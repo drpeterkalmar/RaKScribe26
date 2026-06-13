@@ -377,9 +377,12 @@ def detect_template(text):
     if any(x in text_lower for x in ["dexa", "knochendichte", "densitometrie", "odm"]):
         return "knochendichtemessung_dexa"
         
-    # 3. Mammographie
+    # 3. Mammographie / Fernröntgen
     if "mammo" in text_lower:
         return "mammographie_beidseits"
+        
+    if "fernröntgen" in text_lower or "fern-röntgen" in text_lower or "frs" in text_lower:
+        return "schädelfernröntgen"
 
     # 4. Durchleuchtungen (Fluoroscopy)
     if "breischluck" in text_lower or "ösophagus" in text_lower or "schluckakt" in text_lower:

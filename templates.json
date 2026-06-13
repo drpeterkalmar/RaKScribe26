@@ -402,5 +402,9 @@
     "dvt_unterkiefer": {
         "display_name": "Digitale Volumentomographie des Unterkiefers",
         "body": "Zahnstatus: Zähne in Anzahl, Stellung und Form regelrecht. Kein Nachweis von periapikalen Beherdungen, Wurzelfrakturen oder retinierten Zähnen.\nAlveolarknochen: Regelrechte Knochenstruktur des Unterkiefers. Canalis nervi alveolaris inferioris beidseits unauffällig verlaufend, ohne knöcherne Einengung oder Unterbrechung.\nKiefergelenke: Regelrechte Artikulation beider Gelenkköpfchen in der Fossa mandibularis bei glatten Knochenkonturen."
+    },
+    "schädelfernröntgen": {
+        "display_name": "Schädelfernröntgen",
+        "body": "Die dargestellten knöchernen Schädelstrukturen ohne Auffälligkeiten. Die mitdargestellten Nebenhöhlen o. B.. Die Sella normal weit. Der Sellaboden eben."
     }
 }
