@@ -1,46 +1,74 @@
-# 🚀 RaKScribe 2.0 (Offline)
+# 🚀 RaKScribe26
 
-Willkommen bei **RaKScribe**, dem spezialisierten Diktier-Tool für strukturierte radiologische Befunde – jetzt **100% Offline**, datenschutzkonform und kostenlos.
+**Intelligentes Reporting und strukturiertes radiologisches Befunden** – blitzschnell, hochpräzise und maßgeschneidert für den klinischen Alltag.
 
-RaKScribe nutzt modernste lokale KI-Modelle, um gesprochenes Wort direkt auf Ihrem Rechner in hochpräzise medizinische Berichte zu verwandeln. 
+RaKScribe26 ist die Weiterentwicklung des offline-basierten radiologischen Befundungsassistenten. Es kombiniert die unglaubliche Geschwindigkeit und Qualität moderner Online-KI-Modelle mit dem bewährten lokalen Workflow, um Diktate in Sekundenschnelle in strukturierte Berichte (mit *Befund* und *Beurteilung*) zu übersetzen und direkt in Ihr RIS oder Word einzufügen.
 
-> [!TIP]
-> **Vorteil:** Es verlassen keine Patientendaten Ihren Rechner (DSGVO-konform). Es entstehen keine API-Kosten.
+---
 
-## 💡 Architektur: 100% Lokale Intelligenz
+## 💡 Architektur: Hybrid Online & Offline
 
-RaKScribe ersetzt Cloud-Dienste durch leistungsstarke lokale Worker-Modelle:
+RaKScribe26 unterstützt zwei hocheffiziente Betriebsmodi, um sich perfekt an Ihre Praxis-Infrastruktur anzupassen:
 
-| Komponente | Engine | Begründung |
+| Komponente | Online-Modus (Empfohlen für Standard-Arbeitsplätze) | Offline-Modus (Für High-End-Workstations mit GPU) |
 | :--- | :--- | :--- |
-| **Spracherkennung (STT)** | **Faster-Whisper** (`large-v3-turbo`) | Nutzt die GPU zur Echtzeit-Transkription. Durch Chunk-basiertes Pseudo-Streaming sehen Sie Ihren Text bereits während des Sprechens – ganz ohne Google Cloud. |
-| **Strukturierung (LLM)** | **Gemma 4** (`gemma4:e4b`) | Ein hochmodernes lokales Modell von Google DeepMind, das via Ollama betrieben wird. Es korrigiert Diktatfehler und formatiert den Befund basierend auf Ihren Vorlagen (`radiology_prompt.txt`). |
+| **Spracherkennung (STT)** | **Google Cloud Speech-to-Text** (Übertragung via HTTPS, extrem präzise, inkl. Fachbegriff-Boost) | **Faster-Whisper** (Lokal auf dem Rechner via GPU/CPU) |
+| **Strukturierung (LLM)** | **Google Gemini 1.5 Flash** (Unter-Sekunden-Antwortzeiten, zero-configuration) | **MedGemma / Gemma2** (Betrieben über lokales Ollama) |
+| **API-Kosten** | **Praktisch 0 €** (Erste 60 Min. STT/Monat gratis, Gemini im Free Tier kostenlos) | **0 €** (Komplett kostenfrei) |
+| **Hardware-Bedarf** | **Minimal** (Läuft flüssig auf alten Praxis-PCs mit Onboard-GPU) | **Hoch** (NVIDIA-GPU mit mind. 8GB VRAM benötigt) |
 
 ---
 
-### 👉 [DETAILLIERTE INSTALLATIONSANLEITUNG (INSTALL.MD)](install.md)
+## ⭐ Hauptmerkmale
+
+* **⚡ Sub-Sekunden-Latenz:** Befunde werden online via Gemini Flash in unter 2 Sekunden fertig strukturiert und formatiert zurückgeliefert.
+* **🔑 Zero-Configuration:** Keine manuelle API-Key-Eingabe nötig! Die Anwendung verwendet automatisch Ihre Google Speech-to-Text-Schlüsseldatei (`rakscribe-0ff1ffd128a1.json`) zur sicheren Authentifizierung bei Gemini.
+* **📋 Auto-Paste & Hotkey (F10):** Ein einziger Tastendruck auf **F10** startet und stoppt das Diktat. Nach Beendigung wird der fertige Befund automatisch in die Zwischenablage kopiert und per `Ctrl+V` direkt in Ihr aktives RIS, Word oder KIS eingefügt.
+* **🩺 Medizinisches Vokabular:** Ein integrierter Wortschatz-Boost sorgt dafür, dass komplexe radiologische Fachbegriffe (z. B. *Spondylarthrose*, *Rotatorenmanschettenruptur*, *Rhizarthrose*) fehlerfrei erkannt werden.
+* **🪵 Diagnose-Protokollierung:** Automatisches Schreiben von Log-Ausgaben und Mikrofon-Pegeldaten (RMS) in eine lokale `rakscribe.log`, um Treiber- oder Datenschutzprobleme auf einzelnen PCs sofort aufzuspüren.
 
 ---
 
-## Kernfunktionen
+## 🚀 Schnellstart & Installation
 
-### ⚙️ Voraussetzungen
-* **Python 3.12** oder neuer. 
-* **NVIDIA GPU:** Empfohlen (mind. 8GB VRAM für flüssigen Betrieb).
-* **Ollama:** Der lokale Backend-Server für das Sprachmodell.
+Eine ausführliche Anleitung zur Einrichtung aller Komponenten finden Sie in der **[INSTALL.md](INSTALL.md)**.
 
-### 🔒 Sicherheit & Datenschutz
-* Keine Übertragung von Audio- oder Textdaten an externe Server (OpenAI, Google).
-* Vollständige Kontrolle über die verwendeten Modelle und Daten.
-* Ideal für sensible klinische Umgebungen und Praxen.
+### 1. Repository klonen & vorbereiten
+Stellen Sie sicher, dass sich folgende Dateien im Projektverzeichnis befinden:
+* `config.ini` – Ihre Einstellungen (Standardmäßig auf Online-Modus konfiguriert)
+* `templates.json` – Ihre Normalbefunde und radiologischen Templates
+* `radiology_prompt.txt` – Der System-Prompt für die KI-Strukturierung
+* `practice_reports.db` – Die lokale SQLite-Datenbank für Praxis-Referenzen
+* `rakscribe-0ff1ffd128a1.json` – Ihre Google Cloud Service-Account-Schlüsseldatei
 
-### 🚀 Schneller Workflow
-1. **F10** drücken → Diktat startet (Live-Anzeige der Chunks).
-2. **F10** erneut drücken → Modell strukturiert den Befund innerhalb von Sekunden.
-3. Der fertige Befund wird automatisch in Word/RIS/PACS eingefügt (via Clipboard).
+### 2. Abhängigkeiten installieren
+```bash
+pip install -r source_code/requirements.txt
+```
 
-## Anpassung
-Die medizinische Intelligenz steckt in der `radiology_prompt.txt`. Hier können Sie Ihre persönlichen Normalbefunde, Abkürzungen und Formatierungswünsche hinterlegen.
+### 3. Anwendung starten
+Starten Sie das Programm einfach per Doppelklick auf die Batch-Datei im Hauptverzeichnis:
+```bash
+start rakscribe.bat
+```
 
 ---
-*(c) 2025-2026 Dr. Peter Kalmar - Erstellt für die lokale radiologische Befundung.*
+
+## ⚙️ Konfigurations-Beispiel (`config.ini`)
+
+```ini
+[SETTINGS]
+# LLM-Provider: 'gemini' (online), 'openai' (online) oder 'ollama' (lokal)
+LLM_PROVIDER = gemini
+LLM_MODEL = gemini-1.5-flash
+
+# API-Key (kann für Gemini leer bleiben, da die STT-Schlüsseldatei wiederverwendet wird)
+API_KEY = 
+
+# Spracherkennung: 'google' (online, live streaming) oder 'whisper' (offline)
+STT_ENGINE = google
+GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json
+```
+
+---
+*(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

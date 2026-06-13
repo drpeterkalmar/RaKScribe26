@@ -1,85 +1,89 @@
-# ⚙️ Installations- und Einrichtungsanleitung (Offline-Version)
+# ⚙️ RaKScribe26 - Installationsanleitung
 
-RaKScribe 2.0 läuft vollständig lokal auf Ihrem Rechner. Es sind keine Cloud-Abonnements oder API-Keys mehr erforderlich.
+Diese Anleitung führt Sie Schritt für Schritt durch die Einrichtung von **RaKScribe26** für den radiologischen Befundungsalltag.
 
 ---
 
 ## 1. Systemvoraussetzungen 💻
 
-Um STT (Spracherkennung) und LLM (Strukturierung) gleichzeitig flüssig zu betreiben, wird folgende Hardware empfohlen:
+Je nachdem, welchen Modus Sie in der `config.ini` wählen, gelten unterschiedliche Anforderungen:
 
-* **GPU:** NVIDIA Grafikkarte mit mind. **8 GB VRAM** (z.B. RTX 3070 Ti, 4060 oder besser).
-* **RAM:** Mind. 16 GB Arbeitsspeicher.
-* **Betriebssystem:** Windows 10/11 (bevorzugt).
-* **Python:** Version 3.12 oder neuer.
+### A. Online-Modus (Empfohlen für Standard-PCs)
+* **Betriebssystem:** Windows 10 / 11
+* **Python:** Version 3.12 oder neuer
+* **Hardware:** Minimal. Funktioniert auch auf alten Praxis-Arbeitsplätzen mit Onboard-Grafikkarte oder älteren Prozessoren, da die Berechnung auf Google-Servern erfolgt.
+* **Internetverbindung:** Erforderlich für die Google Cloud Speech-to-Text und Gemini API-Anfragen.
+
+### B. Offline-Modus (Für High-End-PCs mit Grafikkarte)
+* **Betriebssystem:** Windows 10 / 11
+* **Hardware:** **NVIDIA-Grafikkarte** mit mindestens **8 GB VRAM** (z. B. RTX 3060/4060 oder besser) für flüssiges, verzögerungsfreies Arbeiten.
+* **Zusatzsoftware:** Lokaler Ollama-Server für die KI-Strukturierung.
 
 ---
 
-## 2. Software-Komponenten installieren 📦
+## 2. Installationsschritte 🚀
 
-### A. Ollama (Das LLM-Backend)
-1. Laden Sie Ollama von [ollama.com](https://ollama.com) herunter und installieren Sie es.
-2. Öffnen Sie ein Terminal (PowerShell) und laden Sie das benötigte Sprachmodell:
-   ```powershell
-   ollama pull gemma4:e4b
+### Schritt 1: Python installieren
+1. Laden Sie Python 3.12 von der offiziellen Webseite herunter: [python.org/downloads](https://www.python.org/downloads/)
+2. **Wichtig:** Aktivieren Sie bei der Installation das Kontrollkästchen **"Add Python.exe to PATH"**.
+
+### Schritt 2: Repository herunterladen und entpacken
+1. Laden Sie das ZIP-Archiv von GitHub herunter und entpacken Sie es in einen Ordner Ihrer Wahl (z. B. `C:\RaKScribe26`).
+
+### Schritt 3: Google Service Account Key hinterlegen (Nur Online-Modus)
+1. Platzieren Sie Ihre Google Cloud JSON-Schlüsseldatei (z. B. `rakscribe-0ff1ffd128a1.json`) direkt im Hauptverzeichnis des entpackten Ordners.
+2. Das Programm liest diesen API-Schlüssel automatisch aus und verwendet ihn sowohl für die Spracherkennung (Speech-to-Text) als auch für das Sprachmodell (Gemini Flash).
+
+### Schritt 4: Python-Abhängigkeiten installieren
+1. Öffnen Sie die Eingabeaufforderung (cmd) oder PowerShell im Programmordner.
+2. Führen Sie folgenden Befehl aus, um alle notwendigen Bibliotheken zu installieren:
+   ```cmd
+   pip install -r requirements.txt
    ```
 
-### B. Python-Abhängigkeiten
-Navigieren Sie in den Projektordner und installieren Sie die Bibliotheken:
-```powershell
-pip install -r requirements.txt
-```
-
-### C. Audio-Treiber testen
-Stellen Sie sicher, dass Ihr Mikrofon erkannt wird:
-```powershell
-python -m sounddevice
-```
-
 ---
 
-## 3. Konfiguration einrichten 🛠️
+## 3. Konfiguration anpassen (`config.ini`) 🛠️
 
-RaKScribe nutzt eine `config.ini` Datei für alle Einstellungen.
-
-1. Erstellen Sie eine Datei namens **`config.ini`** im Hauptverzeichnis (falls nicht vorhanden).
-2. Fügen Sie folgenden Inhalt ein:
+Öffnen Sie die Datei `config.ini` im Hauptverzeichnis mit einem Texteditor (z. B. Notepad), um das Verhalten anzupassen:
 
 ```ini
 [SETTINGS]
-OLLAMA_URL = http://localhost:11434
-LLM_MODEL = gemma4:e4b
-WHISPER_MODEL = large-v3-turbo
-WHISPER_COMPUTE_TYPE = int8
-CHUNK_DURATION = 7
+# LLM-Provider: 'gemini' (online), 'openai' (online) oder 'ollama' (lokal offline)
+LLM_PROVIDER = gemini
+
+# Modellname je nach Provider:
+# - Für gemini: gemini-1.5-flash (empfohlen für blitzschnelle Befunde)
+# - Für ollama: gemma2:9b (empfohlen) oder gemma4:12b
+LLM_MODEL = gemini-1.5-flash
+
+# API-Key für Online-Modelle (kann bei Gemini leer bleiben, wenn rakscribe-*.json vorhanden ist)
+API_KEY = 
+
+# Spracherkennung: 'google' (online, live streaming) oder 'whisper' (offline, batch)
+STT_ENGINE = google
+
+# Dateiname der Google Cloud JSON-Schlüsseldatei (muss im Hauptverzeichnis liegen)
+GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json
 ```
 
 ---
 
-## 4. Erster Start 🚀
+## 4. Anwendung starten und bedienen 🎤
 
-1. Starten Sie die Anwendung:
-   ```powershell
-   python RaKScribe.py
-   ```
-2. **Hinweis:** Beim allerersten Start lädt die App das Whisper-Modell (~1.5 GB) automatisch herunter. Dies kann je nach Internetgeschwindigkeit einige Minuten dauern. Danach startet die App in Sekunden.
-3. Passen Sie die `radiology_prompt.txt` an Ihre gewohnten Befunde an.
+1. Starten Sie das Programm einfach per Doppelklick auf die Datei **`start rakscribe.bat`** im Hauptverzeichnis.
+2. Drücken Sie **F10**, um das Diktat zu starten. Sprechen Sie Ihren Befund ein.
+3. Drücken Sie **F10** erneut, um die Aufnahme zu stoppen.
+4. Die Anwendung überträgt das Diktat, strukturiert es in *Befund* und *Beurteilung* anhand Ihrer Templates und fügt es **automatisch** per `Ctrl+V` in Ihre aktuell geöffnete Anwendung (z. B. Ihr RIS oder MS Word) ein.
 
 ---
 
-## 5. Bedienung und Workflow 🎤
+## 🔍 Diagnose & Fehlerbehebung (Troubleshooting)
 
-1. **Starten:** Drücken Sie **F10**. Sprechen Sie Ihren Befund. Der Pegel-Balken schlägt aus und das Transkript wird in Chunks (Paketen) live angezeigt.
-2. **Stoppen:** Drücken Sie erneut **F10**. Die KI strukturiert den Text.
-3. **Einfügen:** Der fertige Befund wird automatisch in die Zwischenablage kopiert und im aktiven Fenster (z.B. Word oder RIS-Textfeld) eingefügt.
-
----
-
-## Fehlerbehebung (Troubleshooting)
-
-* **Ollama nicht gefunden:** Stellen Sie sicher, dass das Ollama-Icon in der Taskleiste sichtbar ist.
-* **GPU-Fehler (CUDA):** Wenn keine NVIDIA-Karte vorhanden ist, wechselt die App automatisch auf den CPU-Modus (deutlich langsamer). Installieren Sie ggf. die neuesten NVIDIA-Treiber.
-* **Kein Pegelausschlag:** Prüfen Sie in den Windows-Soundeinstellungen, ob das richtige Mikrofon als Standardgerät ausgewählt ist.
+Alle Aktivitäten, Warnungen und Fehler werden in die Datei **`rakscribe.log`** im Hauptverzeichnis geschrieben. Sollte etwas nicht funktionieren:
+* **Kein Ton erkannt:** Prüfen Sie im Log (`rakscribe.log`), ob Ihr Standard-Mikrofon korrekt erkannt und angesprochen wird.
+* **Fehler bei der Google API:** Stellen Sie sicher, dass Ihre JSON-Schlüsseldatei im Hauptverzeichnis liegt und der Name in der `config.ini` exakt übereinstimmt.
+* **Latenzprobleme:** Wenn Sie den Offline-Modus nutzen und die Antwort zu lange dauert, prüfen Sie, ob Ihre NVIDIA-Grafikkarte von CUDA angesprochen wird oder ob auf die langsame CPU ausgewichen wurde.
 
 ---
-*(c) 2026 RaKScribe Team - Lokale radiologische Dokumentation.*
+*(c) 2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

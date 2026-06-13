@@ -12,7 +12,10 @@ ENV/
 
 # RaKScribe Secrets & Local Config (Legacy & Current)
 *.json
+!templates.json
 *.bat
+!start rakscribe.bat
+!source_code/build.bat
 
 # Compilation
 build/
@@ -26,3 +29,9 @@ Thumbs.db
 # Whisper Models (if cached locally in project)
 models/
 whisper-models/
+
+# Local Data & Logs (Do not commit to GitHub)
+*.log
+*.exe
+practice_reports.db
+Befundvorlagen/
