@@ -43,7 +43,7 @@ Für den Online-Modus fallen bei Google folgende minimale Gebühren an:
 
 * **🏥 Modalitätsspezifische Befundvorlagen:** RaKScribe26 erkennt automatisch die Bildgebungsmodalität des diktierten Befunds und wählt die passende strukturierte Vorlage. Jede Modalität hat eigene, klinisch präzise Templates – keine Verwechslung mehr zwischen Röntgen, Sonographie und Nervenschall.
 * **⚡ Sub-Sekunden-Latenz:** Befunde werden online via Gemini Flash in unter 2 Sekunden fertig strukturiert und formatiert zurückgeliefert.
-* **🔑 Zero-Configuration:** Keine manuelle API-Key-Eingabe nötig! Die Anwendung verwendet automatisch Ihre Google Speech-to-Text-Schlüsseldatei (`rakscribe-0ff1ffd128a1.json`) zur sicheren Authentifizierung bei Gemini.
+* **🔑 Zero-Configuration:** Keine manuelle API-Key-Eingabe nötig! Die Anwendung verwendet automatisch Ihre Google Speech-to-Text-Schlüsseldatei (`google-service-account.json`) zur sicheren Authentifizierung bei Gemini.
 * **📋 Auto-Paste & Hotkey (F10):** Ein einziger Tastendruck auf **F10** startet und stoppt das Diktat. Nach Beendigung wird der fertige Befund automatisch in die Zwischenablage kopiert und per `Ctrl+V` direkt in Ihr aktives RIS, Word oder KIS eingefügt.
 * **🔄 Reset-Hotkey (F9):** Schnelles Zurücksetzen aller Felder mit **F9** – ideal wenn ein Diktat falsch gestartet wurde oder die Vorlage neu gewählt werden soll.
 * **🩺 Medizinisches Vokabular:** Ein integrierter Wortschatz-Boost sorgt dafür, dass komplexe radiologische Fachbegriffe (z. B. *Spondylarthrose*, *Rotatorenmanschettenruptur*, *Rhizarthrose*) fehlerfrei erkannt werden.
@@ -82,7 +82,7 @@ Stellen Sie sicher, dass sich folgende Dateien im Projektverzeichnis befinden:
 * `templates.json` – Ihre Normalbefunde und radiologischen Templates
 * `radiology_prompt.txt` – Der System-Prompt für die KI-Strukturierung
 * `practice_reports.db` – Die lokale SQLite-Datenbank für Praxis-Referenzen
-* `rakscribe-0ff1ffd128a1.json` – Ihre Google Cloud Service-Account-Schlüsseldatei
+* `google-service-account.json` – Ihre Google Cloud Service-Account-Schlüsseldatei
 
 ### 2. Abhängigkeiten installieren
 ```bash
@@ -110,7 +110,7 @@ API_KEY =
 
 # Spracherkennung: 'google' (online, live streaming) oder 'whisper' (offline)
 STT_ENGINE = google
-GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json
+GOOGLE_JSON_FILENAME = google-service-account.json
 ```
 
 ---
