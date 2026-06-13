@@ -625,6 +625,15 @@ class RaKScribeApp(ctk.CTk):
                                          command=self.toggle_recording)
         self.record_btn.pack(side="left")
 
+        self.reset_btn = ctk.CTkButton(ctrl_frame, text=" Zurücksetzen ",
+                                        height=50,
+                                        font=("Segoe UI", 14),
+                                        fg_color="#2D314D",
+                                        hover_color="#E74C3C",
+                                        corner_radius=10,
+                                        command=self.reset_dictation)
+        self.reset_btn.pack(side="left", padx=10)
+
         self.copy_btn = ctk.CTkButton(ctrl_frame, text=" Befund kopieren ",
                                        height=50,
                                        font=("Segoe UI", 14),
@@ -694,6 +703,19 @@ class RaKScribeApp(ctk.CTk):
             else:
                 self.record_btn.configure(text=f" Fast fertig... {elapsed}s ")
             self.after(1000, self.update_processing_timer)
+
+    def reset_dictation(self):
+        if self.is_recording:
+            self.toggle_recording()
+        
+        log("[UI] Zurücksetzen angefordert. Lösche Transkription, Befund und Aufnahmedaten.")
+        self.final_transcript = ""
+        self.recorded_audio_chunks = []
+        self.transcript_text.delete("1.0", "end")
+        self.result_text.delete("1.0", "end")
+        self.update_status("READY", "ready")
+        self.level_indicator.configure(width=0)
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
 
     def toggle_recording(self):
         global STT_ENGINE
