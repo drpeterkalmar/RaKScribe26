@@ -338,5 +338,53 @@
     "durchleuchtung:_magen-darm-passage_mdp": {
         "display_name": "Durchleuchtung: Magen-Darm-Passage (MDP)",
         "body": "Magen: Normal konfiguriert, regelrechtes Schleimhautrelief. Zügige Magenentleerung. Keine Ulkusnischen oder Füllungsdefekte.\nDuodenum: Bulbus duodeni und Duodenalschleife unauffällig konfiguriert, glatt konturiert.\nPassage: Zügiger Transit des Kontrastmittels in die oberen Dünndarmschlingen (Jejunum) ohne Obstruktionszeichen."
+    },
+    "sonografie_nerven": {
+        "display_name": "Hochaufloesende Nervensonographie",
+        "body": "Nervenverlauf: Symmetrische Darstellung des untersuchten Nervensegments. Kontur des Epineuriums allseits glatt begrenzt, ohne Einengung, Sanduhr-Deformitaet oder Kalibersprung.\nEchostruktur: Regelrechtes faszikulaeres Muster erhalten. Keine pathologische Echominderung oder Schwellung der Faszikel.\nKaliber/Querschnitt: Normale Querschnittsflaeche (CSA) im gesamten Verlauf, insbesondere an typischen Engstellen (kein Anhalt fuer Kompressionssyndrom).\nUmgebung: Umgebende anatomische Strukturen (Sehnen, Faszien, GefaeÃŸe) regelrecht abgrenzbar, kein Nachweis raumfordernder Prozesse oder entzuentlicher Fluessigkeitsansammlungen in Nervennaehe."
+    },
+    "sonografie_allgemein": {
+        "display_name": "Sonographie (Allgemein)",
+        "body": "Untersuchungsregion: Symmetrische Darstellung der untersuchten Region. Organ- und Gewebegrenzen glatt abgrenzbar.\nEchotextur: Parenchym homogen, echonormal und altersentsprechend. Keine umschriebenen Herdbefunde, Zysten oder soliden Raumforderungen.\nUmgebung: Unauffällige Darstellung der umgebenden Gewebestrukturen, GefaeÃŸe und Muskelgruppen. Kein Nachweis freier Fluessigkeit."
+    },
+    "sonografie_abdomen_weiblich": {
+        "display_name": "Sonografie Abdomen (weiblich)",
+        "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten. Der Uterus von normaler Form, Größe und Struktur."
+    },
+    "sonografie_abdomen_maennlich": {
+        "display_name": "Sonografie Abdomen (männlich)",
+        "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten."
+    },
+    "sonografie_halsgefaesse": {
+        "display_name": "Farbcodierte Duplexsonographie der Halsgefäße",
+        "body": "Die Arteria carotis externa, Arteria carotis interna und Arteria carotis communis kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar. Auch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar. Der Intima-Media-Komplex mit unter 0,9 mm im Normbereich gelegen."
+    },
+    "sonografie_beinvenen": {
+        "display_name": "Farbcodierte Duplexsonographie der Beinvenen",
+        "body": "Die V. femoralis, die V. poplitea, die V. fibularis sowie tibialis posterior in allen Abschnitten gut komprimierbar ohne Hinweis auf Thrombose. Auch im Bereich der Muskelvenen keine Auffälligkeiten, farbdopplersonographisch o. B."
+    },
+    "sonografie_nerv_medianus": {
+        "display_name": "Hochauflösende Sonographie des N. medianus",
+        "body": "Darstellung des N. medianus vom Oberarm bis distal des Karpaltunnels inklusive sämtlicher abgehender Endäste.\n\nAm gesamten Oberarm regelrechtes Kaliber des N. medianus ohne Nachweis einer faszikulären oder nervalen Auftreibung. Anatomisch regelrechter Verlauf des Nervs am Musculus pronator teres ohne Nachweis einer Kompression oder Verlagerung nach medial. Kein Nachweis eines Nerven-Knochenkontaktes.\n\nAm gesamten Unterarm ebenso regelrechtes Kaliber des N. medianus ohne Nachweis einer faszikulären oder nervalen Auftreibung."
+    },
+    "sonografie_nerv_ulnaris": {
+        "display_name": "Hochauflösende Sonographie des N. ulnaris",
+        "body": "Darstellung des N. ulnaris von der Axilla bis distal der Loge de Guyon inklusive sämtlicher abgehender Endäste.\n\nAm gesamten Oberarm regelrechtes Kaliber des N. ulnaris ohne Nachweis einer faszikulären oder nervalen Auftreibung.\nVerdickung des Nervs am Sulcus nervi ulnaris mit einer Querschnittsfläche von 12 mm² (Normwert < 8 bis 9 mm²). Kein Nachweis einer Nervenkompression am medialen Septum intermusculare oder am Osborne Ligament (zwischen den Köpfen des M. flexor carpi ulnaris). Die Osborne Faszie/das Retinaculum unauffällig. Kein Nachweis eines Schnappens des Nervs über den Epicondylus medialis humeri bei Ellbogenflexion. Geringe Kompression des Nervs durch die Osborne Faszie bei Armflexion."
+    },
+    "sonografie_plexus_brachialis": {
+        "display_name": "Hochauflösende Sonographie des Plexus brachialis",
+        "body": "Darstellung des Plexus brachialis infra- und supraclaviculär bis zur Axilla.\n\nSupraclaviculär regelrechtes Kaliber der Nervenwurzeln C5 - TH1 und normale Formation in die Trunci. Kein Nachweis einer nervalen Verdickung. Unauffällige Nerven-Echogenität. Die Kontinuität sämtlicher Fasern erhalten. Kein Nachweis einer Stummel- oder Halsrippe.\n\nInfraclaviculär normale Darstellung der Faszikuli ohne Nachweis einer Verdickung. Der costoclaviculäre Raum imponiert normweit. Der Musculus subclavicus seitensymetrisch und nicht hypertrophiert. In Ruhe und bei Armabduktion (ca. 90°) kein NW einer signifikanten Stenose in der Arteria subclavia somit auch kein Nachweis eines arteriellen costoclaviculären TOS (Thoracic outlet syndroms)."
+    },
+    "sonografie_nerv_allgemein": {
+        "display_name": "Hochauflösende Nervensonographie (Allgemein)",
+        "body": "Nervenverlauf: Symmetrische Darstellung des untersuchten Nervensegments. Kontur des Epineuriums allseits glatt begrenzt, ohne Einengung, Sanduhr-Deformität oder Kalibersprung.\nEchostruktur: Regelrechtes faszikuläres Muster erhalten. Keine pathologische Echominderung oder Schwellung der Faszikel.\nKaliber/Querschnitt: Normale Querschnittsfläche (CSA) im gesamten Verlauf, insbesondere an typischen Engstellen (kein Anhalt für Kompressionssyndrom).\nUmgebung: Umgebende anatomische Strukturen (Sehnen, Faszien, Gefäße) regelrecht abgrenzbar, kein Nachweis raumfordernder Prozesse oder entzündlicher Flüssigkeitsansammlungen in Nervennähe."
+    },
+    "sonografie_weichteile": {
+        "display_name": "Sonographie der Weichteile",
+        "body": "Untersuchungsbefund: Symmetrische Darstellung der Weichteilstrukturen der betroffenen Region. Haut und Unterhautgewebe (Subcutis) unauffällig konfiguriert.\nMuskulatur/Faszien: Die Muskelfaszien und Muskelfaserbündel stellen sich regelrecht und ohne Unterbrechung dar. Kein Anhalt für Hämatome, Muskelfaserrisse oder Flüssigkeitsansammlungen.\nRaumforderungen: Kein Nachweis solider oder zystischer Raumforderungen (z. B. Lipome, Atherome, Ganglien) in der unmittelbaren Untersuchungsregion. Keine pathologische Hypervaskularisation im Farbdoppler.\nLymphknoten: Soweit einsehbar, keine pathologisch vergrößerten oder strukturell veränderten Lymphknoten."
+    },
+    "sonografie_halsweichteile": {
+        "display_name": "Sonographie der Halsweichteile",
+        "body": "Speicheldrüsen: Homogene Darstellung der Glandula submandibularis und Glandula parotis beidseits. Normalgroß, keine Duktektasien, kein Nachweis von Speichelsteinen (Konkrementen). Mundboden: Unauffällig.\nLymphknoten: Unauffällige Lymphknoten beidseits cervical. Sämtliche Lymphknoten mit ovalärer Konfiguration, erhaltendem echoreichen Fetthilus und ohne suspekte Vaskularisation oder pathologische Schwellung.\nWeichteile: Symmetrische Darstellung der Halsweichteile, kein Nachweis pathologischer Raumforderungen."
     }
 }

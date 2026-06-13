@@ -328,6 +328,40 @@ def detect_template(text):
     """Bessere Erkennungslogik für den Untersuchungstyp."""
     text_lower = text.lower()
     
+    # 0. Spezialregeln für Sonographie vorab prüfen (da sehr häufig)
+    if any(x in text_lower for x in ["sono", "schall", "ultraschall", "duplex"]):
+        # Abdomen-Sonographie
+        if "abdomen" in text_lower or "bauch" in text_lower or "abd" in text_lower:
+            if "weiblich" in text_lower:
+                return "sonografie_abdomen_weiblich"
+            else:
+                return "sonografie_abdomen_maennlich"
+        # Halsgefäße / Carotis
+        if any(x in text_lower for x in ["carotis", "halsgef", "halsart", "extracran", "commun"]):
+            return "sonografie_halsgefaesse"
+        # Beinvenen
+        if any(x in text_lower for x in ["beinven", "v. femoralis", "poplitea", "fibularis", "venen"]):
+            return "sonografie_beinvenen"
+        # Halsweichteile vs Schilddrüse
+        if "halsweichteil" in text_lower or "hals-weichteil" in text_lower:
+            return "sonografie_halsweichteile"
+        if "schilddr" in text_lower or "sd-" in text_lower:
+            return "sonografie_schilddrüse"
+        # Weichteilschall allgemein
+        if "weichteil" in text_lower:
+            return "sonografie_weichteile"
+        # Nerven
+        if "medianus" in text_lower or "karpal" in text_lower or "cts" in text_lower:
+            return "sonografie_nerv_medianus"
+        if "ulnaris" in text_lower or "sulcus" in text_lower or "loge" in text_lower or "guyon" in text_lower:
+            return "sonografie_nerv_ulnaris"
+        if "plexus" in text_lower:
+            return "sonografie_plexus_brachialis"
+        if any(x in text_lower for x in ["nerv", "neuro", "suralis", "peroneus", "tibialis"]):
+            return "sonografie_nerv_allgemein"
+        # Sonographie Allgemein
+        return "sonografie_allgemein"
+
     # Priorisiertes Mapping: spezifischere Begriffe zuerst prüfen
     mappings = [
         # MRT / CT (am spezifischsten)
@@ -341,10 +375,6 @@ def detect_template(text):
         ("cct:", ["cct", "craniales ct", "ct kopf", "ct schädel", "ct gehirn"]),
         ("ct_thorax:", ["ct thorax", "ct lunge", "ct brustkorb"]),
         ("ct_abdomen:", ["ct abdomen", "ct bauch"]),
-        
-        # Sonografie
-        ("sonografie_abdomen_komplett", ["sono abd", "sonografie abd", "ultraschall abd", "abdomen-sono", "sono abdomen", "sonografie abdomen"]),
-        ("sonografie_schilddrüse", ["sono schild", "sonografie schild", "ultraschall schild", "sono hals", "sonografie hals"]),
         
         # Röntgen (Wirbelsäule)
         ("lendenwirbelsäule_in_2_ebenen", ["lws", "lumbal", "lendenwirbel"]),
@@ -510,7 +540,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26")
+        self.title("RaKScribe26 (v2.6.0)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -557,8 +587,11 @@ class RaKScribeApp(ctk.CTk):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=30, pady=(30, 10))
 
-        title_label = ctk.CTkLabel(header, text="RaKScribe AIR", font=("Segoe UI", 28, "bold"), text_color="white")
+        title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
+
+        version_label = ctk.CTkLabel(header, text="v2.6.0", font=("Segoe UI", 12), text_color="#707070")
+        version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
                                          font=("Segoe UI", 12, "bold"),
