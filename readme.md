@@ -74,26 +74,22 @@ Jede Modalität verfügt über eigene, klinisch präzise Befundvorlagen. Die aut
 
 ## 🚀 Schnellstart & Installation
 
-Eine ausführliche Anleitung zur Einrichtung aller Komponenten finden Sie in der **[INSTALL.md](INSTALL.md)**.
+Eine ausführliche Anleitung zur Einrichtung finden Sie in der **[INSTALL.md](INSTALL.md)**.
 
-### 1. Repository klonen & vorbereiten
-Stellen Sie sicher, dass sich folgende Dateien im Projektverzeichnis befinden:
-* `config.ini` – Ihre Einstellungen (Standardmäßig auf Online-Modus konfiguriert)
-* `templates.json` – Ihre Normalbefunde und radiologischen Templates
-* `radiology_prompt.txt` – Der System-Prompt für die KI-Strukturierung
-* `practice_reports.db` – Die lokale SQLite-Datenbank für Praxis-Referenzen
-* `google-service-account.json` – Ihre Google Cloud Service-Account-Schlüsseldatei
+### 1. Release herunterladen
+Laden Sie die neueste Version vom [Releases-Tab](https://github.com/drpeterkalmar/RaKScribe26/releases) herunter. Sie benötigen:
+* `rakscribe26.exe` – die fertige Anwendung (kein Python erforderlich)
+* `config.ini` – Konfigurationsdatei
+* `templates.json` – Befundvorlagen
+* `radiology_prompt.txt` – System-Prompt für die KI
 
-### 2. Abhängigkeiten installieren
-```bash
-pip install -r source_code/requirements.txt
-```
+Alle Dateien in **denselben Ordner** legen.
 
-### 3. Anwendung starten
-Starten Sie das Programm einfach per Doppelklick auf die Batch-Datei im Hauptverzeichnis:
-```bash
-start rakscribe.bat
-```
+### 2. Google Service Account hinterlegen
+Platzieren Sie Ihre Google Cloud JSON-Schlüsseldatei im selben Ordner und tragen Sie den Dateinamen in der `config.ini` unter `GOOGLE_JSON_FILENAME` ein.
+
+### 3. Starten
+Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installation nötig.
 
 ---
 
