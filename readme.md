@@ -19,6 +19,24 @@ RaKScribe26 unterstützt zwei hocheffiziente Betriebsmodi, um sich perfekt an Ih
 
 ---
 
+## 💰 API-Kosten-Kalkulation (Online-Modus)
+
+Für den Online-Modus fallen bei Google folgende minimale Gebühren an:
+
+* **Spracherkennung (Google Cloud Speech-to-Text):**
+  * Tarif: **$0,024 pro Minute** (aufgerundet auf 15-Sekunden-Schritte).
+  * **10-Sekunden-Diktat:** Kostet ca. **$0,006** (~0,6 Cent).
+  * **Gratis-Kontingent:** Die ersten **60 Minuten** pro Monat sind **komplett kostenlos** (entspricht ca. 360 Diktaten à 10s).
+* **Strukturierung (Google Gemini 1.5 Flash):**
+  * Tarif: **$0,075 / 1 Mio. Input-Tokens** und **$0,30 / 1 Mio. Output-Tokens**.
+  * **Kosten pro Befund:** Bei einem Prompt mit ca. 1.500 Tokens (inkl. Vorlagen) und 200 Tokens Antwort entspricht das ca. **$0,00017** (~0,017 Cent).
+  * **Gratis-Kontingent:** Komplett **kostenfrei** im AI Studio Free Tier (bis zu 15 Anfragen/Minute).
+
+**Gesamtkosten pro 10-Sekunden-Befund:** Weniger als **1 Cent** (ca. **0,6 Cent** im regulären Tarif bzw. **0,0 Cent** im Rahmen der monatlichen Freibeträge). Bei ca. 100 Befunden am Tag entspricht dies Betriebskosten von ca. **60 Cent**.
+
+---
+
+
 ## ⭐ Hauptmerkmale
 
 * **⚡ Sub-Sekunden-Latenz:** Befunde werden online via Gemini Flash in unter 2 Sekunden fertig strukturiert und formatiert zurückgeliefert.
