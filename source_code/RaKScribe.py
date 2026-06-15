@@ -25,7 +25,6 @@ import sqlite3
 from difflib import get_close_matches
 import traceback
 import configparser
-from faster_whisper import WhisperModel
 from openai import OpenAI
 
 # =========================================================================
@@ -143,28 +142,21 @@ try:
     if not config.sections():
         raise FileNotFoundError
 
-    OLLAMA_URL = config['SETTINGS']['OLLAMA_URL'].strip()
-    LLM_PROVIDER = config['SETTINGS'].get('LLM_PROVIDER', 'ollama').strip().lower()
+    LLM_PROVIDER = config['SETTINGS'].get('LLM_PROVIDER', 'gemini').strip().lower()
     LLM_MODEL = config['SETTINGS']['LLM_MODEL'].strip()
     API_KEY = config['SETTINGS'].get('API_KEY', '').strip().replace('"', '')
-    WHISPER_MODEL_SIZE = config['SETTINGS']['WHISPER_MODEL'].strip()
-    WHISPER_COMPUTE_TYPE = config['SETTINGS']['WHISPER_COMPUTE_TYPE'].strip()
-    CHUNK_DURATION = int(config['SETTINGS']['CHUNK_DURATION'].strip())
-    STT_ENGINE = config['SETTINGS'].get('STT_ENGINE', 'google').strip().lower()
+    CHUNK_DURATION = int(config['SETTINGS'].get('CHUNK_DURATION', '7').strip())
     GOOGLE_JSON_FILENAME = config['SETTINGS'].get('GOOGLE_JSON_FILENAME', 'rakscribe-0ff1ffd128a1.json').strip().replace('"', '')
+    STT_ENGINE = 'google'
 
 except (KeyError, FileNotFoundError):
     if not os.path.exists(CONFIG_FILE_PATH):
         with open(CONFIG_FILE_PATH, 'w', encoding='utf-8') as f:
             f.write("[SETTINGS]\n"
-                    "OLLAMA_URL = http://localhost:11434\n"
                     "LLM_PROVIDER = gemini\n"
                     "LLM_MODEL = gemini-1.5-flash\n"
                     "API_KEY = \n"
-                    "WHISPER_MODEL = large-v3-turbo\n"
-                    "WHISPER_COMPUTE_TYPE = int8\n"
                     "CHUNK_DURATION = 7\n"
-                    "STT_ENGINE = google\n"
                     "GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json\n")
 
     messagebox.showerror("Konfigurations-Fehler",
@@ -172,32 +164,9 @@ except (KeyError, FileNotFoundError):
     sys.exit()
 
 # --- STT Engines Initialisierungs-Logik ---
-whisper_model = None
 speech_client = None
 GOOGLE_CONFIG = None
 STREAMING_CONFIG = None
-
-def init_whisper_model():
-    global whisper_model
-    if whisper_model is not None:
-        return True
-    MODEL_PATH = os.path.join(RESOURCES_DIR, "models", WHISPER_MODEL_SIZE)
-    if not os.path.exists(MODEL_PATH):
-        MODEL_PATH = WHISPER_MODEL_SIZE
-    print(f"[INIT] Lade Whisper-Modell von '{MODEL_PATH}' ({WHISPER_COMPUTE_TYPE})...")
-    try:
-        whisper_model = WhisperModel(MODEL_PATH, device="cuda", compute_type=WHISPER_COMPUTE_TYPE)
-        print("[INIT] Whisper-Modell geladen (CUDA) [OK]")
-        return True
-    except Exception as e:
-        print(f"[INIT] CUDA nicht verfügbar oder Fehler: {e}")
-        try:
-            whisper_model = WhisperModel(MODEL_PATH, device="cpu", compute_type="int8")
-            print("[INIT] Whisper-Modell geladen (CPU-Modus) [OK]")
-            return True
-        except Exception as e2:
-            print(f"[INIT] Whisper-Fehler: {e2}")
-            return False
 
 def init_google_speech():
     global speech_client, GOOGLE_CONFIG, STREAMING_CONFIG
@@ -240,15 +209,9 @@ def init_google_speech():
         print(f"[INIT] Fehler bei Google SpeechClient Initialisierung: {e}")
         return False
 
-# Initialisiere die aktive Engine beim Start
-if STT_ENGINE == 'google':
-    if not init_google_speech():
-        print("[INIT] Fallback: Initialisiere Whisper, da Google STT nicht geladen werden konnte.")
-        STT_ENGINE = 'whisper'
-        init_whisper_model()
-else:
-    if not init_whisper_model():
-        print("[INIT] Warnung: Whisper konnte nicht geladen werden.")
+# Initialisiere die Google Cloud Speech Engine beim Start
+if not init_google_speech():
+    print("[INIT] Warnung: Google STT konnte beim Start nicht initialisiert werden.")
 
 # --- LLM Client Initialisierung ---
 openai_client = None
@@ -277,9 +240,8 @@ try:
             api_key=key if key else "dummy_key"
         )
         print(f"[INIT] OpenAI-Client konfiguriert (Modell: {LLM_MODEL}) [OK]")
-    else: # ollama
-        openai_client = OpenAI(base_url=f"{OLLAMA_URL}/v1", api_key="ollama")
-        print(f"[INIT] Ollama-Client konfiguriert -> {OLLAMA_URL} (Modell: {LLM_MODEL}) [OK]")
+    else:
+        print("[WARN] Unbekannter oder nicht unterstützter LLM-Provider konfiguriert.")
 except Exception as e:
     messagebox.showerror("LLM Client Fehler", f"Fehler bei Initialisierung des LLM-Clients:\n{e}")
 
@@ -339,6 +301,9 @@ def detect_template(text):
         # Halsgefäße / Carotis
         if any(x in text_lower for x in ["carotis", "halsgef", "halsart", "extracran", "commun"]):
             return "sonografie_halsgefaesse"
+        # Varizensonographie
+        if any(x in text_lower for x in ["varizen", "variko", "variz"]):
+            return "varizensonografie"
         # Beinvenen
         if any(x in text_lower for x in ["beinven", "v. femoralis", "poplitea", "fibularis", "venen"]):
             return "sonografie_beinvenen"
@@ -398,6 +363,13 @@ def detect_template(text):
 
     # Priorisiertes Mapping: spezifischere Begriffe zuerst prüfen
     mappings = [
+        # Prothesen / TEP / Varizen
+        ("varizensonografie", ["varizen", "variko", "variz"]),
+        ("schulterprothese", ["schulterprothese", "schulter-tep", "schulter tep", "schulterendoprothese"]),
+        ("daumensattelprothese", ["daumensattel", "sattelprothese", "sattelgelenk"]),
+        ("knieprothese", ["knieprothese", "knie-tep", "knie tep", "knieendoprothese"]),
+        ("hüftprothese", ["hüftprothese", "hüft-tep", "hüft tep", "hüftendoprothese", "h-tep"]),
+
         # MRT / CT (am spezifischsten)
         ("mr_des_gehirnschädels:", ["mrt schädel", "mr schädel", "mrt kopf", "mr kopf", "mrt gehirn", "mr gehirn"]),
         ("mr_der_lendenwirbelsäule:", ["mrt lws", "mr lws"]),
@@ -574,7 +546,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.6.0)")
+        self.title("RaKScribe26 (v2.7.0)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -624,7 +596,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.6.0", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.7.0", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -785,14 +757,9 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
 
     def toggle_recording(self):
-        global STT_ENGINE
-        if STT_ENGINE == 'google' and not speech_client:
+        if not speech_client:
             if not init_google_speech():
                 messagebox.showerror("Fehler", "Google Cloud Speech-to-Text konnte nicht initialisiert werden. Bitte prüfen Sie Ihre Credentials (JSON-Datei) und die Internetverbindung.")
-                return
-        elif STT_ENGINE == 'whisper' and not whisper_model:
-            if not init_whisper_model():
-                messagebox.showerror("Fehler", "Whisper-Modell konnte nicht initialisiert werden.")
                 return
 
         if not self.is_recording:
@@ -837,17 +804,15 @@ class RaKScribeApp(ctk.CTk):
                 is_short = len(text_lower.split()) < 12
                 return has_normal and is_short
 
-            raw_est = ""
-            if STT_ENGINE == 'google':
-                raw_est = self.transcript_text.get("1.0", "end-1c").strip()
-                if raw_est.startswith("[..") and raw_est.endswith("..]"):
-                    raw_est = raw_est[3:-3].strip()
+            raw_est = self.transcript_text.get("1.0", "end-1c").strip()
+            if raw_est.startswith("[..") and raw_est.endswith("..]"):
+                raw_est = raw_est[3:-3].strip()
             
             is_normal = is_normal_finding(raw_est) if raw_est else False
             if is_normal:
                 self.eta_seconds = 1
             else:
-                self.eta_seconds = 120 if STT_ENGINE == 'google' else 130
+                self.eta_seconds = 120
 
             self.processing_start_time = time.time()
             self.record_btn.configure(state="disabled", text=f" Verarbeite... (ca. {self.eta_seconds}s) ")
@@ -873,10 +838,7 @@ class RaKScribeApp(ctk.CTk):
                         self.final_transcript = salvaged
                         log(f"[GOOGLE] Text gerettet: '{salvaged}'")
 
-                if STT_ENGINE == 'google':
-                    self.process_dictation()
-                else:
-                    self.transcribe_and_process_dictation()
+                self.process_dictation()
 
             threading.Thread(target=wait_and_process, daemon=True).start()
 
@@ -938,26 +900,20 @@ class RaKScribeApp(ctk.CTk):
             self.stream = sd.InputStream(device=self.selected_device_index, samplerate=self.samplerate, channels=1, dtype='int16', callback=callback)
             log("[RECORD] sounddevice InputStream erfolgreich erzeugt. Starte Stream...")
             with self.stream:
-                log("[RECORD] Stream ist aktiv. STT_ENGINE ist " + STT_ENGINE)
-                if STT_ENGINE == 'google':
-                    requests = self.google_streaming_generator()
-                    log("[GOOGLE] Rufe streaming_recognize auf...")
-                    responses = speech_client.streaming_recognize(requests=requests, config=STREAMING_CONFIG)
-                    log("[GOOGLE] streaming_recognize aufgerufen. Starte response-Schleife...")
-                    for response in responses:
-                        if not response.results:
-                            continue
-                        result = response.results[0]
-                        if not result.alternatives:
-                            continue
-                        transcript = result.alternatives[0].transcript
-                        self.after(0, self.update_interim_text, transcript, result.is_final)
-                    log("[GOOGLE] response-Schleife regulär beendet.")
-                else:
-                    log("[RECORD] Whisper-Aufnahmeschleife aktiv...")
-                    while self.is_recording:
-                        time.sleep(0.05)
-                    log("[RECORD] Whisper-Aufnahmeschleife beendet.")
+                log("[RECORD] Stream ist aktiv. Google STT wird ausgeführt.")
+                requests = self.google_streaming_generator()
+                log("[GOOGLE] Rufe streaming_recognize auf...")
+                responses = speech_client.streaming_recognize(requests=requests, config=STREAMING_CONFIG)
+                log("[GOOGLE] streaming_recognize aufgerufen. Starte response-Schleife...")
+                for response in responses:
+                    if not response.results:
+                        continue
+                    result = response.results[0]
+                    if not result.alternatives:
+                        continue
+                    transcript = result.alternatives[0].transcript
+                    self.after(0, self.update_interim_text, transcript, result.is_final)
+                log("[GOOGLE] response-Schleife regulär beendet.")
             log("[RECORD] sounddevice InputStream block verlassen.")
         except Exception as e:
             log_exception("[RECORD] Fehler im record-Thread")
@@ -976,59 +932,6 @@ class RaKScribeApp(ctk.CTk):
         elif level > 0.4:
             color = "#F39C12"
         self.level_indicator.configure(fg_color=color)
-
-    def transcribe_and_process_dictation(self):
-        try:
-            if not self.recorded_audio_chunks:
-                self.after(0, lambda: (
-                    messagebox.showinfo("Info", "Keine Audio-Aufnahme vorhanden."),
-                    self.update_status("READY", "ready"),
-                    self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                    self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-                ))
-                return
-
-            self.after(0, lambda: self.record_btn.configure(text=" Transkribiere... "))
-
-            # Chunks zusammenfügen und in float32 [-1.0, 1.0] konvertieren
-            audio_data = np.concatenate(self.recorded_audio_chunks, axis=0)
-            audio_float32 = audio_data.flatten().astype(np.float32) / 32768.0
-
-            # Transkribieren mit vollem Kontext und VAD-Filter
-            hint = ", ".join(MEDICAL_PHRASES[:120])
-            segments, _ = whisper_model.transcribe(
-                audio_float32, language="de", initial_prompt=hint, 
-                vad_filter=True
-            )
-            
-            transcript = " ".join([s.text.strip() for s in segments]).strip()
-            self.final_transcript = transcript
-
-            if not transcript:
-                self.after(0, lambda: (
-                    messagebox.showinfo("Info", "Kein Text erkannt."),
-                    self.update_status("READY", "ready"),
-                    self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                    self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-                ))
-                return
-
-            # Text in die linke Textbox einfügen
-            self.after(0, lambda t=transcript: (
-                self.transcript_text.delete("1.0", "end"),
-                self.transcript_text.insert("1.0", t)
-            ))
-
-            # Fortfahren mit der LLM-Verarbeitung
-            self.process_dictation()
-
-        except Exception as e:
-            self.after(0, lambda e=e: (
-                messagebox.showerror("Transkriptions-Fehler", str(e)),
-                self.update_status("ERROR", "busy"),
-                self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-            ))
 
     def process_dictation(self):
         try:

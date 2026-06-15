@@ -2,22 +2,20 @@
 
 **Intelligentes Reporting und strukturiertes radiologisches Befunden** – blitzschnell, hochpräzise und maßgeschneidert für den klinischen Alltag.
 
-RaKScribe26 ist die Weiterentwicklung des offline-basierten radiologischen Befundungsassistenten. Es kombiniert die unglaubliche Geschwindigkeit und Qualität moderner Online-KI-Modelle mit dem bewährten lokalen Workflow, um Diktate in Sekundenschnelle in strukturierte Berichte (mit *Befund* und *Beurteilung*) zu übersetzen und direkt in Ihr RIS oder Word einzufügen.
+RaKScribe26 ist ein hocheffizienter radiologischer Befundungsassistent. Es kombiniert die unglaubliche Geschwindigkeit und Qualität moderner Online-KI-Modelle mit dem bewährten lokalen Workflow, um Diktate in Sekundenschnelle in strukturierte Berichte (mit *Befund* und *Beurteilung*) zu übersetzen und direkt in Ihr RIS oder Word einzufügen.
 
-> **Neu in v2.6.0:** Klarer Fokus auf **modalitätsspezifische Befundvorlagen** – RaKScribe26 erkennt automatisch die Bildgebungsmodalität und wählt die passende Vorlage. Unterstützte Modalitäten: Röntgen (Skelett, Thorax, HWS/BWS/LWS, Schädel, Fernröntgen), Sonographie (Abdomen, Weichteile, Gelenke, Schilddrüse, Gefäße), Mammographie, Durchleuchtung, DEXA-Knochendichtemessung, Zahnröntgen (OPG) und Digitale Volumentomographie (DVT).
+> **Neu in v2.7.0:** **Reiner Online-Modus** zur massiven Reduzierung der Programmgröße (von 150MB auf ~75MB) sowie neue modalitätsspezifische Befundvorlagen für **Varizensonografie** und Gelenkprothesen (**Schulterprothese, Daumensattelprothese, Knieprothese, Hüftprothese**) mit standardmäßig deutschen Gelenkbezeichnungen.
 
 ---
 
-## 💡 Architektur: Hybrid Online & Offline
+## 💡 Architektur: Online-Only 💻
 
-RaKScribe26 unterstützt zwei hocheffiziente Betriebsmodi, um sich perfekt an Ihre Praxis-Infrastruktur anzupassen:
+Um eine maximale Vereinfachung, Stabilität und einen minimalen Hardware-Bedarf zu garantieren, läuft RaKScribe26 als reine Online-Anwendung:
 
-| Komponente | Online-Modus (Empfohlen für Standard-Arbeitsplätze) | Offline-Modus (Für High-End-Workstations mit GPU) |
-| :--- | :--- | :--- |
-| **Spracherkennung (STT)** | **Google Cloud Speech-to-Text** (Übertragung via HTTPS, extrem präzise, inkl. Fachbegriff-Boost) | **Faster-Whisper** (Lokal auf dem Rechner via GPU/CPU) |
-| **Strukturierung (LLM)** | **Google Gemini 1.5 Flash** (Unter-Sekunden-Antwortzeiten, zero-configuration) | **MedGemma / Gemma2** (Betrieben über lokales Ollama) |
-| **API-Kosten** | **Praktisch 0 €** (Erste 60 Min. STT/Monat gratis, Gemini im Free Tier kostenlos) | **0 €** (Komplett kostenfrei) |
-| **Hardware-Bedarf** | **Minimal** (Läuft flüssig auf alten Praxis-PCs mit Onboard-GPU) | **Hoch** (NVIDIA-GPU mit mind. 8GB VRAM benötigt) |
+* **Spracherkennung (STT):** **Google Cloud Speech-to-Text** (sichere Übertragung via HTTPS, live-streaming, extrem präzise inkl. medizinischem Fachwortschatz-Boost).
+* **Strukturierung (LLM):** **Google Gemini 1.5 Flash** (unter-Sekunden Antwortzeiten, zero-configuration) oder optional **OpenAI GPT-4o-mini**.
+* **Hardware-Bedarf:** **Minimal** – läuft extrem flüssig auf jedem standardmäßigen Praxis- oder Büro-PC (keine dedizierte Grafikkarte nötig, da keine Berechnungen lokal stattfinden).
+* **Programmgröße:** Durch den Wegfall schwerer Machine-Learning-Bibliotheken (PyTorch, onnxruntime, CUDA) wurde das Programm auf **~75 MB** verkleinert.
 
 ---
 
@@ -97,15 +95,17 @@ Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installatio
 
 ```ini
 [SETTINGS]
-# LLM-Provider: 'gemini' (online), 'openai' (online) oder 'ollama' (lokal)
+# LLM-Provider: 'gemini' (Google AI Studio) oder 'openai' (OpenAI)
 LLM_PROVIDER = gemini
 LLM_MODEL = gemini-1.5-flash
 
-# API-Key (kann für Gemini leer bleiben, da die STT-Schlüsseldatei wiederverwendet wird)
+# API-Key (kann für Gemini leer bleiben, da die JSON-Schlüsseldatei verwendet wird)
 API_KEY = 
 
-# Spracherkennung: 'google' (online, live streaming) oder 'whisper' (offline)
-STT_ENGINE = google
+# Chunk-Dauer in Sekunden für das Google Streaming (empfohlen: 7)
+CHUNK_DURATION = 7
+
+# Dateiname der Google Cloud JSON-Schlüsseldatei
 GOOGLE_JSON_FILENAME = google-service-account.json
 ```
 

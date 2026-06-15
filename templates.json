@@ -406,5 +406,25 @@
     "schädelfernröntgen": {
         "display_name": "Schädelfernröntgen",
         "body": "Die dargestellten knöchernen Schädelstrukturen ohne Auffälligkeiten. Die mitdargestellten Nebenhöhlen o. B.. Die Sella normal weit. Der Sellaboden eben."
+    },
+    "varizensonografie": {
+        "display_name": "Varizensonografie",
+        "body": "Tiefes Venensystem: Die tiefen Venen (V. femoralis communis, V. femoralis, V. poplitea sowie die Unterschenkelvenen) sind beidseits frei durchgängig, vollständig komprimierbar und zeigen ein atemsynchron moduliertes Flussverhalten. Kein Nachweis einer tiefen Venenthrombose (TVT).\nOberflächliches Venensystem: Vena saphena magna und Vena saphena parva beidseits frei durchgängig, im Stammverlauf klappensuffizient ohne Nachweis eines pathologischen Refluxes bei Provokationsmanövern (Valsalva, Kompression/Dekompression). Keine relevanten Seitenastvarizen oder retikuläre Varikose.\nPerforansvenen: Klappensuffizient, keine relevanten insuffizienten Perforansvenen nachweisbar."
+    },
+    "schulterprothese": {
+        "display_name": "Schulterprothese",
+        "body": "Schultergelenk: Zustand nach inverser Schulterendoprothese. Die Prothesenkomponenten liegen in regelrechter Position. Kein Nachweis von Lockerungszeichen (keine osteolytischen Säume, kein Zementbruch, keine Migration der Komponenten). Keine periartikulären Verkalkungen oder Verknöcherungen. Weichteilmantel unauffällig."
+    },
+    "daumensattelprothese": {
+        "display_name": "Daumensattelprothese",
+        "body": "Daumensattelgelenk: Zustand nach Daumensattelgelenksprothese. Die Prothesenkomponenten stellen sich in regelrechter Stellung dar, ohne Anhaltspunkte für eine Lockerung (keine periprothetischen Demineralisationen, kein Osteolysesaum). Soweit mitabgebildet, die übrigen Handwurzelknochen und Ossa metacarpalia in regelrechter Stellung und Knochenstruktur."
+    },
+    "knieprothese": {
+        "display_name": "Knieprothese",
+        "body": "Kniegelenk: Zustand nach Knie-Totalendoprothese (Knie-TEP). Die femoralen und tibialen Prothesenkomponenten zeigen eine regelrechte Stellung und Ausrichtung. Kein Nachweis von periprothetischen Aufhellungssäumen oder Lockerungszeichen. Keine Komponentenmigration oder Materialversagen. Regelrechte Stellung des Patella-Inlays (soweit vorhanden) bzw. der Patella. Kein relevanter Gelenkerguss. Weichteilmantel unauffällig."
+    },
+    "hüftprothese": {
+        "display_name": "Hüftprothese",
+        "body": "Hüftgelenk: Zustand nach Hüft-Totalendoprothese (Hüft-TEP). Die Prothesenkomponenten (Pfanne und Schaft) liegen in regelrechter Stellung und Position. Kein Nachweis von Lockerungszeichen (kein periprothetischer Aufhellungssaum, keine Dislokation, keine Sinterung des Schaftes). Kein Anhaltspunkt für eine periprothetische Fraktur oder Luxation. Regelrechte knöcherne Integration bzw. intakter Zementmantel. Knochenstrukturen des Beckens und des Femurs, soweit erfasst, unauffällig."
     }
 }

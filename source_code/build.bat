@@ -75,6 +75,13 @@ pyinstaller --onefile --noconsole --name=rakscribe26 --icon=rakscribe.ico ^
   --exclude-module pypdfium2 ^
   --exclude-module pytesseract ^
   --exclude-module reportlab ^
+  --exclude-module faster_whisper ^
+  --exclude-module ctranslate2 ^
+  --exclude-module huggingface_hub ^
+  --exclude-module tokenizers ^
+  --exclude-module tqdm ^
+  --exclude-module regex ^
+  --exclude-module triton ^
   RaKScribe.py
 
 if %ERRORLEVEL% EQU 0 (
