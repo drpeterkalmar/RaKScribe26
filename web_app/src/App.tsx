@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Stethoscope, 
+  ScanLine, 
   Mic, 
   MicOff, 
   Copy, 
@@ -878,7 +878,7 @@ export default function App() {
         <div className="login-card" style={{ zIndex: 1 }}>
           <div className="login-header">
             <div className="login-icon">
-              <Stethoscope size={40} />
+              <ScanLine size={40} />
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
@@ -942,7 +942,7 @@ export default function App() {
       <header className="app-header" style={{ zIndex: 1 }}>
         <div className="brand-section">
           <div className="brand-icon">
-            <Stethoscope size={24} />
+            <ScanLine size={24} />
           </div>
           <div className="brand-title-group">
             <div className="brand-name">
