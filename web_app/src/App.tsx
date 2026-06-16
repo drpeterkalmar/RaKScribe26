@@ -170,29 +170,44 @@ export default function App() {
     if (savedEngine) setSttEngine(savedEngine as 'browser' | 'google');
     if (savedAuth === 'true') setIsAuthenticated(true);
     
-    if (savedPrompt) {
-      setSystemPrompt(savedPrompt);
+    const newDefaultPrompt = 
+      `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
+      `<instructions>\n` +
+      `Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.\n\n` +
+      `## STRIKTE FORMATREGELN:\n` +
+      `1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Abschnitte.\n` +
+      `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
+      `## ABSCHNITT "## Befund":\n` +
+      `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis.\n` +
+      `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt (z.B. Arthrose, Fraktur, TEP, Spondylarthrose, Osteochondrose, Beckenschiefstand).\n` +
+      `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
+      `- Übernimm Messwerte (z.B. 'Beckenschiefstand nach links um 4 mm', '-1,2 cm Beinlängendifferenz') exakt aus dem Diktat.\n` +
+      `- Schreibe im radiologischen Nominalstil (z.B. 'Kein Nachweis von Lockerungszeichen.', 'Intakte Hüft-TEP rechts.').\n\n` +
+      `## ABSCHNITT "## Ergebnis":\n` +
+      `- Fasse alle diagnosewesentlichen Pathologien kurz und stichpunktartig zusammen.\n` +
+      `- Schreibe präzise Diagnosen im Stil der Praxis: z.B. 'Intakte Hüft-TEP rechts.', 'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', 'Beckenschiefstand nach links um 4 mm bei Beinlängendifferenz links -4 mm.'.\n` +
+      `- Bei Normalbefund: 'Unauffälliger Befund.' oder der entsprechende Kurztext.\n\n` +
+      `## SCHREIBSTIL – orientiere dich strikt an diesen Praxis-Beispielen:\n` +
+      `- 'Intakte Hüft-TEP rechts, soweit in einer Ebene beurteilbar. Pfannenkomponente und Schaftkomponente in regelrechter Position. Kein periprothetischer Aufhellungssaum.'\n` +
+      `- 'Coxarthrose links mit deutlicher Gelenkspaltverschmälerung, subchondraler Sklerosierung und osteophytären Randwülsten.'\n` +
+      `- 'STT-Arthrose (Scaphoid-Trapezium-Trapezoideum) beidseits. Gelenkspaltverschmälerung und Sklerose.'\n` +
+      `- 'Osteochondrosis pubis. Unregelmäßigkeit der Symphysenfuge mit subchondraler Sklerose.'\n` +
+      `- 'Diskreter/ausgeprägter Beckenschiefstand nach links/rechts um X mm bei Beinlängendifferenz links/rechts -X mm.'\n` +
+      `- 'Unauffälliger HWS-Befund.' / 'Unauffälliger Befund.'\n` +
+      `</instructions>\n` +
+      `<normalbefund_template>\n` +
+      `{template_body}\n` +
+      `</normalbefund_template>\n\n` +
+      `{examples}\n\n` +
+      `<diktat>\n` +
+      `{roh_text}\n` +
+      `</diktat>`;
+
+    if (!savedPrompt || savedPrompt.includes("## Beurteilung") || savedPrompt.includes("Radiologe-Assistent</role>")) {
+      setSystemPrompt(newDefaultPrompt);
+      localStorage.setItem('system_prompt', newDefaultPrompt);
     } else {
-      setSystemPrompt(
-        `<role>Radiologe-Assistent</role>\n` +
-        `<instructions>\n` +
-        `Du bist ein präziser radiologischer Befundungsassistent. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen und professionellen radiologischen Befund zu strukturieren.\n` +
-        `Befolge diese Regeln strikt:\n` +
-        `1. Nutze das bereitgestellte Normalbefund-Template als Basis für den Aufbau unter ## Befund.\n` +
-        `2. WICHTIG: Wenn im Diktat pathologische Befunde erwähnt werden (z.B. Arthrose, Fraktur, etc.), MUSST du die entsprechenden Abschnitte im Normalbefund-Template abändern oder ersetzen, damit der Befund die Pathologie korrekt beschreibt. Schreibe dort nicht fälschlicherweise 'normal' oder 'regelrecht'.\n` +
-        `3. Behalte Normalbefunde bei, wenn im Diktat nichts Abweichendes erwähnt wird.\n` +
-        `4. Schreibstil: Orientiere dich für den Aufbau, die Wortwahl und das Format strikt an den Praxisbeispielen. Schreibe im radiologischen Nominalstil.\n` +
-        `5. Bilde immer zwei Hauptbereiche: ## Befund (mit dem angepassten Template) und ## Ergebnis (mit der kurzen Zusammenfassung der Diagnosen).\n` +
-        `6. Gib ausschließlich den fertigen Befundtext aus. Keine Kommentare, keine Einleitungen.\n` +
-        `</instructions>\n` +
-        `<normalbefund_template>\n` +
-        `{template_body}\n` +
-        `</normalbefund_template>\n\n` +
-        `{examples}\n\n` +
-        `<diktat>\n` +
-        `{roh_text}\n` +
-        `</diktat>`
-      );
+      setSystemPrompt(savedPrompt);
     }
   }, []);
 
@@ -932,7 +947,7 @@ export default function App() {
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta</span>
+              <span className="brand-badge">Web Beta v2.7.0</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
@@ -1005,7 +1020,7 @@ export default function App() {
           </div>
 
           <div className="card-footer">
-            <button onClick={handleReset} className="btn btn-secondary">
+            <button onClick={handleReset} className="btn btn-secondary btn-large-action">
               Zurücksetzen
             </button>
 
@@ -1155,12 +1170,54 @@ export default function App() {
               {/* Prompt Config */}
               <div className="settings-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
                 <h3 className="settings-sec-title">3. System-Prompt konfigurieren</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
+                  Der Prompt steuert, wie die KI Ihr Diktat strukturiert. Er orientiert sich an den Befundvorlagen der Praxis
+                  (Nominalstil, zwei Abschnitte <code style={{color:'#C4A4FF'}}>## Befund</code> und <code style={{color:'#C4A4FF'}}>## Ergebnis</code>).
+                  Platzhalter: <code style={{color:'#C4A4FF'}}>{'{roh_text}'}</code> = Diktat, <code style={{color:'#C4A4FF'}}>{'{template_body}'}</code> = Normalbefund-Vorlage, <code style={{color:'#C4A4FF'}}>{'{examples}'}</code> = Praxis-Beispiele.
+                </p>
                 <textarea
                   value={systemPrompt}
                   onChange={e => setSystemPrompt(e.target.value)}
-                  rows={6}
+                  rows={10}
                   className="settings-textarea"
                 />
+                <button
+                  onClick={() => {
+                    const confirmReset = window.confirm('Prompt auf Praxis-Standard zurücksetzen? Alle eigenen Änderungen gehen verloren.');
+                    if (confirmReset) {
+                      const resetPrompt = 
+                        `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
+                        `<instructions>\n` +
+                        `Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.\n\n` +
+                        `## STRIKTE FORMATREGELN:\n` +
+                        `1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Abschnitte.\n` +
+                        `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
+                        `## ABSCHNITT "## Befund":\n` +
+                        `- Nutze das bereitgestellte Normalbefund-Template als genaue strukturelle Basis.\n` +
+                        `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt.\n` +
+                        `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
+                        `- Übernimm Messwerte exakt aus dem Diktat.\n` +
+                        `- Schreibe im radiologischen Nominalstil.\n\n` +
+                        `## ABSCHNITT "## Ergebnis":\n` +
+                        `- Fasse alle diagnosewesentlichen Pathologien kurz und stichpunktartig zusammen.\n` +
+                        `- Beispiele: 'Intakte Hüft-TEP rechts.', 'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', 'Beckenschiefstand nach links um 4 mm.'\n` +
+                        `</instructions>\n` +
+                        `<normalbefund_template>\n` +
+                        `{template_body}\n` +
+                        `</normalbefund_template>\n\n` +
+                        `{examples}\n\n` +
+                        `<diktat>\n` +
+                        `{roh_text}\n` +
+                        `</diktat>`;
+                      setSystemPrompt(resetPrompt);
+                      localStorage.setItem('system_prompt', resetPrompt);
+                    }
+                  }}
+                  className="btn btn-secondary"
+                  style={{ marginTop: '8px', fontSize: '12px', padding: '8px 16px', height: 'auto', minWidth: 'unset' }}
+                >
+                  ↺ Auf Praxis-Standard zurücksetzen
+                </button>
               </div>
             </div>
 
