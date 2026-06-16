@@ -187,6 +187,8 @@ export default function App() {
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
   // Cached access token for service-account auth
   const googleTokenRef = useRef<string>('');
   const googleTokenExpiryRef = useRef<number>(0);
@@ -263,12 +265,14 @@ export default function App() {
     const savedAuth = localStorage.getItem('is_authenticated');
     const savedKeyJson = localStorage.getItem('google_key_json');
     const savedKeyName = localStorage.getItem('google_key_filename');
+    const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
     if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
     if (savedProvider) setProvider(savedProvider as 'gemini' | 'openai');
     if (savedKeyJson) { try { setGoogleKeyJson(JSON.parse(savedKeyJson)); } catch {} }
     if (savedKeyName) setGoogleKeyFileName(savedKeyName);
     if (savedAuth === 'true') setIsAuthenticated(true);
+    if (savedDeviceId) setSelectedDeviceId(savedDeviceId);
     
     const newDefaultPrompt = 
       `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
@@ -310,6 +314,35 @@ export default function App() {
       setSystemPrompt(savedPrompt);
     }
   }, []);
+
+  const loadAudioDevices = async (requestPermission = false) => {
+    try {
+      if (requestPermission) {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach(track => track.stop());
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(device => device.kind === 'audioinput');
+      setAudioDevices(audioInputs);
+    } catch (err) {
+      console.error("Fehler beim Laden der Audiogeräte:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadAudioDevices(false);
+    const handleDeviceChange = () => loadAudioDevices(false);
+    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showSettings) {
+      loadAudioDevices(true);
+    }
+  }, [showSettings]);
 
   // Particle Canvas Background Logic
   useEffect(() => {
@@ -394,6 +427,7 @@ export default function App() {
     localStorage.setItem('gemini_api_key', geminiApiKey);
     localStorage.setItem('llm_provider', provider);
     localStorage.setItem('system_prompt', systemPrompt);
+    localStorage.setItem('selected_audio_device_id', selectedDeviceId);
     if (googleKeyJson) {
       localStorage.setItem('google_key_json', JSON.stringify(googleKeyJson));
     } else {
@@ -984,6 +1018,7 @@ export default function App() {
       // Request microphone without DSP constraints to preserve raw speech quality
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false
@@ -1355,6 +1390,12 @@ export default function App() {
       {/* Configuration Status Bar */}
       <div className="status-bar" style={{ zIndex: 1 }}>
         <div className="status-bar-item">
+          <span className="status-bar-label">Mikrofon:</span>
+          <span className="status-bar-value success" style={{ color: '#C4A4FF' }}>
+            <Mic size={14} className="status-bar-icon" /> {audioDevices.find(d => d.deviceId === selectedDeviceId)?.label || 'Standard-Mikrofon'}
+          </span>
+        </div>
+        <div className="status-bar-item">
           <span className="status-bar-label">Spracherkennung (STT):</span>
           {googleKeyJson ? (
             <span className="status-bar-value success">
@@ -1492,6 +1533,27 @@ export default function App() {
             </div>
 
             <div className="modal-body">
+              {/* Microphone selection */}
+              <div className="settings-section">
+                <h3 className="settings-sec-title">0. Mikrofon-Auswahl</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
+                  Wählen Sie das gewünschte Eingabegerät für die Aufnahme aus.
+                </p>
+                <select
+                  value={selectedDeviceId}
+                  onChange={e => setSelectedDeviceId(e.target.value)}
+                  className="form-input"
+                  style={{ background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)', height: '40px', padding: '0 10px', borderRadius: '6px', width: '100%', marginBottom: '10px' }}
+                >
+                  <option value="">Standard-Mikrofon</option>
+                  {audioDevices.map(device => (
+                    <option key={device.deviceId} value={device.deviceId}>
+                      {device.label || `Mikrofon (${device.deviceId.slice(0, 8)}...)`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* STT Config – Google Cloud only */}
               <div className="settings-section">
                 <h3 className="settings-sec-title">1. Google Cloud Speech-to-Text – JSON-Schlüssel</h3>
