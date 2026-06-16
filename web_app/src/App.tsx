@@ -5,13 +5,10 @@ import {
   MicOff, 
   Copy, 
   Check, 
-  Settings, 
   LogOut, 
-  Save, 
   Lock, 
   ArrowRight,
   Sparkles,
-  Info,
   X
 } from 'lucide-react';
 import templatesData from './templates.json';
@@ -178,14 +175,11 @@ export default function App() {
   const [authError, setAuthError] = useState<string>('');
 
   // Configuration States
-  const [provider, setProvider] = useState<'gemini' | 'openai'>('gemini');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   // Google Cloud STT – service account JSON or simple API-key JSON
   const [googleKeyJson, setGoogleKeyJson] = useState<any>(null);
   const [googleKeyFileName, setGoogleKeyFileName] = useState<string>('');
-  const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [systemPrompt, setSystemPrompt] = useState<string>('');
-  const [showSettings, setShowSettings] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
@@ -260,7 +254,6 @@ export default function App() {
   // Load configuration from local storage
   useEffect(() => {
     const savedGeminiKey = localStorage.getItem('gemini_api_key');
-    const savedProvider = localStorage.getItem('llm_provider');
     const savedPrompt = localStorage.getItem('system_prompt');
     const savedAuth = localStorage.getItem('is_authenticated');
     const savedKeyJson = localStorage.getItem('google_key_json');
@@ -268,7 +261,6 @@ export default function App() {
     const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
     if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
-    if (savedProvider) setProvider(savedProvider as 'gemini' | 'openai');
     if (savedKeyJson) { try { setGoogleKeyJson(JSON.parse(savedKeyJson)); } catch {} }
     if (savedKeyName) setGoogleKeyFileName(savedKeyName);
     if (savedAuth === 'true') setIsAuthenticated(true);
@@ -330,19 +322,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadAudioDevices(false);
+    loadAudioDevices(true);
     const handleDeviceChange = () => loadAudioDevices(false);
     navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
     return () => {
       navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
     };
   }, []);
-
-  useEffect(() => {
-    if (showSettings) {
-      loadAudioDevices(true);
-    }
-  }, [showSettings]);
 
   // Particle Canvas Background Logic
   useEffect(() => {
@@ -423,24 +409,7 @@ export default function App() {
   }, []);
 
   // Save config changes
-  const saveConfig = () => {
-    localStorage.setItem('gemini_api_key', geminiApiKey);
-    localStorage.setItem('llm_provider', provider);
-    localStorage.setItem('system_prompt', systemPrompt);
-    localStorage.setItem('selected_audio_device_id', selectedDeviceId);
-    if (googleKeyJson) {
-      localStorage.setItem('google_key_json', JSON.stringify(googleKeyJson));
-    } else {
-      localStorage.removeItem('google_key_json');
-    }
-    if (googleKeyFileName) {
-      localStorage.setItem('google_key_filename', googleKeyFileName);
-    } else {
-      localStorage.removeItem('google_key_filename');
-    }
-    alert('Einstellungen erfolgreich gespeichert!');
-    setShowSettings(false);
-  };
+  // Config auto-saved on change
 
   // Login Handler
   const handleLogin = (e: React.FormEvent) => {
@@ -1367,15 +1336,6 @@ export default function App() {
             <span>{statusText.toUpperCase()}</span>
           </div>
 
-          {/* Settings button */}
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className="icon-btn"
-            title="Einstellungen"
-          >
-            <Settings size={20} />
-          </button>
-
           {/* Logout button */}
           <button 
             onClick={handleLogout}
@@ -1387,42 +1347,120 @@ export default function App() {
         </div>
       </header>
 
-      {/* Configuration Status Bar */}
-      <div 
-        className="status-bar" 
-        style={{ zIndex: 1 }}
-        onClick={() => setShowSettings(true)}
-        title="Einstellungen öffnen (Schlüssel konfigurieren, Mikrofon wählen)"
-      >
+      {/* Configuration Control Panel */}
+      <div className="status-bar" style={{ zIndex: 1, padding: '16px 24px' }}>
+        {/* Microphone Dropdown Selector */}
         <div className="status-bar-item">
           <span className="status-bar-label">Mikrofon:</span>
-          <span className="status-bar-value success" style={{ color: '#C4A4FF' }}>
-            <Mic size={14} className="status-bar-icon" /> {audioDevices.find(d => d.deviceId === selectedDeviceId)?.label || 'Standard-Mikrofon'}
-          </span>
+          <select
+            value={selectedDeviceId}
+            onChange={e => {
+              setSelectedDeviceId(e.target.value);
+              localStorage.setItem('selected_audio_device_id', e.target.value);
+            }}
+            className="select-input"
+            style={{ 
+              background: 'var(--bg-input)', 
+              color: '#fff', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '6px', 
+              padding: '6px 24px 6px 10px', 
+              fontSize: '13px',
+              fontFamily: 'var(--sans-font)',
+              outline: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">Standard-Mikrofon</option>
+            {audioDevices.map(device => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label || `Mikrofon (${device.deviceId.slice(0, 8)}...)`}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {/* STT JSON Key Upload */}
         <div className="status-bar-item">
           <span className="status-bar-label">Spracherkennung (STT):</span>
           {googleKeyJson ? (
-            <span className="status-bar-value success">
-              <Check size={14} className="status-bar-icon" /> JSON geladen ({googleKeyFileName})
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="status-bar-value success">
+                <Check size={14} className="status-bar-icon" /> JSON geladen ({googleKeyFileName})
+              </span>
+              <button
+                className="icon-btn logout"
+                style={{ padding: '4px 8px', height: '26px', minWidth: 'unset', display: 'flex', alignItems: 'center' }}
+                onClick={() => {
+                  setGoogleKeyJson(null);
+                  setGoogleKeyFileName('');
+                  localStorage.removeItem('google_key_json');
+                  localStorage.removeItem('google_key_filename');
+                  googleTokenRef.current = '';
+                }}
+                title="Schlüssel entfernen"
+              >
+                🗑
+              </button>
+            </div>
           ) : (
-            <span className="status-bar-value danger">
-              <X size={14} className="status-bar-icon" /> JSON fehlt (Aufnahme gesperrt)
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                style={{ display: 'none' }}
+                onChange={e => { if (e.target.files?.[0]) loadGoogleKeyFile(e.target.files[0]); }}
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()} 
+                className="btn btn-secondary" 
+                style={{ padding: '6px 12px', fontSize: '12px', height: '30px', minWidth: 'unset' }}
+              >
+                JSON hochladen
+              </button>
+              <span className="status-bar-value danger">
+                <X size={14} className="status-bar-icon" /> Schlüssel fehlt
+              </span>
+            </div>
           )}
         </div>
+
+        {/* Gemini API Key */}
         <div className="status-bar-item">
-          <span className="status-bar-label">KI-Strukturierung (LLM):</span>
-          {geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) ? (
-            <span className="status-bar-value success">
-              <Sparkles size={14} className="status-bar-icon" /> Gemini 1.5 Flash aktiv ({googleKeyJson?.type === 'service_account' ? 'Dienstkonto' : 'API-Key'})
-            </span>
-          ) : (
-            <span className="status-bar-value danger">
-              <X size={14} className="status-bar-icon" /> Inaktiv (Schlüssel fehlt)
-            </span>
-          )}
+          <span className="status-bar-label">Gemini API-Key (LLM):</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="password"
+              value={geminiApiKey}
+              onChange={e => {
+                setGeminiApiKey(e.target.value);
+                localStorage.setItem('gemini_api_key', e.target.value);
+              }}
+              placeholder="API-Schlüssel eingeben"
+              className="select-input"
+              style={{ 
+                background: 'var(--bg-input)', 
+                color: '#fff', 
+                border: '1px solid var(--border-color)', 
+                borderRadius: '6px', 
+                padding: '6px 10px', 
+                fontSize: '13px',
+                fontFamily: 'var(--sans-font)',
+                outline: 'none',
+                width: '180px'
+              }}
+            />
+            {geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) ? (
+              <span className="status-bar-value success">
+                <Sparkles size={14} className="status-bar-icon" /> Aktiv
+              </span>
+            ) : (
+              <span className="status-bar-value danger">
+                Inaktiv
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1523,206 +1561,76 @@ export default function App() {
         </section>
       </main>
 
-      {/* Settings Dialog (Modal) */}
-      {showSettings && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ zIndex: 110 }}>
-            <div className="modal-header">
-              <h2 className="modal-title"><Settings size={22} className="card-icon" /> Konfiguration & Schlüssel</h2>
-              <button 
-                onClick={() => setShowSettings(false)}
-                className="modal-close"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {/* Microphone selection */}
-              <div className="settings-section">
-                <h3 className="settings-sec-title">0. Mikrofon-Auswahl</h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
-                  Wählen Sie das gewünschte Eingabegerät für die Aufnahme aus.
-                </p>
-                <select
-                  value={selectedDeviceId}
-                  onChange={e => setSelectedDeviceId(e.target.value)}
-                  className="form-input"
-                  style={{ background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)', height: '40px', padding: '0 10px', borderRadius: '6px', width: '100%', marginBottom: '10px' }}
-                >
-                  <option value="">Standard-Mikrofon</option>
-                  {audioDevices.map(device => (
-                    <option key={device.deviceId} value={device.deviceId}>
-                      {device.label || `Mikrofon (${device.deviceId.slice(0, 8)}...)`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* STT Config – Google Cloud only */}
-              <div className="settings-section">
-                <h3 className="settings-sec-title">1. Google Cloud Speech-to-Text – JSON-Schlüssel</h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
-                  Laden Sie Ihre <strong style={{color:'#fff'}}>Service Account JSON</strong>-Datei hoch (aus Google Cloud Console → IAM → Dienstkontoschlüssel), oder eine JSON mit <code style={{color:'#C4A4FF'}}>"api_key"</code>-Feld.
-                </p>
-
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json"
-                  style={{ display: 'none' }}
-                  onChange={e => { if (e.target.files?.[0]) loadGoogleKeyFile(e.target.files[0]); }}
-                />
-
-                {/* Drag & Drop Zone */}
-                <div
-                  className={`key-dropzone ${isDragOver ? 'drag-over' : ''} ${googleKeyJson ? 'has-key' : ''}`}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
-                  onDragLeave={() => setIsDragOver(false)}
-                  onDrop={e => {
-                    e.preventDefault();
-                    setIsDragOver(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file) loadGoogleKeyFile(file);
-                  }}
-                >
-                  {googleKeyJson ? (
-                    <>
-                      <span className="dropzone-icon">✓</span>
-                      <div>
-                        <span className="dropzone-filename">{googleKeyFileName}</span>
-                        <span className="dropzone-hint">
-                          {googleKeyJson.type === 'service_account'
-                            ? `Service Account: ${googleKeyJson.client_email}`
-                            : 'API Key geladen'}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="dropzone-icon">↑</span>
-                      <div>
-                        <span className="dropzone-filename">JSON-Schlüssel hier droppen</span>
-                        <span className="dropzone-hint">oder klicken zum Auswählen</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {googleKeyJson && (
-                  <button
-                    className="btn btn-secondary"
-                    style={{ marginTop: '8px', fontSize: '12px', padding: '6px 14px', height: 'auto', minWidth: 'unset', color: '#FDA29B' }}
-                    onClick={() => {
-                      setGoogleKeyJson(null);
-                      setGoogleKeyFileName('');
-                      localStorage.removeItem('google_key_json');
-                      localStorage.removeItem('google_key_filename');
-                      googleTokenRef.current = '';
-                    }}
-                  >
-                    🗑 Schlüssel entfernen
-                  </button>
-                )}
-              </div>
-
-              {/* LLM Config */}
-              <div className="settings-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                <h3 className="settings-sec-title">2. KI-Strukturierung (LLM)</h3>
-                
-                <div>
-                  <label className="form-label">Gemini API-Key</label>
-                  <input 
-                    type="password"
-                    value={geminiApiKey}
-                    onChange={e => setGeminiApiKey(e.target.value)}
-                    placeholder="Hinterlegen Sie Ihren Gemini API-Key"
-                    className="form-input"
-                  />
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                    Für kostenlose Testzwecke können Sie einen Key im Google AI Studio erstellen. Bleibt das Feld leer (und ist kein Google Dienstkonto geladen), ist die Strukturierung inaktiv.
-                  </span>
-                </div>
-              </div>
-
-              {/* Prompt Config */}
-              <div className="settings-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                <h3 className="settings-sec-title">3. System-Prompt konfigurieren</h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
-                  Der Prompt steuert, wie die KI Ihr Diktat strukturiert. Er orientiert sich an den Befundvorlagen der Praxis
-                  (Nominalstil, zwei Abschnitte <code style={{color:'#C4A4FF'}}>## Befund</code> und <code style={{color:'#C4A4FF'}}>## Ergebnis</code>).
-                  Platzhalter: <code style={{color:'#C4A4FF'}}>{'{roh_text}'}</code> = Diktat, <code style={{color:'#C4A4FF'}}>{'{template_body}'}</code> = Normalbefund-Vorlage, <code style={{color:'#C4A4FF'}}>{'{examples}'}</code> = Praxis-Beispiele.
-                </p>
-                <textarea
-                  value={systemPrompt}
-                  onChange={e => setSystemPrompt(e.target.value)}
-                  rows={10}
-                  className="settings-textarea"
-                />
-                <button
-                  onClick={() => {
-                    const confirmReset = window.confirm('Prompt auf Praxis-Standard zurücksetzen? Alle eigenen Änderungen gehen verloren.');
-                    if (confirmReset) {
-                      const resetPrompt = 
-                        `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
-                        `<instructions>\n` +
-                        `Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.\n\n` +
-                        `## STRIKTE FORMATREGELN:\n` +
-                        `1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Abschnitte.\n` +
-                        `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
-                        `## ABSCHNITT "## Befund":\n` +
-                        `- Nutze das bereitgestellte Normalbefund-Template als genaue strukturelle Basis.\n` +
-                        `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt.\n` +
-                        `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
-                        `- Übernimm Messwerte exakt aus dem Diktat.\n` +
-                        `- Schreibe im radiologischen Nominalstil.\n\n` +
-                        `## ABSCHNITT "## Ergebnis":\n` +
-                        `- Fasse alle diagnosewesentlichen Pathologien kurz und stichpunktartig zusammen.\n` +
-                        `- Beispiele: 'Intakte Hüft-TEP rechts.', 'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', 'Beckenschiefstand nach links um 4 mm.'\n` +
-                        `</instructions>\n` +
-                        `<normalbefund_template>\n` +
-                        `{template_body}\n` +
-                        `</normalbefund_template>\n\n` +
-                        `{examples}\n\n` +
-                        `<diktat>\n` +
-                        `{roh_text}\n` +
-                        `</diktat>`;
-                      setSystemPrompt(resetPrompt);
-                      localStorage.setItem('system_prompt', resetPrompt);
-                    }
-                  }}
-                  className="btn btn-secondary"
-                  style={{ marginTop: '8px', fontSize: '12px', padding: '8px 16px', height: 'auto', minWidth: 'unset' }}
-                >
-                  ↺ Auf Praxis-Standard zurücksetzen
-                </button>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <span className="footer-warning">
-                <Info size={14} /> Schlüssel werden lokal im Browser gesichert.
-              </span>
-              <div className="modal-footer-actions">
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="btn btn-secondary"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={saveConfig}
-                  className="btn btn-primary"
-                >
-                  <Save size={16} /> Speichern
-                </button>
-              </div>
-            </div>
+      {/* Footer Collapsible Prompt Editor */}
+      <footer style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', zIndex: 1, backgroundColor: 'var(--bg-card)' }}>
+        <details style={{ color: 'var(--text-secondary)' }}>
+          <summary style={{ cursor: 'pointer', outline: 'none', fontSize: '13px', fontWeight: 600 }}>
+            ⚙️ System-Prompt ansehen & bearbeiten (Praxis-Standard)
+          </summary>
+          <div style={{ marginTop: '12px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
+              Der System-Prompt steuert das Verhalten der KI. Platzhalter: <code>{'{roh_text}'}</code>, <code>{'{template_body}'}</code>, <code>{'{examples}'}</code>.
+            </p>
+            <textarea
+              value={systemPrompt}
+              onChange={e => {
+                setSystemPrompt(e.target.value);
+                localStorage.setItem('system_prompt', e.target.value);
+              }}
+              rows={8}
+              className="text-editor"
+              style={{ 
+                width: '100%', 
+                background: 'var(--bg-input)', 
+                color: '#fff', 
+                border: '1px solid var(--border-color)', 
+                borderRadius: '8px', 
+                padding: '12px', 
+                fontFamily: 'var(--mono-font)', 
+                fontSize: '12px', 
+                resize: 'vertical' 
+              }}
+            />
+            <button
+              onClick={() => {
+                const confirmReset = window.confirm('Prompt auf Praxis-Standard zurücksetzen? Alle eigenen Änderungen gehen verloren.');
+                if (confirmReset) {
+                  const resetPrompt = 
+                    `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
+                    `<instructions>\n` +
+                    `Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.\n\n` +
+                    `## STRIKTE FORMATREGELN:\n` +
+                    `1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Abschnitte.\n` +
+                    `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
+                    `## ABSCHNITT "## Befund":\n` +
+                    `- Nutze das bereitgestellte Normalbefund-Template als genaue strukturelle Basis.\n` +
+                    `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt.\n` +
+                    `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
+                    `- Übernimm Messwerte exakt aus dem Diktat.\n` +
+                    `- Schreibe im radiologischen Nominalstil.\n\n` +
+                    `## ABSCHNITT "## Ergebnis":\n` +
+                    `- Fasse alle diagnosewesentlichen Pathologien kurz und stichpunktartig zusammen.\n` +
+                    `- Beispiele: 'Intakte Hüft-TEP rechts.', 'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', 'Beckenschiefstand nach links um 4 mm.'\n` +
+                    `</instructions>\n` +
+                    `<normalbefund_template>\n` +
+                    `{template_body}\n` +
+                    `</normalbefund_template>\n\n` +
+                    `{examples}\n\n` +
+                    `<diktat>\n` +
+                    `{roh_text}\n` +
+                    `</diktat>`;
+                  setSystemPrompt(resetPrompt);
+                  localStorage.setItem('system_prompt', resetPrompt);
+                }
+              }}
+              className="btn btn-secondary"
+              style={{ marginTop: '10px', fontSize: '12px', padding: '6px 14px', height: 'auto', minWidth: 'unset' }}
+            >
+              ↺ Auf Praxis-Standard zurücksetzen
+            </button>
           </div>
-        </div>
-      )}
+        </details>
+      </footer>
     </div>
   );
 }
