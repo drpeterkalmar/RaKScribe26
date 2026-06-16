@@ -794,11 +794,11 @@ export default function App() {
     if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
       // Service Account: generate Bearer token via JWT
       const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
       authHeaders['Authorization'] = `Bearer ${token}`;
     } else if (geminiApiKey) {
       // Simple API key
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
     } else {
       throw new Error("Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
     }
@@ -894,10 +894,10 @@ export default function App() {
 
     if (keyJson && keyJson.type === 'service_account' && keyJson.private_key) {
       const token = await getGoogleBearerToken(keyJson, 'https://www.googleapis.com/auth/generative-language');
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
       authHeaders['Authorization'] = `Bearer ${token}`;
     } else if (apiKey) {
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
     } else {
       throw new Error("Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
     }
