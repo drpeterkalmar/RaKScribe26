@@ -290,6 +290,22 @@ def detect_template(text):
     """Bessere Erkennungslogik für den Untersuchungstyp."""
     text_lower = text.lower()
     
+    # 0.0. Kombinierte Untersuchungen vorab prüfen
+    if any(x in text_lower for x in ["becken", "wecken", "pelvis"]):
+        if any(x in text_lower for x in ["tep", "prothese", "endoprothese", "h-tep"]):
+            if any(x in text_lower for x in ["beidseits", "bds", "beide"]):
+                return "beckenübersicht_mit_beidseitiger_hüftprothese"
+            else:
+                return "beckenübersicht_mit_einseitiger_hüftprothese"
+        elif any(x in text_lower for x in ["hüfte", "hüftgelenk", "hfte", "hft"]):
+            return "beckenübersicht_und_hüfte"
+
+    if "hws" in text_lower and "lws" in text_lower:
+        if "bws" in text_lower:
+            return "wirbelsäule_gesamt"
+        else:
+            return "hws_und_lws"
+    
     # 0. Spezialregeln für Sonographie vorab prüfen (da sehr häufig)
     if any(x in text_lower for x in ["sono", "schall", "ultraschall", "duplex"]):
         # Abdomen-Sonographie
@@ -962,7 +978,7 @@ class RaKScribeApp(ctk.CTk):
             template_key = detect_template(raw)
             template_data = RADIOLOGY_TEMPLATES.get(template_key, {
                 "display_name": "Allgemeine Untersuchung",
-                "body": "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nBeurteilung der radiologischen Pathologien."
+                "body": "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
             })
 
             # RAG-Bypass-Shortcut für reine Normalbefunde
@@ -976,7 +992,7 @@ class RaKScribeApp(ctk.CTk):
                     if not formatted_raw.endswith('.'):
                         formatted_raw += '.'
                 
-                report = f"## Befund\n{template_data['body']}\n\n## Beurteilung\n{formatted_raw}"
+                report = f"## Befund\n{template_data['body']}\n\n## Ergebnis\n{formatted_raw}"
                 
                 # Live in die Textbox schreiben und Status zurücksetzen
                 self.after(0, lambda r=report: (
@@ -1009,7 +1025,7 @@ class RaKScribeApp(ctk.CTk):
             sys_msg = (
                 "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter "
                 "Verwendung des bereitgestellten Normalbefund-Templates. "
-                "Nutze ## Befund und ## Beurteilung als Haupttitel."
+                "Nutze ## Befund und ## Ergebnis als Haupttitel."
             )
 
             report = ""

@@ -8,7 +8,7 @@ Befolge diese Regeln strikt:
 2. WICHTIG: Wenn im Diktat pathologische Befunde erwähnt werden (z.B. Arthrose, Fraktur, etc.), MUSST du die entsprechenden Abschnitte im Normalbefund-Template abändern oder ersetzen, damit der Befund die Pathologie korrekt beschreibt (z.B. passe bei Rhizarthrose den Abschnitt 'Gelenkflächen' an). Schreibe dort nicht fälschlicherweise 'normal' oder 'regelrecht'.
 3. Behalte Normalbefunde bei, wenn im Diktat nichts Abweichendes erwähnt wird.
 4. Schreibstil: Orientiere dich für den Aufbau, die Wortwahl und das Format strikt an den Praxisbeispielen. Schreibe im radiologischen Nominalstil.
-5. Bilde immer zwei Hauptbereiche: ## Befund (mit dem angepassten Template) und ## Beurteilung (mit der kurzen Zusammenfassung der Diagnosen).
+5. Bilde immer zwei Hauptbereiche: ## Befund (mit dem angepassten Template) und ## Ergebnis (mit der kurzen Zusammenfassung der Diagnosen).
 6. Gib ausschließlich den fertigen Befundtext aus. Keine Kommentare, keine Einleitungen.
 </instructions>
 

@@ -1,430 +1,450 @@
 {
-    "schädel_in_2_ebenen": {
-        "display_name": "Schädel in 2 Ebenen",
-        "body": "Schädelkalotte: Normale Form, Dicke und Größe. Mineralgehalt und Knochenstruktur regelrecht. Konturen glatt und scharf, ohne pathologische Unterbrechung. Suturen altersentsprechend. Keine pathologischen Verkalkungen.\nSchädelbasis: Anatomisch normal konfiguriert und glatt begrenzt. Planum sphenoidale, Sella und hintere Schädelgrube unauffällig.\nGesichtsschädel und obere HWS: Konturen regelmäßig, glatt und scharf begrenzt.\nNNH: Unauffällig.\nWeichteile: Kein pathologischer Befund."
-    },
-    "nasennebenhöhlen": {
-        "display_name": "Nasennebenhöhlen",
-        "body": "Sinus paranasales und Cavum nasi: Regelrecht geformt und symmetrisch bei median stehendem Septum nasi. Normale Pneumatisation und Strahlentransparenz. Konturen glatt und scharf begrenzt.\nSkelett: Mitdargestelltes Cranium unauffällig.\nFremdkörper: Keine radiopaken Fremdkörper."
-    },
-    "orthopantomogramm_des_kiefer-_und_gesichtsschädels": {
-        "display_name": "Orthopantomogramm des Kiefer- und Gesichtsschädels",
-        "body": "Maxilla und Mandibula sowie Gesichtsschädel: Normale Form, Größe, Mineralgehalt und Knochenstruktur. Kortikale Begrenzungen glatt und scharf, ohne pathologische Unterbrechung.\nAlveolarknochen: Unauffällige Kontur des Canalis nervi alveolaris inferioris.\nKiefergelenke: Regelrechte Darstellung beider Gelenke mit normal weitem Gelenkspalt.\nZahnstatus: Regelrechter, sanierter Zahnstatus. Zähne in Anzahl, Stellung, Form und Struktur normal. Wurzeln ragen normal weit in den Alveolarknochen, Spatium periodontale nicht verbreitert.\nSinus maxillaris und Sinus paranasales: Frei belüftet, Wandkonturen glatt. Orbitaboden: glatte Wandkonturen.\nWeichteile: Kein Nachweis radiopaker Fremdkörper oder Weichteilschwellung."
-    },
-    "nasenbein": {
-        "display_name": "Nasenbein",
-        "body": "Os nasale: Anatomisch normale Form. Normaler Winkel zwischen Os nasale und Os frontale. Sutura frontonasalis unauffällig. Knochenstruktur und Mineralgehalt regelrecht. Außenbegrenzung glatt und scharf, ohne pathologische Unterbrechung.\nWeichteile: Intakter Weichteilmantel, ohne umschriebene Schwellung oder radiopaken Fremdkörper."
-    },
-    "jochbogen": {
-        "display_name": "Jochbogen",
-        "body": "Arcus zygomaticus: Normale Form und Größe. Knochenstruktur und Mineralgehalt regelrecht. Kortikalis glatt und scharf konturiert, ohne pathologische Unterbrechung.\nCranium: Mitdargestellte Anteile des übrigen Craniums normal geformt, scharf und glatt begrenzt.\nWeichteile: Intakt, ohne Schwellung, frei von Verkalkungen oder radiopaken Fremdkörpern."
-    },
-    "ganzaufnahme_der_wirbelsäule_a-p": {
-        "display_name": "Ganzaufnahme der Wirbelsäule a.-p.",
-        "body": "Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe Skoliose. Alignementlinien regelrecht.\nWirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.\nBogenwurzeln und Querfortsätze: Regelrecht konfiguriert.\nZwischenwirbelräume und Spinalkanal: Normal weit.\nRippen: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine radiopaken Fremdkörper."
-    },
-    "halswirbelsäule_in_2_ebenen": {
-        "display_name": "Halswirbelsäule in 2 Ebenen",
-        "body": "HWS ap/seitlich\n\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B.. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B."
-    },
-    "schrägaufnahme_der_halswirbelsäule": {
-        "display_name": "Schrägaufnahme der Halswirbelsäule",
-        "body": "HWS: Regelrechte Stellung.\nHWK: Anzahl, Form, Struktur und Kontur unauffällig. Spatien intervertebralia normal weit.\nPars interarticularis und Processus articulares: Anatomisch normal geformt, glatt und scharf konturiert. Artikulierende Flächen normal weit zueinander.\nForamina intervertebralia: Normal geformt und regelrecht weit.\nWeichteilschatten: Unauffällig, ohne pathologische Verkalkungen oder Fremdkörper."
-    },
-    "funktionsaufnahmen_der_halswirbelsäule": {
-        "display_name": "Funktionsaufnahmen der Halswirbelsäule",
-        "body": "HWS: Regelrechte Stellung in maximaler Ante- und Retroflexion. Physiologisches Treppenphänomen der Wirbelkörper-Hinterkanten bei Anteflexion. Keine pathologische Ventral- oder Dorsalverschiebung einzelner Vertebrae.\nBandscheibenfächer: Reguläre Form bei beiden Beugeaufnahmen.\nBewegungsdiagramm: Normale Winkelverhältnisse im Bereich HWK 2 bis HWK 7."
-    },
-    "brustwirbelsäule_in_2_ebenen": {
-        "display_name": "Brustwirbelsäule in 2 Ebenen",
-        "body": "BWS: Harmonische Kyphose.\nBWK: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.\nBogenwurzeln, Dornfortsätze, Querfortsätze und Processus articulares: Regelrecht konfiguriert.\nArticulationes costotransversales und Articulationes costovertebrales: Regelrechte Form.\nSpatien intervertebralia und Canalis spinalis: Normal weit.\nRippen: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine radiopaken Fremdkörper."
-    },
-    "lendenwirbelsäule_in_2_ebenen": {
-        "display_name": "Lendenwirbelsäule in 2 Ebenen",
-        "body": "LWS\n\nAnnähernd achsengerechte Stellung.\nAnzahl und Höhe der Lendenwirbelkörper regelrecht.\nDas dorsale Alignement ist erhalten.\nDie Abschlussplatten und Corticalis allseits regelrecht.\nKein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien."
-    },
-    "funktionsaufnahmen_der_lendenwirbelsäule": {
-        "display_name": "Funktionsaufnahmen der Lendenwirbelsäule",
-        "body": "LWS: Regelrechte Ausbiegung bei seitlichen Aufnahmen in maximaler Retro- bzw. Anteflexion. Keine pathologischen Ventral- oder Dorsalverlagerungen einzelner Wirbelkörper.\nBandscheibenfächer: Physiologische, gleichgerichtete Form bei beiden Beugeaufnahmen.\nBewegungsdiagramm: Normal."
-    },
-    "beckenübersicht_stehend": {
-        "display_name": "Beckenübersicht stehend",
-        "body": "Skelett: Anatomisch normale und symmetrische Form. Beide Beckenschaufeln stehen gleich hoch. Mineralgehalt und Knochenstruktur regelrecht. Kortikale Randkonturen normal breit, glatt und scharf begrenzt, ohne pathologische Unterbrechungen.\nAcetabulum bds.: Regelrechte Abbildung.\nHüftgelenke: Glatte und scharf begrenzte, kongruente Gelenkflächen mit allseits normal weitem Gelenkspalt. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Keine intra- oder periartikulären Verkalkungen.\nIliosakralgelenke und Symphysenspalt: Normal weit, glatt und scharf begrenzt.\nOs sacrum und LWS: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine pathologischen Verkalkungen oder schattengebenden Fremdkörper."
-    },
-    "iliosakralgelenke_a-p": {
-        "display_name": "Iliosakralgelenke a.-p.",
-        "body": "Gelenkflächen: Regulär geformt. Kortikale Randkonturen normal breit, glatt und scharf begrenzt, ohne pathologische Unterbrechung. Gelenkspalt allseits normal weit.\nOs ilium und Os sacrum: Mitdargestellte Anteile anatomisch normal und symmetrisch geformt. Mineralgehalt und Knochenstruktur regelrecht.\nWeichteile: Unauffällig, ohne Hinweis auf Verkalkungen oder schattengebenden Fremdkörper."
-    },
-    "kreuzbein_und_steißbein_in_2_ebenen": {
-        "display_name": "Kreuzbein und Steißbein in 2 Ebenen",
-        "body": "Os sacrum und Os coccygeum: Anatomisch normale Form, symmetrische Verjüngung der Steißbeinwirbel nach kaudal. Regelrechte Stellung, keine stärkere seitliche oder ventrale Abwinkelung des Os coccygeum. Mineralgehalt und Knochenstruktur normal.\nIliosakralgelenke: Gelenkflächen nach Form, Kontur und Gelenkspaltweite unauffällig.\nForamina sacralia und Konturen der Steißbeinwirbel: Glatt und scharf, kein Hinweis auf Konturunterbrechung.\nOs coccygeum: Normale Form mit symmetrischer Verjüngung nach kaudal. Anatomisch regelrechte Achsstellung.\nWeichteile: Unauffällig."
-    },
-    "knöcherner_hemithorax": {
-        "display_name": "Knöcherner Hemithorax",
-        "body": "Skelett: Dargestelltes Thoraxskelett nach Form, Anzahl und Stellung der Rippen regelrecht. Interkostalräume normal weit.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatt und scharf begrenzt, ohne Hinweis auf pathologische Unterbrechung. Kompakta normale Breite.\nArticulationes costovertebrales bzw. Articulationes costotransversales: Anatomisch normale Form.\nWeichteile: Normale Abbildung der Weichteile und der mitdargestellten Anteile von Pulmo, Cor und Mediastinum."
-    },
-    "sternum_in_2_ebenen": {
-        "display_name": "Sternum in 2 Ebenen",
-        "body": "Sternum: Anatomisch normale Form und Stellung, regelrechte Wölbung. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nSchlüsselbeine: Ordnungsgemäße Form und Stellung beider Claviculae.\nArticulatio sternoclavicularis: Artikulierende Flächen scharf und glatt begrenzt, Gelenkspalt normal weit.\nPleura: Normale Darstellung der pleuralen Kontaktfläche des Sternum.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "schultergelenke_a-p_unter_belastung": {
-        "display_name": "Schultergelenke a.-p. unter Belastung",
-        "body": "Skelett: Normale, symmetrische Form der beteiligten Skelettabschnitte. Acromion und Clavicula auf beiden Seiten etwa gleich hoch, Gelenkspalten normal weit.\nArticulatio humeri: Symmetrische, regelrechte Artikulation der Humerusköpfe.\nArticulatio sternoclavicularis: Seitengleiche, normale Gelenke.\nRippen, HWS und BWS: Soweit abgebildet Form und Anzahl der oberen Costae unauffällig, Stellung der unteren HWS und oberen BWS normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur normal. Äußere Knochenkonturen und Gelenkflächen glatt und scharf begrenzt. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffällig."
-    },
-    "clavicula": {
-        "display_name": "Clavicula",
-        "body": "Clavicula: Anatomisch regelrechte Form und Stellung. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur. Kompakta normale Breite. Keine pathologische Konturunterbrechung.\nArticulationes acromioclavicularis bzw. sternoclavicularis: Gelenkflächen glatt und scharf begrenzt. Gelenkspalten normal weit.\nRippen, Scapula und Humerus: Mitdargestellte Anteile unauffällig.\nWeichteile: Reguläre Abbildung."
-    },
-    "akromioklavikulargelenk": {
-        "display_name": "Akromioklavikulargelenk",
-        "body": "Skelett: Anatomisch normale Form der dargestellten Abschnitte. Regelrechte Stellung von Acromion und Clavicula zueinander.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatt und scharf begrenzt, intakt. Kompakta normal breit.\nGelenkflächen: Regelrecht konturiert. Gelenkspalt normal weit.\nWeichteile: Unauffällig."
-    },
-    "scapula_in_2_ebenen": {
-        "display_name": "Scapula in 2 Ebenen",
-        "body": "Scapula: Anatomisch normale Form. Mineralgehalt und Knochenstruktur regelrecht. Knochenstrukturen glatt und scharf begrenzt.\nArticulatio humeri und Articulatio acromioclavicularis: Regelrechte Darstellung bei glatten Gelenkflächen.\nHumeruskopf, Clavicula und Rippen: Mitabgebildete Anteile bei regelrechter Stellung unauffällig. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Normal."
-    },
-    "schultergelenk_in_2_ebenen": {
-        "display_name": "Schultergelenk in 2 Ebenen",
-        "body": "Schulter\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
-    },
-    "schultergelenk_tangential_bizepssehnenkanal": {
-        "display_name": "Schultergelenk tangential (Bizepssehnenkanal)",
-        "body": "Skelett: Normale Form von Oberarmkopf, insbesondere der Tubercula. Mineralgehalt, Knochenstruktur und kortikale Randbegrenzung unauffällig.\nSulcus intertubercularis: Regelrechte Konfiguration und Tiefe, glatt und scharf begrenzt. Freie Projektion des Sulcus ohne pathologische Veränderungen.\nSkelett: Übrige abgebildete Abschnitte unauffällig.\nWeichteile: Normale Darstellung."
-    },
-    "oberarm_in_2_ebenen": {
-        "display_name": "Oberarm in 2 Ebenen",
-        "body": "Humerus: Anatomisch normale Form und Stellung des abgebildeten Abschnitts.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur. Kompakta normale Breite.\nGelenkflächen: Normal geformt und kongruent, glatt und scharf begrenzt. Gelenkspalt normal weit. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "ellbogengelenk_in_2_ebenen": {
-        "display_name": "Ellbogengelenk in 2 Ebenen",
-        "body": "Skelett: Normale Form und Stellung von distalem Humerus, Ulna und Radius.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kompakta und Kortikalis nach Breite und Kontur regelrecht.\nGelenkflächen: Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffällige Darstellung des Weichteilmantels."
-    },
-    "axialaufnahme_des_ellbogens": {
-        "display_name": "Axialaufnahme des Ellbogens",
-        "body": "Skelett: Anatomisch normale Form und Stellung von Capitulum und Trochlea humeri sowie Olecranon.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nCanalis cubitalis: Regelrechte Form und Tiefe.\nWeichteile: Keine Verkalkungen oder radiopaken Fremdkörper. Weichteile unauffällig."
-    },
-    "unterarm_in_2_ebenen": {
-        "display_name": "Unterarm in 2 Ebenen",
-        "body": "Skelett: Normale Form und Stellung der abgebildeten Abschnitte.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch regelrecht geformt, glatt und kongruent. Gelenkspalten allseits normale Weite. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
-    },
-    "hand_in_2_ebenen": {
-        "display_name": "Hand in 2 Ebenen",
-        "body": "Skelett: Dargestelltes Handskelett nach Form, Größe, Anzahl und Stellung der Phalanges, Ossa metacarpalia und Ossa carpi normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
-    },
-    "handgelenk_in_2_ebenen": {
-        "display_name": "Handgelenk in 2 Ebenen",
-        "body": "Skelett: Regelrechte Abbildung der Skelettanteile nach Form, Größe und Anzahl. Stellung der einzelnen Ossa carpi, zu den Ossa metacarpalia sowie zu Radius und Ulna regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung.\nGelenkflächen: Regulär geformt. Gelenkspalten normal weit.\nRadius, Ulna und Ossa metacarpalia: Mitabgebildete Anteile unauffällig.\nWeichteile: Regelrechte Verhältnisse, keine radiopaken Fremdkörper oder Verkalkungen."
-    },
-    "karpaltunnelaufnahme": {
-        "display_name": "Karpaltunnelaufnahme",
-        "body": "Skelett: Form, Größe, Anzahl und Stellung der beteiligten Ossa carpi und Ossa metacarpalia normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung. Keine akzessorischen Knochen im Canalis carpi.\nWeichteile: Regelrechte Darstellung, keine Seitendifferenz. Keine radiopaken Fremdkörper oder Verkalkungen."
-    },
-    "naviculareserie": {
-        "display_name": "Naviculareserie",
-        "body": "Os scaphoideum: Form, Größe und Stellung normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt.\nSkelett: Mitabgebildete Anteile unauffällig. Keine Fremdkörper oder Verkalkungen."
-    },
-    "finger_in_2_ebenen": {
-        "display_name": "Finger in 2 Ebenen",
-        "body": "Phalanges: Normale Form der Phalanges proximales, mediae und distales (im Rahmen der Varianz) bei achsengerechter Stellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite. Crista phalangis distalis intakt.\nGelenkflächen: Normal geformt, glatt begrenzt und kongruent. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "ganzbeinaufnahme_im_stand": {
-        "display_name": "Ganzbeinaufnahme im Stand",
-        "body": "Extremität: Regelrechte Form und Stellung des Beines, anatomische und mechanische Achse normal.\nGelenke: Regelrechte Artikulation in Articulatio coxae, Articulatio genus und Articulatio talocruralis.\nLange Röhrenknochen: Normal geformt. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung oder Stufenbildung.\nHüftgelenk: Unauffällige Darstellung, gute Überdachung des normal gerundeten Hüftkopfes durch das Pfannendach.\nKniegelenk: Kongruenz der Gelenkflächen.\nOberes Sprunggelenk: Regelrecht geformt, normale Abbildung der Malleolengabel.\nGelenkspalten: Allseits regelrechte Weiten. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "hüftgelenk_in_2_ebenen": {
-        "display_name": "Hüftgelenk in 2 Ebenen",
-        "body": "Hüfte\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
-    },
-    "konturaufnahmen_des_femurkopfes": {
-        "display_name": "Konturaufnahmen des Femurkopfes",
-        "body": "Caput femoris: Normale Form der Vorder- und Hinterfläche. Kortikale Randkonturen normal breit, glatt und scharf begrenzt. Keine pathologischen Konturunterbrechungen. Kein Nachweis pathologischer Aufhellungen oder Verdichtungen. Keine Randwulstbildungen.\nGelenkspalt: Normal weit. Gelenkflächen kongruent bei guter Überdachung des Caput femoris. Fossa acetabuli glatt konturiert.\nFemur, Os ischii, Os pubis und Ala ossis ilii: Dargestellte Anteile unauffällig.\nWeichteile: Regelrechte Abbildung."
-    },
-    "oberschenkel_in_2_ebenen": {
-        "display_name": "Oberschenkel in 2 Ebenen",
-        "body": "Femur: Anatomisch normale Form und Stellung der abgebildeten Abschnitte.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nGelenkflächen: Normal geformt, glatt begrenzt und kongruent. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "kniegelenk_in_2_ebenen": {
-        "display_name": "Kniegelenk in 2 Ebenen",
-        "body": "Kniegelenk\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
-    },
-    "defileeaufnahmen_der_patella_in_30°_60°_und_90°": {
-        "display_name": "Defileeaufnahmen der Patella in 30°, 60° und 90°",
-        "body": "Patella und Femurkondylen: Anatomisch normale Form bei regelrechter Stellung der Patella.\nKnochenstruktur: Knochenstruktur und Mineralgehalt regelrecht. Kortikalis glatt und scharf begrenzt, normal breit, ohne pathologische Unterbrechung.\nGelenkflächen: Facies articularis patellae und femorale Gelenkfläche glatt und scharf begrenzt, Gelenkspalt normal weit. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "unterschenkel_in_2_ebenen": {
-        "display_name": "Unterschenkel in 2 Ebenen",
-        "body": "Skelett: Normale Form und Stellung der dargestellten Abschnitte. Konfiguration der Malleolengabel regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Anatomisch normal geformt und glatt begrenzt. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
-    },
-    "sprunggelenk_in_2_ebenen": {
-        "display_name": "Sprunggelenk in 2 Ebenen",
-        "body": "Sprunggelenk\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
-    },
-    "fuß_in_2_ebenen": {
-        "display_name": "Fuß in 2 Ebenen",
-        "body": "Skelett: Fußskelett nach Form, Größe, Anzahl und Stellung der Phalanges, Ossa metatarsalia und Ossa tarsi normal. Arcus pedis regulär ausgebildet, Gelenkwinkel regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Regelrecht geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig.\nCalcaneus in 2 Ebenen\nCalcaneus: Normale Form mit regelrechten Winkelmaßen. Stellung zu Talus und Os cuboideum normal, kein Hinweis auf Fehlstellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht, scharfe Abgrenzbarkeit der Spongiosabälkchen. Kortikalis glatte und scharfe Begrenzung, normal breit, ohne pathologische Unterbrechung.\nGelenkspalten: Normale Weite bei kongruenten Gelenkflächen.\nOssa tarsi: Übrige mitdargestellte Ossa tarsi unauffällig.\nWeichteile: Regelrechte Abbildung."
-    },
-    "mittelfuß_in_2_ebenen": {
-        "display_name": "Mittelfuß in 2 Ebenen",
-        "body": "Skelett: Form, Größe, Anzahl und Stellung der einzelnen Ossa tarsi und Ossa metatarsalia normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechungen.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander.\nWeichteile: Unauffällig."
-    },
-    "vorfuß_in_2_ebenen": {
-        "display_name": "Vorfuß in 2 Ebenen",
-        "body": "Skelett: Fußskelett nach Form, Größe und Anzahl der Phalanges, Ossa metatarsalia und der dargestellten Ossa tarsi normal. Stellung der Phalanges im Vergleich zu den Ossa metatarsalia regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig."
-    },
-    "zehe_in_2_ebenen": {
-        "display_name": "Zehe in 2 Ebenen",
-        "body": "Phalanges: Normale Form der Phalanges proximales, mediae und distales (im Rahmen der Varianz) bei regelrechter Stellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite. Crista phalangis distalis intakt.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
-    },
-    "thorax_in_2_ebenen": {
-        "display_name": "Thorax in 2 Ebenen",
-        "body": "Thorax pa/seitlich\n\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich."
-    },
-    "abdomen_im_stand": {
-        "display_name": "Abdomen im Stand",
-        "body": "Zwerchfell: Normal gewölbt, scharf begrenzt und regelrecht gelegen. Keine freie Luft unterhalb der Zwerchfellkuppen.\nGastrointestinaltrakt: Regelrechte Abbildung der luftgefüllten Anteile, normale Darmgasverteilung. Kein Hinweis auf geblähte Darmanteile oder Spiegelbildungen.\nWeichteile: Abgrenzbare Weichteilschatten von Leber, Milz, Nieren und Harnblase unauffällig.\nFremdkörper/Verkalkungen: Kein Nachweis pathologischer Verkalkungen oder radiopaker Fremdkörper in Projektion auf das Abdomen.\nMuskel- und Weichteilschatten: Regelrecht.\nSkelett: Abgebildete Abschnitte unauffällig."
-    },
-    "abdomen_im_liegen": {
-        "display_name": "Abdomen im Liegen",
-        "body": "Weichteile: Unauffällig. Kein Nachweis von Verkalkungen oder radiopaken Fremdkörpern.\nGastrointestinaltrakt: Regelrechte Abbildung des luftgefüllten Traktes mit regelrechter Darmgasverteilung.\nWeichteile: Abgrenzbare Weichteilschatten von Leber, Milz, Nieren und Harnblase unauffällig bei regelrechter Organ-Größe und -Lage.\nMuskelschatten: Glatte und scharfe Abgrenzbarkeit. Flankenzeichnung normal.\nSkelettsystem: Unauffällige Darstellung der abgebildeten Teile."
-    },
-    "intravenöses_urogramm": {
-        "display_name": "Intravenöses Urogramm",
-        "body": "Abdomenübersicht: Regelrechte Darstellung des abgebildeten Skeletts und der Weichteilschatten ohne Nachweis pathologischer Verkalkungen.\nNieren: Nach Kontrastmittelinjektion homogene Parenchymdarstellung, zeitgerechte, seitengleiche Ausscheidung. Regelrechte Lage und Achsstellung, normale Form und Größe. Äußere Konturen harmonisch und glatt begrenzt. Nierenbecken-Kelchsystem stellt sich regelrecht dar.\nHarnwege: Ableitende Harnwege nach Form, Weite und Verlauf unauffällig. Kontrastmittelabstrom unbehindert.\nHarnblase: Nach Konfiguration und Größe normal, glatt konturiert.\nRestharn: Kein wesentlicher Restharn nach Miktion."
-    },
-    "beinphlebographie": {
-        "display_name": "Beinphlebographie",
-        "body": "Nach Punktion einer oberflächlichen Fußrückenvene und Anlage einer Stauungsmanschette Injektion von 60 ml jodhaltigem Kontrastmittel.\nVenen: Unbehinderter Kontrastmittelabfluss über das glatt begrenzte, tiefe Unterschenkel- und Oberschenkelvenensystem mit suffizientem Klappenapparat. Relevante Perforansinsuffizienzen nicht nachweisbar.\nMündungsregion: Regelrechte Darstellung der Mündungsregion der Stammvenen beim Pressversuch.\nBeckenvenen: Unauffälliger Verlauf, kein Nachweis von Füllungsdefekten."
-    },
-    "hysterosalpingographie": {
-        "display_name": "Hysterosalpingographie",
-        "body": "Skelett/Weichteile: Bei orientierender Durchleuchtung regelrechte Darstellung der Skelettstrukturen und der Weichteile des kleinen Beckens. Pathologische Verkalkungen oder radiopake Fremdkörper sind nicht darstellbar.\nZervixkanal: Nach Aufsetzen der Füllungskanüle auf die Portio Injektion von insgesamt 7 ml jodhaltigem Kontrastmittel. Es stellt sich ein normal langer und breiter, glatt begrenzter Canalis cervicis uteri dar.\nCavum uteri: Normal gelegen, füllt sich unbehindert. Reguläre Form und Dehnbarkeit, glatt konturiert. Keine Kontrastmittelaussparungen.\nTubae uterinae: Regelrechte Füllung der symmetrisch angelegten, normal weiten Tubae. Unauffälliges Schleimhautrelief der Ampullae tubae uterinae. Keine Kontrastmittelaussparungen oder Nischenbildungen.\nPeritoneum: Unbehinderter Übertritt des Kontrastmittels in das Peritoneum."
-    },
-    "mr_des_gehirnschädels:": {
-        "display_name": "MR des Gehirnschädels:",
-        "body": "Sulci und Gyri von Cerebrum und Cerebellum regelrecht. Fissura longitudinalis cerebri: mittelständig. Ventriculi cerebri: normal weit und symmetrisch, keine Liquor-Flussstörung. Keine Anzeichen eines erhöhten intrakraniellen Drucks. Substantia alba und Substantia grisea: regelrecht ausgebildet, normales Signal, insbesondere periventrikulär. Keine Diffusionsstörung. Ganglia basalia, Capsula interna, Corpus callosum und Thalamus: regulär. Truncus cerebri und Cerebellum: ohne pathologische Signalveränderungen. Sella turcica und Hypophyse: normal. Strukturen paraselläres: unauffällig. Angulus pontocerebellaris: beidseits ohne Pathologie. Meatus acusticus internus: normal weit. Sinus paranasales und Cellulae mastoideae: regelrecht angelegt und frei pneumatisiert. Orbita-Inhalt: unauffällig."
-    },
-    "mr_der_hypophyse:": {
-        "display_name": "MR der Hypophyse:",
-        "body": "Sella turcica: in Lage und Konfiguration normal groß. Fundus sellae und Paries sellae: glatt und scharf begrenzt. Hypophysis: normal positioniert, geformt und regulär groß. Hypophysengewebe: nativ und post-KM reguläres Signalverhalten. Keine umschriebenen Signalabweichungen. Infundibulum: mittelständig und normal groß. Chiasma opticum und supraselläre Liquorräume: regelrecht dargestellt. Sinus cavernosus und dargestellte Anteile der Arteria carotis interna im Siphonbereich: unauffällig. Mitdargestellte Anteile des Neurocranium: ohne pathologische Auffälligkeiten. Sinus sphenoidales: frei pneumatisiert."
-    },
-    "mr_der_inneren_gehörgänge_felsenbeine:": {
-        "display_name": "MR der Inneren Gehörgänge, Felsenbeine:",
-        "body": "Felsenbeine: beidseits normal und seitensymmetrisch angelegt. Meatus acusticus internus: normal weit, glatt und scharf begrenzt. Nervus vestibulocochlearis: beidseits regelrechter Verlauf und normale Breite. Post-KM: kein pathologischer Signalanstieg am Verlauf des Nervs, insbesondere intrameatal. Cochlea und Bogengänge: normal dargestellt. Cellulae mastoideae: frei pneumatisiert. Cavitas tympani und Meatus acusticus externus: regelhaft. Angulus pontocerebellaris: beidseits regelrechte Konfiguration. Truncus cerebri: bei normaler Konfiguration mit regelrechtem Signal und normalem Austritt der Hirnnerven. Cisterna pontocerebellaris: beidseits symmetrisch und frei. Übrige mitdargestellte Anteile des Neurocranium: ohne Pathologie."
-    },
-    "mr_der_nasennebenhöhlen:": {
-        "display_name": "MR der Nasennebenhöhlen:",
-        "body": "Sinus frontales: regelrecht angelegt, glatte Wandkonturen, freie Pneumatisation. Cellulae ethmoidales: normale Abbildung. Begrenzungen, insbesondere zur Orbita: intakt. Keine Wandarrosionen, keine Schleimhautverbreiterungen. Sinus sphenoidales: regulär, großwabig angelegt. Keine Flüssigkeitsansammlung, keine Schleimhautschwellung. Sinus maxillares: seitensymmetrisch angelegt, glatte Konturen der normal breiten Wände. Keine Destruktion bei freier Belüftung."
-    },
-    "mr_der_halsweichteile:": {
-        "display_name": "MR der Halsweichteile:",
-        "body": "Halsweichteile: normale Konfiguration, HWS in regelrechter Stellung. Mundbodenmuskulatur: seitensymmetrisch und regulär ausgebildet. Spatia oris und Spatia colli: gut abgrenzbar und frei. Mitdargestellte Anteile der Glandula parotidea und Glandula submandibularis: ohne Pathologie. Pharynx und Larynx: mit regelrechter Wandbegrenzung und normaler Wandstärke. Schilddrüse: weitgehend symmetrisch angelegt, normal groß. Lobi glandulae thyroideae: normale Binnenstruktur. Halsgefäße: unauffällige Abbildung (soweit beurteilbar). Halsmuskulatur: normale Strukturen. Lymphknotenstationen: frei. Myelon cervicales und Plexus cervicalis: ohne Pathologie. Septum nasi: mittelständig. Conchae nasales: normale Ausbildung und Signalgebung. Cavitas nasi, parapharyngeale Strukturen (soweit abgebildet): unauffällig. Mitdargestellte Anteile des Neurocranium und der Orbita: ohne Pathologie."
-    },
-    "mr_des_thorax:": {
-        "display_name": "MR des Thorax:",
-        "body": "Lungen: regulär belüftet und allseits der Thoraxwand anliegend. Kein Nachweis umschriebener pleuraler Signalveränderung oder Flüssigkeitsansammlung. Pulmo-Struktur: regelrecht, Gefäßzeichnung normal. Keine intrapulmonalen Rundherde oder flächenhaften Veränderungen. Mediastinum: normal breit, mittelständig. Kein Nachweis von Raumforderungen im vorderen, mittleren oder hinteren Kompartiment. Hilusregion: beidseits unauffällig, Bronchi principales normal abgebildet. Keine pathologischen Lymphknoten, keine perihiläre RF. Herz: normal konfiguriert, orthotop, Herzhöhlen normal weit. Große intrathorakale sowie mitdargestellte supraaortale Vasa: unauffällig. Skelett Thoracis sowie Weichteile Thoracis: regelrechte Darstellung."
-    },
-    "mr_der_mamma:": {
-        "display_name": "MR der Mamma:",
-        "body": "Brustdrüsengewebe: altersentsprechend, symmetrisch ausgebildet, gleichmäßig durch Fettgewebe unterteilt. Nativ: keine Läsionen, die sich vom Brustdrüsenparenchym oder Fettgewebe unterscheiden. Keine Diffusionsstörung. Post-KM: in keinem Segment pathologisch signifikante Signalintensitätssteigerung. Unauffällige Kontrastierungskurven. Cutis und Subcutis: ohne Pathologie."
-    },
-    "mr_der_leber:": {
-        "display_name": "MR der Leber:",
-        "body": "Leber: normal groß, glatt begrenzt, orthotope Lage. Regelrechte Binnenstruktur, kein Nachweis fokaler Signalabweichungen. Keine Aufweitung der intra- und extrahepatischen Ductus biliferi. Gallenblase: glatt begrenzt, homogener Inhalt, normal dargestellt. Porta hepatis: ohne Pathologie. Übrige mitabgebildete Organe Abdominis superioris: ohne Auffälligkeiten."
-    },
-    "mr_der_nebennieren:": {
-        "display_name": "MR der Nebennieren:",
-        "body": "Beide Nebennieren: regulär in Lage und Größe, Schenkel normal ausgebildet. Kein Nachweis einer RF oder umschriebenen Auftreibung. Nebennierenloge: unauffällig. Post-KM: unauffälliges Signalverhalten und normale KM-Dynamik. Übrige mitabgebildete Organe Abdominis superioris, insbesondere Renes: ohne Auffälligkeiten."
-    },
-    "mr_der_hoden:": {
-        "display_name": "MR der Hoden:",
-        "body": "Scrotum und Inhalt des Scrotum: regelrechte Konfiguration. Testes: normal groß, symmetrisch angelegt, homogene, reguläre Binnenstruktur. Tunica albuginea: normal breit, glatt und scharf begrenzt. Epididymis: beidseits mit normaler Lage und Größe sowie regelrechter Binnenstruktur. Skrotalfächer: ordnungsgemäß abgebildet, kein Nachweis vermehrter Flüssigkeit. Leistenkanal: regelrechte Form, Größe und Verlauf. Corpora cavernosa sowie Corpus spongiosum: normal."
-    },
-    "mr_der_halswirbelsäule:": {
-        "display_name": "MR der Halswirbelsäule:",
-        "body": "Columna cervicalis: harmonische Lordose. knöcherner Spinalkanal: normale Weite. Wirbelkörper: regulär nach Anzahl, Form und Stellung zueinander. Distantia atlanto-dentalis: regelrecht. Artikulierende Platae terminales: glatt begrenzt. Zwischenwirbelräume: normale Weite. Bandscheiben: ragen in keinem Segment über die dorsale Corpus vertebrae-Rückfläche hinaus. Myelon: einschließlich Junktio craniovertebralis regelrechte Lage und Konfiguration, normale Breite und Binnenstruktur. Knochenmark der Wirbelkörper: regulär dargestellt. Mitabgebildete Weichteile: ohne Pathologie."
-    },
-    "mr_der_brustwirbelsäule:": {
-        "display_name": "MR der Brustwirbelsäule:",
-        "body": "Columna thoracalis: harmonische Kyphose. Canalis spinalis ossei: normale Weite. Wirbelkörper: regulär nach Anzahl, Form und Stellung zueinander. Artikulierende Platae terminales: glatt begrenzt. Spatien intervertebralia: normale Weite. Disci intervertebrales: ragen in keinem Segment über die dorsale Corpus vertebrae-Rückfläche hinaus. Myelon: regelrechte Konfiguration und regulärer Verlauf, normale Breite und Binnenstruktur. Medulla ossium der Wirbelkörper: regelhaft. Mitdargestellte Weichteile: ohne Pathologie."
-    },
-    "mr_der_lendenwirbelsäule:": {
-        "display_name": "MR der Lendenwirbelsäule:",
-        "body": "Columna lumbalis: harmonische Lordose, normaler Angulus promontorii. Canalis spinalis ossei: normale Weite. Wirbelkörper: regulär nach Anzahl, Form und Stellung zueinander. Artikulierende Platae terminales: glatt begrenzt. Spatien intervertebralia: normale Weite. Disci intervertebrales: ragen in keinem Segment über die dorsale Corpus vertebrae-Rückfläche hinaus. Conus medullaris: endet regelhaft in Höhe L 1, teilt sich in seine Filamente. Duralschlauch: in seinem lumbalen und beurteilbaren sakralen Anteil unauffällig dargestellt. Medulla ossium der Wirbelkörper: regulär. Abgebildete Weichteile: ohne Pathologie."
-    },
-    "mr_der_iliosakralgelenke:": {
-        "display_name": "MR der Iliosakralgelenke:",
-        "body": "ISG: normale Form. Os sacrum und Beckenschaufeln: regelrechte Ausbildung, Junktio lumbosacralis unauffällig. Gelenkspalt: beidseits reguläre Weite. Gelenkkonturen: glatt und scharf begrenzt. Medulla ossium subchondralis: normal. Keine Randwulstbildungen. Medulla ossium von Os sacrum und Alae ossis ilii: unauffällig, kortikale Randbegrenzung glatt, intakt. Foramina sacralia: regelhaft weit. Nervenfilamente: normaler Verlauf und regelrechte Breite. Canalis spinalis sacralis: ordnungsgemäße Weite. Musculi und mitabgebildete Organe pelvis minoris: ohne Pathologie."
-    },
-    "mr_des_kiefergelenkes:": {
-        "display_name": "MR des Kiefergelenkes:",
-        "body": "Kieferköpfchen: in der normal ausgeformten Fossa mandibularis regelrechte Konfiguration. Gelenkspalt: ordnungsgemäß weit. Gelenkflächen: glatt und scharf begrenzt, Kortikalis normal breit. Medulla ossium: regelrechtes Signal. Discus articularis: auf parakoronaren Aufnahmen haubenförmig konfiguriert. Parasagittale Aufnahmen stellen den Discus hantelförmig konfiguriert dar. Faserband hinteres: liegt bei ca. 11.00 Uhr im Verhältnis zur Kieferköpfchenzirkumferenz. Bei der Mundöffnung folgt der Discus dem Caput mandibulae regulär auf das Tuberculum articulare. Mitdargestellte Sinus paranasales: frei pneumatisiert. Mitabgebildete Anteile des Neurocranium: ohne Pathologie."
-    },
-    "mr_des_schultergelenkes:": {
-        "display_name": "MR des Schultergelenkes:",
-        "body": "Humeruskopf: normal konfiguriert, regelrechte Artikulation in der regelhaft ausgebildeten Cavitas glenoidalis. Gelenkflächen: glatt, Kortikalis normal breit. Gelenkspalt: regelrecht weit. Medulla ossium: homogenes, fettäquivalentes Signal. Labrum glenoidale: allseits intakt. Articulatio acromioclavicularis: normale Konfiguration. Keine Gelenkhypertrophie. Fettgewebe subacromiales: erhalten. Musculi der Rotatorenmanschette (insbesondere Musculus supraspinatus): nach Konfiguration und Verlauf regulär dargestellt. Musculus supraspinatus: in Lage, Breite und Signalgebung ordnungsgemäß, normaler Muskel-Sehnen-Übergang. Lange Bizepssehne: intakt, reguläre Abbildung, normaler Verlauf im Sulcus intertubercularis. Übrige das Articulatio humeri deckende Musculi sowie mitdargestellte Pulmo-Abschnitte und Weichteile: unauffällig dargestellt."
-    },
-    "mr_handgelenk:": {
-        "display_name": "MR Handgelenk:",
-        "body": "Handgelenk: normale Konfiguration der beteiligten Skelettabschnitte. Radius-Gelenkwinkel: regelrecht. Handwurzelknochen: ordnungsgemäße Form und Stellung zueinander, sowie zur Articulatio radiocarpalis und Articulationes carpometacarpales. Gelenkflächen: glatt, kongruent, Kortikalis normal breit. Spatium articulare: regulär breit. Keine Randwulstbildungen, keine subchondralen Signalveränderungen. Medulla ossium: normales Signal. Discus triangularis: normal konfiguriert, keine pathologischen Signalveränderungen. Ligamenta interossea: regelhafte Darstellung. Carpaltunnel: normale Weite. Sehnen: in regelrechter Lage und Breite. Nervus medianus sowie Nervus ulnaris: ordnungsgemäß. Ossa metacarpalia und Phalanges: unauffällig nach Begrenzung und Knochenmarksignal. Weichteile: normal."
-    },
-    "mr_hüftgelenk:": {
-        "display_name": "MR Hüftgelenk:",
-        "body": "Hüftköpfe: normal geformt, regelrechte Artikulation in den ordnungsgemäß ausgebildeten Fossae acetabuli. Gute Überdachung der Capita femoris durch die Acetabulum-Ränder. Spatien articulares: normal weit. Gelenkflächen: glatt, kongruent, Kortikalis normal breit. Keine Randwulstbildungen, keine subchondralen Signalveränderungen. Medulla ossium: normales Signal, insbesondere der Capita femoris und Schenkelhalses. Femurschaft: beidseits unauffällig nach Begrenzung und Knochenmarksignal. Musculatura und Pelvis minor: ohne Pathologie."
-    },
-    "mr_des_kniegelenkes:": {
-        "display_name": "MR des Kniegelenkes:",
-        "body": "Kniegelenk: normale Konfiguration und Stellung der beteiligten Skelettabschnitte. Medulla ossium: regelrechtes Signal, reguläre Trabekelzeichnung. Lineae epiphysiales: normal. Kortikalis: glatte Kontur, normal breit. Keine subchondralen Signalveränderungen. Knorpelbelag der Patella, der Femurcondylen und des Tibiaplateaus: regelhaft breit, normale Signalgebung. Knorpeloberfläche: glatt. Meniscus medialis und Meniscus lateralis: im Querschnitt regelrechte, dreieckige Konfiguration, gleichmäßige, signalarme Binnenstruktur. Cornu anterius, Pars intermedia und Cornu posterius: jeweils glatte, intakte Oberfläche. Ligamentum cruciatum anterius und Ligamentum cruciatum posterius: durchgängig, normal breit, regelrechte Signalgebung. Ligamenta collateralia: intakt und normal breit. Weichteile Articulatio genus und abgebildete Vasa: unauffällig dargestellt."
-    },
-    "mr_des_sprunggelenke:": {
-        "display_name": "MR des Sprunggelenke:",
-        "body": "Articulationes talocruralis beteiligte Skelettabschnitte: normale Konfiguration und Stellung. Malleolengabel: ordnungsgemäß ausgebildet. Medulla ossium: regelrechtes Signal, reguläre Trabekelzeichnung. Lineae epiphysiales: normal. Spatium articulare: normal weit. Kortikalis: glatte Kontur, regelhaft breit, insbesondere im Bereich der tibialen und talaren Gelenkfläche. Keine subchondralen Signalveränderungen, keine Randausziehungen. Außen- und Innenbandapparat: regelrechte Darstellung nach Verlauf, Breite und Signalgebung. Articulatio talocalcanea sowie Articulatio talonavicularis: normal dargestellt. Ligamentum interosseum zwischen Talus und Calcaneus: intakt. Achillessehne: nach Verlauf, Breite und Signalgebung unauffällig. Fettgewebe präachillares: frei. Muskel-Sehnen-Übergänge und Aponeurosis plantaris: regelrechte Abbildung. Weichteile: ohne Pathologie."
-    },
-    "mr_der_craniellen_gefäße:": {
-        "display_name": "MR der craniellen Gefäße:",
-        "body": "Arteria carotis interna: beidseits normkalibrig, seitensymmetrisch dargestellt. Pars siphonalis: normal, ohne Verlagerung oder Impression. Verlauf ordnungsgemäß, Gefäßlumina: homogene Signalgebung. Arteria cerebri media: beidseits regelrechter Abgang, normale Ausbildung der Inselschleifen. Keine umschriebene Gefäßaufweitung oder Einengung. Gefäßlumen: homogenes Füllungsbild. Arteria cerebri anterior: normal, kein Hinweis auf Verlagerung oder Einengung. Arteria basilaris: regelhafter Verlauf und Breite, reguläre Aufteilung in die normkalibrigen Arteriae cerebri posteriores. Arteria communicans anterior und Arteria communicans posterior: beidseits regelrecht angelegt und weit. In keinem Gefäßabschnitt ist ein Gefäßkonvolut oder eine umschriebene Aufweitung darstellbar. Neurocranium (soweit dargestellt und beurteilbar): ohne Pathologie."
-    },
-    "mr_der_nierenarterien:": {
-        "display_name": "MR der Nierenarterien:",
-        "body": "Bauchaorta: regelrechter Verlauf und normale Weite. Stammarterien der Nieren: orthotoper Abgang der paarig angelegten Arterien mit regelrechter Aufteilung. Verlauf, Kaliberweiten und Konturen der Vasa renalia: normal. Kein Nachweis einr pathologischen Kaliberänderung.  Nieren: paarige Anlage, normal nach Lage, Form, Größe und Begrenzung. Übrige mitabgebildete Gefäße: unauffällig dargestellt."
-    },
-    "mr_der_becken-_und_beingefäße:": {
-        "display_name": "MR der Becken- und Beingefäße:",
-        "body": "Aorta abdominalis: regelrechter Verlauf und normale Weite, normale Füllung. Bifurcationes aortae: orthotop. Arteriae iliacae communes, internae und externae: regelhaft dargestellt. Beide Arteriae femorales communes: normkalibrig und glattwandig, homogenes Füllungssignal. Regelrechte Aufteilung in die nach Kaliber und Verlauf ordnungsgemäßen Arteriae crurales. Arteria femoralis superficialis: normal abgebildet, insbesondere im Adduktorenkanal. Arteria poplitea: zeigt bei regelrechtem Verlauf keine pathologische Kaliberschwankung. Regelhafte Aufteilung in die Unterschenkelarterien, die normkalibrig und glattwandig nachweisbar sind."
-    },
-    "mr-cholangiopankreatografie_mrcp:": {
-        "display_name": "MR-Cholangiopankreatografie (MRCP):",
-        "body": "Ductus choledochus: orthotope Lage, normkalibrig, reguläre Länge, homogene flüssigkeitsäquivalente Füllung. Ductus cysticus und mitabgebildete Ductus biliferi intrahepatici: regelrechte Darstellung. Gallenblase: normal groß, glatt begrenzt, homogener Inhalt. Ductus pancreaticus: reguläre Lage und Länge, normkalibriges Gangbild, homogene Binnenstruktur, glatte Konturen."
-    },
-    "mr_der_halsarterien:": {
-        "display_name": "MR der Halsarterien:",
-        "body": "Aortenbogen: glattwandig, regelrecht konfiguriert dargestellt. Truncus brachiocephalicus: ordnungsgemäßer Abgang, regelrechte Aufteilung in die unauffälligen Arteria subclavia, Arteria carotis communis und Arteria vertebralis dextra. Die linke Arteria carotis communis und Arteria vertebralis: entspringen regulär direkt aus dem Arcus aortae. Normales Kaliber, regelhaft weites Lumen ohne Einengung oder Kontrastmittelaussparungen. Bifurcationes arteriae carotidis: beidseits orthotop und regulär geformt. Arteria carotis externa und insbesondere Arteria carotis interna: beidseits normkalibrig und seitensymmetrisch dargestellt. Keine umschriebene Gefäßaufweitung oder Einengung. Gefäßlumen: homogenes Füllungsbild. Pars siphonalis: normal, ohne Verlagerung oder Impression. Arteriae vertebrales: seitensymmetrische Anlage und regelrechter Verlauf. Lumen: normal weit, ohne Füllungsdefekte oder Kaliberunregelmäßigkeiten bis hin zur Arteria basilaris. Mitdargestellte Halsanteile (soweit dargestellt und beurteilbar): ohne Pathologie."
-    },
-    "cct:": {
-        "display_name": "CCT:",
-        "body": "Interhemisphärenspalt: mittelständig. Innere und äußere Liquorräume: altersentsprechende Weite. Hirnparenchym: keine Raumforderung, keine intrakranielle Blutung, keine frische Ischämiedemarkierung. Kalotte und Weichteile: regelrecht."
-    },
-    "ct_thorax:": {
-        "display_name": "CT Thorax:",
-        "body": "Lunge: regelrecht belüftet und entfaltet, keine Infiltrate, keine Rundherde. Pleura: keine Ergüsse. Mediastinum: keine pathologisch vergrößerten Lymphknoten. Herz: regelrecht groß, kein Perikarderguss. Gefäße: Aorta und Pulmonalarterien kaliberregelrecht. Keine Emboliezeichen (falls KM). Skelett: keine suspekten osteolytischen oder osteoplastischen Läsionen."
-    },
-    "ct_abdomen:": {
-        "display_name": "CT Abdomen:",
-        "body": "Leber: homogen, glatt begrenzt, keine fokalen Läsionen. Gallenblase: normal groß, unauffällige Wand, steinfrei. Gallenwege: nicht erweitert. Pankreas: regelrecht lobuliert, keine Raumforderung. Milz: homogen, normale Größe. Nieren: beidseits unauffällig, kein Aufstau, keine Konkremente. Nebennieren: schlank. Gefäße: Bauchaorta und große Abgänge regelrecht. Darm: keine pathologische Wandverdickung, kein Ileus. Abdomen gesamt: keine freie Flüssigkeit oder Luft."
-    },
-    "ct_der_wirbelsäule:": {
-        "display_name": "CT der Wirbelsäule:",
-        "body": "Achsenverhältnisse: regelrecht. Wirbelkörper: erhaltene Höhe und Hinterkantenflucht. Knochenstruktur: keine frischen Frakturen, keine fokalen Läsionen. Spinalkanal und Neuroforamina: unauffällig. Paravertebrale Weichteile: unauffällig."
-    },
-    "ct_angiographie:": {
-        "display_name": "CT Angiographie:",
-        "body": "Arterielle Strombahn: regelrechte Kontrastierung. Gefäßstatus: keine hämodynamisch relevanten Stenosen oder Verschlüsse. Wandstruktur: keine Aneurysmata oder Dissektionen. Periarterielle Weichteile: unauffällig."
-    },
-    "polytrauma_ct:": {
-        "display_name": "Polytrauma CT:",
-        "body": "CCT: keine Blutung, keine Infarktzeichen. Wirbelsäule: keine Fraktur, keine Gefügestörung. Thorax: kein Pneumo- oder Hämatothorax. Keine Organläsionen. Abdomen: keine freie intraabdominelle Luft oder Flüssigkeit, keine Organruptur, keine Raumforderung. Becken: keine Fraktur. Keine Blutung."
-    },
-    "sonografie_abdomen_komplett": {
-        "display_name": "Sonografie Abdomen (Komplett)",
-        "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten."
-    },
-    "sonografie_schilddrüse": {
-        "display_name": "Sonografie Schilddrüse",
-        "body": "Schilddrüse: Beide Lappen normal groß, seitensymmetrisch. Isthmus unauffällig.\nParenchym: Homogen, echonormal. Keine fokalen Läsionen (Knoten oder Zysten). Keine Mehrperfusion in der Farbdoppler-Sonografie.\nUmgebung: Keine pathologisch vergrößerten Hals-Lymphknoten."
-    },
-    "durchleuchtung:_ösophagus-breischluck": {
-        "display_name": "Durchleuchtung: Ösophagus-Breischluck",
-        "body": "Schluckakt: Regelrechter Ablauf ohne Aspiration.\nMorphologie: Glatte Wandkonturen, keine Nischen (Divertikel) oder Füllungsdefekte. Keine Stenosen. Schleimhautrelief unauffällig.\nMotilität: Primäre Peristaltik durchgehend bis zum zügigen Übertritt in den Magen. Keine Refluxerscheinungen in Horizontallage.\nKardia: Regelrecht konfiguriert, kein Hinweis auf Hiatushernie."
-    },
-    "durchleuchtung:_magen-darm-passage_mdp": {
-        "display_name": "Durchleuchtung: Magen-Darm-Passage (MDP)",
-        "body": "Magen: Normal konfiguriert, regelrechtes Schleimhautrelief. Zügige Magenentleerung. Keine Ulkusnischen oder Füllungsdefekte.\nDuodenum: Bulbus duodeni und Duodenalschleife unauffällig konfiguriert, glatt konturiert.\nPassage: Zügiger Transit des Kontrastmittels in die oberen Dünndarmschlingen (Jejunum) ohne Obstruktionszeichen."
-    },
-    "sonografie_nerven": {
-        "display_name": "Hochauflösende Nervensonographie",
-        "body": "Nervenverlauf: Symmetrische Darstellung des untersuchten Nervensegments. Kontur des Epineuriums allseits glatt begrenzt, ohne Einengung, Sanduhr-Deformität oder Kalibersprung.\nEchostruktur: Regelrechtes faszikuläres Muster erhalten. Keine pathologische Echominderung oder Schwellung der Faszikel.\nKaliber/Querschnitt: Normale Querschnittsfläche (CSA) im gesamten Verlauf, insbesondere an typischen Engstellen (kein Anhalt für Kompressionssyndrom).\nUmgebung: Umgebende anatomische Strukturen (Sehnen, Faszien, Gefäße) regelrecht abgrenzbar, kein Nachweis raumfordernder Prozesse oder entzündlicher Flüssigkeitsansammlungen in Nervennähe."
-    },
-    "sonografie_allgemein": {
-        "display_name": "Sonographie (Allgemein)",
-        "body": "Sonomorphologisch unauffällige Verhältnisse der untersuchten Region. Organ- und Gewebegrenzen glatt abgrenzbar.\nEchotextur: Parenchym homogen, echonormal und altersentsprechend. Keine umschriebenen Herdbefunde, Zysten oder soliden Raumforderungen.\nUmgebung: Unauffällige Darstellung der umgebenden Gewebestrukturen, Gefäße und Muskelgruppen. Kein Nachweis freier Flüssigkeit."
-    },
-    "sonografie_abdomen_weiblich": {
-        "display_name": "Sonografie Abdomen (weiblich)",
-        "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten. Der Uterus von normaler Form, Größe und Struktur."
-    },
-    "sonografie_abdomen_maennlich": {
-        "display_name": "Sonografie Abdomen (männlich)",
-        "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten."
-    },
-    "sonografie_halsgefaesse": {
-        "display_name": "Farbcodierte Duplexsonographie der Halsgefäße",
-        "body": "Die Arteria carotis externa, Arteria carotis interna und Arteria carotis communis kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar. Auch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar. Der Intima-Media-Komplex mit unter 0,9 mm im Normbereich gelegen."
-    },
-    "sonografie_beinvenen": {
-        "display_name": "Farbcodierte Duplexsonographie der Beinvenen",
-        "body": "Die V. femoralis, die V. poplitea, die V. fibularis sowie tibialis posterior in allen Abschnitten gut komprimierbar ohne Hinweis auf Thrombose. Auch im Bereich der Muskelvenen keine Auffälligkeiten, farbdopplersonographisch o. B."
-    },
-    "sonografie_nerv_medianus": {
-        "display_name": "Hochauflösende Sonographie des N. medianus",
-        "body": "Darstellung des N. medianus von der Axilla bis distal des Karpaltunnels inklusive sämtlicher abgehender Endäste.\n\nAm gesamten Oberarm regelrechtes Kaliber des N. medianus ohne Nachweis einer faszikulären oder nervalen Auftreibung. Anatomisch regelrechter Verlauf des Nervs am Musculus pronator teres ohne Nachweis einer Kompression oder Verlagerung nach medial. Kein Nachweis eines Nerven-Knochenkontaktes.\n\nAm gesamten Unterarm ebenso regelrechtes Kaliber des N. medianus ohne Nachweis einer faszikulären oder nervalen Auftreibung.\n\nUnauffällige Darstellung des Karpaltunnels. Die Querschnittsfläche (CSA) des N. medianus an seiner dicksten Stelle misst 9 mm² (Normwert < 12 mm²). Der Nervus medianus wird nicht durch das Ligamentum carpi transversum eingeengt. Kein Nachweis einer Tendovaginitis/Bursitis der Flexorensehne im Karpalkanal. Der motorische Thenarast entspringt infraligamentär vom medianen Anteil des N. medianus. Entlang der Endäste, inklusive des Ramus palmaris keine Auffälligkeiten.\n\nDie Thenarmuskulatur sowie die vom N. medianus versorgte Lumbrikalmuskulatur seitensymmetrisch ohne Nachweis einer Echogenitätssteigerung im Sinne einer Denervation oder einer Atrophie. Kein Nachweis von Muskel-Faszikulationen."
-    },
-    "sonografie_nerv_ulnaris": {
-        "display_name": "Hochauflösende Sonographie des N. ulnaris",
-        "body": "Darstellung des N. ulnaris von der Axilla bis distal der Loge de Guyon inklusive sämtlicher abgehender Endäste.\n\nAm gesamten Oberarm regelrechtes Kaliber des N. ulnaris ohne Nachweis einer faszikulären oder nervalen Auftreibung.\n\nAnatomisch regelrechter Verlauf des Nervs am Sulcus nervi ulnaris mit regelrechter Querschnittsfläche von 7 mm² (Normwert < 8 bis 9 mm²). Kein Nachweis einer Nervenkompression am medialen Septum intermusculare oder am Osborne Ligament (zwischen den Köpfen des M. flexor carpi ulnaris). Die Osborne Faszie/das Retinaculum unauffällig. Kein Nachweis eines Schnappens des Nervs über den Epicondylus medialis humeri bei Ellbogenflexion. Keine Kompression des Nervs durch die Osborne Faszie oder die mediale Tricepsmuskulatur bei Armflexion.\n\nAm gesamten Unterarm ebenso regelrechtes Kaliber des N. ulnaris ohne Nachweis einer faszikulären oder nervalen Auftreibung. Der Ramus dorsalis entspringt ca. 5 cm oberhalb des Os pisiforme vom N. ulnaris und stellt sich unauffällig dar.\n\nIn der Loge de Guyon unauffällige Darstellung des Nervs mit normaler Querschnittsfläche von 5 mm² (Normwert < 6 mm²). Kein Nachweis einer sekundären Affektion des Nervs. Regelrechte Aufteilung in einen Ramus superficialis und Ramus profundus, welche bis nach distal unauffällig sind.\n\nDie Hypothenarmuskulatur, die vom N. ulnaris versorgte Lumbricalmuskulatur sowie der M. adductor pollicis seitensymmetrisch ohne Nachweis einer Echogenitätssteigerung im Sinne einer Denervation oder einer Atrophie. Kein Nachweis von Muskel-Faszikulationen."
-    },
-    "sonografie_plexus_brachialis": {
-        "display_name": "Hochauflösende Sonographie des Plexus brachialis",
-        "body": "Darstellung des Plexus brachialis infra- und supraclaviculär bis zur Axilla.\n\nSupraclaviculär regelrechtes Kaliber der Nervenwurzeln C5 - TH1 und normale Formation in die Trunci. Kein Nachweis einer nervalen Verdickung. Unauffällige Nerven-Echogenität. Die Kontinuität sämtlicher Fasern erhalten. Kein Nachweis einer Stummel- oder Halsrippe.\n\nInfraclaviculär normale Darstellung der Faszikuli ohne Nachweis einer Verdickung. Der costoclaviculäre Raum imponiert normweit. Der Musculus subclavius seitensymmetrisch und nicht hypertrophiert. In Ruhe und bei Armabduktion (ca. 90°) kein NW einer signifikanten Stenose in der Arteria subclavia somit auch kein Nachweis eines arteriellen costoclaviculären TOS (Thoracic outlet syndroms). Im Verlauf Richtung Axilla unauffälliger Befund am Plexus. Kein Nachweis einer suspekten perineuralen Narbenbildung. Seitensymmetrische Darstellung der Pectoralmuskulatur. Kein Nachweis eines Langer'schen Muskelbauchs.\n\nNB: Kein Nachweis eines Neuroms an den Ästen der Nervi supraclaviculares."
-    },
-    "sonografie_nerv_allgemein": {
-        "display_name": "Hochauflösende Nervensonographie (Allgemein)",
-        "body": "Nervenverlauf: Symmetrische Darstellung des untersuchten Nervensegments. Kontur des Epineuriums allseits glatt begrenzt, ohne Einengung, Sanduhr-Deformität oder Kalibersprung.\nEchostruktur: Regelrechtes faszikuläres Muster erhalten. Keine pathologische Echominderung oder Schwellung der Faszikel.\nKaliber/Querschnitt: Normale Querschnittsfläche (CSA) im gesamten Verlauf, insbesondere an typischen Engstellen (kein Anhalt für Kompressionssyndrom).\nUmgebung: Umgebende anatomische Strukturen (Sehnen, Faszien, Gefäße) regelrecht abgrenzbar, kein Nachweis raumfordernder Prozesse oder entzündlicher Flüssigkeitsansammlungen in Nervennähe."
-    },
-    "sonografie_weichteile": {
-        "display_name": "Sonographie der Weichteile",
-        "body": "Sonomorphologisch unauffällige Verhältnisse der Weichteile im Bereich der untersuchten Region. Regelrechte Schichtung von Cutis und Subcutis. Die Muskulatur und Faszien stellen sich unauffällig dar, ohne Hinweis auf Muskelfaserrisse, Hämatome oder flüssige Gewebealterationen. Kein Nachweis einer soliden oder zystischen Raumforderung. Kein Anhalt für pathologische Lymphknotenschwellungen."
-    },
-    "sonografie_halsweichteile": {
-        "display_name": "Sonographie der Halsweichteile",
-        "body": "Die Glandula parotis und die Glandula submandibularis beidseits stellen sich von homogener Echostruktur und normaler Größe dar, ohne Hinweis auf Duktektasien oder abgrenzbare Raumforderungen. Der Mundboden ist unauffällig.\nEntlang des jugulären Gefäßnervenstranges beidseits zeigen sich mehrere normgroße, längsovalär konfigurierte Lymphknoten mit regelrechtem Fetthilus. Kein Hinweis auf pathologisch vergrößerte oder suspekt konfigurierte Lymphknoten.\nSymmetrische Darstellung der übrigen Halsweichteile, kein Nachweis pathologischer Raumforderungen."
-    },
-    "mammographie_beidseits": {
-        "display_name": "Mammographie beidseits",
-        "body": "Inspektion und Palpation: Unauffälliger Inspektions- und Palpationsbefund. Axillen beidseits frei.\n\nMammographie: Symmetrisches Drüsenparenchym beidseits ohne suspekte Herdbefunde, Architekturstörungen oder Mikrokalkansammlungen. Keine pathologische Dichtezunahme im Vergleich zu Voraufnahmen. Subcutis und Cutis unauffällig.\n\nSonographie: Beidseits regelrechter echographischer Befund ohne Nachweis solider oder zystischer Läsionen."
-    },
-    "knochendichtemessung_dexa": {
-        "display_name": "Knochendichtemessung (DEXA)",
-        "body": "ODM - LWS:\nDie Knochendichtewerte gemittelt über L1 bis L4 betragen [Wert_LWS] g/cm² Calziumhydroxylapatit (entspricht einem T-Wert von [T_Wert_LWS]).\n\nODM - Hüftgelenksregion links:\nDie Knochendichtewerte der Hüftgelenksregion links betragen gesamt [Wert_Hüfte] g/cm² Calziumhydroxylapatit (entspricht einem T-Wert von [T_Wert_Hüfte])."
-    },
-    "dvt_oberkiefer": {
-        "display_name": "Digitale Volumentomographie des Oberkiefers",
-        "body": "Zahnstatus: Zähne in Anzahl, Stellung und Form regelrecht. Kein Nachweis von periapikalen Beherdungen, Wurzelfrakturen oder retinierten Zähnen.\nAlveolarknochen: Regelrechte Alveolarkammhöhe und normale Knochenstruktur der Maxilla.\nKieferhöhlen: Der mitdargestellte Rezessus alveolaris des Sinus maxillaris beidseits frei belüftet, ohne Anhalt für Sekretretention oder Schleimhautschwellungen."
-    },
-    "dvt_unterkiefer": {
-        "display_name": "Digitale Volumentomographie des Unterkiefers",
-        "body": "Zahnstatus: Zähne in Anzahl, Stellung und Form regelrecht. Kein Nachweis von periapikalen Beherdungen, Wurzelfrakturen oder retinierten Zähnen.\nAlveolarknochen: Regelrechte Knochenstruktur des Unterkiefers. Canalis nervi alveolaris inferioris beidseits unauffällig verlaufend, ohne knöcherne Einengung oder Unterbrechung.\nKiefergelenke: Regelrechte Artikulation beider Gelenkköpfchen in der Fossa mandibularis bei glatten Knochenkonturen."
-    },
-    "schädelfernröntgen": {
-        "display_name": "Schädelfernröntgen",
-        "body": "Die dargestellten knöchernen Schädelstrukturen ohne Auffälligkeiten. Die mitdargestellten Nebenhöhlen o. B.. Die Sella normal weit. Der Sellaboden eben."
-    },
-    "varizensonografie": {
-        "display_name": "Varizensonografie",
-        "body": "Tiefes Venensystem: Die tiefen Venen (V. femoralis communis, V. femoralis, V. poplitea sowie die Unterschenkelvenen) sind beidseits frei durchgängig, vollständig komprimierbar und zeigen ein atemsynchron moduliertes Flussverhalten. Kein Nachweis einer tiefen Venenthrombose (TVT).\nOberflächliches Venensystem: Vena saphena magna und Vena saphena parva beidseits frei durchgängig, im Stammverlauf klappensuffizient ohne Nachweis eines pathologischen Refluxes bei Provokationsmanövern (Valsalva, Kompression/Dekompression). Keine relevanten Seitenastvarizen oder retikuläre Varikose.\nPerforansvenen: Klappensuffizient, keine relevanten insuffizienten Perforansvenen nachweisbar."
-    },
-    "schulterprothese": {
-        "display_name": "Schulterprothese",
-        "body": "Schultergelenk: Zustand nach inverser Schulterendoprothese. Die Prothesenkomponenten liegen in regelrechter Position. Kein Nachweis von Lockerungszeichen (keine osteolytischen Säume, kein Zementbruch, keine Migration der Komponenten). Keine periartikulären Verkalkungen oder Verknöcherungen. Weichteilmantel unauffällig."
-    },
-    "daumensattelprothese": {
-        "display_name": "Daumensattelprothese",
-        "body": "Daumensattelgelenk: Zustand nach Daumensattelgelenksprothese. Die Prothesenkomponenten stellen sich in regelrechter Stellung dar, ohne Anhaltspunkte für eine Lockerung (keine periprothetischen Demineralisationen, kein Osteolysesaum). Soweit mitabgebildet, die übrigen Handwurzelknochen und Ossa metacarpalia in regelrechter Stellung und Knochenstruktur."
-    },
-    "knieprothese": {
-        "display_name": "Knieprothese",
-        "body": "Kniegelenk: Zustand nach Knie-Totalendoprothese (Knie-TEP). Die femoralen und tibialen Prothesenkomponenten zeigen eine regelrechte Stellung und Ausrichtung. Kein Nachweis von periprothetischen Aufhellungssäumen oder Lockerungszeichen. Keine Komponentenmigration oder Materialversagen. Regelrechte Stellung des Patella-Inlays (soweit vorhanden) bzw. der Patella. Kein relevanter Gelenkerguss. Weichteilmantel unauffällig."
-    },
-    "hüftprothese": {
-        "display_name": "Hüftprothese",
-        "body": "Hüftgelenk: Zustand nach Hüft-Totalendoprothese (Hüft-TEP). Die Prothesenkomponenten (Pfanne und Schaft) liegen in regelrechter Stellung und Position. Kein Nachweis von Lockerungszeichen (kein periprothetischer Aufhellungssaum, keine Dislokation, keine Sinterung des Schaftes). Kein Anhaltspunkt für eine periprothetische Fraktur oder Luxation. Regelrechte knöcherne Integration bzw. intakter Zementmantel. Knochenstrukturen des Beckens und des Femurs, soweit erfasst, unauffällig."
-    }
+  "schädel_in_2_ebenen": {
+    "display_name": "Schädel in 2 Ebenen",
+    "body": "Schädelkalotte: Normale Form, Dicke und Größe. Mineralgehalt und Knochenstruktur regelrecht. Konturen glatt und scharf, ohne pathologische Unterbrechung. Suturen altersentsprechend. Keine pathologischen Verkalkungen.\nSchädelbasis: Anatomisch normal konfiguriert und glatt begrenzt. Planum sphenoidale, Sella und hintere Schädelgrube unauffällig.\nGesichtsschädel und obere HWS: Konturen regelmäßig, glatt und scharf begrenzt.\nNNH: Unauffällig.\nWeichteile: Kein pathologischer Befund."
+  },
+  "nasennebenhöhlen": {
+    "display_name": "Nasennebenhöhlen",
+    "body": "Sinus paranasales und Cavum nasi: Regelrecht geformt und symmetrisch bei median stehendem Septum nasi. Normale Pneumatisation und Strahlentransparenz. Konturen glatt und scharf begrenzt.\nSkelett: Mitdargestelltes Cranium unauffällig.\nFremdkörper: Keine radiopaken Fremdkörper."
+  },
+  "orthopantomogramm_des_kiefer-_und_gesichtsschädels": {
+    "display_name": "Orthopantomogramm des Kiefer- und Gesichtsschädels",
+    "body": "Maxilla und Mandibula sowie Gesichtsschädel: Normale Form, Größe, Mineralgehalt und Knochenstruktur. Kortikale Begrenzungen glatt und scharf, ohne pathologische Unterbrechung.\nAlveolarknochen: Unauffällige Kontur des Canalis nervi alveolaris inferioris.\nKiefergelenke: Regelrechte Darstellung beider Gelenke mit normal weitem Gelenkspalt.\nZahnstatus: Regelrechter, sanierter Zahnstatus. Zähne in Anzahl, Stellung, Form und Struktur normal. Wurzeln ragen normal weit in den Alveolarknochen, Spatium periodontale nicht verbreitert.\nSinus maxillaris und Sinus paranasales: Frei belüftet, Wandkonturen glatt. Orbitaboden: glatte Wandkonturen.\nWeichteile: Kein Nachweis radiopaker Fremdkörper oder Weichteilschwellung."
+  },
+  "nasenbein": {
+    "display_name": "Nasenbein",
+    "body": "Os nasale: Anatomisch normale Form. Normaler Winkel zwischen Os nasale und Os frontale. Sutura frontonasalis unauffällig. Knochenstruktur und Mineralgehalt regelrecht. Außenbegrenzung glatt und scharf, ohne pathologische Unterbrechung.\nWeichteile: Intakter Weichteilmantel, ohne umschriebene Schwellung oder radiopaken Fremdkörper."
+  },
+  "jochbogen": {
+    "display_name": "Jochbogen",
+    "body": "Arcus zygomaticus: Normale Form und Größe. Knochenstruktur und Mineralgehalt regelrecht. Kortikalis glatt und scharf konturiert, ohne pathologische Unterbrechung.\nCranium: Mitdargestellte Anteile des übrigen Craniums normal geformt, scharf und glatt begrenzt.\nWeichteile: Intakt, ohne Schwellung, frei von Verkalkungen oder radiopaken Fremdkörpern."
+  },
+  "ganzaufnahme_der_wirbelsäule_a-p": {
+    "display_name": "Ganzaufnahme der Wirbelsäule a.-p.",
+    "body": "Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe Skoliose. Alignementlinien regelrecht.\nWirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.\nBogenwurzeln und Querfortsätze: Regelrecht konfiguriert.\nZwischenwirbelräume und Spinalkanal: Normal weit.\nRippen: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine radiopaken Fremdkörper."
+  },
+  "halswirbelsäule_in_2_ebenen": {
+    "display_name": "Halswirbelsäule in 2 Ebenen",
+    "body": "HWS ap/seitlich\n\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B.. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B."
+  },
+  "schrägaufnahme_der_halswirbelsäule": {
+    "display_name": "Schrägaufnahme der Halswirbelsäule",
+    "body": "HWS: Regelrechte Stellung.\nHWK: Anzahl, Form, Struktur und Kontur unauffällig. Spatien intervertebralia normal weit.\nPars interarticularis und Processus articulares: Anatomisch normal geformt, glatt und scharf konturiert. Artikulierende Flächen normal weit zueinander.\nForamina intervertebralia: Normal geformt und regelrecht weit.\nWeichteilschatten: Unauffällig, ohne pathologische Verkalkungen oder Fremdkörper."
+  },
+  "funktionsaufnahmen_der_halswirbelsäule": {
+    "display_name": "Funktionsaufnahmen der Halswirbelsäule",
+    "body": "HWS: Regelrechte Stellung in maximaler Ante- und Retroflexion. Physiologisches Treppenphänomen der Wirbelkörper-Hinterkanten bei Anteflexion. Keine pathologische Ventral- oder Dorsalverschiebung einzelner Vertebrae.\nBandscheibenfächer: Reguläre Form bei beiden Beugeaufnahmen.\nBewegungsdiagramm: Normale Winkelverhältnisse im Bereich HWK 2 bis HWK 7."
+  },
+  "brustwirbelsäule_in_2_ebenen": {
+    "display_name": "Brustwirbelsäule in 2 Ebenen",
+    "body": "BWS: Harmonische Kyphose.\nBWK: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.\nBogenwurzeln, Dornfortsätze, Querfortsätze und Processus articulares: Regelrecht konfiguriert.\nArticulationes costotransversales und Articulationes costovertebrales: Regelrechte Form.\nSpatien intervertebralia und Canalis spinalis: Normal weit.\nRippen: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine radiopaken Fremdkörper."
+  },
+  "lendenwirbelsäule_in_2_ebenen": {
+    "display_name": "Lendenwirbelsäule in 2 Ebenen",
+    "body": "LWS\n\nAnnähernd achsengerechte Stellung.\nAnzahl und Höhe der Lendenwirbelkörper regelrecht.\nDas dorsale Alignement ist erhalten.\nDie Abschlussplatten und Corticalis allseits regelrecht.\nKein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien."
+  },
+  "funktionsaufnahmen_der_lendenwirbelsäule": {
+    "display_name": "Funktionsaufnahmen der Lendenwirbelsäule",
+    "body": "LWS: Regelrechte Ausbiegung bei seitlichen Aufnahmen in maximaler Retro- bzw. Anteflexion. Keine pathologischen Ventral- oder Dorsalverlagerungen einzelner Wirbelkörper.\nBandscheibenfächer: Physiologische, gleichgerichtete Form bei beiden Beugeaufnahmen.\nBewegungsdiagramm: Normal."
+  },
+  "beckenübersicht_stehend": {
+    "display_name": "Beckenübersicht stehend",
+    "body": "Skelett: Anatomisch normale und symmetrische Form. Beide Beckenschaufeln stehen gleich hoch. Mineralgehalt und Knochenstruktur regelrecht. Kortikale Randkonturen normal breit, glatt und scharf begrenzt, ohne pathologische Unterbrechungen.\nAcetabulum bds.: Regelrechte Abbildung.\nHüftgelenke: Glatte und scharf begrenzte, kongruente Gelenkflächen mit allseits normal weitem Gelenkspalt. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Keine intra- oder periartikulären Verkalkungen.\nIliosakralgelenke und Symphysenspalt: Normal weit, glatt und scharf begrenzt.\nOs sacrum und LWS: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine pathologischen Verkalkungen oder schattengebenden Fremdkörper."
+  },
+  "iliosakralgelenke_a-p": {
+    "display_name": "Iliosakralgelenke a.-p.",
+    "body": "Gelenkflächen: Regulär geformt. Kortikale Randkonturen normal breit, glatt und scharf begrenzt, ohne pathologische Unterbrechung. Gelenkspalt allseits normal weit.\nOs ilium und Os sacrum: Mitdargestellte Anteile anatomisch normal und symmetrisch geformt. Mineralgehalt und Knochenstruktur regelrecht.\nWeichteile: Unauffällig, ohne Hinweis auf Verkalkungen oder schattengebenden Fremdkörper."
+  },
+  "kreuzbein_und_steißbein_in_2_ebenen": {
+    "display_name": "Kreuzbein und Steißbein in 2 Ebenen",
+    "body": "Os sacrum und Os coccygeum: Anatomisch normale Form, symmetrische Verjüngung der Steißbeinwirbel nach kaudal. Regelrechte Stellung, keine stärkere seitliche oder ventrale Abwinkelung des Os coccygeum. Mineralgehalt und Knochenstruktur normal.\nIliosakralgelenke: Gelenkflächen nach Form, Kontur und Gelenkspaltweite unauffällig.\nForamina sacralia und Konturen der Steißbeinwirbel: Glatt und scharf, kein Hinweis auf Konturunterbrechung.\nOs coccygeum: Normale Form mit symmetrischer Verjüngung nach kaudal. Anatomisch regelrechte Achsstellung.\nWeichteile: Unauffällig."
+  },
+  "knöcherner_hemithorax": {
+    "display_name": "Knöcherner Hemithorax",
+    "body": "Skelett: Dargestelltes Thoraxskelett nach Form, Anzahl und Stellung der Rippen regelrecht. Interkostalräume normal weit.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatt und scharf begrenzt, ohne Hinweis auf pathologische Unterbrechung. Kompakta normale Breite.\nArticulationes costovertebrales bzw. Articulationes costotransversales: Anatomisch normale Form.\nWeichteile: Normale Abbildung der Weichteile und der mitdargestellten Anteile von Pulmo, Cor und Mediastinum."
+  },
+  "sternum_in_2_ebenen": {
+    "display_name": "Sternum in 2 Ebenen",
+    "body": "Sternum: Anatomisch normale Form und Stellung, regelrechte Wölbung. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nSchlüsselbeine: Ordnungsgemäße Form und Stellung beider Claviculae.\nArticulatio sternoclavicularis: Artikulierende Flächen scharf und glatt begrenzt, Gelenkspalt normal weit.\nPleura: Normale Darstellung der pleuralen Kontaktfläche des Sternum.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "schultergelenke_a-p_unter_belastung": {
+    "display_name": "Schultergelenke a.-p. unter Belastung",
+    "body": "Skelett: Normale, symmetrische Form der beteiligten Skelettabschnitte. Acromion und Clavicula auf beiden Seiten etwa gleich hoch, Gelenkspalten normal weit.\nArticulatio humeri: Symmetrische, regelrechte Artikulation der Humerusköpfe.\nArticulatio sternoclavicularis: Seitengleiche, normale Gelenke.\nRippen, HWS und BWS: Soweit abgebildet Form und Anzahl der oberen Costae unauffällig, Stellung der unteren HWS und oberen BWS normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur normal. Äußere Knochenkonturen und Gelenkflächen glatt und scharf begrenzt. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffällig."
+  },
+  "clavicula": {
+    "display_name": "Clavicula",
+    "body": "Clavicula: Anatomisch regelrechte Form und Stellung. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur. Kompakta normale Breite. Keine pathologische Konturunterbrechung.\nArticulationes acromioclavicularis bzw. sternoclavicularis: Gelenkflächen glatt und scharf begrenzt. Gelenkspalten normal weit.\nRippen, Scapula und Humerus: Mitdargestellte Anteile unauffällig.\nWeichteile: Reguläre Abbildung."
+  },
+  "akromioklavikulargelenk": {
+    "display_name": "Akromioklavikulargelenk",
+    "body": "Skelett: Anatomisch normale Form der dargestellten Abschnitte. Regelrechte Stellung von Acromion und Clavicula zueinander.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatt und scharf begrenzt, intakt. Kompakta normal breit.\nGelenkflächen: Regelrecht konturiert. Gelenkspalt normal weit.\nWeichteile: Unauffällig."
+  },
+  "scapula_in_2_ebenen": {
+    "display_name": "Scapula in 2 Ebenen",
+    "body": "Scapula: Anatomisch normale Form. Mineralgehalt und Knochenstruktur regelrecht. Knochenstrukturen glatt und scharf begrenzt.\nArticulatio humeri und Articulatio acromioclavicularis: Regelrechte Darstellung bei glatten Gelenkflächen.\nHumeruskopf, Clavicula und Rippen: Mitabgebildete Anteile bei regelrechter Stellung unauffällig. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Normal."
+  },
+  "schultergelenk_in_2_ebenen": {
+    "display_name": "Schultergelenk in 2 Ebenen",
+    "body": "Schulter\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+  },
+  "schultergelenk_tangential_bizepssehnenkanal": {
+    "display_name": "Schultergelenk tangential (Bizepssehnenkanal)",
+    "body": "Skelett: Normale Form von Oberarmkopf, insbesondere der Tubercula. Mineralgehalt, Knochenstruktur und kortikale Randbegrenzung unauffällig.\nSulcus intertubercularis: Regelrechte Konfiguration und Tiefe, glatt und scharf begrenzt. Freie Projektion des Sulcus ohne pathologische Veränderungen.\nSkelett: Übrige abgebildete Abschnitte unauffällig.\nWeichteile: Normale Darstellung."
+  },
+  "oberarm_in_2_ebenen": {
+    "display_name": "Oberarm in 2 Ebenen",
+    "body": "Humerus: Anatomisch normale Form und Stellung des abgebildeten Abschnitts.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur. Kompakta normale Breite.\nGelenkflächen: Normal geformt und kongruent, glatt und scharf begrenzt. Gelenkspalt normal weit. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "ellbogengelenk_in_2_ebenen": {
+    "display_name": "Ellbogengelenk in 2 Ebenen",
+    "body": "Skelett: Normale Form und Stellung von distalem Humerus, Ulna und Radius.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kompakta und Kortikalis nach Breite und Kontur regelrecht.\nGelenkflächen: Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffällige Darstellung des Weichteilmantels."
+  },
+  "axialaufnahme_des_ellbogens": {
+    "display_name": "Axialaufnahme des Ellbogens",
+    "body": "Skelett: Anatomisch normale Form und Stellung von Capitulum und Trochlea humeri sowie Olecranon.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nCanalis cubitalis: Regelrechte Form und Tiefe.\nWeichteile: Keine Verkalkungen oder radiopaken Fremdkörper. Weichteile unauffällig."
+  },
+  "unterarm_in_2_ebenen": {
+    "display_name": "Unterarm in 2 Ebenen",
+    "body": "Skelett: Normale Form und Stellung der abgebildeten Abschnitte.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch regelrecht geformt, glatt und kongruent. Gelenkspalten allseits normale Weite. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
+  },
+  "hand_in_2_ebenen": {
+    "display_name": "Hand in 2 Ebenen",
+    "body": "Skelett: Dargestelltes Handskelett nach Form, Größe, Anzahl und Stellung der Phalanges, Ossa metacarpalia und Ossa carpi normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
+  },
+  "handgelenk_in_2_ebenen": {
+    "display_name": "Handgelenk in 2 Ebenen",
+    "body": "Skelett: Regelrechte Abbildung der Skelettanteile nach Form, Größe und Anzahl. Stellung der einzelnen Ossa carpi, zu den Ossa metacarpalia sowie zu Radius und Ulna regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung.\nGelenkflächen: Regulär geformt. Gelenkspalten normal weit.\nRadius, Ulna und Ossa metacarpalia: Mitabgebildete Anteile unauffällig.\nWeichteile: Regelrechte Verhältnisse, keine radiopaken Fremdkörper oder Verkalkungen."
+  },
+  "karpaltunnelaufnahme": {
+    "display_name": "Karpaltunnelaufnahme",
+    "body": "Skelett: Form, Größe, Anzahl und Stellung der beteiligten Ossa carpi und Ossa metacarpalia normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung. Keine akzessorischen Knochen im Canalis carpi.\nWeichteile: Regelrechte Darstellung, keine Seitendifferenz. Keine radiopaken Fremdkörper oder Verkalkungen."
+  },
+  "naviculareserie": {
+    "display_name": "Naviculareserie",
+    "body": "Os scaphoideum: Form, Größe und Stellung normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt.\nSkelett: Mitabgebildete Anteile unauffällig. Keine Fremdkörper oder Verkalkungen."
+  },
+  "finger_in_2_ebenen": {
+    "display_name": "Finger in 2 Ebenen",
+    "body": "Phalanges: Normale Form der Phalanges proximales, mediae und distales (im Rahmen der Varianz) bei achsengerechter Stellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite. Crista phalangis distalis intakt.\nGelenkflächen: Normal geformt, glatt begrenzt und kongruent. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "ganzbeinaufnahme_im_stand": {
+    "display_name": "Ganzbeinaufnahme im Stand",
+    "body": "Extremität: Regelrechte Form und Stellung des Beines, anatomische und mechanische Achse normal.\nGelenke: Regelrechte Artikulation in Articulatio coxae, Articulatio genus und Articulatio talocruralis.\nLange Röhrenknochen: Normal geformt. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung oder Stufenbildung.\nHüftgelenk: Unauffällige Darstellung, gute Überdachung des normal gerundeten Hüftkopfes durch das Pfannendach.\nKniegelenk: Kongruenz der Gelenkflächen.\nOberes Sprunggelenk: Regelrecht geformt, normale Abbildung der Malleolengabel.\nGelenkspalten: Allseits regelrechte Weiten. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "hüftgelenk_in_2_ebenen": {
+    "display_name": "Hüftgelenk in 2 Ebenen",
+    "body": "Hüfte\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+  },
+  "konturaufnahmen_des_femurkopfes": {
+    "display_name": "Konturaufnahmen des Femurkopfes",
+    "body": "Caput femoris: Normale Form der Vorder- und Hinterfläche. Kortikale Randkonturen normal breit, glatt und scharf begrenzt. Keine pathologischen Konturunterbrechungen. Kein Nachweis pathologischer Aufhellungen oder Verdichtungen. Keine Randwulstbildungen.\nGelenkspalt: Normal weit. Gelenkflächen kongruent bei guter Überdachung des Caput femoris. Fossa acetabuli glatt konturiert.\nFemur, Os ischii, Os pubis und Ala ossis ilii: Dargestellte Anteile unauffällig.\nWeichteile: Regelrechte Abbildung."
+  },
+  "oberschenkel_in_2_ebenen": {
+    "display_name": "Oberschenkel in 2 Ebenen",
+    "body": "Femur: Anatomisch normale Form und Stellung der abgebildeten Abschnitte.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nGelenkflächen: Normal geformt, glatt begrenzt und kongruent. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "kniegelenk_in_2_ebenen": {
+    "display_name": "Kniegelenk in 2 Ebenen",
+    "body": "Kniegelenk\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+  },
+  "defileeaufnahmen_der_patella_in_30°_60°_und_90°": {
+    "display_name": "Defileeaufnahmen der Patella in 30°, 60° und 90°",
+    "body": "Patella und Femurkondylen: Anatomisch normale Form bei regelrechter Stellung der Patella.\nKnochenstruktur: Knochenstruktur und Mineralgehalt regelrecht. Kortikalis glatt und scharf begrenzt, normal breit, ohne pathologische Unterbrechung.\nGelenkflächen: Facies articularis patellae und femorale Gelenkfläche glatt und scharf begrenzt, Gelenkspalt normal weit. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "unterschenkel_in_2_ebenen": {
+    "display_name": "Unterschenkel in 2 Ebenen",
+    "body": "Skelett: Normale Form und Stellung der dargestellten Abschnitte. Konfiguration der Malleolengabel regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Anatomisch normal geformt und glatt begrenzt. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+  },
+  "sprunggelenk_in_2_ebenen": {
+    "display_name": "Sprunggelenk in 2 Ebenen",
+    "body": "Sprunggelenk\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+  },
+  "fuß_in_2_ebenen": {
+    "display_name": "Fuß in 2 Ebenen",
+    "body": "Skelett: Fußskelett nach Form, Größe, Anzahl und Stellung der Phalanges, Ossa metatarsalia und Ossa tarsi normal. Arcus pedis regulär ausgebildet, Gelenkwinkel regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Regelrecht geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig.\nCalcaneus in 2 Ebenen\nCalcaneus: Normale Form mit regelrechten Winkelmaßen. Stellung zu Talus und Os cuboideum normal, kein Hinweis auf Fehlstellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht, scharfe Abgrenzbarkeit der Spongiosabälkchen. Kortikalis glatte und scharfe Begrenzung, normal breit, ohne pathologische Unterbrechung.\nGelenkspalten: Normale Weite bei kongruenten Gelenkflächen.\nOssa tarsi: Übrige mitdargestellte Ossa tarsi unauffällig.\nWeichteile: Regelrechte Abbildung."
+  },
+  "mittelfuß_in_2_ebenen": {
+    "display_name": "Mittelfuß in 2 Ebenen",
+    "body": "Skelett: Form, Größe, Anzahl und Stellung der einzelnen Ossa tarsi und Ossa metatarsalia normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechungen.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander.\nWeichteile: Unauffällig."
+  },
+  "vorfuß_in_2_ebenen": {
+    "display_name": "Vorfuß in 2 Ebenen",
+    "body": "Skelett: Fußskelett nach Form, Größe und Anzahl der Phalanges, Ossa metatarsalia und der dargestellten Ossa tarsi normal. Stellung der Phalanges im Vergleich zu den Ossa metatarsalia regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig."
+  },
+  "zehe_in_2_ebenen": {
+    "display_name": "Zehe in 2 Ebenen",
+    "body": "Phalanges: Normale Form der Phalanges proximales, mediae und distales (im Rahmen der Varianz) bei regelrechter Stellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite. Crista phalangis distalis intakt.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
+  },
+  "thorax_in_2_ebenen": {
+    "display_name": "Thorax in 2 Ebenen",
+    "body": "Thorax pa/seitlich\n\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich."
+  },
+  "abdomen_im_stand": {
+    "display_name": "Abdomen im Stand",
+    "body": "Zwerchfell: Normal gewölbt, scharf begrenzt und regelrecht gelegen. Keine freie Luft unterhalb der Zwerchfellkuppen.\nGastrointestinaltrakt: Regelrechte Abbildung der luftgefüllten Anteile, normale Darmgasverteilung. Kein Hinweis auf geblähte Darmanteile oder Spiegelbildungen.\nWeichteile: Abgrenzbare Weichteilschatten von Leber, Milz, Nieren und Harnblase unauffällig.\nFremdkörper/Verkalkungen: Kein Nachweis pathologischer Verkalkungen oder radiopaker Fremdkörper in Projektion auf das Abdomen.\nMuskel- und Weichteilschatten: Regelrecht.\nSkelett: Abgebildete Abschnitte unauffällig."
+  },
+  "abdomen_im_liegen": {
+    "display_name": "Abdomen im Liegen",
+    "body": "Weichteile: Unauffällig. Kein Nachweis von Verkalkungen oder radiopaken Fremdkörpern.\nGastrointestinaltrakt: Regelrechte Abbildung des luftgefüllten Traktes mit regelrechter Darmgasverteilung.\nWeichteile: Abgrenzbare Weichteilschatten von Leber, Milz, Nieren und Harnblase unauffällig bei regelrechter Organ-Größe und -Lage.\nMuskelschatten: Glatte und scharfe Abgrenzbarkeit. Flankenzeichnung normal.\nSkelettsystem: Unauffällige Darstellung der abgebildeten Teile."
+  },
+  "intravenöses_urogramm": {
+    "display_name": "Intravenöses Urogramm",
+    "body": "Abdomenübersicht: Regelrechte Darstellung des abgebildeten Skeletts und der Weichteilschatten ohne Nachweis pathologischer Verkalkungen.\nNieren: Nach Kontrastmittelinjektion homogene Parenchymdarstellung, zeitgerechte, seitengleiche Ausscheidung. Regelrechte Lage und Achsstellung, normale Form und Größe. Äußere Konturen harmonisch und glatt begrenzt. Nierenbecken-Kelchsystem stellt sich regelrecht dar.\nHarnwege: Ableitende Harnwege nach Form, Weite und Verlauf unauffällig. Kontrastmittelabstrom unbehindert.\nHarnblase: Nach Konfiguration und Größe normal, glatt konturiert.\nRestharn: Kein wesentlicher Restharn nach Miktion."
+  },
+  "beinphlebographie": {
+    "display_name": "Beinphlebographie",
+    "body": "Nach Punktion einer oberflächlichen Fußrückenvene und Anlage einer Stauungsmanschette Injektion von 60 ml jodhaltigem Kontrastmittel.\nVenen: Unbehinderter Kontrastmittelabfluss über das glatt begrenzte, tiefe Unterschenkel- und Oberschenkelvenensystem mit suffizientem Klappenapparat. Relevante Perforansinsuffizienzen nicht nachweisbar.\nMündungsregion: Regelrechte Darstellung der Mündungsregion der Stammvenen beim Pressversuch.\nBeckenvenen: Unauffälliger Verlauf, kein Nachweis von Füllungsdefekten."
+  },
+  "hysterosalpingographie": {
+    "display_name": "Hysterosalpingographie",
+    "body": "Skelett/Weichteile: Bei orientierender Durchleuchtung regelrechte Darstellung der Skelettstrukturen und der Weichteile des kleinen Beckens. Pathologische Verkalkungen oder radiopake Fremdkörper sind nicht darstellbar.\nZervixkanal: Nach Aufsetzen der Füllungskanüle auf die Portio Injektion von insgesamt 7 ml jodhaltigem Kontrastmittel. Es stellt sich ein normal langer und breiter, glatt begrenzter Canalis cervicis uteri dar.\nCavum uteri: Normal gelegen, füllt sich unbehindert. Reguläre Form und Dehnbarkeit, glatt konturiert. Keine Kontrastmittelaussparungen.\nTubae uterinae: Regelrechte Füllung der symmetrisch angelegten, normal weiten Tubae. Unauffälliges Schleimhautrelief der Ampullae tubae uterinae. Keine Kontrastmittelaussparungen oder Nischenbildungen.\nPeritoneum: Unbehinderter Übertritt des Kontrastmittels in das Peritoneum."
+  },
+  "mr_des_gehirnschädels:": {
+    "display_name": "MR des Gehirnschädels:",
+    "body": "Sulci und Gyri von Cerebrum und Cerebellum regelrecht. Fissura longitudinalis cerebri: mittelständig. Ventriculi cerebri: normal weit und symmetrisch, keine Liquor-Flussstörung. Keine Anzeichen eines erhöhten intrakraniellen Drucks. Substantia alba und Substantia grisea: regelrecht ausgebildet, normales Signal, insbesondere periventrikulär. Keine Diffusionsstörung. Ganglia basalia, Capsula interna, Corpus callosum und Thalamus: regulär. Truncus cerebri und Cerebellum: ohne pathologische Signalveränderungen. Sella turcica und Hypophyse: normal. Strukturen paraselläres: unauffällig. Angulus pontocerebellaris: beidseits ohne Pathologie. Meatus acusticus internus: normal weit. Sinus paranasales und Cellulae mastoideae: regelrecht angelegt und frei pneumatisiert. Orbita-Inhalt: unauffällig."
+  },
+  "mr_der_hypophyse:": {
+    "display_name": "MR der Hypophyse:",
+    "body": "Sella turcica: in Lage und Konfiguration normal groß. Fundus sellae und Paries sellae: glatt und scharf begrenzt. Hypophysis: normal positioniert, geformt und regulär groß. Hypophysengewebe: nativ und post-KM reguläres Signalverhalten. Keine umschriebenen Signalabweichungen. Infundibulum: mittelständig und normal groß. Chiasma opticum und supraselläre Liquorräume: regelrecht dargestellt. Sinus cavernosus und dargestellte Anteile der Arteria carotis interna im Siphonbereich: unauffällig. Mitdargestellte Anteile des Neurocranium: ohne pathologische Auffälligkeiten. Sinus sphenoidales: frei pneumatisiert."
+  },
+  "mr_der_inneren_gehörgänge_felsenbeine:": {
+    "display_name": "MR der Inneren Gehörgänge, Felsenbeine:",
+    "body": "Felsenbeine: beidseits normal und seitensymmetrisch angelegt. Meatus acusticus internus: normal weit, glatt und scharf begrenzt. Nervus vestibulocochlearis: beidseits regelrechter Verlauf und normale Breite. Post-KM: kein pathologischer Signalanstieg am Verlauf des Nervs, insbesondere intrameatal. Cochlea und Bogengänge: normal dargestellt. Cellulae mastoideae: frei pneumatisiert. Cavitas tympani und Meatus acusticus externus: regelhaft. Angulus pontocerebellaris: beidseits regelrechte Konfiguration. Truncus cerebri: bei normaler Konfiguration mit regelrechtem Signal und normalem Austritt der Hirnnerven. Cisterna pontocerebellaris: beidseits symmetrisch und frei. Übrige mitdargestellte Anteile des Neurocranium: ohne Pathologie."
+  },
+  "mr_der_nasennebenhöhlen:": {
+    "display_name": "MR der Nasennebenhöhlen:",
+    "body": "Sinus frontales: regelrecht angelegt, glatte Wandkonturen, freie Pneumatisation. Cellulae ethmoidales: normale Abbildung. Begrenzungen, insbesondere zur Orbita: intakt. Keine Wandarrosionen, keine Schleimhautverbreiterungen. Sinus sphenoidales: regulär, großwabig angelegt. Keine Flüssigkeitsansammlung, keine Schleimhautschwellung. Sinus maxillares: seitensymmetrisch angelegt, glatte Konturen der normal breiten Wände. Keine Destruktion bei freier Belüftung."
+  },
+  "mr_der_halsweichteile:": {
+    "display_name": "MR der Halsweichteile:",
+    "body": "Halsweichteile: normale Konfiguration, HWS in regelrechter Stellung. Mundbodenmuskulatur: seitensymmetrisch und regulär ausgebildet. Spatia oris und Spatia colli: gut abgrenzbar und frei. Mitdargestellte Anteile der Glandula parotidea und Glandula submandibularis: ohne Pathologie. Pharynx und Larynx: mit regelrechter Wandbegrenzung und normaler Wandstärke. Schilddrüse: weitgehend symmetrisch angelegt, normal groß. Lobi glandulae thyroideae: normale Binnenstruktur. Halsgefäße: unauffällige Abbildung (soweit beurteilbar). Halsmuskulatur: normale Strukturen. Lymphknotenstationen: frei. Myelon cervicales und Plexus cervicalis: ohne Pathologie. Septum nasi: mittelständig. Conchae nasales: normale Ausbildung und Signalgebung. Cavitas nasi, parapharyngeale Strukturen (soweit abgebildet): unauffällig. Mitdargestellte Anteile des Neurocranium und der Orbita: ohne Pathologie."
+  },
+  "mr_des_thorax:": {
+    "display_name": "MR des Thorax:",
+    "body": "Lungen: regulär belüftet und allseits der Thoraxwand anliegend. Kein Nachweis umschriebener pleuraler Signalveränderung oder Flüssigkeitsansammlung. Pulmo-Struktur: regelrecht, Gefäßzeichnung normal. Keine intrapulmonalen Rundherde oder flächenhaften Veränderungen. Mediastinum: normal breit, mittelständig. Kein Nachweis von Raumforderungen im vorderen, mittleren oder hinteren Kompartiment. Hilusregion: beidseits unauffällig, Bronchi principales normal abgebildet. Keine pathologischen Lymphknoten, keine perihiläre RF. Herz: normal konfiguriert, orthotop, Herzhöhlen normal weit. Große intrathorakale sowie mitdargestellte supraaortale Vasa: unauffällig. Skelett Thoracis sowie Weichteile Thoracis: regelrechte Darstellung."
+  },
+  "mr_der_mamma:": {
+    "display_name": "MR der Mamma:",
+    "body": "Brustdrüsengewebe: altersentsprechend, symmetrisch ausgebildet, gleichmäßig durch Fettgewebe unterteilt. Nativ: keine Läsionen, die sich vom Brustdrüsenparenchym oder Fettgewebe unterscheiden. Keine Diffusionsstörung. Post-KM: in keinem Segment pathologisch signifikante Signalintensitätssteigerung. Unauffällige Kontrastierungskurven. Cutis und Subcutis: ohne Pathologie."
+  },
+  "mr_der_leber:": {
+    "display_name": "MR der Leber:",
+    "body": "Leber: normal groß, glatt begrenzt, orthotope Lage. Regelrechte Binnenstruktur, kein Nachweis fokaler Signalabweichungen. Keine Aufweitung der intra- und extrahepatischen Ductus biliferi. Gallenblase: glatt begrenzt, homogener Inhalt, normal dargestellt. Porta hepatis: ohne Pathologie. Übrige mitabgebildete Organe Abdominis superioris: ohne Auffälligkeiten."
+  },
+  "mr_der_nebennieren:": {
+    "display_name": "MR der Nebennieren:",
+    "body": "Beide Nebennieren: regulär in Lage und Größe, Schenkel normal ausgebildet. Kein Nachweis einer RF oder umschriebenen Auftreibung. Nebennierenloge: unauffällig. Post-KM: unauffälliges Signalverhalten und normale KM-Dynamik. Übrige mitabgebildete Organe Abdominis superioris, insbesondere Renes: ohne Auffälligkeiten."
+  },
+  "mr_der_hoden:": {
+    "display_name": "MR der Hoden:",
+    "body": "Scrotum und Inhalt des Scrotum: regelrechte Konfiguration. Testes: normal groß, symmetrisch angelegt, homogene, reguläre Binnenstruktur. Tunica albuginea: normal breit, glatt und scharf begrenzt. Epididymis: beidseits mit normaler Lage und Größe sowie regelrechter Binnenstruktur. Skrotalfächer: ordnungsgemäß abgebildet, kein Nachweis vermehrter Flüssigkeit. Leistenkanal: regelrechte Form, Größe und Verlauf. Corpora cavernosa sowie Corpus spongiosum: normal."
+  },
+  "mr_der_halswirbelsäule:": {
+    "display_name": "MR der Halswirbelsäule:",
+    "body": "Columna cervicalis: harmonische Lordose. knöcherner Spinalkanal: normale Weite. Wirbelkörper: regulär nach Anzahl, Form und Stellung zueinander. Distantia atlanto-dentalis: regelrecht. Artikulierende Platae terminales: glatt begrenzt. Zwischenwirbelräume: normale Weite. Bandscheiben: ragen in keinem Segment über die dorsale Corpus vertebrae-Rückfläche hinaus. Myelon: einschließlich Junktio craniovertebralis regelrechte Lage und Konfiguration, normale Breite und Binnenstruktur. Knochenmark der Wirbelkörper: regulär dargestellt. Mitabgebildete Weichteile: ohne Pathologie."
+  },
+  "mr_der_brustwirbelsäule:": {
+    "display_name": "MR der Brustwirbelsäule:",
+    "body": "Columna thoracalis: harmonische Kyphose. Canalis spinalis ossei: normale Weite. Wirbelkörper: regulär nach Anzahl, Form und Stellung zueinander. Artikulierende Platae terminales: glatt begrenzt. Spatien intervertebralia: normale Weite. Disci intervertebrales: ragen in keinem Segment über die dorsale Corpus vertebrae-Rückfläche hinaus. Myelon: regelrechte Konfiguration und regulärer Verlauf, normale Breite und Binnenstruktur. Medulla ossium der Wirbelkörper: regelhaft. Mitdargestellte Weichteile: ohne Pathologie."
+  },
+  "mr_der_lendenwirbelsäule:": {
+    "display_name": "MR der Lendenwirbelsäule:",
+    "body": "Columna lumbalis: harmonische Lordose, normaler Angulus promontorii. Canalis spinalis ossei: normale Weite. Wirbelkörper: regulär nach Anzahl, Form und Stellung zueinander. Artikulierende Platae terminales: glatt begrenzt. Spatien intervertebralia: normale Weite. Disci intervertebrales: ragen in keinem Segment über die dorsale Corpus vertebrae-Rückfläche hinaus. Conus medullaris: endet regelhaft in Höhe L 1, teilt sich in seine Filamente. Duralschlauch: in seinem lumbalen und beurteilbaren sakralen Anteil unauffällig dargestellt. Medulla ossium der Wirbelkörper: regulär. Abgebildete Weichteile: ohne Pathologie."
+  },
+  "mr_der_iliosakralgelenke:": {
+    "display_name": "MR der Iliosakralgelenke:",
+    "body": "ISG: normale Form. Os sacrum und Beckenschaufeln: regelrechte Ausbildung, Junktio lumbosacralis unauffällig. Gelenkspalt: beidseits reguläre Weite. Gelenkkonturen: glatt und scharf begrenzt. Medulla ossium subchondralis: normal. Keine Randwulstbildungen. Medulla ossium von Os sacrum und Alae ossis ilii: unauffällig, kortikale Randbegrenzung glatt, intakt. Foramina sacralia: regelhaft weit. Nervenfilamente: normaler Verlauf und regelrechte Breite. Canalis spinalis sacralis: ordnungsgemäße Weite. Musculi und mitabgebildete Organe pelvis minoris: ohne Pathologie."
+  },
+  "mr_des_kiefergelenkes:": {
+    "display_name": "MR des Kiefergelenkes:",
+    "body": "Kieferköpfchen: in der normal ausgeformten Fossa mandibularis regelrechte Konfiguration. Gelenkspalt: ordnungsgemäß weit. Gelenkflächen: glatt und scharf begrenzt, Kortikalis normal breit. Medulla ossium: regelrechtes Signal. Discus articularis: auf parakoronaren Aufnahmen haubenförmig konfiguriert. Parasagittale Aufnahmen stellen den Discus hantelförmig konfiguriert dar. Faserband hinteres: liegt bei ca. 11.00 Uhr im Verhältnis zur Kieferköpfchenzirkumferenz. Bei der Mundöffnung folgt der Discus dem Caput mandibulae regulär auf das Tuberculum articulare. Mitdargestellte Sinus paranasales: frei pneumatisiert. Mitabgebildete Anteile des Neurocranium: ohne Pathologie."
+  },
+  "mr_des_schultergelenkes:": {
+    "display_name": "MR des Schultergelenkes:",
+    "body": "Humeruskopf: normal konfiguriert, regelrechte Artikulation in der regelhaft ausgebildeten Cavitas glenoidalis. Gelenkflächen: glatt, Kortikalis normal breit. Gelenkspalt: regelrecht weit. Medulla ossium: homogenes, fettäquivalentes Signal. Labrum glenoidale: allseits intakt. Articulatio acromioclavicularis: normale Konfiguration. Keine Gelenkhypertrophie. Fettgewebe subacromiales: erhalten. Musculi der Rotatorenmanschette (insbesondere Musculus supraspinatus): nach Konfiguration und Verlauf regulär dargestellt. Musculus supraspinatus: in Lage, Breite und Signalgebung ordnungsgemäß, normaler Muskel-Sehnen-Übergang. Lange Bizepssehne: intakt, reguläre Abbildung, normaler Verlauf im Sulcus intertubercularis. Übrige das Articulatio humeri deckende Musculi sowie mitdargestellte Pulmo-Abschnitte und Weichteile: unauffällig dargestellt."
+  },
+  "mr_handgelenk:": {
+    "display_name": "MR Handgelenk:",
+    "body": "Handgelenk: normale Konfiguration der beteiligten Skelettabschnitte. Radius-Gelenkwinkel: regelrecht. Handwurzelknochen: ordnungsgemäße Form und Stellung zueinander, sowie zur Articulatio radiocarpalis und Articulationes carpometacarpales. Gelenkflächen: glatt, kongruent, Kortikalis normal breit. Spatium articulare: regulär breit. Keine Randwulstbildungen, keine subchondralen Signalveränderungen. Medulla ossium: normales Signal. Discus triangularis: normal konfiguriert, keine pathologischen Signalveränderungen. Ligamenta interossea: regelhafte Darstellung. Carpaltunnel: normale Weite. Sehnen: in regelrechter Lage und Breite. Nervus medianus sowie Nervus ulnaris: ordnungsgemäß. Ossa metacarpalia und Phalanges: unauffällig nach Begrenzung und Knochenmarksignal. Weichteile: normal."
+  },
+  "mr_hüftgelenk:": {
+    "display_name": "MR Hüftgelenk:",
+    "body": "Hüftköpfe: normal geformt, regelrechte Artikulation in den ordnungsgemäß ausgebildeten Fossae acetabuli. Gute Überdachung der Capita femoris durch die Acetabulum-Ränder. Spatien articulares: normal weit. Gelenkflächen: glatt, kongruent, Kortikalis normal breit. Keine Randwulstbildungen, keine subchondralen Signalveränderungen. Medulla ossium: normales Signal, insbesondere der Capita femoris und Schenkelhalses. Femurschaft: beidseits unauffällig nach Begrenzung und Knochenmarksignal. Musculatura und Pelvis minor: ohne Pathologie."
+  },
+  "mr_des_kniegelenkes:": {
+    "display_name": "MR des Kniegelenkes:",
+    "body": "Kniegelenk: normale Konfiguration und Stellung der beteiligten Skelettabschnitte. Medulla ossium: regelrechtes Signal, reguläre Trabekelzeichnung. Lineae epiphysiales: normal. Kortikalis: glatte Kontur, normal breit. Keine subchondralen Signalveränderungen. Knorpelbelag der Patella, der Femurcondylen und des Tibiaplateaus: regelhaft breit, normale Signalgebung. Knorpeloberfläche: glatt. Meniscus medialis und Meniscus lateralis: im Querschnitt regelrechte, dreieckige Konfiguration, gleichmäßige, signalarme Binnenstruktur. Cornu anterius, Pars intermedia und Cornu posterius: jeweils glatte, intakte Oberfläche. Ligamentum cruciatum anterius und Ligamentum cruciatum posterius: durchgängig, normal breit, regelrechte Signalgebung. Ligamenta collateralia: intakt und normal breit. Weichteile Articulatio genus und abgebildete Vasa: unauffällig dargestellt."
+  },
+  "mr_des_sprunggelenke:": {
+    "display_name": "MR des Sprunggelenke:",
+    "body": "Articulationes talocruralis beteiligte Skelettabschnitte: normale Konfiguration und Stellung. Malleolengabel: ordnungsgemäß ausgebildet. Medulla ossium: regelrechtes Signal, reguläre Trabekelzeichnung. Lineae epiphysiales: normal. Spatium articulare: normal weit. Kortikalis: glatte Kontur, regelhaft breit, insbesondere im Bereich der tibialen und talaren Gelenkfläche. Keine subchondralen Signalveränderungen, keine Randausziehungen. Außen- und Innenbandapparat: regelrechte Darstellung nach Verlauf, Breite und Signalgebung. Articulatio talocalcanea sowie Articulatio talonavicularis: normal dargestellt. Ligamentum interosseum zwischen Talus und Calcaneus: intakt. Achillessehne: nach Verlauf, Breite und Signalgebung unauffällig. Fettgewebe präachillares: frei. Muskel-Sehnen-Übergänge und Aponeurosis plantaris: regelrechte Abbildung. Weichteile: ohne Pathologie."
+  },
+  "mr_der_craniellen_gefäße:": {
+    "display_name": "MR der craniellen Gefäße:",
+    "body": "Arteria carotis interna: beidseits normkalibrig, seitensymmetrisch dargestellt. Pars siphonalis: normal, ohne Verlagerung oder Impression. Verlauf ordnungsgemäß, Gefäßlumina: homogene Signalgebung. Arteria cerebri media: beidseits regelrechter Abgang, normale Ausbildung der Inselschleifen. Keine umschriebene Gefäßaufweitung oder Einengung. Gefäßlumen: homogenes Füllungsbild. Arteria cerebri anterior: normal, kein Hinweis auf Verlagerung oder Einengung. Arteria basilaris: regelhafter Verlauf und Breite, reguläre Aufteilung in die normkalibrigen Arteriae cerebri posteriores. Arteria communicans anterior und Arteria communicans posterior: beidseits regelrecht angelegt und weit. In keinem Gefäßabschnitt ist ein Gefäßkonvolut oder eine umschriebene Aufweitung darstellbar. Neurocranium (soweit dargestellt und beurteilbar): ohne Pathologie."
+  },
+  "mr_der_nierenarterien:": {
+    "display_name": "MR der Nierenarterien:",
+    "body": "Bauchaorta: regelrechter Verlauf und normale Weite. Stammarterien der Nieren: orthotoper Abgang der paarig angelegten Arterien mit regelrechter Aufteilung. Verlauf, Kaliberweiten und Konturen der Vasa renalia: normal. Kein Nachweis einr pathologischen Kaliberänderung.  Nieren: paarige Anlage, normal nach Lage, Form, Größe und Begrenzung. Übrige mitabgebildete Gefäße: unauffällig dargestellt."
+  },
+  "mr_der_becken-_und_beingefäße:": {
+    "display_name": "MR der Becken- und Beingefäße:",
+    "body": "Aorta abdominalis: regelrechter Verlauf und normale Weite, normale Füllung. Bifurcationes aortae: orthotop. Arteriae iliacae communes, internae und externae: regelhaft dargestellt. Beide Arteriae femorales communes: normkalibrig und glattwandig, homogenes Füllungssignal. Regelrechte Aufteilung in die nach Kaliber und Verlauf ordnungsgemäßen Arteriae crurales. Arteria femoralis superficialis: normal abgebildet, insbesondere im Adduktorenkanal. Arteria poplitea: zeigt bei regelrechtem Verlauf keine pathologische Kaliberschwankung. Regelhafte Aufteilung in die Unterschenkelarterien, die normkalibrig und glattwandig nachweisbar sind."
+  },
+  "mr-cholangiopankreatografie_mrcp:": {
+    "display_name": "MR-Cholangiopankreatografie (MRCP):",
+    "body": "Ductus choledochus: orthotope Lage, normkalibrig, reguläre Länge, homogene flüssigkeitsäquivalente Füllung. Ductus cysticus und mitabgebildete Ductus biliferi intrahepatici: regelrechte Darstellung. Gallenblase: normal groß, glatt begrenzt, homogener Inhalt. Ductus pancreaticus: reguläre Lage und Länge, normkalibriges Gangbild, homogene Binnenstruktur, glatte Konturen."
+  },
+  "mr_der_halsarterien:": {
+    "display_name": "MR der Halsarterien:",
+    "body": "Aortenbogen: glattwandig, regelrecht konfiguriert dargestellt. Truncus brachiocephalicus: ordnungsgemäßer Abgang, regelrechte Aufteilung in die unauffälligen Arteria subclavia, Arteria carotis communis und Arteria vertebralis dextra. Die linke Arteria carotis communis und Arteria vertebralis: entspringen regulär direkt aus dem Arcus aortae. Normales Kaliber, regelhaft weites Lumen ohne Einengung oder Kontrastmittelaussparungen. Bifurcationes arteriae carotidis: beidseits orthotop und regulär geformt. Arteria carotis externa und insbesondere Arteria carotis interna: beidseits normkalibrig und seitensymmetrisch dargestellt. Keine umschriebene Gefäßaufweitung oder Einengung. Gefäßlumen: homogenes Füllungsbild. Pars siphonalis: normal, ohne Verlagerung oder Impression. Arteriae vertebrales: seitensymmetrische Anlage und regelrechter Verlauf. Lumen: normal weit, ohne Füllungsdefekte oder Kaliberunregelmäßigkeiten bis hin zur Arteria basilaris. Mitdargestellte Halsanteile (soweit dargestellt und beurteilbar): ohne Pathologie."
+  },
+  "cct:": {
+    "display_name": "CCT:",
+    "body": "Interhemisphärenspalt: mittelständig. Innere und äußere Liquorräume: altersentsprechende Weite. Hirnparenchym: keine Raumforderung, keine intrakranielle Blutung, keine frische Ischämiedemarkierung. Kalotte und Weichteile: regelrecht."
+  },
+  "ct_thorax:": {
+    "display_name": "CT Thorax:",
+    "body": "Lunge: regelrecht belüftet und entfaltet, keine Infiltrate, keine Rundherde. Pleura: keine Ergüsse. Mediastinum: keine pathologisch vergrößerten Lymphknoten. Herz: regelrecht groß, kein Perikarderguss. Gefäße: Aorta und Pulmonalarterien kaliberregelrecht. Keine Emboliezeichen (falls KM). Skelett: keine suspekten osteolytischen oder osteoplastischen Läsionen."
+  },
+  "ct_abdomen:": {
+    "display_name": "CT Abdomen:",
+    "body": "Leber: homogen, glatt begrenzt, keine fokalen Läsionen. Gallenblase: normal groß, unauffällige Wand, steinfrei. Gallenwege: nicht erweitert. Pankreas: regelrecht lobuliert, keine Raumforderung. Milz: homogen, normale Größe. Nieren: beidseits unauffällig, kein Aufstau, keine Konkremente. Nebennieren: schlank. Gefäße: Bauchaorta und große Abgänge regelrecht. Darm: keine pathologische Wandverdickung, kein Ileus. Abdomen gesamt: keine freie Flüssigkeit oder Luft."
+  },
+  "ct_der_wirbelsäule:": {
+    "display_name": "CT der Wirbelsäule:",
+    "body": "Achsenverhältnisse: regelrecht. Wirbelkörper: erhaltene Höhe und Hinterkantenflucht. Knochenstruktur: keine frischen Frakturen, keine fokalen Läsionen. Spinalkanal und Neuroforamina: unauffällig. Paravertebrale Weichteile: unauffällig."
+  },
+  "ct_angiographie:": {
+    "display_name": "CT Angiographie:",
+    "body": "Arterielle Strombahn: regelrechte Kontrastierung. Gefäßstatus: keine hämodynamisch relevanten Stenosen oder Verschlüsse. Wandstruktur: keine Aneurysmata oder Dissektionen. Periarterielle Weichteile: unauffällig."
+  },
+  "polytrauma_ct:": {
+    "display_name": "Polytrauma CT:",
+    "body": "CCT: keine Blutung, keine Infarktzeichen. Wirbelsäule: keine Fraktur, keine Gefügestörung. Thorax: kein Pneumo- oder Hämatothorax. Keine Organläsionen. Abdomen: keine freie intraabdominelle Luft oder Flüssigkeit, keine Organruptur, keine Raumforderung. Becken: keine Fraktur. Keine Blutung."
+  },
+  "sonografie_abdomen_komplett": {
+    "display_name": "Sonografie Abdomen (Komplett)",
+    "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten."
+  },
+  "sonografie_schilddrüse": {
+    "display_name": "Sonografie Schilddrüse",
+    "body": "Schilddrüse: Beide Lappen normal groß, seitensymmetrisch. Isthmus unauffällig.\nParenchym: Homogen, echonormal. Keine fokalen Läsionen (Knoten oder Zysten). Keine Mehrperfusion in der Farbdoppler-Sonografie.\nUmgebung: Keine pathologisch vergrößerten Hals-Lymphknoten."
+  },
+  "durchleuchtung:_ösophagus-breischluck": {
+    "display_name": "Durchleuchtung: Ösophagus-Breischluck",
+    "body": "Schluckakt: Regelrechter Ablauf ohne Aspiration.\nMorphologie: Glatte Wandkonturen, keine Nischen (Divertikel) oder Füllungsdefekte. Keine Stenosen. Schleimhautrelief unauffällig.\nMotilität: Primäre Peristaltik durchgehend bis zum zügigen Übertritt in den Magen. Keine Refluxerscheinungen in Horizontallage.\nKardia: Regelrecht konfiguriert, kein Hinweis auf Hiatushernie."
+  },
+  "durchleuchtung:_magen-darm-passage_mdp": {
+    "display_name": "Durchleuchtung: Magen-Darm-Passage (MDP)",
+    "body": "Magen: Normal konfiguriert, regelrechtes Schleimhautrelief. Zügige Magenentleerung. Keine Ulkusnischen oder Füllungsdefekte.\nDuodenum: Bulbus duodeni und Duodenalschleife unauffällig konfiguriert, glatt konturiert.\nPassage: Zügiger Transit des Kontrastmittels in die oberen Dünndarmschlingen (Jejunum) ohne Obstruktionszeichen."
+  },
+  "sonografie_nerven": {
+    "display_name": "Hochauflösende Nervensonographie",
+    "body": "Nervenverlauf: Symmetrische Darstellung des untersuchten Nervensegments. Kontur des Epineuriums allseits glatt begrenzt, ohne Einengung, Sanduhr-Deformität oder Kalibersprung.\nEchostruktur: Regelrechtes faszikuläres Muster erhalten. Keine pathologische Echominderung oder Schwellung der Faszikel.\nKaliber/Querschnitt: Normale Querschnittsfläche (CSA) im gesamten Verlauf, insbesondere an typischen Engstellen (kein Anhalt für Kompressionssyndrom).\nUmgebung: Umgebende anatomische Strukturen (Sehnen, Faszien, Gefäße) regelrecht abgrenzbar, kein Nachweis raumfordernder Prozesse oder entzündlicher Flüssigkeitsansammlungen in Nervennähe."
+  },
+  "sonografie_allgemein": {
+    "display_name": "Sonographie (Allgemein)",
+    "body": "Sonomorphologisch unauffällige Verhältnisse der untersuchten Region. Organ- und Gewebegrenzen glatt abgrenzbar.\nEchotextur: Parenchym homogen, echonormal und altersentsprechend. Keine umschriebenen Herdbefunde, Zysten oder soliden Raumforderungen.\nUmgebung: Unauffällige Darstellung der umgebenden Gewebestrukturen, Gefäße und Muskelgruppen. Kein Nachweis freier Flüssigkeit."
+  },
+  "sonografie_abdomen_weiblich": {
+    "display_name": "Sonografie Abdomen (weiblich)",
+    "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten. Der Uterus von normaler Form, Größe und Struktur."
+  },
+  "sonografie_abdomen_maennlich": {
+    "display_name": "Sonografie Abdomen (männlich)",
+    "body": "Leber: Normal groß, glatt begrenzt, homogenes Parenchymecho. Keine fokalen Läsionen, kein Anhalt für Steatosis hepatis.\nGallenblase/Gallenwege: Gallenblase normal groß, wandglatt, steinfrei. Intra- und extrahepatische Gallenwege nicht erweitert. Ductus choledochus normkalibrig.\nPankreas: Soweit einsehbar regelrecht konfiguriert, Parenchym unauffällig. Keine umschriebenen Raumforderungen. Ductus pancreaticus nicht erweitert.\nMilz: Orthotop, normal groß, homogenes Binnen-Echo.\nNieren: Beidseits regelrecht nach Lage, Form und Größe. Zentrales Reflexband ungestört, kein Aufstau, keine Konkremente. Parenchym-Pyelon-Index im Normbereich.\nGefäße: Aorta abdominalis und Vena cava inferior normkalibrig.\nBlase/Raum: Harnblase gut gefüllt, wandglatt. Kein Nachweis freier intraabdominaler Flüssigkeit (Aszites). Keine pathologisch vergrößerten Lymphknoten."
+  },
+  "sonografie_halsgefaesse": {
+    "display_name": "Farbcodierte Duplexsonographie der Halsgefäße",
+    "body": "Die Arteria carotis externa, Arteria carotis interna und Arteria carotis communis kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar. Auch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar. Der Intima-Media-Komplex mit unter 0,9 mm im Normbereich gelegen."
+  },
+  "sonografie_beinvenen": {
+    "display_name": "Farbcodierte Duplexsonographie der Beinvenen",
+    "body": "Die V. femoralis, die V. poplitea, die V. fibularis sowie tibialis posterior in allen Abschnitten gut komprimierbar ohne Hinweis auf Thrombose. Auch im Bereich der Muskelvenen keine Auffälligkeiten, farbdopplersonographisch o. B."
+  },
+  "sonografie_nerv_medianus": {
+    "display_name": "Hochauflösende Sonographie des N. medianus",
+    "body": "Darstellung des N. medianus von der Axilla bis distal des Karpaltunnels inklusive sämtlicher abgehender Endäste.\n\nAm gesamten Oberarm regelrechtes Kaliber des N. medianus ohne Nachweis einer faszikulären oder nervalen Auftreibung. Anatomisch regelrechter Verlauf des Nervs am Musculus pronator teres ohne Nachweis einer Kompression oder Verlagerung nach medial. Kein Nachweis eines Nerven-Knochenkontaktes.\n\nAm gesamten Unterarm ebenso regelrechtes Kaliber des N. medianus ohne Nachweis einer faszikulären oder nervalen Auftreibung.\n\nUnauffällige Darstellung des Karpaltunnels. Die Querschnittsfläche (CSA) des N. medianus an seiner dicksten Stelle misst 9 mm² (Normwert < 12 mm²). Der Nervus medianus wird nicht durch das Ligamentum carpi transversum eingeengt. Kein Nachweis einer Tendovaginitis/Bursitis der Flexorensehne im Karpalkanal. Der motorische Thenarast entspringt infraligamentär vom medianen Anteil des N. medianus. Entlang der Endäste, inklusive des Ramus palmaris keine Auffälligkeiten.\n\nDie Thenarmuskulatur sowie die vom N. medianus versorgte Lumbrikalmuskulatur seitensymmetrisch ohne Nachweis einer Echogenitätssteigerung im Sinne einer Denervation oder einer Atrophie. Kein Nachweis von Muskel-Faszikulationen."
+  },
+  "sonografie_nerv_ulnaris": {
+    "display_name": "Hochauflösende Sonographie des N. ulnaris",
+    "body": "Darstellung des N. ulnaris von der Axilla bis distal der Loge de Guyon inklusive sämtlicher abgehender Endäste.\n\nAm gesamten Oberarm regelrechtes Kaliber des N. ulnaris ohne Nachweis einer faszikulären oder nervalen Auftreibung.\n\nAnatomisch regelrechter Verlauf des Nervs am Sulcus nervi ulnaris mit regelrechter Querschnittsfläche von 7 mm² (Normwert < 8 bis 9 mm²). Kein Nachweis einer Nervenkompression am medialen Septum intermusculare oder am Osborne Ligament (zwischen den Köpfen des M. flexor carpi ulnaris). Die Osborne Faszie/das Retinaculum unauffällig. Kein Nachweis eines Schnappens des Nervs über den Epicondylus medialis humeri bei Ellbogenflexion. Keine Kompression des Nervs durch die Osborne Faszie oder die mediale Tricepsmuskulatur bei Armflexion.\n\nAm gesamten Unterarm ebenso regelrechtes Kaliber des N. ulnaris ohne Nachweis einer faszikulären oder nervalen Auftreibung. Der Ramus dorsalis entspringt ca. 5 cm oberhalb des Os pisiforme vom N. ulnaris und stellt sich unauffällig dar.\n\nIn der Loge de Guyon unauffällige Darstellung des Nervs mit normaler Querschnittsfläche von 5 mm² (Normwert < 6 mm²). Kein Nachweis einer sekundären Affektion des Nervs. Regelrechte Aufteilung in einen Ramus superficialis und Ramus profundus, welche bis nach distal unauffällig sind.\n\nDie Hypothenarmuskulatur, die vom N. ulnaris versorgte Lumbricalmuskulatur sowie der M. adductor pollicis seitensymmetrisch ohne Nachweis einer Echogenitätssteigerung im Sinne einer Denervation oder einer Atrophie. Kein Nachweis von Muskel-Faszikulationen."
+  },
+  "sonografie_plexus_brachialis": {
+    "display_name": "Hochauflösende Sonographie des Plexus brachialis",
+    "body": "Darstellung des Plexus brachialis infra- und supraclaviculär bis zur Axilla.\n\nSupraclaviculär regelrechtes Kaliber der Nervenwurzeln C5 - TH1 und normale Formation in die Trunci. Kein Nachweis einer nervalen Verdickung. Unauffällige Nerven-Echogenität. Die Kontinuität sämtlicher Fasern erhalten. Kein Nachweis einer Stummel- oder Halsrippe.\n\nInfraclaviculär normale Darstellung der Faszikuli ohne Nachweis einer Verdickung. Der costoclaviculäre Raum imponiert normweit. Der Musculus subclavius seitensymmetrisch und nicht hypertrophiert. In Ruhe und bei Armabduktion (ca. 90°) kein NW einer signifikanten Stenose in der Arteria subclavia somit auch kein Nachweis eines arteriellen costoclaviculären TOS (Thoracic outlet syndroms). Im Verlauf Richtung Axilla unauffälliger Befund am Plexus. Kein Nachweis einer suspekten perineuralen Narbenbildung. Seitensymmetrische Darstellung der Pectoralmuskulatur. Kein Nachweis eines Langer'schen Muskelbauchs.\n\nNB: Kein Nachweis eines Neuroms an den Ästen der Nervi supraclaviculares."
+  },
+  "sonografie_nerv_allgemein": {
+    "display_name": "Hochauflösende Nervensonographie (Allgemein)",
+    "body": "Nervenverlauf: Symmetrische Darstellung des untersuchten Nervensegments. Kontur des Epineuriums allseits glatt begrenzt, ohne Einengung, Sanduhr-Deformität oder Kalibersprung.\nEchostruktur: Regelrechtes faszikuläres Muster erhalten. Keine pathologische Echominderung oder Schwellung der Faszikel.\nKaliber/Querschnitt: Normale Querschnittsfläche (CSA) im gesamten Verlauf, insbesondere an typischen Engstellen (kein Anhalt für Kompressionssyndrom).\nUmgebung: Umgebende anatomische Strukturen (Sehnen, Faszien, Gefäße) regelrecht abgrenzbar, kein Nachweis raumfordernder Prozesse oder entzündlicher Flüssigkeitsansammlungen in Nervennähe."
+  },
+  "sonografie_weichteile": {
+    "display_name": "Sonographie der Weichteile",
+    "body": "Sonomorphologisch unauffällige Verhältnisse der Weichteile im Bereich der untersuchten Region. Regelrechte Schichtung von Cutis und Subcutis. Die Muskulatur und Faszien stellen sich unauffällig dar, ohne Hinweis auf Muskelfaserrisse, Hämatome oder flüssige Gewebealterationen. Kein Nachweis einer soliden oder zystischen Raumforderung. Kein Anhalt für pathologische Lymphknotenschwellungen."
+  },
+  "sonografie_halsweichteile": {
+    "display_name": "Sonographie der Halsweichteile",
+    "body": "Die Glandula parotis und die Glandula submandibularis beidseits stellen sich von homogener Echostruktur und normaler Größe dar, ohne Hinweis auf Duktektasien oder abgrenzbare Raumforderungen. Der Mundboden ist unauffällig.\nEntlang des jugulären Gefäßnervenstranges beidseits zeigen sich mehrere normgroße, längsovalär konfigurierte Lymphknoten mit regelrechtem Fetthilus. Kein Hinweis auf pathologisch vergrößerte oder suspekt konfigurierte Lymphknoten.\nSymmetrische Darstellung der übrigen Halsweichteile, kein Nachweis pathologischer Raumforderungen."
+  },
+  "mammographie_beidseits": {
+    "display_name": "Mammographie beidseits",
+    "body": "Inspektion und Palpation: Unauffälliger Inspektions- und Palpationsbefund. Axillen beidseits frei.\n\nMammographie: Symmetrisches Drüsenparenchym beidseits ohne suspekte Herdbefunde, Architekturstörungen oder Mikrokalkansammlungen. Keine pathologische Dichtezunahme im Vergleich zu Voraufnahmen. Subcutis und Cutis unauffällig.\n\nSonographie: Beidseits regelrechter echographischer Befund ohne Nachweis solider oder zystischer Läsionen."
+  },
+  "knochendichtemessung_dexa": {
+    "display_name": "Knochendichtemessung (DEXA)",
+    "body": "ODM - LWS:\nDie Knochendichtewerte gemittelt über L1 bis L4 betragen [Wert_LWS] g/cm² Calziumhydroxylapatit (entspricht einem T-Wert von [T_Wert_LWS]).\n\nODM - Hüftgelenksregion links:\nDie Knochendichtewerte der Hüftgelenksregion links betragen gesamt [Wert_Hüfte] g/cm² Calziumhydroxylapatit (entspricht einem T-Wert von [T_Wert_Hüfte])."
+  },
+  "dvt_oberkiefer": {
+    "display_name": "Digitale Volumentomographie des Oberkiefers",
+    "body": "Zahnstatus: Zähne in Anzahl, Stellung und Form regelrecht. Kein Nachweis von periapikalen Beherdungen, Wurzelfrakturen oder retinierten Zähnen.\nAlveolarknochen: Regelrechte Alveolarkammhöhe und normale Knochenstruktur der Maxilla.\nKieferhöhlen: Der mitdargestellte Rezessus alveolaris des Sinus maxillaris beidseits frei belüftet, ohne Anhalt für Sekretretention oder Schleimhautschwellungen."
+  },
+  "dvt_unterkiefer": {
+    "display_name": "Digitale Volumentomographie des Unterkiefers",
+    "body": "Zahnstatus: Zähne in Anzahl, Stellung und Form regelrecht. Kein Nachweis von periapikalen Beherdungen, Wurzelfrakturen oder retinierten Zähnen.\nAlveolarknochen: Regelrechte Knochenstruktur des Unterkiefers. Canalis nervi alveolaris inferioris beidseits unauffällig verlaufend, ohne knöcherne Einengung oder Unterbrechung.\nKiefergelenke: Regelrechte Artikulation beider Gelenkköpfchen in der Fossa mandibularis bei glatten Knochenkonturen."
+  },
+  "schädelfernröntgen": {
+    "display_name": "Schädelfernröntgen",
+    "body": "Die dargestellten knöchernen Schädelstrukturen ohne Auffälligkeiten. Die mitdargestellten Nebenhöhlen o. B.. Die Sella normal weit. Der Sellaboden eben."
+  },
+  "varizensonografie": {
+    "display_name": "Varizensonografie",
+    "body": "Tiefes Venensystem: Die tiefen Venen (V. femoralis communis, V. femoralis, V. poplitea sowie die Unterschenkelvenen) sind beidseits frei durchgängig, vollständig komprimierbar und zeigen ein atemsynchron moduliertes Flussverhalten. Kein Nachweis einer tiefen Venenthrombose (TVT).\nOberflächliches Venensystem: Vena saphena magna und Vena saphena parva beidseits frei durchgängig, im Stammverlauf klappensuffizient ohne Nachweis eines pathologischen Refluxes bei Provokationsmanövern (Valsalva, Kompression/Dekompression). Keine relevanten Seitenastvarizen oder retikuläre Varikose.\nPerforansvenen: Klappensuffizient, keine relevanten insuffizienten Perforansvenen nachweisbar."
+  },
+  "schulterprothese": {
+    "display_name": "Schulterprothese",
+    "body": "Schultergelenk: Zustand nach inverser Schulterendoprothese. Die Prothesenkomponenten liegen in regelrechter Position. Kein Nachweis von Lockerungszeichen (keine osteolytischen Säume, kein Zementbruch, keine Migration der Komponenten). Keine periartikulären Verkalkungen oder Verknöcherungen. Weichteilmantel unauffällig."
+  },
+  "daumensattelprothese": {
+    "display_name": "Daumensattelprothese",
+    "body": "Daumensattelgelenk: Zustand nach Daumensattelgelenksprothese. Die Prothesenkomponenten stellen sich in regelrechter Stellung dar, ohne Anhaltspunkte für eine Lockerung (keine periprothetischen Demineralisationen, kein Osteolysesaum). Soweit mitabgebildet, die übrigen Handwurzelknochen und Ossa metacarpalia in regelrechter Stellung und Knochenstruktur."
+  },
+  "knieprothese": {
+    "display_name": "Knieprothese",
+    "body": "Kniegelenk: Zustand nach Knie-Totalendoprothese (Knie-TEP). Die femoralen und tibialen Prothesenkomponenten zeigen eine regelrechte Stellung und Ausrichtung. Kein Nachweis von periprothetischen Aufhellungssäumen oder Lockerungszeichen. Keine Komponentenmigration oder Materialversagen. Regelrechte Stellung des Patella-Inlays (soweit vorhanden) bzw. der Patella. Kein relevanter Gelenkerguss. Weichteilmantel unauffällig."
+  },
+  "hüftprothese": {
+    "display_name": "Hüftprothese",
+    "body": "Hüftgelenk: Zustand nach Hüft-Totalendoprothese (Hüft-TEP). Die Prothesenkomponenten (Pfanne und Schaft) liegen in regelrechter Stellung und Position. Kein Nachweis von Lockerungszeichen (kein periprothetischer Aufhellungssaum, keine Dislokation, keine Sinterung des Schaftes). Kein Anhaltspunkt für eine periprothetische Fraktur oder Luxation. Regelrechte knöcherne Integration bzw. intakter Zementmantel. Knochenstrukturen des Beckens und des Femurs, soweit erfasst, unauffällig."
+  },
+  "beckenübersicht_und_hüfte": {
+    "display_name": "Beckenübersicht und Hüfte",
+    "body": "Beckenschiefstand: Keiner. Keine signifikante Beinlängendifferenz.\nSkelett: Symmetrische Beckenform. Mineralgehalt und Knochenstruktur regelrecht. Kortikale Randkonturen glatt und scharf begrenzt, ohne pathologische Unterbrechungen.\nHüftgelenke: Gelenkflächen glatt und kongruent, Gelenkspalten normal weit. Keine Coxarthrosezeichen.\nIliosakralgelenke und Symphysenspalt: Normal weit, glatt und scharf begrenzt.\nWeichteile: Unauffällig."
+  },
+  "beckenübersicht_mit_einseitiger_hüftprothese": {
+    "display_name": "Beckenübersicht mit einseitiger Hüftprothese",
+    "body": "Beckenschiefstand: Keiner. Keine signifikante Beinlängendifferenz.\nSkelett: Symmetrische Beckenform. Mineralgehalt und Knochenstruktur regelrecht. Kortikale Randkonturen glatt und scharf begrenzt, ohne pathologische Unterbrechungen.\nIliosakralgelenke und Symphysenspalt: Normal weit, glatt und scharf begrenzt.\nHüftgelenk (nicht prothetisch versorgt): Glatte Gelenkflächen mit normal weitem Gelenkspalt. Keine Coxarthrosezeichen.\nHüft-TEP (prothetisch versorgt): Zustand nach Hüft-Totalendoprothese (Hüft-TEP). Die Prothesenkomponenten (Pfanne und Schaft) liegen in regelrechter Stellung und Position. Kein Nachweis von Lockerungszeichen (kein periprothetischer Aufhellungssaum, keine Dislokation). Regelrechte knöcherne Integration. Ungehinderte Abduktion.\nWeichteile: Keine pathologischen Verkalkungen."
+  },
+  "beckenübersicht_mit_beidseitiger_hüftprothese": {
+    "display_name": "Beckenübersicht mit beidseitiger Hüftprothese",
+    "body": "Beckenschiefstand: Keiner. Keine signifikante Beinlängendifferenz.\nSkelett: Symmetrische Beckenform. Mineralgehalt und Knochenstruktur regelrecht. Kortikale Randkonturen glatt und scharf begrenzt, ohne pathologische Unterbrechungen.\nIliosakralgelenke und Symphysenspalt: Normal weit, glatt und scharf begrenzt.\nHüft-TEP beidseits: Zustand nach beidseitiger Hüft-Totalendoprothese (Hüft-TEP). Die Prothesenkomponenten liegen beidseits in regelrechter Stellung und Position. Kein Nachweis von Lockerungszeichen (kein periprothetischer Aufhellungssaum, keine Dislokation). Beidseits ungehinderte Abduktion.\nWeichteile: Keine pathologischen Verkalkungen."
+  },
+  "wirbelsäule_gesamt": {
+    "display_name": "Gesamte Wirbelsäule",
+    "body": "HWS:\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B.\n\nBWS:\nHarmonische Kyphose. Wirbelkörper nach Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Spatien intervertebralia und Canalis spinalis normal weit.\n\nLWS:\nAnnähernd achsengerechte Stellung. Anzahl und Höhe der Lendenwirbelkörper regelrecht. Das dorsale Alignement ist erhalten. Die Abschlussplatten und Corticalis allseits regelrecht. Kein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien."
+  },
+  "hws_und_lws": {
+    "display_name": "HWS und LWS",
+    "body": "HWS:\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B.\n\nLWS:\nAnnähernd achsengerechte Stellung. Anzahl und Höhe der Lendenwirbelkörper regelrecht. Das dorsale Alignement ist erhalten. Die Abschlussplatten und Corticalis allseits regelrecht. Kein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien."
+  }
 }

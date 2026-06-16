@@ -533,6 +533,17 @@ body {
   box-shadow: 0 0 20px rgba(240, 68, 56, 0.45);
 }
 
+.btn-large-action {
+  font-size: 19px !important;
+  padding: 16px 36px !important;
+  height: 56px !important;
+  min-width: 250px;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  display: inline-flex !important;
+}
+
 .copied-badge {
   display: flex;
   align-items: center;
@@ -717,4 +728,5 @@ body {
   z-index: 0;
   pointer-events: none;
   opacity: 0.6;
+  filter: blur(8px);
 }

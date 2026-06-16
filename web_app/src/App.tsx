@@ -109,12 +109,40 @@ export default function App() {
   const [structuredReport, setStructuredReport] = useState<string>('');
   const [micLevel, setMicLevel] = useState<number>(0);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [pendingCopyText, setPendingCopyText] = useState<string>('');
+
+  // Auto-copy helper with fallback
+  const copyTextToClipboard = async (text: string): Promise<boolean> => {
+    if (!text) return false;
+    try {
+      await navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 3000);
+      setPendingCopyText(''); // Clear any pending copy
+      return true;
+    } catch (err) {
+      console.warn("Auto-copy failed, saving for when tab is focused:", err);
+      setPendingCopyText(text); // Save for later when window is focused
+      return false;
+    }
+  };
+
+  // Listen for window focus to trigger pending copies
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      if (pendingCopyText) {
+        copyTextToClipboard(pendingCopyText);
+      }
+    };
+    window.addEventListener('focus', handleWindowFocus);
+    return () => window.removeEventListener('focus', handleWindowFocus);
+  }, [pendingCopyText]);
 
   // RAG mock dataset
   const ragDatabase: string[] = [
-    "Befund: HWS in 2 Ebenen. Harmonischer Achsenverlauf. Keine Spondylolisthesis. Keine Höhenminderung der Intervertebralräume. Beurteilung: Unauffälliger HWS-Befund.",
-    "Befund: Thorax in 2 Ebenen. Zwerchfellkuppen glatt begrenzt, Sinus frei. Lungenfelder regelrecht belüftet. Cor normal groß. Beurteilung: Herz-Lungen-Befund ohne pathologischen Befund.",
-    "Befund: Kniegelenk rechts in 2 Ebenen. Regelrechter Gelenkspalt, keine arthrotischen Randwülste. Intakter Knorpel. Beurteilung: Altersentsprechender Normalbefund."
+    "Befund: HWS in 2 Ebenen. Harmonischer Achsenverlauf. Keine Spondylolisthesis. Keine Höhenminderung der Intervertebralräume. Ergebnis: Unauffälliger HWS-Befund.",
+    "Befund: Thorax in 2 Ebenen. Zwerchfellkuppen glatt begrenzt, Sinus frei. Lungenfelder regelrecht belüftet. Cor normal groß. Ergebnis: Herz-Lungen-Befund ohne pathologischen Befund.",
+    "Befund: Kniegelenk rechts in 2 Ebenen. Regelrechter Gelenkspalt, keine arthrotischen Randwülste. Intakter Knorpel. Ergebnis: Altersentsprechender Normalbefund."
   ];
 
   // Particle background Canvas Ref
@@ -154,7 +182,7 @@ export default function App() {
         `2. WICHTIG: Wenn im Diktat pathologische Befunde erwähnt werden (z.B. Arthrose, Fraktur, etc.), MUSST du die entsprechenden Abschnitte im Normalbefund-Template abändern oder ersetzen, damit der Befund die Pathologie korrekt beschreibt. Schreibe dort nicht fälschlicherweise 'normal' oder 'regelrecht'.\n` +
         `3. Behalte Normalbefunde bei, wenn im Diktat nichts Abweichendes erwähnt wird.\n` +
         `4. Schreibstil: Orientiere dich für den Aufbau, die Wortwahl und das Format strikt an den Praxisbeispielen. Schreibe im radiologischen Nominalstil.\n` +
-        `5. Bilde immer zwei Hauptbereiche: ## Befund (mit dem angepassten Template) und ## Beurteilung (mit der kurzen Zusammenfassung der Diagnosen).\n` +
+        `5. Bilde immer zwei Hauptbereiche: ## Befund (mit dem angepassten Template) und ## Ergebnis (mit der kurzen Zusammenfassung der Diagnosen).\n` +
         `6. Gib ausschließlich den fertigen Befundtext aus. Keine Kommentare, keine Einleitungen.\n` +
         `</instructions>\n` +
         `<normalbefund_template>\n` +
@@ -275,6 +303,27 @@ export default function App() {
   // Detect modality template based on text keywords (1:1 from EXE Version)
   const detectTemplate = (text: string): string => {
     const textLower = text.toLowerCase();
+    
+    // Combined / complex templates check
+    if (textLower.includes("becken") || textLower.includes("wecken") || textLower.includes("pelvis")) {
+      if (textLower.includes("tep") || textLower.includes("prothese") || textLower.includes("endoprothese") || textLower.includes("h-tep")) {
+        if (textLower.includes("beidseits") || textLower.includes("bds") || textLower.includes("beide")) {
+          return "beckenübersicht_mit_beidseitiger_hüftprothese";
+        } else {
+          return "beckenübersicht_mit_einseitiger_hüftprothese";
+        }
+      } else if (textLower.includes("hüfte") || textLower.includes("hüftgelenk") || textLower.includes("hfte") || textLower.includes("hft")) {
+        return "beckenübersicht_und_hüfte";
+      }
+    }
+
+    if (textLower.includes("hws") && textLower.includes("lws")) {
+      if (textLower.includes("bws")) {
+        return "wirbelsäule_gesamt";
+      } else {
+        return "hws_und_lws";
+      }
+    }
     
     if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall") || textLower.includes("duplex")) {
       if (textLower.includes("abdomen") || textLower.includes("bauch") || textLower.includes("abd")) {
@@ -549,7 +598,7 @@ export default function App() {
       promptText = promptText + "\n\n" + examples;
     }
 
-    const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Nutze ## Befund und ## Beurteilung als Haupttitel.";
+    const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Nutze ## Befund und ## Ergebnis als Haupttitel.";
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
@@ -699,7 +748,7 @@ export default function App() {
       const detectedKey = detectTemplate(finalRawText);
       const activeTemplate = templates[detectedKey] || templates['allgemein'] || { 
         display_name: "Allgemeine Untersuchung",
-        body: "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nBeurteilung der radiologischen Pathologien."
+        body: "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
       };
 
       // RAG-Bypass-Shortcut for pure normal findings (1:1 from EXE version)
@@ -713,18 +762,12 @@ export default function App() {
           }
         }
         
-        const report = `## Befund\n${activeTemplate.body}\n\n## Beurteilung\n${formattedRaw}`;
+        const report = `## Befund\n${activeTemplate.body}\n\n## Ergebnis\n${formattedRaw}`;
         setStructuredReport(report);
         setStatus('ready');
         setStatusText('Bereit');
         
-        try {
-          await navigator.clipboard.writeText(report);
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 3000);
-        } catch (clipErr) {
-          console.error("Clipboard copy failed:", clipErr);
-        }
+        await copyTextToClipboard(report);
         return;
       }
 
@@ -748,20 +791,14 @@ export default function App() {
             formattedRaw += '.';
           }
         }
-        structuredText = `## Befund\n${activeTemplate.body}\n\n## Beurteilung\n${formattedRaw}`;
+        structuredText = `## Befund\n${activeTemplate.body}\n\n## Ergebnis\n${formattedRaw}`;
       }
 
       setStructuredReport(structuredText);
       setStatus('ready');
       setStatusText('Bereit');
 
-      try {
-        await navigator.clipboard.writeText(structuredText);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 3000);
-      } catch (clipErr) {
-        console.error("Clipboard copy failed:", clipErr);
-      }
+      await copyTextToClipboard(structuredText);
 
     } catch (err: any) {
       console.error(err);
@@ -774,13 +811,7 @@ export default function App() {
   // Manual Copy Result
   const handleCopyReport = async () => {
     if (!structuredReport) return;
-    try {
-      await navigator.clipboard.writeText(structuredReport);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 3000);
-    } catch (err) {
-      alert("Fehler beim Kopieren in die Zwischenablage.");
-    }
+    await copyTextToClipboard(structuredReport);
   };
 
   // Reset fields
@@ -979,11 +1010,11 @@ export default function App() {
             </button>
 
             {status === 'recording' ? (
-              <button onClick={stopRecording} className="btn btn-danger pulse-recording">
+              <button onClick={stopRecording} className="btn btn-danger btn-large-action pulse-recording">
                 <MicOff size={18} /> Aufnahme Stoppen
               </button>
             ) : (
-              <button onClick={startRecording} disabled={status === 'processing'} className="btn btn-primary">
+              <button onClick={startRecording} disabled={status === 'processing'} className="btn btn-primary btn-large-action">
                 <Mic size={18} /> Aufnahme Starten
               </button>
             )}
@@ -1020,7 +1051,7 @@ export default function App() {
             <button
               onClick={handleCopyReport}
               disabled={!structuredReport}
-              className="btn btn-secondary"
+              className="btn btn-primary btn-large-action"
             >
               <Copy size={16} /> Befund Kopieren
             </button>
