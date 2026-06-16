@@ -1380,13 +1380,13 @@ export default function App() {
           </select>
         </div>
 
-        {/* STT JSON Key Upload */}
+        {/* Unified Praxis JSON Key Upload */}
         <div className="status-bar-item">
-          <span className="status-bar-label">Spracherkennung (STT):</span>
+          <span className="status-bar-label">Zugangsdaten (JSON):</span>
           {googleKeyJson ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="status-bar-value success">
-                <Check size={14} className="status-bar-icon" /> JSON geladen ({googleKeyFileName})
+                <Check size={14} className="status-bar-icon" /> {googleKeyFileName} geladen (STT + LLM aktiv)
               </span>
               <button
                 className="icon-btn logout"
@@ -1420,51 +1420,8 @@ export default function App() {
                 JSON hochladen
               </button>
               <span className="status-bar-value danger">
-                <X size={14} className="status-bar-icon" /> Schlüssel fehlt
+                <X size={14} className="status-bar-icon" /> Nicht geladen (Aufnahme gesperrt)
               </span>
-            </div>
-          )}
-        </div>
-
-        {/* Gemini API Key */}
-        <div className="status-bar-item">
-          <span className="status-bar-label">Gemini (LLM):</span>
-          {googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key ? (
-            <span className="status-bar-value success">
-              <Sparkles size={14} className="status-bar-icon" /> Aktiv via Google-Dienstkonto
-            </span>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="password"
-                value={geminiApiKey}
-                onChange={e => {
-                  setGeminiApiKey(e.target.value);
-                  localStorage.setItem('gemini_api_key', e.target.value);
-                }}
-                placeholder="API-Schlüssel eingeben"
-                className="select-input"
-                style={{ 
-                  background: 'var(--bg-input)', 
-                  color: '#fff', 
-                  border: '1px solid var(--border-color)', 
-                  borderRadius: '6px', 
-                  padding: '6px 10px', 
-                  fontSize: '13px',
-                  fontFamily: 'var(--sans-font)',
-                  outline: 'none',
-                  width: '180px'
-                }}
-              />
-              {geminiApiKey ? (
-                <span className="status-bar-value success">
-                  <Sparkles size={14} className="status-bar-icon" /> Aktiv
-                </span>
-              ) : (
-                <span className="status-bar-value danger">
-                  Inaktiv
-                </span>
-              )}
             </div>
           )}
         </div>
