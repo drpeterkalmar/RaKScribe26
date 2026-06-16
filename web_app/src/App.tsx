@@ -757,8 +757,19 @@ export default function App() {
   // Call Gemini API to Structure the Transcript
   // Call Gemini API to Structure the Transcript (Aligned 1:1 with EXE parameters)
   const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string): Promise<string> => {
-    if (!geminiApiKey) {
-      throw new Error("Bitte konfigurieren Sie Ihren Gemini API-Key in den Einstellungen.");
+    let url: string;
+    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+      // Service Account: generate Bearer token via JWT
+      const token = await getGoogleBearerToken(googleKeyJson);
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    } else if (geminiApiKey) {
+      // Simple API key
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+    } else {
+      throw new Error("Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
     }
 
     setStatusText("Strukturiere mit Gemini...");
@@ -776,30 +787,25 @@ export default function App() {
 
     const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Nutze ## Befund und ## Ergebnis als Haupttitel.";
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: promptText
+          }]
+        }],
+        systemInstruction: {
+          parts: [{
+            text: sysMsg
+          }]
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: promptText
-            }]
-          }],
-          systemInstruction: {
-            parts: [{
-              text: sysMsg
-            }]
-          },
-          generationConfig: {
-            temperature: 0.0
-          }
-        })
-      }
-    );
+        generationConfig: {
+          temperature: 0.0
+        }
+      })
+    });
 
     const data = await response.json();
     if (data.error) {
@@ -1043,8 +1049,9 @@ export default function App() {
 
       // Normal path: structure with LLM
       const examples = getFewShotExamples(finalRawText);
+      const isLlmAvailable = !!geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key);
       let structuredText = "";
-      if (geminiApiKey) {
+      if (isLlmAvailable) {
         structuredText = await callGeminiLLM(
           finalRawText, 
           activeTemplate.body, 
