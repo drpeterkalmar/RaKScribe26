@@ -183,9 +183,26 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
-  // Cached access token for service-account auth
-  const googleTokenRef = useRef<string>('');
-  const googleTokenExpiryRef = useRef<number>(0);
+  // Cached access tokens for service-account auth, mapped by scope
+  const googleTokensRef = useRef<{ [scope: string]: { token: string; expiry: number } }>({});
+
+  // Drag and Drop state & handlers for Google JSON key file
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files?.[0]) {
+      loadGoogleKeyFile(e.dataTransfer.files[0]);
+    }
+  };
 
   // Application States
   const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
@@ -652,8 +669,7 @@ export default function App() {
         localStorage.setItem('google_key_json', JSON.stringify(parsed));
         localStorage.setItem('google_key_filename', file.name);
         // Invalidate cached token
-        googleTokenRef.current = '';
-        googleTokenExpiryRef.current = 0;
+        googleTokensRef.current = {};
       } catch {
         alert('Ungültige JSON-Datei.');
       }
@@ -686,14 +702,15 @@ export default function App() {
   };
 
   // Get a valid Bearer token for service accounts (cached, auto-refresh)
-  const getGoogleBearerToken = async (keyJson: any): Promise<string> => {
+  const getGoogleBearerToken = async (keyJson: any, scope: string): Promise<string> => {
     const now = Math.floor(Date.now() / 1000);
-    if (googleTokenRef.current && googleTokenExpiryRef.current > now + 60) {
-      return googleTokenRef.current;
+    const cached = googleTokensRef.current[scope];
+    if (cached && cached.expiry > now + 60) {
+      return cached.token;
     }
     const jwt = await signJwt({
       iss: keyJson.client_email,
-      scope: 'https://www.googleapis.com/auth/cloud-platform',
+      scope: scope,
       aud: 'https://oauth2.googleapis.com/token',
       iat: now,
       exp: now + 3600,
@@ -705,8 +722,10 @@ export default function App() {
     });
     const data = await resp.json();
     if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
-    googleTokenRef.current = data.access_token;
-    googleTokenExpiryRef.current = now + (data.expires_in || 3600);
+    googleTokensRef.current[scope] = {
+      token: data.access_token,
+      expiry: now + (data.expires_in || 3600)
+    };
     return data.access_token;
   };
 
@@ -723,7 +742,7 @@ export default function App() {
 
     if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
       // Service Account: generate Bearer token via JWT
-      const token = await getGoogleBearerToken(googleKeyJson);
+      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
       url = 'https://speech.googleapis.com/v1/speech:recognize';
       authHeaders['Authorization'] = `Bearer ${token}`;
     } else {
@@ -774,7 +793,7 @@ export default function App() {
 
     if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
       // Service Account: generate Bearer token via JWT
-      const token = await getGoogleBearerToken(googleKeyJson);
+      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
       url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
       authHeaders['Authorization'] = `Bearer ${token}`;
     } else if (geminiApiKey) {
@@ -837,7 +856,7 @@ export default function App() {
     let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
 
     if (keyJson.type === 'service_account' && keyJson.private_key) {
-      const token = await getGoogleBearerToken(keyJson);
+      const token = await getGoogleBearerToken(keyJson, 'https://www.googleapis.com/auth/cloud-platform');
       url = 'https://speech.googleapis.com/v1/speech:recognize';
       authHeaders['Authorization'] = `Bearer ${token}`;
     } else {
@@ -874,7 +893,7 @@ export default function App() {
     let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
 
     if (keyJson && keyJson.type === 'service_account' && keyJson.private_key) {
-      const token = await getGoogleBearerToken(keyJson);
+      const token = await getGoogleBearerToken(keyJson, 'https://www.googleapis.com/auth/generative-language');
       url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
       authHeaders['Authorization'] = `Bearer ${token}`;
     } else if (apiKey) {
@@ -1380,8 +1399,23 @@ export default function App() {
           </select>
         </div>
 
-        {/* Unified Praxis JSON Key Upload */}
-        <div className="status-bar-item">
+        {/* Unified Praxis JSON Key Upload with Drag-and-Drop */}
+        <div 
+          className="status-bar-item"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            border: isDragging ? '1.5px dashed var(--accent-purple, #8c52ff)' : '1px solid transparent',
+            backgroundColor: isDragging ? 'rgba(140, 82, 255, 0.15)' : 'transparent',
+            borderRadius: '8px',
+            padding: '4px 10px',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}
+        >
           <span className="status-bar-label">Zugangsdaten (JSON):</span>
           {googleKeyJson ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1396,7 +1430,7 @@ export default function App() {
                   setGoogleKeyFileName('');
                   localStorage.removeItem('google_key_json');
                   localStorage.removeItem('google_key_filename');
-                  googleTokenRef.current = '';
+                  googleTokensRef.current = {};
                 }}
                 title="Schlüssel entfernen"
               >
@@ -1419,8 +1453,8 @@ export default function App() {
               >
                 JSON hochladen
               </button>
-              <span className="status-bar-value danger">
-                <X size={14} className="status-bar-icon" /> Nicht geladen (Aufnahme gesperrt)
+              <span className="status-bar-value danger" style={{ pointerEvents: 'none' }}>
+                <X size={14} className="status-bar-icon" /> Drag & Drop (.json) möglich
               </span>
             </div>
           )}
