@@ -13,17 +13,7 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
-import templatesData from './templates.json';
-
 // Types
-type Template = {
-  display_name: string;
-  body: string;
-};
-
-type TemplatesMap = {
-  [key: string]: Template;
-};
 
 const MEDICAL_PHRASES = [
   "HWS", "LWS", "BWS", "MRT", "CT", "Sonographie", "Röntgen", "Mammographie", "DEXA", "DVT", "OPG",
@@ -101,9 +91,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState<boolean>(false);
 
   // Application States
-  const templates: TemplatesMap = templatesData as TemplatesMap;
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('auto');
-  const [detectedTemplateKey, setDetectedTemplateKey] = useState<string>('allgemein');
   const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
   const [statusText, setStatusText] = useState<string>('Bereit');
   const [transcript, setTranscript] = useState<string>('');
@@ -149,13 +136,12 @@ export default function App() {
       setSystemPrompt(
         `<role>Radiologe-Assistent</role>\n` +
         `<instructions>\n` +
-        `Du bist ein präziser radiologischer Befundungsassistent. Strukturiere das Diktat ` +
-        `unter Verwendung des bereitgestellten Normalbefund-Templates und orientiere dich für ` +
-        `den Schreibstil und die Formatierung strikt an den Praxisbeispielen.\n` +
-        `</instructions>\n` +
-        `<normalbefund_template>\n` +
-        `{template_body}\n` +
-        `</normalbefund_template>\n\n` +
+        `Du bist ein präziser radiologischer Befundungsassistent. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen und professionellen radiologischen Befund zu strukturieren.\n` +
+        `Befolge diese Regeln strikt:\n` +
+        `1. Schreibstil: Schreibe im radiologischen Nominalstil.\n` +
+        `2. Bilde immer zwei Hauptbereiche: ## Befund (mit einer strukturierten Beschreibung) und ## Beurteilung (mit der kurzen Zusammenfassung der Diagnosen).\n` +
+        `3. Gib ausschließlich den fertigen Befundtext aus. Keine Kommentare, keine Einleitungen.\n` +
+        `</instructions>\n\n` +
         `{examples}\n\n` +
         `<diktat>\n` +
         `{roh_text}\n` +
@@ -266,77 +252,7 @@ export default function App() {
     localStorage.removeItem('is_authenticated');
   };
 
-  // Detect modality template based on text keywords
-  const detectTemplate = (text: string) => {
-    const textLower = text.toLowerCase();
-    
-    if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall")) {
-      if (textLower.includes("abdomen") || textLower.includes("bauch")) {
-        return "sonografie_abdomen_maennlich";
-      }
-      if (textLower.includes("carotis") || textLower.includes("halsgef")) {
-        return "sonografie_halsgefaesse";
-      }
-      if (textLower.includes("schilddr")) {
-        return "sonografie_schilddrüse";
-      }
-      return "sonografie_allgemein";
-    }
 
-    if (textLower.includes("dvt") || textLower.includes("volumentomographie")) {
-      return "dvt_oberkiefer";
-    }
-
-    if (textLower.includes("dexa") || textLower.includes("knochendichte")) {
-      return "knochendichtemessung_dexa";
-    }
-
-    if (textLower.includes("mammo")) {
-      return "mammographie_beidseits";
-    }
-
-    // X-ray skeletal
-    if (textLower.includes("lws") || textLower.includes("lendenwirbel")) {
-      return "lendenwirbelsäule_in_2_ebenen";
-    }
-    if (textLower.includes("hws") || textLower.includes("halswirbel")) {
-      return "halswirbelsäule_in_2_ebenen";
-    }
-    if (textLower.includes("bws") || textLower.includes("brustwirbel")) {
-      return "brustwirbelsäule_in_2_ebenen";
-    }
-    if (textLower.includes("thorax") || textLower.includes("lunge") || textLower.includes("rö-th")) {
-      return "thorax_in_2_ebenen";
-    }
-    if (textLower.includes("schulter")) {
-      return "schultergelenk_in_2_ebenen";
-    }
-    if (textLower.includes("knie")) {
-      return "kniegelenk_in_2_ebenen";
-    }
-    if (textLower.includes("handgelenk")) {
-      return "handgelenk_in_2_ebenen";
-    }
-    if (textLower.includes("hand")) {
-      return "hand_in_2_ebenen";
-    }
-    if (textLower.includes("fuss") || textLower.includes("fuß")) {
-      return "fuß_in_2_ebenen";
-    }
-    if (textLower.includes("mrt") || textLower.includes("mr")) {
-      if (textLower.includes("schädel") || textLower.includes("kopf")) {
-        return "mr_des_gehirnschädels:";
-      }
-      if (textLower.includes("lws")) {
-        return "mr_der_lendenwirbelsäule:";
-      }
-      if (textLower.includes("knie")) {
-        return "mr_des_kniegelenkes:";
-      }
-    }
-
-    return "allgemein";
-  };
 
   // Run full-text search simulation in the local report list
   const getFewShotExamples = (text: string): string => {
@@ -374,12 +290,7 @@ export default function App() {
         }
       }
       if (finalStr.trim()) {
-        setTranscript(prev => {
-          const newText = prev + finalStr;
-          const autoKey = detectTemplate(newText);
-          setDetectedTemplateKey(autoKey);
-          return newText;
-        });
+        setTranscript(prev => prev + finalStr);
       }
     };
 
@@ -461,7 +372,7 @@ export default function App() {
   };
 
   // Call Gemini API to Structure the Transcript
-  const callGeminiLLM = async (rawText: string, templateBody: string, examples: string): Promise<string> => {
+  const callGeminiLLM = async (rawText: string, examples: string): Promise<string> => {
     if (!geminiApiKey) {
       throw new Error("Bitte konfigurieren Sie Ihren Gemini API-Key in den Einstellungen.");
     }
@@ -469,9 +380,17 @@ export default function App() {
     setStatusText("Strukturiere mit Gemini...");
 
     let promptText = systemPrompt
-      .replace("{template_body}", templateBody)
-      .replace("{examples}", examples)
-      .replace("{roh_text}", rawText);
+      .replace("{roh_text}", rawText)
+      .replace("{template_body}", "")
+      .replace("{region_name}", "");
+
+    if (promptText.includes("{examples}")) {
+      promptText = promptText.replace("{examples}", examples);
+    } else {
+      promptText = promptText + "\n\n" + examples;
+    }
+
+    const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat. Nutze ## Befund und ## Beurteilung als Haupttitel.";
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
@@ -485,7 +404,15 @@ export default function App() {
             parts: [{
               text: promptText
             }]
-          }]
+          }],
+          systemInstruction: {
+            parts: [{
+              text: sysMsg
+            }]
+          },
+          generationConfig: {
+            temperature: 0.0
+          }
         })
       }
     );
@@ -601,25 +528,25 @@ export default function App() {
         throw new Error("Es wurde kein gesprochener Text erkannt.");
       }
 
-      const detectedKey = detectTemplate(finalRawText);
-      const activeKey = selectedTemplateKey === 'auto' ? detectedKey : selectedTemplateKey;
-      const activeTemplate = templates[activeKey] || templates['allgemein'] || { display_name: 'Freitext / Allgemein', body: 'Freitext Befundung' };
+      // Normal path: structure with LLM
       const examples = getFewShotExamples(finalRawText);
-
       let structuredText = "";
       if (geminiApiKey) {
-        structuredText = await callGeminiLLM(finalRawText, activeTemplate.body, examples);
+        structuredText = await callGeminiLLM(
+          finalRawText, 
+          examples
+        );
       } else {
         setStatusText("Lokal simulierte KI-Strukturierung...");
-        await new Promise(r => setTimeout(r, 1500));
-        
-        structuredText = `BEFUNDUNGSBERICHT: ${activeTemplate.display_name.toUpperCase()}\n\n` +
-          `Klinische Angaben: Diktierter Text ("${finalRawText}")\n\n` +
-          `Befund:\n` +
-          `${activeTemplate.body}\n\n` +
-          `Beurteilung:\n` +
-          `- Regelrechte Darstellung der Modalität ${activeTemplate.display_name}.\n` +
-          `- Kein Nachweis frischer Frakturen oder entzündlicher Prozesse.`;
+        await new Promise(r => setTimeout(r, 1200));
+        let formattedRaw = finalRawText.trim();
+        if (formattedRaw) {
+          formattedRaw = formattedRaw[0].toUpperCase() + formattedRaw.slice(1);
+          if (!formattedRaw.endsWith('.')) {
+            formattedRaw += '.';
+          }
+        }
+        structuredText = `## Befund\nRegelrechter Befund.\n\n## Beurteilung\n${formattedRaw}`;
       }
 
       setStructuredReport(structuredText);
@@ -658,8 +585,6 @@ export default function App() {
   const handleReset = () => {
     setTranscript('');
     setStructuredReport('');
-    setSelectedTemplateKey('auto');
-    setDetectedTemplateKey('allgemein');
     setStatus('ready');
     setStatusText('Bereit');
   };
@@ -787,25 +712,6 @@ export default function App() {
             <span>{statusText.toUpperCase()}</span>
           </div>
 
-          {/* Template Selection Dropdown */}
-          <div className="template-selector-group">
-            <span className="select-label">Vorlage:</span>
-            <select
-              value={selectedTemplateKey}
-              onChange={e => setSelectedTemplateKey(e.target.value)}
-              className="select-input"
-            >
-              <option value="auto">
-                Automatisch ({templates[detectedTemplateKey]?.display_name || 'Freitext'})
-              </option>
-              {Object.keys(templates).map(key => (
-                <option key={key} value={key}>
-                  {templates[key].display_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Settings button */}
           <button 
             onClick={() => setShowSettings(!showSettings)}
@@ -835,7 +741,9 @@ export default function App() {
               <Mic className="card-icon" size={18} />
               <h2 className="card-title">Live-Diktat & Spracherkennung</h2>
             </div>
-            <span className="card-badge">Engine: {sttEngine.toUpperCase()}</span>
+            <span className="card-badge">
+              Engine: {sttEngine.toUpperCase()}
+            </span>
           </div>
 
           <div className="card-body">
@@ -843,8 +751,6 @@ export default function App() {
               value={transcript}
               onChange={e => {
                 setTranscript(e.target.value);
-                const autoKey = detectTemplate(e.target.value);
-                setDetectedTemplateKey(autoKey);
               }}
               placeholder="Hier erscheint das Live-Diktat... Sie können das Diktat auch manuell bearbeiten oder kopieren."
               className="text-editor"
