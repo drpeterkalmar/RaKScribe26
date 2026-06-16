@@ -186,22 +186,22 @@ export default function App() {
 
     const initParticles = () => {
       particles = [];
-      const count = Math.min(50, Math.floor((canvas.width * canvas.height) / 25000));
+      const count = Math.min(120, Math.floor((canvas.width * canvas.height) / 12000));
       for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           vx: (Math.random() - 0.5) * 0.2,
           vy: (Math.random() - 0.5) * 0.2,
-          r: Math.random() * 2 + 1
+          r: Math.random() * 5 + 2.5
         });
       }
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(140, 82, 255, 0.25)';
-      ctx.strokeStyle = 'rgba(140, 82, 255, 0.05)';
+      ctx.fillStyle = 'rgba(140, 82, 255, 0.35)';
+      ctx.strokeStyle = 'rgba(140, 82, 255, 0.08)';
       ctx.lineWidth = 1;
 
       for (let i = 0; i < particles.length; i++) {
@@ -219,7 +219,7 @@ export default function App() {
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 120) {
+          if (dist < 150) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
