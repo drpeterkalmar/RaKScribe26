@@ -360,6 +360,7 @@ export default function App() {
     }
 
     const mappings: [string, string[]][] = [
+      ["beckenübersicht_stehend", ["becken", "wecken", "pelvis"]],
       ["varizensonografie", ["varizen", "variko", "variz"]],
       ["schulterprothese", ["schulterprothese", "schulter-tep", "schulter tep", "schulterendoprothese"]],
       ["daumensattelprothese", ["daumensattel", "sattelprothese", "sattelgelenk"]],
@@ -390,8 +391,7 @@ export default function App() {
       ["fuß_in_2_ebenen", ["fuß", "fuss", "mittelfuß", "vorfuß", "rückfuß"]],
       ["zehe_in_2_ebenen", ["zehe", "großzehe"]],
       ["kniegelenk_in_2_ebenen", ["knie", "gonarthrose"]],
-      ["hüftgelenk_in_2_ebenen", ["hüfte", "hft", "coxarthrose"]],
-      ["beckenübersicht_stehend", ["becken", "pelvis"]]
+      ["hüftgelenk_in_2_ebenen", ["hüfte", "hft", "coxarthrose"]]
     ];
 
     for (const [key, keywords] of mappings) {

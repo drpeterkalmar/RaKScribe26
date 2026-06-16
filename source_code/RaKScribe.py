@@ -363,6 +363,7 @@ def detect_template(text):
 
     # Priorisiertes Mapping: spezifischere Begriffe zuerst prüfen
     mappings = [
+        ("beckenübersicht_stehend", ["becken", "wecken", "pelvis"]),
         # Prothesen / TEP / Varizen
         ("varizensonografie", ["varizen", "variko", "variz"]),
         ("schulterprothese", ["schulterprothese", "schulter-tep", "schulter tep", "schulterendoprothese"]),
@@ -403,7 +404,6 @@ def detect_template(text):
         ("zehe_in_2_ebenen", ["zehe", "großzehe"]),
         ("kniegelenk_in_2_ebenen", ["knie", "gonarthrose"]),
         ("hüftgelenk_in_2_ebenen", ["hüfte", "hft", "coxarthrose"]),
-        ("beckenübersicht_stehend", ["becken", "pelvis"]),
     ]
     
     # 1. Prüfe die priorisierten Schlagwort-Mappings
