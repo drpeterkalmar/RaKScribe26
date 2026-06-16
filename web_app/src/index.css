@@ -703,3 +703,12 @@ body {
   display: flex;
   gap: 12px;
 }
+
+/* Background Particle Canvas */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}

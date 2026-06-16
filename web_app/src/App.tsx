@@ -102,7 +102,8 @@ export default function App() {
 
   // Application States
   const templates: TemplatesMap = templatesData as TemplatesMap;
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('allgemein');
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('auto');
+  const [detectedTemplateKey, setDetectedTemplateKey] = useState<string>('allgemein');
   const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
   const [statusText, setStatusText] = useState<string>('Bereit');
   const [transcript, setTranscript] = useState<string>('');
@@ -116,6 +117,9 @@ export default function App() {
     "Befund: Thorax in 2 Ebenen. Zwerchfellkuppen glatt begrenzt, Sinus frei. Lungenfelder regelrecht belüftet. Cor normal groß. Beurteilung: Herz-Lungen-Befund ohne pathologischen Befund.",
     "Befund: Kniegelenk rechts in 2 Ebenen. Regelrechter Gelenkspalt, keine arthrotischen Randwülste. Intakter Knorpel. Beurteilung: Altersentsprechender Normalbefund."
   ];
+
+  // Particle background Canvas Ref
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Audio recording refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -158,6 +162,79 @@ export default function App() {
         `</diktat>`
       );
     }
+  }, []);
+
+  // Particle Canvas Background Logic
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    };
+
+    const initParticles = () => {
+      particles = [];
+      const count = Math.min(50, Math.floor((canvas.width * canvas.height) / 25000));
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          r: Math.random() * 2 + 1
+        });
+      }
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(140, 82, 255, 0.25)';
+      ctx.strokeStyle = 'rgba(140, 82, 255, 0.05)';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
   // Save config changes
@@ -300,9 +377,7 @@ export default function App() {
         setTranscript(prev => {
           const newText = prev + finalStr;
           const autoKey = detectTemplate(newText);
-          if (autoKey !== selectedTemplateKey && templates[autoKey]) {
-            setSelectedTemplateKey(autoKey);
-          }
+          setDetectedTemplateKey(autoKey);
           return newText;
         });
       }
@@ -527,7 +602,8 @@ export default function App() {
       }
 
       const detectedKey = detectTemplate(finalRawText);
-      const activeTemplate = templates[detectedKey] || templates['allgemein'];
+      const activeKey = selectedTemplateKey === 'auto' ? detectedKey : selectedTemplateKey;
+      const activeTemplate = templates[activeKey] || templates['allgemein'] || { display_name: 'Freitext / Allgemein', body: 'Freitext Befundung' };
       const examples = getFewShotExamples(finalRawText);
 
       let structuredText = "";
@@ -582,6 +658,8 @@ export default function App() {
   const handleReset = () => {
     setTranscript('');
     setStructuredReport('');
+    setSelectedTemplateKey('auto');
+    setDetectedTemplateKey('allgemein');
     setStatus('ready');
     setStatusText('Bereit');
   };
@@ -590,7 +668,10 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <div className="login-container">
-        <div className="login-card">
+        {/* Canvas background for login */}
+        <canvas ref={canvasRef} id="particle-canvas" />
+
+        <div className="login-card" style={{ zIndex: 1 }}>
           <div className="login-header">
             <div className="login-icon">
               <Stethoscope size={40} />
@@ -649,9 +730,12 @@ export default function App() {
 
   // Render workspace dashboard
   return (
-    <div className="flex-grow flex flex-col" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)' }}>
+    <div className="flex-grow flex flex-col" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', position: 'relative' }}>
+      {/* Background canvas for particles */}
+      <canvas ref={canvasRef} id="particle-canvas" />
+
       {/* Header bar */}
-      <header className="app-header">
+      <header className="app-header" style={{ zIndex: 1 }}>
         <div className="brand-section">
           <div className="brand-icon">
             <Stethoscope size={24} />
@@ -680,6 +764,9 @@ export default function App() {
               onChange={e => setSelectedTemplateKey(e.target.value)}
               className="select-input"
             >
+              <option value="auto">
+                Automatisch ({templates[detectedTemplateKey]?.display_name || 'Freitext'})
+              </option>
               {Object.keys(templates).map(key => (
                 <option key={key} value={key}>
                   {templates[key].display_name}
@@ -709,7 +796,7 @@ export default function App() {
       </header>
 
       {/* Main Workspace */}
-      <main className="workspace-grid">
+      <main className="workspace-grid" style={{ zIndex: 1 }}>
         {/* Left Side: Live Transcription & Controls */}
         <section className="workspace-card">
           <div className="card-header">
@@ -726,9 +813,7 @@ export default function App() {
               onChange={e => {
                 setTranscript(e.target.value);
                 const autoKey = detectTemplate(e.target.value);
-                if (autoKey !== selectedTemplateKey && templates[autoKey]) {
-                  setSelectedTemplateKey(autoKey);
-                }
+                setDetectedTemplateKey(autoKey);
               }}
               placeholder="Hier erscheint das Live-Diktat... Sie können das Diktat auch manuell bearbeiten oder kopieren."
               className="text-editor"
@@ -807,7 +892,7 @@ export default function App() {
       {/* Settings Dialog (Modal) */}
       {showSettings && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content" style={{ zIndex: 110 }}>
             <div className="modal-header">
               <h2 className="modal-title"><Settings size={22} className="card-icon" /> Konfiguration & Schlüssel</h2>
               <button 
