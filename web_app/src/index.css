@@ -803,6 +803,13 @@ body {
   border-bottom: 1px solid var(--border-color);
   backdrop-filter: blur(8px);
   margin-bottom: 0px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-bar:hover {
+  background: rgba(140, 82, 255, 0.12);
+  border-bottom-color: rgba(140, 82, 255, 0.4);
 }
 
 .status-bar-item {

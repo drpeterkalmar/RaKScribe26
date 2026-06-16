@@ -1388,7 +1388,12 @@ export default function App() {
       </header>
 
       {/* Configuration Status Bar */}
-      <div className="status-bar" style={{ zIndex: 1 }}>
+      <div 
+        className="status-bar" 
+        style={{ zIndex: 1 }}
+        onClick={() => setShowSettings(true)}
+        title="Einstellungen öffnen (Schlüssel konfigurieren, Mikrofon wählen)"
+      >
         <div className="status-bar-item">
           <span className="status-bar-label">Mikrofon:</span>
           <span className="status-bar-value success" style={{ color: '#C4A4FF' }}>
