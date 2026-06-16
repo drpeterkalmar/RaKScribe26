@@ -97,10 +97,16 @@ export default function App() {
   // Configuration States
   const [provider, setProvider] = useState<'gemini' | 'openai'>('gemini');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
-  const [googleApiKey, setGoogleApiKey] = useState<string>('');
-  const [sttEngine, setSttEngine] = useState<'browser' | 'google'>('google');
+  // Google Cloud STT – service account JSON or simple API-key JSON
+  const [googleKeyJson, setGoogleKeyJson] = useState<any>(null);
+  const [googleKeyFileName, setGoogleKeyFileName] = useState<string>('');
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Cached access token for service-account auth
+  const googleTokenRef = useRef<string>('');
+  const googleTokenExpiryRef = useRef<number>(0);
 
   // Application States
   const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
@@ -153,28 +159,20 @@ export default function App() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const audioChunksRef = useRef<Float32Array[]>([]);
-  const recognitionRef = useRef<any>(null); // Browser SpeechRecognition
 
   // Load configuration from local storage
   useEffect(() => {
     const savedGeminiKey = localStorage.getItem('gemini_api_key');
-    const savedGoogleKey = localStorage.getItem('google_api_key');
     const savedProvider = localStorage.getItem('llm_provider');
-    const savedEngine = localStorage.getItem('stt_engine');
     const savedPrompt = localStorage.getItem('system_prompt');
     const savedAuth = localStorage.getItem('is_authenticated');
+    const savedKeyJson = localStorage.getItem('google_key_json');
+    const savedKeyName = localStorage.getItem('google_key_filename');
 
     if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
-    if (savedGoogleKey) setGoogleApiKey(savedGoogleKey);
     if (savedProvider) setProvider(savedProvider as 'gemini' | 'openai');
-    // Migrate: force Google STT as default (ignore any saved 'browser' setting)
-    if (savedEngine && savedEngine !== 'browser') {
-      setSttEngine(savedEngine as 'browser' | 'google');
-    } else {
-      // Always default to Google Cloud STT; persist the setting
-      setSttEngine('google');
-      localStorage.setItem('stt_engine', 'google');
-    }
+    if (savedKeyJson) { try { setGoogleKeyJson(JSON.parse(savedKeyJson)); } catch {} }
+    if (savedKeyName) setGoogleKeyFileName(savedKeyName);
     if (savedAuth === 'true') setIsAuthenticated(true);
     
     const newDefaultPrompt = 
@@ -294,10 +292,10 @@ export default function App() {
   // Save config changes
   const saveConfig = () => {
     localStorage.setItem('gemini_api_key', geminiApiKey);
-    localStorage.setItem('google_api_key', googleApiKey);
     localStorage.setItem('llm_provider', provider);
-    localStorage.setItem('stt_engine', sttEngine);
     localStorage.setItem('system_prompt', systemPrompt);
+    if (googleKeyJson) localStorage.setItem('google_key_json', JSON.stringify(googleKeyJson));
+    if (googleKeyFileName) localStorage.setItem('google_key_filename', googleKeyFileName);
     alert('Einstellungen erfolgreich gespeichert!');
     setShowSettings(false);
   };
@@ -527,107 +525,134 @@ export default function App() {
       matches.map((m, idx) => `Beispiel ${idx + 1}:\n${m}\n---`).join("\n");
   };
 
-  // Browser Native Speech Recognition Setup
-  const startBrowserRecognition = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Spracherkennung wird von Ihrem Browser nicht nativ unterstützt. Bitte Chrome/Edge nutzen oder Google Cloud Key konfigurieren.");
+  // ── Google Cloud STT – JSON Key File handling ──────────────────────────────
+
+  const loadGoogleKeyFile = (file: File) => {
+    if (!file.name.endsWith('.json')) {
+      alert('Bitte eine Google Cloud JSON-Schlüsseldatei hochladen.');
       return;
     }
-
-    const rec = new SpeechRecognition();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = 'de-DE';
-
-    rec.onresult = (event: any) => {
-      let finalStr = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalStr += event.results[i][0].transcript + ' ';
-        }
-      }
-      if (finalStr.trim()) {
-        setTranscript(prev => prev + finalStr);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target?.result as string);
+        setGoogleKeyJson(parsed);
+        setGoogleKeyFileName(file.name);
+        localStorage.setItem('google_key_json', JSON.stringify(parsed));
+        localStorage.setItem('google_key_filename', file.name);
+        // Invalidate cached token
+        googleTokenRef.current = '';
+        googleTokenExpiryRef.current = 0;
+      } catch {
+        alert('Ungültige JSON-Datei.');
       }
     };
-
-    rec.onerror = (e: any) => {
-      console.error("Speech recognition error:", e);
-    };
-
-    rec.onend = () => {
-      if (status === 'recording') {
-        try {
-          rec.start();
-        } catch (err) {
-          console.error("Recognition restart failed", err);
-        }
-      }
-    };
-
-    recognitionRef.current = rec;
-    rec.start();
+    reader.readAsText(file);
   };
 
-  // Google Cloud Speech to Text REST API Call
-  const transcribeWithGoogle = async (wavBlob: Blob): Promise<string> => {
-    if (!googleApiKey) {
-      throw new Error("Bitte tragen Sie Ihren Google Cloud API-Key in den Einstellungen ein.");
-    }
+  // Base64url encode a Uint8Array
+  const toBase64Url = (buffer: ArrayBuffer): string =>
+    btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 
-    setStatusText("Transkribiere mit Google STT...");
+  // Sign a JWT with RS256 using a PKCS8 PEM private key (service account)
+  const signJwt = async (payload: object, privateKeyPem: string): Promise<string> => {
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const pemBody = privateKeyPem
+      .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n|\r/g, '');
+    const derBinary = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
+    const cryptoKey = await crypto.subtle.importKey(
+      'pkcs8', derBinary.buffer,
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false, ['sign']
+    );
+    const enc = new TextEncoder();
+    const headerB64  = toBase64Url(enc.encode(JSON.stringify(header)).buffer as ArrayBuffer);
+    const payloadB64 = toBase64Url(enc.encode(JSON.stringify(payload)).buffer as ArrayBuffer);
+    const signingInput = `${headerB64}.${payloadB64}`;
+    const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, enc.encode(signingInput));
+    return `${signingInput}.${toBase64Url(sig)}`;
+  };
+
+  // Get a valid Bearer token for service accounts (cached, auto-refresh)
+  const getGoogleBearerToken = async (keyJson: any): Promise<string> => {
+    const now = Math.floor(Date.now() / 1000);
+    if (googleTokenRef.current && googleTokenExpiryRef.current > now + 60) {
+      return googleTokenRef.current;
+    }
+    const jwt = await signJwt({
+      iss: keyJson.client_email,
+      scope: 'https://www.googleapis.com/auth/cloud-platform',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: now,
+      exp: now + 3600,
+    }, keyJson.private_key);
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+    });
+    const data = await resp.json();
+    if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
+    googleTokenRef.current = data.access_token;
+    googleTokenExpiryRef.current = now + (data.expires_in || 3600);
+    return data.access_token;
+  };
+
+  // Google Cloud Speech-to-Text REST API Call (supports API key or service account JSON)
+  const transcribeWithGoogle = async (wavBlob: Blob): Promise<string> => {
+    if (!googleKeyJson) {
+      throw new Error('Bitte laden Sie Ihre Google Cloud JSON-Schlüsseldatei in den Einstellungen hoch.');
+    }
+    setStatusText('Transkribiere mit Google Cloud STT...');
+
+    // Determine auth method from JSON structure
+    let url: string;
+    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+      // Service Account: generate Bearer token via JWT
+      const token = await getGoogleBearerToken(googleKeyJson);
+      url = 'https://speech.googleapis.com/v1/speech:recognize';
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Simple API key (stored in json as "api_key" or "key")
+      const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
+      if (!apiKey) throw new Error('JSON-Datei enthält weder "type":"service_account" noch "api_key".');
+      url = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
+    }
 
     const reader = new FileReader();
     return new Promise((resolve, reject) => {
       reader.onloadend = async () => {
         try {
           const base64Data = (reader.result as string).split(',')[1];
-          const response = await fetch(
-            `https://speech.googleapis.com/v1/speech:recognize?key=${googleApiKey}`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({
+              config: {
+                encoding: 'LINEAR16',
+                sampleRateHertz: 16000,
+                languageCode: 'de-DE',
+                enableAutomaticPunctuation: true,
+                model: 'medical_dictation',
+                speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 12.0 }],
               },
-              body: JSON.stringify({
-                config: {
-                  encoding: "LINEAR16",
-                  sampleRateHertz: 16000,
-                  languageCode: "de-DE",
-                  enableAutomaticPunctuation: true,
-                  speechContexts: [{
-                    phrases: MEDICAL_PHRASES,
-                    boost: 12.0
-                  }]
-                },
-                audio: {
-                  content: base64Data
-                }
-              })
-            }
-          );
-
+              audio: { content: base64Data },
+            }),
+          });
           const data = await response.json();
-          if (data.error) {
-            reject(new Error(data.error.message || "Google Cloud STT Fehler."));
-            return;
-          }
-
+          if (data.error) { reject(new Error(data.error.message || 'Google STT Fehler.')); return; }
           const results = data.results || [];
-          const transcriptResult = results
-            .map((r: any) => r.alternatives[0].transcript)
-            .join(' ');
-
-          resolve(transcriptResult);
-        } catch (err) {
-          reject(err);
-        }
+          resolve(results.map((r: any) => r.alternatives[0].transcript).join(' '));
+        } catch (err) { reject(err); }
       };
-      reader.onerror = () => reject(new Error("Fehler beim Lesen der Audiodatei."));
+      reader.onerror = () => reject(new Error('Fehler beim Lesen der Audiodatei.'));
       reader.readAsDataURL(wavBlob);
     });
   };
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Call Gemini API to Structure the Transcript
   // Call Gemini API to Structure the Transcript (Aligned 1:1 with EXE parameters)
@@ -710,22 +735,12 @@ export default function App() {
 
       processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
-        
-        if (sttEngine === 'google') {
-          audioChunksRef.current.push(new Float32Array(inputData));
-        }
-
+        // Always accumulate WAV chunks for Google Cloud STT
+        audioChunksRef.current.push(new Float32Array(inputData));
         let sum = 0;
-        for (let i = 0; i < inputData.length; i++) {
-          sum += inputData[i] * inputData[i];
-        }
-        const rms = Math.sqrt(sum / inputData.length);
-        setMicLevel(Math.min(100, Math.round(rms * 400)));
+        for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
+        setMicLevel(Math.min(100, Math.round(Math.sqrt(sum / inputData.length) * 400)));
       };
-
-      if (sttEngine === 'browser') {
-        startBrowserRecognition();
-      }
 
     } catch (err: any) {
       console.error(err);
@@ -743,11 +758,6 @@ export default function App() {
     setStatusText('Verarbeite Audio...');
     setMicLevel(0);
 
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-
     if (processorRef.current) {
       processorRef.current.disconnect();
       processorRef.current = null;
@@ -764,24 +774,21 @@ export default function App() {
     try {
       let finalRawText = transcript;
 
-      if (sttEngine === 'google') {
-        const totalLength = audioChunksRef.current.reduce((acc, val) => acc + val.length, 0);
-        const mergedArray = new Float32Array(totalLength);
-        let offset = 0;
-        for (const chunk of audioChunksRef.current) {
-          mergedArray.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        const ctxTemp = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-        const audioBuf = ctxTemp.createBuffer(1, mergedArray.length, 16000);
-        audioBuf.copyToChannel(mergedArray, 0);
-        const wavBlob = audioBufferToWav(audioBuf);
-        ctxTemp.close();
-
-        finalRawText = await transcribeWithGoogle(wavBlob);
-        setTranscript(finalRawText);
+      // Always use Google Cloud STT
+      const totalLength = audioChunksRef.current.reduce((acc, val) => acc + val.length, 0);
+      const mergedArray = new Float32Array(totalLength);
+      let offset = 0;
+      for (const chunk of audioChunksRef.current) {
+        mergedArray.set(chunk, offset);
+        offset += chunk.length;
       }
+      const ctxTemp = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      const audioBuf = ctxTemp.createBuffer(1, mergedArray.length, 16000);
+      audioBuf.copyToChannel(mergedArray, 0);
+      const wavBlob = audioBufferToWav(audioBuf);
+      ctxTemp.close();
+      finalRawText = await transcribeWithGoogle(wavBlob);
+      setTranscript(finalRawText);
 
       if (!finalRawText.trim()) {
         throw new Error("Es wurde kein gesprochener Text erkannt.");
@@ -1026,7 +1033,7 @@ export default function App() {
               <h2 className="card-title">Live-Diktat & Spracherkennung</h2>
             </div>
             <span className="card-badge">
-              Engine: {sttEngine.toUpperCase()}
+              Engine: GOOGLE CLOUD STT
             </span>
           </div>
 
@@ -1125,62 +1132,72 @@ export default function App() {
             </div>
 
             <div className="modal-body">
-              {/* STT Config */}
+              {/* STT Config – Google Cloud only */}
               <div className="settings-section">
-                <h3 className="settings-sec-title">1. Spracherkennung (Speech-to-Text)</h3>
-                
-                <div className="settings-grid">
-                  <div 
-                    className={`engine-option-card ${sttEngine === 'browser' ? 'selected' : ''}`}
-                    onClick={() => setSttEngine('browser')}
-                  >
-                    <input 
-                      type="radio" 
-                      name="stt_engine" 
-                      value="browser"
-                      checked={sttEngine === 'browser'}
-                      readOnly
-                      className="engine-radio"
-                    />
-                    <div>
-                      <span className="engine-title">Browser-Erkennung (Free)</span>
-                      <span className="engine-desc">Nutzt die eingebaute Spracherkennung von Chrome/Edge. Kein Setup nötig.</span>
-                    </div>
-                  </div>
+                <h3 className="settings-sec-title">1. Google Cloud Speech-to-Text – JSON-Schlüssel</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '10px' }}>
+                  Laden Sie Ihre <strong style={{color:'#fff'}}>Service Account JSON</strong>-Datei hoch (aus Google Cloud Console → IAM → Dienstkontoschlüssel), oder eine JSON mit <code style={{color:'#C4A4FF'}}>"api_key"</code>-Feld.
+                </p>
 
-                  <div 
-                    className={`engine-option-card ${sttEngine === 'google' ? 'selected' : ''}`}
-                    onClick={() => setSttEngine('google')}
-                  >
-                    <input 
-                      type="radio" 
-                      name="stt_engine" 
-                      value="google"
-                      checked={sttEngine === 'google'}
-                      readOnly
-                      className="engine-radio"
-                    />
-                    <div>
-                      <span className="engine-title">Google Cloud STT</span>
-                      <span className="engine-desc">Sehr präzises medizinisches Diktat. Benötigt Google API-Key.</span>
-                    </div>
-                  </div>
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  style={{ display: 'none' }}
+                  onChange={e => { if (e.target.files?.[0]) loadGoogleKeyFile(e.target.files[0]); }}
+                />
+
+                {/* Drag & Drop Zone */}
+                <div
+                  className={`key-dropzone ${isDragOver ? 'drag-over' : ''} ${googleKeyJson ? 'has-key' : ''}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onDrop={e => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) loadGoogleKeyFile(file);
+                  }}
+                >
+                  {googleKeyJson ? (
+                    <>
+                      <span className="dropzone-icon">✓</span>
+                      <div>
+                        <span className="dropzone-filename">{googleKeyFileName}</span>
+                        <span className="dropzone-hint">
+                          {googleKeyJson.type === 'service_account'
+                            ? `Service Account: ${googleKeyJson.client_email}`
+                            : 'API Key geladen'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="dropzone-icon">↑</span>
+                      <div>
+                        <span className="dropzone-filename">JSON-Schlüssel hier droppen</span>
+                        <span className="dropzone-hint">oder klicken zum Auswählen</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                {sttEngine === 'google' && (
-                  <div style={{ marginTop: '12px' }}>
-                    <label className="form-label">Google Cloud API-Key</label>
-                    <input 
-                      type="password"
-                      value={googleApiKey}
-                      onChange={e => setGoogleApiKey(e.target.value)}
-                      placeholder="AIzaSy..."
-                      className="form-input"
-                    />
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                      Tipp: Erstellen Sie einen API-Schlüssel in der Google Cloud Console mit Zugriff auf Speech-to-Text.
-                    </span>
-                  </div>
+                {googleKeyJson && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ marginTop: '8px', fontSize: '12px', padding: '6px 14px', height: 'auto', minWidth: 'unset', color: '#FDA29B' }}
+                    onClick={() => {
+                      setGoogleKeyJson(null);
+                      setGoogleKeyFileName('');
+                      localStorage.removeItem('google_key_json');
+                      localStorage.removeItem('google_key_filename');
+                      googleTokenRef.current = '';
+                    }}
+                  >
+                    🗑 Schlüssel entfernen
+                  </button>
                 )}
               </div>
 

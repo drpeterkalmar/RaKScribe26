@@ -729,6 +729,59 @@ body {
   gap: 12px;
 }
 
+/* Google Cloud JSON Key Drop Zone */
+.key-dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--bg-main);
+  user-select: none;
+}
+
+.key-dropzone:hover,
+.key-dropzone.drag-over {
+  border-color: var(--accent-purple);
+  background-color: rgba(140, 82, 255, 0.06);
+}
+
+.key-dropzone.has-key {
+  border-color: var(--ready-green);
+  border-style: solid;
+  background-color: rgba(18, 183, 106, 0.05);
+}
+
+.dropzone-icon {
+  font-size: 28px;
+  min-width: 36px;
+  text-align: center;
+  color: var(--accent-purple);
+  .has-key & { color: var(--ready-green); }
+}
+
+.key-dropzone.has-key .dropzone-icon { color: var(--ready-green); }
+
+.dropzone-filename {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-family: var(--mono-font);
+  word-break: break-all;
+}
+
+.dropzone-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  word-break: break-all;
+}
+
 /* Background Particle Canvas */
 #particle-canvas {
   position: fixed;
