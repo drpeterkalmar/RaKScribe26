@@ -98,7 +98,7 @@ export default function App() {
   const [provider, setProvider] = useState<'gemini' | 'openai'>('gemini');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [googleApiKey, setGoogleApiKey] = useState<string>('');
-  const [sttEngine, setSttEngine] = useState<'browser' | 'google'>('browser');
+  const [sttEngine, setSttEngine] = useState<'browser' | 'google'>('google');
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const [showSettings, setShowSettings] = useState<boolean>(false);
 
@@ -167,7 +167,14 @@ export default function App() {
     if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
     if (savedGoogleKey) setGoogleApiKey(savedGoogleKey);
     if (savedProvider) setProvider(savedProvider as 'gemini' | 'openai');
-    if (savedEngine) setSttEngine(savedEngine as 'browser' | 'google');
+    // Migrate: force Google STT as default (ignore any saved 'browser' setting)
+    if (savedEngine && savedEngine !== 'browser') {
+      setSttEngine(savedEngine as 'browser' | 'google');
+    } else {
+      // Always default to Google Cloud STT; persist the setting
+      setSttEngine('google');
+      localStorage.setItem('stt_engine', 'google');
+    }
     if (savedAuth === 'true') setIsAuthenticated(true);
     
     const newDefaultPrompt = 
