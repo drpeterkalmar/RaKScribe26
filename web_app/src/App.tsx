@@ -11,7 +11,9 @@ import {
   Lock, 
   ArrowRight,
   Sparkles,
-  Info
+  Info,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import templatesData from './templates.json';
 
@@ -393,8 +395,16 @@ export default function App() {
     localStorage.setItem('gemini_api_key', geminiApiKey);
     localStorage.setItem('llm_provider', provider);
     localStorage.setItem('system_prompt', systemPrompt);
-    if (googleKeyJson) localStorage.setItem('google_key_json', JSON.stringify(googleKeyJson));
-    if (googleKeyFileName) localStorage.setItem('google_key_filename', googleKeyFileName);
+    if (googleKeyJson) {
+      localStorage.setItem('google_key_json', JSON.stringify(googleKeyJson));
+    } else {
+      localStorage.removeItem('google_key_json');
+    }
+    if (googleKeyFileName) {
+      localStorage.setItem('google_key_filename', googleKeyFileName);
+    } else {
+      localStorage.removeItem('google_key_filename');
+    }
     alert('Einstellungen erfolgreich gespeichert!');
     setShowSettings(false);
   };
@@ -866,6 +876,12 @@ export default function App() {
   // Start Audio Recording
   const startRecording = async () => {
     try {
+      if (!googleKeyJson) {
+        alert("Fehler: Bitte laden Sie zuerst Ihre Google Cloud JSON-Schlüsseldatei in den Einstellungen hoch!");
+        setStatusText("Fehler: JSON-Schlüssel fehlt");
+        setStatus('ready');
+        return;
+      }
       setTranscript('');
       setStructuredReport('');
       setStatus('recording');
@@ -1259,6 +1275,34 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Configuration Status Bar */}
+      <div className="status-bar" style={{ zIndex: 1 }}>
+        <div className="status-bar-item">
+          <span className="status-bar-label">Spracherkennung (STT):</span>
+          {googleKeyJson ? (
+            <span className="status-bar-value success">
+              <Check size={14} className="status-bar-icon" /> JSON geladen ({googleKeyFileName})
+            </span>
+          ) : (
+            <span className="status-bar-value danger">
+              <X size={14} className="status-bar-icon" /> JSON fehlt (Aufnahme gesperrt)
+            </span>
+          )}
+        </div>
+        <div className="status-bar-item">
+          <span className="status-bar-label">KI-Strukturierung (LLM):</span>
+          {geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) ? (
+            <span className="status-bar-value success">
+              <Sparkles size={14} className="status-bar-icon" /> Gemini 1.5 Flash aktiv ({googleKeyJson?.type === 'service_account' ? 'Dienstkonto' : 'API-Key'})
+            </span>
+          ) : (
+            <span className="status-bar-value warning">
+              <AlertTriangle size={14} className="status-bar-icon" /> Simulations-Modus (kein Key hinterlegt)
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Main Workspace */}
       <main className="workspace-grid" style={{ zIndex: 1 }}>

@@ -791,3 +791,61 @@ body {
   opacity: 0.6;
   filter: blur(8px);
 }
+
+/* Configuration Status Bar */
+.status-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+  padding: 12px 24px;
+  background: rgba(22, 25, 44, 0.55);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(8px);
+  margin-bottom: 0px;
+}
+
+.status-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.status-bar-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.status-bar-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.status-bar-value.success {
+  background-color: rgba(18, 183, 106, 0.12);
+  color: #6CE9A6;
+  border: 1px solid rgba(18, 183, 106, 0.2);
+}
+
+.status-bar-value.warning {
+  background-color: rgba(247, 144, 9, 0.12);
+  color: #FEC84B;
+  border: 1px solid rgba(247, 144, 9, 0.2);
+}
+
+.status-bar-value.danger {
+  background-color: rgba(240, 68, 56, 0.12);
+  color: #FDA29B;
+  border: 1px solid rgba(240, 68, 56, 0.2);
+}
+
+.status-bar-icon {
+  flex-shrink: 0;
+}
+
