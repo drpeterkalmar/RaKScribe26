@@ -783,6 +783,171 @@ export default function App() {
       reader.readAsDataURL(wavBlob);
     });
   };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FULL-AUDIO TRANSCRIPTION (Re-transcription with complete context)
+  // Uses speech:recognize for ≤60s audio, speech:longrunningrecognize for >60s
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const transcribeFullAudioWithGoogle = async (wavBlob: Blob): Promise<string> => {
+    if (!googleKeyJson) {
+      throw new Error('Bitte laden Sie Ihre Google Cloud JSON-Schlüsseldatei in den Einstellungen hoch.');
+    }
+
+    // Convert blob to base64
+    const base64Data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = () => reject(new Error('Fehler beim Lesen der Audiodatei.'));
+      reader.readAsDataURL(wavBlob);
+    });
+
+    // Build auth URL + headers
+    let recognizeUrl: string;
+    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
+      recognizeUrl = 'https://speech.googleapis.com/v1/speech:recognize';
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    } else {
+      const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
+      if (!apiKey) throw new Error('JSON-Datei enthält weder "type":"service_account" noch "api_key".');
+      recognizeUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
+    }
+
+    // Shared config with full medical context (same as chunk transcription)
+    const sttConfig = {
+      encoding: 'LINEAR16',
+      sampleRateHertz: 16000,
+      languageCode: 'de-DE',
+      enableAutomaticPunctuation: true,
+      model: 'latest_long',
+      useEnhanced: true,
+      speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
+    };
+
+    // Estimate audio duration: base64 is ~4/3 the size of binary.
+    // 16000 samples/s * 2 bytes/sample = 32000 bytes/s
+    const binarySize = Math.floor(base64Data.length * 3 / 4);
+    const estimatedDurationSec = binarySize / 32000;
+
+    console.log(`[FULL-AUDIO] Audio size: ${binarySize} bytes, estimated duration: ${estimatedDurationSec.toFixed(1)}s`);
+
+    if (estimatedDurationSec <= 59) {
+      // Short audio: use speech:recognize (synchronous)
+      console.log('[FULL-AUDIO] Using speech:recognize (synchronous, ≤60s)');
+      setStatusText('Volltranskription läuft (komplettes Diktat)...');
+
+      const response = await fetch(recognizeUrl, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          config: sttConfig,
+          audio: { content: base64Data },
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message || 'Google STT Fehler bei Volltranskription.');
+      }
+      const results = data.results || [];
+      const fullText = results.map((r: any) => r.alternatives[0].transcript).join(' ');
+      console.log(`[FULL-AUDIO] Transkription erfolgreich: ${fullText.length} Zeichen`);
+      return fullText;
+
+    } else {
+      // Long audio (>60s): use speech:longrunningrecognize (async with polling)
+      console.log('[FULL-AUDIO] Using speech:longrunningrecognize (async, >60s)');
+      setStatusText('Volltranskription läuft (langes Diktat, bitte warten)...');
+
+      let longRunningUrl: string;
+      if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+        const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
+        longRunningUrl = 'https://speech.googleapis.com/v1/speech:longrunningrecognize';
+        authHeaders['Authorization'] = `Bearer ${token}`;
+      } else {
+        const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
+        longRunningUrl = `https://speech.googleapis.com/v1/speech:longrunningrecognize?key=${apiKey}`;
+      }
+
+      // Initiate long-running operation
+      const startResponse = await fetch(longRunningUrl, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          config: sttConfig,
+          audio: { content: base64Data },
+        }),
+      });
+
+      const startData = await startResponse.json();
+      if (startData.error) {
+        throw new Error(startData.error.message || 'Fehler beim Starten der Long-Running-Erkennung.');
+      }
+
+      const operationName = startData.name;
+      console.log(`[FULL-AUDIO] Long-running operation started: ${operationName}`);
+
+      // Poll until done (max 5 minutes)
+      const maxAttempts = 60;
+      const pollInterval = 5000; // 5 seconds
+      let lastProgress = 0;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+        // Build poll URL (API key needs to be in query params for GET)
+        let pollUrl = `https://speech.googleapis.com/v1/operations/${operationName}`;
+        const pollHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+          // Re-fetch token in case it expired during long operation
+          const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
+          pollHeaders['Authorization'] = `Bearer ${token}`;
+        } else {
+          const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
+          pollUrl = `${pollUrl}?key=${apiKey}`;
+        }
+
+        const pollResponse = await fetch(pollUrl, {
+          method: 'GET',
+          headers: pollHeaders,
+        });
+
+        const pollData = await pollResponse.json();
+        if (pollData.error) {
+          throw new Error(pollData.error.message || 'Fehler beim Abrufen des Transkriptionsergebnisses.');
+        }
+
+        if (pollData.done) {
+          const response = pollData.response;
+          if (!response || !response.results) {
+            console.log('[FULL-AUDIO] Operation completed but no results returned.');
+            return '';
+          }
+          const fullText = response.results
+            .map((r: any) => r.alternatives[0].transcript)
+            .join(' ');
+          console.log(`[FULL-AUDIO] Long-running transcription complete: ${fullText.length} chars`);
+          return fullText;
+        }
+
+        // Update progress indicator
+        const progress = pollData.metadata?.progressPercent;
+        if (progress && progress !== lastProgress) {
+          lastProgress = progress;
+          setStatusText(`Volltranskription läuft... ${progress}%`);
+          console.log(`[FULL-AUDIO] Progress: ${progress}%`);
+        } else {
+          setStatusText(`Volltranskription läuft... (Versuch ${attempt + 1}/${maxAttempts})`);
+        }
+      }
+
+      throw new Error('Zeitüberschreitung bei der Volltranskription (5 Minuten). Das Audio war evtl. zu lang.');
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
 
   // Call Gemini API to Structure the Transcript
@@ -1124,13 +1289,54 @@ export default function App() {
     }
 
     try {
-      // Wait for any active/pending requests to finish
+      // Wait for any active/pending chunk requests to finish
       if (pendingPromisesRef.current.length > 0) {
-        setStatusText('Warte auf ausstehende Transkriptionen...');
+        setStatusText('Warte auf ausstehende Chunk-Transkriptionen...');
         await Promise.all(pendingPromisesRef.current);
       }
 
-      const finalRawText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
+      // ─────────────────────────────────────────────────────────────────────
+      // FULL-AUDIO RE-TRANSCRIPTION (the key fix for medical term recognition)
+      // Re-transcribe the ENTIRE recording as one piece so Google has full
+      // context across the whole dictation — same as the Desktop EXE's
+      // streaming_recognize approach.
+      // ─────────────────────────────────────────────────────────────────────
+      let finalRawText = '';
+
+      try {
+        // Merge ALL recorded audio chunks into one continuous buffer
+        const allChunks = audioChunksRef.current;
+        if (allChunks.length > 0) {
+          const mergedAll = mergeFloat32Arrays(allChunks);
+          const currentSampleRate = actualSampleRateRef.current;
+          const resampledAll = downsampleBuffer(mergedAll, currentSampleRate, 16000);
+
+          if (resampledAll.length > 0) {
+            const ctxFull = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+            const audioBufFull = ctxFull.createBuffer(1, resampledAll.length, 16000);
+            audioBufFull.copyToChannel(resampledAll as any, 0);
+            const fullWavBlob = audioBufferToWav(audioBufFull);
+            ctxFull.close();
+
+            console.log(`[FULL-AUDIO] Re-transcribing complete recording (${resampledAll.length} samples, ${(resampledAll.length / 16000).toFixed(1)}s)`);
+
+            // Run full-audio transcription
+            const fullTranscript = await transcribeFullAudioWithGoogle(fullWavBlob);
+            finalRawText = fullTranscript.trim();
+          }
+        }
+      } catch (fullAudioErr: any) {
+        console.warn('[FULL-AUDIO] Re-transcription failed, falling back to chunk transcripts:', fullAudioErr.message);
+        // Fallback: use concatenated chunk transcripts
+        finalRawText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
+      }
+
+      // If full-audio transcription returned empty, also fall back
+      if (!finalRawText.trim()) {
+        console.warn('[FULL-AUDIO] Empty result, falling back to chunk transcripts.');
+        finalRawText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
+      }
+
       setTranscript(finalRawText);
 
       if (!finalRawText.trim()) {
