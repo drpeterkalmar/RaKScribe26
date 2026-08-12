@@ -359,9 +359,29 @@ def detect_template(text):
             return "sonografie_nerv_medianus"
         if "ulnaris" in text_lower or "sulcus" in text_lower or "loge" in text_lower or "guyon" in text_lower:
             return "sonografie_nerv_ulnaris"
+        if "radialis" in text_lower or "supinator" in text_lower or "frohse" in text_lower or "wartenberg" in text_lower:
+            return "sonografie_nerv_radialis"
+        if "plexus" in text_lower and "cervicalis" in text_lower:
+            return "sonografie_plexus_cervicalis"
         if "plexus" in text_lower:
             return "sonografie_plexus_brachialis"
-        if any(x in text_lower for x in ["nerv", "neuro", "suralis", "peroneus", "tibialis"]):
+        if "ischiadicus" in text_lower:
+            return "sonografie_nerv_ischiadicus"
+        if "peroneus" in text_lower:
+            return "sonografie_nerv_peroneus"
+        if "tibialis" in text_lower:
+            return "sonografie_nerv_tibialis"
+        if "femoralis" in text_lower and "cutaneus" in text_lower:
+            return "sonografie_nerv_femoralis_cutaneus_lateralis"
+        if "femoralis" in text_lower:
+            return "sonografie_nerv_femoralis"
+        if "pudendus" in text_lower:
+            return "sonografie_nervus_pudendus"
+        if "iliohypogastricus" in text_lower or "ilioinguinalis" in text_lower:
+            return "sonografie_nervus_iliohypogastricus_ilioinguinalis"
+        if "blockade" in text_lower or "injektion" in text_lower:
+            return "ultraschall_gezielte_blockade"
+        if any(x in text_lower for x in ["nerv", "neuro", "suralis"]):
             return "sonografie_nerv_allgemein"
         # Sonographie Allgemein
         return "sonografie_allgemein"
@@ -383,6 +403,8 @@ def detect_template(text):
         
     # 3. Mammographie / Fernröntgen
     if "mammo" in text_lower:
+        if any(x in text_lower for x in ["sono", "schall", "ultraschall", "mammasono"]):
+            return "mammasonographie_beidseits"
         return "mammographie_beidseits"
         
     if "fernröntgen" in text_lower or "fern-röntgen" in text_lower or "frs" in text_lower:
@@ -585,7 +607,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.7.0)")
+        self.title("RaKScribe26 (v2.8.0)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -635,7 +657,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.7.0", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.8.0", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 

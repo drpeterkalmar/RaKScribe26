@@ -35,3 +35,11 @@ whisper-models/
 *.exe
 practice_reports.db
 Befundvorlagen/
+
+# Google Service Account Keys - NEVER commit
+*.json
+!templates.json
+!web_app/src/templates.json
+
+# Web-App key injector - embeds private key, never commit
+web_app/public/inject-key.js

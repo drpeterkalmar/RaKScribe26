@@ -1,0 +1,93 @@
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+
+======================================================================
+CASE: Hüfte Coxarthrose
+======================================================================
+
+[Call #1] (5.7s):
+## Befund
+
+Hüfte links
+
+Normale Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes, subchondrale Sklerosierung der Gelenkflächen und osteophytäre Randzackenbildung. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+
+1. Coxarthrose links.
+
+[Call #2] (3.8s):
+## Befund
+
+Hüfte links
+
+Verschmälerung des Gelenkspaltes, subchondrale Sklerosierung der Gelenkflächen und osteophytäre Randzackenbildung. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+
+1. Coxarthrose links.
+
+⚠️ UNTERSCHIEDLICH — diff:
+  Line 5:
+    - Normale Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes, subchondrale Sklerosierung der Gelenkflächen und osteophytäre Randzackenbildung. Die periarticuläre Weichteilzone o. B.
+    + Verschmälerung des Gelenkspaltes, subchondrale Sklerosierung der Gelenkflächen und osteophytäre Randzackenbildung. Die periarticuläre Weichteilzone o. B.
+
+======================================================================
+CASE: Schulter Omarthrose
+======================================================================
+
+[Call #1] (10.9s):
+## Befund
+Hochstand des Humeruskopfes bei ansonsten normaler Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytären Randanbauten. Kalkdichte Verschattung im Projektionsbereich der Supraspinatussehne, ansonsten die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+1. Omarthrose rechts.
+2. Kalzifikation Supraspinatussehne rechts.
+3. Humeruskopfhochstand rechts.
+
+[Call #2] (6.6s):
+## Befund
+Hochstand des Humeruskopfes. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytären Randanbauten. Kalkdichte Verschattung im Projektionsbereich der Supraspinatussehne, ansonsten die periartikuläre Weichteilzone o. B.
+
+## Ergebnis
+1. Omarthrose rechts.
+2. Kalzifikation Supraspinatussehne rechts.
+3. Humeruskopfhochstand rechts.
+
+⚠️ UNTERSCHIEDLICH — diff:
+  Line 2:
+    - Hochstand des Humeruskopfes bei ansonsten normaler Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytären Randanbauten. Kalkdichte Verschattung im Projektionsbereich der Supraspinatussehne, ansonsten die periarticuläre Weichteilzone o. B.
+    + Hochstand des Humeruskopfes. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytären Randanbauten. Kalkdichte Verschattung im Projektionsbereich der Supraspinatussehne, ansonsten die periartikuläre Weichteilzone o. B.
+
+======================================================================
+CASE: Knie Gonarthrose
+======================================================================
+
+[Call #1] (8.1s):
+## Befund
+
+Normale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Medialbetonte Gelenkspaltverschmälerung rechts. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+
+1. Gonarthrose rechts.
+
+[Call #2] (5.8s):
+## Befund
+
+Normale Form und Struktur der Gelenkkörper. Medialbetonte Gelenkspaltverschmälerung rechts. Die periartikuläre Weichteilzone o. B.
+
+## Ergebnis
+
+1. Gonarthrose rechts.
+
+⚠️ UNTERSCHIEDLICH — diff:
+  Line 3:
+    - Normale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Medialbetonte Gelenkspaltverschmälerung rechts. Die periarticuläre Weichteilzone o. B.
+    + Normale Form und Struktur der Gelenkkörper. Medialbetonte Gelenkspaltverschmälerung rechts. Die periartikuläre Weichteilzone o. B.
+
+Done.

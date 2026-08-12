@@ -1,0 +1,76 @@
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+
+======================================================================
+CASE: Hüfte Coxarthrose
+======================================================================
+
+[Call #1] (4.9s):
+## Befund
+
+Verschmälerung des Gelenkspaltes des linken Hüftgelenkes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randzackenbildung. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+
+1. Coxarthrose links.
+
+[Call #2] (6.0s):
+## Befund
+
+Verschmälerung des Gelenkspaltes des linken Hüftgelenkes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randzackenbildung. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+
+1. Coxarthrose links.
+
+✅ IDENTISCH — keine Korrektur nötig
+
+======================================================================
+CASE: Schulter Omarthrose
+======================================================================
+
+[Call #1] (8.3s):
+## Befund
+Hochstand des Humeruskopfes. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen sowie osteophytärer Randwulstbildung. Periartikuläre Kalzifikation im Projektionsbereich der Supraspinatussehne. Ansonsten unauffällige periartikuläre Weichteile.
+
+## Ergebnis
+1. Omarthrose rechts.
+2. Kalzifikation der Supraspinatussehne.
+3. Humeruskopfhochstand.
+
+[Call #2] (11.1s):
+## Befund
+Hochstand des Humeruskopfes. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen sowie osteophytärer Randwulstbildung. Periartikuläre Kalzifikation im Projektionsbereich der Supraspinatussehne. Ansonsten unauffällige periartikuläre Weichteile.
+
+## Ergebnis
+1. Omarthrose rechts.
+2. Kalzifikation der Supraspinatussehne.
+3. Humeruskopfhochstand.
+
+✅ IDENTISCH — keine Korrektur nötig
+
+======================================================================
+CASE: Knie Gonarthrose
+======================================================================
+
+[Call #1] (8.7s):
+## Befund
+Medialbetonte Gelenkspaltverschmälerung des rechten Kniegelenkes. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+1. Medialbetonte Gonarthrose rechts.
+
+[Call #2] (4.5s):
+## Befund
+Medialbetonte Gelenkspaltverschmälerung des rechten Kniegelenkes. Die periarticuläre Weichteilzone o. B.
+
+## Ergebnis
+1. Medialbetonte Gonarthrose rechts.
+
+✅ IDENTISCH — keine Korrektur nötig
+
+Done.

@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Aperture, 
-  Mic, 
-  MicOff, 
-  Copy, 
-  Check, 
-  LogOut, 
-  Lock, 
+import {
+  Aperture,
+  Mic,
+  MicOff,
+  Copy,
+  Check,
+  LogOut,
+  Lock,
   ArrowRight,
   Sparkles,
-  X
+  X,
+  Upload
 } from 'lucide-react';
 import templatesData from './templates.json';
 
@@ -70,9 +71,226 @@ const MEDICAL_PHRASES = [
   "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
   "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
   "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-  "Flachbogig", "S-förmige"
+  "Flachbogig", "S-förmige",
+  // ── Schulter/Sonographie-spezifisch ──
+  "Tenosynovitis", "Tenosynovitis der langen Bizepssehne", "Bizepssehne", "Bizepssehnenscheide",
+  "Tendinopathie", "Tendinose", "Tendinosis", "Tendinosis calcarea",
+  "Supraspinatussehne", "Supraspinatus", "Infraspinatussehne", "Infraspinatus",
+  "Subscapularis", "Subscapularissehne", "Teres minor", "Teres-minor-Sehne",
+  "Rotatorenmanschette", "Rotatorenmanschettenruptur", "Rotatorenmanschetten-Tendinose",
+  "Bursitis", "Bursitis subacromialis", "Subacromialbursa", "Subakromialbursa",
+  "begleitende Bursitis", "Begleitbursitis", "begleitbursitis",
+  "Kalkschulter", "Kalkspick", "Kalkablagerung", "Verkalkung der Supraspinatussehne",
+  "Impingement", "Impingementsyndrom", "subacromiales Impingement",
+  "Akromion", "Akromioklavikulargelenk", "AC-Gelenk", "Klavikula",
+  "Coracoid", "Processus coracoideus", "Labrum glenoidale", "Labrumläsion",
+  "SLAP-Läsion", "Bankart-Läsion", "Hill-Sachs-Läsion",
+  "Glenohumeralgelenk", "Glenoid", "Bizepssehnenanker",
+  "Lange Bizepssehne", "Lange-Bizeps-Sehne", "Bizepslongussehne",
+  "Schultergelenksonographie", "Schultersonographie", "Schulterultraschall",
+  "Röntgen und Sonographie des Schultergelenkes",
+  "Röntgen und der Sonographie",
+  "Kalkeinlagerung", "Kalkdepot", "Kalkherd",
+  "Sehnenkalkeinlagerung", "Tendinosis calcarea der Supraspinatussehne",
+  "Partialruptur der Supraspinatussehne", "Full-Thickness-Ruptur",
+  "Gelenkerguss", "Gelenkspalt", "Gelenkkapsel",
+  // ── Allgemein radiologische Begriffe (ergänzt) ──
+  "unauffällig", "Unauffällig", "unauffälliger Befund",
+  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
+  "regelrecht", "Regelrecht", "regelrechte Darstellung",
+  "ohne pathologischen Befund", "kein pathologischer Befund",
+  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
+  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
+  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
+  "Röntgen und Sonographie", "Röntgen und der Sonographie",
+  "des linken Schultergelenkes", "des rechten Schultergelenkes",
+  "des linken Kniegelenkes", "des rechten Kniegelenkes",
+  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
+  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
+  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
+  "des linken Handgelenkes", "des rechten Handgelenkes",
+  // ── Praxis-Jargon / Shortcut-Phrasen ──
+  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
+  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
+  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
+  "Metatarsale", "Phalanx", "Basis",
+  // ── Mamma/Mammasonographie-spezifisch ──
+  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
+  "Mammographie", "Mammografie", "Mammographie beidseits",
+  "Drüsenparenchym", "Brustdrüse", "Mamma",
+  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
+  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
+  "Morbus Mondor", "Mondor", "Mondor-Disease",
+  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
+  "kutane Venenthrombose", "Venenthrombose",
+  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
+  "Axillen", "Axillen beidseits frei",
+  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
+  "Architekturstörung", "Architekturstörungen",
+  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
+  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
+  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
+  "Inspektion und Palpation", "Palpationsbefund",
+  "Durchmesser", "mm Durchmesser",
+  // ── Nervus-ulnaris / Neurosonographie-spezifisch ──
+  "Nervus ulnaris", "N. ulnaris", "Sulcus nervi ulnaris", "Sulcus ulnaris",
+  "Loge de Guyon", "Guyon-Loge", "Ramus dorsalis", "Ramus superficialis", "Ramus profundus",
+  "Querschnittsfläche", "Querschnittsflaeche", "Quadratmillimeter", "mm²",
+  "M. anconeus", "Musculus anconeus", "M. anconeus epitrochlearis", "anconeus epitrochlearis",
+  "hypertropher M. anconeus", "hypertrophe Musculus anconeus",
+  "Epicondylus medialis humeri", "Epicondylus medialis", "mediales Septum intermusculare",
+  "Osborne Ligament", "Osborne-Ligament", "Osborne Faszie", "Retinaculum",
+  "M. flexor carpi ulnaris", "Flexor carpi ulnaris", "FCU",
+  "Ellbogenflexion", "Ellbogenstreckung", "Ellbogengelenk",
+  "Aggravation", "Kompression des Nervs", "Nervenkompression",
+  "faszikulär", "faszikulaer", "nervale Auftreibung", "Denervation",
+  "Hypothenarmuskulatur", "Lumbricalmuskulatur", "M. adductor pollicis", "Muskel-Faszikulationen",
+  "Echogenitätssteigerung", "Atrophie", "seitensymmetrisch",
+  "Schnappen des Nervs", "Loge de Guyon unauffällig",
+  "N. radialis", "Nervus radialis", "Ramus profundus", "Ramus superficialis",
+  "Frohse-Arkade", "Frohse Arkade", "Supinator", "M. supinator", "Musculus supinator",
+  "Wartenberg-Syndrom", "Wartenberg", "Arteria radialis recurrens",
+  "Sulcus n. radialis", "Strecksehnenfach", "4. Strecksehnenfaches",
+  "N. cutaneus brachii lateralis inferior", "N. cutaneus antebrachii posterior",
+  "M. brachioradialis", "Handgelenksextensoren",
+  // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
+  "flachbogig", "flachbogige", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
+  "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
+  "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
+  "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
+  "multisegmentale", "Schmalsche Impressionen", "Deckplattenimpressionen",
+  "Edgren-Vaino-Zeichen", "Edgren Vaino Zeichen", "Edgren-Vaino Zeichen",
+  "Morbus Scheuermann", "Scheuermann", "Scheuermann-Krankheit",
+  "Kyphose", "hyperkyphotisch", "harmonische Kyphose",
+  "Bogenwurzeln", "Dornfortsätze", "Querfortsätze", "Processus articulares",
+  "Articulationes costotransversales", "Articulationes costovertebrales",
+  "Spatien intervertebralia", "Canalis spinalis", "Platae terminales",
+  "BWS-Röntgen", "BWS in 2 Ebenen", "Brustwirbelsäule", "BWS",
+  // ── Allgemein radiologische Begriffe (ergänzt) ──
+  "unauffällig", "Unauffällig", "unauffälliger Befund",
+  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
+  "regelrecht", "Regelrecht", "regelrechte Darstellung",
+  "ohne pathologischen Befund", "kein pathologischer Befund",
+  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
+  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
+  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
+  "Röntgen und Sonographie", "Röntgen und der Sonographie",
+  "des linken Schultergelenkes", "des rechten Schultergelenkes",
+  "des linken Kniegelenkes", "des rechten Kniegelenkes",
+  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
+  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
+  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
+  "des linken Handgelenkes", "des rechten Handgelenkes",
+  // ── Praxis-Jargon / Shortcut-Phrasen ──
+  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
+  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
+  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
+  "Metatarsale", "Phalanx", "Basis",
+  // ── Mamma/Mammasonographie-spezifisch ──
+  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
+  "Mammographie", "Mammografie", "Mammographie beidseits",
+  "Drüsenparenchym", "Brustdrüse", "Mamma",
+  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
+  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
+  "Morbus Mondor", "Mondor", "Mondor-Disease",
+  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
+  "kutane Venenthrombose", "Venenthrombose",
+  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
+  "Axillen", "Axillen beidseits frei",
+  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
+  "Architekturstörung", "Architekturstörungen",
+  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
+  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
+  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
+  "Inspektion und Palpation", "Palpationsbefund",
+  "Durchmesser", "mm Durchmesser",
 ];
 
+
+// ─────────────────────────────────────────────────────────────────────────
+// isNormalFinding — erkennt reine Normalbefunde für RAG-Bypass (kein LLM nötig)
+// Wird von Recording- und Upload-Pfad verwendet. Negations-aware.
+// ─────────────────────────────────────────────────────────────────────────
+function isNormalFinding(text: string): boolean {
+  const textLower = text.toLowerCase();
+  const pathologyKeywords = [
+    "arthrose", "fraktur", "osteo", "spondyl", "tendin", "calcarea", "bursitis",
+    "tenosynovitis", "teppich", "ruptur", "luxation", "skoliose", "kyphose",
+    "impression", "edgren", "scheuermann", "bi-rads", "morb", "thrombose",
+    "mondor", "tumor", "metastas", "entzünd", "ödem", "erguss",
+    "verschmäler", "skleros", "osteophyt", "beckenschief", "beinlängen",
+    "listhesis", "chondr", "fissur", "kontusion", "depression", "n. ulnaris",
+    "anconeus", "epitrochlear", "guyon", "flachbogig", "cobb", "schmorl",
+    "patholog", "verdacht", "suspekt", "läsion", "herd", "verkalkung",
+    "kalk", "fremdkörper", "emphysem", "infiltrat", "stauung",
+    "thromb", "vene", "axillär", "axillar"
+  ];
+  const negationPhrases = [
+    "kein ", "keine ", "keinem ", "keinen ", "keiner ", "kein nachweis",
+    "nicht nachweisbar", "nicht vorhanden", "ausschluss", "frei von",
+    "ohne nachweis", "ohne patholog", "ohne fraktur", "ohne arthrose",
+    "kein hinweis", "keine zeichen", "nicht nachweis"
+  ];
+  const hasPathology = pathologyKeywords.some(kw => {
+    const idx = textLower.indexOf(kw);
+    if (idx === -1) return false;
+    const before = textLower.substring(Math.max(0, idx - 30), idx);
+    const isNegated = negationPhrases.some(neg => before.includes(neg));
+    return !isNegated;
+  });
+  if (hasPathology) return false;
+  const normalKeywords = ["unauffällig", "normal", "regelrecht", "ohne befund", "kein nachweis", "unauffaellig"];
+  const hasNormal = normalKeywords.some(kw => textLower.includes(kw));
+  const isShort = textLower.split(/\s+/).filter(Boolean).length < 12;
+  return hasNormal && isShort;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────
+// fetchWithRetry — robust fetch with timeout + automatic retry
+// Prevents silent failures when Google Cloud APIs are slow or flaky.
+// The web app must handle this autonomously — no Hermes to the rescue.
+// ─────────────────────────────────────────────────────────────────────────
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = 120_000,
+  maxRetries: number = 3
+): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      // Retry on 429 (rate limit), 500, 502, 503, 504
+      if (response.status === 429 || response.status >= 500) {
+        const waitSec = Math.min(2 ** attempt, 8);
+        if (attempt < maxRetries) {
+          console.warn(`[FETCH] HTTP ${response.status}, retry ${attempt}/${maxRetries} in ${waitSec}s...`);
+          await new Promise(r => setTimeout(r, waitSec * 1000));
+          continue;
+        }
+      }
+      return response;
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError' && attempt < maxRetries) {
+        const waitSec = Math.min(2 ** attempt, 8);
+        console.warn(`[FETCH] Timeout (${timeoutMs}ms), retry ${attempt}/${maxRetries} in ${waitSec}s...`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(`fetchWithRetry: Max retries (${maxRetries}) exceeded for ${url}`);
+}
 
 // Helper to encode AudioBuffer to WAV
 function audioBufferToWav(buffer: AudioBuffer): Blob {
@@ -181,6 +399,7 @@ export default function App() {
   const [googleKeyFileName, setGoogleKeyFileName] = useState<string>('');
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioUploadRef = useRef<HTMLInputElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
   // Cached access tokens for service-account auth, mapped by scope
@@ -282,6 +501,27 @@ export default function App() {
     if (savedKeyName) setGoogleKeyFileName(savedKeyName);
     if (savedAuth === 'true') setIsAuthenticated(true);
     if (savedDeviceId) setSelectedDeviceId(savedDeviceId);
+
+    // Auto-Load Google Key from local file if not in localStorage
+    if (!savedKeyJson) {
+      (async () => {
+        try {
+          const resp = await fetch('/google-key.json');
+          if (resp.ok) {
+            const keyData = await resp.json();
+            if (keyData.type === 'service_account' && keyData.private_key) {
+              localStorage.setItem('google_key_json', JSON.stringify(keyData));
+              localStorage.setItem('google_key_filename', 'google-key.json (auto-loaded)');
+              setGoogleKeyJson(keyData);
+              setGoogleKeyFileName('google-key.json (auto-loaded)');
+              console.log('[AUTO-LOAD] Google Key automatisch aus /google-key.json geladen');
+            }
+          }
+        } catch (e) {
+          console.log('[AUTO-LOAD] Kein google-key.json gefunden:', e);
+        }
+      })();
+    }
     
     const newDefaultPrompt = 
       `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
@@ -299,7 +539,54 @@ export default function App() {
       `## ABSCHNITT "## Ergebnis":\n` +
       `- Fasse alle diagnosewesentlichen Pathologien kurz und stichpunktartig zusammen.\n` +
       `- Schreibe präzise Diagnosen im Stil der Praxis: z.B. 'Intakte Hüft-TEP rechts.', 'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', 'Beckenschiefstand nach links um 4 mm bei Beinlängendifferenz links -4 mm.'.\n` +
-      `- Bei Normalbefund: 'Unauffälliger Befund.' oder der entsprechende Kurztext.\n\n` +
+      `- Bei Normalbefund: 'Unauffälliger Befund.' oder der entsprechende Kurztext.\n` +
+      `## KONSISTENZ-REGELN (STRIKT):\n` +
+      `1. JEDER pathologische Befund aus dem Diktat MUSS im "## Ergebnis" genannt werden. Keine Diagnose darf fehlen.\n` +
+      `2. JEDER pathologische Befund aus dem "## Ergebnis" MUSS auch im "## Befund" beschrieben sein. Keine Diagnose darf nur in einem Abschnitt stehen.\n` +
+      `3. KEINE WIDERSPRÜCHE: Wenn im Befund eine Pathologie beschrieben wird, darf das Ergebnis nicht "unauffällig" lauten.\n` +
+      `4. KEINE WIDERSPRÜCHE: Wenn das Ergebnis eine Diagnose nennt, muss der Befund die entsprechenden morphologischen Kriterien beschreiben.\n` +
+      `5. Keine Diagnose darf ERFUNDEN werden, die nicht im Diktat genannt wurde. Du strukturierst, du diagnostizierst nicht.\n` +
+      `6. "ansonsten unauffällig" bezieht sich nur auf nicht genannte Bereiche – es darf NICHT das gesamte Ergebnis als unauffällig markieren wenn Pathologien vorhanden sind.\n\n` +
+      `## KONFLIKT-REGELN (NORMALBEFUND vs. PATHOLOGIE) — STRIKT EINZUHALTEN:\n` +
+      `Wenn das Diktat eine Pathologie nennt, MÜSSEN die entsprechenden Normalbefund-Sätze aus dem Template ENTFERNT oder ANGEPASST werden. KEINE WIDERSPRÜCHE im Befundtext!\n\n` +
+      `Spezifische Regeln:\n` +
+      `- Osteochondrose/Diskopathie in Segment X: ENTFERNE "Bandscheibenräume normal hoch" für dieses Segment. Schreibe stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums [Segment] mit subchondraler Sklerosierung der Abschlussplatten". Schreibe NICHT "Osteochondrose" als Wort in den Befundtext — nur Deskriptoren.\n` +
+      `- Spondylosis deformans/Spondylophyten in Segment X: ERGÄNZE "Spondylophytenbildung [Segment]" im Befundtext.\n` +
+      `- Unkovertebralgelenksarthrose/Uncovertebralarthrose in Segment X: FÜGE HINZU "Degenerative Veränderungen der Unkovertebralgelenke [Segment] mit Gelenkspaltverschmälerung, subchondraler Sklerosierung und Osteophytenbildung". Die "kleinen Zwischenwirbelgelenke" (Facettengelenke) sind ANDERE Gelenke und bleiben "ohne Auffälligkeiten" wenn nicht genannt.\n` +
+      `- Facettengelenksarthrose/Spondylarthrose in Segment X: ERSETZE "kleinen Zwischenwirbelgelenke ohne Auffälligkeiten" durch "Degenerative Veränderungen der kleinen Wirbelgelenke [Segment]".\n` +
+      `- Anterolisthese/Retrolisthese: Ersetze die normale Achsenverlaufsbeschreibung für das betroffene Segment durch die Listhese-Beschreibung.\n` +
+      `- Skoliose/skoliotische Fehlhaltung: ERSETZE "Normaler Achsenverlauf" durch die Skoliose-Beschreibung.\n` +
+      `- Streckhaltung: ERSETZE "Normaler Achsenverlauf" durch "Streckhaltung der HWS".\n` +
+      `- Fraktur: ENTFERNE "Alle Wirbelkörper von normaler Form und Höhe" und ersetze durch Frakturbeschreibung.\n` +
+      `- Gelenksarthrose (Omarthrose/Coxarthrose/Gonarthrose/Arthrose etc.): ENTFERNE "Normale Form und Struktur der Gelenkkörper", "Die Gelenkflächen glatt und kongruent", "Die Gelenkränder unauffällig", "Die Gelenksspalten normal weit" — ALLE diese Normalbefund-Sätze MÜSSEN gestrichen werden wenn eine Arthrose vorliegt. Stattdessen arthrotische Deskriptoren: "Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung". NIEMALS "Normale Form und Struktur der Gelenkkörper" + arthrotische Deskriptoren im selben Satz (kein "bei ansonsten normaler Form").\n` +
+      `- Humeruskopfhochstand/Femurkopfhochstand: Ersetze die normale Gelenkpartner-Stellung durch den Hochstand. KEIN "bei ansonsten normaler Form und Struktur" — der Hochstand IST die Abweichung.\n` +
+      `- TEP/Prothese: ERSETZE "Normale Form und Struktur der Gelenkkörper" durch Prothesenbeschreibung.\n` +
+      `- Knochenzyste/Lyse/Tumor: ERSETZE "Knochenstruktur unauffällig" / "Mineralgehalt und Knochenstruktur regelrecht" durch pathologische Beschreibung.\n` +
+      `- Kalzifikation/Tendinosis calcarea: ERGÄNZE Verkalkungsbeschreibung im Befundtext.\n\n` +
+      `GRUNDREGEL: Wenn ein Normalbefund-Satz durch eine Pathologie hinfällig wird, MUSS er gestrichen oder ersetzt werden. Ein Befundtext darf NIEMALS eine Struktur als "normal/unauffällig/ordnungsgemäß" beschreiben UND GLEICHZEITIG als pathologisch verändert einstufen.\n` +
+      `BESCHREIBUNGSTEXT = NUR MORPHOLOGIE/DESKRIPTOREN. Diagnosen, Differentialdiagnosen und Diagnose-Namen gehören NUR ins Ergebnis, NICHT in den Befundtext.\n\n` +
+      `## VERBOTENE MUSTER (Anti-Patterns) — diese Fehler macht Gemini Flash oft, sie MÜSSEN vermieden werden:\n` +
+      `❌ FALSCH: "Normale Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung und Osteophytenbildung." (Widerspruch: erst normal, dann arthrotisch — der erste Satz MUSS WEG)\n` +
+      `✅ RICHTIG: "Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung." (nur arthrotische Deskriptoren)\n` +
+      `❌ FALSCH: "Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Medialbetonte Gelenkspaltverschmälerung." (Widerspruch: 3 Normalbefund-Sätze + 1 arthrotischer Befund — die 3 Normalbefund-Sätze MÜSSEN WEG)\n` +
+      `✅ RICHTIG: "Medialbetonte Gelenkspaltverschmälerung. Die periartikuläre Weichteilzone o. B." (nur arthrotische Deskriptoren + Weichteil-Normalbefund, da dieser nicht betroffen ist)\n` +
+      `❌ FALSCH: "Hochstand des Humeruskopfes bei ansonsten normaler Form und Struktur der Gelenkkörper." (Widerspruch: Hochstand + normale Form — "bei ansonsten normaler Form" MUSS WEG)\n` +
+      `✅ RICHTIG: "Hochstand des Humeruskopfes." (Hochstand ist die Abweichung, kein "bei ansonsten normaler Form")\n` +
+      `❌ FALSCH: "Normale Form und Struktur der Gelenkkörper. Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum." (Widerspruch: erst normale Form, dann Fraktur — der erste Satz MUSS WEG)\n` +
+      `✅ RICHTIG: "Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum humeri." (nur Frakturbeschreibung)\n` +
+      `❌ FALSCH: "Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander." (nach Fraktur eines Gelenkpartners — fehlender Qualifikator, impliziert ALLE Flächen normal)\n` +
+      `✅ RICHTIG: "Artikulierende Flächen im Übrigen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander." ("im Übrigen" qualifiziert: der frakturierte Teil ist ausgenommen)\n` +
+      `❌ FALSCH: "Mineralgehalt und Knochenstruktur regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Widerspruch: Knochenstruktur als regelrecht bezeichnet, dann Fraktur — "und Knochenstruktur" MUSS WEG)\n` +
+      `✅ RICHTIG: "Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Mineralgehalt darf normal bleiben, Knochenstruktur nicht bei Fraktur)\n` +
+      `❌ FALSCH: "Flachbogige linkskonvexe Skoliose." oder "Retrolisthese von L4 gegenüber L5." (Befundtext — Diagnosename statt Morphologie)\n` +
+      `✅ RICHTIG: "Flachbogige linkskonvexe Seitausbiegung." bzw. "Dorsaler Versatz von L4 gegenüber L5." (Morphologie im Befundtext, Diagnose "Skoliose"/"Retrolisthese" nur im Ergebnis)\n` +
+      `## ERGEBNIS-REGELN:\n` +
+      `- Schreibe NUR Diagnosen die im Diktat genannt wurden. Keine ERFUNDENEN Begriffe wie "Fehlhaltung" wenn das Diktat "Streckhaltung" sagt.\n` +
+      `- Verwende EXAKT die Begriffe aus dem Diktat. Wenn das Diktat "Streckhaltung" sagt, schreibe "Streckhaltung" — nicht "Fehlhaltung".\n` +
+      `- Diagnose-Namen dürfen NICHT umformuliert werden. "Osteochondrose" bleibt "Osteochondrose", nicht "Diskopathie". "Coxarthrose" bleibt "Coxarthrose", nicht "Hüftgelenksarthrose".\n` +
+      `- Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.\n` +
+      `- Wenn im Diktat "vereinbar mit [Diagnose]" gesagt wird, schreibe im Ergebnis IMMER "Bild wie bei [Diagnose]" (z.B. "vereinbar mit CIDP" → "Bild wie bei CIDP"). "Vereinbar mit" ist NUR eine Diktat-Formulierung und darf NICHT wörtlich ins Ergebnis übernommen werden.\n` +
+      `- Querschnittsfläche (CSA): NUR in den Befundtext aufnehmen, wenn sie EXPLIZIT im Diktat genannt wird. Wenn das Diktat keine CSA nennt, LASS die CSA-Erwähnung aus dem Template KOMPLETT WEG (kein Platzhalter, kein Normwert, nichts). Dies gilt für ALLE Nerven-Templates.\n` +
       `## SCHREIBSTIL – orientiere dich strikt an diesen Praxis-Beispielen:\n` +
       `- 'Intakte Hüft-TEP rechts, soweit in einer Ebene beurteilbar. Pfannenkomponente und Schaftkomponente in regelrechter Position. Kein periprothetischer Aufhellungssaum.'\n` +
       `- 'Coxarthrose links mit deutlicher Gelenkspaltverschmälerung, subchondraler Sklerosierung und osteophytären Randwülsten.'\n` +
@@ -483,6 +770,11 @@ export default function App() {
                       || (textLower.includes("gesamt") && textLower.includes("wirbel"))
                       || (textLower.includes("komplett") && textLower.includes("wirbel"));
 
+    // Ganzaufnahme a.-p. hat eigenes Template — vor wirbelsäule_gesamt prüfen!
+    if (textLower.includes("ganzaufnahme") && !hasCervical) {
+      return "ganzaufnahme_der_wirbelsäule_a-p";
+    }
+
     if (isFullSpineExam || (hasCervical && hasThoracic && hasLumbar)) {
       return "wirbelsäule_gesamt";
     }
@@ -503,6 +795,10 @@ export default function App() {
     }
     
     if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall") || textLower.includes("duplex")) {
+      // ── Schulter-Sonographie (vor allem anderen prüfen!) ──
+      if (textLower.includes("schulter") || textLower.includes("supraspinatus") || textLower.includes("infraspinatus") || textLower.includes("bizepssehne") || textLower.includes("rotatorenmanschette") || textLower.includes("subacromial") || textLower.includes("subakromial") || textLower.includes("bursitis subacromialis")) {
+        return "sonografie_schultergelenk";
+      }
       if (textLower.includes("abdomen") || textLower.includes("bauch") || textLower.includes("abd")) {
         if (textLower.includes("weiblich")) {
           return "sonografie_abdomen_weiblich";
@@ -534,6 +830,9 @@ export default function App() {
       if (textLower.includes("ulnaris") || textLower.includes("sulcus") || textLower.includes("loge") || textLower.includes("guyon")) {
         return "sonografie_nerv_ulnaris";
       }
+      if (textLower.includes("radialis") || textLower.includes("supinator") || textLower.includes("frohse") || textLower.includes("wartenberg")) {
+        return "sonografie_nerv_radialis";
+      }
       if (textLower.includes("plexus")) {
         return "sonografie_plexus_brachialis";
       }
@@ -562,6 +861,10 @@ export default function App() {
     }
 
     if (textLower.includes("mammo")) {
+      // Mammasonographie (Ultraschall) vs Mammographie (Röntgen)
+      if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall") || textLower.includes("mammasono")) {
+        return "mammasonographie_beidseits";
+      }
       return "mammographie_beidseits";
     }
 
@@ -715,11 +1018,11 @@ export default function App() {
       iat: now,
       exp: now + 3600,
     }, keyJson.private_key);
-    const resp = await fetch('https://oauth2.googleapis.com/token', {
+    const resp = await fetchWithRetry('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
-    });
+    }, 30_000, 3);
     const data = await resp.json();
     if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
     googleTokensRef.current[scope] = {
@@ -757,7 +1060,7 @@ export default function App() {
       reader.onloadend = async () => {
         try {
           const base64Data = (reader.result as string).split(',')[1];
-          const response = await fetch(url, {
+          const response = await fetchWithRetry(url, {
             method: 'POST',
             headers: authHeaders,
             body: JSON.stringify({
@@ -766,13 +1069,13 @@ export default function App() {
                 sampleRateHertz: 16000,
                 languageCode: 'de-DE',
                 enableAutomaticPunctuation: true,
-                model: 'latest_long',
+                model: 'latest_short',
                 useEnhanced: true,
                 speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
               },
               audio: { content: base64Data },
             }),
-          });
+          }, 120_000, 3);
           const data = await response.json();
           if (data.error) { reject(new Error(data.error.message || 'Google STT Fehler.')); return; }
           const results = data.results || [];
@@ -816,16 +1119,17 @@ export default function App() {
       recognizeUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
     }
 
-    // Shared config with full medical context (same as chunk transcription)
-    const sttConfig = {
-      encoding: 'LINEAR16',
+    // Config depends on audio duration — latest_short for ≤59s, latest_long for >60s
+    // Using the wrong model returns 0 results silently (Google quirk)
+    const buildSttConfig = (useLongModel: boolean) => ({
+      encoding: 'LINEAR16' as const,
       sampleRateHertz: 16000,
       languageCode: 'de-DE',
       enableAutomaticPunctuation: true,
-      model: 'latest_long',
+      model: useLongModel ? 'latest_long' : 'latest_short',
       useEnhanced: true,
       speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
-    };
+    });
 
     // Estimate audio duration: base64 is ~4/3 the size of binary.
     // 16000 samples/s * 2 bytes/sample = 32000 bytes/s
@@ -839,14 +1143,14 @@ export default function App() {
       console.log('[FULL-AUDIO] Using speech:recognize (synchronous, ≤60s)');
       setStatusText('Volltranskription läuft (komplettes Diktat)...');
 
-      const response = await fetch(recognizeUrl, {
+      const response = await fetchWithRetry(recognizeUrl, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({
-          config: sttConfig,
+          config: buildSttConfig(false),
           audio: { content: base64Data },
         }),
-      });
+      }, 120_000, 3);
 
       const data = await response.json();
       if (data.error) {
@@ -873,14 +1177,14 @@ export default function App() {
       }
 
       // Initiate long-running operation
-      const startResponse = await fetch(longRunningUrl, {
+      const startResponse = await fetchWithRetry(longRunningUrl, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({
-          config: sttConfig,
+          config: buildSttConfig(true),
           audio: { content: base64Data },
         }),
-      });
+      }, 120_000, 3);
 
       const startData = await startResponse.json();
       if (startData.error) {
@@ -910,10 +1214,10 @@ export default function App() {
           pollUrl = `${pollUrl}?key=${apiKey}`;
         }
 
-        const pollResponse = await fetch(pollUrl, {
+        const pollResponse = await fetchWithRetry(pollUrl, {
           method: 'GET',
           headers: pollHeaders,
-        });
+        }, 30_000, 3);
 
         const pollData = await pollResponse.json();
         if (pollData.error) {
@@ -949,6 +1253,139 @@ export default function App() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────
+  // WHISPER STT — lokale faster-whisper Engine über http://localhost:8765/whisper
+  // Vollständige Erkennung aller Wörter, kostenlos, offline
+  // ─────────────────────────────────────────────────────────────────────────
+  const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.ogg');
+
+    console.log('[WHISPER] Sende Audio an lokalen Whisper-Server...');
+    const response = await fetchWithRetry('http://localhost:8765/whisper', {
+      method: 'POST',
+      body: formData,
+    }, 120_000, 3);
+
+    const data = await response.json();
+    if (data.error) {
+      throw new Error('Whisper STT Fehler: ' + data.error);
+    }
+    const text = (data.text || '').trim();
+    console.log(`[WHISPER] Fertig in ${data.elapsed_seconds}s: "${text.substring(0, 100)}..."`);
+    return text;
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Correct STT errors using Gemini Flash (standalone, no external dependency)
+  const correctTranscriptionWithGemini = async (rawText: string): Promise<string> => {
+    if (!googleKeyJson && !geminiApiKey) {
+      return rawText; // No LLM available, return raw
+    }
+
+    let url: string;
+    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    } else if (geminiApiKey) {
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
+    } else {
+      return rawText;
+    }
+
+    const correctionPrompt = `Du bist ein medizinischer Lektor für radiologische Diktate. Korrigiere Spracherkennungsfehler.
+
+## BEKANNTE STT-FEHLER (automatisch korrigieren):
+- "Genusse pinnatus" / "Genusses pinnatus" / "pinnatus" → "Supraspinatussehne" / "Supraspinatus"
+- "Szene Partie" / "Partie" → "Tendinopathie"
+- "Bizeps Szene" / "Szene" (nach Bizeps/Sehne) → "Bizepssehne" / "Sehne"
+- "nur noch völlig" → "unauffällig"
+- "begleitet ist" / "begleitend" / "begleitet" → "mit Begleitbursitis" / "mit begleitender Bursitis"
+- "Kalkschulter" → "Tendinosis calcarea"
+- "Kalkspick" / "Kalkspick" → "Kalkeinlagerung"
+- "Pirates" / "Pirates 2" / "Pirats" → "BI-RADS 2"
+- "Pirates 1" / "Pirates 3" / "Pirates 4" / "Pirates 5" → "BI-RADS 1" / "BI-RADS 3" / "BI-RADS 4" / "BI-RADS 5"
+- "Pirates 0" / "Pirates 6" → "BI-RADS 0" / "BI-RADS 6"
+- "Hypertropha Musculus Anconeus Epidrochearis" → "hypertropher M. anconeus epitrochlearis"
+- "Epidrochearis" / "Epitrochlearis" → "epitrochlearis"
+- "Edelbogenflexion" → "Ellbogenflexion"
+- "Edelbogen" → "Ellbogen"
+- "Quadratmillimeter" / "Quadrat Millimeter" → "mm²"
+- "Sulcus Nervi" → "Sulcus nervi ulnaris"
+- "fast zirkulär" / "fastzirkulär" / "fast zirkular" → "faszikulär"
+- "Nerventechistenz" / "Nerventechistenz" → "Nervendehiszenz"
+- "Elbungs" → "Ellbogens"
+- "Kilo-Nevin" → "Kiloh-Nevin"
+- "Einigung" (bei Nerv/Sehne) → "Einengung"
+- "Nervus Lunaris" / "N. Lunaris" → "Nervus ulnaris" / "N. ulnaris"
+- "Hypothenamuskulatur" → "Hypothenarmuskulatur"
+- "Sulkus" → "Sulcus"
+- "Aktion not mesis" / "Aktionotmesis" → "Axonotmesis"
+- "messigradige" / "messiggradige" → "mäßiggradige"
+- "Succus" → "Sulcus"
+- "Platnoster Synthese" / "Platnostersynthese" → "Plattenosteosynthese"
+- "Rhamus" → "Ramus"
+- "perinorale" → "perineurale"
+- "hoffmann die nählzeichen" / "hoffmann die nähzeichen" → "Hoffmann-Tinel-Zeichen"
+- "bizeps sinnen naht" → "Bizepssehnennaht"
+
+## PRAXIS-JARGON (Dr. Kalmar / Dr. Riegler Shortcut-Phrasen):
+- "Baustein Gelenkschema" / "Baustein Gelenkschirma" / "Baustein Gelenk Schema" → "unauffällig"
+- "Baustein Gelenkschema 0" / "Baustein Gelenkschema 1" / "Baustein Gelenkschema 2" → "unauffällig"
+- "Baustein" (alleine, am Ende eines Diktats) → "unauffällig"
+- "im Übrigen Baustein" → "im Übrigen unauffällig"
+
+## WICHTIGE REGELN:
+1. Behalte ALLE Pathologien bei — verliere NIEMALS eine Diagnose
+2. "mit" + unklarer Begriff nach Sehnen-Untersuchung → "mit Begleitbursitis"
+3. VERÄNDERE KEINE ZAHLEN! "18 mm" bleibt "18 mm", nicht "1,8 mm". "15 mm²" bleibt "15 mm²". Messwerte sind heilig.
+4. VERÄNDERE KEINE ANATOMISCHEN LOKALISATIONEN! "axillär" bleibt "axillär", nicht "lateral". 
+5. Gib NUR den korrigierten Text aus, keine Erklärungen
+
+## FEW-SHOT BEISPIELE:
+Roh: "Tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig"
+Korrigiert: "Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig"
+
+Roh: "Mammasonographie beidseits, thrombosierte Hautvenen links im axillären Quadranten, auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig, Pirates 2"
+Korrigiert: "Mammasonographie beidseits: Thrombosierte Hautvenen links im axillären Quadranten, auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig. BI-RADS 2."
+
+Roh: "Röntgen und der Sonographie des linken Schultergelenkes tenosynovitis der langen Bizepssehne tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig"
+Korrigiert: "Röntgen und Sonographie des linken Schultergelenkes: Tenosynovitis der langen Bizepssehne, Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig"
+
+Roh: ${rawText}
+
+Korrigiert:`;
+
+    try {
+      const response = await fetchWithRetry(url, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: correctionPrompt }]
+          }],
+          generationConfig: { temperature: 0.0 }
+        })
+      }, 120_000, 3);
+
+      const data = await response.json();
+      if (data.error) {
+        console.warn('[CORRECT] Gemini correction error:', data.error.message);
+        return rawText;
+      }
+
+      const corrected = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      console.log(`[CORRECT] Raw: "${rawText.substring(0, 100)}..."`);
+      console.log(`[CORRECT] Corrected: "${corrected.substring(0, 100)}..."`);
+      return corrected || rawText;
+    } catch (e: any) {
+      console.warn('[CORRECT] Correction failed:', e.message);
+      return rawText;
+    }
+  };
 
   // Call Gemini API to Structure the Transcript
   // Call Gemini API to Structure the Transcript (Aligned 1:1 with EXE parameters)
@@ -983,7 +1420,7 @@ export default function App() {
 
     const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Nutze ## Befund und ## Ergebnis als Haupttitel.";
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
@@ -1001,7 +1438,7 @@ export default function App() {
           temperature: 0.0
         }
       })
-    });
+    }, 120_000, 3);
 
     const data = await response.json();
     if (data.error) {
@@ -1010,6 +1447,86 @@ export default function App() {
 
     const outputText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     return outputText;
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // VALIDATION: 2nd Gemini Call — prüft Befund gegen Diktat auf Vollständigkeit & Widerspruchsfreiheit
+  const validateReportConsistency = async (rawDictation: string, generatedReport: string): Promise<string> => {
+    let url: string;
+    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
+      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    } else if (geminiApiKey) {
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
+    } else {
+      return generatedReport; // No LLM available, skip validation
+    }
+
+    const validationPrompt = `Du bist ein radiologischer Qualitätskontrolleur. Du erhältst das ursprüngliche Diktat und den daraus generierten Befund. Prüfe STRENG:
+
+1. VOLLSTÄNDIGKEIT: Jede Pathologie/Diagnose aus dem Diktat muss im Befund (## Befund) UND im Ergebnis (## Ergebnis) vorkommen. Liste fehlende Diagnosen auf.
+2. WIDERSPRUCHSFREIHEIT: Befund und Ergebnis dürfen sich nicht widersprechen. Wenn Befund eine Pathologie beschreibt, darf Ergebnis nicht "unauffällig" sein.
+3. WIDERSPRUCHSFREIHEIT IM BEFUNDTEXT: Ein Normalbefund-Satz darf NICHT bestehen bleiben, wenn die entsprechende Struktur pathologisch verändert ist. Spezifisch:
+   - "Bandscheibenräume normal hoch" MUSS gestrichen/angepasst werden wenn Osteochondrose/Diskopathie in einem Segment vorliegt.
+   - "kleinen Zwischenwirbelgelenke ohne Auffälligkeiten" MUSS angepasst werden wenn Facettengelenksarthrose vorliegt (NICHT bei Unkovertebralgelenksarthrose — das sind unterschiedliche Gelenke!).
+   - "Normaler Achsenverlauf" MUSS ersetzt werden bei Skoliose, Streckhaltung, Anterolisthese oder anderen Achsenabweichungen.
+   - "Alle Wirbelkörper von normaler Form und Höhe" MUSS angepasst werden bei Fraktur, Anterolisthese oder anderen Formveränderungen.
+4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" Abschnitt dürfen KEINE Diagnosenamen stehen (z.B. nicht "Osteochondrose im Segment C5/C6"). Stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums C5/C6 mit subchondraler Sklerosierung der Abschlussplatten". Diagnosen NUR im "## Ergebnis".
+5. KEINE ERFUNDENE DIAGNOSE: Der Befund darf keine Diagnosen enthalten, die im Diktat nicht erwähnt wurden.
+6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
+7. SPRACHERKENNUNGSKORREKTUR: Prüfe ob offensichtliche Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen", "Flachbügelingskonvexe" → "flachbogige Konvexität").
+
+Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
+Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
+Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen.
+
+<diktat>
+${rawDictation}
+</diktat>
+
+<generierter_befund>
+${generatedReport}
+</generierter_befund>
+
+Korrigierter Befund:`;
+
+    try {
+      console.log('[VALIDATE] Prüfe Befund-Konsistenz...');
+      const response = await fetchWithRetry(url, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: validationPrompt }] }],
+          generationConfig: { temperature: 0.0 }
+        })
+      }, 120_000, 3);
+
+      const data = await response.json();
+      if (data.error) {
+        console.warn('[VALIDATE] Validation error:', data.error.message);
+        return generatedReport;
+      }
+
+      const validated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      if (!validated || !validated.includes('## Befund')) {
+        console.warn('[VALIDATE] Validation output invalid, using original');
+        return generatedReport;
+      }
+
+      // Check if validation changed anything
+      if (validated.trim() === generatedReport.trim()) {
+        console.log('[VALIDATE] Befund war bereits fehlerfrei ✅');
+      } else {
+        console.log('[VALIDATE] Befund wurde korrigiert ⚠️');
+      }
+      return validated;
+    } catch (e: any) {
+      console.warn('[VALIDATE] Validation failed:', e.message);
+      return generatedReport;
+    }
   };
 
   const testGoogleSTT = async (keyJson: any): Promise<void> => {
@@ -1033,7 +1550,7 @@ export default function App() {
     // Send a tiny silent audio chunk (160 samples of 0, which is 320 bytes)
     const base64Silence = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; 
     
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
@@ -1044,7 +1561,7 @@ export default function App() {
         },
         audio: { content: base64Silence },
       }),
-    });
+    }, 30_000, 2);
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
@@ -1067,14 +1584,14 @@ export default function App() {
       throw new Error("Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
     }
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
         contents: [{ parts: [{ text: "Hi" }] }],
         generationConfig: { maxOutputTokens: 1 }
       })
-    });
+    }, 30_000, 2);
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
@@ -1343,20 +1860,22 @@ export default function App() {
         throw new Error("Es wurde kein gesprochener Text erkannt.");
       }
 
-      // 1:1 Matching logic from EXE version
-      const isNormalFinding = (text: string): boolean => {
-        const textLower = text.toLowerCase();
-        const normalKeywords = ["unauffällig", "normal", "regelrecht", "ohne befund", "kein nachweis", "unauffaellig"];
-        const hasNormal = normalKeywords.some(kw => textLower.includes(kw));
-        const isShort = textLower.split(/\s+/).filter(Boolean).length < 12;
-        return hasNormal && isShort;
-      };
+      // LLM-Korrektur der STT-Ergebnisse
+      setStatusText('Korrigiere medizinische Fachbegriffe (Gemini Flash)...');
+      const correctedText = await correctTranscriptionWithGemini(finalRawText);
+      finalRawText = correctedText;
+      setTranscript(finalRawText);
 
+      // 1:1 Matching logic from EXE version
       const detectedKey = detectTemplate(finalRawText);
-      const activeTemplate = templates[detectedKey] || templates['allgemein'] || { 
+      const activeTemplate = templates[detectedKey] || templates['allgemein'] || {
         display_name: "Allgemeine Untersuchung",
         body: "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
       };
+      if (detectedKey === 'allgemein') {
+        console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
+        setStatusText('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
+      }
 
       // RAG-Bypass-Shortcut for pure normal findings (1:1 from EXE version)
       if (isNormalFinding(finalRawText)) {
@@ -1392,11 +1911,15 @@ export default function App() {
         examples
       );
 
-      setStructuredReport(structuredText);
+      // Step 3: Konsistenz-Validierung gegen das Diktat
+      setStatusText('Validiere Befund-Konsistenz...');
+      const validatedReport = await validateReportConsistency(finalRawText, structuredText);
+
+      setStructuredReport(validatedReport);
       setStatus('ready');
       setStatusText('Bereit');
 
-      await copyTextToClipboard(structuredText);
+      await copyTextToClipboard(validatedReport);
 
     } catch (err: any) {
       console.error(err);
@@ -1410,6 +1933,141 @@ export default function App() {
   const handleCopyReport = async () => {
     if (!structuredReport) return;
     await copyTextToClipboard(structuredReport);
+  };
+
+  // Audio File Upload Handler — feeds uploaded audio through the same STT + Gemini pipeline
+  const handleAudioUpload = async (file: File) => {
+    setStatus('processing');
+    setStatusText('Verarbeite hochgeladenes Audio...');
+    setTranscript('');
+    setStructuredReport('');
+
+    try {
+      // Read the uploaded file into an AudioBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
+
+      // Convert to mono 16kHz WAV (same pipeline as mic recording)
+      const sampleRate = decodedAudio.sampleRate;
+      let channelData: Float32Array;
+
+      if (decodedAudio.numberOfChannels > 1) {
+        // Mix down to mono
+        const numChannels = decodedAudio.numberOfChannels;
+        const length = decodedAudio.length;
+        channelData = new Float32Array(length);
+        for (let ch = 0; ch < numChannels; ch++) {
+          const chData = decodedAudio.getChannelData(ch);
+          for (let i = 0; i < length; i++) {
+            channelData[i] += chData[i] / numChannels;
+          }
+        }
+      } else {
+        channelData = decodedAudio.getChannelData(0);
+      }
+
+      // Downsample to 16kHz
+      const resampled = downsampleBuffer(channelData, sampleRate, 16000);
+
+      if (resampled.length === 0) {
+        throw new Error('Audiodatei ist leer oder zu kurz.');
+      }
+
+      // Create WAV blob
+      const ctxWav = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      const audioBuf = ctxWav.createBuffer(1, resampled.length, 16000);
+      audioBuf.copyToChannel(resampled as any, 0);
+      const wavBlob = audioBufferToWav(audioBuf);
+      ctxWav.close();
+      audioContext.close();
+
+      console.log(`[UPLOAD] Audio loaded: ${file.name}, ${resampled.length} samples, ${(resampled.length / 16000).toFixed(1)}s`);
+
+      // Step 1: Transkription via lokalem Whisper-Server (primär), Google STT (Fallback)
+      let finalRawText = '';
+      try {
+        setStatusText('Spracherkennung läuft (Whisper large-v3, lokal)...');
+        // Sende die Original-Datei an Whisper (nicht WAV-konvertiert — Whisper kann OGG direkt)
+        finalRawText = await transcribeWithWhisper(file);
+      } catch (whisperErr: any) {
+        console.warn('[UPLOAD] Whisper fehlgeschlagen, falle auf Google STT zurück:', whisperErr.message);
+        setStatusText('Spracherkennung läuft (Google Cloud STT, Fallback)...');
+        finalRawText = await transcribeFullAudioWithGoogle(wavBlob);
+      }
+
+      finalRawText = finalRawText.trim();
+
+      if (!finalRawText) {
+        throw new Error('Es wurde kein gesprochener Text erkannt.');
+      }
+
+      // Step 1.5: LLM-Korrektur der STT-Ergebnisse
+      setStatusText('Korrigiere medizinische Fachbegriffe (Gemini Flash)...');
+      finalRawText = await correctTranscriptionWithGemini(finalRawText);
+
+      setTranscript(finalRawText);
+      console.log(`[UPLOAD] Transcription (corrected): ${finalRawText.substring(0, 200)}...`);
+
+      // Step 2: Template detection + LLM structuring (same as stopRecording)
+      const detectedKey = detectTemplate(finalRawText);
+      const activeTemplate = templates[detectedKey] || templates['allgemein'] || {
+        display_name: "Allgemeine Untersuchung",
+        body: "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
+      };
+      if (detectedKey === 'allgemein') {
+        console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
+        setStatusText('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
+      }
+
+      // Normalbefund-Bypass
+      if (isNormalFinding(finalRawText)) {
+        console.log(`[UPLOAD] Normalbefund erkannt. Generiere direkt aus Template.`);
+        let formattedRaw = finalRawText.trim();
+        if (formattedRaw) {
+          formattedRaw = formattedRaw[0].toUpperCase() + formattedRaw.slice(1);
+          if (!formattedRaw.endsWith('.')) {
+            formattedRaw += '.';
+          }
+        }
+        const report = `## Befund\n${activeTemplate.body}\n\n## Ergebnis\n${formattedRaw}`;
+        setStructuredReport(report);
+        setStatus('ready');
+        setStatusText('Bereit');
+        await copyTextToClipboard(report);
+        return;
+      }
+
+      // Normal path: structure with LLM
+      const examples = getFewShotExamples(finalRawText);
+      const isLlmAvailable = !!geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key);
+      if (!isLlmAvailable) {
+        throw new Error("KI-Strukturierung nicht möglich: Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
+      }
+
+      setStatusText('KI-Strukturierung läuft (Gemini Flash)...');
+      const structuredText = await callGeminiLLM(
+        finalRawText,
+        activeTemplate.body,
+        activeTemplate.display_name,
+        examples
+      );
+
+      // Step 3: Konsistenz-Validierung gegen das Diktat
+      setStatusText('Validiere Befund-Konsistenz...');
+      const validatedReport = await validateReportConsistency(finalRawText, structuredText);
+
+      setStructuredReport(validatedReport);
+      setStatus('ready');
+      setStatusText('Bereit');
+      await copyTextToClipboard(validatedReport);
+
+    } catch (err: any) {
+      console.error('[UPLOAD] Error:', err?.message || err?.name || JSON.stringify(err), err?.stack?.substring(0, 200) || '');
+      setStatus('ready');
+      setStatusText('Fehler bei der Verarbeitung.');
+      alert("Fehler bei Audio-Upload-Verarbeitung: " + (err?.message || err?.name || 'Unbekannter Fehler'));
+    }
   };
 
   // Reset fields
@@ -1719,9 +2377,32 @@ export default function App() {
                 <MicOff size={18} /> Aufnahme Stoppen
               </button>
             ) : (
-              <button onClick={startRecording} disabled={status === 'processing'} className="btn btn-primary btn-large-action">
-                <Mic size={18} /> Aufnahme Starten
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button onClick={startRecording} disabled={status === 'processing'} className="btn btn-primary btn-large-action">
+                  <Mic size={18} /> Aufnahme Starten
+                </button>
+                <button
+                  onClick={() => audioUploadRef.current?.click()}
+                  disabled={status === 'processing'}
+                  className="btn btn-secondary btn-large-action"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  title="Sprachnachricht oder Audio-Datei hochladen"
+                >
+                  <Upload size={18} /> Audio hochladen
+                </button>
+                <input
+                  ref={audioUploadRef}
+                  type="file"
+                  accept="audio/*,.ogg,.mp3,.wav,.m4a,.opus,.webm"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    if (e.target.files?.[0]) {
+                      handleAudioUpload(e.target.files[0]);
+                      e.target.value = ''; // reset so same file can be re-uploaded
+                    }
+                  }}
+                />
+              </div>
             )}
           </div>
         </section>
