@@ -34,7 +34,7 @@ jobs:
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=rakscribe.ico RaKScribe.py
+          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files
