@@ -10,7 +10,8 @@ import {
   ArrowRight,
   Sparkles,
   X,
-  Upload
+  Upload,
+  Download
 } from 'lucide-react';
 import templatesData from './templates.json';
 
@@ -2218,6 +2219,18 @@ Korrigierter Befund:`;
             <span className={`status-dot ${status === 'recording' ? 'recording' : status === 'processing' ? 'processing' : 'ready'}`} />
             <span>{statusText.toUpperCase()}</span>
           </div>
+
+          {/* Download Desktop EXE */}
+          <a
+            href="https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="icon-btn"
+            title="Windows Desktop-App herunterladen"
+            style={{ textDecoration: 'none' }}
+          >
+            <Download size={20} />
+          </a>
 
           {/* Logout button */}
           <button 
