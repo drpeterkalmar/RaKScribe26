@@ -27,185 +27,8 @@ type TemplatesMap = {
 
 const templates = templatesData as TemplatesMap;
 
-const MEDICAL_PHRASES = [
-  "Hochauflösender Nervenschall", "Thorax pa/seitlich", "MRT", "MR", "CT", "Computertomografie", "DXA", "Knochendichtemessung",
-  "Humerus", "Femur", "Tibia", "Fibula", "Patella", "Karpaltunnel", "Rotatorenmanschette",
-  "Achillessehne", "Kalkaneus", "Acromioclaviculargelenk", "Sacroiliacalgelenk", "Halswirbelsäule (HWS)",
-  "Brustwirbelsäule (BWS)", "Lendenwirbelsäule (LWS)", "Kreuzband", "Tarsus", "Metatarsus",
-  "Fraktur", "Spondylarthrose", "Spondylarthrosen", "Spondylodese", "Spondyolyse", "Spondylosis deformans", "Spondylose", "pontifizierend", "pontifizierende", "Arthrose", "Coxarthrose", "Gonarthrose", "Meniskus", "Hinterhorn-Läsion",
-  "Korbhenkelriss", "Bandscheibenprolaps", "Spinalkanalstenose", "Osteochondrose", "Osteochondrosen", "Nearthrosis interspinosa",
-  "Osteomyelitis", "Rheumatoide Arthritis", "Kapsel-Band-Läsion", "Osteoporose", "Bakerzyste",
-  "Knochenödem", "Einklemmungssyndrom", "Arthrographie", "Szintigraphie", "Vertebroplastie",
-  "Facetteninfiltration", "CT-gesteuerte Biopsie", "MR-Arthrographie", "Skelettaufnahme", "Ganzbeinaufnahme",
-  "Gelenkspaltverschmälerung", "Subluxation", "Wirbelkörperkompression", "Rotatorenmanschettenruptur",
-  "Labrumläsion", "Subchondrale Sklerosierung", "Nervus medianus", "Nervus radialis",
-  "Liquor", "Zerebrospinalflüssigkeit", "Kortex", "Großhirnrinde", "Weiße Substanz", "Basalganglien",
-  "Hypophyse", "Corpus callosum", "Sinus cavernosus", "Aorta", "Arteria carotis interna", "Arteria carotis externa",
-  "Pulmonalarterie", "Vena cava superior", "Vena cava inferior", "A. vertebralis",
-  "Aneurysma", "Intrakranielles Aneurysma", "Ischämie", "Ischämischer Infarkt", "Intracranielle Blutung",
-  "Subarachnoidalblutung (SAB)", "Subduralhämatom (SDH)", "Epiduralhämatom (EDH)", "Multiple Sklerose (MS)",
-  "Hypophysenadenom", "Hydrozephalus", "Normaldruckhydrozephalus", "Vaskulitis", "Stenose", "Carotisstenose",
-  "Koronarstenose", "Dissektion", "Aortendissektion", "Thrombus", "Thrombose", "Embolie", "PAE", "Plaqubildung", "Softplaque",
-  "gemischte Plaqueformation", "IMT-Komplex", "Intima-Media-Hyperplasie", "Intimahyperplasie",
-  "Varizen", "T1-gewichtete Sequenz", "T2-gewichtete Sequenz", "Flair-Sequenz", "Diffusion-weighted Imaging (DWI)",
-  "Time-of-Flight (TOF) Angio", "MRA", "CTA", "Kontrastmittel (KM)", "Plaque", "Atherosklerotische Plaque",
-  "Angioplastie", "Sakkuläres Aneurysma", "Gefäßokklusion",
-  "Lunge", "Oberlappen", "Unterlappen", "Trachea", "Bronchien", "Mediastinum", "Herz", "Ventrikel",
-  "Perikard", "Leber", "Gallenblase", "Pankreas", "Niere", "Milz", "Uterus", "Adnexe", "Appendix",
-  "Schilddrüse", "Infiltrat", "Pulmonales Infiltrat", "Pleuraerguss", "Pneumothorax", "Spannungspneumothorax",
-  "Kardiomegalie", "Aortenklappeninsuffizienz", "Leberzirrhose", "Cholezystitis", "Pankreatitis",
-  "Nierenstein", "Ureterstein", "Nephrolithiasis", "Adnexitis", "Ovarielle Zyste", "Lymphknoten",
-  "Lymphadenopathie", "Appendizitis", "Struma", "Verschattung", "Milzruptur", "Hernie", "Hiatushernie",
-  "Inguinalhernie", "Dilatation", "Aszites", "Zystische Läsion", "Liquidation", "Faszienverdickung",
-  "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
-  "Echoarm", "Echogen",
-  "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung",
-  "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
-  "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
-  "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
-  "Kontraindikation", "Artefakt", "Pixel", "Voxel", "Echoarmut", "Echogenität", "Hyperintens", "Hypointens",
-  "Dosis-Längen-Produkt (DLP)", "Field of View (FOV)", "Standard-Abweichung (SD)", "Flüssigkeitsspiegel",
-  "Röntgen-Thorax", "Projektionsaufnahme", "Z.n.", "Zustand nach", "Adenokarzinom", "Cholangiokarzinom",
-  "Fibrose", "Hämangiom", "Atelektase", "Bronchiektasen", "Emphysem", "Sarkom", "Neurofibrom", "Lipom",
-  "Aortenaneurysma", "Klaustrophobie", "Sequester", "Vollbild", "Partialruptur", "Tendinose", "Impingement",
-  "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
-  "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
-  "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-  "Flachbogig", "S-förmige",
-  // ── Schulter/Sonographie-spezifisch ──
-  "Tenosynovitis", "Tenosynovitis der langen Bizepssehne", "Bizepssehne", "Bizepssehnenscheide",
-  "Tendinopathie", "Tendinose", "Tendinosis", "Tendinosis calcarea",
-  "Supraspinatussehne", "Supraspinatus", "Infraspinatussehne", "Infraspinatus",
-  "Subscapularis", "Subscapularissehne", "Teres minor", "Teres-minor-Sehne",
-  "Rotatorenmanschette", "Rotatorenmanschettenruptur", "Rotatorenmanschetten-Tendinose",
-  "Bursitis", "Bursitis subacromialis", "Subacromialbursa", "Subakromialbursa",
-  "begleitende Bursitis", "Begleitbursitis", "begleitbursitis",
-  "Kalkschulter", "Kalkspick", "Kalkablagerung", "Verkalkung der Supraspinatussehne",
-  "Impingement", "Impingementsyndrom", "subacromiales Impingement",
-  "Akromion", "Akromioklavikulargelenk", "AC-Gelenk", "Klavikula",
-  "Coracoid", "Processus coracoideus", "Labrum glenoidale", "Labrumläsion",
-  "SLAP-Läsion", "Bankart-Läsion", "Hill-Sachs-Läsion",
-  "Glenohumeralgelenk", "Glenoid", "Bizepssehnenanker",
-  "Lange Bizepssehne", "Lange-Bizeps-Sehne", "Bizepslongussehne",
-  "Schultergelenksonographie", "Schultersonographie", "Schulterultraschall",
-  "Röntgen und Sonographie des Schultergelenkes",
-  "Röntgen und der Sonographie",
-  "Kalkeinlagerung", "Kalkdepot", "Kalkherd",
-  "Sehnenkalkeinlagerung", "Tendinosis calcarea der Supraspinatussehne",
-  "Partialruptur der Supraspinatussehne", "Full-Thickness-Ruptur",
-  "Gelenkerguss", "Gelenkspalt", "Gelenkkapsel",
-  // ── Allgemein radiologische Begriffe (ergänzt) ──
-  "unauffällig", "Unauffällig", "unauffälliger Befund",
-  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
-  "regelrecht", "Regelrecht", "regelrechte Darstellung",
-  "ohne pathologischen Befund", "kein pathologischer Befund",
-  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
-  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
-  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
-  "Röntgen und Sonographie", "Röntgen und der Sonographie",
-  "des linken Schultergelenkes", "des rechten Schultergelenkes",
-  "des linken Kniegelenkes", "des rechten Kniegelenkes",
-  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
-  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
-  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
-  "des linken Handgelenkes", "des rechten Handgelenkes",
-  // ── Praxis-Jargon / Shortcut-Phrasen ──
-  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
-  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
-  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
-  "Metatarsale", "Phalanx", "Basis",
-  // ── Mamma/Mammasonographie-spezifisch ──
-  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
-  "Mammographie", "Mammografie", "Mammographie beidseits",
-  "Drüsenparenchym", "Brustdrüse", "Mamma",
-  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
-  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
-  "Morbus Mondor", "Mondor", "Mondor-Disease",
-  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
-  "kutane Venenthrombose", "Venenthrombose",
-  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
-  "Axillen", "Axillen beidseits frei",
-  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
-  "Architekturstörung", "Architekturstörungen",
-  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
-  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
-  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
-  "Inspektion und Palpation", "Palpationsbefund",
-  "Durchmesser", "mm Durchmesser",
-  // ── Nervus-ulnaris / Neurosonographie-spezifisch ──
-  "Nervus ulnaris", "N. ulnaris", "Sulcus nervi ulnaris", "Sulcus ulnaris",
-  "Loge de Guyon", "Guyon-Loge", "Ramus dorsalis", "Ramus superficialis", "Ramus profundus",
-  "Querschnittsfläche", "Querschnittsflaeche", "Quadratmillimeter", "mm²",
-  "M. anconeus", "Musculus anconeus", "M. anconeus epitrochlearis", "anconeus epitrochlearis",
-  "hypertropher M. anconeus", "hypertrophe Musculus anconeus",
-  "Epicondylus medialis humeri", "Epicondylus medialis", "mediales Septum intermusculare",
-  "Osborne Ligament", "Osborne-Ligament", "Osborne Faszie", "Retinaculum",
-  "M. flexor carpi ulnaris", "Flexor carpi ulnaris", "FCU",
-  "Ellbogenflexion", "Ellbogenstreckung", "Ellbogengelenk",
-  "Aggravation", "Kompression des Nervs", "Nervenkompression",
-  "faszikulär", "faszikulaer", "nervale Auftreibung", "Denervation",
-  "Hypothenarmuskulatur", "Lumbricalmuskulatur", "M. adductor pollicis", "Muskel-Faszikulationen",
-  "Echogenitätssteigerung", "Atrophie", "seitensymmetrisch",
-  "Schnappen des Nervs", "Loge de Guyon unauffällig",
-  "N. radialis", "Nervus radialis", "Ramus profundus", "Ramus superficialis",
-  "Frohse-Arkade", "Frohse Arkade", "Supinator", "M. supinator", "Musculus supinator",
-  "Wartenberg-Syndrom", "Wartenberg", "Arteria radialis recurrens",
-  "Sulcus n. radialis", "Strecksehnenfach", "4. Strecksehnenfaches",
-  "N. cutaneus brachii lateralis inferior", "N. cutaneus antebrachii posterior",
-  "M. brachioradialis", "Handgelenksextensoren",
-  // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
-  "flachbogig", "flachbogige", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
-  "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
-  "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
-  "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
-  "multisegmentale", "Schmalsche Impressionen", "Deckplattenimpressionen",
-  "Edgren-Vaino-Zeichen", "Edgren Vaino Zeichen", "Edgren-Vaino Zeichen",
-  "Morbus Scheuermann", "Scheuermann", "Scheuermann-Krankheit",
-  "Kyphose", "hyperkyphotisch", "harmonische Kyphose",
-  "Bogenwurzeln", "Dornfortsätze", "Querfortsätze", "Processus articulares",
-  "Articulationes costotransversales", "Articulationes costovertebrales",
-  "Spatien intervertebralia", "Canalis spinalis", "Platae terminales",
-  "BWS-Röntgen", "BWS in 2 Ebenen", "Brustwirbelsäule", "BWS",
-  // ── Allgemein radiologische Begriffe (ergänzt) ──
-  "unauffällig", "Unauffällig", "unauffälliger Befund",
-  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
-  "regelrecht", "Regelrecht", "regelrechte Darstellung",
-  "ohne pathologischen Befund", "kein pathologischer Befund",
-  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
-  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
-  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
-  "Röntgen und Sonographie", "Röntgen und der Sonographie",
-  "des linken Schultergelenkes", "des rechten Schultergelenkes",
-  "des linken Kniegelenkes", "des rechten Kniegelenkes",
-  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
-  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
-  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
-  "des linken Handgelenkes", "des rechten Handgelenkes",
-  // ── Praxis-Jargon / Shortcut-Phrasen ──
-  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
-  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
-  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
-  "Metatarsale", "Phalanx", "Basis",
-  // ── Mamma/Mammasonographie-spezifisch ──
-  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
-  "Mammographie", "Mammografie", "Mammographie beidseits",
-  "Drüsenparenchym", "Brustdrüse", "Mamma",
-  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
-  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
-  "Morbus Mondor", "Mondor", "Mondor-Disease",
-  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
-  "kutane Venenthrombose", "Venenthrombose",
-  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
-  "Axillen", "Axillen beidseits frei",
-  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
-  "Architekturstörung", "Architekturstörungen",
-  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
-  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
-  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
-  "Inspektion und Palpation", "Palpationsbefund",
-  "Durchmesser", "mm Durchmesser",
-];
+// Vertex AI endpoint for Gemini 2.5 Flash
+const VERTEX_ENDPOINT = 'https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent';
 
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -394,35 +217,11 @@ export default function App() {
   const [authError, setAuthError] = useState<string>('');
 
   // Configuration States
-  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
-  // Google Cloud STT – service account JSON or simple API-key JSON
-  const [googleKeyJson, setGoogleKeyJson] = useState<any>(null);
-  const [googleKeyFileName, setGoogleKeyFileName] = useState<string>('');
+  const [vertexApiKey, setVertexApiKey] = useState<string>('');
   const [systemPrompt, setSystemPrompt] = useState<string>('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
-  // Cached access tokens for service-account auth, mapped by scope
-  const googleTokensRef = useRef<{ [scope: string]: { token: string; expiry: number } }>({});
-
-  // Drag and Drop state & handlers for Google JSON key file
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files?.[0]) {
-      loadGoogleKeyFile(e.dataTransfer.files[0]);
-    }
-  };
 
   // Application States
   const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
@@ -490,36 +289,30 @@ export default function App() {
 
   // Load configuration from local storage
   useEffect(() => {
-    const savedGeminiKey = localStorage.getItem('gemini_api_key');
+    const savedVertexKey = localStorage.getItem('vertex_api_key');
     const savedPrompt = localStorage.getItem('system_prompt');
     const savedAuth = localStorage.getItem('is_authenticated');
-    const savedKeyJson = localStorage.getItem('google_key_json');
-    const savedKeyName = localStorage.getItem('google_key_filename');
     const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
-    if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
-    if (savedKeyJson) { try { setGoogleKeyJson(JSON.parse(savedKeyJson)); } catch {} }
-    if (savedKeyName) setGoogleKeyFileName(savedKeyName);
+    if (savedVertexKey) setVertexApiKey(savedVertexKey);
     if (savedAuth === 'true') setIsAuthenticated(true);
     if (savedDeviceId) setSelectedDeviceId(savedDeviceId);
 
-    // Auto-Load Google Key from local file if not in localStorage
-    if (!savedKeyJson) {
+    // Auto-Load Vertex AI API key from local file if not in localStorage
+    if (!savedVertexKey) {
       (async () => {
         try {
-          const resp = await fetch('/google-key.json');
+          const resp = await fetch('/vertex-key.txt');
           if (resp.ok) {
-            const keyData = await resp.json();
-            if (keyData.type === 'service_account' && keyData.private_key) {
-              localStorage.setItem('google_key_json', JSON.stringify(keyData));
-              localStorage.setItem('google_key_filename', 'google-key.json (auto-loaded)');
-              setGoogleKeyJson(keyData);
-              setGoogleKeyFileName('google-key.json (auto-loaded)');
-              console.log('[AUTO-LOAD] Google Key automatisch aus /google-key.json geladen');
+            const keyData = (await resp.text()).trim();
+            if (keyData) {
+              localStorage.setItem('vertex_api_key', keyData);
+              setVertexApiKey(keyData);
+              console.log('[AUTO-LOAD] Vertex API Key automatisch aus /vertex-key.txt geladen');
             }
           }
         } catch (e) {
-          console.log('[AUTO-LOAD] Kein google-key.json gefunden:', e);
+          console.log('[AUTO-LOAD] Kein vertex-key.txt gefunden:', e);
         }
       })();
     }
@@ -957,306 +750,6 @@ export default function App() {
       matches.map((m, idx) => `Beispiel ${idx + 1}:\n${m}\n---`).join("\n");
   };
 
-  // ── Google Cloud STT – JSON Key File handling ──────────────────────────────
-
-  const loadGoogleKeyFile = (file: File) => {
-    if (!file.name.endsWith('.json')) {
-      alert('Bitte eine Google Cloud JSON-Schlüsseldatei hochladen.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const parsed = JSON.parse(e.target?.result as string);
-        setGoogleKeyJson(parsed);
-        setGoogleKeyFileName(file.name);
-        localStorage.setItem('google_key_json', JSON.stringify(parsed));
-        localStorage.setItem('google_key_filename', file.name);
-        // Invalidate cached token
-        googleTokensRef.current = {};
-      } catch {
-        alert('Ungültige JSON-Datei.');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  // Base64url encode a Uint8Array
-  const toBase64Url = (buffer: ArrayBuffer): string =>
-    btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-  // Sign a JWT with RS256 using a PKCS8 PEM private key (service account)
-  const signJwt = async (payload: object, privateKeyPem: string): Promise<string> => {
-    const header = { alg: 'RS256', typ: 'JWT' };
-    const pemBody = privateKeyPem
-      .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n|\r/g, '');
-    const derBinary = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
-    const cryptoKey = await crypto.subtle.importKey(
-      'pkcs8', derBinary.buffer,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false, ['sign']
-    );
-    const enc = new TextEncoder();
-    const headerB64  = toBase64Url(enc.encode(JSON.stringify(header)).buffer as ArrayBuffer);
-    const payloadB64 = toBase64Url(enc.encode(JSON.stringify(payload)).buffer as ArrayBuffer);
-    const signingInput = `${headerB64}.${payloadB64}`;
-    const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, enc.encode(signingInput));
-    return `${signingInput}.${toBase64Url(sig)}`;
-  };
-
-  // Get a valid Bearer token for service accounts (cached, auto-refresh)
-  const getGoogleBearerToken = async (keyJson: any, scope: string): Promise<string> => {
-    const now = Math.floor(Date.now() / 1000);
-    const cached = googleTokensRef.current[scope];
-    if (cached && cached.expiry > now + 60) {
-      return cached.token;
-    }
-    const jwt = await signJwt({
-      iss: keyJson.client_email,
-      scope: scope,
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600,
-    }, keyJson.private_key);
-    const resp = await fetchWithRetry('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
-    }, 30_000, 3);
-    const data = await resp.json();
-    if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
-    googleTokensRef.current[scope] = {
-      token: data.access_token,
-      expiry: now + (data.expires_in || 3600)
-    };
-    return data.access_token;
-  };
-
-  // Google Cloud Speech-to-Text REST API Call (supports API key or service account JSON)
-  const transcribeWithGoogle = async (wavBlob: Blob): Promise<string> => {
-    if (!googleKeyJson) {
-      throw new Error('Bitte laden Sie Ihre Google Cloud JSON-Schlüsseldatei in den Einstellungen hoch.');
-    }
-    setStatusText('Transkribiere mit Google Cloud STT...');
-
-    // Determine auth method from JSON structure
-    let url: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-      // Service Account: generate Bearer token via JWT
-      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-      url = 'https://speech.googleapis.com/v1/speech:recognize';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else {
-      // Simple API key (stored in json as "api_key" or "key")
-      const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
-      if (!apiKey) throw new Error('JSON-Datei enthält weder "type":"service_account" noch "api_key".');
-      url = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
-    }
-
-    const reader = new FileReader();
-    return new Promise((resolve, reject) => {
-      reader.onloadend = async () => {
-        try {
-          const base64Data = (reader.result as string).split(',')[1];
-          const response = await fetchWithRetry(url, {
-            method: 'POST',
-            headers: authHeaders,
-            body: JSON.stringify({
-              config: {
-                encoding: 'LINEAR16',
-                sampleRateHertz: 16000,
-                languageCode: 'de-DE',
-                enableAutomaticPunctuation: true,
-                model: 'latest_short',
-                useEnhanced: true,
-                speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
-              },
-              audio: { content: base64Data },
-            }),
-          }, 120_000, 3);
-          const data = await response.json();
-          if (data.error) { reject(new Error(data.error.message || 'Google STT Fehler.')); return; }
-          const results = data.results || [];
-          resolve(results.map((r: any) => r.alternatives[0].transcript).join(' '));
-        } catch (err) { reject(err); }
-      };
-      reader.onerror = () => reject(new Error('Fehler beim Lesen der Audiodatei.'));
-      reader.readAsDataURL(wavBlob);
-    });
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // FULL-AUDIO TRANSCRIPTION (Re-transcription with complete context)
-  // Uses speech:recognize for ≤60s audio, speech:longrunningrecognize for >60s
-  // ─────────────────────────────────────────────────────────────────────────
-
-  const transcribeFullAudioWithGoogle = async (wavBlob: Blob): Promise<string> => {
-    if (!googleKeyJson) {
-      throw new Error('Bitte laden Sie Ihre Google Cloud JSON-Schlüsseldatei in den Einstellungen hoch.');
-    }
-
-    // Convert blob to base64
-    const base64Data = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-      reader.onerror = () => reject(new Error('Fehler beim Lesen der Audiodatei.'));
-      reader.readAsDataURL(wavBlob);
-    });
-
-    // Build auth URL + headers
-    let recognizeUrl: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-      recognizeUrl = 'https://speech.googleapis.com/v1/speech:recognize';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else {
-      const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
-      if (!apiKey) throw new Error('JSON-Datei enthält weder "type":"service_account" noch "api_key".');
-      recognizeUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
-    }
-
-    // Config depends on audio duration — latest_short for ≤59s, latest_long for >60s
-    // Using the wrong model returns 0 results silently (Google quirk)
-    const buildSttConfig = (useLongModel: boolean) => ({
-      encoding: 'LINEAR16' as const,
-      sampleRateHertz: 16000,
-      languageCode: 'de-DE',
-      enableAutomaticPunctuation: true,
-      model: useLongModel ? 'latest_long' : 'latest_short',
-      useEnhanced: true,
-      speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
-    });
-
-    // Estimate audio duration: base64 is ~4/3 the size of binary.
-    // 16000 samples/s * 2 bytes/sample = 32000 bytes/s
-    const binarySize = Math.floor(base64Data.length * 3 / 4);
-    const estimatedDurationSec = binarySize / 32000;
-
-    console.log(`[FULL-AUDIO] Audio size: ${binarySize} bytes, estimated duration: ${estimatedDurationSec.toFixed(1)}s`);
-
-    if (estimatedDurationSec <= 59) {
-      // Short audio: use speech:recognize (synchronous)
-      console.log('[FULL-AUDIO] Using speech:recognize (synchronous, ≤60s)');
-      setStatusText('Volltranskription läuft (komplettes Diktat)...');
-
-      const response = await fetchWithRetry(recognizeUrl, {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
-          config: buildSttConfig(false),
-          audio: { content: base64Data },
-        }),
-      }, 120_000, 3);
-
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error.message || 'Google STT Fehler bei Volltranskription.');
-      }
-      const results = data.results || [];
-      const fullText = results.map((r: any) => r.alternatives[0].transcript).join(' ');
-      console.log(`[FULL-AUDIO] Transkription erfolgreich: ${fullText.length} Zeichen`);
-      return fullText;
-
-    } else {
-      // Long audio (>60s): use speech:longrunningrecognize (async with polling)
-      console.log('[FULL-AUDIO] Using speech:longrunningrecognize (async, >60s)');
-      setStatusText('Volltranskription läuft (langes Diktat, bitte warten)...');
-
-      let longRunningUrl: string;
-      if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-        const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-        longRunningUrl = 'https://speech.googleapis.com/v1/speech:longrunningrecognize';
-        authHeaders['Authorization'] = `Bearer ${token}`;
-      } else {
-        const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
-        longRunningUrl = `https://speech.googleapis.com/v1/speech:longrunningrecognize?key=${apiKey}`;
-      }
-
-      // Initiate long-running operation
-      const startResponse = await fetchWithRetry(longRunningUrl, {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
-          config: buildSttConfig(true),
-          audio: { content: base64Data },
-        }),
-      }, 120_000, 3);
-
-      const startData = await startResponse.json();
-      if (startData.error) {
-        throw new Error(startData.error.message || 'Fehler beim Starten der Long-Running-Erkennung.');
-      }
-
-      const operationName = startData.name;
-      console.log(`[FULL-AUDIO] Long-running operation started: ${operationName}`);
-
-      // Poll until done (max 5 minutes)
-      const maxAttempts = 60;
-      const pollInterval = 5000; // 5 seconds
-      let lastProgress = 0;
-
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-        // Build poll URL (API key needs to be in query params for GET)
-        let pollUrl = `https://speech.googleapis.com/v1/operations/${operationName}`;
-        const pollHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-          // Re-fetch token in case it expired during long operation
-          const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-          pollHeaders['Authorization'] = `Bearer ${token}`;
-        } else {
-          const apiKey = googleKeyJson.api_key || googleKeyJson.key || googleKeyJson.apiKey;
-          pollUrl = `${pollUrl}?key=${apiKey}`;
-        }
-
-        const pollResponse = await fetchWithRetry(pollUrl, {
-          method: 'GET',
-          headers: pollHeaders,
-        }, 30_000, 3);
-
-        const pollData = await pollResponse.json();
-        if (pollData.error) {
-          throw new Error(pollData.error.message || 'Fehler beim Abrufen des Transkriptionsergebnisses.');
-        }
-
-        if (pollData.done) {
-          const response = pollData.response;
-          if (!response || !response.results) {
-            console.log('[FULL-AUDIO] Operation completed but no results returned.');
-            return '';
-          }
-          const fullText = response.results
-            .map((r: any) => r.alternatives[0].transcript)
-            .join(' ');
-          console.log(`[FULL-AUDIO] Long-running transcription complete: ${fullText.length} chars`);
-          return fullText;
-        }
-
-        // Update progress indicator
-        const progress = pollData.metadata?.progressPercent;
-        if (progress && progress !== lastProgress) {
-          lastProgress = progress;
-          setStatusText(`Volltranskription läuft... ${progress}%`);
-          console.log(`[FULL-AUDIO] Progress: ${progress}%`);
-        } else {
-          setStatusText(`Volltranskription läuft... (Versuch ${attempt + 1}/${maxAttempts})`);
-        }
-      }
-
-      throw new Error('Zeitüberschreitung bei der Volltranskription (5 Minuten). Das Audio war evtl. zu lang.');
-    }
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // WHISPER STT — lokale faster-whisper Engine über http://localhost:8765/whisper
-  // Vollständige Erkennung aller Wörter, kostenlos, offline
-  // ─────────────────────────────────────────────────────────────────────────
   const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> => {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.ogg');
@@ -1280,22 +773,12 @@ export default function App() {
 
   // Correct STT errors using Gemini Flash (standalone, no external dependency)
   const correctTranscriptionWithGemini = async (rawText: string): Promise<string> => {
-    if (!googleKeyJson && !geminiApiKey) {
+    if (!vertexApiKey) {
       return rawText; // No LLM available, return raw
     }
 
-    let url: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else if (geminiApiKey) {
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
-    } else {
-      return rawText;
-    }
+    const url = VERTEX_ENDPOINT;
+    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': vertexApiKey };
 
     const correctionPrompt = `Du bist ein medizinischer Lektor für radiologische Diktate. Korrigiere Spracherkennungsfehler.
 
@@ -1366,6 +849,7 @@ Korrigiert:`;
         headers: authHeaders,
         body: JSON.stringify({
           contents: [{
+            role: "user",
             parts: [{ text: correctionPrompt }]
           }],
           generationConfig: { temperature: 0.0 }
@@ -1388,23 +872,14 @@ Korrigiert:`;
     }
   };
 
-  // Call Gemini API to Structure the Transcript
   // Call Gemini API to Structure the Transcript (Aligned 1:1 with EXE parameters)
   const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string): Promise<string> => {
-    let url: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-      // Service Account: generate Bearer token via JWT
-      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else if (geminiApiKey) {
-      // Simple API key
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
-    } else {
-      throw new Error("Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
+    if (!vertexApiKey) {
+      throw new Error("Es ist kein Vertex AI API-Key konfiguriert. Bitte in den Einstellungen eintragen.");
     }
+
+    const url = VERTEX_ENDPOINT;
+    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': vertexApiKey };
 
     setStatusText("Strukturiere mit Gemini...");
 
@@ -1426,6 +901,7 @@ Korrigiert:`;
       headers: authHeaders,
       body: JSON.stringify({
         contents: [{
+          role: "user",
           parts: [{
             text: promptText
           }]
@@ -1453,18 +929,12 @@ Korrigiert:`;
   // ─────────────────────────────────────────────────────────────────────────
   // VALIDATION: 2nd Gemini Call — prüft Befund gegen Diktat auf Vollständigkeit & Widerspruchsfreiheit
   const validateReportConsistency = async (rawDictation: string, generatedReport: string): Promise<string> => {
-    let url: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key) {
-      const token = await getGoogleBearerToken(googleKeyJson, 'https://www.googleapis.com/auth/generative-language');
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else if (geminiApiKey) {
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
-    } else {
+    if (!vertexApiKey) {
       return generatedReport; // No LLM available, skip validation
     }
+
+    const url = VERTEX_ENDPOINT;
+    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': vertexApiKey };
 
     const validationPrompt = `Du bist ein radiologischer Qualitätskontrolleur. Du erhältst das ursprüngliche Diktat und den daraus generierten Befund. Prüfe STRENG:
 
@@ -1500,7 +970,7 @@ Korrigierter Befund:`;
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({
-          contents: [{ parts: [{ text: validationPrompt }] }],
+          contents: [{ role: "user", parts: [{ text: validationPrompt }] }],
           generationConfig: { temperature: 0.0 }
         })
       }, 120_000, 3);
@@ -1530,66 +1000,19 @@ Korrigierter Befund:`;
     }
   };
 
-  const testGoogleSTT = async (keyJson: any): Promise<void> => {
-    if (!keyJson) {
-      throw new Error('Google Cloud JSON-Schlüsseldatei fehlt.');
+  const testGeminiAPI = async (): Promise<void> => {
+    if (!vertexApiKey) {
+      throw new Error("Es ist kein Vertex AI API-Key konfiguriert.");
     }
 
-    let url: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (keyJson.type === 'service_account' && keyJson.private_key) {
-      const token = await getGoogleBearerToken(keyJson, 'https://www.googleapis.com/auth/cloud-platform');
-      url = 'https://speech.googleapis.com/v1/speech:recognize';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else {
-      const apiKey = keyJson.api_key || keyJson.key || keyJson.apiKey;
-      if (!apiKey) throw new Error('JSON-Datei enthält weder "type":"service_account" noch "api_key".');
-      url = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
-    }
-
-    // Send a tiny silent audio chunk (160 samples of 0, which is 320 bytes)
-    const base64Silence = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; 
-    
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        config: {
-          encoding: 'LINEAR16',
-          sampleRateHertz: 16000,
-          languageCode: 'de-DE',
-        },
-        audio: { content: base64Silence },
-      }),
-    }, 30_000, 2);
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      const errMsg = data.error?.message || `HTTP Fehler ${response.status}`;
-      throw new Error(`Google STT Fehler: ${errMsg}`);
-    }
-  };
-
-  const testGeminiAPI = async (keyJson: any, apiKey: string): Promise<void> => {
-    let url: string;
-    let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-
-    if (keyJson && keyJson.type === 'service_account' && keyJson.private_key) {
-      const token = await getGoogleBearerToken(keyJson, 'https://www.googleapis.com/auth/generative-language');
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
-      authHeaders['Authorization'] = `Bearer ${token}`;
-    } else if (apiKey) {
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-    } else {
-      throw new Error("Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
-    }
+    const url = VERTEX_ENDPOINT;
+    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': vertexApiKey };
 
     const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        contents: [{ parts: [{ text: "Hi" }] }],
+        contents: [{ role: "user", parts: [{ text: "Hi" }] }],
         generationConfig: { maxOutputTokens: 1 }
       })
     }, 30_000, 2);
@@ -1628,7 +1051,7 @@ Korrigierter Befund:`;
       activeRequestsCountRef.current++;
       setIsTranscribingChunk(true);
       
-      const p = transcribeWithGoogle(wavBlob).then(text => {
+      const p = transcribeWithWhisper(wavBlob).then(text => {
         chunkTranscriptsRef.current[chunkIdx] = text.trim();
         const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
         setTranscript(fullText);
@@ -1650,26 +1073,23 @@ Korrigierter Befund:`;
   // Start Audio Recording
   const startRecording = async () => {
     try {
-      if (!googleKeyJson) {
-        alert("Fehler: Bitte laden Sie zuerst Ihre Google Cloud JSON-Schlüsseldatei in den Einstellungen hoch!");
-        setStatusText("Fehler: JSON-Schlüssel fehlt");
+      if (!vertexApiKey) {
+        alert("Fehler: Bitte tragen Sie Ihren Vertex AI API-Key in den Einstellungen ein!");
+        setStatusText("Fehler: Vertex API-Key fehlt");
         setStatus('ready');
         return;
       }
 
-      setStatusText("Verifiziere Schlüssel...");
+      setStatusText("Verifiziere API-Key...");
       setStatus('processing');
 
-      // Validate both Google Cloud STT credentials and Gemini API Key
+      // Validate Vertex AI API key
       try {
-        await Promise.all([
-          testGoogleSTT(googleKeyJson),
-          testGeminiAPI(googleKeyJson, geminiApiKey)
-        ]);
+        await testGeminiAPI();
       } catch (verifyErr: any) {
         setStatus('ready');
-        setStatusText('Schlüssel ungültig');
-        alert("Fehler bei der Key-Verifikation:\n\n" + verifyErr.message + "\n\nBitte überprüfen Sie Ihre API-Schlüssel in den Einstellungen.");
+        setStatusText('API-Key ungültig');
+        alert("Fehler bei der Key-Verifikation:\n\n" + verifyErr.message + "\n\nBitte überprüfen Sie Ihren API-Key in den Einstellungen.");
         return;
       }
 
@@ -1774,7 +1194,7 @@ Korrigierter Befund:`;
         activeRequestsCountRef.current++;
         setIsTranscribingChunk(true);
         
-        const p = transcribeWithGoogle(wavBlob).then(text => {
+        const p = transcribeWithWhisper(wavBlob).then(text => {
           chunkTranscriptsRef.current[chunkIdx] = text.trim();
           const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
           setTranscript(fullText);
@@ -1815,9 +1235,8 @@ Korrigierter Befund:`;
 
       // ─────────────────────────────────────────────────────────────────────
       // FULL-AUDIO RE-TRANSCRIPTION (the key fix for medical term recognition)
-      // Re-transcribe the ENTIRE recording as one piece so Google has full
-      // context across the whole dictation — same as the Desktop EXE's
-      // streaming_recognize approach.
+      // Re-transcribe the ENTIRE recording as one piece so Whisper has full
+      // context across the whole dictation.
       // ─────────────────────────────────────────────────────────────────────
       let finalRawText = '';
 
@@ -1838,8 +1257,9 @@ Korrigierter Befund:`;
 
             console.log(`[FULL-AUDIO] Re-transcribing complete recording (${resampledAll.length} samples, ${(resampledAll.length / 16000).toFixed(1)}s)`);
 
-            // Run full-audio transcription
-            const fullTranscript = await transcribeFullAudioWithGoogle(fullWavBlob);
+            // Run full-audio transcription via Whisper
+            setStatusText('Volltranskription läuft (komplettes Diktat)...');
+            const fullTranscript = await transcribeWithWhisper(fullWavBlob);
             finalRawText = fullTranscript.trim();
           }
         }
@@ -1900,9 +1320,8 @@ Korrigierter Befund:`;
 
       // Normal path: structure with LLM
       const examples = getFewShotExamples(finalRawText);
-      const isLlmAvailable = !!geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key);
-      if (!isLlmAvailable) {
-        throw new Error("KI-Strukturierung nicht möglich: Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
+      if (!vertexApiKey) {
+        throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
       }
 
       const structuredText = await callGeminiLLM(
@@ -1944,57 +1363,16 @@ Korrigierter Befund:`;
     setStructuredReport('');
 
     try {
-      // Read the uploaded file into an AudioBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
-
-      // Convert to mono 16kHz WAV (same pipeline as mic recording)
-      const sampleRate = decodedAudio.sampleRate;
-      let channelData: Float32Array;
-
-      if (decodedAudio.numberOfChannels > 1) {
-        // Mix down to mono
-        const numChannels = decodedAudio.numberOfChannels;
-        const length = decodedAudio.length;
-        channelData = new Float32Array(length);
-        for (let ch = 0; ch < numChannels; ch++) {
-          const chData = decodedAudio.getChannelData(ch);
-          for (let i = 0; i < length; i++) {
-            channelData[i] += chData[i] / numChannels;
-          }
-        }
-      } else {
-        channelData = decodedAudio.getChannelData(0);
-      }
-
-      // Downsample to 16kHz
-      const resampled = downsampleBuffer(channelData, sampleRate, 16000);
-
-      if (resampled.length === 0) {
-        throw new Error('Audiodatei ist leer oder zu kurz.');
-      }
-
-      // Create WAV blob
-      const ctxWav = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      const audioBuf = ctxWav.createBuffer(1, resampled.length, 16000);
-      audioBuf.copyToChannel(resampled as any, 0);
-      const wavBlob = audioBufferToWav(audioBuf);
-      ctxWav.close();
-      audioContext.close();
-
-      console.log(`[UPLOAD] Audio loaded: ${file.name}, ${resampled.length} samples, ${(resampled.length / 16000).toFixed(1)}s`);
-
-      // Step 1: Transkription via lokalem Whisper-Server (primär), Google STT (Fallback)
+      // Step 1: Transkription via lokalem Whisper-Server (nur Whisper STT)
       let finalRawText = '';
       try {
         setStatusText('Spracherkennung läuft (Whisper large-v3, lokal)...');
-        // Sende die Original-Datei an Whisper (nicht WAV-konvertiert — Whisper kann OGG direkt)
+        // Sende die Original-Datei an Whisper (Whisper kann OGG/MP3/WAV direkt verarbeiten)
         finalRawText = await transcribeWithWhisper(file);
       } catch (whisperErr: any) {
-        console.warn('[UPLOAD] Whisper fehlgeschlagen, falle auf Google STT zurück:', whisperErr.message);
-        setStatusText('Spracherkennung läuft (Google Cloud STT, Fallback)...');
-        finalRawText = await transcribeFullAudioWithGoogle(wavBlob);
+        console.warn('[UPLOAD] Whisper fehlgeschlagen:', whisperErr.message);
+        setStatusText('Spracherkennung fehlgeschlagen...');
+        throw new Error('Whisper STT fehlgeschlagen: ' + whisperErr.message + ' (Google STT ist nicht mehr verfügbar)');
       }
 
       finalRawText = finalRawText.trim();
@@ -2041,9 +1419,8 @@ Korrigierter Befund:`;
 
       // Normal path: structure with LLM
       const examples = getFewShotExamples(finalRawText);
-      const isLlmAvailable = !!geminiApiKey || (googleKeyJson && googleKeyJson.type === 'service_account' && googleKeyJson.private_key);
-      if (!isLlmAvailable) {
-        throw new Error("KI-Strukturierung nicht möglich: Weder ein Gemini API-Key noch eine Google Cloud Service-Account JSON-Datei ist konfiguriert.");
+      if (!vertexApiKey) {
+        throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
       }
 
       setStatusText('KI-Strukturierung läuft (Gemini Flash)...');
@@ -2276,40 +1653,22 @@ Korrigierter Befund:`;
           </select>
         </div>
 
-        {/* Unified Praxis JSON Key Upload with Drag-and-Drop */}
-        <div 
-          className="status-bar-item"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          style={{
-            border: isDragging ? '1.5px dashed var(--accent-purple, #8c52ff)' : '1px solid transparent',
-            backgroundColor: isDragging ? 'rgba(140, 82, 255, 0.15)' : 'transparent',
-            borderRadius: '8px',
-            padding: '4px 10px',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}
-        >
-          <span className="status-bar-label">Zugangsdaten (JSON):</span>
-          {googleKeyJson ? (
+        {/* Vertex AI API Key Input */}
+        <div className="status-bar-item">
+          <span className="status-bar-label">Vertex AI API Key:</span>
+          {vertexApiKey ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="status-bar-value success">
-                <Check size={14} className="status-bar-icon" /> {googleKeyFileName} geladen (STT + LLM aktiv)
+                <Check size={14} className="status-bar-icon" /> API-Key geladen (LLM aktiv)
               </span>
               <button
                 className="icon-btn logout"
                 style={{ padding: '4px 8px', height: '26px', minWidth: 'unset', display: 'flex', alignItems: 'center' }}
                 onClick={() => {
-                  setGoogleKeyJson(null);
-                  setGoogleKeyFileName('');
-                  localStorage.removeItem('google_key_json');
-                  localStorage.removeItem('google_key_filename');
-                  googleTokensRef.current = {};
+                  setVertexApiKey('');
+                  localStorage.removeItem('vertex_api_key');
                 }}
-                title="Schlüssel entfernen"
+                title="API-Key entfernen"
               >
                 🗑
               </button>
@@ -2317,21 +1676,29 @@ Korrigierter Befund:`;
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                style={{ display: 'none' }}
-                onChange={e => { if (e.target.files?.[0]) loadGoogleKeyFile(e.target.files[0]); }}
+                type="text"
+                placeholder="Vertex AI API-Key eingeben"
+                className="select-input"
+                style={{
+                  background: 'var(--bg-input)',
+                  color: '#fff',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '13px',
+                  fontFamily: 'var(--sans-font)',
+                  outline: 'none',
+                  width: '300px'
+                }}
+                onChange={e => {
+                  const val = e.target.value.trim();
+                  setVertexApiKey(val);
+                  if (val) localStorage.setItem('vertex_api_key', val);
+                  else localStorage.removeItem('vertex_api_key');
+                }}
               />
-              <button 
-                onClick={() => fileInputRef.current?.click()} 
-                className="btn btn-secondary" 
-                style={{ padding: '6px 12px', fontSize: '12px', height: '30px', minWidth: 'unset' }}
-              >
-                JSON hochladen
-              </button>
               <span className="status-bar-value danger" style={{ pointerEvents: 'none' }}>
-                <X size={14} className="status-bar-icon" /> Drag & Drop (.json) möglich
+                <X size={14} className="status-bar-icon" /> STT: nur Whisper (lokal)
               </span>
             </div>
           )}
@@ -2348,7 +1715,7 @@ Korrigierter Befund:`;
               <h2 className="card-title">Live-Diktat & Spracherkennung</h2>
             </div>
             <span className="card-badge">
-              Engine: GOOGLE CLOUD STT
+              Engine: WHISPER (lokal)
             </span>
           </div>
 

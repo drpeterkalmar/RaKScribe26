@@ -25,6 +25,8 @@ import sqlite3
 from difflib import get_close_matches
 import traceback
 import configparser
+import urllib.request
+import urllib.error
 from openai import OpenAI
 
 # =========================================================================
@@ -219,23 +221,19 @@ if not init_google_speech():
 
 # --- LLM Client Initialisierung ---
 openai_client = None
+# Vertex AI Endpoint für Gemini (REST API, Auth via x-goog-api-key Header)
+VERTEX_ENDPOINT = (
+    "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/"
+    "locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
+)
 try:
     if LLM_PROVIDER == 'gemini':
         key = API_KEY if API_KEY else os.environ.get("GEMINI_API_KEY", "")
         if key:
-            import google.generativeai as genai
-            genai.configure(api_key=key)
-            print(f"[INIT] Gemini-Client via API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
+            VERTEX_API_KEY = key
+            print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
         else:
-            SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME)
-            if os.path.exists(SERVICE_ACCOUNT_FILE):
-                import google.generativeai as genai
-                from google.oauth2 import service_account
-                credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
-                genai.configure(credentials=credentials)
-                print(f"[INIT] Gemini-Client via Service-Account '{GOOGLE_JSON_FILENAME}' konfiguriert (Modell: {LLM_MODEL}) [OK]")
-            else:
-                print("[WARN] Kein Gemini API-Key oder Service-Account JSON gefunden.")
+            print("[WARN] Kein Gemini/Vertex API-Key gefunden in config.ini oder GEMINI_API_KEY Umgebungsvariable.")
     elif LLM_PROVIDER == 'openai':
         key = API_KEY if API_KEY else os.environ.get("OPENAI_API_KEY", "")
         if not key:
@@ -1081,33 +1079,32 @@ class RaKScribeApp(ctk.CTk):
 
             report = ""
             if LLM_PROVIDER == 'gemini':
-                import google.generativeai as genai
-                model_id = LLM_MODEL
-                if model_id == "gemini-1.5-flash":
-                    model_id = "gemini-flash-latest"
-                elif model_id == "gemini-1.5-pro":
-                    model_id = "gemini-pro-latest"
-                
-                model = genai.GenerativeModel(
-                    model_name=model_id,
-                    system_instruction=sys_msg
-                )
-                resp = model.generate_content(
-                    p_full,
-                    generation_config={"temperature": 0.0},
-                    stream=True
-                )
-                for chunk in resp:
-                    try:
-                        delta = chunk.text
-                        if delta:
-                            report += delta
-                            self.after(0, lambda r=report: (
-                                self.result_text.delete("1.0", "end"),
-                                self.result_text.insert("1.0", r)
-                            ))
-                    except (AttributeError, ValueError, KeyError):
-                        pass
+                # Vertex AI REST API Call (Auth via x-goog-api-key Header)
+                try:
+                    key = API_KEY if API_KEY else os.environ.get("GEMINI_API_KEY", "")
+                    headers = {
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": key,
+                    }
+                    body = json.dumps({
+                        "contents": [{"role": "user", "parts": [{"text": p_full}]}],
+                        "systemInstruction": {"parts": [{"text": sys_msg}]},
+                        "generationConfig": {"temperature": 0.0},
+                    }).encode()
+                    req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
+                    with urllib.request.urlopen(req, timeout=120) as resp:
+                        result = json.loads(resp.read())
+                    if "error" in result:
+                        raise Exception(result["error"].get("message", result["error"]))
+                    report = result["candidates"][0]["content"]["parts"][0]["text"]
+                    self.after(0, lambda r=report: (
+                        self.result_text.delete("1.0", "end"),
+                        self.result_text.insert("1.0", r)
+                    ))
+                except Exception as e:
+                    report = ""
+                    log_exception("Gemini Vertex AI Generate")
+                    messagebox.showerror("Generierungs-Fehler", f"Fehler bei der Gemini (Vertex AI) Generierung:\n{e}")
             else:
                 kwargs = {
                     "model": LLM_MODEL,

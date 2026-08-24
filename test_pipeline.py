@@ -7,18 +7,17 @@ Nutzt Google Service Account für Gemini Flash (wie die Web App).
 """
 
 import json
+import os
 import urllib.request
 import urllib.error
 import time
 import sys
 from pathlib import Path
-import google.auth.transport.requests as grequests
-from google.oauth2.service_account import Credentials
 
 # ─── Config ───
-KEY_PATH = Path.home() / ".hermes" / "rakscribe-google-key.json"
-GEMINI_MODEL = "gemini-flash-latest"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = "gemini-2.5-flash"
+VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
 
 # Peters Roh-Diktat (mit STT-Fehlern, wie es aus der Spracherkennung kommt)
 RAW_DICTATION = (
@@ -133,23 +132,18 @@ Korrigierter Befund:
 """
 
 
-def get_bearer_token(key_path):
-    creds = Credentials.from_service_account_file(
-        str(key_path),
-        scopes=["https://www.googleapis.com/auth/generative-language"]
-    )
-    creds.refresh(grequests.Request())
-    return creds.token
+def get_bearer_token(key_path=None):
+    return API_KEY
 
 
-def call_gemini(prompt, token, temperature=0.0, timeout=120):
-    url = GEMINI_URL
+def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
+    url = VERTEX_URL
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {token}"
+        "x-goog-api-key": API_KEY
     }
     body = json.dumps({
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": temperature}
     }).encode()
 
@@ -167,8 +161,8 @@ def run_test(label, use_conflict_rules_gen=False, use_conflict_rules_val=False):
     print(f"TEST: {label}")
     print(f"{'='*70}")
 
-    # Get token
-    token = get_bearer_token(KEY_PATH)
+    # Get token (Vertex API key)
+    token = get_bearer_token()
 
     # Call #1: Generation
     print("\n[CALL #1] Generiere Befund...")

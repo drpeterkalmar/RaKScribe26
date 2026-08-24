@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Quick Diff-Test: Call #1 vs Call #2 für 3 repräsentative Fälle."""
 import json
+import os
 import urllib.request
 import time
 from pathlib import Path
-import google.auth.transport.requests as grequests
-from google.oauth2.service_account import Credentials
 
-KEY_PATH = Path.home() / ".hermes" / "rakscribe-google-key.json"
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+API_KEY = os.environ.get("GEMINI_API_KEY", "")
+VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
 
 TEMPLATES_PATH = Path.home() / "RaKScribe26" / "web_app" / "src" / "templates.json"
 with open(TEMPLATES_PATH) as f:
@@ -19,23 +18,17 @@ import sys
 sys.path.insert(0, str(Path.home() / "RaKScribe26"))
 from test_all_regions import CONFLICT_RULES, build_gen_prompt, build_val_prompt
 
-def get_token():
-    creds = Credentials.from_service_account_file(
-        str(KEY_PATH),
-        scopes=["https://www.googleapis.com/auth/generative-language"]
-    )
-    creds.refresh(grequests.Request())
-    return creds.token
-
-def call_gemini(prompt, token, temperature=0.0, timeout=120):
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
+    headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
     body = json.dumps({
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": temperature}
     }).encode()
-    req = urllib.request.Request(GEMINI_URL, data=body, headers=headers, method="POST")
+    req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read())
+    if "error" in data:
+        raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
     return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
 
 CASES = [
@@ -50,8 +43,6 @@ CASES = [
      "Sprunggelenk links, Röntgen, Arthrose des oberen Sprunggelenkes, Gelenkspaltverschmälerung, subchondrale Sklerosierung, Osteophyten. Ansonsten unauffällig."),
 ]
 
-token = get_token()
-
 for name, tkey, diktat in CASES:
     template_body = TEMPLATES.get(tkey, {}).get("body", "")
     print(f"\n{'='*70}")
@@ -60,13 +51,13 @@ for name, tkey, diktat in CASES:
 
     gen_prompt = build_gen_prompt(diktat, template_body)
     t0 = time.time()
-    call1 = call_gemini(gen_prompt, token, temperature=0.0)
+    call1 = call_gemini(gen_prompt, None, temperature=0.0)
     print(f"\n[Call #1] ({time.time()-t0:.1f}s):")
     print(call1)
 
     val_prompt = build_val_prompt(diktat, call1)
     t0 = time.time()
-    call2 = call_gemini(val_prompt, token, temperature=0.0)
+    call2 = call_gemini(val_prompt, None, temperature=0.0)
     print(f"\n[Call #2] ({time.time()-t0:.1f}s):")
     print(call2)
 

@@ -5,16 +5,15 @@ Testet Generierung + Validierung mit pathologischen Diktaten pro Region.
 """
 
 import json
+import os
 import urllib.request
 import urllib.error
 import time
 import sys
 from pathlib import Path
-import google.auth.transport.requests as grequests
-from google.oauth2.service_account import Credentials
 
-KEY_PATH = Path.home() / ".hermes" / "rakscribe-google-key.json"
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+API_KEY = os.environ.get("GEMINI_API_KEY", "")
+VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
 
 # Templates laden
 TEMPLATES_PATH = Path.home() / "RaKScribe26" / "web_app" / "src" / "templates.json"
@@ -131,22 +130,13 @@ TEST_CASES = [
 ]
 
 
-def get_bearer_token():
-    creds = Credentials.from_service_account_file(
-        str(KEY_PATH),
-        scopes=["https://www.googleapis.com/auth/generative-language"]
-    )
-    creds.refresh(grequests.Request())
-    return creds.token
-
-
-def call_gemini(prompt, token, temperature=0.0, timeout=120):
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
+    headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
     body = json.dumps({
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": temperature}
     }).encode()
-    req = urllib.request.Request(GEMINI_URL, data=body, headers=headers, method="POST")
+    req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read())
     if "error" in data:
@@ -366,11 +356,10 @@ def main():
     print("VOLLSTÄNDIGER WIDERSPRUCHSTEST — Alle Regionen")
     print("=" * 70)
 
-    token = get_bearer_token()
     results = []
 
     for name, tkey, diktat, expected in TEST_CASES:
-        r = run_test_case(name, tkey, diktat, expected, token)
+        r = run_test_case(name, tkey, diktat, expected, None)
         results.append(r)
         time.sleep(1)  # Rate limit
 
