@@ -392,6 +392,42 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 }
 
 
+// Praxis-Login: erkennt Service-Account-JSON (roh oder Base64) sowie Vertex-API-Keys
+async function tryPraxisLogin(pw: string): Promise<boolean> {
+  if (!pw) return false;
+  let candidate = pw;
+
+  // Base64-Hülle erkennen (stt-key.b64 / vertex-key.b64): kein '{', aber Base64-Zeichensatz
+  if (!candidate.startsWith('{') && !candidate.startsWith('AQ.')) {
+    try {
+      const bin = atob(candidate.replace(/\s+/g, ''));
+      const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+      const decoded = new TextDecoder().decode(bytes).trim();
+      if (decoded.startsWith('{')) candidate = decoded;
+    } catch { /* kein Base64 — weiter als roher Text */ }
+  }
+
+  if (candidate.startsWith('AQ.')) {
+    // Vertex-API-Key (Gemini) — als LLM-Key übernehmen
+    localStorage.setItem('vertex_api_key', candidate);
+    window.dispatchEvent(new Event('vertex-key-external'));
+    console.log('[LOGIN] Vertex API-Key erkannt');
+    return true;
+  }
+
+  try {
+    const json = JSON.parse(candidate);
+    if (json.type === 'service_account' && json.private_key) {
+      // STT-Key global verfügbar machen (App setzt ihn beim Mount via Event)
+      (window as any).__praxisSttKey = json;
+      window.dispatchEvent(new Event('praxis-stt-key'));
+      console.log('[LOGIN] STT Service-Account-Key erkannt');
+      return true;
+    }
+  } catch { /* kein JSON */ }
+  return false;
+}
+
 export default function App() {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -479,8 +515,20 @@ export default function App() {
     const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
     if (savedVertexKey) setVertexApiKey(savedVertexKey);
+    window.addEventListener('vertex-key-external', () => {
+      const k = localStorage.getItem('vertex_api_key');
+      if (k) setVertexApiKey(k);
+    });
     if (savedAuth === 'true') setIsAuthenticated(true);
     if (savedDeviceId) setSelectedDeviceId(savedDeviceId);
+
+    // Praxis-Login: STT-Key aus dem Login-Vorgang übernehmen
+    const onPraxisKey = () => {
+      const k = (window as any).__praxisSttKey;
+      if (k && k.private_key) setSttKeyJson(k);
+    };
+    window.addEventListener('praxis-stt-key', onPraxisKey);
+    if ((window as any).__praxisSttKey) onPraxisKey();
 
     // Auto-Load Vertex AI API key from local file if not in localStorage
     if (!savedVertexKey) {
@@ -749,30 +797,21 @@ export default function App() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const pw = password.trim();
-    if (false && username.trim() !== '' && pw === 'rakscribe') {
-      setIsAuthenticated(true);
-      localStorage.setItem('is_authenticated', 'true');
-      setAuthError('');
-    } else if (pw.startsWith('{') && pw.includes('BEGIN PRIVATE KEY')) {
-      // Praxis-Key: Die STT-JSON-Datei (aus dem RaKScribe-Drive-Ordner) als Passwort
-      // in das Passwortfeld ziehen/einfuegen — Inhalt ist der Login.
-      try {
-        const json = JSON.parse(pw);
-        if (json.type === 'service_account' && json.private_key) {
-          setSttKeyJson(json);
-          setIsAuthenticated(true);
-          localStorage.setItem('is_authenticated', 'true');
-          setAuthError('');
-          console.log('[LOGIN] STT-Key via Praxis-JSON erkannt');
-        } else {
-          setAuthError('JSON erkannt, aber keine gültige Service-Account-Datei.');
-        }
-      } catch {
-        setAuthError('Ungültige Anmeldedaten.');
-      }
-    } else {
-      setAuthError('Ungültige Anmeldedaten.');
+    if (username.trim() === '') {
+      setAuthError('Bitte Benutzernamen eingeben.');
+      return;
     }
+    // Praxis-Key als Login: rohe JSON, Base64(JSON) (stt-key.b64 / vertex-key.b64) oder
+    // der Vertex-API-Key selbst (AQ.…) — alles wird erkannt.
+    tryPraxisLogin(pw).then(ok => {
+      if (ok) {
+        setIsAuthenticated(true);
+        localStorage.setItem('is_authenticated', 'true');
+        setAuthError('');
+      } else {
+        setAuthError('Ungültige Anmeldedaten — bitte die Key-Datei aus dem Drive-Ordner RaKScribe verwenden.');
+      }
+    }).catch(() => setAuthError('Ungültige Anmeldedaten.'));
   };
 
   // Logout Handler
