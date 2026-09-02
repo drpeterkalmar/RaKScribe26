@@ -45,15 +45,19 @@ jobs:
           cd web_app
           npm run build
 
-      - name: API-Key ins Build-Verzeichnis legen
+      - name: API-Keys ins Build-Verzeichnis legen
         shell: bash
         run: |
-          # Key (aus GitHub Secret) als Base64-Datei ins Pages-Bundle legen.
+          # Vertex API-Key (Gemini) als Base64-Datei ins Pages-Bundle legen.
           # Die App dekodiert ihn im Browser; im Klartext erscheint er nur im Browser-RAM.
           echo -n "$VERTEX_API_KEY" | base64 > web_app/dist/vertex-key.b64
           test "$(base64 -d web_app/dist/vertex-key.b64 | wc -c)" -gt 10 || { echo "Key fehlt/zu kurz"; exit 1; }
+          # STT Service-Account (Speech-to-Text) als Base64-Datei (JSON -> b64)
+          echo -n "$STT_KEY_B64" | base64 -d > web_app/dist/stt-key.b64
+          test "$(base64 -d web_app/dist/stt-key.b64 | wc -c)" -gt 100 || { echo "STT-Key fehlt/zu kurz"; exit 1; }
         env:
           VERTEX_API_KEY: ${{ secrets.VERTEX_API_KEY }}
+          STT_KEY_B64: ${{ secrets.STT_KEY_B64 }}
 
       - name: GitHub Pages konfigurieren
         uses: actions/configure-pages@v4
