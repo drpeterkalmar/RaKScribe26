@@ -52,8 +52,8 @@ jobs:
           # Die App dekodiert ihn im Browser; im Klartext erscheint er nur im Browser-RAM.
           echo -n "$VERTEX_API_KEY" | base64 > web_app/dist/vertex-key.b64
           test "$(base64 -d web_app/dist/vertex-key.b64 | wc -c)" -gt 10 || { echo "Key fehlt/zu kurz"; exit 1; }
-          # STT Service-Account (Speech-to-Text) als Base64-Datei (JSON -> b64)
-          printf '%s' "$STT_KEY_B64" | base64 -d > web_app/dist/stt-key.b64
+          # STT Service-Account (Speech-to-Text): Secret IST bereits Base64(JSON) -> 1:1 als Datei
+          printf '%s' "$STT_KEY_B64" > web_app/dist/stt-key.b64
           test "$(wc -c < web_app/dist/stt-key.b64)" -gt 100 || { echo "STT-Key fehlt/zu kurz"; exit 1; }
         env:
           VERTEX_API_KEY: ${{ secrets.VERTEX_API_KEY }}
