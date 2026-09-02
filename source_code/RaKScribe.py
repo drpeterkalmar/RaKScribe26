@@ -157,18 +157,33 @@ try:
     STT_ENGINE = 'google'
 
 except (KeyError, FileNotFoundError):
-    if not os.path.exists(CONFIG_FILE_PATH):
+    # Fehlende/unvollständige config.ini wird automatisch neu angelegt — kein Neustart nötig.
+    # (Nur wenn eine vorhanden-Datei PARSE-Fehler hat, warnen wir.)
+    config_was_corrupt = os.path.exists(CONFIG_FILE_PATH)
+    if not config_was_corrupt:
         with open(CONFIG_FILE_PATH, 'w', encoding='utf-8') as f:
             f.write("[SETTINGS]\n"
                     "LLM_PROVIDER = gemini\n"
-                    "LLM_MODEL = gemini-1.5-flash\n"
+                    "LLM_MODEL = gemini-2.5-flash\n"
                     "API_KEY = \n"
                     "CHUNK_DURATION = 7\n"
                     "GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json\n")
+        print(f"[INIT] config.ini fehlte und wurde neu angelegt: {CONFIG_FILE_PATH}")
 
-    messagebox.showerror("Konfigurations-Fehler",
-                         f"Datei 'config.ini' fehlt oder ist fehlerhaft.\n\nPfad: {BASE_DIR}\n\nBitte Einstellungen prüfen und neustarten.")
-    sys.exit()
+    if config_was_corrupt:
+        messagebox.showerror("Konfigurations-Fehler",
+                             f"Datei 'config.ini' ist fehlerhaft (ungültige Werte).\n\nPfad: {CONFIG_FILE_PATH}\n\n"
+                             f"Bitte prüfen oder die Datei löschen — beim nächsten Start wird sie neu angelegt.")
+        sys.exit()
+
+    # Frisch angelegte Defaults verwenden
+    LLM_PROVIDER = 'gemini'
+    LLM_MODEL = 'gemini-2.5-flash'
+    API_KEY = ''
+    CHUNK_DURATION = 7
+    GOOGLE_JSON_FILENAME = 'rakscribe-0ff1ffd128a1.json'
+    STT_ENGINE = 'google'
+    print("[INIT] Standard-Konfiguration aktiv (LLM: gemini-2.5-flash).")
 
 # --- STT Engines Initialisierungs-Logik ---
 # Vertex API-Key: Auto-Load aus vertex-key.b64 (Base64, liegt neben der EXE) oder
