@@ -188,6 +188,16 @@ except (KeyError, FileNotFoundError):
 # --- STT Engines Initialisierungs-Logik ---
 # Vertex API-Key: Auto-Load aus vertex-key.b64 (Base64, liegt neben der EXE) oder
 # vertex-key.txt (Klartext). Damit muss der Key NICHT in config.ini eingetragen werden.
+def _read_text_robust(path):
+    # Windows-Editoren speichern gern UTF-16/BOM/CRLF — alle Varianten vertragen
+    with open(path, 'rb') as f:
+        raw = f.read()
+    if raw.startswith(b'\xff\xfe') or raw.startswith(b'\xfe\xff'):
+        raw = raw.decode('utf-16').encode('utf-8')
+    if raw.startswith(b'\xef\xbb\xbf'):
+        raw = raw[3:]
+    return raw.decode('utf-8', errors='replace')
+
 def _load_vertex_key():
     k = API_KEY.strip()
     if k:
@@ -196,20 +206,24 @@ def _load_vertex_key():
     txt_path = os.path.join(BASE_DIR, 'vertex-key.txt')
     try:
         if os.path.exists(b64_path):
-            with open(b64_path, 'r', encoding='utf-8') as f:
-                k = base64.b64decode(f.read().strip()).decode('utf-8').strip()
-                if k:
-                    return k
+            content = _read_text_robust(b64_path).strip()
+            k = base64.b64decode(content).decode('utf-8').strip()
+            if k:
+                print(f"[INIT] Gemini-Key aus vertex-key.b64 geladen ({len(k)} Zeichen)")
+                return k
+            else:
+                print("[INIT] vertex-key.b64 ist LEER.")
     except Exception as e:
         print(f"[INIT] Konnte vertex-key.b64 nicht lesen: {e}")
     try:
         if os.path.exists(txt_path):
-            with open(txt_path, 'r', encoding='utf-8') as f:
-                k = f.read().strip()
-                if k:
-                    return k
+            k = _read_text_robust(txt_path).strip()
+            if k:
+                print(f"[INIT] Gemini-Key aus vertex-key.txt geladen ({len(k)} Zeichen)")
+                return k
     except Exception as e:
         print(f"[INIT] Konnte vertex-key.txt nicht lesen: {e}")
+    print(f"[INIT] WARNUNG: Kein Gemini-Key gefunden (gesucht: {b64_path}, {txt_path}, config.ini API_KEY).")
     return ""
 
 VERTEX_KEY_FILE = _load_vertex_key()
@@ -236,8 +250,7 @@ def init_google_speech():
         SERVICE_ACCOUNT_FILE = stt_json
         credentials = service_account.Credentials.from_service_account_file(stt_json)
     elif os.path.exists(stt_b64):
-        with open(stt_b64, 'r', encoding='utf-8') as f:
-            key_data = json.loads(base64.b64decode(f.read().strip()).decode('utf-8'))
+        key_data = json.loads(base64.b64decode(_read_text_robust(stt_b64).strip()).decode('utf-8'))
         credentials = service_account.Credentials.from_service_account_info(key_data)
         SERVICE_ACCOUNT_FILE = stt_b64
         print("[INIT] STT-Key aus rakscribe-stt-key.b64 geladen (Base64)")
@@ -292,7 +305,7 @@ VERTEX_ENDPOINT = (
 )
 try:
     if LLM_PROVIDER == 'gemini':
-        key = VERTEX_KEY_FILE or API_KEY or os.environ.get("GEMINI_API_KEY", "")
+        key = _load_vertex_key() or API_KEY or os.environ.get("GEMINI_API_KEY", "")
         if key:
             VERTEX_API_KEY = key
             print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
@@ -669,7 +682,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.9.6)")
+        self.title("RaKScribe26 (v2.9.7)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -719,7 +732,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.9.6", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.9.7", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1145,7 +1158,7 @@ class RaKScribeApp(ctk.CTk):
             if LLM_PROVIDER == 'gemini':
                 # Vertex AI REST API Call (Auth via x-goog-api-key Header)
                 try:
-                    key = VERTEX_KEY_FILE or API_KEY or os.environ.get("GEMINI_API_KEY", "")
+                    key = _load_vertex_key() or API_KEY or os.environ.get("GEMINI_API_KEY", "")
                     headers = {
                         "Content-Type": "application/json",
                         "x-goog-api-key": key,
@@ -1168,7 +1181,16 @@ class RaKScribeApp(ctk.CTk):
                 except Exception as e:
                     report = ""
                     log_exception("Gemini Vertex AI Generate")
-                    messagebox.showerror("Generierungs-Fehler", f"Fehler bei der Gemini (Vertex AI) Generierung:\n{e}")
+                    if "401" in str(e) or "Unauthorized" in str(e):
+                        messagebox.showerror("Generierungs-Fehler",
+                            "Gemini: HTTP 401 — der API-Key fehlt oder ist ungültig.\n\n"
+                            f"Gesucht in: {BASE_DIR}\n"
+                            "  - vertex-key.b64 (GitHub-Release)\n"
+                            "  - vertex-key.txt\n"
+                            "  - config.ini [API_KEY]\n\n"
+                            "Bitte die Dateien aus dem neuesten Release in diesen Ordner legen.")
+                    else:
+                        messagebox.showerror("Generierungs-Fehler", f"Fehler bei der Gemini (Vertex AI) Generierung:\n{e}")
             else:
                 kwargs = {
                     "model": LLM_MODEL,
