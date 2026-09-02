@@ -29,12 +29,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller customtkinter keyboard markdown numpy openai pillow pyperclip pywin32 sounddevice
+          pip install pyinstaller customtkinter keyboard markdown numpy openai pillow pyperclip pywin32 sounddevice google-cloud-speech google-api-core grpcio-status
 
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico RaKScribe.py
+          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files
@@ -65,7 +65,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=v2.9.5" >> "$GITHUB_OUTPUT"
+            echo "tag=v2.9.6" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset
