@@ -798,7 +798,7 @@ export default function App() {
     e.preventDefault();
     const pw = password.trim();
     if (username.trim() === '') {
-      setAuthError('Bitte Benutzernamen eingeben.');
+      setAuthError('Bitte zuerst einen Benutzernamen eintragen (beliebig, z.B. Peter).');
       return;
     }
     // Praxis-Key als Login: rohe JSON, Base64(JSON) (stt-key.b64 / vertex-key.b64) oder
@@ -2032,11 +2032,12 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.2</p>
           </div>
 
           <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label className="form-label">Benutzername (Praxis-Login)</label>
+              <label className="form-label">Benutzername (frei wählbar, z.B. dein Name)</label>
               <input 
                 type="text" 
                 value={username}
