@@ -210,7 +210,12 @@ def init_google_speech():
     if not google_speech_available:
         print("[INIT] Google Cloud Speech Bibliotheken nicht installiert.")
         return False
-    SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME)
+    # STT-Key: neuer Dateiname (rakscribe-stt-key.json) hat Vorrang, Fallback auf config.ini-Wert
+    stt_candidates = [
+        os.path.join(BASE_DIR, 'rakscribe-stt-key.json'),
+        os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME),
+    ]
+    SERVICE_ACCOUNT_FILE = next((c for c in stt_candidates if os.path.exists(c)), stt_candidates[0])
     if not os.path.exists(SERVICE_ACCOUNT_FILE):
         print(f"[INIT] Google Credentials Datei nicht gefunden unter: {SERVICE_ACCOUNT_FILE}")
         return False

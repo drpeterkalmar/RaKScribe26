@@ -30,6 +30,189 @@ const templates = templatesData as TemplatesMap;
 // Vertex AI endpoint for Gemini 2.5 Flash
 const VERTEX_ENDPOINT = 'https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent';
 
+// Speech-Context Phrasen für Google STT (medizinischer Jargon, boost 15.0)
+const MEDICAL_PHRASES = [
+  "Hochauflösender Nervenschall", "Thorax pa/seitlich", "MRT", "MR", "CT", "Computertomografie", "DXA", "Knochendichtemessung",
+  "Humerus", "Femur", "Tibia", "Fibula", "Patella", "Karpaltunnel", "Rotatorenmanschette",
+  "Achillessehne", "Kalkaneus", "Acromioclaviculargelenk", "Sacroiliacalgelenk", "Halswirbelsäule (HWS)",
+  "Brustwirbelsäule (BWS)", "Lendenwirbelsäule (LWS)", "Kreuzband", "Tarsus", "Metatarsus",
+  "Fraktur", "Spondylarthrose", "Spondylarthrosen", "Spondylodese", "Spondyolyse", "Spondylosis deformans", "Spondylose", "pontifizierend", "pontifizierende", "Arthrose", "Coxarthrose", "Gonarthrose", "Meniskus", "Hinterhorn-Läsion",
+  "Korbhenkelriss", "Bandscheibenprolaps", "Spinalkanalstenose", "Osteochondrose", "Osteochondrosen", "Nearthrosis interspinosa",
+  "Osteomyelitis", "Rheumatoide Arthritis", "Kapsel-Band-Läsion", "Osteoporose", "Bakerzyste",
+  "Knochenödem", "Einklemmungssyndrom", "Arthrographie", "Szintigraphie", "Vertebroplastie",
+  "Facetteninfiltration", "CT-gesteuerte Biopsie", "MR-Arthrographie", "Skelettaufnahme", "Ganzbeinaufnahme",
+  "Gelenkspaltverschmälerung", "Subluxation", "Wirbelkörperkompression", "Rotatorenmanschettenruptur",
+  "Labrumläsion", "Subchondrale Sklerosierung", "Nervus medianus", "Nervus radialis",
+  "Liquor", "Zerebrospinalflüssigkeit", "Kortex", "Großhirnrinde", "Weiße Substanz", "Basalganglien",
+  "Hypophyse", "Corpus callosum", "Sinus cavernosus", "Aorta", "Arteria carotis interna", "Arteria carotis externa",
+  "Pulmonalarterie", "Vena cava superior", "Vena cava inferior", "A. vertebralis",
+  "Aneurysma", "Intrakranielles Aneurysma", "Ischämie", "Ischämischer Infarkt", "Intracranielle Blutung",
+  "Subarachnoidalblutung (SAB)", "Subduralhämatom (SDH)", "Epiduralhämatom (EDH)", "Multiple Sklerose (MS)",
+  "Hypophysenadenom", "Hydrozephalus", "Normaldruckhydrozephalus", "Vaskulitis", "Stenose", "Carotisstenose",
+  "Koronarstenose", "Dissektion", "Aortendissektion", "Thrombus", "Thrombose", "Embolie", "PAE", "Plaqubildung", "Softplaque",
+  "gemischte Plaqueformation", "IMT-Komplex", "Intima-Media-Hyperplasie", "Intimahyperplasie",
+  "Varizen", "T1-gewichtete Sequenz", "T2-gewichtete Sequenz", "Flair-Sequenz", "Diffusion-weighted Imaging (DWI)",
+  "Time-of-Flight (TOF) Angio", "MRA", "CTA", "Kontrastmittel (KM)", "Plaque", "Atherosklerotische Plaque",
+  "Angioplastie", "Sakkuläres Aneurysma", "Gefäßokklusion",
+  "Lunge", "Oberlappen", "Unterlappen", "Trachea", "Bronchien", "Mediastinum", "Herz", "Ventrikel",
+  "Perikard", "Leber", "Gallenblase", "Pankreas", "Niere", "Milz", "Uterus", "Adnexe", "Appendix",
+  "Schilddrüse", "Infiltrat", "Pulmonales Infiltrat", "Pleuraerguss", "Pneumothorax", "Spannungspneumothorax",
+  "Kardiomegalie", "Aortenklappeninsuffizienz", "Leberzirrhose", "Cholezystitis", "Pankreatitis",
+  "Nierenstein", "Ureterstein", "Nephrolithiasis", "Adnexitis", "Ovarielle Zyste", "Lymphknoten",
+  "Lymphadenopathie", "Appendizitis", "Struma", "Verschattung", "Milzruptur", "Hernie", "Hiatushernie",
+  "Inguinalhernie", "Dilatation", "Aszites", "Zystische Läsion", "Liquidation", "Faszienverdickung",
+  "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
+  "Echoarm", "Echogen",
+  "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
+  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung",
+  "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
+  "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
+  "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
+  "Kontraindikation", "Artefakt", "Pixel", "Voxel", "Echoarmut", "Echogenität", "Hyperintens", "Hypointens",
+  "Dosis-Längen-Produkt (DLP)", "Field of View (FOV)", "Standard-Abweichung (SD)", "Flüssigkeitsspiegel",
+  "Röntgen-Thorax", "Projektionsaufnahme", "Z.n.", "Zustand nach", "Adenokarzinom", "Cholangiokarzinom",
+  "Fibrose", "Hämangiom", "Atelektase", "Bronchiektasen", "Emphysem", "Sarkom", "Neurofibrom", "Lipom",
+  "Aortenaneurysma", "Klaustrophobie", "Sequester", "Vollbild", "Partialruptur", "Tendinose", "Impingement",
+  "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
+  "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
+  "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
+  "Flachbogig", "S-förmige",
+  // ── Schulter/Sonographie-spezifisch ──
+  "Tenosynovitis", "Tenosynovitis der langen Bizepssehne", "Bizepssehne", "Bizepssehnenscheide",
+  "Tendinopathie", "Tendinose", "Tendinosis", "Tendinosis calcarea",
+  "Supraspinatussehne", "Supraspinatus", "Infraspinatussehne", "Infraspinatus",
+  "Subscapularis", "Subscapularissehne", "Teres minor", "Teres-minor-Sehne",
+  "Rotatorenmanschette", "Rotatorenmanschettenruptur", "Rotatorenmanschetten-Tendinose",
+  "Bursitis", "Bursitis subacromialis", "Subacromialbursa", "Subakromialbursa",
+  "begleitende Bursitis", "Begleitbursitis", "begleitbursitis",
+  "Kalkschulter", "Kalkspick", "Kalkablagerung", "Verkalkung der Supraspinatussehne",
+  "Impingement", "Impingementsyndrom", "subacromiales Impingement",
+  "Akromion", "Akromioklavikulargelenk", "AC-Gelenk", "Klavikula",
+  "Coracoid", "Processus coracoideus", "Labrum glenoidale", "Labrumläsion",
+  "SLAP-Läsion", "Bankart-Läsion", "Hill-Sachs-Läsion",
+  "Glenohumeralgelenk", "Glenoid", "Bizepssehnenanker",
+  "Lange Bizepssehne", "Lange-Bizeps-Sehne", "Bizepslongussehne",
+  "Schultergelenksonographie", "Schultersonographie", "Schulterultraschall",
+  "Röntgen und Sonographie des Schultergelenkes",
+  "Röntgen und der Sonographie",
+  "Kalkeinlagerung", "Kalkdepot", "Kalkherd",
+  "Sehnenkalkeinlagerung", "Tendinosis calcarea der Supraspinatussehne",
+  "Partialruptur der Supraspinatussehne", "Full-Thickness-Ruptur",
+  "Gelenkerguss", "Gelenkspalt", "Gelenkkapsel",
+  // ── Allgemein radiologische Begriffe (ergänzt) ──
+  "unauffällig", "Unauffällig", "unauffälliger Befund",
+  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
+  "regelrecht", "Regelrecht", "regelrechte Darstellung",
+  "ohne pathologischen Befund", "kein pathologischer Befund",
+  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
+  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
+  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
+  "Röntgen und Sonographie", "Röntgen und der Sonographie",
+  "des linken Schultergelenkes", "des rechten Schultergelenkes",
+  "des linken Kniegelenkes", "des rechten Kniegelenkes",
+  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
+  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
+  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
+  "des linken Handgelenkes", "des rechten Handgelenkes",
+  // ── Praxis-Jargon / Shortcut-Phrasen ──
+  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
+  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
+  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
+  "Metatarsale", "Phalanx", "Basis",
+  // ── Mamma/Mammasonographie-spezifisch ──
+  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
+  "Mammographie", "Mammografie", "Mammographie beidseits",
+  "Drüsenparenchym", "Brustdrüse", "Mamma",
+  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
+  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
+  "Morbus Mondor", "Mondor", "Mondor-Disease",
+  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
+  "kutane Venenthrombose", "Venenthrombose",
+  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
+  "Axillen", "Axillen beidseits frei",
+  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
+  "Architekturstörung", "Architekturstörungen",
+  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
+  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
+  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
+  "Inspektion und Palpation", "Palpationsbefund",
+  "Durchmesser", "mm Durchmesser",
+  // ── Nervus-ulnaris / Neurosonographie-spezifisch ──
+  "Nervus ulnaris", "N. ulnaris", "Sulcus nervi ulnaris", "Sulcus ulnaris",
+  "Loge de Guyon", "Guyon-Loge", "Ramus dorsalis", "Ramus superficialis", "Ramus profundus",
+  "Querschnittsfläche", "Querschnittsflaeche", "Quadratmillimeter", "mm²",
+  "M. anconeus", "Musculus anconeus", "M. anconeus epitrochlearis", "anconeus epitrochlearis",
+  "hypertropher M. anconeus", "hypertrophe Musculus anconeus",
+  "Epicondylus medialis humeri", "Epicondylus medialis", "mediales Septum intermusculare",
+  "Osborne Ligament", "Osborne-Ligament", "Osborne Faszie", "Retinaculum",
+  "M. flexor carpi ulnaris", "Flexor carpi ulnaris", "FCU",
+  "Ellbogenflexion", "Ellbogenstreckung", "Ellbogengelenk",
+  "Aggravation", "Kompression des Nervs", "Nervenkompression",
+  "faszikulär", "faszikulaer", "nervale Auftreibung", "Denervation",
+  "Hypothenarmuskulatur", "Lumbricalmuskulatur", "M. adductor pollicis", "Muskel-Faszikulationen",
+  "Echogenitätssteigerung", "Atrophie", "seitensymmetrisch",
+  "Schnappen des Nervs", "Loge de Guyon unauffällig",
+  "N. radialis", "Nervus radialis", "Ramus profundus", "Ramus superficialis",
+  "Frohse-Arkade", "Frohse Arkade", "Supinator", "M. supinator", "Musculus supinator",
+  "Wartenberg-Syndrom", "Wartenberg", "Arteria radialis recurrens",
+  "Sulcus n. radialis", "Strecksehnenfach", "4. Strecksehnenfaches",
+  "N. cutaneus brachii lateralis inferior", "N. cutaneus antebrachii posterior",
+  "M. brachioradialis", "Handgelenksextensoren",
+  // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
+  "flachbogig", "flachbogige", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
+  "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
+  "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
+  "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
+  "multisegmentale", "Schmalsche Impressionen", "Deckplattenimpressionen",
+  "Edgren-Vaino-Zeichen", "Edgren Vaino Zeichen", "Edgren-Vaino Zeichen",
+  "Morbus Scheuermann", "Scheuermann", "Scheuermann-Krankheit",
+  "Kyphose", "hyperkyphotisch", "harmonische Kyphose",
+  "Bogenwurzeln", "Dornfortsätze", "Querfortsätze", "Processus articulares",
+  "Articulationes costotransversales", "Articulationes costovertebrales",
+  "Spatien intervertebralia", "Canalis spinalis", "Platae terminales",
+  "BWS-Röntgen", "BWS in 2 Ebenen", "Brustwirbelsäule", "BWS",
+  // ── Allgemein radiologische Begriffe (ergänzt) ──
+  "unauffällig", "Unauffällig", "unauffälliger Befund",
+  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
+  "regelrecht", "Regelrecht", "regelrechte Darstellung",
+  "ohne pathologischen Befund", "kein pathologischer Befund",
+  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
+  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
+  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
+  "Röntgen und Sonographie", "Röntgen und der Sonographie",
+  "des linken Schultergelenkes", "des rechten Schultergelenkes",
+  "des linken Kniegelenkes", "des rechten Kniegelenkes",
+  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
+  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
+  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
+  "des linken Handgelenkes", "des rechten Handgelenkes",
+  // ── Praxis-Jargon / Shortcut-Phrasen ──
+  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
+  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
+  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
+  "Metatarsale", "Phalanx", "Basis",
+  // ── Mamma/Mammasonographie-spezifisch ──
+  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
+  "Mammographie", "Mammografie", "Mammographie beidseits",
+  "Drüsenparenchym", "Brustdrüse", "Mamma",
+  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
+  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
+  "Morbus Mondor", "Mondor", "Mondor-Disease",
+  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
+  "kutane Venenthrombose", "Venenthrombose",
+  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
+  "Axillen", "Axillen beidseits frei",
+  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
+  "Architekturstörung", "Architekturstörungen",
+  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
+  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
+  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
+  "Inspektion und Palpation", "Palpationsbefund",
+  "Durchmesser", "mm Durchmesser",
+];
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────
 // isNormalFinding — erkennt reine Normalbefunde für RAG-Bypass (kein LLM nötig)
@@ -218,6 +401,7 @@ export default function App() {
 
   // Configuration States
   const [vertexApiKey, setVertexApiKey] = useState<string>('');
+  const [sttKeyJson, setSttKeyJson] = useState<any>(null);
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
@@ -334,6 +518,37 @@ export default function App() {
           }
         } catch (e) {
           console.log('[AUTO-LOAD] Kein vertex-key.b64 gefunden:', e);
+        }
+      })();
+
+      // Fallback 3: STT-Service-Account (stt-key.b64 = CI-injiziert, stt-key.txt = lokal)
+      (async () => {
+        try {
+          const resp = await fetch(`${import.meta.env.BASE_URL}stt-key.b64`);
+          if (resp.ok) {
+            const bin = atob((await resp.text()).trim());
+            const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+            const json = JSON.parse(new TextDecoder().decode(bytes));
+            if (json && json.private_key) {
+              setSttKeyJson(json);
+              console.log('[AUTO-LOAD] STT Service-Account-Key geladen (stt-key.b64)');
+              return;
+            }
+          }
+        } catch (e) {
+          console.log('[AUTO-LOAD] Kein stt-key.b64 gefunden:', e);
+        }
+        try {
+          const resp = await fetch(`${import.meta.env.BASE_URL}stt-key.txt`);
+          if (resp.ok) {
+            const json = JSON.parse(await resp.text());
+            if (json && json.private_key) {
+              setSttKeyJson(json);
+              console.log('[AUTO-LOAD] STT Service-Account-Key geladen (stt-key.txt)');
+            }
+          }
+        } catch (e) {
+          console.log('[AUTO-LOAD] Kein stt-key.txt gefunden — STT faellt auf Whisper zurueck');
         }
       })();
     }
@@ -771,6 +986,227 @@ export default function App() {
       matches.map((m, idx) => `Beispiel ${idx + 1}:\n${m}\n---`).join("\n");
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // GOOGLE CLOUD STT — Service-Account (rakscribe-stt@) → JWT → Bearer Token
+  // Primary STT (beste medizinische Erkennung, $10 GCP-Credit). Whisper = Fallback.
+  // ─────────────────────────────────────────────────────────────────────────
+  const sttTokensRef = useRef<{ [scope: string]: { token: string; expiry: number } }>({});
+
+  const toBase64Url = (buffer: ArrayBuffer): string =>
+    btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+  const signJwt = async (payload: object, privateKeyPem: string): Promise<string> => {
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const pemBody = privateKeyPem
+      .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n|\r/g, '');
+    const derBinary = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
+    const cryptoKey = await crypto.subtle.importKey(
+      'pkcs8', derBinary.buffer as ArrayBuffer,
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false, ['sign']
+    );
+    const enc = new TextEncoder();
+    const headerB64  = toBase64Url(enc.encode(JSON.stringify(header)).buffer as ArrayBuffer);
+    const payloadB64 = toBase64Url(enc.encode(JSON.stringify(payload)).buffer as ArrayBuffer);
+    const signingInput = `${headerB64}.${payloadB64}`;
+    const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, enc.encode(signingInput));
+    return `${signingInput}.${toBase64Url(sig)}`;
+  };
+
+  // Get a valid Bearer token for the STT service account (cached, auto-refresh)
+  const getGoogleBearerToken = async (keyJson: any, scope: string): Promise<string> => {
+    const now = Math.floor(Date.now() / 1000);
+    const cached = sttTokensRef.current[scope];
+    if (cached && cached.expiry > now + 60) {
+      return cached.token;
+    }
+    const jwt = await signJwt({
+      iss: keyJson.client_email,
+      scope: scope,
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: now,
+      exp: now + 3600,
+    }, keyJson.private_key);
+    const resp = await fetchWithRetry('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+    }, 30_000, 3);
+    const data = await resp.json();
+    if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
+    sttTokensRef.current[scope] = {
+      token: data.access_token,
+      expiry: now + (data.expires_in || 3600)
+    };
+    return data.access_token;
+  };
+
+  const buildSttAuth = async (): Promise<{ url: string; headers: Record<string, string> }> => {
+    if (!sttKeyJson) {
+      throw new Error('STT-Schluessel nicht geladen (stt-key.b64 / stt-key.txt fehlt).');
+    }
+    const token = await getGoogleBearerToken(sttKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
+    return {
+      url: 'https://speech.googleapis.com/v1/speech:recognize',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    };
+  };
+
+  const blobToBase64 = (wavBlob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = () => reject(new Error('Fehler beim Lesen der Audiodatei.'));
+      reader.readAsDataURL(wavBlob);
+    });
+
+  // Chunk-Transkription (7s-Chunks, latest_short)
+  const transcribeWithGoogle = async (wavBlob: Blob): Promise<string> => {
+    const { url, headers } = await buildSttAuth();
+    setStatusText('Transkribiere (Google Cloud STT)...');
+    const base64Data = await blobToBase64(wavBlob);
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        config: {
+          encoding: 'LINEAR16', sampleRateHertz: 16000, languageCode: 'de-DE',
+          enableAutomaticPunctuation: true, model: 'latest_short', useEnhanced: true,
+          speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
+        },
+        audio: { content: base64Data },
+      }),
+    }, 120_000, 3);
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message || 'Google STT Fehler.');
+    const results = data.results || [];
+    return results.map((r: any) => r.alternatives[0].transcript).join(' ');
+  };
+
+  // FULL-AUDIO Transkription (komplettes Diktat; ≤59s sync/latest_short, >60s longrunning/latest_long)
+  const transcribeFullAudioWithGoogle = async (wavBlob: Blob): Promise<string> => {
+    const { url, headers } = await buildSttAuth();
+    const base64Data = await blobToBase64(wavBlob);
+
+    // Duration: 16000 samples/s * 2 bytes/sample = 32000 bytes/s (base64 ~4/3)
+    const binarySize = Math.floor(base64Data.length * 3 / 4);
+    const estimatedDurationSec = binarySize / 32000;
+    console.log(`[FULL-AUDIO] ${binarySize} bytes, ~${estimatedDurationSec.toFixed(1)}s`);
+
+    const buildSttConfig = (useLongModel: boolean) => ({
+      encoding: 'LINEAR16' as const,
+      sampleRateHertz: 16000,
+      languageCode: 'de-DE',
+      enableAutomaticPunctuation: true,
+      model: useLongModel ? 'latest_long' : 'latest_short',
+      useEnhanced: true,
+      speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
+    });
+
+    if (estimatedDurationSec <= 59) {
+      setStatusText('Volltranskription läuft (komplettes Diktat, Google STT)...');
+      const response = await fetchWithRetry(url, {
+        method: 'POST', headers,
+        body: JSON.stringify({ config: buildSttConfig(false), audio: { content: base64Data } }),
+      }, 120_000, 3);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || 'Google STT Fehler bei Volltranskription.');
+      const results = data.results || [];
+      return results.map((r: any) => r.alternatives[0].transcript).join(' ');
+    }
+
+    // >60s: longrunningrecognize + polling
+    console.log('[FULL-AUDIO] longrunningrecognize (>60s)');
+    setStatusText('Volltranskription läuft (langes Diktat, bitte warten)...');
+    const startResponse = await fetchWithRetry('https://speech.googleapis.com/v1/speech:longrunningrecognize', {
+      method: 'POST', headers,
+      body: JSON.stringify({ config: buildSttConfig(true), audio: { content: base64Data } }),
+    }, 120_000, 3);
+    const startData = await startResponse.json();
+    if (startData.error) throw new Error(startData.error.message || 'Fehler beim Starten der Long-Running-Erkennung.');
+
+    const operationName = startData.name;
+    const maxAttempts = 60;
+    const pollInterval = 5000;
+    let lastProgress = 0;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      // Token ggf. erneuern (langer Betrieb)
+      const freshToken = await getGoogleBearerToken(sttKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
+      const pollResponse = await fetchWithRetry(`https://speech.googleapis.com/v1/operations/${operationName}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${freshToken}` },
+      }, 30_000, 3);
+
+      const pollData = await pollResponse.json();
+      if (pollData.error) throw new Error(pollData.error.message || 'Fehler beim Abrufen des Transkriptionsergebnisses.');
+
+      if (pollData.done) {
+        const response = pollData.response;
+        if (!response || !response.results) return '';
+        const fullText = response.results
+          .map((r: any) => r.alternatives[0].transcript)
+          .join(' ');
+        console.log(`[FULL-AUDIO] Long-running complete: ${fullText.length} chars`);
+        return fullText;
+      }
+
+      const progress = pollData.metadata?.progressPercent;
+      if (progress && progress !== lastProgress) {
+        lastProgress = progress;
+        setStatusText(`Volltranskription läuft... ${progress}%`);
+      } else {
+        setStatusText(`Volltranskription läuft... (Versuch ${attempt + 1}/${maxAttempts})`);
+      }
+    }
+    throw new Error('Zeitüberschreitung bei der Volltranskription (5 Minuten).');
+  };
+
+  // Wrapper: Google primary, Whisper fallback (lokaler Server auf Praxis-PC)
+  const transcribeAudio = async (wavBlob: Blob, isFull: boolean): Promise<string> => {
+    try {
+      return isFull ? await transcribeFullAudioWithGoogle(wavBlob) : await transcribeWithGoogle(wavBlob);
+    } catch (sttErr: any) {
+      console.warn('[STT] Google fehlgeschlagen, Whisper-Fallback:', sttErr.message);
+      return await transcribeWithWhisper(wavBlob);
+    }
+  };
+
+  // Beliebige Audiodatei (OGG/MP3/WAV) → mono 16kHz WAV (für Google STT)
+  const decodeFileToWavBlob = async (file: File | Blob): Promise<Blob> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
+    let channelData: Float32Array;
+    if (decodedAudio.numberOfChannels > 1) {
+      const length = decodedAudio.length;
+      channelData = new Float32Array(length);
+      for (let ch = 0; ch < decodedAudio.numberOfChannels; ch++) {
+        const chData = decodedAudio.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+          channelData[i] += chData[i] / decodedAudio.numberOfChannels;
+        }
+      }
+    } else {
+      channelData = decodedAudio.getChannelData(0);
+    }
+    const resampled = downsampleBuffer(channelData, decodedAudio.sampleRate, 16000);
+    if (resampled.length === 0) {
+      await audioContext.close();
+      throw new Error('Audiodatei ist leer oder zu kurz.');
+    }
+    const ctxWav = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+    const audioBuf = ctxWav.createBuffer(1, resampled.length, 16000);
+    audioBuf.copyToChannel(resampled as any, 0);
+    const wavBlob = audioBufferToWav(audioBuf);
+    ctxWav.close();
+    await audioContext.close();
+    return wavBlob;
+  };
+
   const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> => {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.ogg');
@@ -1072,7 +1508,7 @@ Korrigierter Befund:`;
       activeRequestsCountRef.current++;
       setIsTranscribingChunk(true);
       
-      const p = transcribeWithWhisper(wavBlob).then(text => {
+      const p = transcribeAudio(wavBlob, false).then(text => {
         chunkTranscriptsRef.current[chunkIdx] = text.trim();
         const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
         setTranscript(fullText);
@@ -1215,7 +1651,7 @@ Korrigierter Befund:`;
         activeRequestsCountRef.current++;
         setIsTranscribingChunk(true);
         
-        const p = transcribeWithWhisper(wavBlob).then(text => {
+        const p = transcribeAudio(wavBlob, false).then(text => {
           chunkTranscriptsRef.current[chunkIdx] = text.trim();
           const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
           setTranscript(fullText);
@@ -1280,7 +1716,7 @@ Korrigierter Befund:`;
 
             // Run full-audio transcription via Whisper
             setStatusText('Volltranskription läuft (komplettes Diktat)...');
-            const fullTranscript = await transcribeWithWhisper(fullWavBlob);
+            const fullTranscript = await transcribeAudio(fullWavBlob, true);
             finalRawText = fullTranscript.trim();
           }
         }
@@ -1384,16 +1820,15 @@ Korrigierter Befund:`;
     setStructuredReport('');
 
     try {
-      // Step 1: Transkription via lokalem Whisper-Server (nur Whisper STT)
+      // Step 1: Transkription via Google Cloud STT (Whisper nur als Fallback)
       let finalRawText = '';
       try {
-        setStatusText('Spracherkennung läuft (Whisper large-v3, lokal)...');
-        // Sende die Original-Datei an Whisper (Whisper kann OGG/MP3/WAV direkt verarbeiten)
+        setStatusText('Spracherkennung läuft (Google Cloud STT)...');
+        finalRawText = await transcribeFullAudioWithGoogle(await decodeFileToWavBlob(file));
+      } catch (sttErr: any) {
+        console.warn('[UPLOAD] Google STT fehlgeschlagen, Whisper-Fallback:', sttErr.message);
+        setStatusText('Spracherkennung läuft (Whisper, Fallback)...');
         finalRawText = await transcribeWithWhisper(file);
-      } catch (whisperErr: any) {
-        console.warn('[UPLOAD] Whisper fehlgeschlagen:', whisperErr.message);
-        setStatusText('Spracherkennung fehlgeschlagen...');
-        throw new Error('Whisper STT fehlgeschlagen: ' + whisperErr.message + ' (Google STT ist nicht mehr verfügbar)');
       }
 
       finalRawText = finalRawText.trim();
@@ -1605,7 +2040,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.9.0</span>
+              <span className="brand-badge">Web Beta v2.9.1</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
@@ -1680,7 +2115,10 @@ Korrigierter Befund:`;
           {vertexApiKey ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="status-bar-value success">
-                <Check size={14} className="status-bar-icon" /> API-Key geladen (LLM aktiv)
+                <Check size={14} className="status-bar-icon" /> LLM aktiv
+              </span>
+              <span className={sttKeyJson ? "status-bar-value success" : "status-bar-value danger"} style={{ pointerEvents: 'none' }}>
+                STT: {sttKeyJson ? 'Google Cloud' : 'nur Whisper (Server nötig)'}
               </span>
               <button
                 className="icon-btn logout"
@@ -1718,8 +2156,8 @@ Korrigierter Befund:`;
                   else localStorage.removeItem('vertex_api_key');
                 }}
               />
-              <span className="status-bar-value danger" style={{ pointerEvents: 'none' }}>
-                <X size={14} className="status-bar-icon" /> STT: nur Whisper (lokal)
+              <span className={sttKeyJson ? "status-bar-value success" : "status-bar-value danger"} style={{ pointerEvents: 'none' }}>
+                <X size={14} className="status-bar-icon" /> STT: {sttKeyJson ? 'Google Cloud aktiv' : 'nur Whisper (Server nötig)'}
               </span>
             </div>
           )}

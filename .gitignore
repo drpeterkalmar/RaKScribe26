@@ -47,3 +47,9 @@ web_app/public/inject-key.js
 # Vertex API-Key (Base64) - never commit
 vertex-key.b64
 web_app/public/vertex-key.txt
+stt-key-tmp.json
+web_app/public/stt-key.txt
+web_app/public/stt-key.b64
+stt-key.txt
+stt-key.b64
+rakscribe-stt-key.json
