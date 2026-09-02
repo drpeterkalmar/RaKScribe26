@@ -748,12 +748,30 @@ export default function App() {
   // Login Handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim() !== '' && password === 'rakscribe') {
+    const pw = password.trim();
+    if (username.trim() !== '' && pw === 'rakscribe') {
       setIsAuthenticated(true);
       localStorage.setItem('is_authenticated', 'true');
       setAuthError('');
+    } else if (pw.startsWith('{') && pw.includes('BEGIN PRIVATE KEY')) {
+      // Praxis-Key: Die STT-JSON-Datei (aus dem RaKScribe-Drive-Ordner) als Passwort
+      // in das Passwortfeld ziehen/einfuegen — Inhalt ist der Login.
+      try {
+        const json = JSON.parse(pw);
+        if (json.type === 'service_account' && json.private_key) {
+          setSttKeyJson(json);
+          setIsAuthenticated(true);
+          localStorage.setItem('is_authenticated', 'true');
+          setAuthError('');
+          console.log('[LOGIN] STT-Key via Praxis-JSON erkannt');
+        } else {
+          setAuthError('JSON erkannt, aber keine gültige Service-Account-Datei.');
+        }
+      } catch {
+        setAuthError('Ungültige Anmeldedaten.');
+      }
     } else {
-      setAuthError('Ungültige Anmeldedaten. (Tipp: Passwort ist "rakscribe")');
+      setAuthError('Ungültige Anmeldedaten.');
     }
   };
 
@@ -1997,7 +2015,16 @@ Korrigierter Befund:`;
                   type="password" 
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Passwort eingeben"
+                  onDrop={async e => {
+                    e.preventDefault();
+                    const f = e.dataTransfer.files?.[0];
+                    if (f) {
+                      const txt = await f.text();
+                      setPassword(txt);
+                    }
+                  }}
+                  onDragOver={e => e.preventDefault()}
+                  placeholder="Passwort eingeben (oder JSON-Key hierher ziehen)"
                   className="form-input"
                   required
                 />
@@ -2018,7 +2045,7 @@ Korrigierter Befund:`;
 
           <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #1E2235', fontSize: '12px', color: 'var(--text-secondary)' }}>
             Benötigen Sie Hilfe? Kontaktieren Sie die Praxis-IT. <br />
-            <span style={{ fontStyle: 'italic', display: 'block', marginTop: '4px' }}>(Passwort für Testzwecke: "rakscribe")</span>
+            <span style={{ fontStyle: 'italic', display: 'block', marginTop: '4px' }}>Alternativ: Praxis-JSON-Key (Drive → RaKScribe) in das Passwortfeld ziehen</span>
           </div>
         </div>
       </div>
@@ -2040,7 +2067,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.9.1</span>
+              <span className="brand-badge">Web Beta v2.9.2</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
