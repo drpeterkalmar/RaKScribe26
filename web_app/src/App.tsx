@@ -2241,7 +2241,7 @@ Korrigierter Befund:`;
               <h2 className="card-title">Live-Diktat & Spracherkennung</h2>
             </div>
             <span className="card-badge">
-              Engine: WHISPER (lokal)
+              Engine: {sttKeyJson ? 'GOOGLE CLOUD STT' : 'WHISPER (lokal)'}
             </span>
           </div>
 
