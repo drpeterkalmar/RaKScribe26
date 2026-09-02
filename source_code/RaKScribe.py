@@ -225,17 +225,32 @@ def init_google_speech():
     if not google_speech_available:
         print("[INIT] Google Cloud Speech Bibliotheken nicht installiert.")
         return False
-    # STT-Key: neuer Dateiname (rakscribe-stt-key.json) hat Vorrang, Fallback auf config.ini-Wert
-    stt_candidates = [
-        os.path.join(BASE_DIR, 'rakscribe-stt-key.json'),
-        os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME),
-    ]
-    SERVICE_ACCOUNT_FILE = next((c for c in stt_candidates if os.path.exists(c)), stt_candidates[0])
-    if not os.path.exists(SERVICE_ACCOUNT_FILE):
-        print(f"[INIT] Google Credentials Datei nicht gefunden unter: {SERVICE_ACCOUNT_FILE}")
+    # STT-Key-Reihenfolge: rakscribe-stt-key.json (Drive) > rakscribe-stt-key.b64 (Release-Asset,
+    # Base64-JSON) > config.ini-GOOGLE_JSON_FILENAME (Legacy). Alles im EXE-Verzeichnis (BASE_DIR).
+    stt_json = os.path.join(BASE_DIR, 'rakscribe-stt-key.json')
+    stt_b64 = os.path.join(BASE_DIR, 'rakscribe-stt-key.b64')
+    legacy_json = os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME)
+    SERVICE_ACCOUNT_FILE = None
+    credentials = None
+    if os.path.exists(stt_json):
+        SERVICE_ACCOUNT_FILE = stt_json
+        credentials = service_account.Credentials.from_service_account_file(stt_json)
+    elif os.path.exists(stt_b64):
+        with open(stt_b64, 'r', encoding='utf-8') as f:
+            key_data = json.loads(base64.b64decode(f.read().strip()).decode('utf-8'))
+        credentials = service_account.Credentials.from_service_account_info(key_data)
+        SERVICE_ACCOUNT_FILE = stt_b64
+        print("[INIT] STT-Key aus rakscribe-stt-key.b64 geladen (Base64)")
+    elif os.path.exists(legacy_json):
+        SERVICE_ACCOUNT_FILE = legacy_json
+        credentials = service_account.Credentials.from_service_account_file(legacy_json)
+    else:
+        print(f"[INIT] Keine STT-Credentials gefunden. Gesucht in {BASE_DIR}:")
+        print("       - rakscribe-stt-key.json (Drive-Ordner RaKScribe)")
+        print("       - rakscribe-stt-key.b64 (GitHub-Release)")
+        print(f"       - {GOOGLE_JSON_FILENAME} (Legacy)")
         return False
     try:
-        credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
         speech_client = speech.SpeechClient(credentials=credentials)
         
         GOOGLE_CONFIG = speech.RecognitionConfig(
@@ -654,7 +669,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.9.4)")
+        self.title("RaKScribe26 (v2.9.5)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -704,7 +719,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.9.4", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.9.5", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 

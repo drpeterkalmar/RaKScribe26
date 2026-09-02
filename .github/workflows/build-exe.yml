@@ -48,9 +48,13 @@ jobs:
           # Vertex API-Key als Base64-Datei neben die EXE legen (Auto-Load, keine Eingabe nötig)
           echo -n "$VERTEX_API_KEY" | base64 > release/vertex-key.b64
           test "$(base64 -d release/vertex-key.b64 | wc -c)" -gt 10 || { echo "Key fehlt/zu kurz"; exit 1; }
+          # STT Service-Account (Secret IST bereits Base64(JSON)) -> 1:1 als Datei
+          printf '%s' "$STT_KEY_B64" > release/rakscribe-stt-key.b64
+          test "$(wc -c < release/rakscribe-stt-key.b64)" -gt 100 || { echo "STT-Key fehlt/zu kurz"; exit 1; }
           ls -la release/
         env:
           VERTEX_API_KEY: ${{ secrets.VERTEX_API_KEY }}
+          STT_KEY_B64: ${{ secrets.STT_KEY_B64 }}
 
       - name: Determine version
         id: version
@@ -61,7 +65,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=v2.9.4" >> "$GITHUB_OUTPUT"
+            echo "tag=v2.9.5" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset
