@@ -749,7 +749,7 @@ export default function App() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const pw = password.trim();
-    if (username.trim() !== '' && pw === 'rakscribe') {
+    if (false && username.trim() !== '' && pw === 'rakscribe') {
       setIsAuthenticated(true);
       localStorage.setItem('is_authenticated', 'true');
       setAuthError('');
