@@ -25,6 +25,7 @@ import sqlite3
 from difflib import get_close_matches
 import traceback
 import configparser
+import base64
 import urllib.request
 import urllib.error
 from openai import OpenAI
@@ -170,6 +171,34 @@ except (KeyError, FileNotFoundError):
     sys.exit()
 
 # --- STT Engines Initialisierungs-Logik ---
+# Vertex API-Key: Auto-Load aus vertex-key.b64 (Base64, liegt neben der EXE) oder
+# vertex-key.txt (Klartext). Damit muss der Key NICHT in config.ini eingetragen werden.
+def _load_vertex_key():
+    k = API_KEY.strip()
+    if k:
+        return k
+    b64_path = os.path.join(BASE_DIR, 'vertex-key.b64')
+    txt_path = os.path.join(BASE_DIR, 'vertex-key.txt')
+    try:
+        if os.path.exists(b64_path):
+            with open(b64_path, 'r', encoding='utf-8') as f:
+                k = base64.b64decode(f.read().strip()).decode('utf-8').strip()
+                if k:
+                    return k
+    except Exception as e:
+        print(f"[INIT] Konnte vertex-key.b64 nicht lesen: {e}")
+    try:
+        if os.path.exists(txt_path):
+            with open(txt_path, 'r', encoding='utf-8') as f:
+                k = f.read().strip()
+                if k:
+                    return k
+    except Exception as e:
+        print(f"[INIT] Konnte vertex-key.txt nicht lesen: {e}")
+    return ""
+
+VERTEX_KEY_FILE = _load_vertex_key()
+
 speech_client = None
 GOOGLE_CONFIG = None
 STREAMING_CONFIG = None
@@ -228,7 +257,7 @@ VERTEX_ENDPOINT = (
 )
 try:
     if LLM_PROVIDER == 'gemini':
-        key = API_KEY if API_KEY else os.environ.get("GEMINI_API_KEY", "")
+        key = VERTEX_KEY_FILE or API_KEY or os.environ.get("GEMINI_API_KEY", "")
         if key:
             VERTEX_API_KEY = key
             print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
@@ -605,7 +634,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.8.0)")
+        self.title("RaKScribe26 (v2.9.0)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -655,7 +684,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.8.0", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.9.0", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1081,7 +1110,7 @@ class RaKScribeApp(ctk.CTk):
             if LLM_PROVIDER == 'gemini':
                 # Vertex AI REST API Call (Auth via x-goog-api-key Header)
                 try:
-                    key = API_KEY if API_KEY else os.environ.get("GEMINI_API_KEY", "")
+                    key = VERTEX_KEY_FILE or API_KEY or os.environ.get("GEMINI_API_KEY", "")
                     headers = {
                         "Content-Type": "application/json",
                         "x-goog-api-key": key,

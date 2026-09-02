@@ -45,7 +45,12 @@ jobs:
           cp config.ini release/
           cp templates.json release/
           cp radiology_prompt.txt release/
+          # Vertex API-Key als Base64-Datei neben die EXE legen (Auto-Load, keine Eingabe nötig)
+          echo -n "$VERTEX_API_KEY" | base64 > release/vertex-key.b64
+          test "$(base64 -d release/vertex-key.b64 | wc -c)" -gt 10 || { echo "Key fehlt/zu kurz"; exit 1; }
           ls -la release/
+        env:
+          VERTEX_API_KEY: ${{ secrets.VERTEX_API_KEY }}
 
       - name: Determine version
         id: version
@@ -56,7 +61,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=v2.8.0" >> "$GITHUB_OUTPUT"
+            echo "tag=v2.9.0" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset

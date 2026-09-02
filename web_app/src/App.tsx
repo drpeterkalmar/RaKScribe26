@@ -300,19 +300,40 @@ export default function App() {
 
     // Auto-Load Vertex AI API key from local file if not in localStorage
     if (!savedVertexKey) {
+      // Fallback 1: vertex-key.txt (Klartext, lokale Dev-Datei)
       (async () => {
         try {
-          const resp = await fetch('/vertex-key.txt');
+          const resp = await fetch(`${import.meta.env.BASE_URL}vertex-key.txt`);
           if (resp.ok) {
             const keyData = (await resp.text()).trim();
             if (keyData) {
               localStorage.setItem('vertex_api_key', keyData);
               setVertexApiKey(keyData);
-              console.log('[AUTO-LOAD] Vertex API Key automatisch aus /vertex-key.txt geladen');
+              console.log('[AUTO-LOAD] Vertex API Key automatisch aus vertex-key.txt geladen');
             }
           }
         } catch (e) {
           console.log('[AUTO-LOAD] Kein vertex-key.txt gefunden:', e);
+        }
+      })();
+
+      // Fallback 2: vertex-key.b64 (Base64, von CI neben index.html abgelegt)
+      (async () => {
+        try {
+          const resp = await fetch(`${import.meta.env.BASE_URL}vertex-key.b64`);
+          if (resp.ok) {
+            const b64 = (await resp.text()).trim();
+            const bin = atob(b64);
+            const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+            const keyData = new TextDecoder().decode(bytes).trim();
+            if (keyData) {
+              localStorage.setItem('vertex_api_key', keyData);
+              setVertexApiKey(keyData);
+              console.log('[AUTO-LOAD] Vertex API Key automatisch aus vertex-key.b64 geladen');
+            }
+          }
+        } catch (e) {
+          console.log('[AUTO-LOAD] Kein vertex-key.b64 gefunden:', e);
         }
       })();
     }
@@ -1584,7 +1605,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.7.0</span>
+              <span className="brand-badge">Web Beta v2.9.0</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
