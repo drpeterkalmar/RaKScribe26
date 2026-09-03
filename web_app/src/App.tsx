@@ -393,6 +393,12 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 
 
 // Praxis-Login: erkennt Service-Account-JSON (roh oder Base64) sowie Vertex-API-Keys
+
+// Key-Generation-Marker: Bei Key-Rotation diesen Wert hochzählen. Gespeicherte
+// Keys mit älterer Markierung werden beim Start verworfen (Fix für veraltete
+// localStorage-Keys, die den frischen Key blockiert haben — vgl. 401 in der EXE).
+const KEY_VERSION = '2';
+
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
   let candidate = pw;
@@ -410,6 +416,7 @@ async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (candidate.startsWith('AQ.')) {
     // Vertex-API-Key (Gemini) — als LLM-Key übernehmen
     localStorage.setItem('vertex_api_key', candidate);
+    localStorage.setItem('key_version', KEY_VERSION);
     window.dispatchEvent(new Event('vertex-key-external'));
     console.log('[LOGIN] Vertex API-Key erkannt');
     return true;
@@ -510,11 +517,19 @@ export default function App() {
   // Load configuration from local storage
   useEffect(() => {
     const savedVertexKey = localStorage.getItem('vertex_api_key');
+    const savedKeyVersion = localStorage.getItem('key_version');
     const savedPrompt = localStorage.getItem('system_prompt');
     const savedAuth = localStorage.getItem('is_authenticated');
     const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
-    if (savedVertexKey) setVertexApiKey(savedVertexKey);
+    // Stale-Key-Schutz: Gespeicherte Keys aus einer älteren Key-Generation verwerfen.
+    if (savedVertexKey && savedKeyVersion !== KEY_VERSION) {
+      console.log('[INIT] Veralteter gespeicherter Key (alte Key-Generation) verworfen');
+      localStorage.removeItem('vertex_api_key');
+      setVertexApiKey('');
+    } else if (savedVertexKey) {
+      setVertexApiKey(savedVertexKey);
+    }
     window.addEventListener('vertex-key-external', () => {
       const k = localStorage.getItem('vertex_api_key');
       if (k) setVertexApiKey(k);
@@ -540,6 +555,7 @@ export default function App() {
             const keyData = (await resp.text()).trim();
             if (keyData) {
               localStorage.setItem('vertex_api_key', keyData);
+              localStorage.setItem('key_version', KEY_VERSION);
               setVertexApiKey(keyData);
               console.log('[AUTO-LOAD] Vertex API Key automatisch aus vertex-key.txt geladen');
             }
@@ -560,6 +576,7 @@ export default function App() {
             const keyData = new TextDecoder().decode(bytes).trim();
             if (keyData) {
               localStorage.setItem('vertex_api_key', keyData);
+              localStorage.setItem('key_version', KEY_VERSION);
               setVertexApiKey(keyData);
               console.log('[AUTO-LOAD] Vertex API Key automatisch aus vertex-key.b64 geladen');
             }
@@ -2032,7 +2049,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.2</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.3</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2107,7 +2124,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.9.2</span>
+              <span className="brand-badge">Web Beta v2.9.3</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
@@ -2193,6 +2210,7 @@ Korrigierter Befund:`;
                 onClick={() => {
                   setVertexApiKey('');
                   localStorage.removeItem('vertex_api_key');
+                  localStorage.removeItem('key_version');
                 }}
                 title="API-Key entfernen"
               >
@@ -2219,8 +2237,14 @@ Korrigierter Befund:`;
                 onChange={e => {
                   const val = e.target.value.trim();
                   setVertexApiKey(val);
-                  if (val) localStorage.setItem('vertex_api_key', val);
-                  else localStorage.removeItem('vertex_api_key');
+                  if (val) {
+                    localStorage.setItem('vertex_api_key', val);
+                    localStorage.setItem('key_version', KEY_VERSION);
+                  }
+                  else {
+                    localStorage.removeItem('vertex_api_key');
+                    localStorage.removeItem('key_version');
+                  }
                 }}
               />
               <span className={sttKeyJson ? "status-bar-value success" : "status-bar-value danger"} style={{ pointerEvents: 'none' }}>

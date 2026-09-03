@@ -45,16 +45,9 @@ jobs:
           cp config.ini release/
           cp templates.json release/
           cp radiology_prompt.txt release/
-          # Vertex API-Key als Base64-Datei neben die EXE legen (Auto-Load, keine Eingabe nötig)
-          echo -n "$VERTEX_API_KEY" | base64 > release/vertex-key.b64
-          test "$(base64 -d release/vertex-key.b64 | wc -c)" -gt 10 || { echo "Key fehlt/zu kurz"; exit 1; }
-          # STT Service-Account (Secret IST bereits Base64(JSON)) -> 1:1 als Datei
-          printf '%s' "$STT_KEY_B64" > release/rakscribe-stt-key.b64
-          test "$(wc -c < release/rakscribe-stt-key.b64)" -gt 100 || { echo "STT-Key fehlt/zu kurz"; exit 1; }
-          ls -la release/
-        env:
-          VERTEX_API_KEY: ${{ secrets.VERTEX_API_KEY }}
-          STT_KEY_B64: ${{ secrets.STT_KEY_B64 }}
+          # SECURITY (03.09.26): KEINE Key-Dateien mehr in Release-Assets (public repo!).
+          # Verteilung der Keys nur ueber den privaten Drive-Ordner RaKScribe.
+          # vertex-key.b64 / rakscribe-stt-key.b64 liegen im Drive → neben die EXE kopieren.
 
       - name: Determine version
         id: version
@@ -65,7 +58,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=v2.9.6" >> "$GITHUB_OUTPUT"
+            echo "tag=v2.9.7" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset
