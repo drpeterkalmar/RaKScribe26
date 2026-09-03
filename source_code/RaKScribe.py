@@ -199,9 +199,8 @@ def _read_text_robust(path):
     return raw.decode('utf-8', errors='replace')
 
 def _load_vertex_key():
-    k = API_KEY.strip()
-    if k:
-        return k
+    # PRIORITAET (Fix 03.09.26): Datei-Keys VOR config.ini — eine alte config.ini
+    # mit totem API_KEY darf den frischen vertex-key.b64 nicht mehr überstimmen.
     b64_path = os.path.join(BASE_DIR, 'vertex-key.b64')
     txt_path = os.path.join(BASE_DIR, 'vertex-key.txt')
     try:
@@ -223,6 +222,11 @@ def _load_vertex_key():
                 return k
     except Exception as e:
         print(f"[INIT] Konnte vertex-key.txt nicht lesen: {e}")
+    # config.ini nur als LETZTE Rückfallebene (Legacy-Verhalten)
+    k = API_KEY.strip()
+    if k:
+        print("[INIT] Gemini-Key aus config.ini API_KEY geladen (Legacy — bitte vertex-key.b64 nutzen)")
+        return k
     print(f"[INIT] WARNUNG: Kein Gemini-Key gefunden (gesucht: {b64_path}, {txt_path}, config.ini API_KEY).")
     return ""
 
@@ -682,7 +686,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.9.7)")
+        self.title("RaKScribe26 (v2.9.8)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -732,7 +736,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.9.7", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.9.8", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
