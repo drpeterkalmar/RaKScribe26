@@ -1178,7 +1178,7 @@ export default function App() {
     const estimatedDurationSec = binarySize / 32000;
     console.log(`[FULL-AUDIO] ${binarySize} bytes, ~${estimatedDurationSec.toFixed(1)}s`);
 
-    const buildSttConfig = (useLongModel: boolean) => ({
+    const buildSttConfig = () => ({
       encoding: 'LINEAR16' as const,
       sampleRateHertz: 16000,
       languageCode: 'de-DE',
@@ -1193,7 +1193,7 @@ export default function App() {
       setStatusText('Volltranskription läuft (komplettes Diktat, Google STT)...');
       const response = await fetchWithRetry(url, {
         method: 'POST', headers,
-        body: JSON.stringify({ config: buildSttConfig(false), audio: { content: base64Data } }),
+        body: JSON.stringify({ config: buildSttConfig(), audio: { content: base64Data } }),
       }, 120_000, 3);
       const data = await response.json();
       if (data.error) throw new Error(data.error.message || 'Google STT Fehler bei Volltranskription.');
@@ -1206,7 +1206,7 @@ export default function App() {
     setStatusText('Volltranskription läuft (langes Diktat, bitte warten)...');
     const startResponse = await fetchWithRetry('https://speech.googleapis.com/v1/speech:longrunningrecognize', {
       method: 'POST', headers,
-      body: JSON.stringify({ config: buildSttConfig(true), audio: { content: base64Data } }),
+      body: JSON.stringify({ config: buildSttConfig(), audio: { content: base64Data } }),
     }, 120_000, 3);
     const startData = await startResponse.json();
     if (startData.error) throw new Error(startData.error.message || 'Fehler beim Starten der Long-Running-Erkennung.');
