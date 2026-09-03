@@ -1145,7 +1145,7 @@ export default function App() {
       reader.readAsDataURL(wavBlob);
     });
 
-  // Chunk-Transkription (7s-Chunks, latest_short)
+  // Chunk-Transkription (7s-Chunks, latest_long)
   const transcribeWithGoogle = async (wavBlob: Blob): Promise<string> => {
     const { url, headers } = await buildSttAuth();
     setStatusText('Transkribiere (Google Cloud STT)...');
@@ -1156,7 +1156,7 @@ export default function App() {
       body: JSON.stringify({
         config: {
           encoding: 'LINEAR16', sampleRateHertz: 16000, languageCode: 'de-DE',
-          enableAutomaticPunctuation: true, model: 'latest_short', useEnhanced: true,
+          enableAutomaticPunctuation: true, model: 'latest_long', useEnhanced: true,  // WER-Test 03.09.: short verliert Material
           speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
         },
         audio: { content: base64Data },
@@ -1168,7 +1168,7 @@ export default function App() {
     return results.map((r: any) => r.alternatives[0].transcript).join(' ');
   };
 
-  // FULL-AUDIO Transkription (komplettes Diktat; ≤59s sync/latest_short, >60s longrunning/latest_long)
+  // FULL-AUDIO Transkription (komplettes Diktat; <=59s sync, >60s longrunning — immer latest_long)
   const transcribeFullAudioWithGoogle = async (wavBlob: Blob): Promise<string> => {
     const { url, headers } = await buildSttAuth();
     const base64Data = await blobToBase64(wavBlob);
@@ -1183,7 +1183,8 @@ export default function App() {
       sampleRateHertz: 16000,
       languageCode: 'de-DE',
       enableAutomaticPunctuation: true,
-      model: useLongModel ? 'latest_long' : 'latest_short',
+      // latest_long UEBERALL: latest_short schneidet bei 17s-Audio den Satzrest ab (WER-Test 03.09.)
+      model: 'latest_long',
       useEnhanced: true,
       speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
     });
@@ -2059,7 +2060,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.4</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.5</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2134,7 +2135,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.9.4</span>
+              <span className="brand-badge">Web Beta v2.9.5</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
