@@ -260,7 +260,7 @@ def init_google_speech():
     else:
         print(f"[INIT] Keine STT-Credentials gefunden. Gesucht in {BASE_DIR}:")
         print("       - rakscribe-stt-key.json (Drive-Ordner RaKScribe)")
-        print("       - rakscribe-stt-key.b64 (GitHub-Release)")
+        print("       - rakscribe-stt-key.b64 (Drive-Ordner RaKScribe)")
         print(f"       - {GOOGLE_JSON_FILENAME} (Legacy)")
         return False
     try:
@@ -1185,10 +1185,10 @@ class RaKScribeApp(ctk.CTk):
                         messagebox.showerror("Generierungs-Fehler",
                             "Gemini: HTTP 401 — der API-Key fehlt oder ist ungültig.\n\n"
                             f"Gesucht in: {BASE_DIR}\n"
-                            "  - vertex-key.b64 (GitHub-Release)\n"
+                            "  - vertex-key.b64 (Drive-Ordner RaKScribe)\n"
                             "  - vertex-key.txt\n"
                             "  - config.ini [API_KEY]\n\n"
-                            "Bitte die Dateien aus dem neuesten Release in diesen Ordner legen.")
+                            "Bitte die Key-Dateien aus dem Drive-Ordner RaKScribe in diesen Ordner legen.")
                     else:
                         messagebox.showerror("Generierungs-Fehler", f"Fehler bei der Gemini (Vertex AI) Generierung:\n{e}")
             else:
