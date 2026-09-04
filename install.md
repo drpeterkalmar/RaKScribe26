@@ -27,13 +27,11 @@ Diese Anleitung führt Sie Schritt für Schritt durch die Einrichtung von **RaKS
 
 Legen Sie **alle Dateien in denselben Ordner** (z. B. `C:\RaKScribe26\`).
 
-### Schritt 2: Google Service Account Key hinterlegen
-1. Platzieren Sie Ihre Google Cloud JSON-Schlüsseldatei (z. B. `google-service-account.json`) **in denselben Ordner** wie die EXE.
-2. Öffnen Sie `config.ini` mit einem Texteditor und tragen Sie den genauen Dateinamen ein:
-   ```ini
-   GOOGLE_JSON_FILENAME = google-service-account.json
-   ```
-   Das Programm verwendet diese Datei automatisch für Spracherkennung (Speech-to-Text) und das Sprachmodell (Gemini Flash).
+### Schritt 2: Praxis-Key hinterlegen (EIN Key für alles)
+1. Kopieren Sie die Datei `rakscribe-praxis-key.json` (aus dem Drive-Ordner „RaKScribe") **in denselben Ordner** wie die EXE.
+2. Das ist alles – keine config.ini-Änderung nötig. Diese **eine Datei** authentifiziert automatisch sowohl die Spracherkennung (Speech-to-Text) als auch das Sprachmodell (Gemini Flash).
+
+> **Hinweis:** Ältere Setups mit getrennten Schlüsseldateien (`vertex-key.b64`, `rakscribe-stt-key.json`) funktionieren weiterhin, sind aber nicht mehr nötig.
 
 ### Schritt 3: Starten
 Doppelklick auf **`rakscribe26.exe`** – fertig. ✅
@@ -83,7 +81,7 @@ GOOGLE_JSON_FILENAME = google-service-account.json
 Alle Aktivitäten, Warnungen und Fehler werden in die Datei **`rakscribe.log`** geschrieben:
 
 * **Kein Ton erkannt:** Prüfen Sie im Log, ob Ihr Standard-Mikrofon korrekt erkannt wird.
-* **Fehler bei der Google API:** Stellen Sie sicher, dass die JSON-Schlüsseldatei im selben Ordner wie die EXE liegt und der Name in `config.ini` exakt übereinstimmt.
+* **Fehler bei der Google API:** Stellen Sie sicher, dass `rakscribe-praxis-key.json` im selben Ordner wie die EXE liegt (Ein-Key-Setup). Ältere Setups: Dateiname in `config.ini` unter `GOOGLE_JSON_FILENAME` prüfen.
 * **Windows Defender / Antivirus:** Da die EXE selbst kompiliert ist, kann ein Hinweis erscheinen. Klicken Sie auf „Weitere Informationen" → „Trotzdem ausführen".
 
 ---

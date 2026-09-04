@@ -58,7 +58,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=v2.9.8" >> "$GITHUB_OUTPUT"
+            echo "tag=v2.9.9" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset

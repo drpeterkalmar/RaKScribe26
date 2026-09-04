@@ -41,7 +41,7 @@ Für den Online-Modus fallen bei Google folgende minimale Gebühren an:
 
 * **🏥 Modalitätsspezifische Befundvorlagen:** RaKScribe26 erkennt automatisch die Bildgebungsmodalität des diktierten Befunds und wählt die passende strukturierte Vorlage. Jede Modalität hat eigene, klinisch präzise Templates – keine Verwechslung mehr zwischen Röntgen, Sonographie und Nervenschall.
 * **⚡ Sub-Sekunden-Latenz:** Befunde werden online via Gemini Flash in unter 2 Sekunden fertig strukturiert und formatiert zurückgeliefert.
-* **🔑 Zero-Configuration:** Keine manuelle API-Key-Eingabe nötig! Die Anwendung verwendet automatisch Ihre Google Speech-to-Text-Schlüsseldatei (`google-service-account.json`) zur sicheren Authentifizierung bei Gemini.
+* **🔑 Ein Key für alles:** Eine einzige Datei (`rakscribe-praxis-key.json`) authentifiziert Spracherkennung (Speech-to-Text) **und** Gemini – keine manuelle API-Key-Eingabe, keine separate Konfiguration.
 * **📋 Auto-Paste & Hotkey (F10):** Ein einziger Tastendruck auf **F10** startet und stoppt das Diktat. Nach Beendigung wird der fertige Befund automatisch in die Zwischenablage kopiert und per `Ctrl+V` direkt in Ihr aktives RIS, Word oder KIS eingefügt.
 * **🔄 Reset-Hotkey (F9):** Schnelles Zurücksetzen aller Felder mit **F9** – ideal wenn ein Diktat falsch gestartet wurde oder die Vorlage neu gewählt werden soll.
 * **🩺 Medizinisches Vokabular:** Ein integrierter Wortschatz-Boost sorgt dafür, dass komplexe radiologische Fachbegriffe (z. B. *Spondylarthrose*, *Rotatorenmanschettenruptur*, *Rhizarthrose*) fehlerfrei erkannt werden.
@@ -83,8 +83,8 @@ Laden Sie die neueste Version vom [Releases-Tab](https://github.com/drpeterkalma
 
 Alle Dateien in **denselben Ordner** legen.
 
-### 2. Google Service Account hinterlegen
-Platzieren Sie Ihre Google Cloud JSON-Schlüsseldatei im selben Ordner und tragen Sie den Dateinamen in der `config.ini` unter `GOOGLE_JSON_FILENAME` ein.
+### 2. Praxis-Key hinterlegen (EIN Key für alles)
+Legen Sie `rakscribe-praxis-key.json` (aus dem Drive-Ordner „RaKScribe") in denselben Ordner wie die EXE. Fertig – diese eine Datei versorgt Spracherkennung **und** Gemini.
 
 ### 3. Starten
 Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installation nötig.
@@ -99,13 +99,14 @@ Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installatio
 LLM_PROVIDER = gemini
 LLM_MODEL = gemini-1.5-flash
 
-# API-Key (kann für Gemini leer bleiben, da die JSON-Schlüsseldatei verwendet wird)
+# API-Key: bleibt leer – der Key kommt aus rakscribe-praxis-key.json
 API_KEY = 
 
 # Chunk-Dauer in Sekunden für das Google Streaming (empfohlen: 7)
 CHUNK_DURATION = 7
 
-# Dateiname der Google Cloud JSON-Schlüsseldatei
+# Dateiname der Google Cloud JSON-Schlüsseldatei (nur Legacy – wird von
+# rakscribe-praxis-key.json abgelöst)
 GOOGLE_JSON_FILENAME = google-service-account.json
 ```
 

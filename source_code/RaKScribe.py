@@ -198,9 +198,32 @@ def _read_text_robust(path):
         raw = raw[3:]
     return raw.decode('utf-8', errors='replace')
 
+def _load_praxis_key():
+    # EIN-Key-Setup (v2.9.9): rakscribe-praxis-key.json = {"vertex_api_key": "AQ...",
+    # "stt": {SA-JSON}} — dieselbe Datei wie im Web-Login (v2.9.4). EINE Datei
+    # versorgt Gemini UND Speech-to-Text. Liefert (gemini_key, stt_dict).
+    p = os.path.join(BASE_DIR, 'rakscribe-praxis-key.json')
+    try:
+        if os.path.exists(p):
+            data = json.loads(_read_text_robust(p))
+            gk = str(data.get('vertex_api_key') or '').strip()
+            stt = data.get('stt') if isinstance(data.get('stt'), dict) else None
+            if gk:
+                print(f"[INIT] Gemini-Key aus rakscribe-praxis-key.json geladen ({len(gk)} Zeichen)")
+            if stt:
+                print("[INIT] STT-Key aus rakscribe-praxis-key.json geladen (SA-JSON)")
+            return (gk, stt)
+    except Exception as e:
+        print(f"[INIT] rakscribe-praxis-key.json nicht verwertbar: {e}")
+    return ("", None)
+
 def _load_vertex_key():
     # PRIORITAET (Fix 03.09.26): Datei-Keys VOR config.ini — eine alte config.ini
     # mit totem API_KEY darf den frischen vertex-key.b64 nicht mehr überstimmen.
+    # v2.9.9: rakscribe-praxis-key.json (EIN-Key-Setup) hat oberste Priorität.
+    _praxis_gemini, _praxis_stt = _load_praxis_key()
+    if _praxis_gemini:
+        return _praxis_gemini
     b64_path = os.path.join(BASE_DIR, 'vertex-key.b64')
     txt_path = os.path.join(BASE_DIR, 'vertex-key.txt')
     try:
@@ -243,14 +266,19 @@ def init_google_speech():
     if not google_speech_available:
         print("[INIT] Google Cloud Speech Bibliotheken nicht installiert.")
         return False
-    # STT-Key-Reihenfolge: rakscribe-stt-key.json (Drive) > rakscribe-stt-key.b64 (Release-Asset,
-    # Base64-JSON) > config.ini-GOOGLE_JSON_FILENAME (Legacy). Alles im EXE-Verzeichnis (BASE_DIR).
+    # STT-Key-Reihenfolge (v2.9.9): rakscribe-praxis-key.json (EIN-Key-Setup) >
+    # rakscribe-stt-key.json (Drive) > rakscribe-stt-key.b64 (Base64-JSON) >
+    # config.ini-GOOGLE_JSON_FILENAME (Legacy). Alles im EXE-Verzeichnis (BASE_DIR).
     stt_json = os.path.join(BASE_DIR, 'rakscribe-stt-key.json')
     stt_b64 = os.path.join(BASE_DIR, 'rakscribe-stt-key.b64')
     legacy_json = os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME)
     SERVICE_ACCOUNT_FILE = None
     credentials = None
-    if os.path.exists(stt_json):
+    _gk, _pstt = _load_praxis_key()
+    if _pstt:
+        credentials = service_account.Credentials.from_service_account_info(_pstt)
+        SERVICE_ACCOUNT_FILE = 'rakscribe-praxis-key.json'
+    elif os.path.exists(stt_json):
         SERVICE_ACCOUNT_FILE = stt_json
         credentials = service_account.Credentials.from_service_account_file(stt_json)
     elif os.path.exists(stt_b64):
@@ -263,6 +291,7 @@ def init_google_speech():
         credentials = service_account.Credentials.from_service_account_file(legacy_json)
     else:
         print(f"[INIT] Keine STT-Credentials gefunden. Gesucht in {BASE_DIR}:")
+        print("       - rakscribe-praxis-key.json (Drive-Ordner RaKScribe — EIN-Key-Setup)")
         print("       - rakscribe-stt-key.json (Drive-Ordner RaKScribe)")
         print("       - rakscribe-stt-key.b64 (Drive-Ordner RaKScribe)")
         print(f"       - {GOOGLE_JSON_FILENAME} (Legacy)")
@@ -686,7 +715,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.9.8)")
+        self.title("RaKScribe26 (v2.9.9)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -736,7 +765,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.9.8", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.9.9", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1189,6 +1218,7 @@ class RaKScribeApp(ctk.CTk):
                         messagebox.showerror("Generierungs-Fehler",
                             "Gemini: HTTP 401 — der API-Key fehlt oder ist ungültig.\n\n"
                             f"Gesucht in: {BASE_DIR}\n"
+                            "  - rakscribe-praxis-key.json (Drive-Ordner RaKScribe — EIN-Key-Setup)\n"
                             "  - vertex-key.b64 (Drive-Ordner RaKScribe)\n"
                             "  - vertex-key.txt\n"
                             "  - config.ini [API_KEY]\n\n"
