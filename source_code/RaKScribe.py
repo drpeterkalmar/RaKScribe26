@@ -258,6 +258,8 @@ VERTEX_KEY_FILE = _load_vertex_key()
 speech_client = None
 GOOGLE_CONFIG = None
 STREAMING_CONFIG = None
+_SA_CREDENTIALS = None
+_STT_TOKEN_CACHE = {'token': None, 'exp': 0}
 
 def init_google_speech():
     global speech_client, GOOGLE_CONFIG, STREAMING_CONFIG
@@ -274,9 +276,11 @@ def init_google_speech():
     legacy_json = os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME)
     SERVICE_ACCOUNT_FILE = None
     credentials = None
+    global _SA_CREDENTIALS
     _gk, _pstt = _load_praxis_key()
     if _pstt:
         credentials = service_account.Credentials.from_service_account_info(_pstt)
+        _SA_CREDENTIALS = credentials
         SERVICE_ACCOUNT_FILE = 'rakscribe-praxis-key.json'
     elif os.path.exists(stt_json):
         SERVICE_ACCOUNT_FILE = stt_json
@@ -702,6 +706,105 @@ def numpy_to_wav_bytes(audio_np, samplerate=16000):
     buf.seek(0)
     return buf
 
+# =========================================================================
+# === CHIRP 3 Volltranskription (v2.9.10, 04.09.26) ===
+# WER-Test 04.09.: chirp_3 (STT v2, Location eu) = 2,4% WER (auch bei Echo/
+# Daempfung), latest_long = 16,7%. Kein Phrasen-Boost moeglich, dafuer
+# Dragon-Niveau. Max 60s pro Request -> Segmentierung 50s + 4s Rueckhoeren,
+# Ueberlappung wird per Wortvergleich gestitched.
+# =========================================================================
+def transcribe_full_chirp3(pcm_int16, samplerate=16000, loc='eu'):
+    try:
+        token = _get_stt_access_token()
+        if not token:
+            return None
+        import urllib.request as _ur
+        total = len(pcm_int16) if False else len(pcm_int16)
+        return _chirp3_worker(pcm_int16, samplerate, loc, token)
+    except Exception as e:
+        log_exception("[CHIRP3] Fehler in transcribe_full_chirp3")
+        return None
+
+def _chirp3_request(token, loc, wav_b64, timeout=60):
+    import urllib.request as _ur
+    host = 'speech' if loc == 'global' else loc + '-speech'
+    url = (f"https://{host}.googleapis.com/v2/projects/rakscribe/"
+           f"locations/{loc}/recognizers/_:recognize")
+    cfg = {"languageCodes": ["de-DE"], "model": "chirp_3",
+           "autoDecodingConfig": {},
+           "features": {"enableAutomaticPunctuation": True}}
+    body = json.dumps({"config": cfg, "content": wav_b64}).encode()
+    req = _ur.Request(url, data=body, headers={
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"})
+    with _ur.urlopen(req, timeout=timeout) as resp:
+        j = json.loads(resp.read())
+    return " ".join(res["alternatives"][0]["transcript"]
+                    for res in j.get("results", []))
+
+def _get_stt_access_token():
+    try:
+        if GOOGLE_CONFIG is None:
+            return None
+        # JWT-Flow: SA-JSON direkt aus dem geladenen Service-Account-File
+        from google.oauth2 import service_account as _sa
+        from google.auth.transport.requests import Request as _Req
+        global _STT_TOKEN_CACHE
+        now = time.time()
+        if _STT_TOKEN_CACHE.get('token') and _STT_TOKEN_CACHE.get('exp', 0) > now + 120:
+            return _STT_TOKEN_CACHE['token']
+        creds = _SA_CREDENTIALS
+        if creds is None:
+            return None
+        if not creds.valid:
+            creds.refresh(_Req())
+        _STT_TOKEN_CACHE['token'] = creds.token
+        _STT_TOKEN_CACHE['exp'] = creds.expiry.timestamp() if creds.expiry else now + 3000
+        return _STT_TOKEN_CACHE['token']
+    except Exception as e:
+        log_exception("[CHIRP3] Token-Fehler")
+        return None
+
+def _stitch_overlaps(a, b, window=14):
+    aw, bw = a.split(), b.split()
+    best = 0
+    for L in range(min(window, len(aw), len(bw)), 0, -1):
+        tail = [w.lower().strip('.,:;') for w in aw[-L:]]
+        head = [w.lower().strip('.,:;') for w in bw[:L]]
+        if sum(1 for x, y in zip(tail, head) if x == y) >= int(L * 0.8):
+            best = L
+            break
+    return (a + " " + " ".join(bw[best:])) if best else (a + " " + b)
+
+def _chirp3_worker(pcm_int16, samplerate, loc, token):
+    import urllib.request as _ur
+    raw = pcm_int16.tobytes()
+    total = len(raw) // 2
+    SEG = 50 * samplerate      # 50s Segmente
+    OV = 4 * samplerate        # 4s Rueckhoeren
+    texts = []
+    start = 0
+    while start < len(pcm_int16):
+        end = min(start + SEG, len(pcm_int16))
+        seg = pcm_int16[start:end]
+        buf = io.BytesIO()
+        with wave.open(buf, 'wb') as wf:
+            wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(samplerate)
+            wf.writeframes(seg.tobytes())
+        import base64 as _b64
+        b64 = _b64.b64encode(buf.getvalue()).decode()
+        txt = _chirp3_request(token, loc, b64)
+        if txt is None:
+            return None
+        texts.append(txt)
+        if end >= len(pcm_int16):
+            break
+        start = end - OV
+    full = texts[0]
+    for nxt in texts[1:]:
+        full = _stitch_overlaps(full, nxt)
+    return full
+
 # === CUSTOM COLORS (Deepc AIR Inspired) ===
 BGC_MAIN = "#0B0D17"
 BGC_CARD = "#16192C"
@@ -715,7 +818,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.9.9)")
+        self.title("RaKScribe26 (v2.9.10)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -765,7 +868,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.9.9", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.9.10", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -935,6 +1038,7 @@ class RaKScribeApp(ctk.CTk):
             log("[RECORD] Aufnahme wird gestartet...")
             self.final_transcript = ""
             self.recorded_audio_chunks = []
+            self.recorded_audio_chunks_all = []
             self.transcript_text.delete("1.0", "end")
             self.result_text.delete("1.0", "end")
             self.is_recording = True
@@ -994,6 +1098,30 @@ class RaKScribeApp(ctk.CTk):
                     self.record_thread.join(timeout=6.0) # Wait for generator to finish yielding and responses to drain
                 log("[PROCESS] Aufnahme-Thread beendet oder Timeout erreicht.")
                 
+                # ═══ CHIRP 3 Volltranskription (v2.9.10) ═══
+                # Das Streaming (7s-Chunks) dient nur der Live-Anzeige. Für die
+                # finale Transkription wird die KOMPLETTE Aufnahme noch einmal
+                # an chirp_3 (STT v2, WER 2,4% vs 16,7%) geschickt.
+                try:
+                    all_pcm = np.concatenate(self.recorded_audio_chunks_all, axis=0) \
+                        if getattr(self, 'recorded_audio_chunks_all', None) else None
+                    if all_pcm is not None and len(all_pcm) > 16000:
+                        log(f"[CHIRP3] Volltranskription: {len(all_pcm)/16000:.0f}s Audio")
+                        self.after(0, lambda: self.update_status("PROCESSING", "busy"))
+                        token = _get_stt_access_token()
+                        chirp_text = _chirp3_worker(all_pcm, 16000, 'eu', token) if token else None
+                        if chirp_text and chirp_text.strip():
+                            self.final_transcript = chirp_text.strip()
+                            log(f"[CHIRP3] OK: {len(self.final_transcript)} Zeichen")
+                            self.after(0, lambda: (
+                                self.transcript_text.delete("1.0", "end"),
+                                self.transcript_text.insert("1.0", self.final_transcript.strip())
+                            ))
+                        else:
+                            log("[CHIRP3] Kein Ergebnis — nutze Streaming-Transkript weiter.")
+                except Exception as e_chirp:
+                    log_exception("[CHIRP3] Volltranskription fehlgeschlagen — Streaming-Transkript bleibt.")
+
                 # Safety net: If final_transcript is empty but they saw text, salvage it
                 if not self.final_transcript.strip():
                     salvaged = self.transcript_text.get("1.0", "end-1c").strip()
@@ -1061,6 +1189,9 @@ class RaKScribeApp(ctk.CTk):
                     rms = np.sqrt(np.mean(indata.astype(np.float64)**2))
                     log(f"[AUDIO] Erster Audio-Callback empfangen. RMS-Pegel: {rms:.2f}")
                 self.recorded_audio_chunks.append(indata.copy())
+                if not hasattr(self, 'recorded_audio_chunks_all'):
+                    self.recorded_audio_chunks_all = []
+                self.recorded_audio_chunks_all.append(indata.copy())
                 rms = np.sqrt(np.mean(indata.astype(np.float64)**2))
                 self.after(0, self.update_level_bar, rms)
 

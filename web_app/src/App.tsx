@@ -1168,9 +1168,57 @@ export default function App() {
     return results.map((r: any) => r.alternatives[0].transcript).join(' ');
   };
 
-  // FULL-AUDIO Transkription (komplettes Diktat; <=59s sync, >60s longrunning — immer latest_long)
+  // FULL-AUDIO Transkription (v2.9.10): chirp_3 via STT v2 (Location eu).
+  // WER-Test 04.09.: chirp_3 = 2,4% (auch bei Echo/Daempfung) vs latest_long = 16,7%.
+  // Kein Phrasen-Boost in chirp_3, dafuer Dragon-Niveau. Segmentierung >60s:
+  // 50s-Segmente + 4s Rueckhoeren, Ueberlappung per Wortvergleich gestitched.
+  const chirpTokenCacheRef = useRef<{ token: string; exp: number } | null>(null);
+  const getSttAccessToken = async (): Promise<string> => {
+    const now = Date.now() / 1000;
+    if (chirpTokenCacheRef.current && chirpTokenCacheRef.current.exp > now + 120) {
+      return chirpTokenCacheRef.current.token;
+    }
+    if (!sttKeyJson) throw new Error('STT-Schluessel nicht geladen.');
+    const token = await getGoogleBearerToken(sttKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
+    chirpTokenCacheRef.current = { token, exp: now + 3000 };
+    return token;
+  };
+
+  const chirp3Recognize = async (token: string, wavB64: string): Promise<string> => {
+    const url = 'https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize';
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        config: {
+          languageCodes: ['de-DE'],
+          model: 'chirp_3',
+          autoDecodingConfig: {},
+          features: { enableAutomaticPunctuation: true },
+        },
+        content: wavB64,
+      }),
+    }, 120_000, 3);
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message || 'chirp_3 Fehler.');
+    const results = data.results || [];
+    return results.map((r: any) => r.alternatives[0].transcript).join(' ');
+  };
+
+  const stitchOverlaps = (a: string, b: string, window = 14): string => {
+    const aw: string[] = a.split(' ');
+    const bw: string[] = b.split(' ');
+    let best = 0;
+    for (let L = Math.min(window, aw.length, bw.length); L > 0; L--) {
+      const tail = aw.slice(-L).map(w => w.toLowerCase().replace(/[.,:;]/g, ''));
+      const head = bw.slice(0, L).map(w => w.toLowerCase().replace(/[.,:;]/g, ''));
+      if (tail.filter((w, i) => w === head[i]).length >= Math.floor(L * 0.8)) { best = L; break; }
+    }
+    return best ? a + ' ' + bw.slice(best).join(' ') : a + ' ' + b;
+  };
+
   const transcribeFullAudioWithGoogle = async (wavBlob: Blob): Promise<string> => {
-    const { url, headers } = await buildSttAuth();
+    const token = await getSttAccessToken();
     const base64Data = await blobToBase64(wavBlob);
 
     // Duration: 16000 samples/s * 2 bytes/sample = 32000 bytes/s (base64 ~4/3)
@@ -1178,76 +1226,55 @@ export default function App() {
     const estimatedDurationSec = binarySize / 32000;
     console.log(`[FULL-AUDIO] ${binarySize} bytes, ~${estimatedDurationSec.toFixed(1)}s`);
 
-    const buildSttConfig = () => ({
-      encoding: 'LINEAR16' as const,
-      sampleRateHertz: 16000,
-      languageCode: 'de-DE',
-      enableAutomaticPunctuation: true,
-      // latest_long UEBERALL: latest_short schneidet bei 17s-Audio den Satzrest ab (WER-Test 03.09.)
-      model: 'latest_long',
-      useEnhanced: true,
-      speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
-    });
-
+    // <=59s: EIN chirp_3-Request
     if (estimatedDurationSec <= 59) {
-      setStatusText('Volltranskription läuft (komplettes Diktat, Google STT)...');
-      const response = await fetchWithRetry(url, {
-        method: 'POST', headers,
-        body: JSON.stringify({ config: buildSttConfig(), audio: { content: base64Data } }),
-      }, 120_000, 3);
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message || 'Google STT Fehler bei Volltranskription.');
-      const results = data.results || [];
-      return results.map((r: any) => r.alternatives[0].transcript).join(' ');
+      setStatusText('Volltranskription läuft (chirp_3, komplettes Diktat)...');
+      return await chirp3Recognize(token, base64Data);
     }
 
-    // >60s: longrunningrecognize + polling
-    console.log('[FULL-AUDIO] longrunningrecognize (>60s)');
-    setStatusText('Volltranskription läuft (langes Diktat, bitte warten)...');
-    const startResponse = await fetchWithRetry('https://speech.googleapis.com/v1/speech:longrunningrecognize', {
-      method: 'POST', headers,
-      body: JSON.stringify({ config: buildSttConfig(), audio: { content: base64Data } }),
-    }, 120_000, 3);
-    const startData = await startResponse.json();
-    if (startData.error) throw new Error(startData.error.message || 'Fehler beim Starten der Long-Running-Erkennung.');
-
-    const operationName = startData.name;
-    const maxAttempts = 60;
-    const pollInterval = 5000;
-    let lastProgress = 0;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-      // Token ggf. erneuern (langer Betrieb)
-      const freshToken = await getGoogleBearerToken(sttKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-      const pollResponse = await fetchWithRetry(`https://speech.googleapis.com/v1/operations/${operationName}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${freshToken}` },
-      }, 30_000, 3);
-
-      const pollData = await pollResponse.json();
-      if (pollData.error) throw new Error(pollData.error.message || 'Fehler beim Abrufen des Transkriptionsergebnisses.');
-
-      if (pollData.done) {
-        const response = pollData.response;
-        if (!response || !response.results) return '';
-        const fullText = response.results
-          .map((r: any) => r.alternatives[0].transcript)
-          .join(' ');
-        console.log(`[FULL-AUDIO] Long-running complete: ${fullText.length} chars`);
-        return fullText;
-      }
-
-      const progress = pollData.metadata?.progressPercent;
-      if (progress && progress !== lastProgress) {
-        lastProgress = progress;
-        setStatusText(`Volltranskription läuft... ${progress}%`);
-      } else {
-        setStatusText(`Volltranskription läuft... (Versuch ${attempt + 1}/${maxAttempts})`);
-      }
+    // >60s: Segmentierung 50s + 4s Rueckhoeren, dann Overlap-Stitch
+    console.log('[FULL-AUDIO] chirp_3 Segmentierung (>60s)');
+    setStatusText('Volltranskription läuft (langes Diktat, chirp_3, bitte warten)...');
+    // WAV decodieren → Float32 → s16le-PCM
+    const arrayBuffer = await wavBlob.arrayBuffer();
+    const ctxTemp = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+    const audioBuf = await ctxTemp.decodeAudioData(arrayBuffer);
+    ctxTemp.close();
+    const f32 = audioBuf.getChannelData(0);
+    const s16 = new Int16Array(f32.length);
+    for (let i = 0; i < f32.length; i++) {
+      const s = Math.max(-1, Math.min(1, f32[i]));
+      s16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
     }
-    throw new Error('Zeitüberschreitung bei der Volltranskription (5 Minuten).');
+    const SR = 16000, SEG = 50 * SR, OV = 4 * SR;
+    const texts: string[] = [];
+    let start = 0;
+    while (start < s16.length) {
+      const end = Math.min(start + SEG, s16.length);
+      const seg = s16.slice(start, end);
+      // Int16 → WAV-Container
+      const wav = new ArrayBuffer(44 + seg.length * 2);
+      const view = new DataView(wav);
+      const ws = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+      ws(0, 'RIFF'); view.setUint32(4, 36 + seg.length * 2, true); ws(8, 'WAVE');
+      ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true); view.setUint32(24, SR, true);
+      view.setUint32(28, SR * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+      ws(36, 'data'); view.setUint32(40, seg.length * 2, true);
+      new Int16Array(wav, 44).set(seg);
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = () => reject(new Error('WAV-Encoding fehlgeschlagen.'));
+        reader.readAsDataURL(new Blob([wav], { type: 'audio/wav' }));
+      });
+      texts.push(await chirp3Recognize(token, b64));
+      if (end >= s16.length) break;
+      start = end - OV;
+    }
+    let full = texts[0];
+    for (let i = 1; i < texts.length; i++) full = stitchOverlaps(full, texts[i]);
+    return full;
   };
 
   // Wrapper: Google primary, Whisper fallback (lokaler Server auf Praxis-PC)
@@ -2060,7 +2087,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.5</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.10</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2135,7 +2162,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.9.5</span>
+              <span className="brand-badge">Web Beta v2.9.10</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
