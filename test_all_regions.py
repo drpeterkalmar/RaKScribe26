@@ -134,7 +134,7 @@ def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
     headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
     body = json.dumps({
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperature}
+        "generationConfig": {"temperature": temperature, "thinkingConfig": {"thinkingBudget": 0}}
     }).encode()
     req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as resp:

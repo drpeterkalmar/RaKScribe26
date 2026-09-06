@@ -1448,7 +1448,7 @@ Korrigiert:`;
             role: "user",
             parts: [{ text: correctionPrompt }]
           }],
-          generationConfig: { temperature: 0.0 }
+          generationConfig: { temperature: 0.0, thinkingConfig: { thinkingBudget: 0 } }
         })
       }, 120_000, 3);
 
@@ -1508,7 +1508,8 @@ Korrigiert:`;
           }]
         },
         generationConfig: {
-          temperature: 0.0
+          temperature: 0.0,
+          thinkingConfig: { thinkingBudget: 0 }
         }
       })
     }, 120_000, 3);
@@ -1567,7 +1568,7 @@ Korrigierter Befund:`;
         headers: authHeaders,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: validationPrompt }] }],
-          generationConfig: { temperature: 0.0 }
+          generationConfig: { temperature: 0.0, thinkingConfig: { thinkingBudget: 0 } }
         })
       }, 120_000, 3);
 
@@ -2114,7 +2115,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.0</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.1</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2202,7 +2203,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.0</span>
+              <span className="brand-badge">Web v2.10.1</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
