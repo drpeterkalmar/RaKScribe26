@@ -195,7 +195,7 @@ body {
   justify-content: space-between;
   padding: 16px 28px;
   background-color: rgba(11, 13, 23, 0.9);
-  border-b: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
 }
 
@@ -850,3 +850,80 @@ body {
   flex-shrink: 0;
 }
 
+
+/* Schlüssel-Datei-Button (Login) */
+.keyfile-btn {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ================= Mobile / iPhone (iOS Safari) ================= */
+@media (max-width: 900px) {
+  #root { min-height: 100dvh; }
+  .login-container {
+    min-height: 100dvh;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+  }
+
+  /* iOS zoomt bei Eingabefeldern mit < 16px */
+  .form-input,
+  .select-input,
+  .text-editor {
+    font-size: 16px !important;
+  }
+
+  .app-header {
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .brand-name { font-size: 20px; }
+  .brand-desc { display: none; }
+  .brand-badge { font-size: 10px; padding: 2px 8px; }
+  .header-actions { gap: 10px; }
+  .status-badge { font-size: 11px; }
+
+  .status-bar {
+    gap: 10px;
+    padding: 10px 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .status-bar-item { justify-content: space-between; flex-wrap: wrap; }
+  .status-bar input.select-input { width: 100% !important; max-width: none; }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px 12px;
+  }
+  .workspace-card { height: auto; }
+  .workspace-card .text-editor { min-height: 300px; }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .card-footer .footer-info { text-align: center; }
+  .btn-large-action {
+    width: 100%;
+    min-width: 0 !important;
+    height: 52px !important;
+    font-size: 16px !important;
+  }
+
+  .modal-content { max-height: 92dvh; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .login-card { padding: 24px 20px; }
+
+  footer { padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important; }
+}
+@media (max-width: 420px) {
+  .brand-badge { display: none; }
+}

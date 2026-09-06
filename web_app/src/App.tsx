@@ -11,7 +11,8 @@ import {
   Sparkles,
   X,
   Upload,
-  Download
+  Download,
+  FileUp
 } from 'lucide-react';
 import templatesData from './templates.json';
 
@@ -448,7 +449,7 @@ async function tryPraxisLogin(pw: string): Promise<boolean> {
 export default function App() {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState<string>('');
+  const [username, setUsername] = useState<string>(() => localStorage.getItem('raks_username') || '');
   const [password, setPassword] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
 
@@ -457,6 +458,7 @@ export default function App() {
   const [sttKeyJson, setSttKeyJson] = useState<any>(null);
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const audioUploadRef = useRef<HTMLInputElement>(null);
+  const keyFileRef = useRef<HTMLInputElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
 
@@ -820,6 +822,30 @@ export default function App() {
   // Save config changes
   // Config auto-saved on change
 
+  // Schlüssel-Datei vom Dateisystem lesen (iPhone/Android: kein Drag & Drop möglich)
+  const handleKeyFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const txt = await f.text();
+      setPassword(txt);
+      setAuthError('');
+      const uname = username.trim() || 'Praxis';
+      if (!username.trim()) setUsername(uname);
+      const ok = await tryPraxisLogin(txt);
+      if (ok) {
+        setIsAuthenticated(true);
+        localStorage.setItem('is_authenticated', 'true');
+        localStorage.setItem('raks_username', uname);
+      } else {
+        setAuthError('Schlüssel-Datei nicht erkannt — unterstützt: praxis-key.json, SA-JSON, Base64-Key oder AQ.-API-Key.');
+      }
+    } catch {
+      setAuthError('Datei konnte nicht gelesen werden.');
+    }
+    e.target.value = '';
+  };
+
   // Login Handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -834,6 +860,7 @@ export default function App() {
       if (ok) {
         setIsAuthenticated(true);
         localStorage.setItem('is_authenticated', 'true');
+        localStorage.setItem('raks_username', username.trim());
         setAuthError('');
       } else {
         setAuthError('Ungültige Anmeldedaten — bitte die Key-Datei aus dem Drive-Ordner RaKScribe verwenden.');
@@ -2087,7 +2114,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.9.10</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.0</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2127,6 +2154,21 @@ Korrigierter Befund:`;
               </div>
             </div>
 
+            <button
+              type="button"
+              className="btn btn-secondary keyfile-btn"
+              onClick={() => keyFileRef.current?.click()}
+            >
+              <FileUp size={16} /> Schlüssel-Datei wählen
+            </button>
+            <input
+              ref={keyFileRef}
+              type="file"
+              accept=".json,.txt,.b64,application/json,text/plain"
+              style={{ display: 'none' }}
+              onChange={handleKeyFile}
+            />
+
             {authError && (
               <div className="login-error">
                 {authError}
@@ -2140,7 +2182,7 @@ Korrigierter Befund:`;
 
           <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #1E2235', fontSize: '12px', color: 'var(--text-secondary)' }}>
             Benötigen Sie Hilfe? Kontaktieren Sie die Praxis-IT. <br />
-            <span style={{ fontStyle: 'italic', display: 'block', marginTop: '4px' }}>Alternativ: Praxis-JSON-Key (Drive → RaKScribe) in das Passwortfeld ziehen</span>
+            <span style={{ fontStyle: 'italic', display: 'block', marginTop: '4px' }}>Praxis-Key (Drive → RaKScribe): Desktop = ins Passwortfeld ziehen · iPhone = „Schlüssel-Datei wählen“</span>
           </div>
         </div>
       </div>
@@ -2162,7 +2204,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web Beta v2.9.10</span>
+              <span className="brand-badge">Web v2.10.0</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
