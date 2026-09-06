@@ -927,3 +927,6 @@ body {
 @media (max-width: 420px) {
   .brand-badge { display: none; }
 }
+
+/* Passwortfeld: Platz neben dem Schloss-Icon (Placeholder-Clipping-Fix) */
+.password-wrapper .form-input { padding-right: 44px; }

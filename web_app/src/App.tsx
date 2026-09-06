@@ -2146,7 +2146,7 @@ Korrigierter Befund:`;
                     }
                   }}
                   onDragOver={e => e.preventDefault()}
-                  placeholder="Passwort eingeben (oder JSON-Key hierher ziehen)"
+                  placeholder="Passwort oder JSON-Key"
                   className="form-input"
                   required
                 />
