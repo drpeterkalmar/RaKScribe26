@@ -858,6 +858,27 @@ body {
   margin-top: 12px;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Input physisch vorhanden (iOS-Sicherheit), aber unsichtbar */
+.keyfile-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  pointer-events: none;
+}
+
+.keyfile-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 /* ================= Mobile / iPhone (iOS Safari) ================= */

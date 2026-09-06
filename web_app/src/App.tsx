@@ -825,7 +825,7 @@ export default function App() {
   // Schlüssel-Datei vom Dateisystem lesen (iPhone/Android: kein Drag & Drop möglich)
   const handleKeyFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (!f) return;
+    if (!f) { e.target.value = ''; return; }
     try {
       const txt = await f.text();
       setPassword(txt);
@@ -2154,20 +2154,18 @@ Korrigierter Befund:`;
               </div>
             </div>
 
-            <button
-              type="button"
-              className="btn btn-secondary keyfile-btn"
-              onClick={() => keyFileRef.current?.click()}
-            >
+            <label className="btn btn-secondary keyfile-btn">
               <FileUp size={16} /> Schlüssel-Datei wählen
-            </button>
-            <input
-              ref={keyFileRef}
-              type="file"
-              accept=".json,.txt,.b64,application/json,text/plain"
-              style={{ display: 'none' }}
-              onChange={handleKeyFile}
-            />
+              <input
+                ref={keyFileRef}
+                type="file"
+                className="keyfile-input"
+                onChange={handleKeyFile}
+              />
+            </label>
+            <span className="keyfile-hint">
+              praxis-key.json aus dem Drive-Ordner „RaKScribe" — im Picker unter „Orte" → Google Drive
+            </span>
 
             {authError && (
               <div className="login-error">
