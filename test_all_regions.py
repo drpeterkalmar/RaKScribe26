@@ -28,10 +28,12 @@ Spezifische Regeln:
 - Osteochondrose/Diskopathie in Segment X: ENTFERNE "Bandscheibenräume normal hoch" / "Kein Nachweis von Discopathien" für dieses Segment. Schreibe stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums [Segment] mit subchondraler Sklerosierung der Abschlussplatten". Schreibe NICHT "Osteochondrose" als Wort in den Befundtext — nur Deskriptoren.
 - Spondylosis deformans/Spondylophyten in Segment X: ERGÄNZE "Spondylophytenbildung [Segment]" im Befundtext.
 - Unkovertebralgelenksarthrose/Uncovertebralarthrose in Segment X: FÜGE HINZU "Degenerative Veränderungen der Unkovertebralgelenke [Segment]". Die "kleinen Zwischenwirbelgelenke" (Facettengelenke) sind ANDERE Gelenke und bleiben "ohne Auffälligkeiten" wenn nicht genannt.
+- Fehlhaltung im Diktat (z.B. "kyphotische Fehlhaltung"): darf NICHT verschwiegen werden — nenne sie im Befundtext (z.B. "Kyphotische Fehlhaltung der HWS.") UND im Ergebnis.
 - Facettengelenksarthrose/Spondylarthrose in Segment X: ERSETZE "Kein Nachweis von Facettengelenksarthrosen" / "kleinen Zwischenwirbelgelenke ohne Auffälligkeiten" durch "Degenerative Veränderungen der kleinen Wirbelgelenke [Segment]".
 - Anterolisthese/Retrolisthese: Ersetze die normale Achsenverlaufsbeschreibung für das betroffene Segment.
 - Skoliose/skoliotische Fehlhaltung: ERSETZE "Normaler Achsenverlauf" / "achsengerechte Stellung" durch die Skoliose-Beschreibung.
 - Streckhaltung: ERSETZE "Normaler Achsenverlauf" / "achsengerechte Stellung" durch "Streckhaltung".
+- Haltungs-/Achsenbeschreibungen ("Flachbogige Konvexität", "Streckhaltung", "Skoliose") NUR wenn im Diktat genannt. Degenerative Diagnosen (Osteochondrose/Spondylose/Arthrose) rechtfertigen KEINE erfundene Achsenbeschreibung — "Normaler Achsenverlauf" / "achsengerechte Stellung" bleibt dann UNVERÄNDERT.
 - Fraktur: ENTFERNE "Alle Wirbelkörper von normaler Form und Höhe" / "Normale Form und Struktur der Gelenkkörper" und ersetze durch Frakturbeschreibung.
 - Omarthrose/Coxarthrose/Gonarthrose/Gelenksarthrose etc.: ENTFERNE "Normale Form und Struktur der Gelenkkörper", "Die Gelenkflächen glatt und kongruent", "Die Gelenkränder unauffällig", "Die Gelenksspalten normal weit" — ALLE diese Normalbefund-Sätze MÜSSEN gestrichen werden wenn eine Arthrose vorliegt. Stattdessen arthrotische Deskriptoren (Gelenkspaltverschmälerung, subchondrale Sklerosierung, Osteophytenbildung). NIEMALS "Normale Form und Struktur der Gelenkkörper" + arthrotische Deskriptoren im selben Satz (kein "bei ansonsten normaler Form").
 - Humeruskopfhochstand/Femurkopfhochstand: Ersetze die normale Gelenkpartner-Stellung durch den Hochstand. KEIN "bei ansonsten normaler Form und Struktur" — der Hochstand IST die Abweichung.
@@ -57,6 +59,8 @@ BESCHREIBUNGSTEXT = NUR MORPHOLOGIE/DESKRIPTOREN. Diagnosen gehören NUR ins Erg
 ✅ RICHTIG: "Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Mineralgehalt darf normal bleiben, Knochenstruktur nicht bei Fraktur)
 ❌ FALSCH: "Flachbogige linkskonvexe Skoliose." oder "Retrolisthese von L4 gegenüber L5." (Befundtext — Diagnosename statt Morphologie)
 ✅ RICHTIG: "Flachbogige linkskonvexe Seitausbiegung." bzw. "Dorsaler Versatz von L4 gegenüber L5." (Morphologie im Befundtext, Diagnose "Skoliose"/"Retrolisthese" nur im Ergebnis)
+❌ FALSCH: "Flachbogige Konvexität." als Befund-Satz, ohne dass das Diktat eine Haltungs-/Achsenabweichung nennt (erfundene Haltungsbeschreibung)
+✅ RICHTIG: "Normaler Achsenverlauf." (Template-Satz bleibt stehen, wenn das Diktat nichts zur Achse/Haltung diktiert)
 
 ## ERGEBNIS-REGELN:
 - Schreibe NUR Diagnosen die im Diktat genannt wurden. Keine ERFUNDENEN Begriffe.
@@ -120,6 +124,14 @@ TEST_CASES = [
      "Sprunggelenk links, Röntgen, Arthrose des oberen Sprunggelenkes, Gelenkspaltverschmälerung, subchondrale Sklerosierung, Osteophyten. Ansonsten unauffällig.",
      ["Arthrose"]),
 
+    ("HWS Discopathiezeichen (Peter 07.09., Regression)", "halswirbelsäule_in_2_ebenen",
+     "HWS: Osteochondrose C3/C4, deformierende Spondylose C2–C7, Discopathiezeichen C4–C7.",
+     ["Osteochondrose", "Spondylose", "Discopathiezeichen"]),
+
+    ("HWS Flachprofil-STT + kyphotische Fehlhaltung (Peter 07.09., Screenshot-Case)", "halswirbelsäule_in_2_ebenen",
+     "HWS: flachprofile nach links, komplexe kyphotische Fehlhaltung. Osteochondrose C2 bis C4. Gelenksarthrose C3 bis C5. Hochgradige Diskopathie C4 bis C7.",
+     ["flachbogig", "Fehlhaltung", "Osteochondrose", "Gelenksarthrose", "Diskopathie"]),
+
     ("Schädel Fraktur", "schädel_in_2_ebenen",
      "Schädel, Röntgen, undislozierte Fraktur des Os parietale links. Ansonsten unauffällig.",
      ["Fraktur", "Os parietale"]),
@@ -130,6 +142,21 @@ TEST_CASES = [
 ]
 
 
+def _get_sa_token():
+    """Bearer-Fallback: SA-JSON (Hermes-Key, gleiches GCP-Projekt) wenn kein/ungültiger AQ.-Key."""
+    global _SA_TOKEN_CACHE
+    if _SA_TOKEN_CACHE:
+        return _SA_TOKEN_CACHE
+    from google.oauth2 import service_account
+    import google.auth.transport.requests as _tr
+    sa_path = os.environ.get("VERTEX_SA_KEY", str(Path.home() / ".hermes" / "secrets" / "vertex-sa-key.json"))
+    creds = service_account.Credentials.from_service_account_file(sa_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    creds.refresh(_tr.Request())
+    _SA_TOKEN_CACHE = creds.token
+    return _SA_TOKEN_CACHE
+
+_SA_TOKEN_CACHE = None
+
 def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
     headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
     body = json.dumps({
@@ -137,8 +164,22 @@ def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
         "generationConfig": {"temperature": temperature, "thinkingConfig": {"thinkingBudget": 0}}
     }).encode()
     req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        data = json.loads(resp.read())
+    _retries = 0
+    while True:
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read())
+            break
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                # Fallback: SA-Bearer (AQ.-Key fehlt/rotiert)
+                req = urllib.request.Request(VERTEX_URL, data=body, headers={
+                    "Content-Type": "application/json", "Authorization": "Bearer " + _get_sa_token()}, method="POST")
+            elif e.code in (429, 500, 503) and _retries < 3:
+                _retries += 1
+                time.sleep(30 * _retries)
+            else:
+                raise
     if "error" in data:
         raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
     return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
@@ -197,7 +238,7 @@ def build_val_prompt(raw_dictation, generated_report):
 4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" dürfen KEINE Diagnosenamen stehen. Stattdessen Deskriptoren. Diagnosen NUR im "## Ergebnis".
 5. KEINE ERFUNDENE DIAGNOSE.
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen.
-7. SPRACHERKENNUNGSKORREKTUR: Prüfe ob Spracherkennungsfehler korrekt interpretiert wurden.
+7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler korrekt interpretiert wurden. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen (z.B. "Flachbogige Konvexität" ohne Diktat-Grundlage). Übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere und gib die korrigierte Version zurück.
@@ -323,11 +364,14 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
         if dw.lower() in befund.lower() and dw.lower() not in template_body.lower():
             issues.append(f"⚠️ Diagnose '{dw}' im Befundtext statt Deskriptor")
 
-    # 4. Erfundene Begriffe?
-    invented = ["Fehlhaltung"]
+    # 4. Erfundene Begriffe? (nur wenn NICHT im Diktat genannt — "Fehlhaltung" kann diktiert sein)
+    invented = [inv for inv in ["Fehlhaltung"] if inv.lower() not in diktat.lower()]
     for inv in invented:
         if inv.lower() in ergebnis.lower():
             issues.append(f"⚠️ Erfundener Begriff '{inv}' im Ergebnis")
+    # 4b. "Flachprofil" darf NIE im Report stehen (existiert radiologisch nicht)
+    if "flachprofil" in final.lower():
+        issues.append(f"❌ 'Flachprofil' im Befund — existiert radiologisch nicht (korrekt: flachbogige Skoliose)")
 
     # 5. Wurde korrigiert?
     if was_corrected:

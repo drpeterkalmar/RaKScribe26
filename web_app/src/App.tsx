@@ -77,7 +77,7 @@ const MEDICAL_PHRASES = [
   "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
   "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
   "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-  "Flachbogig", "S-förmige",
+  "Flachbogig", "S-förmige", "Discopathiezeichen", "Diskopathiezeichen",
   // ── Schulter/Sonographie-spezifisch ──
   "Tenosynovitis", "Tenosynovitis der langen Bizepssehne", "Bizepssehne", "Bizepssehnenscheide",
   "Tendinopathie", "Tendinose", "Tendinosis", "Tendinosis calcarea",
@@ -160,7 +160,8 @@ const MEDICAL_PHRASES = [
   "N. cutaneus brachii lateralis inferior", "N. cutaneus antebrachii posterior",
   "M. brachioradialis", "Handgelenksextensoren",
   // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
-  "flachbogig", "flachbogige", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
+  "flachbogig", "flachbogige", "flachbogige Skoliose", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
+  "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
   "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
   "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
   "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
@@ -399,6 +400,9 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 // Keys mit älterer Markierung werden beim Start verworfen (Fix für veraltete
 // localStorage-Keys, die den frischen Key blockiert haben — vgl. 401 in der EXE).
 const KEY_VERSION = '2';
+// PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
+// localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
+const PROMPT_VERSION = '2026-09-07-flachprofil';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -531,6 +535,7 @@ export default function App() {
     const savedVertexKey = localStorage.getItem('vertex_api_key');
     const savedKeyVersion = localStorage.getItem('key_version');
     const savedPrompt = localStorage.getItem('system_prompt');
+    const savedPromptVersion = localStorage.getItem('system_prompt_version');
     const savedAuth = localStorage.getItem('is_authenticated');
     const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
@@ -664,6 +669,7 @@ export default function App() {
       `- Anterolisthese/Retrolisthese: Ersetze die normale Achsenverlaufsbeschreibung für das betroffene Segment durch die Listhese-Beschreibung.\n` +
       `- Skoliose/skoliotische Fehlhaltung: ERSETZE "Normaler Achsenverlauf" durch die Skoliose-Beschreibung.\n` +
       `- Streckhaltung: ERSETZE "Normaler Achsenverlauf" durch "Streckhaltung der HWS".\n` +
+      `- Haltungs-/Achsenbeschreibungen ("Flachbogige Konvexität", "Streckhaltung", "Skoliose") NUR wenn im Diktat genannt. Degenerative Diagnosen (Osteochondrose/Spondylose/Arthrose) rechtfertigen KEINE erfundene Achsenbeschreibung — der Template-Satz "Normaler Achsenverlauf" bleibt dann UNVERÄNDERT stehen.\n` +
       `- Fraktur: ENTFERNE "Alle Wirbelkörper von normaler Form und Höhe" und ersetze durch Frakturbeschreibung.\n` +
       `- Gelenksarthrose (Omarthrose/Coxarthrose/Gonarthrose/Arthrose etc.): ENTFERNE "Normale Form und Struktur der Gelenkkörper", "Die Gelenkflächen glatt und kongruent", "Die Gelenkränder unauffällig", "Die Gelenksspalten normal weit" — ALLE diese Normalbefund-Sätze MÜSSEN gestrichen werden wenn eine Arthrose vorliegt. Stattdessen arthrotische Deskriptoren: "Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung". NIEMALS "Normale Form und Struktur der Gelenkkörper" + arthrotische Deskriptoren im selben Satz (kein "bei ansonsten normaler Form").\n` +
       `- Humeruskopfhochstand/Femurkopfhochstand: Ersetze die normale Gelenkpartner-Stellung durch den Hochstand. KEIN "bei ansonsten normaler Form und Struktur" — der Hochstand IST die Abweichung.\n` +
@@ -687,8 +693,12 @@ export default function App() {
       `✅ RICHTIG: "Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Mineralgehalt darf normal bleiben, Knochenstruktur nicht bei Fraktur)\n` +
       `❌ FALSCH: "Flachbogige linkskonvexe Skoliose." oder "Retrolisthese von L4 gegenüber L5." (Befundtext — Diagnosename statt Morphologie)\n` +
       `✅ RICHTIG: "Flachbogige linkskonvexe Seitausbiegung." bzw. "Dorsaler Versatz von L4 gegenüber L5." (Morphologie im Befundtext, Diagnose "Skoliose"/"Retrolisthese" nur im Ergebnis)\n` +
+      `❌ FALSCH: "Flachbogige Konvexität." als Befund-Satz, ohne dass das Diktat eine Haltungs-/Achsenabweichung nennt (erfundene Haltungsbeschreibung)\n` +
+      `✅ RICHTIG: "Normaler Achsenverlauf." (Template-Satz bleibt stehen, wenn das Diktat nichts zur Achse/Haltung diktiert)\n` +
       `## ERGEBNIS-REGELN:\n` +
       `- Schreibe NUR Diagnosen die im Diktat genannt wurden. Keine ERFUNDENEN Begriffe wie "Fehlhaltung" wenn das Diktat "Streckhaltung" sagt.\n` +
+      `- "Flachprofil" existiert in der Radiologie NICHT — dieses Wort darf NIEMALS im Befund oder Ergebnis stehen. Wenn das Diktat eine flachbogige Seitabweichung nennt: Befundtext "flachbogige [links/rechts]konvexe Seitausbiegung", Ergebnis "Flachbogige [links/rechts]konvexe Skoliose".\n` +
+      `- Fehlhaltung im Diktat (z.B. "kyphotische Fehlhaltung"): darf NICHT verschwiegen werden — nenne sie im Befundtext (z.B. "Kyphotische Fehlhaltung der HWS.") UND im Ergebnis.\n` +
       `- Verwende EXAKT die Begriffe aus dem Diktat. Wenn das Diktat "Streckhaltung" sagt, schreibe "Streckhaltung" — nicht "Fehlhaltung".\n` +
       `- Diagnose-Namen dürfen NICHT umformuliert werden. "Osteochondrose" bleibt "Osteochondrose", nicht "Diskopathie". "Coxarthrose" bleibt "Coxarthrose", nicht "Hüftgelenksarthrose".\n` +
       `- Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.\n` +
@@ -710,9 +720,10 @@ export default function App() {
       `{roh_text}\n` +
       `</diktat>`;
 
-    if (!savedPrompt || savedPrompt.includes("## Beurteilung") || savedPrompt.includes("Radiologe-Assistent</role>")) {
+    if (!savedPrompt || savedPromptVersion !== PROMPT_VERSION || savedPrompt.includes("## Beurteilung") || savedPrompt.includes("Radiologe-Assistent</role>")) {
       setSystemPrompt(newDefaultPrompt);
       localStorage.setItem('system_prompt', newDefaultPrompt);
+      localStorage.setItem('system_prompt_version', PROMPT_VERSION);
     } else {
       setSystemPrompt(savedPrompt);
     }
@@ -1411,6 +1422,11 @@ export default function App() {
 - "perinorale" → "perineurale"
 - "hoffmann die nählzeichen" / "hoffmann die nähzeichen" → "Hoffmann-Tinel-Zeichen"
 - "bizeps sinnen naht" → "Bizepssehnennaht"
+- "Diskozeichen" / "Disko Zeichen" / "Disco Zeichen" → "Discopathiezeichen"
+- "Diskopathiezeichen" / "Discopathie Zeichen" → "Discopathiezeichen"
+- "Flachprofil" / "flachprofile" / "Flachprofilen" → "flachbogige Skoliose" (das Wort "Flachprofil" existiert in der Radiologie NICHT; gemeint ist eine flachbogige Seitneigung/Skoliose)
+- "Coyote Fehlhaltung" / "Coyote-Fehlhaltung" → "kyphotische Fehlhaltung" (HWS-Kontext)
+- "Z3" / "S3" (zwischen Wirbelhöhen, z.B. "Z3 c5") → "C3" (HWS-Kontext)
 
 ## PRAXIS-JARGON (Dr. Kalmar / Dr. Riegler Shortcut-Phrasen):
 - "Baustein Gelenkschema" / "Baustein Gelenkschirma" / "Baustein Gelenk Schema" → "unauffällig"
@@ -1545,11 +1561,11 @@ Korrigiert:`;
 4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" Abschnitt dürfen KEINE Diagnosenamen stehen (z.B. nicht "Osteochondrose im Segment C5/C6"). Stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums C5/C6 mit subchondraler Sklerosierung der Abschlussplatten". Diagnosen NUR im "## Ergebnis".
 5. KEINE ERFUNDENE DIAGNOSE: Der Befund darf keine Diagnosen enthalten, die im Diktat nicht erwähnt wurden.
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
-7. SPRACHERKENNUNGSKORREKTUR: Prüfe ob offensichtliche Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen", "Flachbügelingskonvexe" → "flachbogige Konvexität").
+7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
-Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen.
+Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen. KEINE Markdown-Codezäune (```), keine Fettmarken. Stil-Formulierungen wie "o. B." NICHT umschreiben — korrigiere nur inhaltliche Fehler.
 
 <diktat>
 ${rawDictation}
@@ -2115,7 +2131,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.1</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.3</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2203,7 +2219,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.1</span>
+              <span className="brand-badge">Web v2.10.2</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

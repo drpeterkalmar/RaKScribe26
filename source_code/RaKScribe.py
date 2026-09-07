@@ -134,7 +134,9 @@ MEDICAL_PHRASES = [
     "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
     "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
     "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-    "Flachbogig", "S-förmige"
+    "Flachbogig", "S-förmige",
+    "Flachbogige Skoliose", "flachbogige Skoliose", "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
+    "Discopathiezeichen", "Diskopathiezeichen"
 ]
 
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
