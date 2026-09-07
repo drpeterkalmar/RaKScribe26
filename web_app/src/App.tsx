@@ -65,7 +65,7 @@ const MEDICAL_PHRASES = [
   "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
   "Echoarm", "Echogen",
   "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung",
+  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen",
   "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
   "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
   "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
@@ -402,7 +402,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-07-flachprofil';
+const PROMPT_VERSION = '2026-09-07-fibroostosen';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -1424,6 +1424,7 @@ export default function App() {
 - "bizeps sinnen naht" → "Bizepssehnennaht"
 - "Diskozeichen" / "Disko Zeichen" / "Disco Zeichen" → "Discopathiezeichen"
 - "Diskopathiezeichen" / "Discopathie Zeichen" → "Discopathiezeichen"
+- "Fibrosedosen" / "Fibrose dosen" / "Fibrosostosen" / "Fibro ostosen" → "Fibroostosen"
 - "Flachprofil" / "flachprofile" / "Flachprofilen" → "flachbogige Skoliose" (das Wort "Flachprofil" existiert in der Radiologie NICHT; gemeint ist eine flachbogige Seitneigung/Skoliose)
 - "Coyote Fehlhaltung" / "Coyote-Fehlhaltung" → "kyphotische Fehlhaltung" (HWS-Kontext)
 - "Z3" / "S3" (zwischen Wirbelhöhen, z.B. "Z3 c5") → "C3" (HWS-Kontext)
@@ -1565,7 +1566,7 @@ Korrigiert:`;
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
-Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen. KEINE Markdown-Codezäune (```), keine Fettmarken. Stil-Formulierungen wie "o. B." NICHT umschreiben — korrigiere nur inhaltliche Fehler.
+Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen. KEINE Markdown-Codezäune (\`\`\`), keine Fettmarken. Stil-Formulierungen wie "o. B." NICHT umschreiben — korrigiere nur inhaltliche Fehler.
 
 <diktat>
 ${rawDictation}
