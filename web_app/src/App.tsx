@@ -65,7 +65,7 @@ const MEDICAL_PHRASES = [
   "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
   "Echoarm", "Echogen",
   "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen",
+  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen", "Thorax p.a.", "Thorax p.a./seitlich",
   "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
   "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
   "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
@@ -403,7 +403,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-08-kellgren';
+const PROMPT_VERSION = '2026-09-08-thorax-pa';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -1432,6 +1432,9 @@ export default function App() {
 - "Diskopathiezeichen" / "Discopathie Zeichen" → "Discopathiezeichen"
 - "Fibrosedosen" / "Fibrose dosen" / "Fibrosostosen" / "Fibro ostosen" → "Fibroostosen"
 - "Flachbau" / "Flachbau-" → "flachbogig" (z.B. "Flachbau linkskonvex" → "flachbogig linkskonvex")
+- "Thorax b.a. seitlich" / "Thorax b.a. und seitlich" → "Thorax p.a./seitlich"
+- "Thorax b.a." / "Thorax be a" / "Thorax ba" → "Thorax p.a."
+- "b.a." (Projektionsangabe, nach Thorax/Röntgen) → "p.a."
 - "Flachprofil" / "flachprofile" / "Flachprofilen" → "flachbogige Skoliose" (das Wort "Flachprofil" existiert in der Radiologie NICHT; gemeint ist eine flachbogige Seitneigung/Skoliose)
 - "Coyote Fehlhaltung" / "Coyote-Fehlhaltung" → "kyphotische Fehlhaltung" (HWS-Kontext)
 - "Z3" / "S3" (zwischen Wirbelhöhen, z.B. "Z3 c5") → "C3" (HWS-Kontext)
@@ -2152,7 +2155,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.6</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.7</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2240,7 +2243,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.6</span>
+              <span className="brand-badge">Web v2.10.7</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
