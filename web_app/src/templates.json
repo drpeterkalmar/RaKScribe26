@@ -494,5 +494,9 @@
   "ultraschall_gezielte_blockade": {
     "display_name": "Ultraschall-gezielte Blockade",
     "body": "Es erfolgt nach mündlicher Aufklärung des Pat. über mögliche Risiken einer Ultraschall-gezielten Injektion (insbesondere: Infektion, Nervenverletzung, Blutung) sowie Einwilligung des Patienten unter Einhaltung hygienischer Standards (DEGUM Leitlinien 2018) eine Ultraschall-gezielte Injektion mit [X] ml Xylonest (1%)/[X] ml Carbostesin (0,5%). Kein Nachweis von Komplikationen."
+  },
+  "allgemein": {
+    "display_name": "Allgemeine Untersuchung",
+    "body": "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
   }
 }

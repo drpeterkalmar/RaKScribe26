@@ -494,5 +494,9 @@
   "mammasonographie_beidseits": {
     "display_name": "Mammasonographie beidseits",
     "body": "Inspektion und Palpation: Unauffälliger Inspektions- und Palpationsbefund. Axillen beidseits frei.\n\nMammasonographie: Beidseits regelrechte echographische Darstellung des Drüsenparenchyms ohne Nachweis solider oder zystischer Läsionen, Architekturstörungen oder Mikrokalkansammlungen. Subcutis und Cutis beidseits unauffällig. Axillen beidseits frei, kein Nachweis pathologisch vergrößerter Lymphknoten.\n\nHautvenen: Beidseits unauffällige Darstellung der kutanen und subkutanen Venen. Kein Nachweis von Thrombosen oder pathologischen Erweiterungen."
+  },
+  "allgemein": {
+    "display_name": "Allgemeine Untersuchung",
+    "body": "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
   }
 }

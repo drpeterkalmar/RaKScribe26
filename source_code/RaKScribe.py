@@ -134,7 +134,7 @@ MEDICAL_PHRASES = [
     "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
     "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
     "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-    "Flachbogig", "S-förmige",
+    "Flachbogig", "S-förmige", "HWS", "HWK",
     "Flachbogige Skoliose", "flachbogige Skoliose", "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
     "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
     "Discopathiezeichen", "Diskopathiezeichen"
@@ -422,7 +422,7 @@ def detect_template(text):
     # ── Gesamtwirbelsäule / Multi-Segment Erkennung (erweiterte Keywords) ──────
     # Deckt ab: "Wirbelsäulen ganz Aufnahme", "zerviko-thorako-lumbal",
     #           "toracco lumbal Skoliose", "Ganzwirbelsäule" etc.
-    has_cervical  = any(x in text_lower for x in ["hws", "zervik", "zerviko", "cervik", "cervico", "halswirbel"])
+    has_cervical  = any(x in text_lower for x in ["hws", "hwk", "zervik", "zerviko", "cervik", "cervico", "halswirbel"]) or re.search(r'\bhw\b', text_lower)
     has_thoracic  = any(x in text_lower for x in ["bws", "thorakal", "thorako", "thoraco", "toracco", "brustwirbel"])
     has_lumbar    = any(x in text_lower for x in ["lws", "lumbal", "lendenwirbel"])
     is_full_spine = any(x in text_lower for x in ["ganzaufnahme", "gesamtwirbel", "ganzwirbel"]) or \
@@ -437,6 +437,9 @@ def detect_template(text):
     if has_cervical and has_thoracic:
         return "wirbelsäule_gesamt"
     # ─────────────────────────────────────────────────────────────────────────
+    if re.search(r'\bhw\b', text_lower):
+        # STT schreibt HWS oft nur als "HW" (z.B. "HW ist unauffällig")
+        return "halswirbelsäule_in_2_ebenen"
 
     if "hws" in text_lower and "lws" in text_lower:
         if "bws" in text_lower:
@@ -871,7 +874,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.6", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.10.9", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1265,21 +1268,25 @@ class RaKScribeApp(ctk.CTk):
             template_key = detect_template(raw)
             template_data = RADIOLOGY_TEMPLATES.get(template_key, {
                 "display_name": "Allgemeine Untersuchung",
-                "body": "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
+                "body": "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
             })
 
-            # RAG-Bypass-Shortcut für reine Normalbefunde
-            if is_normal_finding(raw):
+            # RAG-Bypass-Shortcut für reine Normalbefunde (nur bei ERKANNTER Region —
+            # bei 'allgemein' lieber LLM-Strukturierung, damit echte Normalbefund-Templates greifen)
+            if is_normal_finding(raw) and template_key != "allgemein":
                 print(f"[BYPASS] Normalbefund erkannt: '{raw}'. Generiere direkt aus Template '{template_key}'.")
                 formatted_raw = raw.strip()
+                formatted_raw = re.sub(r'\bHW\b', 'HWS', formatted_raw)
                 if formatted_raw:
                     # Ersten Buchstaben großschreiben
                     formatted_raw = formatted_raw[0].upper() + formatted_raw[1:]
                     # Punkt am Ende sicherstellen
                     if not formatted_raw.endswith('.'):
                         formatted_raw += '.'
-                
-                report = f"## Befund\n{template_data['body']}\n\n## Ergebnis\n{formatted_raw}"
+                tpl_lines = template_data['body'].split('\n')
+                tpl_title = tpl_lines[0].strip().rstrip(':')
+                tpl_body = '\n'.join(tpl_lines[1:])
+                report = f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{formatted_raw}"
                 
                 # Live in die Textbox schreiben und Status zurücksetzen
                 self.after(0, lambda r=report: (

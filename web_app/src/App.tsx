@@ -161,6 +161,7 @@ const MEDICAL_PHRASES = [
   "M. brachioradialis", "Handgelenksextensoren",
   // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
   "flachbogig", "flachbogige", "flachbogige Skoliose", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
+  "HWS", "HWK",
   "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
   "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
   "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
@@ -403,7 +404,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-08-ueberschrift';
+const PROMPT_VERSION = '2026-09-08-normalbefunde';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -913,9 +914,9 @@ export default function App() {
     // ── Full-spine detection (expanded keywords) ──────────────────────────────
     // Covers: "Wirbelsäulen ganz Aufnahme", "Ganzwirbelsäule", "Gesamtwirbelsäule",
     //         "zerviko-thorako-lumbal", "cervico-thoracal-lumbal", "toracco lumbal", etc.
-    const hasCervical  = textLower.includes("hws") || textLower.includes("zervik")
-                      || textLower.includes("zerviko") || textLower.includes("cervik")
-                      || textLower.includes("cervico") || textLower.includes("halswirbel");
+    const hasCervical  = textLower.includes("hws") || textLower.includes("hwk") || /\bhw\b/.test(textLower) || textLower.includes("zervik")
+                   || textLower.includes("zerviko") || textLower.includes("cervik")
+                   || textLower.includes("cervico") || textLower.includes("halswirbel");
     const hasThoracic  = textLower.includes("bws") || textLower.includes("thorakal")
                       || textLower.includes("thorako") || textLower.includes("thoraco")
                       || textLower.includes("toracco") || textLower.includes("brustwirbel");
@@ -941,6 +942,10 @@ export default function App() {
     }
     if (hasCervical && hasThoracic) {
       return "wirbelsäule_gesamt";
+    }
+    if (/\bhw\b/.test(textLower)) {
+      // STT schreibt HWS oft nur als "HW" (z.B. "HW ist unauffällig")
+      return "halswirbelsäule_in_2_ebenen";
     }
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -1438,6 +1443,7 @@ export default function App() {
 - "Flachprofil" / "flachprofile" / "Flachprofilen" → "flachbogige Skoliose" (das Wort "Flachprofil" existiert in der Radiologie NICHT; gemeint ist eine flachbogige Seitneigung/Skoliose)
 - "Coyote Fehlhaltung" / "Coyote-Fehlhaltung" → "kyphotische Fehlhaltung" (HWS-Kontext)
 - "Z3" / "S3" (zwischen Wirbelhöhen, z.B. "Z3 c5") → "C3" (HWS-Kontext)
+- "HW" allein (Wirbelsäulen-Kontext, z.B. "HW ist unauffällig") → "HWS"
 
 ## PRAXIS-JARGON (Dr. Kalmar / Dr. Riegler Shortcut-Phrasen):
 - "Baustein Gelenkschema" / "Baustein Gelenkschirma" / "Baustein Gelenk Schema" → "unauffällig"
@@ -1928,7 +1934,7 @@ Korrigierter Befund:`;
       const detectedKey = detectTemplate(finalRawText);
       const activeTemplate = templates[detectedKey] || templates['allgemein'] || {
         display_name: "Allgemeine Untersuchung",
-        body: "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
+        body: "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
       };
       if (detectedKey === 'allgemein') {
         console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
@@ -1936,9 +1942,10 @@ Korrigierter Befund:`;
       }
 
       // RAG-Bypass-Shortcut for pure normal findings (1:1 from EXE version)
-      if (isNormalFinding(finalRawText)) {
+      if (isNormalFinding(finalRawText) && detectedKey !== 'allgemein') {
         console.log(`[BYPASS] Normalbefund erkannt. Generiere direkt aus Template.`);
         let formattedRaw = finalRawText.trim();
+        formattedRaw = formattedRaw.replace(/\bHW\b/g, 'HWS');
         if (formattedRaw) {
           formattedRaw = formattedRaw[0].toUpperCase() + formattedRaw.slice(1);
           if (!formattedRaw.endsWith('.')) {
@@ -2031,7 +2038,7 @@ Korrigierter Befund:`;
       const detectedKey = detectTemplate(finalRawText);
       const activeTemplate = templates[detectedKey] || templates['allgemein'] || {
         display_name: "Allgemeine Untersuchung",
-        body: "Befund der untersuchten Region entsprechend dem Standardvorgehen.\nErgebnis der radiologischen Pathologien."
+        body: "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
       };
       if (detectedKey === 'allgemein') {
         console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
@@ -2039,9 +2046,10 @@ Korrigierter Befund:`;
       }
 
       // Normalbefund-Bypass
-      if (isNormalFinding(finalRawText)) {
-        console.log(`[UPLOAD] Normalbefund erkannt. Generiere direkt aus Template.`);
+      if (isNormalFinding(finalRawText) && detectedKey !== 'allgemein') {
+        console.log(`[BYPASS] Normalbefund erkannt. Generiere direkt aus Template.`);
         let formattedRaw = finalRawText.trim();
+        formattedRaw = formattedRaw.replace(/\bHW\b/g, 'HWS');
         if (formattedRaw) {
           formattedRaw = formattedRaw[0].toUpperCase() + formattedRaw.slice(1);
           if (!formattedRaw.endsWith('.')) {
@@ -2161,7 +2169,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.8</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.9</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2249,7 +2257,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.8</span>
+              <span className="brand-badge">Web v2.10.9</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
