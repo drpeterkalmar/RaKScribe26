@@ -403,7 +403,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-08-thorax-pa';
+const PROMPT_VERSION = '2026-09-08-ueberschrift';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -641,11 +641,11 @@ export default function App() {
       `<instructions>\n` +
       `Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.\n\n` +
       `## STRIKTE FORMATREGELN:\n` +
-      `1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Abschnitte.\n` +
+      `1. Erstelle IMMER exakt drei Teile: die Untersuchungs-Überschrift als eigene Markdown-Überschrift ('## [Untersuchungsart]') und danach die zwei Hauptabschnitte '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Teile.\n` +
       `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
       `## ABSCHNITT "## Befund":\n` +
-      `- UNTERSUCHUNGS-ÜBERSCHRIFT (erste Zeile des Befundtextes): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Zeile des Template-Bodies — NIE das roh diktierte Wort für die Untersuchung (z.B. diktiert "Kniegelenk links" bei Template "Kniegelenk in 2 Ebenen" → Überschrift "Kniegelenk links in 2 Ebenen", NIEMALS "Kniegelenk" oder "Kniegelenk links" allein). Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift, sonst bleibt sie ohne Seitenangabe.\n` +
-      `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis. Die ERSTE ZEILE des Template-Bodies ist die kanonische Untersuchungs-Überschrift — ergänze falls nötig die fehlenden Formulierungsbestandteile (z.B. Template "Kniegelenk" + diktierter Zusatz "in 2 Ebenen" → "Kniegelenk in 2 Ebenen") und schreibe sie mit übernommener diktierter Seite als erste Zeile des Befundtextes.\n` +
+      `- UNTERSUCHUNGS-ÜBERSCHRIFT (eigene Zeile VOR '## Befund', als Markdown-Überschrift '## [Untersuchungsart]'): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Zeile des Template-Bodies — NIE das roh diktierte Wort für die Untersuchung (z.B. diktiert "Kniegelenk links" bei Template "Kniegelenk in 2 Ebenen" → "## Kniegelenk links in 2 Ebenen", NIEMALS "Kniegelenk" oder "Kniegelenk links" allein). Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift, sonst bleibt sie ohne Seitenangabe. Der Abschnitt "## Befund" beginnt DANACH direkt mit dem Befundtext — die Untersuchungsbezeichnung steht NICHT mehr als erster Satz im Befundtext.\n` +
+      `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis. Die ERSTE ZEILE des Template-Bodies ist die kanonische Untersuchungs-Überschrift — ergänze falls nötig die fehlenden Formulierungsbestandteile (z.B. Template "Kniegelenk" + diktierter Zusatz "in 2 Ebenen" → "Kniegelenk in 2 Ebenen") und schreibe sie mit übernommener diktierter Seite als Untersuchungs-Überschrift ('## [Untersuchungsart]') VOR dem Abschnitt '## Befund'.\n` +
       `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt (z.B. Arthrose, Fraktur, TEP, Spondylarthrose, Osteochondrose, Beckenschiefstand).\n` +
       `- Die kanonische Untersuchungsbezeichnung steht zusätzlich in <untersuchung> — sie hat Vorrang vor jeder roh diktierten Untersuchungsbezeichnung.\n` +
       `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
@@ -1524,7 +1524,7 @@ Korrigiert:`;
       promptText = promptText + "\n\n" + examples;
     }
 
-    const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Nutze ## Befund und ## Ergebnis als Haupttitel.";
+    const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Setze zuerst eine ##-Überschrift mit der Untersuchungsart, dann ## Befund und ## Ergebnis als Haupttitel.";
 
     const response = await fetchWithRetry(url, {
       method: 'POST',
@@ -1582,11 +1582,11 @@ Korrigiert:`;
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
-8. UNTERSUCHUNGS-BEZEICHNUNG: Die erste Zeile des Befundtextes muss die kanonische Untersuchungsbezeichnung sein (z.B. "Kniegelenk links in 2 Ebenen"). Wenn dort eine roh diktierte Kurzform ohne Formulierungsbestandteile steht (z.B. nur "Kniegelenk"), korrigiere sie zur vollständigen Bezeichnung mit übernommener diktierter Seite.
+8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite.
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
-Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen. KEINE Markdown-Codezäune (\`\`\`), keine Fettmarken. Stil-Formulierungen wie "o. B." NICHT umschreiben — korrigiere nur inhaltliche Fehler.
+Gib NUR den fertigen Befundtext aus (mit Untersuchungs-Überschrift, ## Befund und ## Ergebnis), keine Erklärungen. KEINE Markdown-Codezäune (\`\`\`), keine Fettmarken. Stil-Formulierungen wie "o. B." NICHT umschreiben — korrigiere nur inhaltliche Fehler.
 
 <diktat>
 ${rawDictation}
@@ -1946,7 +1946,10 @@ Korrigierter Befund:`;
           }
         }
         
-        const report = `## Befund\n${activeTemplate.body}\n\n## Ergebnis\n${formattedRaw}`;
+        const tplLines = activeTemplate.body.split('\n');
+        const tplTitle = (tplLines[0] || '').trim().replace(/:$/, '');
+        const tplBody = tplLines.slice(1).join('\n');
+        const report = `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${formattedRaw}`;
         setStructuredReport(report);
         setStatus('ready');
         setStatusText('Bereit');
@@ -2045,7 +2048,10 @@ Korrigierter Befund:`;
             formattedRaw += '.';
           }
         }
-        const report = `## Befund\n${activeTemplate.body}\n\n## Ergebnis\n${formattedRaw}`;
+        const tplLines = activeTemplate.body.split('\n');
+        const tplTitle = (tplLines[0] || '').trim().replace(/:$/, '');
+        const tplBody = tplLines.slice(1).join('\n');
+        const report = `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${formattedRaw}`;
         setStructuredReport(report);
         setStatus('ready');
         setStatusText('Bereit');
@@ -2155,7 +2161,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.7</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.8</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2243,7 +2249,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.7</span>
+              <span className="brand-badge">Web v2.10.8</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

@@ -202,11 +202,11 @@ Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntg
 {untersuchung}
 
 ## STRIKTE FORMATREGELN:
-1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text.
+1. Erstelle IMMER exakt drei Teile: die Untersuchungs-Überschrift als eigene Markdown-Überschrift ('## [Untersuchungsart]') und danach die zwei Hauptabschnitte '## Befund' und '## Ergebnis'. Kein weiterer Text.
 2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.
 
 ## ABSCHNITT "## Befund":
-- UNTERSUCHUNGS-ÜBERSCHRIFT (erste Zeile des Befundtextes): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Template-Zeile — NIE das roh diktierte Wort für die Untersuchung allein. Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift (z.B. diktiert "Kniegelenk links" → "Kniegelenk links in 2 Ebenen").
+- UNTERSUCHUNGS-ÜBERSCHRIFT (eigene Zeile VOR '## Befund', als Markdown-Überschrift '## [Untersuchungsart]'): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Template-Zeile — NIE das roh diktierte Wort für die Untersuchung allein. Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift (z.B. diktiert "Kniegelenk links" → "## Kniegelenk links in 2 Ebenen"). Der Abschnitt "## Befund" beginnt danach direkt mit dem Befundtext — die Untersuchungsbezeichnung steht NICHT mehr als erster Satz im Befundtext.
 - Nutze das bereitgestellte Normalbefund-Template als genaue strukturelle Basis.
 - Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt.
 - Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.
@@ -250,11 +250,11 @@ def build_val_prompt(raw_dictation, generated_report):
 5. KEINE ERFUNDENE DIAGNOSE. Umgekehrt MÜSSEN Arthrose-Diagnosen im Ergebnis nach Kellgren & Lawrence graduiert sein ("Grad [1-4] nach Kellgren & Lawrence"), wenn das Gelenk zur K&L-Liste gehört (Schulter/Ellbogen/Hand/Handgelenk/Hüfte/Knie/Sprunggelenk/Fuß — NICHT AC/ISG/Symphyse). Fehlt die Graduierung, ergänze sie aus den Deskriptoren (geringe Osteophyten=1, +geringe Verschmälerung=2, mäßiggradig+multiple Osteophyten+Sklerosierung=3, aufgehobener Spalt=4). Knie: Femorotibial und Patellofemoral getrennt.
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen.
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler korrekt interpretiert wurden. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen (z.B. "Flachbogige Konvexität" ohne Diktat-Grundlage). Übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
-8. UNTERSUCHUNGS-BEZEICHNUNG: Die erste Zeile des Befundtextes muss die kanonische Untersuchungsbezeichnung sein (z.B. "Kniegelenk links in 2 Ebenen") — roh diktierte Kurzformen ohne Formulierungsbestandteile (nur "Kniegelenk") korrigieren, diktierte Seite übernehmen.
+8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform (nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite.
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere und gib die korrigierte Version zurück.
-Gib NUR den fertigen Befundtext aus (mit ## Befund und ## Ergebnis), keine Erklärungen.
+Gib NUR den fertigen Befundtext aus (mit Untersuchungs-Überschrift, ## Befund und ## Ergebnis), keine Erklärungen.
 
 <diktat>
 {raw_dictation}
