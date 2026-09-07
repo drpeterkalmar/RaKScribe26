@@ -136,6 +136,7 @@ MEDICAL_PHRASES = [
     "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
     "Flachbogig", "S-förmige",
     "Flachbogige Skoliose", "flachbogige Skoliose", "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
+    "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
     "Discopathiezeichen", "Diskopathiezeichen"
 ]
 
@@ -1296,6 +1297,9 @@ class RaKScribeApp(ctk.CTk):
             p_full = p_base.replace('{roh_text}', raw)
             p_full = p_full.replace('{template_body}', template_data['body'])
             p_full = p_full.replace('{region_name}', template_data['display_name'])
+            # Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.):
+            # roh diktierte Kurzformen ("Kniegelenk") dürfen die Bezeichnung ("Kniegelenk in 2 Ebenen") nicht verdrängen
+            p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
             
             # RAG Few-Shot Beispiele laden (limit=0 für Normalbefunde, limit=1 für pathologische Befunde)
             limit_examples = 0 if is_normal_finding(raw) else 1
@@ -1339,7 +1343,10 @@ class RaKScribeApp(ctk.CTk):
                         result = json.loads(resp.read())
                     if "error" in result:
                         raise Exception(result["error"].get("message", result["error"]))
-                    report = result["candidates"][0]["content"]["parts"][0]["text"]
+                    report = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    # Markdown-Zäune strippen (Gemini wickelt Befunde gelegentlich in ``` ein)
+                    report = re.sub(r'^```[a-zA-Z]*\s*\n?', '', report)
+                    report = re.sub(r'\n?```\s*$', '', report).strip()
                     self.after(0, lambda r=report: (
                         self.result_text.delete("1.0", "end"),
                         self.result_text.insert("1.0", r)

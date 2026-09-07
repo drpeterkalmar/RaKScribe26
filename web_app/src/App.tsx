@@ -162,6 +162,7 @@ const MEDICAL_PHRASES = [
   // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
   "flachbogig", "flachbogige", "flachbogige Skoliose", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
   "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
+  "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
   "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
   "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
   "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
@@ -402,7 +403,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-07-flachbau';
+const PROMPT_VERSION = '2026-09-08-kellgren';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -643,8 +644,10 @@ export default function App() {
       `1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Abschnitte.\n` +
       `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
       `## ABSCHNITT "## Befund":\n` +
-      `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis.\n` +
+      `- UNTERSUCHUNGS-ÜBERSCHRIFT (erste Zeile des Befundtextes): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Zeile des Template-Bodies — NIE das roh diktierte Wort für die Untersuchung (z.B. diktiert "Kniegelenk links" bei Template "Kniegelenk in 2 Ebenen" → Überschrift "Kniegelenk links in 2 Ebenen", NIEMALS "Kniegelenk" oder "Kniegelenk links" allein). Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift, sonst bleibt sie ohne Seitenangabe.\n` +
+      `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis. Die ERSTE ZEILE des Template-Bodies ist die kanonische Untersuchungs-Überschrift — ergänze falls nötig die fehlenden Formulierungsbestandteile (z.B. Template "Kniegelenk" + diktierter Zusatz "in 2 Ebenen" → "Kniegelenk in 2 Ebenen") und schreibe sie mit übernommener diktierter Seite als erste Zeile des Befundtextes.\n` +
       `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt (z.B. Arthrose, Fraktur, TEP, Spondylarthrose, Osteochondrose, Beckenschiefstand).\n` +
+      `- Die kanonische Untersuchungsbezeichnung steht zusätzlich in <untersuchung> — sie hat Vorrang vor jeder roh diktierten Untersuchungsbezeichnung.\n` +
       `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
       `- Übernimm Messwerte (z.B. 'Beckenschiefstand nach links um 4 mm', '-1,2 cm Beinlängendifferenz') exakt aus dem Diktat.\n` +
       `- Schreibe im radiologischen Nominalstil (z.B. 'Kein Nachweis von Lockerungszeichen.', 'Intakte Hüft-TEP rechts.').\n\n` +
@@ -704,6 +707,9 @@ export default function App() {
       `- Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.\n` +
       `- Wenn im Diktat "vereinbar mit [Diagnose]" gesagt wird, schreibe im Ergebnis IMMER "Bild wie bei [Diagnose]" (z.B. "vereinbar mit CIDP" → "Bild wie bei CIDP"). "Vereinbar mit" ist NUR eine Diktat-Formulierung und darf NICHT wörtlich ins Ergebnis übernommen werden.\n` +
       `- Querschnittsfläche (CSA): NUR in den Befundtext aufnehmen, wenn sie EXPLIZIT im Diktat genannt wird. Wenn das Diktat keine CSA nennt, LASS die CSA-Erwähnung aus dem Template KOMPLETT WEG (kein Platzhalter, kein Normwert, nichts). Dies gilt für ALLE Nerven-Templates.\n` +
+      `## ARTHROSE-GRADUIERUNG NACH KELLGREN & LAWRENCE (PFLICHT):\n` +
+      `Bei ARTHROSE-Diagnosen in Ergebnis-Formulierungen mit Graduierung: "[Gelenksarthrose-Diagnose] Grad [X] nach Kellgren & Lawrence [Seite]". Die Grad-Zuordnung aus den Deskriptoren des Diktats/Befundtextes: geringe Osteophyten ohne/fragliche Verschmälerung = Grad 1 · geringe Osteophyten + geringe Verschmälerung/Randzuschärfung = Grad 2 · mäßiggradige Verschmälerung + multiple Osteophyten + subchondrale Sklerosierung = Grad 3 · aufgehobener Gelenkspalt + ausgeprägte Sklerosierung/Zysten = Grad 4.\n` +
+      `Beispiel: Diktat "maßgradige Gonarthrose medial" → Befundtext mit arthrotischen Deskriptoren, Ergebnis "Gonarthrose links, medial betont, Grad 2-3 nach Kellgren & Lawrence." — Gilt für Schulter (Omarthrose), Ellbogen, Hand, Handgelenk, Hüfte (Coxarthrose), Knie (Gonarthrose/Femorotibial + Patellofemoral getrennt gradieren), Sprunggelenk, Fuß. NICHT für: AC-Gelenk, ISG, Symphyse (dort nur Deskriptoren, keine K&L-Graduierung).\n` +
       `## SCHREIBSTIL – orientiere dich strikt an diesen Praxis-Beispielen:\n` +
       `- 'Intakte Hüft-TEP rechts, soweit in einer Ebene beurteilbar. Pfannenkomponente und Schaftkomponente in regelrechter Position. Kein periprothetischer Aufhellungssaum.'\n` +
       `- 'Coxarthrose links mit deutlicher Gelenkspaltverschmälerung, subchondraler Sklerosierung und osteophytären Randwülsten.'\n` +
@@ -1487,6 +1493,9 @@ Korrigiert:`;
   };
 
   // Call Gemini API to Structure the Transcript (Aligned 1:1 with EXE parameters)
+  const stripCodeFences = (text: string): string =>
+    text.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+
   const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string): Promise<string> => {
     if (!vertexApiKey) {
       throw new Error("Es ist kein Vertex AI API-Key konfiguriert. Bitte in den Einstellungen eintragen.");
@@ -1501,6 +1510,10 @@ Korrigiert:`;
       .replace("{roh_text}", rawText)
       .replace("{template_body}", templateBody)
       .replace("{region_name}", regionName);
+
+    // Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.: roh diktierte
+    // Kurzformen wie "Kniegelenk" dürfen die Bezeichnung nicht verdrängen)
+    promptText = promptText + `\n<untersuchung>${regionName}</untersuchung>\n`;
 
     if (promptText.includes("{examples}")) {
       promptText = promptText.replace("{examples}", examples);
@@ -1538,7 +1551,8 @@ Korrigiert:`;
     }
 
     const outputText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    return outputText;
+    // Markdown-Zäune strippen (Gemini wickelt Befunde gelegentlich in ``` ein)
+    return stripCodeFences(outputText);
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1561,9 +1575,11 @@ Korrigiert:`;
    - "Normaler Achsenverlauf" MUSS ersetzt werden bei Skoliose, Streckhaltung, Anterolisthese oder anderen Achsenabweichungen.
    - "Alle Wirbelkörper von normaler Form und Höhe" MUSS angepasst werden bei Fraktur, Anterolisthese oder anderen Formveränderungen.
 4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" Abschnitt dürfen KEINE Diagnosenamen stehen (z.B. nicht "Osteochondrose im Segment C5/C6"). Stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums C5/C6 mit subchondraler Sklerosierung der Abschlussplatten". Diagnosen NUR im "## Ergebnis".
-5. KEINE ERFUNDENE DIAGNOSE: Der Befund darf keine Diagnosen enthalten, die im Diktat nicht erwähnt wurden.
+5. KEINE ERFUNDENE DIAGNOSE: Der Befund darf keine Diagnosen enthalten, die im Diktat nicht erwähnt wurden. Umgekehrt MÜSSEN Arthrose-Diagnosen im Ergebnis nach Kellgren & Lawrence graduiert sein ("Grad [1-4] nach Kellgren & Lawrence"), wenn das betroffene Gelenk zur K&L-Liste gehört (Schulter/Ellbogen/Hand/Handgelenk/Hüfte/Knie/Sprunggelenk/Fuß — NICHT AC-Gelenk/ISG/Symphyse). Fehlt die Graduierung, ergänze sie aus den Deskriptoren: geringe Osteophyten=1, +geringe Verschmälerung=2, mäßiggradige Verschmälerung+multiple Osteophyten+Sklerosierung=3, aufgehobener Gelenkspalt=4. Beim Knie Femorotibial- und Patellofemoral-Kompartiment getrennt gradieren.
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
+
+8. UNTERSUCHUNGS-BEZEICHNUNG: Die erste Zeile des Befundtextes muss die kanonische Untersuchungsbezeichnung sein (z.B. "Kniegelenk links in 2 Ebenen"). Wenn dort eine roh diktierte Kurzform ohne Formulierungsbestandteile steht (z.B. nur "Kniegelenk"), korrigiere sie zur vollständigen Bezeichnung mit übernommener diktierter Seite.
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
@@ -1602,13 +1618,16 @@ Korrigierter Befund:`;
         return generatedReport;
       }
 
+      // Markdown-Zäune strippen (Gemini wickelt Befunde gelegentlich in ``` ein)
+      const clean = stripCodeFences(validated);
+
       // Check if validation changed anything
-      if (validated.trim() === generatedReport.trim()) {
+      if (clean.trim() === generatedReport.trim()) {
         console.log('[VALIDATE] Befund war bereits fehlerfrei ✅');
       } else {
         console.log('[VALIDATE] Befund wurde korrigiert ⚠️');
       }
-      return validated;
+      return clean;
     } catch (e: any) {
       console.warn('[VALIDATE] Validation failed:', e.message);
       return generatedReport;
@@ -2133,7 +2152,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.5</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.6</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2221,7 +2240,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.5</span>
+              <span className="brand-badge">Web v2.10.6</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

@@ -67,6 +67,10 @@ BESCHREIBUNGSTEXT = NUR MORPHOLOGIE/DESKRIPTOREN. Diagnosen gehören NUR ins Erg
 - Verwende EXAKT die Begriffe aus dem Diktat.
 - Diagnose-Namen dürfen NICHT umformuliert werden. "Osteochondrose" bleibt "Osteochondrose", nicht "Diskopathie". "Coxarthrose" bleibt "Coxarthrose", nicht "Hüftgelenksarthrose".
 - Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.
+
+## ARTHROSE-GRADUIERUNG NACH KELLGREN & LAWRENCE (PFLICHT):
+Bei ARTHROSE-Diagnosen im Ergebnis IMMER mit Graduierung: "[Gelenksarthrose-Diagnose] Grad [X] nach Kellgren & Lawrence [Seite]". Die Grad-Zuordnung aus den Deskriptoren: geringe Osteophyten ohne/fragliche Verschmälerung = Grad 1 · geringe Osteophyten + geringe Verschmälerung/Randzuschärfung = Grad 2 · mäßiggradige Verschmälerung + multiple Osteophyten + subchondrale Sklerosierung = Grad 3 · aufgehobener Gelenkspalt + ausgeprägte Sklerosierung/Zysten = Grad 4.
+Gilt für: Schulter (Omarthrose), Ellbogen, Hand, Handgelenk, Hüfte (Coxarthrose), Knie (Femorotibial + Patellofemoral getrennt gradieren), Sprunggelenk, Fuß. NICHT für: AC-Gelenk, ISG, Symphyse.
 """
 
 # ─── Testfälle ───
@@ -102,7 +106,11 @@ TEST_CASES = [
 
     ("Knie Gonarthrose", "kniegelenk_in_2_ebenen",
      "Knie rechts, Röntgen, Gonarthrose rechts, medialbetonte Gelenkspaltverschmälerung, subchondrale Sklerosierung, Osteophyten. Ansonsten unauffällig.",
-     ["Gonarthrose"]),
+     ["Gonarthrose", "Kellgren"]),
+
+    ("Knie Gonarthrose K&L (Peter 08.09., Screenshot-Case)", "kniegelenk_in_2_ebenen",
+     "Kniegelenk links, Röntgen, maßgradige Gonarthrose des medialen Femorotibialkompartiments, geringgradige Retropatellararthrose. Ansonsten unauffällig.",
+     ["Gonarthrose", "Kellgren"]),
 
     ("Ellbogen Fraktur", "ellbogengelenk_in_2_ebenen",
      "Ellbogen rechts, Röntgen, dislozierte Fraktur des Radiusköpfchens. Ansonsten unauffällig.",
@@ -185,17 +193,20 @@ def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
     return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
 
 
-def build_gen_prompt(raw_text, template_body):
+def build_gen_prompt(raw_text, template_body, region_name=None):
+    untersuchung = f"\n<untersuchung>{region_name}</untersuchung>\n" if region_name else ""
     return f"""<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>
 
 <instructions>
 Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.
+{untersuchung}
 
 ## STRIKTE FORMATREGELN:
 1. Erstelle IMMER exakt zwei Hauptabschnitte: '## Befund' und '## Ergebnis'. Kein weiterer Text.
 2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.
 
 ## ABSCHNITT "## Befund":
+- UNTERSUCHUNGS-ÜBERSCHRIFT (erste Zeile des Befundtextes): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Template-Zeile — NIE das roh diktierte Wort für die Untersuchung allein. Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift (z.B. diktiert "Kniegelenk links" → "Kniegelenk links in 2 Ebenen").
 - Nutze das bereitgestellte Normalbefund-Template als genaue strukturelle Basis.
 - Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt.
 - Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.
@@ -236,9 +247,10 @@ def build_val_prompt(raw_dictation, generated_report):
    - "Normaler Achsenverlauf" / "achsengerechte Stellung" MUSS ersetzt werden bei Skoliose, Streckhaltung, Listhese.
    - "Knochenstruktur unauffällig" / "Mineralgehalt und Knochenstruktur regelrecht" MUSS angepasst werden bei Lyse, Zyste, Tumor.
 4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" dürfen KEINE Diagnosenamen stehen. Stattdessen Deskriptoren. Diagnosen NUR im "## Ergebnis".
-5. KEINE ERFUNDENE DIAGNOSE.
+5. KEINE ERFUNDENE DIAGNOSE. Umgekehrt MÜSSEN Arthrose-Diagnosen im Ergebnis nach Kellgren & Lawrence graduiert sein ("Grad [1-4] nach Kellgren & Lawrence"), wenn das Gelenk zur K&L-Liste gehört (Schulter/Ellbogen/Hand/Handgelenk/Hüfte/Knie/Sprunggelenk/Fuß — NICHT AC/ISG/Symphyse). Fehlt die Graduierung, ergänze sie aus den Deskriptoren (geringe Osteophyten=1, +geringe Verschmälerung=2, mäßiggradig+multiple Osteophyten+Sklerosierung=3, aufgehobener Spalt=4). Knie: Femorotibial und Patellofemoral getrennt.
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen.
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler korrekt interpretiert wurden. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen (z.B. "Flachbogige Konvexität" ohne Diktat-Grundlage). Übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
+8. UNTERSUCHUNGS-BEZEICHNUNG: Die erste Zeile des Befundtextes muss die kanonische Untersuchungsbezeichnung sein (z.B. "Kniegelenk links in 2 Ebenen") — roh diktierte Kurzformen ohne Formulierungsbestandteile (nur "Kniegelenk") korrigieren, diktierte Seite übernehmen.
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere und gib die korrigierte Version zurück.
@@ -324,7 +336,7 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
 
     # Call #1: Generation
     try:
-        gen_prompt = build_gen_prompt(diktat, template_body)
+        gen_prompt = build_gen_prompt(diktat, template_body, region_name=TEMPLATES[template_key].get("display_name", ""))
         t0 = time.time()
         report = call_gemini(gen_prompt, token, temperature=0.1)
         gen_time = time.time() - t0

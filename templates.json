@@ -25,7 +25,7 @@
   },
   "halswirbelsäule_in_2_ebenen": {
     "display_name": "Halswirbelsäule in 2 Ebenen",
-    "body": "HWS ap/seitlich\n\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B.. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B."
+    "body": "Halswirbelsäule in 2 Ebenen\n\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B.. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B."
   },
   "schrägaufnahme_der_halswirbelsäule": {
     "display_name": "Schrägaufnahme der Halswirbelsäule",
@@ -37,11 +37,11 @@
   },
   "brustwirbelsäule_in_2_ebenen": {
     "display_name": "Brustwirbelsäule in 2 Ebenen",
-    "body": "BWS: Harmonische Kyphose.\nBWK: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.\nBogenwurzeln, Dornfortsätze, Querfortsätze und Processus articulares: Regelrecht konfiguriert.\nArticulationes costotransversales und Articulationes costovertebrales: Regelrechte Form.\nSpatien intervertebralia und Canalis spinalis: Normal weit.\nRippen: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine radiopaken Fremdkörper."
+    "body": "Brustwirbelsäule in 2 Ebenen\nBWK: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.\nBogenwurzeln, Dornfortsätze, Querfortsätze und Processus articulares: Regelrecht konfiguriert.\nArticulationes costotransversales und Articulationes costovertebrales: Regelrechte Form.\nSpatien intervertebralia und Canalis spinalis: Normal weit.\nRippen: Mitdargestellte Anteile unauffällig.\nWeichteile: Keine radiopaken Fremdkörper."
   },
   "lendenwirbelsäule_in_2_ebenen": {
     "display_name": "Lendenwirbelsäule in 2 Ebenen",
-    "body": "LWS\n\nAnnähernd achsengerechte Stellung.\nAnzahl und Höhe der Lendenwirbelkörper regelrecht.\nDas dorsale Alignement ist erhalten.\nDie Abschlussplatten und Corticalis allseits regelrecht.\nKein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien."
+    "body": "Lendenwirbelsäule in 2 Ebenen\n\nAnnähernd achsengerechte Stellung.\nAnzahl und Höhe der Lendenwirbelkörper regelrecht.\nDas dorsale Alignement ist erhalten.\nDie Abschlussplatten und Corticalis allseits regelrecht.\nKein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien."
   },
   "funktionsaufnahmen_der_lendenwirbelsäule": {
     "display_name": "Funktionsaufnahmen der Lendenwirbelsäule",
@@ -57,7 +57,7 @@
   },
   "kreuzbein_und_steißbein_in_2_ebenen": {
     "display_name": "Kreuzbein und Steißbein in 2 Ebenen",
-    "body": "Os sacrum und Os coccygeum: Anatomisch normale Form, symmetrische Verjüngung der Steißbeinwirbel nach kaudal. Regelrechte Stellung, keine stärkere seitliche oder ventrale Abwinkelung des Os coccygeum. Mineralgehalt und Knochenstruktur normal.\nIliosakralgelenke: Gelenkflächen nach Form, Kontur und Gelenkspaltweite unauffällig.\nForamina sacralia und Konturen der Steißbeinwirbel: Glatt und scharf, kein Hinweis auf Konturunterbrechung.\nOs coccygeum: Normale Form mit symmetrischer Verjüngung nach kaudal. Anatomisch regelrechte Achsstellung.\nWeichteile: Unauffällig."
+    "body": "Kreuzbein und Steißbein in 2 Ebenen\nIliosakralgelenke: Gelenkflächen nach Form, Kontur und Gelenkspaltweite unauffällig.\nForamina sacralia und Konturen der Steißbeinwirbel: Glatt und scharf, kein Hinweis auf Konturunterbrechung.\nOs coccygeum: Normale Form mit symmetrischer Verjüngung nach kaudal. Anatomisch regelrechte Achsstellung.\nWeichteile: Unauffällig."
   },
   "knöcherner_hemithorax": {
     "display_name": "Knöcherner Hemithorax",
@@ -65,7 +65,7 @@
   },
   "sternum_in_2_ebenen": {
     "display_name": "Sternum in 2 Ebenen",
-    "body": "Sternum: Anatomisch normale Form und Stellung, regelrechte Wölbung. Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung.\nSchlüsselbeine: Ordnungsgemäße Form und Stellung beider Claviculae.\nArticulatio sternoclavicularis: Artikulierende Flächen scharf und glatt begrenzt, Gelenkspalt normal weit.\nPleura: Normale Darstellung der pleuralen Kontaktfläche des Sternum.\nWeichteile: Unauffälliger Weichteilmantel."
+    "body": "Sternum in 2 Ebenen\nSchlüsselbeine: Ordnungsgemäße Form und Stellung beider Claviculae.\nArticulatio sternoclavicularis: Artikulierende Flächen scharf und glatt begrenzt, Gelenkspalt normal weit.\nPleura: Normale Darstellung der pleuralen Kontaktfläche des Sternum.\nWeichteile: Unauffälliger Weichteilmantel."
   },
   "schultergelenke_a-p_unter_belastung": {
     "display_name": "Schultergelenke a.-p. unter Belastung",
@@ -81,23 +81,23 @@
   },
   "scapula_in_2_ebenen": {
     "display_name": "Scapula in 2 Ebenen",
-    "body": "Scapula: Anatomisch normale Form. Mineralgehalt und Knochenstruktur regelrecht. Knochenstrukturen glatt und scharf begrenzt.\nArticulatio humeri und Articulatio acromioclavicularis: Regelrechte Darstellung bei glatten Gelenkflächen.\nHumeruskopf, Clavicula und Rippen: Mitabgebildete Anteile bei regelrechter Stellung unauffällig. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Normal."
+    "body": "Scapula in 2 Ebenen\nArticulatio humeri und Articulatio acromioclavicularis: Regelrechte Darstellung bei glatten Gelenkflächen.\nHumeruskopf, Clavicula und Rippen: Mitabgebildete Anteile bei regelrechter Stellung unauffällig. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Normal."
   },
   "schultergelenk_in_2_ebenen": {
     "display_name": "Schultergelenk in 2 Ebenen",
-    "body": "Schulter\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+    "body": "Schultergelenk in 2 Ebenen\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
   },
   "schultergelenk_tangential_bizepssehnenkanal": {
     "display_name": "Schultergelenk tangential (Bizepssehnenkanal)",
-    "body": "Skelett: Normale Form von Oberarmkopf, insbesondere der Tubercula. Mineralgehalt, Knochenstruktur und kortikale Randbegrenzung unauffällig.\nSulcus intertubercularis: Regelrechte Konfiguration und Tiefe, glatt und scharf begrenzt. Freie Projektion des Sulcus ohne pathologische Veränderungen.\nSkelett: Übrige abgebildete Abschnitte unauffällig.\nWeichteile: Normale Darstellung."
+    "body": "Schultergelenk tangential (Bizepssehnenkanal) in 2 Ebenen\nSulcus intertubercularis: Regelrechte Konfiguration und Tiefe, glatt und scharf begrenzt. Freie Projektion des Sulcus ohne pathologische Veränderungen.\nSkelett: Übrige abgebildete Abschnitte unauffällig.\nWeichteile: Normale Darstellung."
   },
   "oberarm_in_2_ebenen": {
     "display_name": "Oberarm in 2 Ebenen",
-    "body": "Humerus: Anatomisch normale Form und Stellung des abgebildeten Abschnitts.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur. Kompakta normale Breite.\nGelenkflächen: Normal geformt und kongruent, glatt und scharf begrenzt. Gelenkspalt normal weit. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
+    "body": "Oberarm in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur. Kompakta normale Breite.\nGelenkflächen: Normal geformt und kongruent, glatt und scharf begrenzt. Gelenkspalt normal weit. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffälliger Weichteilmantel."
   },
   "ellbogengelenk_in_2_ebenen": {
     "display_name": "Ellbogengelenk in 2 Ebenen",
-    "body": "Skelett: Normale Form und Stellung von distalem Humerus, Ulna und Radius.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kompakta und Kortikalis nach Breite und Kontur regelrecht.\nGelenkflächen: Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffällige Darstellung des Weichteilmantels."
+    "body": "Ellbogengelenk in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kompakta und Kortikalis nach Breite und Kontur regelrecht.\nGelenkflächen: Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen.\nWeichteile: Unauffällige Darstellung des Weichteilmantels."
   },
   "axialaufnahme_des_ellbogens": {
     "display_name": "Axialaufnahme des Ellbogens",
@@ -105,15 +105,15 @@
   },
   "unterarm_in_2_ebenen": {
     "display_name": "Unterarm in 2 Ebenen",
-    "body": "Skelett: Normale Form und Stellung der abgebildeten Abschnitte.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch regelrecht geformt, glatt und kongruent. Gelenkspalten allseits normale Weite. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
+    "body": "Unterarm in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch regelrecht geformt, glatt und kongruent. Gelenkspalten allseits normale Weite. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
   },
   "hand_in_2_ebenen": {
     "display_name": "Hand in 2 Ebenen",
-    "body": "Skelett: Dargestelltes Handskelett nach Form, Größe, Anzahl und Stellung der Phalanges, Ossa metacarpalia und Ossa carpi normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
+    "body": "Hand in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
   },
   "handgelenk_in_2_ebenen": {
     "display_name": "Handgelenk in 2 Ebenen",
-    "body": "Skelett: Regelrechte Abbildung der Skelettanteile nach Form, Größe und Anzahl. Stellung der einzelnen Ossa carpi, zu den Ossa metacarpalia sowie zu Radius und Ulna regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung.\nGelenkflächen: Regulär geformt. Gelenkspalten normal weit.\nRadius, Ulna und Ossa metacarpalia: Mitabgebildete Anteile unauffällig.\nWeichteile: Regelrechte Verhältnisse, keine radiopaken Fremdkörper oder Verkalkungen."
+    "body": "Handgelenk in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung.\nGelenkflächen: Regulär geformt. Gelenkspalten normal weit.\nRadius, Ulna und Ossa metacarpalia: Mitabgebildete Anteile unauffällig.\nWeichteile: Regelrechte Verhältnisse, keine radiopaken Fremdkörper oder Verkalkungen."
   },
   "karpaltunnelaufnahme": {
     "display_name": "Karpaltunnelaufnahme",
@@ -133,7 +133,7 @@
   },
   "hüftgelenk_in_2_ebenen": {
     "display_name": "Hüftgelenk in 2 Ebenen",
-    "body": "Hüfte\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+    "body": "Hüftgelenk in 2 Ebenen\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
   },
   "konturaufnahmen_des_femurkopfes": {
     "display_name": "Konturaufnahmen des Femurkopfes",
@@ -145,7 +145,7 @@
   },
   "kniegelenk_in_2_ebenen": {
     "display_name": "Kniegelenk in 2 Ebenen",
-    "body": "Kniegelenk\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+    "body": "Kniegelenk in 2 Ebenen\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
   },
   "defileeaufnahmen_der_patella_in_30°_60°_und_90°": {
     "display_name": "Defileeaufnahmen der Patella in 30°, 60° und 90°",
@@ -157,27 +157,27 @@
   },
   "sprunggelenk_in_2_ebenen": {
     "display_name": "Sprunggelenk in 2 Ebenen",
-    "body": "Sprunggelenk\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
+    "body": "Sprunggelenk in 2 Ebenen\n\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B."
   },
   "fuß_in_2_ebenen": {
     "display_name": "Fuß in 2 Ebenen",
-    "body": "Skelett: Fußskelett nach Form, Größe, Anzahl und Stellung der Phalanges, Ossa metatarsalia und Ossa tarsi normal. Arcus pedis regulär ausgebildet, Gelenkwinkel regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Regelrecht geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig.\nCalcaneus in 2 Ebenen\nCalcaneus: Normale Form mit regelrechten Winkelmaßen. Stellung zu Talus und Os cuboideum normal, kein Hinweis auf Fehlstellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht, scharfe Abgrenzbarkeit der Spongiosabälkchen. Kortikalis glatte und scharfe Begrenzung, normal breit, ohne pathologische Unterbrechung.\nGelenkspalten: Normale Weite bei kongruenten Gelenkflächen.\nOssa tarsi: Übrige mitdargestellte Ossa tarsi unauffällig.\nWeichteile: Regelrechte Abbildung."
+    "body": "Fuß in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Regelrecht geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig.\nCalcaneus in 2 Ebenen\nCalcaneus: Normale Form mit regelrechten Winkelmaßen. Stellung zu Talus und Os cuboideum normal, kein Hinweis auf Fehlstellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht, scharfe Abgrenzbarkeit der Spongiosabälkchen. Kortikalis glatte und scharfe Begrenzung, normal breit, ohne pathologische Unterbrechung.\nGelenkspalten: Normale Weite bei kongruenten Gelenkflächen.\nOssa tarsi: Übrige mitdargestellte Ossa tarsi unauffällig.\nWeichteile: Regelrechte Abbildung."
   },
   "mittelfuß_in_2_ebenen": {
     "display_name": "Mittelfuß in 2 Ebenen",
-    "body": "Skelett: Form, Größe, Anzahl und Stellung der einzelnen Ossa tarsi und Ossa metatarsalia normal.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechungen.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander.\nWeichteile: Unauffällig."
+    "body": "Mittelfuß in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechungen.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander.\nWeichteile: Unauffällig."
   },
   "vorfuß_in_2_ebenen": {
     "display_name": "Vorfuß in 2 Ebenen",
-    "body": "Skelett: Fußskelett nach Form, Größe und Anzahl der Phalanges, Ossa metatarsalia und der dargestellten Ossa tarsi normal. Stellung der Phalanges im Vergleich zu den Ossa metatarsalia regelrecht.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig."
+    "body": "Vorfuß in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Begrenzbarkeit, normal breit, ohne pathologische Unterbrechung. Kompakta normale Breite.\nGelenkflächen: Normal geformt, glatt und scharf begrenzt, normal weit zueinander. Keine intra- und periartikulären Verkalkungen.\nWeichteile: Unauffällig."
   },
   "zehe_in_2_ebenen": {
     "display_name": "Zehe in 2 Ebenen",
-    "body": "Phalanges: Normale Form der Phalanges proximales, mediae und distales (im Rahmen der Varianz) bei regelrechter Stellung.\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite. Crista phalangis distalis intakt.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
+    "body": "Zehe in 2 Ebenen\nKnochenstruktur: Mineralgehalt und Knochenstruktur regelrecht. Kortikalis glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta normale Breite. Crista phalangis distalis intakt.\nGelenkflächen: Proximale und distale Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalt allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\nWeichteile: Unauffällig."
   },
   "thorax_in_2_ebenen": {
     "display_name": "Thorax in 2 Ebenen",
-    "body": "Thorax pa/seitlich\n\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich."
+    "body": "Thorax in 2 Ebenen\n\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich."
   },
   "abdomen_im_stand": {
     "display_name": "Abdomen im Stand",
