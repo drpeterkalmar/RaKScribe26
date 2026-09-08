@@ -404,7 +404,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-08-normalbefunde';
+const PROMPT_VERSION = '2026-09-08-normalbefunde-v2';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -962,6 +962,9 @@ export default function App() {
       if (textLower.includes("schulter") || textLower.includes("supraspinatus") || textLower.includes("infraspinatus") || textLower.includes("bizepssehne") || textLower.includes("rotatorenmanschette") || textLower.includes("subacromial") || textLower.includes("subakromial") || textLower.includes("bursitis subacromialis")) {
         return "sonografie_schultergelenk";
       }
+      if (textLower.includes("bauchdeck") || textLower.includes("hernie") || textLower.includes("rektusdiastase") || textLower.includes("rectusdiastase")) {
+        return "sonografie_bauchdecke";
+      }
       if (textLower.includes("abdomen") || textLower.includes("bauch") || textLower.includes("abd")) {
         if (textLower.includes("weiblich")) {
           return "sonografie_abdomen_weiblich";
@@ -977,6 +980,21 @@ export default function App() {
       }
       if (textLower.includes("beinven") || textLower.includes("v. femoralis") || textLower.includes("poplitea") || textLower.includes("fibularis") || textLower.includes("venen")) {
         return "sonografie_beinvenen";
+      }
+      if (textLower.includes("muskel") || textLower.includes("muskul") || textLower.includes("gastrocnem") || textLower.includes("soleus") || textLower.includes("quadriceps") || textLower.includes("ischio") || textLower.includes("faserriss")) {
+        if (textLower.includes("dorsal") && textLower.includes("unterschenkel")) {
+          return "sonografie_dorsaler_unterschenkel";
+        }
+        if (textLower.includes("gastrocnem")) {
+          return "sonografie_gastrocnemius_medialis";
+        }
+        if (textLower.includes("dorsal") && textLower.includes("oberschenkel")) {
+          return "sonografie_dorsaler_oberschenkel";
+        }
+        if (textLower.includes("anterior") && textLower.includes("oberschenkel")) {
+          return "sonografie_anteriorer_oberschenkel";
+        }
+        return "sonografie_weichteile";
       }
       if (textLower.includes("halsweichteil") || textLower.includes("hals-weichteil")) {
         return "sonografie_halsweichteile";
@@ -1015,6 +1033,33 @@ export default function App() {
       return "dvt_oberkiefer";
     }
 
+    if (textLower.includes("orbita") || textLower.includes("orbitae")) {
+      return "orbita_pa_aufnahme";
+    }
+
+    if (textLower.includes("calcaneus") || textLower.includes("kalkaneus") || textLower.includes("ferse")) {
+      if (textLower.includes("seitlich") && !textLower.includes("2 ebenen")) {
+        return "calcaneus_seitlich";
+      }
+      return "calcaneus_in_2_ebenen";
+    }
+
+    if (textLower.includes("mortise")) {
+      return "sprunggelenk_mortise_view";
+    }
+
+    if (textLower.includes("gehaltene")) {
+      return "sprunggelenk_gehaltene_aufnahmen";
+    }
+
+    if ((textLower.includes("sprunggelenk") || textLower.includes("osg")) && (textLower.includes("fuß") || textLower.includes("fuss"))) {
+      return "sprunggelenk_mit_fuss";
+    }
+
+    if (textLower.includes("naviculare") || textLower.includes("skaphoid") || textLower.includes("scaphoid") || textLower.includes("kahnbein")) {
+      return "naviculareserie";
+    }
+
     if (textLower.includes("opg") || textLower.includes("zahnröntgen") || textLower.includes("zahnstatus") || textLower.includes("orthopantomogramm")) {
       return "orthopantomogramm_des_kiefer-_und_gesichtsschädels";
     }
@@ -1035,7 +1080,18 @@ export default function App() {
       return "schädelfernröntgen";
     }
 
+    if (textLower.includes("visa") || textLower.includes("wiederschluck") || textLower.includes("videokinematographie")) {
+      // Peters Diktat-Kürzel: "Visa" = Videokinematographie des Schluckaktes (Konvention 3x)
+      return "videokinematographie_schluckakt";
+    }
+
     if (textLower.includes("breischluck") || textLower.includes("ösophagus") || textLower.includes("schluckakt")) {
+      if (textLower.includes("videokinematographie") || textLower.includes("video") || textLower.includes("vis-a-vis") || textLower.includes("wiederschluck") || textLower.includes("visa")) {
+        return "videokinematographie_schluckakt";
+      }
+      if (textLower.includes("magen") || textLower.includes("duodenum") || textLower.includes("magenduodenum")) {
+        return "oesophagus_magenduodenum_doppelkontrast";
+      }
       return "durchleuchtung:_ösophagus-breischluck";
     }
     if (textLower.includes("mdp") || textLower.includes("magen-darm") || textLower.includes("magen")) {
@@ -1045,6 +1101,9 @@ export default function App() {
       return "intravenöses_urogramm";
     }
     if (textLower.includes("phlebographie") || textLower.includes("phlebo")) {
+      if (textLower.includes("press") || textLower.includes("aszendier") || textLower.includes("aufsteigend")) {
+        return "aszendierende_pressphlebographie";
+      }
       return "beinphlebographie";
     }
     if (textLower.includes("hsg") || textLower.includes("hysterosalpingographie")) {
@@ -2169,7 +2228,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.9</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.10</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2257,7 +2316,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.9</span>
+              <span className="brand-badge">Web v2.10.10</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

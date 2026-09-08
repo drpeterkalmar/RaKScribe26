@@ -13,6 +13,7 @@ ENV/
 # RaKScribe Secrets & Local Config (Legacy & Current)
 /*.json
 !/templates.json
+!/taught_blocks.json
 *.bat
 !start rakscribe.bat
 !source_code/build.bat
@@ -40,6 +41,7 @@ Befundvorlagen/
 *.json
 !templates.json
 !web_app/src/templates.json
+!taught_blocks.json
 
 # Web-App key injector - embeds private key, never commit
 web_app/public/inject-key.js

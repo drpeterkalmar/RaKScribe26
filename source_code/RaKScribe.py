@@ -449,6 +449,9 @@ def detect_template(text):
     
     # 0. Spezialregeln für Sonographie vorab prüfen (da sehr häufig)
     if any(x in text_lower for x in ["sono", "schall", "ultraschall", "duplex"]):
+        # Bauchdecke (vor abdomen/bauch, sonst greift das Allgemein-Abdomen)
+        if "bauchdeck" in text_lower or "hernie" in text_lower or "rektusdiastase" in text_lower or "rectusdiastase" in text_lower:
+            return "sonografie_bauchdecke"
         # Abdomen-Sonographie
         if "abdomen" in text_lower or "bauch" in text_lower or "abd" in text_lower:
             if "weiblich" in text_lower:
@@ -464,6 +467,17 @@ def detect_template(text):
         # Beinvenen
         if any(x in text_lower for x in ["beinven", "v. femoralis", "poplitea", "fibularis", "venen"]):
             return "sonografie_beinvenen"
+        # Muskel-/Weichteil-Sonographie (Pedret/BAMIC-Regionen)
+        if any(x in text_lower for x in ["muskel", "muskul", "gastrocnem", "soleus", "quadriceps", "ischio", "faserriss"]):
+            if "dorsal" in text_lower and "unterschenkel" in text_lower:
+                return "sonografie_dorsaler_unterschenkel"
+            if "gastrocnem" in text_lower:
+                return "sonografie_gastrocnemius_medialis"
+            if "dorsal" in text_lower and "oberschenkel" in text_lower:
+                return "sonografie_dorsaler_oberschenkel"
+            if "anterior" in text_lower and "oberschenkel" in text_lower:
+                return "sonografie_anteriorer_oberschenkel"
+            return "sonografie_weichteile"
         # Halsweichteile vs Schilddrüse
         if "halsweichteil" in text_lower or "hals-weichteil" in text_lower:
             return "sonografie_halsweichteile"
@@ -528,14 +542,40 @@ def detect_template(text):
     if "fernröntgen" in text_lower or "fern-röntgen" in text_lower or "frs" in text_lower:
         return "schädelfernröntgen"
 
+    # 2b. Röntgen-Regionen mit eigenen Normalbefund-Templates (v2.10.10)
+    if "orbita" in text_lower:
+        return "orbita_pa_aufnahme"
+    if any(x in text_lower for x in ["calcaneus", "kalkaneus", "ferse"]):
+        if "seitlich" in text_lower and "2 ebenen" not in text_lower:
+            return "calcaneus_seitlich"
+        return "calcaneus_in_2_ebenen"
+    if "mortise" in text_lower:
+        return "sprunggelenk_mortise_view"
+    if "gehaltene" in text_lower:
+        return "sprunggelenk_gehaltene_aufnahmen"
+    if ("sprunggelenk" in text_lower or "osg" in text_lower) and ("fuß" in text_lower or "fuss" in text_lower):
+        return "sprunggelenk_mit_fuss"
+    if any(x in text_lower for x in ["naviculare", "skaphoid", "scaphoid", "kahnbein"]):
+        return "naviculareserie"
+
+    # Peters Diktat-Kürzel: "Visa" = Videokinematographie des Schluckaktes (Konvention 3x)
+    if any(x in text_lower for x in ["visa", "wiederschluck", "videokinematographie"]):
+        return "videokinematographie_schluckakt"
+
     # 4. Durchleuchtungen (Fluoroscopy)
     if "breischluck" in text_lower or "ösophagus" in text_lower or "schluckakt" in text_lower:
+        if any(x in text_lower for x in ["videokinematographie", "video", "vis-a-vis", "wiederschluck", "visa"]):
+            return "videokinematographie_schluckakt"
+        if any(x in text_lower for x in ["magen", "duodenum", "magenduodenum"]):
+            return "oesophagus_magenduodenum_doppelkontrast"
         return "durchleuchtung:_ösophagus-breischluck"
     if "mdp" in text_lower or "magen-darm" in text_lower or "magen" in text_lower:
         return "durchleuchtung:_magen-darm-passage_mdp"
     if "urogramm" in text_lower or "ivu" in text_lower or "ivp" in text_lower:
         return "intravenöses_urogramm"
     if "phlebographie" in text_lower or "phlebo" in text_lower:
+        if any(x in text_lower for x in ["press", "aszendier", "aufsteigend"]):
+            return "aszendierende_pressphlebographie"
         return "beinphlebographie"
     if "hsg" in text_lower or "hysterosalpingographie" in text_lower:
         return "hysterosalpingographie"
@@ -874,7 +914,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.9", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.10.10", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
