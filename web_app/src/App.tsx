@@ -2228,7 +2228,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.10</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.11</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2316,7 +2316,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.10</span>
+              <span className="brand-badge">Web v2.10.11</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

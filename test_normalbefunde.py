@@ -11,6 +11,9 @@ Prüft:
    (per AST extrahiert, nicht nachgebaut) muss die 16 neuen Keys erreichen.
 3. BYPASS-SIMULATION: Der Normalbefund-Bypass (kein LLM) muss für neue Templates
    das v2.10.8-Headerformat produzieren: ## Titel vor ## Befund.
+4. TITELZEILEN-GATE (v2.10.11): Zeile 1 JEDES Templates = display_name — sonst
+   schreibt der Bypass den ersten Befund-Satz als Überschrift (Peter-Fall:
+   „Sonomorphologisch unauffällige Verhältnisse…" als Titel der Unterschenkel-Sono).
 
 Exit-Code 0 = alle Gates PASS. Läuft ohne Netz.
 """
@@ -190,6 +193,48 @@ for raw, key in BYPASS_CASES:
     print(f"{'✅ PASS' if ok else '❌ FAIL'}  Bypass {key} (Header vor Befund + taught-Satz drin)")
     if not ok:
         failures.append(f"Bypass-Simulation {key} fehlgeschlagen")
+
+# ── 4. TITELZEILEN-GATE (v2.10.11) ────────────────────────────────────────
+# Peters Unterschenkel-Fall (09.09.): Templates OHNE Titelzeile ließen den
+# Bypass den ERSTEN BEFUND-SATZ als ##-Überschrift schreiben. Pflicht: Zeile 1
+# = display_name (Bypass nimmt body.split('\n')[0] als Titel). Einzige
+# tolerierte Abweichung: sonografie_halsgefaesse (wörtlich gemergter
+# taught-Block mit Bindestrich „Duplex-Sonographie").
+print("\n" + "=" * 70)
+print("TEIL 4: TITELZEILEN-GATE (Zeile 1 = display_name, kein Satz als Titel)")
+print("=" * 70)
+def _clean_title(s: str) -> str:
+    return re.sub(r"[\s\-\u2013\u2014:()\.,]+", "", s.lower())
+
+bad_titles = []
+for key, t in TPL.items():
+    dn = t["display_name"].strip().rstrip(":").strip()
+    l1 = t["body"].split("\n")[0].strip().rstrip(":").strip()
+    if _clean_title(l1) != _clean_title(dn):
+        bad_titles.append(key)
+if bad_titles:
+    print(f"❌ FAIL  {len(bad_titles)} Templates ohne korrekte Titelzeile: {bad_titles[:10]}")
+    failures.append(f"Titelzeilen-Gate: {len(bad_titles)} Templates ohne Zeile 1 = display_name")
+else:
+    print(f"✅ PASS  Alle {len(TPL)} Templates: Zeile 1 = display_name (Titelzeile)")
+
+# Peters Fall als Regression: 'Unterschenkel-Sonographie rechts unauffällig'
+# läuft über sonografie_allgemein. Titel muss die Untersuchungsart sein, NICHT
+# der Template-Erstsatz; Satz 1 muss im Befundtext überleben.
+_peters_raw = "Unterschenkel-Sonographie rechts unauffällig."
+_t = TPL["sonografie_allgemein"]["body"].split("\n")
+_p_title = _t[0].strip().rstrip(":")
+_p_rest = "\n".join(_t[1:])
+_p_report = f"## {_p_title}\n\n## Befund\n{_p_rest}\n\n## Ergebnis\n{_peters_raw}"
+_p_befund = _p_report.split("## Befund")[1].split("## Ergebnis")[0]
+_p_ok = (
+    _p_report.startswith("## Sonographie (Allgemein)")
+    and "Sonomorphologisch unauffällige Verhältnisse" in _p_befund
+    and _p_report.strip().endswith("## Ergebnis\n" + _peters_raw)
+)
+print(f"{'✅ PASS' if _p_ok else '❌ FAIL'}  Peters Fall: Unterschenkel-Sono → Titel 'Sonographie (Allgemein)', Satz 1 bleibt im Befund")
+if not _p_ok:
+    failures.append("Peters Unterschenkel-Fall: Bypass-Report falsch formatiert")
 
 print("\n" + "=" * 70)
 if failures:
