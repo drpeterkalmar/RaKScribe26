@@ -137,7 +137,8 @@ MEDICAL_PHRASES = [
     "Flachbogig", "S-förmige", "HWS", "HWK",
     "Flachbogige Skoliose", "flachbogige Skoliose", "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
     "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
-    "Discopathiezeichen", "Diskopathiezeichen"
+    "Discopathiezeichen", "Diskopathiezeichen",
+    "Neoarthrosis interspinosa", "Neoarthrosen interspinosa", "Neoarthrose interspinosa"
 ]
 
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
@@ -963,7 +964,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.13", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.10.14", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
