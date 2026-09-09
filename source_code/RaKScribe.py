@@ -502,6 +502,14 @@ def detect_template(text):
         # Varizensonographie
         if any(x in text_lower for x in ["varizen", "variko", "variz"]):
             return "varizensonografie"
+        # Mamma VOR dem generischen "venen"-Trigger (K3-Befund 2-Familie:
+        # "Hautvenen" im Mamma-Diktat matcht "venen" → falsches Beinvenen-Template).
+        # Trigger 'mamma' (nicht 'mammo'): 'Mammasonographie' enthält 'mamma',
+        # aber NIE 'mammo' (m-a-m-m-a + sono)!
+        if "mamma" in text_lower:
+            if any(x in text_lower for x in ["sono", "schall", "ultraschall", "mammasono"]):
+                return "mammasonographie_beidseits"
+            return "mammographie_beidseits"
         # Beinvenen
         if any(x in text_lower for x in ["beinven", "v. femoralis", "poplitea", "fibularis", "venen"]):
             return "sonografie_beinvenen"
@@ -572,7 +580,7 @@ def detect_template(text):
         return "knochendichtemessung_dexa"
         
     # 3. Mammographie / Fernröntgen
-    if "mammo" in text_lower:
+    if "mamma" in text_lower:
         if any(x in text_lower for x in ["sono", "schall", "ultraschall", "mammasono"]):
             return "mammasonographie_beidseits"
         return "mammographie_beidseits"

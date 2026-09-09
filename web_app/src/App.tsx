@@ -430,7 +430,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-09-allgemein-ausnahme-echt';
+const PROMPT_VERSION = '2026-09-09-mamma-venen-trigger';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -1004,6 +1004,12 @@ export default function App() {
       if (textLower.includes("varizen") || textLower.includes("variko") || textLower.includes("variz")) {
         return "varizensonografie";
       }
+      if (textLower.includes("mamma")) {
+        if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall") || textLower.includes("mammasono")) {
+          return "mammasonographie_beidseits";
+        }
+        return "mammographie_beidseits";
+      }
       if (textLower.includes("beinven") || textLower.includes("v. femoralis") || textLower.includes("poplitea") || textLower.includes("fibularis") || textLower.includes("venen")) {
         return "sonografie_beinvenen";
       }
@@ -1094,8 +1100,10 @@ export default function App() {
       return "knochendichtemessung_dexa";
     }
 
-    if (textLower.includes("mammo")) {
-      // Mammasonographie (Ultraschall) vs Mammographie (Röntgen)
+    if (textLower.includes("mamma")) {
+      // Mammasonographie (Ultraschall) vs Mammographie (Röntgen) — 'mamma' als Trigger,
+      // denn 'Mammasonographie' enthält 'mamma' aber NIE 'mammo' (v2.10.13-Fix)
+      
       if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall") || textLower.includes("mammasono")) {
         return "mammasonographie_beidseits";
       }

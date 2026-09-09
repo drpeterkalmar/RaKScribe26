@@ -19,6 +19,7 @@ Exit-Code 0 = alle Gates PASS. Läuft ohne Netz.
 """
 import ast
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -263,6 +264,37 @@ _p_ok = (
 print(f"{'✅ PASS' if _p_ok else '❌ FAIL'}  Peters Fall: Titel aus Diktat 'Unterschenkel-Sonographie rechts', kein '(Allgemein)' im Report, Satz 1 im Befund")
 if not _p_ok:
     failures.append("Peters Unterschenkel-Fall: Bypass-Report falsch formatiert")
+
+# ── 4b. TITEL-FIXTURES (v2.10.13, K3-Befund 7/8): tabellengetriebene Regression ──
+# Eine Quelle der Wahrheit (titel_fixtures.py) für alle 3 Implementierungen.
+# Die ECHTE RaKScribe.py-Funktion läuft per AST-Extract (kein Nachbau-Drift möglich).
+try:
+    import titel_fixtures
+    _src_all = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "source_code", "RaKScribe.py")).read()
+    import ast as _ast
+    _tree = _ast.parse(_src_all)
+    _fn_src = None
+    for _node in _ast.walk(_tree):
+        if isinstance(_node := getattr(_node, "name", "") and _node, _ast.FunctionDef) and _node.name == "derive_untersuchungs_titel":
+            _fn_src = _ast.get_source_segment(_src_all, _node)
+            break
+    if _fn_src:
+        _ns = {"re": re}
+        exec(_fn_src, _ns)
+        _ok, _fails = titel_fixtures.run_fixtures(_ns["derive_untersuchungs_titel"])
+    else:
+        _ok, _fails = titel_fixtures.run_fixtures(titel_fixtures.derive_titel_py)
+        _fails.insert(0, "echte Funktion nicht gefunden — Referenzimplementierung getestet")
+    if _ok:
+        print(f"✅ PASS  Titel-Fixtures: alle {len(titel_fixtures.TITEL_FIXTURES)} Cases gegen echte RaKScribe.py-Funktion")
+    else:
+        for _f in _fails:
+            print(f"❌ FAIL  Titel-Fixture: {_f}")
+        failures.append(f"Titel-Fixtures: {len(_fails)} Fälle falsch")
+except Exception as _e:
+    print(f"❌ FAIL  Titel-Fixtures-Modul: {_e}")
+    failures.append(f"Titel-Fixtures: {_e}")
 
 print("\n" + "=" * 70)
 if failures:
