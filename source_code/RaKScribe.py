@@ -405,6 +405,30 @@ def load_templates():
 
 RADIOLOGY_TEMPLATES = load_templates()
 
+def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
+    """Befundtitel fuer Bypass & <untersuchung>-Embed (v2.10.12, Peter 09.09.).
+
+    Generische Sammel-Templates (display_name mit '(Allgemein)') duerfen ihren
+    internen Namen NICHT als Befundtitel ausgeben — dann wird die
+    Untersuchungsbezeichnung aus dem DIKTAT gebildet: 'Unterschenkel-
+    Sonographie rechts unauffaellig' → 'Unterschenkel-Sonographie rechts'.
+    Konkrete Templates (HWS, Orbita, ...) behalten den kanonischen Namen.
+    """
+    if not re.search(r"\(allgemein\)", display_name or "", re.I):
+        return display_name
+    t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
+    t = re.sub(r"[.?!]\s*$", "", t).strip()
+    for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
+              r"ohne pathologischem Befund", r"kein pathologischer Befund",
+              r"regelrecht", r"normal"):
+        m = re.search(",?\s*" + f + "\s*$", t, re.I)
+        if m:
+            t = t[:m.start()].strip()
+            break
+    t = t.rstrip(".,?!").strip()
+    return t or re.sub(r"\s*\(Allgemein\)", "", display_name, flags=re.I).strip()
+
+
 def detect_template(text):
     """Bessere Erkennungslogik für den Untersuchungstyp."""
     text_lower = text.lower()
@@ -542,7 +566,7 @@ def detect_template(text):
     if "fernröntgen" in text_lower or "fern-röntgen" in text_lower or "frs" in text_lower:
         return "schädelfernröntgen"
 
-    # 2b. Röntgen-Regionen mit eigenen Normalbefund-Templates (v2.10.11)
+    # 2b. Röntgen-Regionen mit eigenen Normalbefund-Templates (v2.10.12)
     if "orbita" in text_lower:
         return "orbita_pa_aufnahme"
     if any(x in text_lower for x in ["calcaneus", "kalkaneus", "ferse"]):
@@ -914,7 +938,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.11", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.10.12", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1324,7 +1348,7 @@ class RaKScribeApp(ctk.CTk):
                     if not formatted_raw.endswith('.'):
                         formatted_raw += '.'
                 tpl_lines = template_data['body'].split('\n')
-                tpl_title = tpl_lines[0].strip().rstrip(':')
+                tpl_title = derive_untersuchungs_titel(raw, tpl_lines[0].strip().rstrip(':'))
                 tpl_body = '\n'.join(tpl_lines[1:])
                 report = f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{formatted_raw}"
                 
@@ -1346,7 +1370,7 @@ class RaKScribeApp(ctk.CTk):
             p_full = p_full.replace('{region_name}', template_data['display_name'])
             # Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.):
             # roh diktierte Kurzformen ("Kniegelenk") dürfen die Bezeichnung ("Kniegelenk in 2 Ebenen") nicht verdrängen
-            p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
+            p_full = p_full + "\n<untersuchung>" + derive_untersuchungs_titel(raw, template_data['display_name']) + "</untersuchung>\n"
             
             # RAG Few-Shot Beispiele laden (limit=0 für Normalbefunde, limit=1 für pathologische Befunde)
             limit_examples = 0 if is_normal_finding(raw) else 1

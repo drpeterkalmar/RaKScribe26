@@ -219,20 +219,32 @@ else:
     print(f"✅ PASS  Alle {len(TPL)} Templates: Zeile 1 = display_name (Titelzeile)")
 
 # Peters Fall als Regression: 'Unterschenkel-Sonographie rechts unauffällig'
-# läuft über sonografie_allgemein. Titel muss die Untersuchungsart sein, NICHT
-# der Template-Erstsatz; Satz 1 muss im Befundtext überleben.
+# läuft über sonografie_allgemein. Titel kommt (generisches '(Allgemein)'-Template,
+# v2.10.12) aus dem DIKTAT — NIEMALS '(Allgemein)' im Report; Satz 1 bleibt im Befund.
 _peters_raw = "Unterschenkel-Sonographie rechts unauffällig."
+def _derive_titel(raw: str, dn: str) -> str:
+    # Sync mit derive_untersuchungs_titel (RaKScribe.py) / deriveUntersuchungsTitel (App.tsx)
+    if "(allgemein)" not in dn.lower():
+        return dn
+    t = raw.strip()
+    t = re.sub(r"[.?!]\s*$", "", t).strip()
+    m = re.search(r",?\s*unauff(?:ae|ä)llig\s*$", t, re.I)
+    if m:
+        t = t[:m.start()].strip()
+    t = t.rstrip(".,?!").strip()
+    return t or re.sub(r"\s*\(Allgemein\)", "", dn, flags=re.I).strip()
 _t = TPL["sonografie_allgemein"]["body"].split("\n")
-_p_title = _t[0].strip().rstrip(":")
+_p_title = _derive_titel(_peters_raw, _t[0].strip().rstrip(":"))
 _p_rest = "\n".join(_t[1:])
 _p_report = f"## {_p_title}\n\n## Befund\n{_p_rest}\n\n## Ergebnis\n{_peters_raw}"
 _p_befund = _p_report.split("## Befund")[1].split("## Ergebnis")[0]
 _p_ok = (
-    _p_report.startswith("## Sonographie (Allgemein)")
+    _p_report.startswith("## Unterschenkel-Sonographie rechts")
+    and "(Allgemein)" not in _p_report
     and "Sonomorphologisch unauffällige Verhältnisse" in _p_befund
     and _p_report.strip().endswith("## Ergebnis\n" + _peters_raw)
 )
-print(f"{'✅ PASS' if _p_ok else '❌ FAIL'}  Peters Fall: Unterschenkel-Sono → Titel 'Sonographie (Allgemein)', Satz 1 bleibt im Befund")
+print(f"{'✅ PASS' if _p_ok else '❌ FAIL'}  Peters Fall: Titel aus Diktat 'Unterschenkel-Sonographie rechts', kein '(Allgemein)' im Report, Satz 1 im Befund")
 if not _p_ok:
     failures.append("Peters Unterschenkel-Fall: Bypass-Report falsch formatiert")
 

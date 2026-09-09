@@ -222,6 +222,21 @@ const MEDICAL_PHRASES = [
 // isNormalFinding — erkennt reine Normalbefunde für RAG-Bypass (kein LLM nötig)
 // Wird von Recording- und Upload-Pfad verwendet. Negations-aware.
 // ─────────────────────────────────────────────────────────────────────────
+// deriveUntersuchungsTitel — Befundtitel für Bypass & <untersuchung>-Embed (Sync mit RaKScribe.py, v2.10.12).
+// Generische Sammel-Templates ('(Allgemein)') dürfen ihren internen Namen NICHT als
+// Befundtitel ausgeben (Peter 09.09.) → Titel aus dem Diktat, Befund-Worte gestrippt.
+function deriveUntersuchungsTitel(raw: string, displayName: string): string {
+  if (!/\(allgemein\)/i.test(displayName || "")) return displayName;
+  let t = (raw || "").trim().replace(/\bHW\b/g, "HWS").replace(/[.?!]\s*$/, "").trim();
+  const findings = ["unauff(?:ae|ä)llig", "o\\.?\\s?B\\.?", "ohne pathologischen Befund", "ohne pathologischem Befund", "kein pathologischer Befund", "regelrecht", "normal"];
+  for (const f of findings) {
+    const m = t.match(new RegExp(",?\\s*" + f + "\\s*$", "i"));
+    if (m) { t = t.slice(0, (m.index ?? 0)).trim(); break; }
+  }
+  t = t.replace(/[.,?!]+$/, "").trim();
+  return t || displayName.replace(/\s*\(Allgemein\)/i, "").trim();
+}
+
 function isNormalFinding(text: string): boolean {
   const textLower = text.toLowerCase();
   const pathologyKeywords = [
@@ -404,7 +419,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-08-normalbefunde-v2';
+const PROMPT_VERSION = '2026-09-09-titel-aus-diktat';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -645,10 +660,10 @@ export default function App() {
       `1. Erstelle IMMER exakt drei Teile: die Untersuchungs-Überschrift als eigene Markdown-Überschrift ('## [Untersuchungsart]') und danach die zwei Hauptabschnitte '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Teile.\n` +
       `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
       `## ABSCHNITT "## Befund":\n` +
-      `- UNTERSUCHUNGS-ÜBERSCHRIFT (eigene Zeile VOR '## Befund', als Markdown-Überschrift '## [Untersuchungsart]'): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Zeile des Template-Bodies — NIE das roh diktierte Wort für die Untersuchung (z.B. diktiert "Kniegelenk links" bei Template "Kniegelenk in 2 Ebenen" → "## Kniegelenk links in 2 Ebenen", NIEMALS "Kniegelenk" oder "Kniegelenk links" allein). Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift, sonst bleibt sie ohne Seitenangabe. Der Abschnitt "## Befund" beginnt DANACH direkt mit dem Befundtext — die Untersuchungsbezeichnung steht NICHT mehr als erster Satz im Befundtext.\n` +
+      `- UNTERSUCHUNGS-ÜBERSCHRIFT (eigene Zeile VOR '## Befund', als Markdown-Überschrift '## [Untersuchungsart]'): Verwende die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Zeile des Template-Bodies — AUSNAHME: Enthält <untersuchung> '(Allgemein)', ist das ein interner Sammel-Name, der NICHT als Befundtitel stehen darf; bilde die Untersuchungs-Überschrift dann aus dem DIKTAT (diktierte Untersuchungsbezeichnung OHNE Befundworte wie 'unauffällig'; z.B. 'Unterschenkel-Sonographie rechts unauffällig' → '## Unterschenkel-Sonographie rechts') — im Übrigen NIE das roh diktierte Wort für die Untersuchung (z.B. diktiert "Kniegelenk links" bei Template "Kniegelenk in 2 Ebenen" → "## Kniegelenk links in 2 Ebenen", NIEMALS "Kniegelenk" oder "Kniegelenk links" allein). Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift, sonst bleibt sie ohne Seitenangabe. Der Abschnitt "## Befund" beginnt DANACH direkt mit dem Befundtext — die Untersuchungsbezeichnung steht NICHT mehr als erster Satz im Befundtext.\n` +
       `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis. Die ERSTE ZEILE des Template-Bodies ist die kanonische Untersuchungs-Überschrift — ergänze falls nötig die fehlenden Formulierungsbestandteile (z.B. Template "Kniegelenk" + diktierter Zusatz "in 2 Ebenen" → "Kniegelenk in 2 Ebenen") und schreibe sie mit übernommener diktierter Seite als Untersuchungs-Überschrift ('## [Untersuchungsart]') VOR dem Abschnitt '## Befund'.\n` +
       `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt (z.B. Arthrose, Fraktur, TEP, Spondylarthrose, Osteochondrose, Beckenschiefstand).\n` +
-      `- Die kanonische Untersuchungsbezeichnung steht zusätzlich in <untersuchung> — sie hat Vorrang vor jeder roh diktierten Untersuchungsbezeichnung.\n` +
+      `- Die kanonische Untersuchungsbezeichnung steht zusätzlich in <untersuchung> — sie hat Vorrang vor jeder roh diktierten Untersuchungsbezeichnung, AUSSER sie enthält '(Allgemein)': dann darf der interne Sammel-Name nicht als Titel erscheinen und die Überschrift wird aus dem Diktat abgeleitet.\n` +
       `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
       `- Übernimm Messwerte (z.B. 'Beckenschiefstand nach links um 4 mm', '-1,2 cm Beinlängendifferenz') exakt aus dem Diktat.\n` +
       `- Schreibe im radiologischen Nominalstil (z.B. 'Kein Nachweis von Lockerungszeichen.', 'Intakte Hüft-TEP rechts.').\n\n` +
@@ -1574,14 +1589,15 @@ Korrigiert:`;
 
     setStatusText("Strukturiere mit Gemini...");
 
+    const unterTitel = deriveUntersuchungsTitel(rawText, regionName);
     let promptText = systemPrompt
       .replace("{roh_text}", rawText)
       .replace("{template_body}", templateBody)
-      .replace("{region_name}", regionName);
+      .replace("{region_name}", unterTitel);
 
     // Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.: roh diktierte
     // Kurzformen wie "Kniegelenk" dürfen die Bezeichnung nicht verdrängen)
-    promptText = promptText + `\n<untersuchung>${regionName}</untersuchung>\n`;
+    promptText = promptText + `\n<untersuchung>${unterTitel}</untersuchung>\n`;
 
     if (promptText.includes("{examples}")) {
       promptText = promptText.replace("{examples}", examples);
@@ -1647,7 +1663,7 @@ Korrigiert:`;
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
-8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite.
+8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite. Enthält die Überschrift '(Allgemein)', ersetze sie durch die aus dem Diktat abgeleitete Untersuchungsbezeichnung (ohne Befundworte wie 'unauffällig') — '(Allgemein)' selbst darf nie als Titel stehen.
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
@@ -2013,7 +2029,7 @@ Korrigierter Befund:`;
         }
         
         const tplLines = activeTemplate.body.split('\n');
-        const tplTitle = (tplLines[0] || '').trim().replace(/:$/, '');
+        const tplTitle = deriveUntersuchungsTitel(finalRawText, (tplLines[0] || '').trim().replace(/:$/, ''));
         const tplBody = tplLines.slice(1).join('\n');
         const report = `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${formattedRaw}`;
         setStructuredReport(report);
@@ -2116,7 +2132,7 @@ Korrigierter Befund:`;
           }
         }
         const tplLines = activeTemplate.body.split('\n');
-        const tplTitle = (tplLines[0] || '').trim().replace(/:$/, '');
+        const tplTitle = deriveUntersuchungsTitel(finalRawText, (tplLines[0] || '').trim().replace(/:$/, ''));
         const tplBody = tplLines.slice(1).join('\n');
         const report = `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${formattedRaw}`;
         setStructuredReport(report);
@@ -2228,7 +2244,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.11</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.12</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2316,7 +2332,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.11</span>
+              <span className="brand-badge">Web v2.10.12</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

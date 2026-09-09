@@ -193,6 +193,24 @@ def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
     return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
 
 
+def derive_titel_harness(raw, display_name):
+    """Wie derive_untersuchungs_titel in RaKScribe.py (sync!) — generische
+    '(Allgemein)'-Templates bekommen den Titel aus dem Diktat."""
+    if not re.search(r"\(allgemein\)", display_name or "", re.I):
+        return display_name
+    t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
+    t = re.sub(r"[.?!]\s*$", "", t).strip()
+    for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
+              r"ohne pathologischem Befund", r"kein pathologischer Befund",
+              r"regelrecht", r"normal"):
+        m = re.search(",?\s*" + f + "\s*$", t, re.I)
+        if m:
+            t = t[:m.start()].strip()
+            break
+    t = t.rstrip(".,?!").strip()
+    return t or re.sub(r"\s*\(Allgemein\)", "", display_name, flags=re.I).strip()
+
+
 def build_gen_prompt(raw_text, template_body, region_name=None):
     untersuchung = f"\n<untersuchung>{region_name}</untersuchung>\n" if region_name else ""
     return f"""<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>
@@ -336,7 +354,7 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
 
     # Call #1: Generation
     try:
-        gen_prompt = build_gen_prompt(diktat, template_body, region_name=TEMPLATES[template_key].get("display_name", ""))
+        gen_prompt = build_gen_prompt(diktat, template_body, region_name=derive_titel_harness(diktat, TEMPLATES[template_key].get("display_name", "")))
         t0 = time.time()
         report = call_gemini(gen_prompt, token, temperature=0.1)
         gen_time = time.time() - t0
