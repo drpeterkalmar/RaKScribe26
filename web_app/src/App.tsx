@@ -1052,6 +1052,9 @@ export default function App() {
       if (textLower.includes("nerv") || textLower.includes("neuro") || textLower.includes("suralis") || textLower.includes("peroneus") || textLower.includes("tibialis")) {
         return "sonografie_nerv_allgemein";
       }
+      if (textLower.includes("unterschenkel")) {
+        return "sonografie_unterschenkel";
+      }
       return "sonografie_allgemein";
     }
 

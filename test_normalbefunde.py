@@ -250,15 +250,17 @@ def _derive_titel(raw: str, dn: str) -> str:
     if len(t) > 80:
         t = t[:80].strip()
     return t or re.sub(r"\s*\(Allgemein\)", "", dn, flags=re.I).strip()
-_t = TPL["sonografie_allgemein"]["body"].split("\n")
+# v2.10.13-fix2: Peters Unterschenkel-Diktat detectet jetzt das EIGENE Template
+# (sonografie_unterschenkel statt allgemein-Fallback) — Fall umgezogen.
+_t = TPL["sonografie_unterschenkel"]["body"].split("\n")
 _p_title = _derive_titel(_peters_raw, _t[0].strip().rstrip(":"))
 _p_rest = "\n".join(_t[1:])
 _p_report = f"## {_p_title}\n\n## Befund\n{_p_rest}\n\n## Ergebnis\n{_peters_raw}"
 _p_befund = _p_report.split("## Befund")[1].split("## Ergebnis")[0]
 _p_ok = (
-    _p_report.startswith("## Unterschenkel-Sonographie rechts")
+    _p_report.startswith("## Sonographie des Unterschenkels")  # eigenes Template = kanonischer Titel
     and "(Allgemein)" not in _p_report
-    and "Sonomorphologisch unauffällige Verhältnisse" in _p_befund
+    and "homogenem, echonormalem Parenchym" in _p_befund  # Unterschenkel-Template-Kernsatz
     and _p_report.strip().endswith("## Ergebnis\n" + _peters_raw)
 )
 print(f"{'✅ PASS' if _p_ok else '❌ FAIL'}  Peters Fall: Titel aus Diktat 'Unterschenkel-Sonographie rechts', kein '(Allgemein)' im Report, Satz 1 im Befund")

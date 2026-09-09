@@ -562,5 +562,9 @@
   "sonografie_anteriorer_oberschenkel": {
     "display_name": "Sonographie der anterioren Oberschenkelmuskulatur",
     "body": "Sonographie der anterioren Oberschenkelmuskulatur\n\nAufgrund fehlender wissenschaftlicher Graduierungssysteme für Verletzungen der anterioren Oberschenkelmuskulatur erfolgt die Beschreibung deskriptiv.\n\nEs erfolgt eine Darstellung sämtlicher anteriorer Oberschenkelmuskeln und Sehnen vom proximalen Ursprung bis nach distal inklusive der Quadricepssehne unter Ruhebedingungen sowie passiver und aktiver Flexion und Extension des Kniegelenkes. Regelrechte Echogenität ohne Nachweis einer Sehnenverdickung der direkten und indirekten Rectus-femoris-Sehne. Entlang der proximalen intramuskulären indirekten Rectus-femoris-Sehne sowie des muskulären Sehnenausläufers der direkten Rectus-femoris-Sehne glatte Begrenzung der Sehne ohne Nachweis einer Retraktion oder tendinösen/myotendinösen Ruptur. Die muskulären Ursprünge des M. vastus medialis/lateralis regelrecht. Der Kortex glatt begrenzt. An der Quadricepssehne regelrechte Echotextur sämtlicher Sehnenanteile. Die Insertion unauffällig. Der Kortex glatt begrenzt."
+  },
+  "sonografie_unterschenkel": {
+    "display_name": "Sonographie des Unterschenkels",
+    "body": "Sonographie des Unterschenkels\n\nHaut und Subkutis: Sonographisch unauffällige Darstellung der Haut und der Subkutis des Unterschenkels. Kein Nachweis einer Schwellung, eines Hämatoms oder einer Flüssigkeitsansammlung.\nMuskulatur: Die dargestellte Muskulatur des Unterschenkels mit homogenem, echonormalem Parenchym und erhaltener Fibrillenstruktur. Keine fokalen Läsionen, keine Fibrose oder Kalkablagerungen.\nSehnen: Regelrechte Darstellung der einsehbaren Sehnen mit glatter, kontinuierlicher Fibrillenstruktur ohne Verdickung oder Rupturzeichen.\nGefäße: Keine raumfordernden Strukturen, kein Nachweis einer pathologischen Flüssigkeitsansammlung im untersuchten Bereich."
   }
 }

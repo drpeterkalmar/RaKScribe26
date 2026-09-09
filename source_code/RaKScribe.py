@@ -561,6 +561,9 @@ def detect_template(text):
             return "ultraschall_gezielte_blockade"
         if any(x in text_lower for x in ["nerv", "neuro", "suralis"]):
             return "sonografie_nerv_allgemein"
+        # Unterschenkel-Weichteil-Sono (v2.10.13-fix2, Peter: eigenes Template)
+        if "unterschenkel" in text_lower:
+            return "sonografie_unterschenkel"
         # Sonographie Allgemein
         return "sonografie_allgemein"
 
