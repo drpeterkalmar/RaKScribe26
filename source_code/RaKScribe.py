@@ -406,7 +406,7 @@ def load_templates():
 RADIOLOGY_TEMPLATES = load_templates()
 
 def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
-    """Befundtitel fuer Bypass & <untersuchung>-Embed (v2.10.12, Peter 09.09.).
+    """Befundtitel fuer Bypass & <untersuchung>-Embed (v2.10.12/13, Peter 09.09.).
 
     Generische Sammel-Templates (display_name mit '(Allgemein)') duerfen ihren
     internen Namen NICHT als Befundtitel ausgeben — dann wird die
@@ -416,16 +416,30 @@ def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
     """
     if not re.search(r"\(allgemein\)", display_name or "", re.I):
         return display_name
+    # v2.10.13 (K3-Review): Negations-Guard ("nicht unauffällig" kappselt das
+    # NICHT), Loop über alle Findings statt break, ':'-Strip,
+    # (Allgemein)-Leak aus dem Diktat entfernen, Newline-Falt, Cap 80.
     t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
+    t = re.sub(r"\s+", " ", t)
     t = re.sub(r"[.?!]\s*$", "", t).strip()
-    for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
-              r"ohne pathologischem Befund", r"kein pathologischer Befund",
-              r"regelrecht", r"normal"):
-        m = re.search(",?\s*" + f + "\s*$", t, re.I)
-        if m:
-            t = t[:m.start()].strip()
+    for _ in range(3):
+        stripped = False
+        for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
+                  r"ohne pathologischem Befund", r"kein pathologischer Befund",
+                  r"regelrecht", r"normal"):
+            m = re.search(r"(?:^|[\s,])" + f + r"\s*$", t, re.I)
+            if m:
+                pre = t[:m.start()].strip()
+                if re.search(r"\bnicht\s*$", pre, re.I):
+                    continue  # Negation: "nicht unauffällig" nicht kappseln
+                t = pre.strip()
+                stripped = True
+        if not stripped:
             break
-    t = t.rstrip(".,?!").strip()
+    t = re.sub(r"[.,?!:]+$", "", t).strip()
+    t = re.sub(r"\(\s*allgemein\s*\)", "", t, flags=re.I).strip()
+    if len(t) > 80:
+        t = t[:80].strip()
     return t or re.sub(r"\s*\(Allgemein\)", "", display_name, flags=re.I).strip()
 
 
@@ -566,7 +580,7 @@ def detect_template(text):
     if "fernröntgen" in text_lower or "fern-röntgen" in text_lower or "frs" in text_lower:
         return "schädelfernröntgen"
 
-    # 2b. Röntgen-Regionen mit eigenen Normalbefund-Templates (v2.10.12)
+    # 2b. Röntgen-Regionen mit eigenen Normalbefund-Templates (v2.10.12/13)
     if "orbita" in text_lower:
         return "orbita_pa_aufnahme"
     if any(x in text_lower for x in ["calcaneus", "kalkaneus", "ferse"]):
@@ -938,7 +952,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.12", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.10.13", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1368,9 +1382,13 @@ class RaKScribeApp(ctk.CTk):
             p_full = p_base.replace('{roh_text}', raw)
             p_full = p_full.replace('{template_body}', template_data['body'])
             p_full = p_full.replace('{region_name}', template_data['display_name'])
-            # Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.):
-            # roh diktierte Kurzformen ("Kniegelenk") dürfen die Bezeichnung ("Kniegelenk in 2 Ebenen") nicht verdrängen
-            p_full = p_full + "\n<untersuchung>" + derive_untersuchungs_titel(raw, template_data['display_name']) + "</untersuchung>\n"
+            # v2.10.13 (K3-Review Befund 2/3): Der LLM-Pfad bekommt die KANONISCHE
+            # Bezeichnung (display_name, inkl. "(Allgemein)"), damit die
+            # "(Allgemein)"-Ausnahme im Gen-Prompt ECHT feuern kann — bei
+            # pathologischen (Allgemein)-Diktaten leitet das LLM die Überschrift
+            # aus dem Diktat (ohne Befundworte), statt den Volltext als Titel zu
+            # bekommen. Der Bypass-Pfad (Zeile ~1351) bleibt bei derive.
+            p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
             
             # RAG Few-Shot Beispiele laden (limit=0 für Normalbefunde, limit=1 für pathologische Befunde)
             limit_examples = 0 if is_normal_finding(raw) else 1

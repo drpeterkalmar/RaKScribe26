@@ -6,6 +6,7 @@ Testet Generierung + Validierung mit pathologischen Diktaten pro Region.
 
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 import time
@@ -198,16 +199,28 @@ def derive_titel_harness(raw, display_name):
     '(Allgemein)'-Templates bekommen den Titel aus dem Diktat."""
     if not re.search(r"\(allgemein\)", display_name or "", re.I):
         return display_name
+    # v2.10.13-Sync: Negations-Guard, Loop statt break, ':'-Strip, Leak, Cap.
     t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
+    t = re.sub(r"\s+", " ", t)
     t = re.sub(r"[.?!]\s*$", "", t).strip()
-    for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
-              r"ohne pathologischem Befund", r"kein pathologischer Befund",
-              r"regelrecht", r"normal"):
-        m = re.search(",?\s*" + f + "\s*$", t, re.I)
-        if m:
-            t = t[:m.start()].strip()
+    for _ in range(3):
+        stripped = False
+        for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
+                  r"ohne pathologischem Befund", r"kein pathologischer Befund",
+                  r"regelrecht", r"normal"):
+            m = re.search(r"(?:^|[\s,])" + f + r"\s*$", t, re.I)
+            if m:
+                pre = t[:m.start()].strip()
+                if re.search(r"\bnicht\s*$", pre, re.I):
+                    continue
+                t = pre.strip()
+                stripped = True
+        if not stripped:
             break
-    t = t.rstrip(".,?!").strip()
+    t = re.sub(r"[.,?!:]+$", "", t).strip()
+    t = re.sub(r"\(\s*allgemein\s*\)", "", t, flags=re.I).strip()
+    if len(t) > 80:
+        t = t[:80].strip()
     return t or re.sub(r"\s*\(Allgemein\)", "", display_name, flags=re.I).strip()
 
 

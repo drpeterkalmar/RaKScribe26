@@ -227,13 +227,24 @@ const MEDICAL_PHRASES = [
 // Befundtitel ausgeben (Peter 09.09.) → Titel aus dem Diktat, Befund-Worte gestrippt.
 function deriveUntersuchungsTitel(raw: string, displayName: string): string {
   if (!/\(allgemein\)/i.test(displayName || "")) return displayName;
-  let t = (raw || "").trim().replace(/\bHW\b/g, "HWS").replace(/[.?!]\s*$/, "").trim();
-  const findings = ["unauff(?:ae|ä)llig", "o\\.?\\s?B\\.?", "ohne pathologischen Befund", "ohne pathologischem Befund", "kein pathologischer Befund", "regelrecht", "normal"];
-  for (const f of findings) {
-    const m = t.match(new RegExp(",?\\s*" + f + "\\s*$", "i"));
-    if (m) { t = t.slice(0, (m.index ?? 0)).trim(); break; }
+  // v2.10.13 (K3-Review): optionale Umlaut-Gruppe (STT-Typo "unauffllig"), Negations-Guard
+  // ("nicht unauffällig" kappselt das NICHT), Newline-Falt, ':'-Strip, (Allgemein)-Leak, Cap 80.
+  let t = (raw || "").trim().replace(/\bHW\b/g, "HWS").replace(/\s+/g, " ").replace(/[.?!]\s*$/, "").trim();
+  const findings = ["unauff(?:ae|ä)?llig", "o\\.?\\s?B\\.?", "ohne pathologischen Befund", "ohne pathologischem Befund", "kein pathologischer Befund", "regelrecht", "normal"];
+  for (let round = 0; round < 3; round++) {
+    let stripped = false;
+    for (const f of findings) {
+      const m = t.match(new RegExp("(?:^|[\\s,])" + f + "\\s*$", "i"));
+      if (m) {
+        const pre = t.slice(0, (m.index ?? 0)).trim();
+        if (/\bnicht\s*$/i.test(pre)) continue; // Negation: "nicht unauffällig" nicht kappseln
+        t = pre; stripped = true;
+      }
+    }
+    if (!stripped) break;
   }
-  t = t.replace(/[.,?!]+$/, "").trim();
+  t = t.replace(/[.,?!:]+$/, "").replace(/\(\s*allgemein\s*\)/gi, "").trim();
+  if (t.length > 80) t = t.slice(0, 80).trim();
   return t || displayName.replace(/\s*\(Allgemein\)/i, "").trim();
 }
 
@@ -419,7 +430,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-09-titel-aus-diktat';
+const PROMPT_VERSION = '2026-09-09-allgemein-ausnahme-echt';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -1589,15 +1600,20 @@ Korrigiert:`;
 
     setStatusText("Strukturiere mit Gemini...");
 
-    const unterTitel = deriveUntersuchungsTitel(rawText, regionName);
+    // v2.10.13 (K3-Review Befund 2): Der LLM-Pfad bekommt die KANONISCHE Bezeichnung
+    // (display_name, inkl. "(Allgemein)"), damit die "(Allgemein)"-Ausnahme im
+    // Gen-Prompt ECHT feuern kann — bei pathologischen (Allgemein)-Diktaten leitet
+    // das LLM die Überschrift aus dem Diktat (ohne Befundworte), statt den
+    // Volltext als Titel zu bekommen. Der Bypass-Pfad (ohne LLM) bleibt bei
+    // deriveUntersuchungsTitel — dort muss der Titel deterministisch entstehen.
     let promptText = systemPrompt
       .replace("{roh_text}", rawText)
       .replace("{template_body}", templateBody)
-      .replace("{region_name}", unterTitel);
+      .replace("{region_name}", regionName);
 
     // Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.: roh diktierte
     // Kurzformen wie "Kniegelenk" dürfen die Bezeichnung nicht verdrängen)
-    promptText = promptText + `\n<untersuchung>${unterTitel}</untersuchung>\n`;
+    promptText = promptText + `\n<untersuchung>${regionName}</untersuchung>\n`;
 
     if (promptText.includes("{examples}")) {
       promptText = promptText.replace("{examples}", examples);
@@ -2244,7 +2260,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.12</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.13</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2332,7 +2348,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.12</span>
+              <span className="brand-badge">Web v2.10.13</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

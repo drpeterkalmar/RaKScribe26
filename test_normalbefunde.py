@@ -224,14 +224,30 @@ else:
 _peters_raw = "Unterschenkel-Sonographie rechts unauffällig."
 def _derive_titel(raw: str, dn: str) -> str:
     # Sync mit derive_untersuchungs_titel (RaKScribe.py) / deriveUntersuchungsTitel (App.tsx)
+    # v2.10.13: optionale Umlaut-Gruppe, Negations-Guard, ':'-Strip, Loop-Strip.
     if "(allgemein)" not in dn.lower():
         return dn
-    t = raw.strip()
+    t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
+    t = re.sub(r"\s+", " ", t)
     t = re.sub(r"[.?!]\s*$", "", t).strip()
-    m = re.search(r",?\s*unauff(?:ae|ä)llig\s*$", t, re.I)
-    if m:
-        t = t[:m.start()].strip()
-    t = t.rstrip(".,?!").strip()
+    for _ in range(3):
+        stripped = False
+        for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
+                  r"ohne pathologischem Befund", r"kein pathologischer Befund",
+                  r"regelrecht", r"normal"):
+            m = re.search(r"(?:^|[\s,])" + f + r"\s*$", t, re.I)
+            if m:
+                pre = t[:m.start()].strip()
+                if re.search(r"\bnicht\s*$", pre, re.I):
+                    continue
+                t = pre.strip()
+                stripped = True
+        if not stripped:
+            break
+    t = re.sub(r"[.,?!:]+$", "", t).strip()
+    t = re.sub(r"\(\s*allgemein\s*\)", "", t, flags=re.I).strip()
+    if len(t) > 80:
+        t = t[:80].strip()
     return t or re.sub(r"\s*\(Allgemein\)", "", dn, flags=re.I).strip()
 _t = TPL["sonografie_allgemein"]["body"].split("\n")
 _p_title = _derive_titel(_peters_raw, _t[0].strip().rstrip(":"))
