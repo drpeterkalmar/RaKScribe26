@@ -155,7 +155,7 @@ def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
         data = json.loads(resp.read())
     if "error" in data:
         raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
-    text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+    text = "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not p.get("thought"))
     return text.strip()
 
 

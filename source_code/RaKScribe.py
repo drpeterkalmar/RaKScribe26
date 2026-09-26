@@ -895,6 +895,16 @@ CHIRP_PHRASES = [
 ]
 
 
+def _report_complete(t):
+    """v2.11.1: vollständig = '## Befund' + nicht-leeres '## Ergebnis'."""
+    t = t or ""
+    if "## Ergebnis" not in t or len(t.split("## Ergebnis")[1].strip()) <= 5:
+        return False
+    pre = t.split("## Ergebnis")[0]
+    body = pre.split("## Befund")[1] if "## Befund" in pre else "\n".join(l for l in pre.splitlines() if not l.strip().startswith("#"))
+    return len(body.strip()) > 20
+
+
 def _chirp3_request(token, loc, wav_b64, timeout=60):
     import urllib.request as _ur
     host = 'speech' if loc == 'global' else loc + '-speech'
@@ -990,7 +1000,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.11.0)")
+        self.title("RaKScribe26 (v2.11.1)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -1040,7 +1050,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.11.0", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.11.1", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1517,15 +1527,34 @@ class RaKScribeApp(ctk.CTk):
                         # Gemini dynamisch mit: Befund 7 s → ~1,5 s, gleiche Qualität (90-Fall-A/B).
                         "generationConfig": {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}},
                     }).encode()
-                    req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
-                    with urllib.request.urlopen(req, timeout=120) as resp:
-                        result = json.loads(resp.read())
-                    if "error" in result:
-                        raise Exception(result["error"].get("message", result["error"]))
-                    report = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    # Markdown-Zäune strippen (Gemini wickelt Befunde gelegentlich in ``` ein)
-                    report = re.sub(r'^```[a-zA-Z]*\s*\n?', '', report)
-                    report = re.sub(r'\n?```\s*$', '', report).strip()
+                    # v2.11.1 HOTFIX: ALLE Text-parts zusammensetzen (Gemini 3.5 splittet Antworten, z.B. '## L' | 'endenwirbel…')
+                    # + Vollständigkeits-Check (## Befund + ## Ergebnis, finishReason STOP) + bis zu 3 Versuche bei Fehler/Unvollständigkeit.
+                    report, last_err = "", None
+                    for _attempt in range(3):
+                        try:
+                            req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
+                            with urllib.request.urlopen(req, timeout=120) as resp:
+                                result = json.loads(resp.read())
+                            if "error" in result:
+                                raise Exception(result["error"].get("message", result["error"]))
+                            cand = result["candidates"][0]
+                            txt = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", [])
+                                          if isinstance(p.get("text"), str) and not p.get("thought")).strip()
+                            txt = re.sub(r'^```[a-zA-Z]*\s*\n?', '', txt)
+                            txt = re.sub(r'\n?```\s*$', '', txt).strip()
+                            if _report_complete(txt) and cand.get("finishReason", "STOP") == "STOP":
+                                report = txt
+                                break
+                            last_err = Exception("Befund unvollständig (## Ergebnis fehlt)")
+                            print(f"[GEN] Versuch {_attempt + 1}: Befund unvollständig — neuer Versuch")
+                        except Exception as _e:
+                            last_err = _e
+                            if "401" in str(_e) or "Unauthorized" in str(_e):
+                                break
+                            print(f"[GEN] Versuch {_attempt + 1} fehlgeschlagen: {_e}")
+                            time.sleep(2 * (_attempt + 1))
+                    if not report:
+                        raise last_err or Exception("Gemini lieferte keinen Befund")
                     self.after(0, lambda r=report: (
                         self.result_text.delete("1.0", "end"),
                         self.result_text.insert("1.0", r)
@@ -1564,6 +1593,14 @@ class RaKScribeApp(ctk.CTk):
                             self.result_text.insert("1.0", r)
                         ))
 
+            # v2.11.1 (Prüfbericht W4): leeren/unvollständigen Befund NIE ins Zielprogramm einfügen
+            if not _report_complete(report):
+                self.after(0, lambda: (
+                    self.update_status("ERROR", "busy"),
+                    self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
+                    self.level_indicator.configure(fg_color=READY_GREEN, width=0)
+                ))
+                return
             # Nach erfolgreichem Streaming
             self.after(0, lambda: (
                 self.update_status("READY", "ready"),

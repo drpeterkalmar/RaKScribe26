@@ -77,8 +77,9 @@ def asr(wav: pathlib.Path) -> str:
     tmp = pathlib.Path("/tmp/suite_asr.json")
     tmp.write_text(json.dumps(body))
     req = urllib.request.Request(
-        "https://aiplatform.googleapis.com/v1/projects/rakscribe/locations/global/"
-        "publishers/google/models/gemini-3.8-flash:generateContent",
+        # Test-ASR (nur Hilfsmittel, nicht App-Pfad): 3.8 global hatte am 26.09. wiederholt 18–100 s + Timeouts → 3.5 EU
+        "https://aiplatform.eu.rep.googleapis.com/v1/projects/rakscribe/locations/eu/"
+        "publishers/google/models/gemini-3.5-flash:generateContent",
         data=tmp.read_bytes(), headers={"Content-Type": "application/json",
                                         "Authorization": "Bearer " + sa_token()})
     with urllib.request.urlopen(req, timeout=180) as r:

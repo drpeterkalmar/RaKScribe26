@@ -60,7 +60,7 @@ def gemini(prompt, temp=0.0, tries=4):
                 raise
         if "error" in data:
             raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
-        return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+        return "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not p.get("thought")).strip()
     raise Exception("Gemini: keine Antwort nach Retries")
 
 def check_report(final, label):

@@ -32,6 +32,29 @@ const templates = templatesData as TemplatesMap;
 // v2.11.0 (26.09.2026): gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz + EU-Verarbeitung).
 // A/B 54 Fall-Läufe: Normalbefund-Treue 84,5 % → 93,7 %, fehlende '## Befund'-Überschrift 6 → 0, FAIL 0.
 // gemini-2.5-flash wird von Google abgeschaltet (Phase 1: 20.10.2026).
+// v2.11.1 HOTFIX: Gemini 3.5 teilt Antworten gelegentlich in mehrere parts auf ('## L' | 'endenwirbelsäule…').
+// Immer ALLE Text-parts zusammensetzen (Thinking-parts ausgenommen) — nie nur parts[0] lesen.
+const joinGeminiText = (data: any): string =>
+  (data?.candidates?.[0]?.content?.parts || [])
+    .filter((p: any) => typeof p?.text === 'string' && !p?.thought)
+    .map((p: any) => p.text)
+    .join('');
+
+// v2.11.1: Ein Befund gilt nur als vollständig, wenn '## Befund' UND ein nicht-leeres '## Ergebnis' vorhanden sind
+// und Gemini regulär beendet hat (finishReason STOP). Sonst: Retry bzw. Fallback — NIE Halb-Befunde ausgeben.
+const geminiFinishedOk = (data: any): boolean => {
+  const fr = data?.candidates?.[0]?.finishReason;
+  return !fr || fr === 'STOP';
+};
+// Vollständig = nicht-leeres '## Ergebnis' mit Befundtext davor ('## Befund' fehlt beim Prod-Prompt gelegentlich — kein Abbruchgrund).
+const befundSection = (t: string): string => {
+  const pre = t.split('## Ergebnis')[0];
+  const body = pre.includes('## Befund') ? pre.split('## Befund')[1] : pre.split('\n').filter(l => !l.trim().startsWith('#')).join('\n');
+  return body.trim();
+};
+const isCompleteReport = (t: string): boolean =>
+  t.includes('## Ergebnis') && t.split('## Ergebnis')[1].trim().length > 5 && befundSection(t).length > 20;
+
 const VERTEX_ENDPOINT = 'https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent';
 
 // Speech-Context Phrasen für Google STT (medizinischer Jargon, boost 15.0)
@@ -433,7 +456,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-26-gemini35-call0-woertlich';
+const PROMPT_VERSION = '2026-09-26-v2111-hotfix';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -1615,7 +1638,7 @@ const chirp3Recognize = async (token: string, wavB64: string): Promise<string> =
 - "Neoarthrosen interspinosa" / "Neoarthrose interspinosa" / "Näoarthrosen interspinosa" → "Neoarthrosis interspinosa" (NEOART HROSE der Dornfortsätze, LWS-Kontext; Singular, lateinische Form)
 - "Flachbau" / "Flachbau-" → "flachbogig" (z.B. "Flachbau linkskonvex" → "flachbogig linkskonvex")
 - "Flachbild" / "Flachbogen" (Wirbelsäulen-Kontext, vor Skoliose/konvex) → "flachbogig"
-- "Cobbs-Winkel" / "Cobbs Winkel" / "Kopfwinkel" / "Copfwinkel" (Skoliose-Kontext) → "Cobb-Winkel"
+- "Cobbs-Winkel" / "Cobbs Winkel" / "Copfwinkel" / "lateraler Kopfwinkel" / "Kopfwinkel nach Cobb" → "Cobb-Winkel" (NUR Wirbelsäule/Skoliose; ein alleinstehendes "Kopfwinkel" z.B. an der Hüfte NIE ändern)
 - "DH4" / "TH4" / "D4" (Wirbelsäule, analog für alle Zahlen 1–12) → "Th4" (Brustwirbel IMMER "Th" + Zahl)
 - "Edgren-Veno" / "Edgren-Venu" / "Edgren-Vanno" / "Edgren-Veyno" → "Edgren-Vaino"
 - "Mammasono kaffil" / "Mammasono graphie" → "Mammasonographie"
@@ -1677,10 +1700,15 @@ Korrigiert:`;
         return rawText;
       }
 
-      const corrected = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      const corrected = joinGeminiText(data).trim();
       console.log(`[CORRECT] Raw: "${rawText.substring(0, 100)}..."`);
       console.log(`[CORRECT] Corrected: "${corrected.substring(0, 100)}..."`);
-      return corrected || rawText;
+      // v2.11.1: abgeschnittene/verkürzte Korrektur NIE übernehmen (sonst fehlt der Diktat-Rest stillschweigend)
+      if (!corrected || !geminiFinishedOk(data) || corrected.length < rawText.trim().length * 0.6) {
+        console.warn('[CORRECT] Korrektur unvollständig/verkürzt — verwende Rohtext');
+        return rawText;
+      }
+      return corrected;
     } catch (e: any) {
       console.warn('[CORRECT] Correction failed:', e.message);
       return rawText;
@@ -1724,10 +1752,7 @@ Korrigiert:`;
 
     const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Setze zuerst eine ##-Überschrift mit der Untersuchungsart, dann ## Befund und ## Ergebnis als Haupttitel.";
 
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
+    const lastGenBody = JSON.stringify({
         contents: [{
           role: "user",
           parts: [{
@@ -1743,7 +1768,11 @@ Korrigiert:`;
           temperature: 0.0,
           thinkingConfig: { thinkingBudget: 0 }
         }
-      })
+      });
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: authHeaders,
+      body: lastGenBody,
     }, 120_000, 3);
 
     const data = await response.json();
@@ -1751,9 +1780,19 @@ Korrigiert:`;
       throw new Error(data.error.message || "Gemini API Fehler.");
     }
 
-    const outputText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    // Markdown-Zäune strippen (Gemini wickelt Befunde gelegentlich in ``` ein)
-    return stripCodeFences(outputText);
+    let outputText = stripCodeFences(joinGeminiText(data));
+    // v2.11.1: unvollständige Antwort (kein ## Ergebnis / abgebrochen) → EINMAL neu anfordern, sonst Fehler statt Halb-Befund
+    if (!isCompleteReport(outputText) || !geminiFinishedOk(data)) {
+      console.warn('[GEN] Befund unvollständig — zweiter Versuch');
+      const r2 = await fetchWithRetry(url, { method: 'POST', headers: authHeaders, body: lastGenBody }, 120_000, 2);
+      const d2 = await r2.json();
+      const t2 = d2.error ? '' : stripCodeFences(joinGeminiText(d2));
+      if (!isCompleteReport(t2)) {
+        throw new Error('Gemini lieferte zweimal einen unvollständigen Befund (Ergebnis fehlt). Bitte Diktat erneut strukturieren.');
+      }
+      outputText = t2;
+    }
+    return outputText;
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1780,6 +1819,8 @@ Korrigiert:`;
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
+9. NORMALBEFUND ERHALTEN: Entferne NIEMALS Template-/Normalbefund-Sätze, die keiner diktierten Pathologie widersprechen — auch nicht zur Kürzung (z.B. Oberarm-/Unterarm-Abschnitte einer Nervensonographie bleiben vollständig stehen).
+10. DIAGNOSEBEGRIFFE NIE ERSETZEN: Jede diktierte Diagnose bleibt im Ergebnis in der DIKTIERTEN Wortwahl als eigener Punkt (\"Gelenksarthrose C3 bis C5\" bleibt so — NICHT \"Facettengelenksarthrose\" oder \"Uncovertebralarthrose\"). \"Bild wie bei [Diagnose]\" bleibt \"Bild wie bei\", NIE zurück zu \"vereinbar mit\". Messwerte wie CSA gehören NICHT ins Ergebnis. AUSNAHME zur Wortwahl: Steht im generierten Ergebnis \"Bild wie bei [Diagnose]\", ist das die PFLICHT-Umsetzung von diktiertem \"vereinbar mit\"/\"kompatibel mit\" — NIEMALS entfernen, sonst wird aus einer Verdachtsdiagnose eine gesicherte.
 8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite. Enthält die Überschrift '(Allgemein)', ersetze sie durch die aus dem Diktat abgeleitete Untersuchungsbezeichnung (ohne Befundworte wie 'unauffällig') — '(Allgemein)' selbst darf nie als Titel stehen.
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
@@ -1813,8 +1854,15 @@ Korrigierter Befund:`;
         return generatedReport;
       }
 
-      const validated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      if (!validated || !validated.includes('## Befund')) {
+      const validated = joinGeminiText(data).trim();
+      // v2.11.1 (Prüfbericht K2): Validator kürzte bei Nervensono 1245 → 152 Zeichen (Normalbefund weg) → verwerfen
+      const befLenIn = befundSection(generatedReport).length;
+      const befLenOut = befundSection(validated).length;
+      if (validated && isCompleteReport(validated) && befLenIn > 0 && befLenOut < befLenIn * 0.7) {
+        console.warn(`[VALIDATE] Befund zu stark gekürzt (${befLenIn} → ${befLenOut}) — verwende Call-#1-Befund`);
+        return generatedReport;
+      }
+      if (!validated || !isCompleteReport(validated) || !geminiFinishedOk(data)) {
         console.warn('[VALIDATE] Validation output invalid, using original');
         return generatedReport;
       }
@@ -1822,13 +1870,31 @@ Korrigierter Befund:`;
       // Markdown-Zäune strippen (Gemini wickelt Befunde gelegentlich in ``` ein)
       const clean = stripCodeFences(validated);
 
+      // v2.11.1: 'Bild wie bei' (= diktiertes 'vereinbar mit') darf der Validator NIE entfernen — sonst wird aus
+      // einer Verdachtsdiagnose eine gesicherte (Test: 'vereinbar mit Karpaltunnelsyndrom' → Call2 'Karpaltunnelsyndrom').
+      const restoreBildWieBei = (orig: string, val: string): string => {
+        if (!orig.includes('## Ergebnis') || !val.includes('## Ergebnis')) return val;
+        const [valHead, valErgRaw] = [val.split('## Ergebnis')[0], val.split('## Ergebnis').slice(1).join('## Ergebnis')];
+        let valErg = valErgRaw;
+        const origErg = orig.split('## Ergebnis').slice(1).join('## Ergebnis');
+        for (const m of origErg.matchAll(/Bild wie bei ([^.\n]+)/g)) {
+          const diag = m[1].trim();
+          if (!diag || valErg.includes('Bild wie bei ' + diag)) continue;
+          const idx = valErg.indexOf(diag);
+          if (idx >= 0) valErg = valErg.slice(0, idx) + 'Bild wie bei ' + valErg.slice(idx);
+        }
+        return valHead + '## Ergebnis' + valErg;
+      };
+      const restored = restoreBildWieBei(generatedReport, clean);
+      if (restored !== clean) console.warn('[VALIDATE] "Bild wie bei" wiederhergestellt');
+
       // Check if validation changed anything
-      if (clean.trim() === generatedReport.trim()) {
+      if (restored.trim() === generatedReport.trim()) {
         console.log('[VALIDATE] Befund war bereits fehlerfrei ✅');
       } else {
         console.log('[VALIDATE] Befund wurde korrigiert ⚠️');
       }
-      return clean;
+      return restored;
     } catch (e: any) {
       console.warn('[VALIDATE] Validation failed:', e.message);
       return generatedReport;
@@ -2361,7 +2427,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.11.0</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.11.1</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2449,7 +2515,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.11.0</span>
+              <span className="brand-badge">Web v2.11.1</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>
