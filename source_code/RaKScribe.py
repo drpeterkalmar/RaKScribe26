@@ -202,13 +202,26 @@ def _read_text_robust(path):
         raw = raw[3:]
     return raw.decode('utf-8', errors='replace')
 
+USER_KEY_DIR = os.path.join(os.environ.get('APPDATA') or os.path.expanduser('~'), 'RaKScribe')
+USER_KEY_PATH = os.path.join(USER_KEY_DIR, 'rakscribe-praxis-key.json')
+
+
+def _praxis_key_path():
+    # v3.0: neben der EXE (wie bisher) ODER im Benutzerprofil (%APPDATA%\RaKScribe, per Menü geladen —
+    # überlebt EXE-Updates, kein erneutes Kopieren nach jedem Download).
+    for p in (os.path.join(BASE_DIR, 'rakscribe-praxis-key.json'), USER_KEY_PATH):
+        if os.path.exists(p):
+            return p
+    return None
+
+
 def _load_praxis_key():
     # EIN-Key-Setup (v2.9.9): rakscribe-praxis-key.json = {"vertex_api_key": "AQ...",
-    # "stt": {SA-JSON}} — dieselbe Datei wie im Web-Login (v2.9.4). EINE Datei
+    # "stt": {SA-JSON}} — dieselbe Datei wie im Web (v2.9.4). EINE Datei
     # versorgt Gemini UND Speech-to-Text. Liefert (gemini_key, stt_dict).
-    p = os.path.join(BASE_DIR, 'rakscribe-praxis-key.json')
+    p = _praxis_key_path()
     try:
-        if os.path.exists(p):
+        if p:
             data = json.loads(_read_text_robust(p))
             gk = str(data.get('vertex_api_key') or '').strip()
             stt = data.get('stt') if isinstance(data.get('stt'), dict) else None
@@ -987,22 +1000,47 @@ def _chirp3_worker(pcm_int16, samplerate, loc, token):
         full = _stitch_overlaps(full, nxt)
     return full
 
-# === CUSTOM COLORS (Deepc AIR Inspired) ===
-BGC_MAIN = "#0B0D17"
-BGC_CARD = "#16192C"
-ACCENT_PURPLE = "#8C52FF"
-BORDER_COLOR = "#2D314D"
-READY_GREEN = "#12B76A"
-RECORDING_RED = "#F04438"
-TEXT_PRIMARY = "#E0E0E0"
+# === v3.0 DESIGN-TOKENS (ruhig, kontrastreich, für abgedunkelte Befundräume) ===
+BGC_MAIN = "#0D1016"
+BGC_ELEV = "#141821"
+BGC_CARD = "#171C26"
+BGC_INPUT = "#10141C"
+BORDER_COLOR = "#262D3B"
+BORDER_STRONG = "#343D50"
+ACCENT_PURPLE = "#4F8CFF"      # Name historisch — v3.0 Akzent ist Blau
+ACCENT_HOVER = "#3F7AF0"
+READY_GREEN = "#2FBF71"
+WARN_AMBER = "#F2A93B"
+RECORDING_RED = "#EF4444"
+TEXT_PRIMARY = "#E8EBF1"
+TEXT_MUTED = "#9AA3B5"
+TEXT_FAINT = "#8791A6"
+UI_FONT = "Segoe UI"
+STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
+    "READY": ("Bereit", READY_GREEN, "#15261F"),
+    "RECORDING": ("Aufnahme läuft", RECORDING_RED, "#2E1618"),
+    "PROCESSING": ("Befund wird erstellt…", WARN_AMBER, "#2D2413"),
+    "COPIED": ("Kopiert & eingefügt", READY_GREEN, "#15261F"),
+    "ERROR": ("Fehler", RECORDING_RED, "#2E1618"),
+    "LOCKED": ("Gesperrt – Schlüssel fehlt", TEXT_FAINT, "#1B2030"),
+}
+
+
+def keys_ready():
+    """v3.0: App ist nur bedienbar, wenn Gemini- UND STT-Schlüssel vorhanden sind."""
+    return bool(_load_vertex_key()) and (_SA_CREDENTIALS is not None or speech_client is not None)
+
 
 class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.11.1)")
-        self.geometry("1100x800")
+        self.title("RaKScribe 3.0 – Röntgen am Kai")
+        self.geometry("1240x820")
+        self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
+        self._status_raw = "READY"
+        self.gate = None
 
         # Audio settings
         self.samplerate = 16000
@@ -1041,109 +1079,247 @@ class RaKScribeApp(ctk.CTk):
 
         self.create_widgets()
         self.register_hotkey()
+        self.after(150, self.refresh_key_state)
 
     def create_widgets(self):
-        # Header Area
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.pack(fill="x", padx=30, pady=(30, 10))
+        # ── Kopfzeile ───────────────────────────────────────────────
+        header = ctk.CTkFrame(self, fg_color=BGC_ELEV, corner_radius=0, height=64,
+                              border_width=0)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        ctk.CTkFrame(self, fg_color=BORDER_COLOR, height=1, corner_radius=0).pack(fill="x")
 
-        title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
-        title_label.pack(side="left")
+        brand = ctk.CTkFrame(header, fg_color="transparent")
+        brand.pack(side="left", padx=(20, 0))
+        ctk.CTkLabel(brand, text="≋", width=34, height=34, corner_radius=10, fg_color=ACCENT_PURPLE,
+                     text_color="white", font=(UI_FONT, 18, "bold")).pack(side="left")
+        names = ctk.CTkFrame(brand, fg_color="transparent")
+        names.pack(side="left", padx=(10, 8))
+        ctk.CTkLabel(names, text="RaKScribe", font=(UI_FONT, 16, "bold"), text_color=TEXT_PRIMARY,
+                     height=18, anchor="w").pack(anchor="w")
+        ctk.CTkLabel(names, text="Röntgen am Kai", font=(UI_FONT, 11), text_color=TEXT_FAINT,
+                     height=14, anchor="w").pack(anchor="w")
+        ctk.CTkLabel(brand, text=" v3.0 ", font=(UI_FONT, 11, "bold"), text_color=ACCENT_PURPLE,
+                     fg_color="#1A2640", corner_radius=9, height=20).pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.11.1", font=("Segoe UI", 12), text_color="#707070")
-        version_label.pack(side="left", padx=(5, 10))
-
-        self.status_badge = ctk.CTkLabel(header, text=" READY ", 
-                                         font=("Segoe UI", 12, "bold"),
-                                         fg_color=READY_GREEN,
-                                         text_color="white",
-                                         corner_radius=6)
-        self.status_badge.pack(side="left", padx=20)
-
-        # Active Engine Label
-        engine_str = f"Engine: {STT_ENGINE.upper()}"
-        self.engine_label = ctk.CTkLabel(header, text=engine_str, font=("Segoe UI", 12, "italic"), text_color="#A0A0A0")
-        self.engine_label.pack(side="left", padx=10)
-
-        # Eingabegerät Dropdown
-        self.device_dropdown = ctk.CTkComboBox(header, values=self.device_names, command=self.on_device_changed, width=280)
+        right = ctk.CTkFrame(header, fg_color="transparent")
+        right.pack(side="right", padx=(0, 20))
+        self.menu_btn = ctk.CTkButton(right, text="☰", width=38, height=36, corner_radius=9,
+                                      fg_color="transparent", hover_color=BGC_CARD, border_width=1,
+                                      border_color=BORDER_COLOR, text_color=TEXT_MUTED,
+                                      font=(UI_FONT, 16), command=self.open_menu)
+        self.menu_btn.pack(side="right")
+        self.device_dropdown = ctk.CTkComboBox(right, values=self.device_names, command=self.on_device_changed,
+                                               width=250, height=36, corner_radius=9, fg_color=BGC_INPUT,
+                                               border_color=BORDER_COLOR, button_color=BORDER_STRONG,
+                                               dropdown_fg_color=BGC_ELEV, font=(UI_FONT, 12),
+                                               dropdown_font=(UI_FONT, 12))
         self.device_dropdown.set(self.default_device_name)
-        self.device_dropdown.pack(side="right")
+        self.device_dropdown.pack(side="right", padx=10)
+        self.key_chip = ctk.CTkLabel(right, text="", font=(UI_FONT, 12, "bold"), corner_radius=12, height=26)
+        self.key_chip.pack(side="right")
+        # Engine-Info (historischer Name, liegt jetzt im Menü/Tooltip-Text)
+        self.engine_label = ctk.CTkLabel(right, text="", width=0)
 
-        # Main Paned Area (Live Transcription / Structured Report)
+        self.status_badge = ctk.CTkLabel(header, text="", font=(UI_FONT, 13, "bold"), corner_radius=15,
+                                         height=30, text_color=TEXT_PRIMARY)
+        self.status_badge.place(relx=0.5, rely=0.5, anchor="center")
+
+        # ── Arbeitsbereich: Diktat | Befund ─────────────────────────
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_container.pack(fill="both", expand=True, padx=25, pady=10)
-        self.main_container.grid_columnconfigure(0, weight=1)
-        self.main_container.grid_columnconfigure(1, weight=1)
+        self.main_container.pack(fill="both", expand=True, padx=18, pady=16)
+        self.main_container.grid_columnconfigure(0, weight=1, uniform="col")
+        self.main_container.grid_columnconfigure(1, weight=1, uniform="col")
         self.main_container.grid_rowconfigure(0, weight=1)
 
-        # LEFT CARD: Transcription
-        left_card = ctk.CTkFrame(self.main_container, fg_color=BGC_CARD, corner_radius=15, border_width=1, border_color=BORDER_COLOR)
-        left_card.grid(row=0, column=0, padx=5, sticky="nsew")
-        
-        ctk.CTkLabel(left_card, text="LIVE TRANSSKRIPTION", font=("Segoe UI", 11, "bold"), text_color="#707070").pack(anchor="w", padx=20, pady=(15, 5))
-        
-        self.transcript_text = ctk.CTkTextbox(left_card, font=("Segoe UI", 14), fg_color="transparent", text_color=TEXT_PRIMARY, wrap="word")
-        self.transcript_text.pack(fill="both", expand=True, padx=15, pady=10)
+        def card(col, title):
+            c = ctk.CTkFrame(self.main_container, fg_color=BGC_CARD, corner_radius=14,
+                             border_width=1, border_color=BORDER_COLOR)
+            c.grid(row=0, column=col, padx=(0, 8) if col == 0 else (8, 0), sticky="nsew")
+            head = ctk.CTkFrame(c, fg_color="transparent", height=44)
+            head.pack(fill="x", padx=16, pady=(8, 0))
+            head.pack_propagate(False)
+            ctk.CTkLabel(head, text=title, font=(UI_FONT, 12, "bold"), text_color=TEXT_MUTED).pack(side="left")
+            ctk.CTkFrame(c, fg_color=BORDER_COLOR, height=1, corner_radius=0).pack(fill="x", padx=1)
+            foot = ctk.CTkFrame(c, fg_color=BGC_ELEV, corner_radius=0, height=66)
+            foot.pack(side="bottom", fill="x", padx=1, pady=(0, 1))
+            foot.pack_propagate(False)
+            ctk.CTkFrame(c, fg_color=BORDER_COLOR, height=1, corner_radius=0).pack(side="bottom", fill="x", padx=1)
+            return c, head, foot
 
-        # RIGHT CARD: Structured Report
-        right_card = ctk.CTkFrame(self.main_container, fg_color=BGC_CARD, corner_radius=15, border_width=1, border_color=BORDER_COLOR)
-        right_card.grid(row=0, column=1, padx=5, sticky="nsew")
-        
-        ctk.CTkLabel(right_card, text="STRUKTURIERTER BEFUND", font=("Segoe UI", 11, "bold"), text_color="#707070").pack(anchor="w", padx=20, pady=(15, 5))
-        
-        self.result_text = ctk.CTkTextbox(right_card, font=("Segoe UI", 14), fg_color="transparent", text_color=TEXT_PRIMARY, wrap="word")
-        self.result_text.pack(fill="both", expand=True, padx=15, pady=10)
+        left_card, left_head, left_foot = card(0, "DIKTAT")
+        right_card, right_head, right_foot = card(1, "BEFUND")
 
-        # Footer Area: Level, Buttons
-        footer = ctk.CTkFrame(self, fg_color="transparent")
-        footer.pack(fill="x", padx=30, pady=30)
-
-        # Level bar
-        self.level_container = ctk.CTkFrame(footer, height=4, fg_color="#1E2235", corner_radius=2)
-        self.level_container.pack(fill="x", pady=(0, 20))
-        self.level_indicator = ctk.CTkFrame(self.level_container, width=0, height=4, fg_color=READY_GREEN, corner_radius=2)
+        # Pegel im Diktat-Kopf
+        self.level_container = ctk.CTkFrame(left_head, width=200, height=6, fg_color=BGC_INPUT, corner_radius=3)
+        self.level_container.pack(side="right", pady=19)
+        self.level_indicator = ctk.CTkFrame(self.level_container, width=0, height=6, fg_color=READY_GREEN, corner_radius=3)
         self.level_indicator.place(x=0, y=0)
 
-        # Controls
-        ctrl_frame = ctk.CTkFrame(footer, fg_color="transparent")
-        ctrl_frame.pack(fill="x")
+        box_kw = dict(font=(UI_FONT, 15), fg_color="transparent", text_color=TEXT_PRIMARY, wrap="word",
+                      border_width=0, scrollbar_button_color=BORDER_STRONG)
+        self.transcript_text = ctk.CTkTextbox(left_card, **box_kw)
+        self.transcript_text.pack(fill="both", expand=True, padx=10, pady=8)
+        self.result_text = ctk.CTkTextbox(right_card, **box_kw)
+        self.result_text.pack(fill="both", expand=True, padx=10, pady=8)
+        self._setup_report_formatting()
 
-        self.record_btn = ctk.CTkButton(ctrl_frame, text=" Aufnahme Starten (F10) ", 
-                                         height=50, width=220,
-                                         font=("Segoe UI", 14, "bold"),
-                                         fg_color=ACCENT_PURPLE,
-                                         hover_color="#7A45E5",
-                                         corner_radius=10,
-                                         command=self.toggle_recording)
-        self.record_btn.pack(side="left")
+        # Diktat-Fußzeile
+        self.record_btn = ctk.CTkButton(left_foot, text=" Aufnahme Starten (F10) ", height=44, width=230,
+                                        font=(UI_FONT, 14, "bold"), fg_color=ACCENT_PURPLE,
+                                        hover_color=ACCENT_HOVER, corner_radius=10, command=self.toggle_recording)
+        self.record_btn.pack(side="left", padx=14, pady=11)
+        ghost = dict(height=40, font=(UI_FONT, 13), fg_color="transparent", hover_color=BGC_CARD,
+                     border_width=1, border_color=BORDER_STRONG, text_color=TEXT_PRIMARY, corner_radius=10)
+        self.reset_btn = ctk.CTkButton(left_foot, text="↺  Neu (F9)", width=110, command=self.reset_dictation, **ghost)
+        self.reset_btn.pack(side="right", padx=14)
 
-        self.reset_btn = ctk.CTkButton(ctrl_frame, text=" Zurücksetzen (F9) ",
-                                        height=50,
-                                        font=("Segoe UI", 14),
-                                        fg_color="#2D314D",
-                                        hover_color="#E74C3C",
-                                        corner_radius=10,
-                                        command=self.reset_dictation)
-        self.reset_btn.pack(side="left", padx=10)
-
-        self.copy_btn = ctk.CTkButton(ctrl_frame, text=" Befund kopieren ",
-                                       height=50,
-                                       font=("Segoe UI", 14),
-                                       fg_color="#2D314D",
-                                       hover_color="#3D416D",
-                                       corner_radius=10,
-                                       command=self.copy_formatted_report)
-        self.copy_btn.pack(side="right", padx=10)
-
-        # Prompt Editing Toggle
-        self.prompt_toggle = ctk.CTkButton(ctrl_frame, text="⚙", width=50, height=50, 
-                                           fg_color="transparent", border_width=1, border_color=BORDER_COLOR,
-                                           command=self.toggle_prompt_view)
-        self.prompt_toggle.pack(side="right")
-
-        # Hidden Prompt View
+        # Befund-Fußzeile
+        ctk.CTkLabel(right_foot, text="Wird automatisch kopiert und eingefügt", font=(UI_FONT, 11),
+                     text_color=TEXT_FAINT).pack(side="left", padx=16)
+        self.copy_btn = ctk.CTkButton(right_foot, text="⧉  Befund kopieren", height=40, width=170,
+                                      font=(UI_FONT, 13, "bold"), fg_color=ACCENT_PURPLE, hover_color=ACCENT_HOVER,
+                                      corner_radius=10, command=self.copy_formatted_report)
+        self.copy_btn.pack(side="right", padx=14)
+        # historischer Name: Prompt-Editor liegt jetzt im Menü
+        self.prompt_toggle = self.menu_btn
         self.prompt_window = None
+        self.update_status("READY", "ready")
+
+    # ── v3.0: Befund-Formatierung (## versteckt, Überschriften fett) — Text bleibt Markdown für Kopieren ──
+    def _setup_report_formatting(self):
+        tb = self.result_text._textbox
+        tb.tag_configure("md_hidden", elide=True)
+        tb.tag_configure("md_title", font=(UI_FONT, 17, "bold"), foreground=ACCENT_PURPLE, spacing1=2, spacing3=6)
+        tb.tag_configure("md_head", font=(UI_FONT, 15, "bold"), foreground="#FFFFFF", spacing1=12, spacing3=4)
+        tb.configure(spacing2=3, padx=10, pady=8)
+        self.transcript_text._textbox.configure(spacing2=3, padx=10, pady=8)
+
+        def on_modified(_evt=None):
+            try:
+                if not tb.edit_modified():
+                    return
+                for tag in ("md_hidden", "md_title", "md_head"):
+                    tb.tag_remove(tag, "1.0", "end")
+                first = True
+                last = int(tb.index("end-1c").split(".")[0])
+                for ln in range(1, last + 1):
+                    line = tb.get(f"{ln}.0", f"{ln}.end")
+                    stripped = line.lstrip()
+                    if stripped.startswith("#"):
+                        lead = len(line) - len(stripped)
+                        hashes = len(stripped) - len(stripped.lstrip("#"))
+                        pre = lead + hashes + (1 if stripped[hashes:hashes + 1] == " " else 0)
+                        tb.tag_add("md_hidden", f"{ln}.0", f"{ln}.{pre}")
+                        tb.tag_add("md_title" if first else "md_head", f"{ln}.{pre}", f"{ln}.end")
+                        first = False
+                    elif stripped:
+                        first = False
+                tb.edit_modified(False)
+            except Exception:
+                pass
+
+        tb.bind("<<Modified>>", on_modified)
+
+    # ── v3.0: Menü ──
+    def open_menu(self):
+        m = tk.Menu(self, tearoff=0, bg=BGC_ELEV, fg=TEXT_PRIMARY, activebackground=BGC_CARD,
+                    activeforeground="#FFFFFF", bd=0, font=(UI_FONT, 11))
+        m.add_command(label="Schlüssel-Datei laden…", command=self.load_key_dialog)
+        if _praxis_key_path() == USER_KEY_PATH:
+            m.add_command(label="Gespeicherten Schlüssel entfernen", command=self.remove_user_key)
+        m.add_separator()
+        m.add_command(label="Prompt bearbeiten…", command=self.toggle_prompt_view)
+        m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
+            "https://drpeterkalmar.github.io/RaKScribe26/"))
+        m.add_separator()
+        m.add_command(label=f"STT: Google chirp_3 · LLM: Gemini 3.5 Flash (EU)", state="disabled")
+        m.add_command(label="F10 Aufnahme · F9 Neu", state="disabled")
+        x = self.menu_btn.winfo_rootx()
+        y = self.menu_btn.winfo_rooty() + self.menu_btn.winfo_height() + 4
+        try:
+            m.tk_popup(x - 250, y)
+        finally:
+            m.grab_release()
+
+    # ── v3.0: Schlüssel laden / Sperre ──
+    def load_key_dialog(self):
+        from tkinter import filedialog
+        import shutil
+        path = filedialog.askopenfilename(title="rakscribe-praxis-key.json wählen",
+                                          filetypes=[("Praxis-Schlüssel", "*.json"), ("Alle Dateien", "*.*")])
+        if not path:
+            return
+        try:
+            data = json.loads(_read_text_robust(path))
+            if not (str(data.get("vertex_api_key", "")).strip() and isinstance(data.get("stt"), dict)
+                    and data["stt"].get("private_key")):
+                raise ValueError("kein kombinierter Praxis-Schlüssel")
+            os.makedirs(USER_KEY_DIR, exist_ok=True)
+            shutil.copyfile(path, USER_KEY_PATH)
+        except Exception as e:
+            messagebox.showerror("Schlüssel nicht erkannt",
+                                 "Bitte rakscribe-praxis-key.json aus dem Drive-Ordner „RaKScribe“ wählen.\n\n"
+                                 f"Details: {e}")
+            return
+        global speech_client
+        speech_client = None
+        init_google_speech()
+        self.refresh_key_state()
+        if keys_ready():
+            messagebox.showinfo("Schlüssel geladen", "Praxis-Schlüssel gespeichert — RaKScribe ist bereit.\n"
+                                "Er bleibt auch nach EXE-Updates erhalten.")
+
+    def remove_user_key(self):
+        if not messagebox.askyesno("Schlüssel entfernen", "Gespeicherten Praxis-Schlüssel entfernen?"):
+            return
+        try:
+            os.remove(USER_KEY_PATH)
+        except Exception:
+            pass
+        global speech_client, _SA_CREDENTIALS
+        speech_client = None
+        _SA_CREDENTIALS = None
+        init_google_speech()
+        self.refresh_key_state()
+
+    def refresh_key_state(self):
+        ok = keys_ready()
+        if ok:
+            self.key_chip.configure(text="  ✓ Schlüssel aktiv  ", fg_color="#15261F", text_color=READY_GREEN)
+            if self.gate is not None:
+                self.gate.destroy()
+                self.gate = None
+            if not self.is_recording and self._status_raw in ("LOCKED", "READY"):
+                self.update_status("READY", "ready")
+            self.record_btn.configure(state="normal")
+        else:
+            self.key_chip.configure(text="  Kein Schlüssel  ", fg_color="#2D2413", text_color=WARN_AMBER)
+            self.record_btn.configure(state="disabled")
+            self.update_status("LOCKED", "ready")
+            self._show_gate()
+
+    def _show_gate(self):
+        if self.gate is not None:
+            return
+        self.gate = ctk.CTkFrame(self.main_container, fg_color=BGC_MAIN, corner_radius=0)
+        self.gate.place(relx=0, rely=0, relwidth=1, relheight=1)
+        box = ctk.CTkFrame(self.gate, fg_color=BGC_ELEV, corner_radius=18, border_width=1,
+                           border_color=BORDER_STRONG, width=460, height=330)
+        box.place(relx=0.5, rely=0.46, anchor="center")
+        box.pack_propagate(False)
+        ctk.CTkLabel(box, text="🔑", font=(UI_FONT, 30), width=58, height=58, corner_radius=16,
+                     fg_color="#1A2640").pack(pady=(28, 10))
+        ctk.CTkLabel(box, text="Praxis-Schlüssel laden", font=(UI_FONT, 20, "bold"),
+                     text_color=TEXT_PRIMARY).pack()
+        ctk.CTkLabel(box, text="RaKScribe ist gesperrt, bis der Schlüssel geladen ist.\n"
+                               "Datei: rakscribe-praxis-key.json (Drive-Ordner „RaKScribe“)",
+                     font=(UI_FONT, 13), text_color=TEXT_MUTED, justify="center").pack(pady=(8, 18))
+        ctk.CTkButton(box, text="Schlüssel-Datei wählen…", height=46, width=320, corner_radius=10,
+                      font=(UI_FONT, 14, "bold"), fg_color=ACCENT_PURPLE, hover_color=ACCENT_HOVER,
+                      command=self.load_key_dialog).pack()
+        ctk.CTkLabel(box, text="Einmal laden genügt — bleibt auch nach Updates gespeichert.",
+                     font=(UI_FONT, 11), text_color=TEXT_FAINT).pack(pady=(14, 0))
 
     def on_device_changed(self, choice):
         self.selected_device_index = self.device_mapping.get(choice, sd.default.device[0])
@@ -1174,12 +1350,12 @@ class RaKScribeApp(ctk.CTk):
             self.prompt_window.focus()
 
     def update_status(self, text, type="ready"):
-        if type == "ready":
-            self.status_badge.configure(text=f" {text.upper()} ", fg_color=READY_GREEN)
-        elif type == "busy":
-            self.status_badge.configure(text=f" {text.upper()} ", fg_color="#F39C12")
-        elif type == "recording":
-            self.status_badge.configure(text=f" {text.upper()} ", fg_color=RECORDING_RED)
+        raw = (text or "").upper()
+        self._status_raw = raw
+        label, dot, bg = STATUS_STYLE.get(raw, (text, {"busy": WARN_AMBER, "recording": RECORDING_RED}.get(type, READY_GREEN), "#1B2030"))
+        self.status_badge.configure(text=f"   ●  {label}   ", fg_color=bg, text_color=TEXT_PRIMARY)
+        # farbiger Punkt: CTkLabel kann nur eine Textfarbe → Pill-Rand über Hintergrund, Punkt in Textfarbe des Status
+        self.status_badge.configure(text_color=dot if raw in ("RECORDING", "ERROR", "PROCESSING", "LOCKED") else TEXT_PRIMARY)
 
     def update_recording_timer(self):
         if self.is_recording:
@@ -1188,7 +1364,7 @@ class RaKScribeApp(ctk.CTk):
             self.after(1000, self.update_recording_timer)
 
     def update_processing_timer(self):
-        if not self.is_recording and self.status_badge.cget("text").strip() == "PROCESSING":
+        if not self.is_recording and self._status_raw == "PROCESSING":
             elapsed = int(time.time() - self.processing_start_time)
             remaining = max(0, self.eta_seconds - elapsed)
             if remaining > 0:
@@ -1211,6 +1387,9 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
 
     def toggle_recording(self):
+        if not self.is_recording and not keys_ready():
+            self.refresh_key_state()
+            return
         if not speech_client:
             if not init_google_speech():
                 messagebox.showerror("Fehler", "Google Cloud Speech-to-Text konnte nicht initialisiert werden. Bitte prüfen Sie Ihre Credentials (JSON-Datei) und die Internetverbindung.")

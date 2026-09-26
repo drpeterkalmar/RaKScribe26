@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Aperture,
-  Mic,
-  MicOff,
-  Copy,
-  Check,
-  LogOut,
-  Lock,
-  ArrowRight,
-  Sparkles,
-  X,
-  Upload,
-  Download,
-  FileUp
+  Mic, MicOff, Copy, Check, Upload, Download, Sparkles, X, KeyRound, Menu, Trash2,
+  RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines
 } from 'lucide-react';
 import templatesData from './templates.json';
 
@@ -448,7 +437,9 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 }
 
 
-// Praxis-Login: erkennt Service-Account-JSON (roh oder Base64) sowie Vertex-API-Keys
+// v3.0: Kein Login mehr. Die App ist gesperrt, bis der Praxis-Schlüssel geladen ist (Drag & Drop irgendwo
+// ins Fenster oder Menü → „Schlüssel laden“). Erkennt praxis-key.json, SA-JSON (roh/Base64) und AQ.-Keys.
+// Beide Schlüssel bleiben lokal im Browser (localStorage) — nichts verlässt das Gerät außer zu Google.
 
 // Key-Generation-Marker: Bei Key-Rotation diesen Wert hochzählen. Gespeicherte
 // Keys mit älterer Markierung werden beim Start verworfen (Fix für veraltete
@@ -458,7 +449,7 @@ const KEY_VERSION = '2';
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
 const PROMPT_VERSION = '2026-09-26-v2111-hotfix';
 
-async function tryPraxisLogin(pw: string): Promise<boolean> {
+async function loadPraxisKey(pw: string): Promise<boolean> {
   if (!pw) return false;
   let candidate = pw;
 
@@ -477,7 +468,7 @@ async function tryPraxisLogin(pw: string): Promise<boolean> {
     localStorage.setItem('vertex_api_key', candidate);
     localStorage.setItem('key_version', KEY_VERSION);
     window.dispatchEvent(new Event('vertex-key-external'));
-    console.log('[LOGIN] Vertex API-Key erkannt');
+    console.log('[KEY] Vertex API-Key erkannt');
     return true;
   }
 
@@ -486,8 +477,10 @@ async function tryPraxisLogin(pw: string): Promise<boolean> {
     if (json.type === 'service_account' && json.private_key) {
       // STT-Key global verfügbar machen (App setzt ihn beim Mount via Event)
       (window as any).__praxisSttKey = json;
+      localStorage.setItem('praxis_stt_key', JSON.stringify(json));
+      localStorage.setItem('key_version', KEY_VERSION);
       window.dispatchEvent(new Event('praxis-stt-key'));
-      console.log('[LOGIN] STT Service-Account-Key erkannt');
+      console.log('[KEY] STT Service-Account-Key erkannt');
       return true;
     }
     if (json.vertex_api_key && json.stt && json.stt.private_key) {
@@ -495,28 +488,57 @@ async function tryPraxisLogin(pw: string): Promise<boolean> {
       localStorage.setItem('vertex_api_key', json.vertex_api_key);
       localStorage.setItem('key_version', KEY_VERSION);
       (window as any).__praxisSttKey = json.stt;
+      localStorage.setItem('praxis_stt_key', JSON.stringify(json.stt));
       window.dispatchEvent(new Event('vertex-key-external'));
       window.dispatchEvent(new Event('praxis-stt-key'));
-      console.log('[LOGIN] Kombinierter Praxis-Key erkannt (LLM + STT)');
+      console.log('[KEY] Kombinierter Praxis-Key erkannt (LLM + STT)');
       return true;
     }
   } catch { /* kein JSON */ }
   return false;
 }
 
+// v3.0: Befund formatiert anzeigen/kopieren. Bewusst minimal (nur ##, Listen, Absätze, **fett**), kein HTML aus dem Modell.
+const escapeHtml = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function reportToHtml(md: string): string {
+  const out: string[] = [];
+  let list: 'ol' | 'ul' | null = null;
+  const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  const inline = (t: string) => escapeHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  for (const raw of md.split('\n')) {
+    const line = raw.trim();
+    if (!line) { closeList(); continue; }
+    const h = line.match(/^#{1,4}\s+(.*)$/);
+    const ol = line.match(/^\d+[.)]\s+(.*)$/);
+    const ul = line.match(/^[-*•]\s+(.*)$/);
+    if (h) { closeList(); out.push(`<h3>${inline(h[1])}</h3>`); }
+    else if (ol) { if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; } out.push(`<li>${inline(ol[1])}</li>`); }
+    else if (ul) { if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; } out.push(`<li>${inline(ul[1])}</li>`); }
+    else { closeList(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  closeList();
+  return out.join('');
+}
+
 export default function App() {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState<string>(() => localStorage.getItem('raks_username') || '');
-  const [password, setPassword] = useState<string>('');
-  const [authError, setAuthError] = useState<string>('');
+  // v3.0 Key-Gate (ersetzt den Login)
+  const [keyError, setKeyError] = useState<string>('');
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [dragActive, setDragActive] = useState<boolean>(false);
+  const [pasteOpen, setPasteOpen] = useState<boolean>(false);
+  const [pasteValue, setPasteValue] = useState<string>('');
+  const [reportView, setReportView] = useState<'formatiert' | 'text'>('formatiert');
 
   // Configuration States
   const [vertexApiKey, setVertexApiKey] = useState<string>('');
   const [sttKeyJson, setSttKeyJson] = useState<any>(null);
+  const keysReady = !!vertexApiKey && !!(sttKeyJson && sttKeyJson.private_key);
+  const keysReadyRef = useRef(keysReady);
+  keysReadyRef.current = keysReady;
   const [systemPrompt, setSystemPrompt] = useState<string>('');
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const keyFileRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
 
@@ -535,7 +557,15 @@ export default function App() {
   const copyTextToClipboard = async (text: string): Promise<boolean> => {
     if (!text) return false;
     try {
-      await navigator.clipboard.writeText(text);
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+        const html = `<html><head><meta charset="utf-8"></head><body>${reportToHtml(text)}</body></html>`;
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/html': new Blob([html], { type: 'text/html' }),
+        })]);
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 3000);
       setPendingCopyText(''); // Clear any pending copy
@@ -565,8 +595,6 @@ export default function App() {
     "Befund: Kniegelenk rechts in 2 Ebenen. Regelrechter Gelenkspalt, keine arthrotischen Randwülste. Intakter Knorpel. Ergebnis: Altersentsprechender Normalbefund."
   ];
 
-  // Particle background Canvas Ref
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Audio recording refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -590,13 +618,13 @@ export default function App() {
     const savedKeyVersion = localStorage.getItem('key_version');
     const savedPrompt = localStorage.getItem('system_prompt');
     const savedPromptVersion = localStorage.getItem('system_prompt_version');
-    const savedAuth = localStorage.getItem('is_authenticated');
     const savedDeviceId = localStorage.getItem('selected_audio_device_id');
 
     // Stale-Key-Schutz: Gespeicherte Keys aus einer älteren Key-Generation verwerfen.
     if (savedVertexKey && savedKeyVersion !== KEY_VERSION) {
       console.log('[INIT] Veralteter gespeicherter Key (alte Key-Generation) verworfen');
       localStorage.removeItem('vertex_api_key');
+      localStorage.removeItem('praxis_stt_key');
       setVertexApiKey('');
     } else if (savedVertexKey) {
       setVertexApiKey(savedVertexKey);
@@ -605,7 +633,12 @@ export default function App() {
       const k = localStorage.getItem('vertex_api_key');
       if (k) setVertexApiKey(k);
     });
-    if (savedAuth === 'true') setIsAuthenticated(true);
+    // v3.0: STT-Schlüssel aus dem letzten Laden wiederherstellen (kein erneutes Reinziehen nötig)
+    const savedStt = localStorage.getItem('praxis_stt_key');
+    if (savedStt && savedKeyVersion === KEY_VERSION) {
+      try { const j = JSON.parse(savedStt); if (j && j.private_key) (window as any).__praxisSttKey = j; } catch { /* ignorieren */ }
+    }
+    localStorage.removeItem('is_authenticated');
     if (savedDeviceId) setSelectedDeviceId(savedDeviceId);
 
     // Praxis-Login: STT-Key aus dem Login-Vorgang übernehmen
@@ -616,79 +649,8 @@ export default function App() {
     window.addEventListener('praxis-stt-key', onPraxisKey);
     if ((window as any).__praxisSttKey) onPraxisKey();
 
-    // Auto-Load Vertex AI API key from local file if not in localStorage
-    if (!savedVertexKey) {
-      // Fallback 1: vertex-key.txt (Klartext, lokale Dev-Datei)
-      (async () => {
-        try {
-          const resp = await fetch(`${import.meta.env.BASE_URL}vertex-key.txt`);
-          if (resp.ok) {
-            const keyData = (await resp.text()).trim();
-            if (keyData) {
-              localStorage.setItem('vertex_api_key', keyData);
-              localStorage.setItem('key_version', KEY_VERSION);
-              setVertexApiKey(keyData);
-              console.log('[AUTO-LOAD] Vertex API Key automatisch aus vertex-key.txt geladen');
-            }
-          }
-        } catch (e) {
-          console.log('[AUTO-LOAD] Kein vertex-key.txt gefunden:', e);
-        }
-      })();
+    // (v3.0: frühere Auto-Load-Fallbacks vertex-key.txt/.b64/stt-key.* entfernt — Schlüssel kommen nur per Drag & Drop/Menü)
 
-      // Fallback 2: vertex-key.b64 (Base64, von CI neben index.html abgelegt)
-      (async () => {
-        try {
-          const resp = await fetch(`${import.meta.env.BASE_URL}vertex-key.b64`);
-          if (resp.ok) {
-            const b64 = (await resp.text()).trim();
-            const bin = atob(b64);
-            const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-            const keyData = new TextDecoder().decode(bytes).trim();
-            if (keyData) {
-              localStorage.setItem('vertex_api_key', keyData);
-              localStorage.setItem('key_version', KEY_VERSION);
-              setVertexApiKey(keyData);
-              console.log('[AUTO-LOAD] Vertex API Key automatisch aus vertex-key.b64 geladen');
-            }
-          }
-        } catch (e) {
-          console.log('[AUTO-LOAD] Kein vertex-key.b64 gefunden:', e);
-        }
-      })();
-
-      // Fallback 3: STT-Service-Account (stt-key.b64 = CI-injiziert, stt-key.txt = lokal)
-      (async () => {
-        try {
-          const resp = await fetch(`${import.meta.env.BASE_URL}stt-key.b64`);
-          if (resp.ok) {
-            const bin = atob((await resp.text()).trim());
-            const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-            const json = JSON.parse(new TextDecoder().decode(bytes));
-            if (json && json.private_key) {
-              setSttKeyJson(json);
-              console.log('[AUTO-LOAD] STT Service-Account-Key geladen (stt-key.b64)');
-              return;
-            }
-          }
-        } catch (e) {
-          console.log('[AUTO-LOAD] Kein stt-key.b64 gefunden:', e);
-        }
-        try {
-          const resp = await fetch(`${import.meta.env.BASE_URL}stt-key.txt`);
-          if (resp.ok) {
-            const json = JSON.parse(await resp.text());
-            if (json && json.private_key) {
-              setSttKeyJson(json);
-              console.log('[AUTO-LOAD] STT Service-Account-Key geladen (stt-key.txt)');
-            }
-          }
-        } catch (e) {
-          console.log('[AUTO-LOAD] Kein stt-key.txt gefunden — STT faellt auf Whisper zurueck');
-        }
-      })();
-    }
-    
     const newDefaultPrompt = 
       `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
       `<instructions>\n` +
@@ -812,138 +774,81 @@ export default function App() {
     };
   }, []);
 
-  // Particle Canvas Background Logic
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initParticles();
-    };
-
-    const initParticles = () => {
-      particles = [];
-      const count = Math.min(120, Math.floor((canvas.width * canvas.height) / 12000));
-      for (let i = 0; i < count; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.2,
-          vy: (Math.random() - 0.5) * 0.2,
-          r: Math.random() * 5 + 2.5
-        });
-      }
-    };
-
-    const draw = () => {
-      if (statusRef.current === 'recording') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        animationFrameId = requestAnimationFrame(draw);
-        return;
-      }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(140, 82, 255, 0.35)';
-      ctx.strokeStyle = 'rgba(140, 82, 255, 0.08)';
-      ctx.lineWidth = 1;
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    draw();
-
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
   // Save config changes
   // Config auto-saved on change
 
-  // Schlüssel-Datei vom Dateisystem lesen (iPhone/Android: kein Drag & Drop möglich)
+  // v3.0: Schlüssel laden (Datei, Drag & Drop oder Einfügen) — ersetzt Login/Logout
+  const applyKeyText = async (txt: string) => {
+    setKeyError('');
+    const ok = await loadPraxisKey(txt.trim());
+    if (!ok) {
+      setKeyError('Schlüssel nicht erkannt. Bitte rakscribe-praxis-key.json aus dem Drive-Ordner „RaKScribe“ verwenden.');
+      return false;
+    }
+    setMenuOpen(false); setPasteOpen(false); setPasteValue('');
+    return true;
+  };
+
   const handleKeyFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (!f) { e.target.value = ''; return; }
-    try {
-      const txt = await f.text();
-      setPassword(txt);
-      setAuthError('');
-      const uname = username.trim() || 'Praxis';
-      if (!username.trim()) setUsername(uname);
-      const ok = await tryPraxisLogin(txt);
-      if (ok) {
-        setIsAuthenticated(true);
-        localStorage.setItem('is_authenticated', 'true');
-        localStorage.setItem('raks_username', uname);
-      } else {
-        setAuthError('Schlüssel-Datei nicht erkannt — unterstützt: praxis-key.json, SA-JSON, Base64-Key oder AQ.-API-Key.');
-      }
-    } catch {
-      setAuthError('Datei konnte nicht gelesen werden.');
-    }
     e.target.value = '';
+    if (!f) return;
+    try { await applyKeyText(await f.text()); }
+    catch { setKeyError('Datei konnte nicht gelesen werden.'); }
   };
 
-  // Login Handler
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const pw = password.trim();
-    if (username.trim() === '') {
-      setAuthError('Bitte zuerst einen Benutzernamen eintragen (beliebig, z.B. Peter).');
-      return;
-    }
-    // Praxis-Key als Login: rohe JSON, Base64(JSON) (stt-key.b64 / vertex-key.b64) oder
-    // der Vertex-API-Key selbst (AQ.…) — alles wird erkannt.
-    tryPraxisLogin(pw).then(ok => {
-      if (ok) {
-        setIsAuthenticated(true);
-        localStorage.setItem('is_authenticated', 'true');
-        localStorage.setItem('raks_username', username.trim());
-        setAuthError('');
-      } else {
-        setAuthError('Ungültige Anmeldedaten — bitte die Key-Datei aus dem Drive-Ordner RaKScribe verwenden.');
+  const removeKeys = () => {
+    localStorage.removeItem('vertex_api_key');
+    localStorage.removeItem('praxis_stt_key');
+    localStorage.removeItem('key_version');
+    (window as any).__praxisSttKey = null;
+    setVertexApiKey('');
+    setSttKeyJson(null);
+    setMenuOpen(false);
+  };
+
+  // Drag & Drop irgendwo ins Fenster
+  useEffect(() => {
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types || []).includes('Files');
+    const onEnter = (e: DragEvent) => { if (!hasFiles(e)) return; e.preventDefault(); depth++; setDragActive(true); };
+    const onOver = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
+    const onLeave = (e: DragEvent) => { if (!hasFiles(e)) return; depth = Math.max(0, depth - 1); if (!depth) setDragActive(false); };
+    const onDrop = async (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); depth = 0; setDragActive(false);
+      const f = e.dataTransfer?.files?.[0];
+      if (!f) return;
+      if (/^audio\//.test(f.type) || /\.(ogg|mp3|wav|m4a|opus|webm)$/i.test(f.name)) {
+        if (keysReadyRef.current) handleAudioUploadRef.current(f);
+        else setKeyError('Bitte zuerst den Praxis-Schlüssel laden — danach können Audio-Dateien verarbeitet werden.');
+        return;
       }
-    }).catch(() => setAuthError('Ungültige Anmeldedaten.'));
-  };
+      try { await applyKeyText(await f.text()); } catch { setKeyError('Datei konnte nicht gelesen werden.'); }
+    };
+    window.addEventListener('dragenter', onEnter);
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onEnter);
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, []);
 
-  // Logout Handler
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('is_authenticated');
-  };
+  // Menü schließen bei Klick außerhalb / Esc
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey); };
+  }, [menuOpen]);
+
+
 
 
 
@@ -2381,6 +2286,8 @@ Korrigierter Befund:`;
   stopRecordingRef.current = stopRecording;
   const handleResetRef = useRef(handleReset);
   handleResetRef.current = handleReset;
+  const handleAudioUploadRef = useRef(handleAudioUpload);
+  handleAudioUploadRef.current = handleAudioUpload;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2388,7 +2295,7 @@ Korrigierter Befund:`;
         e.preventDefault();
         if (statusRef.current === 'recording') {
           stopRecordingRef.current();
-        } else if (statusRef.current === 'ready') {
+        } else if (statusRef.current === 'ready' && keysReadyRef.current) {
           startRecordingRef.current();
         }
       } else if (e.key === 'F9') {
@@ -2413,363 +2320,224 @@ Korrigierter Befund:`;
   }, []);
 
 
-  // Render Login screen if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="login-container">
-        {/* Canvas background for login */}
-        <canvas ref={canvasRef} id="particle-canvas" />
+  // ── v3.0 Render ────────────────────────────────────────────────────────────
+  const stateLabel = !keysReady ? 'Gesperrt' : status === 'recording' ? 'Aufnahme' : status === 'processing' ? 'Verarbeitung' : status === 'copied' ? 'Kopiert' : 'Bereit';
+  const partialKey = !keysReady && (!!vertexApiKey || !!sttKeyJson);
 
-        <div className="login-card" style={{ zIndex: 1 }}>
-          <div className="login-header">
-            <div className="login-icon">
-              <Aperture size={40} />
-            </div>
-            <h1 className="login-title">RaKScribe26 Web</h1>
-            <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.11.1</p>
-          </div>
-
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label className="form-label">Benutzername (frei wählbar, z.B. dein Name)</label>
-              <input 
-                type="text" 
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="z.B. dr.kalmar"
-                className="form-input"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Passwort</label>
-              <div className="password-wrapper">
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  onDrop={async e => {
-                    e.preventDefault();
-                    const f = e.dataTransfer.files?.[0];
-                    if (f) {
-                      const txt = await f.text();
-                      setPassword(txt);
-                    }
-                  }}
-                  onDragOver={e => e.preventDefault()}
-                  placeholder="Passwort oder JSON-Key"
-                  className="form-input"
-                  required
-                />
-                <Lock className="password-icon" size={18} />
-              </div>
-            </div>
-
-            <label className="btn btn-secondary keyfile-btn">
-              <FileUp size={16} /> Schlüssel-Datei wählen
-              <input
-                ref={keyFileRef}
-                type="file"
-                className="keyfile-input"
-                onChange={handleKeyFile}
-              />
-            </label>
-            <span className="keyfile-hint">
-              praxis-key.json aus dem Drive-Ordner „RaKScribe" — im Picker unter „Orte" → Google Drive
-            </span>
-
-            {authError && (
-              <div className="login-error">
-                {authError}
-              </div>
-            )}
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '48px', marginTop: '10px' }}>
-              Anmelden <ArrowRight size={18} />
-            </button>
-          </form>
-
-          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #1E2235', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            Benötigen Sie Hilfe? Kontaktieren Sie die Praxis-IT. <br />
-            <span style={{ fontStyle: 'italic', display: 'block', marginTop: '4px' }}>Praxis-Key (Drive → RaKScribe): Desktop = ins Passwortfeld ziehen · iPhone = „Schlüssel-Datei wählen“</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Render workspace dashboard
   return (
-    <div className="flex-grow flex flex-col" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', position: 'relative' }}>
-      {/* Background canvas for particles */}
-      <canvas ref={canvasRef} id="particle-canvas" />
-
-      {/* Header bar */}
-      <header className="app-header" style={{ zIndex: 1 }}>
-        <div className="brand-section">
-          <div className="brand-icon">
-            <Aperture size={24} />
+    <div className={`app ${keysReady ? '' : 'is-locked'}`}>
+      {/* Top bar */}
+      <header className="topbar">
+        <div className="brand">
+          <div className="brand-mark" aria-hidden="true"><AudioLines size={18} /></div>
+          <div className="brand-text">
+            <span className="brand-name">RaKScribe</span>
+            <span className="brand-sub">Röntgen am Kai</span>
           </div>
-          <div className="brand-title-group">
-            <div className="brand-name">
-              <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.11.1</span>
-            </div>
-            <span className="brand-desc">Befundungsassistent</span>
-          </div>
+          <span className="version-chip">v3.0</span>
         </div>
 
-        {/* Status indicator & selectors */}
-        <div className="header-actions">
-          <div className="status-badge" style={{ color: status === 'recording' ? 'var(--recording-red)' : status === 'processing' ? 'var(--warning-yellow)' : 'var(--ready-green)' }}>
-            <span className={`status-dot ${status === 'recording' ? 'recording' : status === 'processing' ? 'processing' : 'ready'}`} />
-            <span>{statusText.toUpperCase()}</span>
-          </div>
-
-          {/* Download Desktop EXE */}
-          <a
-            href="https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="icon-btn"
-            title="Windows Desktop-App herunterladen"
-            style={{ textDecoration: 'none' }}
-          >
-            <Download size={20} />
-          </a>
-
-          {/* Logout button */}
-          <button 
-            onClick={handleLogout}
-            className="icon-btn logout"
-            title="Abmelden"
-          >
-            <LogOut size={20} />
-          </button>
+        <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>
+          <span className="state-dot" />
+          <span className="state-label">{stateLabel}</span>
+          {keysReady && statusText && statusText !== 'Bereit' && <span className="state-detail">{statusText}</span>}
         </div>
-      </header>
 
-      {/* Configuration Control Panel */}
-      <div className="status-bar" style={{ zIndex: 1, padding: '16px 24px' }}>
-        {/* Microphone Dropdown Selector */}
-        <div className="status-bar-item">
-          <span className="status-bar-label">Mikrofon:</span>
+        <div className="topbar-actions">
+          <span className={`key-chip ${keysReady ? 'ok' : 'missing'}`}>
+            {keysReady ? <ShieldCheck size={14} /> : <KeyRound size={14} />}
+            {keysReady ? 'Schlüssel aktiv' : 'Kein Schlüssel'}
+          </span>
+
           <select
             value={selectedDeviceId}
             onChange={e => {
               setSelectedDeviceId(e.target.value);
               localStorage.setItem('selected_audio_device_id', e.target.value);
             }}
-            className="select-input"
-            style={{ 
-              background: 'var(--bg-input)', 
-              color: '#fff', 
-              border: '1px solid var(--border-color)', 
-              borderRadius: '6px', 
-              padding: '6px 24px 6px 10px', 
-              fontSize: '13px',
-              fontFamily: 'var(--sans-font)',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
+            className="mic-select"
+            title="Mikrofon"
+            aria-label="Mikrofon"
           >
             <option value="">Standard-Mikrofon</option>
             {audioDevices.map(device => (
               <option key={device.deviceId} value={device.deviceId}>
-                {device.label || `Mikrofon (${device.deviceId.slice(0, 8)}...)`}
+                {device.label || `Mikrofon (${device.deviceId.slice(0, 8)}…)`}
               </option>
             ))}
           </select>
-        </div>
 
-        {/* Vertex AI API Key Input */}
-        <div className="status-bar-item">
-          <span className="status-bar-label">Vertex AI API Key:</span>
-          {vertexApiKey ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="status-bar-value success">
-                <Check size={14} className="status-bar-icon" /> LLM aktiv
-              </span>
-              <span className={sttKeyJson ? "status-bar-value success" : "status-bar-value danger"} style={{ pointerEvents: 'none' }}>
-                STT: {sttKeyJson ? 'Google Cloud' : 'nur Whisper (Server nötig)'}
-              </span>
-              <button
-                className="icon-btn logout"
-                style={{ padding: '4px 8px', height: '26px', minWidth: 'unset', display: 'flex', alignItems: 'center' }}
-                onClick={() => {
-                  setVertexApiKey('');
-                  localStorage.removeItem('vertex_api_key');
-                  localStorage.removeItem('key_version');
-                }}
-                title="API-Key entfernen"
-              >
-                🗑
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="text"
-                placeholder="Vertex AI API-Key eingeben"
-                className="select-input"
-                style={{
-                  background: 'var(--bg-input)',
-                  color: '#fff',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  fontSize: '13px',
-                  fontFamily: 'var(--sans-font)',
-                  outline: 'none',
-                  width: '300px'
-                }}
-                onChange={e => {
-                  const val = e.target.value.trim();
-                  setVertexApiKey(val);
-                  if (val) {
-                    localStorage.setItem('vertex_api_key', val);
-                    localStorage.setItem('key_version', KEY_VERSION);
-                  }
-                  else {
-                    localStorage.removeItem('vertex_api_key');
-                    localStorage.removeItem('key_version');
-                  }
-                }}
-              />
-              <span className={sttKeyJson ? "status-bar-value success" : "status-bar-value danger"} style={{ pointerEvents: 'none' }}>
-                <X size={14} className="status-bar-icon" /> STT: {sttKeyJson ? 'Google Cloud aktiv' : 'nur Whisper (Server nötig)'}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Workspace */}
-      <main className="workspace-grid" style={{ zIndex: 1 }}>
-        {/* Left Side: Live Transcription & Controls */}
-        <section className="workspace-card">
-          <div className="card-header">
-            <div className="card-title-group">
-              <Mic className="card-icon" size={18} />
-              <h2 className="card-title">Live-Diktat & Spracherkennung</h2>
-            </div>
-            <span className="card-badge">
-              Engine: {sttKeyJson ? 'GOOGLE CLOUD STT' : 'WHISPER (lokal)'}
-            </span>
-          </div>
-
-          <div className="card-body">
-            <textarea
-              value={transcript + (isTranscribingChunk ? " [..]" : "")}
-              onChange={e => {
-                const cleanVal = e.target.value.endsWith(" [..]")
-                  ? e.target.value.slice(0, -5)
-                  : e.target.value;
-                setTranscript(cleanVal);
-              }}
-              placeholder="Hier erscheint das Live-Diktat... Sie können das Diktat auch manuell bearbeiten oder kopieren."
-              className="text-editor"
-            />
-
-            {/* Level meter during recording */}
-            {status === 'recording' && (
-              <div className="level-meter-container">
-                <span className="level-meter-label">Pegel</span>
-                <div className="level-meter-track">
-                  <div 
-                    className="level-meter-bar"
-                    style={{ width: `${micLevel}%` }}
-                  />
+          <div className="menu" ref={menuRef}>
+            <button className="icon-button" onClick={() => setMenuOpen(o => !o)} aria-label="Menü" aria-expanded={menuOpen}>
+              <Menu size={20} />
+            </button>
+            {menuOpen && (
+              <div className="menu-panel" role="menu">
+                <label className="menu-item" role="menuitem">
+                  <FileKey size={16} /> Schlüssel-Datei laden…
+                  <input type="file" className="visually-hidden" onChange={handleKeyFile} />
+                </label>
+                <button className="menu-item" role="menuitem" onClick={() => { setPasteOpen(true); setMenuOpen(false); }}>
+                  <KeyRound size={16} /> Schlüssel einfügen…
+                </button>
+                {(vertexApiKey || sttKeyJson) && (
+                  <button className="menu-item danger" role="menuitem" onClick={removeKeys}>
+                    <Trash2 size={16} /> Schlüssel entfernen
+                  </button>
+                )}
+                <div className="menu-sep" />
+                <a className="menu-item" role="menuitem" href="https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe" target="_blank" rel="noopener noreferrer">
+                  <Download size={16} /> Windows-App herunterladen
+                </a>
+                <div className="menu-foot">
+                  <span>STT: {sttKeyJson ? 'Google chirp_3' : '—'}</span>
+                  <span>LLM: {vertexApiKey ? 'Gemini 3.5 Flash (EU)' : '—'}</span>
+                  <span><kbd>F10</kbd> Aufnahme · <kbd>F9</kbd> Zurücksetzen</span>
                 </div>
-                <span className="level-meter-value">{micLevel}%</span>
               </div>
             )}
           </div>
+        </div>
+      </header>
 
-          <div className="card-footer">
-            <button onClick={handleReset} className="btn btn-secondary btn-large-action">
-              Zurücksetzen
-            </button>
-
+      {/* Workspace */}
+      <main className="workspace" aria-hidden={!keysReady}>
+        <section className="panel">
+          <div className="panel-head">
+            <h2><Mic size={16} /> Diktat</h2>
+            {status === 'recording' && (
+              <div className="level" aria-label="Pegel">
+                <div className="level-track"><div className="level-bar" style={{ width: `${micLevel}%` }} /></div>
+              </div>
+            )}
+            {isTranscribingChunk && <LoaderCircle size={16} className="spin muted" />}
+          </div>
+          <textarea
+            value={transcript + (isTranscribingChunk ? ' [..]' : '')}
+            onChange={e => {
+              const v = e.target.value.endsWith(' [..]') ? e.target.value.slice(0, -5) : e.target.value;
+              setTranscript(v);
+            }}
+            placeholder="Das Diktat erscheint hier live und kann bearbeitet werden."
+            className="editor"
+            disabled={!keysReady}
+          />
+          <div className="panel-foot">
             {status === 'recording' ? (
-              <button onClick={stopRecording} className="btn btn-danger btn-large-action pulse-recording">
-                <MicOff size={18} /> Aufnahme Stoppen
+              <button onClick={stopRecording} className="btn btn-record is-recording">
+                <MicOff size={18} /> Aufnahme stoppen <kbd>F10</kbd>
               </button>
             ) : (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button onClick={startRecording} disabled={status === 'processing'} className="btn btn-primary btn-large-action">
-                  <Mic size={18} /> Aufnahme Starten
-                </button>
-                <button
-                  onClick={() => audioUploadRef.current?.click()}
-                  disabled={status === 'processing'}
-                  className="btn btn-secondary btn-large-action"
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                  title="Sprachnachricht oder Audio-Datei hochladen"
-                >
-                  <Upload size={18} /> Audio hochladen
-                </button>
-                <input
-                  ref={audioUploadRef}
-                  type="file"
-                  accept="audio/*,.ogg,.mp3,.wav,.m4a,.opus,.webm"
-                  style={{ display: 'none' }}
-                  onChange={e => {
-                    if (e.target.files?.[0]) {
-                      handleAudioUpload(e.target.files[0]);
-                      e.target.value = ''; // reset so same file can be re-uploaded
-                    }
-                  }}
-                />
-              </div>
+              <button onClick={startRecording} disabled={status === 'processing' || !keysReady} className="btn btn-record">
+                <Mic size={18} /> Aufnahme starten <kbd>F10</kbd>
+              </button>
             )}
+            <button
+              onClick={() => audioUploadRef.current?.click()}
+              disabled={status === 'processing' || status === 'recording' || !keysReady}
+              className="btn btn-ghost"
+              title="Sprachnachricht oder Audio-Datei hochladen (auch per Drag & Drop)"
+            >
+              <Upload size={16} /> Audio
+            </button>
+            <input
+              ref={audioUploadRef}
+              type="file"
+              accept="audio/*,.ogg,.mp3,.wav,.m4a,.opus,.webm"
+              className="visually-hidden"
+              onChange={e => {
+                if (e.target.files?.[0]) {
+                  handleAudioUpload(e.target.files[0]);
+                  e.target.value = '';
+                }
+              }}
+            />
+            <button onClick={handleReset} className="btn btn-ghost" title="Zurücksetzen (F9)" disabled={!keysReady}>
+              <RotateCcw size={16} /> Neu
+            </button>
           </div>
         </section>
 
-        {/* Right Side: Structured Report */}
-        <section className="workspace-card">
-          <div className="card-header">
-            <div className="card-title-group">
-              <Sparkles className="card-icon" size={18} />
-              <h2 className="card-title">Strukturierter Befund</h2>
+        <section className="panel panel-report">
+          <div className="panel-head">
+            <h2><Sparkles size={16} /> Befund</h2>
+            {isCopied && <span className="copied"><Check size={13} /> Kopiert</span>}
+            {status === 'processing' && <LoaderCircle size={16} className="spin muted" />}
+            <div className="seg" role="tablist" aria-label="Ansicht">
+              <button role="tab" aria-selected={reportView === 'formatiert'} className={reportView === 'formatiert' ? 'on' : ''} onClick={() => setReportView('formatiert')}>Formatiert</button>
+              <button role="tab" aria-selected={reportView === 'text'} className={reportView === 'text' ? 'on' : ''} onClick={() => setReportView('text')}>Text</button>
             </div>
-            
-            {isCopied && (
-              <span className="copied-badge">
-                <Check size={12} /> Kopiert!
-              </span>
-            )}
           </div>
-
-          <div className="card-body">
-            <textarea
-              value={structuredReport}
-              readOnly
-              placeholder="Der strukturierte Bericht wird nach Abschluss des Diktats hier eingefügt."
-              className="text-editor"
-            />
-          </div>
-
-          <div className="card-footer">
-            <span className="footer-info">Kopieren Sie das Ergebnis für RIS oder Word.</span>
-            
-            <button
-              onClick={handleCopyReport}
-              disabled={!structuredReport}
-              className="btn btn-primary btn-large-action"
-            >
-              <Copy size={16} /> Befund Kopieren
+          {reportView === 'formatiert' ? (
+            structuredReport
+              ? <div className="report-view" dangerouslySetInnerHTML={{ __html: reportToHtml(structuredReport) }} />
+              : <div className="report-view report-empty">Der strukturierte Befund erscheint hier nach dem Diktat und wird automatisch kopiert.</div>
+          ) : (
+            <textarea value={structuredReport} readOnly className="editor editor-report" placeholder="Noch kein Befund." />
+          )}
+          <div className="panel-foot">
+            <span className="hint">Für RIS oder Word</span>
+            <button onClick={handleCopyReport} disabled={!structuredReport} className="btn btn-primary">
+              <Copy size={16} /> Befund kopieren
             </button>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer style={{ padding: '12px 24px', borderTop: '1px solid var(--border-color)', zIndex: 1, textAlign: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
-        <span>&copy; {new Date().getFullYear()} Praxis "Röntgen am Kai" &bull; RaKScribe26</span>
-      </footer>
+      {/* Key-Gate: App gesperrt, bis der Praxis-Schlüssel geladen ist */}
+      {!keysReady && (
+        <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+          <div className="gate-card">
+            <h1 id="gate-title">Praxis-Schlüssel laden</h1>
+            <p className="gate-text">Die App ist gesperrt, bis der Schlüssel geladen ist.</p>
+            <div className="gate-drop">
+              <KeyRound size={26} />
+              <span><strong>rakscribe-praxis-key.json</strong> hierher ziehen</span>
+              <small>aus dem Drive-Ordner „RaKScribe“</small>
+            </div>
+            <label className="btn btn-primary btn-wide">
+              <FileKey size={18} /> Schlüssel-Datei wählen
+              <input ref={keyFileRef} type="file" className="visually-hidden" onChange={handleKeyFile} />
+            </label>
+            <button className="btn btn-ghost btn-wide" onClick={() => setPasteOpen(true)}>
+              <KeyRound size={16} /> Schlüssel einfügen
+            </button>
+            {partialKey && !keyError && (
+              <div className="gate-note">
+                <CircleAlert size={15} /> Nur ein Teilschlüssel geladen ({vertexApiKey ? 'Spracherkennung' : 'Befund-KI'} fehlt) — bitte die kombinierte praxis-key.json laden.
+              </div>
+            )}
+            {keyError && <div className="gate-error"><CircleAlert size={15} /> {keyError}</div>}
+            <p className="gate-foot">Einmal laden genügt — der Schlüssel bleibt in diesem Browser gespeichert.<br />iPhone: im Dateidialog „Durchsuchen → Google Drive“.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Schlüssel einfügen */}
+      {pasteOpen && (
+        <div className="gate gate-top" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget) setPasteOpen(false); }}>
+          <div className="gate-card">
+            <button className="icon-button gate-close" onClick={() => setPasteOpen(false)} aria-label="Schließen"><X size={18} /></button>
+            <h1>Schlüssel einfügen</h1>
+            <p className="gate-text">Inhalt der praxis-key.json (oder Base64 / AQ.-Key) einfügen.</p>
+            <textarea className="paste-area" value={pasteValue} onChange={e => setPasteValue(e.target.value)} placeholder='{"vertex_api_key": …, "stt": {…}}' autoFocus />
+            {keyError && <div className="gate-error"><CircleAlert size={15} /> {keyError}</div>}
+            <button className="btn btn-primary btn-wide" disabled={!pasteValue.trim()} onClick={() => applyKeyText(pasteValue)}>
+              <Check size={16} /> Übernehmen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Drag-Overlay */}
+      {dragActive && (
+        <div className="drop-overlay">
+          <div className="drop-box">
+            <Upload size={32} />
+            <span>{keysReady ? 'Loslassen — Schlüssel oder Audio-Datei' : 'Loslassen, um den Schlüssel zu laden'}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
