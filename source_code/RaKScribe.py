@@ -1080,6 +1080,7 @@ class RaKScribeApp(ctk.CTk):
         self.create_widgets()
         self.register_hotkey()
         self.after(150, self.refresh_key_state)
+        self.after(400, self._selftest_hook)
 
     def create_widgets(self):
         # ── Kopfzeile ───────────────────────────────────────────────
@@ -1185,6 +1186,67 @@ class RaKScribeApp(ctk.CTk):
         self.prompt_toggle = self.menu_btn
         self.prompt_window = None
         self.update_status("READY", "ready")
+
+    # ── v3.0: Selbsttest-Modus für den automatischen Windows-UI-Test (tests/windows/exe_ui_test.py).
+    # NUR aktiv, wenn die Umgebungsvariable RAKSCRIBE_SELFTEST gesetzt ist — im Praxisbetrieb wirkungslos.
+    # Schreibt den UI-Zustand als JSON (Sperre, Aufnahme-Button, Status, Schlüssel) und füllt optional Demo-Text.
+    def _selftest_hook(self):
+        path = os.environ.get("RAKSCRIBE_SELFTEST")
+        if not path:
+            return
+        geo = os.environ.get("RAKSCRIBE_SELFTEST_GEOMETRY")
+        if geo:
+            self.geometry(geo)
+        self.lift()
+        self.attributes("-topmost", True)
+        self.focus_force()
+
+        def dump(phase):
+            try:
+                data = {}
+                if os.path.exists(path):
+                    with open(path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                tb = self.result_text._textbox
+                data[phase] = {
+                    "title": self.title(),
+                    "gate_visible": self.gate is not None,
+                    "record_btn_state": str(self.record_btn.cget("state")),
+                    "status": self._status_raw,
+                    "keys_ready": bool(keys_ready()),
+                    "key_chip": self.key_chip.cget("text").strip(),
+                    "geometry": self.winfo_geometry(),
+                    "screen": [self.winfo_screenwidth(), self.winfo_screenheight()],
+                    "report_heading_tags": len(tb.tag_ranges("md_title")) // 2 + len(tb.tag_ranges("md_head")) // 2,
+                    "report_hidden_hash_tags": len(tb.tag_ranges("md_hidden")) // 2,
+                    "report_text_keeps_markdown": self.result_text.get("1.0", "end").lstrip().startswith("##"),
+                    "time": time.strftime("%H:%M:%S"),
+                }
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=1)
+            except Exception as e:
+                with open(path + ".err", "a", encoding="utf-8") as f:
+                    f.write(f"{phase}: {e}\n")
+
+        def demo():
+            if os.environ.get("RAKSCRIBE_SELFTEST_DEMO") == "1":
+                self.transcript_text.insert("1.0", "Röntgen und Sonographie des linken Schultergelenkes: Tenosynovitis der langen "
+                                                   "Bizepssehne, Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit "
+                                                   "Begleitbursitis, ansonsten unauffällig.")
+                self.result_text.insert("1.0", "## Röntgen und Sonographie des Schultergelenkes links\n\n## Befund\n"
+                                               "Flüssigkeitsansammlung in der Sehnenscheide des Caput longum des M. biceps brachii. "
+                                               "Supraspinatussehne echoarm verdickt mit intratendinösen Verkalkungen. Bursa "
+                                               "subacromialis-subdeltoidea verdickt. Übrige Sehnen der Rotatorenmanschette intakt.\n\n"
+                                               "## Ergebnis\n1. Tenosynovitis der langen Bizepssehne links.\n"
+                                               "2. Tendinopathie und Tendinosis calcarea der Supraspinatussehne.\n"
+                                               "3. Begleitbursitis subacromialis-subdeltoidea.")
+                self.update_level_bar(4500)
+            self.after(800, lambda: dump("ready"))
+
+        self.after(1200, lambda: (dump("start"), demo()))
+        # Nach dem F10-Test (vom Testskript gesendet) Zustand erneut festhalten
+        self.bind_all("<<SelftestDump>>", lambda e: dump("after_f10"))
+        self.after(int(os.environ.get("RAKSCRIBE_SELFTEST_F10_DUMP_MS", "9000")), lambda: dump("after_f10"))
 
     # ── v3.0: Befund-Formatierung (## versteckt, Überschriften fett) — Text bleibt Markdown für Kopieren ──
     def _setup_report_formatting(self):

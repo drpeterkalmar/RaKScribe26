@@ -1,0 +1,92 @@
+name: Windows UI-Test (EXE)
+
+# Läuft automatisch nach jedem erfolgreichen EXE-Build (oder manuell mit Versions-Tag).
+# Startet die ECHTE rakscribe26.exe aus dem Release auf einem frischen Windows-Rechner,
+# prüft Sperre / F10 / Entsperren / Befund-Formatierung und dokumentiert das Ergebnis:
+#   - Zusammenfassung im Actions-Lauf (Job Summary)
+#   - Screenshots + report.md als Artefakt
+#   - Screenshots + report.md als Release-Assets, Ergebnis in den Release-Notizen
+on:
+  workflow_run:
+    workflows: ["Build Windows EXE"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release-Tag (leer = neuester Release)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  ui-test:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Testwerkzeuge installieren
+        run: pip install pillow pywin32 cryptography
+
+      - name: Bildschirmauflösung auf 1920x1080 (falls möglich)
+        continue-on-error: true
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
+      - name: Release-EXE holen
+        id: rel
+        shell: bash
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then TAG=$(gh release view --json tagName -q .tagName); fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          gh release download "$TAG" --pattern rakscribe26.exe --dir exe --clobber
+          ls -la exe
+
+      - name: UI-Test ausführen
+        id: test
+        shell: bash
+        run: python tests/windows/exe_ui_test.py exe/rakscribe26.exe ui-report "${{ steps.rel.outputs.tag }}"
+
+      - name: Ergebnis in Job-Zusammenfassung
+        if: always()
+        shell: bash
+        run: |
+          if [ -f ui-report/report.md ]; then cat ui-report/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "Kein Report erzeugt." >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-ui-test-${{ steps.rel.outputs.tag }}
+          path: ui-report/
+
+      - name: Im Release dokumentieren (Screenshots + Ergebnis)
+        if: always() && hashFiles('ui-report/report.md') != ''
+        shell: bash
+        run: |
+          TAG="${{ steps.rel.outputs.tag }}"
+          cd ui-report
+          for f in A_gesperrt.png C_entsperrt.png; do
+            [ -f "$f" ] && cp "$f" "windows-ui-$f"
+          done
+          cp report.md windows-ui-test-report.md
+          gh release upload "$TAG" windows-ui-*.png windows-ui-test-report.md --clobber
+          BASE="https://github.com/${{ github.repository }}/releases/download/$TAG"
+          OLD=$(gh release view "$TAG" --json body -q .body | sed '/<!-- windows-ui-test -->/,$d')
+          {
+            printf '%s\n\n<!-- windows-ui-test -->\n' "$OLD"
+            cat report.md
+            printf '\n![Ohne Schlüssel](%s/windows-ui-A_gesperrt.png)\n![Mit Test-Schlüssel](%s/windows-ui-C_entsperrt.png)\n' "$BASE" "$BASE"
+            printf '\n[Actions-Lauf](%s/%s/actions/runs/%s)\n' "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}"
+          } > notes.md
+          gh release edit "$TAG" --notes-file notes.md
