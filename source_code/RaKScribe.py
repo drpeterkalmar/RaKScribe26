@@ -821,6 +821,79 @@ def transcribe_full_chirp3(pcm_int16, samplerate=16000, loc='eu'):
         log_exception("[CHIRP3] Fehler in transcribe_full_chirp3")
         return None
 
+# v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation), identisch zur Web-App (CHIRP_PHRASES).
+CHIRP_PHRASES = [
+    "flachbogig",
+    "flachbogige Skoliose",
+    "rechtskonvex",
+    "linkskonvex",
+    "Cobb-Winkel",
+    "Th1",
+    "Th2",
+    "Th3",
+    "Th4",
+    "Th5",
+    "Th6",
+    "Th7",
+    "Th8",
+    "Th9",
+    "Th10",
+    "Th11",
+    "Th12",
+    "Schmorlsche Impressionen",
+    "Edgren-Vaino-Zeichen",
+    "Morbus Scheuermann",
+    "Osteochondrose",
+    "Spondylosis deformans",
+    "Spondylarthrose",
+    "Unkovertebralgelenksarthrose",
+    "Facettengelenksarthrose",
+    "Discopathiezeichen",
+    "Diskopathie",
+    "Antelisthese",
+    "Retrolisthese",
+    "Neoarthrosis interspinosa",
+    "kyphotische Fehlhaltung",
+    "Streckhaltung",
+    "Fibroostosen",
+    "Kellgren und Lawrence",
+    "Gonarthrose",
+    "Coxarthrose",
+    "Omarthrose",
+    "Rhizarthrose",
+    "Retropatellararthrose",
+    "Femorotibialkompartiment",
+    "Scaphoidtaille",
+    "Kahnbeintaille",
+    "Collum chirurgicum",
+    "Radiusköpfchen",
+    "Humeruskopfhochstand",
+    "Garden",
+    "Supraspinatussehne",
+    "Infraspinatussehne",
+    "Subscapularissehne",
+    "lange Bizepssehne",
+    "Tenosynovitis",
+    "Tendinopathie",
+    "Tendinosis calcarea",
+    "Begleitbursitis",
+    "Enthesiopathie",
+    "Plantarfaszie",
+    "Arthro-Broström",
+    "Mammasonographie",
+    "BI-RADS",
+    "Morbus Mondor",
+    "Sulcus nervi ulnaris",
+    "Nervus ulnaris",
+    "Musculus anconeus epitrochlearis",
+    "Hoffmann-Tinel-Zeichen",
+    "Kiloh-Nevin",
+    "Hypothenarmuskulatur",
+    "faszikulär",
+    "Thorax p.a.",
+]
+
+
 def _chirp3_request(token, loc, wav_b64, timeout=60):
     import urllib.request as _ur
     host = 'speech' if loc == 'global' else loc + '-speech'
@@ -828,7 +901,9 @@ def _chirp3_request(token, loc, wav_b64, timeout=60):
            f"locations/{loc}/recognizers/_:recognize")
     cfg = {"languageCodes": ["de-DE"], "model": "chirp_3",
            "autoDecodingConfig": {},
-           "features": {"enableAutomaticPunctuation": True}}
+           "features": {"enableAutomaticPunctuation": True},
+           "adaptation": {"phraseSets": [{"inlinePhraseSet": {"phrases": [
+               {"value": p, "boost": 10} for p in CHIRP_PHRASES]}}]}}
     body = json.dumps({"config": cfg, "content": wav_b64}).encode()
     req = _ur.Request(url, data=body, headers={
         "Authorization": "Bearer " + token,
@@ -914,7 +989,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.9.10)")
+        self.title("RaKScribe26 (v2.10.15)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -964,7 +1039,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.14", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.10.15", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 
@@ -1437,7 +1512,9 @@ class RaKScribeApp(ctk.CTk):
                     body = json.dumps({
                         "contents": [{"role": "user", "parts": [{"text": p_full}]}],
                         "systemInstruction": {"parts": [{"text": sys_msg}]},
-                        "generationConfig": {"temperature": 0.0},
+                        # v2.10.15: thinkingBudget 0 (Web-Parität seit v2.10.1) — ohne denkt
+                        # Gemini dynamisch mit: Befund 7 s → ~1,5 s, gleiche Qualität (90-Fall-A/B).
+                        "generationConfig": {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}},
                     }).encode()
                     req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
                     with urllib.request.urlopen(req, timeout=120) as resp:

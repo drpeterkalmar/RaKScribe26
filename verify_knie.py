@@ -69,7 +69,9 @@ def check_report(final, label):
     print(final[:900])
     befund = final.split("## Befund")[1].split("## Ergebnis")[0] if "## Befund" in final else ""
     ergebnis = final.split("## Ergebnis")[1] if "## Ergebnis" in final else ""
-    header = next((l.strip() for l in befund.splitlines() if l.strip()), "")
+    # seit v2.10.8 steht die Untersuchungsart als '## …'-Zeile VOR '## Befund'
+    pre = final.split("## Befund")[0] if "## Befund" in final else final
+    header = next((l.strip().lstrip("#").strip() for l in pre.splitlines() if l.strip().startswith("##")), "")
     lower = final.lower()
     checks = [
         ("Überschrift = 'Kniegelenk … in 2 Ebenen'", "kniegelenk" in header.lower() and "in 2 ebenen" in header.lower()),

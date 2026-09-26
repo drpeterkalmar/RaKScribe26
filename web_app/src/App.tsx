@@ -1329,7 +1329,81 @@ export default function App() {
     return token;
   };
 
-  const chirp3Recognize = async (token: string, wavB64: string): Promise<string> => {
+  // v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation). A/B echte + synthetische Diktate:
+// Termini 41/47 → 45/47 (flachbogig, Cobb-Winkel, Mammasonographie, Discopathiezeichen, Fibroostosen,
+// Rhizarthrose, Arthro-Broström). BEWUSST KURZ — die 692er-Liste verschlechterte chirp_3 (25/29 statt 26/29).
+const CHIRP_PHRASES: string[] = [
+  "flachbogig",
+  "flachbogige Skoliose",
+  "rechtskonvex",
+  "linkskonvex",
+  "Cobb-Winkel",
+  "Th1",
+  "Th2",
+  "Th3",
+  "Th4",
+  "Th5",
+  "Th6",
+  "Th7",
+  "Th8",
+  "Th9",
+  "Th10",
+  "Th11",
+  "Th12",
+  "Schmorlsche Impressionen",
+  "Edgren-Vaino-Zeichen",
+  "Morbus Scheuermann",
+  "Osteochondrose",
+  "Spondylosis deformans",
+  "Spondylarthrose",
+  "Unkovertebralgelenksarthrose",
+  "Facettengelenksarthrose",
+  "Discopathiezeichen",
+  "Diskopathie",
+  "Antelisthese",
+  "Retrolisthese",
+  "Neoarthrosis interspinosa",
+  "kyphotische Fehlhaltung",
+  "Streckhaltung",
+  "Fibroostosen",
+  "Kellgren und Lawrence",
+  "Gonarthrose",
+  "Coxarthrose",
+  "Omarthrose",
+  "Rhizarthrose",
+  "Retropatellararthrose",
+  "Femorotibialkompartiment",
+  "Scaphoidtaille",
+  "Kahnbeintaille",
+  "Collum chirurgicum",
+  "Radiusköpfchen",
+  "Humeruskopfhochstand",
+  "Garden",
+  "Supraspinatussehne",
+  "Infraspinatussehne",
+  "Subscapularissehne",
+  "lange Bizepssehne",
+  "Tenosynovitis",
+  "Tendinopathie",
+  "Tendinosis calcarea",
+  "Begleitbursitis",
+  "Enthesiopathie",
+  "Plantarfaszie",
+  "Arthro-Broström",
+  "Mammasonographie",
+  "BI-RADS",
+  "Morbus Mondor",
+  "Sulcus nervi ulnaris",
+  "Nervus ulnaris",
+  "Musculus anconeus epitrochlearis",
+  "Hoffmann-Tinel-Zeichen",
+  "Kiloh-Nevin",
+  "Hypothenarmuskulatur",
+  "faszikulär",
+  "Thorax p.a.",
+];
+
+const chirp3Recognize = async (token: string, wavB64: string): Promise<string> => {
     const url = 'https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize';
     const response = await fetchWithRetry(url, {
       method: 'POST',
@@ -1340,6 +1414,7 @@ export default function App() {
           model: 'chirp_3',
           autoDecodingConfig: {},
           features: { enableAutomaticPunctuation: true },
+          adaptation: { phraseSets: [{ inlinePhraseSet: { phrases: CHIRP_PHRASES.map(value => ({ value, boost: 10 })) } }] },
         },
         content: wavB64,
       }),
@@ -1535,6 +1610,14 @@ export default function App() {
 - "Näoarthrosen" / "näoarthrosen" / "neo Arthrosen" / "Näo Arthrosen" → "Neoarthrosen"
 - "Neoarthrosen interspinosa" / "Neoarthrose interspinosa" / "Näoarthrosen interspinosa" → "Neoarthrosis interspinosa" (NEOART HROSE der Dornfortsätze, LWS-Kontext; Singular, lateinische Form)
 - "Flachbau" / "Flachbau-" → "flachbogig" (z.B. "Flachbau linkskonvex" → "flachbogig linkskonvex")
+- "Flachbild" / "Flachbogen" (Wirbelsäulen-Kontext, vor Skoliose/konvex) → "flachbogig"
+- "Cobbs-Winkel" / "Cobbs Winkel" / "Kopfwinkel" / "Copfwinkel" (Skoliose-Kontext) → "Cobb-Winkel"
+- "DH4" / "TH4" / "D4" (Wirbelsäule, analog für alle Zahlen 1–12) → "Th4" (Brustwirbel IMMER "Th" + Zahl)
+- "Edgren-Veno" / "Edgren-Venu" / "Edgren-Vanno" / "Edgren-Veyno" → "Edgren-Vaino"
+- "Mammasono kaffil" / "Mammasono graphie" → "Mammasonographie"
+- "Scaphoid Taille" / "Scaphoid-Teile" / "Skaphoid Teile" / "Cafés Taille" / "Kaput Taille" → "Scaphoidtaille"
+- "Rizarthrose" → "Rhizarthrose"
+- "Artro-Brostrom" / "Arthrobros-Trümmer-Tanke" → "Arthro-Broström"
 - "Thorax b.a. seitlich" / "Thorax b.a. und seitlich" → "Thorax p.a./seitlich"
 - "Thorax b.a." / "Thorax be a" / "Thorax ba" → "Thorax p.a."
 - "b.a." (Projektionsangabe, nach Thorax/Röntgen) → "p.a."
@@ -2273,7 +2356,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.14</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.15</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2361,7 +2444,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.14</span>
+              <span className="brand-badge">Web v2.10.15</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

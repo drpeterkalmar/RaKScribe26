@@ -22,9 +22,7 @@ import urllib.request
 ROOT = pathlib.Path(__file__).parent
 PUBLIC = ROOT / "web_app" / "public"
 API_KEY = (ROOT / "web_app" / "public" / "vertex-key.txt").read_text().strip()
-VERTEX_URL = ("https://europe-west3-aiplatform.googleapis.com/v1/projects/"
-              "895690562186/locations/europe-west3/publishers/google/models/"
-              "gemini-2.5-flash:generateContent")
+VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
 
 sys.path.insert(0, str(ROOT))
 import test_all_regions as harness  # noqa: E402
