@@ -5,7 +5,7 @@ Automatischer Oberflächen-Test der echten `rakscribe26.exe` auf einem frischen 
 (Workflow „Windows UI-Test (EXE)“, `.github/workflows/test-exe-windows.yml`) oder manuell:
 
 ```bash
-gh workflow run test-exe-windows.yml -f tag=3.0.1   # leer = neuester Release
+gh workflow run test-exe-windows.yml -f tag=3.0.2   # leer = neuester Release
 ```
 
 ## Was geprüft wird

@@ -1035,7 +1035,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe 3.0.1 – Röntgen am Kai")
+        self.title("RaKScribe 3.0.2 – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
@@ -1075,6 +1075,11 @@ class RaKScribeApp(ctk.CTk):
             self.device_names = ["0: Standard Mikrofon"]
             self.device_mapping = {"0: Standard Mikrofon": 0}
             self.selected_device_index = 0
+        if not self.device_names:
+            self.device_names = ["Kein Mikrofon gefunden"]
+            self.device_mapping = {"Kein Mikrofon gefunden": None}
+        if not self.default_device_name:
+            self.default_device_name = self.device_names[0]
             self.default_device_name = "0: Standard Mikrofon"
 
         self.create_widgets()
@@ -1195,7 +1200,9 @@ class RaKScribeApp(ctk.CTk):
         if not path:
             return
         geo = os.environ.get("RAKSCRIBE_SELFTEST_GEOMETRY")
-        if geo:
+        if geo == "zoomed":
+            self.state("zoomed")
+        elif geo:
             self.geometry(geo)
         self.lift()
         self.attributes("-topmost", True)
@@ -1220,6 +1227,8 @@ class RaKScribeApp(ctk.CTk):
                     "report_heading_tags": len(tb.tag_ranges("md_title")) // 2 + len(tb.tag_ranges("md_head")) // 2,
                     "report_hidden_hash_tags": len(tb.tag_ranges("md_hidden")) // 2,
                     "report_text_keeps_markdown": self.result_text.get("1.0", "end").lstrip().startswith("##"),
+                    "toggle_calls": getattr(self, "_toggle_calls", 0),
+                    "mic_dropdown": self.device_dropdown.get(),
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -1244,9 +1253,19 @@ class RaKScribeApp(ctk.CTk):
             self.after(800, lambda: dump("ready"))
 
         self.after(1200, lambda: (dump("start"), demo()))
-        # Nach dem F10-Test (vom Testskript gesendet) Zustand erneut festhalten
-        self.bind_all("<<SelftestDump>>", lambda e: dump("after_f10"))
-        self.after(int(os.environ.get("RAKSCRIBE_SELFTEST_F10_DUMP_MS", "9000")), lambda: dump("after_f10"))
+        # Testskript legt <state>.trigger mit Phasen-Namen an → Zustand erneut festhalten
+        def poll_trigger():
+            trig = path + ".trigger"
+            if os.path.exists(trig):
+                try:
+                    with open(trig, "r", encoding="utf-8") as f:
+                        phase = f.read().strip() or "trigger"
+                    os.remove(trig)
+                    dump(phase)
+                except Exception:
+                    pass
+            self.after(300, poll_trigger)
+        self.after(1500, poll_trigger)
 
     # ── v3.0: Befund-Formatierung (## versteckt, Überschriften fett) — Text bleibt Markdown für Kopieren ──
     def _setup_report_formatting(self):
@@ -1449,6 +1468,7 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
 
     def toggle_recording(self):
+        self._toggle_calls = getattr(self, "_toggle_calls", 0) + 1
         if not self.is_recording and not keys_ready():
             self.refresh_key_state()
             return

@@ -13,6 +13,7 @@ Ergebnis: <out>/report.md, <out>/results.json, <out>/*.png  — Exit 1 bei FAIL.
 Aufruf:  python exe_ui_test.py <pfad/zur/rakscribe26.exe> <ausgabe-ordner> [versions-tag]
 """
 import ctypes, json, os, pathlib, shutil, subprocess, sys, tempfile, time
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 EXE = pathlib.Path(sys.argv[1]).resolve()
 OUT = pathlib.Path(sys.argv[2]).resolve(); OUT.mkdir(parents=True, exist_ok=True)
@@ -31,16 +32,30 @@ def screen_size():
     return u.GetSystemMetrics(0), u.GetSystemMetrics(1)
 
 
-def find_window(title_part, timeout=60):
+def rks_windows(title_part="RaKScribe"):
     import win32gui
+    hits = []
+    win32gui.EnumWindows(lambda h, _: hits.append(h) if win32gui.IsWindowVisible(h) and title_part in win32gui.GetWindowText(h) else None, None)
+    return hits
+
+
+def find_window(title_part, timeout=60):
     t0 = time.time()
     while time.time() - t0 < timeout:
-        hits = []
-        win32gui.EnumWindows(lambda h, _: hits.append(h) if win32gui.IsWindowVisible(h) and title_part in win32gui.GetWindowText(h) else None, None)
+        hits = rks_windows(title_part)
         if hits:
             return hits[0], time.time() - t0
         time.sleep(0.5)
     return None, timeout
+
+
+def kill_all(p):
+    # PyInstaller-onefile: Bootloader + Kindprozess → ganzen Baum beenden, dann warten bis alle Fenster weg sind
+    subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True)
+    subprocess.run(["taskkill", "/F", "/IM", "rakscribe26.exe"], capture_output=True)
+    t0 = time.time()
+    while rks_windows() and time.time() - t0 < 20:
+        time.sleep(0.5)
 
 
 def screenshot(hwnd, path):
@@ -90,11 +105,8 @@ def run_case(case, with_key, demo, send_f10):
         (appdata / "RaKScribe").mkdir()
         (appdata / "RaKScribe" / "rakscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
     state = work / "selftest.json"
-    sw, sh = screen_size()
-    w, h = min(1240, sw - 40), min(820, sh - 80)
     env = dict(os.environ, APPDATA=str(appdata), RAKSCRIBE_SELFTEST=str(state),
-               RAKSCRIBE_SELFTEST_GEOMETRY=f"{w}x{h}+10+10", RAKSCRIBE_SELFTEST_DEMO="1" if demo else "0",
-               RAKSCRIBE_SELFTEST_F10_DUMP_MS="12000")
+               RAKSCRIBE_SELFTEST_GEOMETRY="zoomed", RAKSCRIBE_SELFTEST_DEMO="1" if demo else "0")
     p = subprocess.Popen([str(work / EXE.name)], cwd=work, env=env)
     try:
         hwnd, t_start = find_window("RaKScribe", 90)
@@ -114,11 +126,15 @@ def run_case(case, with_key, demo, send_f10):
             import win32api, win32con
             win32api.keybd_event(win32con.VK_F10, 0, 0, 0); time.sleep(0.1)
             win32api.keybd_event(win32con.VK_F10, 0, win32con.KEYEVENTF_KEYUP, 0)
+            time.sleep(2.5)
+            # falls Windows F10 als Menütaste behandelt hat: Menümodus mit ESC verlassen
+            win32api.keybd_event(win32con.VK_ESCAPE, 0, 0, 0); time.sleep(0.1)
+            win32api.keybd_event(win32con.VK_ESCAPE, 0, win32con.KEYEVENTF_KEYUP, 0)
+            pathlib.Path(str(state) + ".trigger").write_text("after_f10", encoding="utf-8")
             after = wait_json(state, "after_f10", 20)
         return {"state": st, "after_f10": after, "screenshot": f"{case}.png", "size": size, "t_start": round(t_start, 1)}
     finally:
-        p.kill()
-        time.sleep(1)
+        kill_all(p)
 
 
 print(f"RaKScribe EXE-UI-Test {TAG} — Bildschirm {screen_size()}", flush=True)
@@ -134,7 +150,8 @@ if a:
     check("A_gesperrt", "Schlüssel-Anzeige = Kein Schlüssel", "Kein" in s["key_chip"], s["key_chip"])
     af = a["after_f10"]
     check("B_F10", "F10 ohne Schlüssel startet keine Aufnahme", af is not None and af["status"] == "LOCKED",
-          af["status"] if af else "kein Zustand nach F10")
+          (f"Status {af['status']}, F10-Hotkey {af['toggle_calls']}× empfangen") if af else "kein Zustand nach F10")
+    check("A_gesperrt", "Mikrofon-Auswahl nicht leer", bool(s.get("mic_dropdown")), s.get("mic_dropdown", ""))
 
 # C: mit Test-Schlüssel + Demo-Befund
 c = run_case("C_entsperrt", with_key=True, demo=True, send_f10=False)
@@ -147,6 +164,9 @@ if c:
     check("C_entsperrt", "Befund: 3 Überschriften formatiert", s["report_heading_tags"] == 3, str(s["report_heading_tags"]))
     check("C_entsperrt", "Befund: ## ausgeblendet", s["report_hidden_hash_tags"] == 3, str(s["report_hidden_hash_tags"]))
     check("C_entsperrt", "Kopiertext bleibt Markdown", s["report_text_keeps_markdown"])
+    sw_, sh_ = s["screen"]
+    gw, gh_ = [int(x) for x in s["geometry"].split("+")[0].split("x")]
+    check("C_entsperrt", "Fenster passt auf den Bildschirm", gw <= sw_ and gh_ <= sh_, f"{gw}×{gh_} auf {sw_}×{sh_}")
 
 ok = all(r["ok"] for r in results) and a and c
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c},
