@@ -1,0 +1,312 @@
+======================================================================
+VOLLSTÄNDIGER WIDERSPRUCHSTEST — Alle Regionen
+======================================================================
+
+────────────────────────────────────────────────────────────
+TEST: HWS Streckhaltung+Skoliose+Osteochondrose
+────────────────────────────────────────────────────────────
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/wohnzimmer/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+  Gen: 2.7s | Val: 2.1s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- HWS Streckhaltung+Skoliose+Osteochondrose FINALES ERGEBNIS ---
+## Halswirbelsäule in 2 Ebenen
+
+## Befund
+Streckhaltung und flachbogige Seitausbiegung der HWS. Ventraler Versatz von C5 gegenüber C6. Die HWK sind im Übrigen nach Anzahl, Form und Größe regelrecht. Mineralgehalt und Knochenstruktur sind unauffällig. Die kortikalen Randkonturen sind einschließlich der Grund- und Deckplatten im Übrigen glatt und scharf abgrenzbar. Die Dorn-, Quer- und Gelenkfortsätze sind ordnungsgemäß konfiguriert. Gelenkspaltverschmälerung und knöcherne Ausziehungen der Unkovertebralgelenke C5/C6. Die kleinen Zwischenwirbelgelenke sind ohne Auffälligkeiten. Verschmälerung des
+
+────────────────────────────────────────────────────────────
+TEST: LWS Osteochondrose+Spondylose+Facettenarthrose
+────────────────────────────────────────────────────────────
+  Gen: 2.1s | Val: 2.1s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- LWS Osteochondrose+Spondylose+Facettenarthrose FINALES ERGEBNIS ---
+## Lendenwirbelsäule in 2 Ebenen
+
+## Befund
+Flachbogige linkskonvexe Seitausbiegung der Lendenwirbelsäule. Dorsaler Versatz von L4 gegenüber L5. Die LWK sind nach Anzahl, Form und Größe regelrecht. Mineralgehalt und Knochenstruktur sind unauffällig. Die kortikalen Randkonturen sind einschließlich der Grund- und Deckplatten im Übrigen glatt und scharf abgrenzbar. Spondylophytenbildung im Bereich L3 bis L5. Verschmälerung des Intervertebralraums L4/L5 sowie L5/S1 mit subchondraler Sklerosierung der Abschlussplatten. Die Abgänge der Bogenwurzeln, die Dorn- und Querfortsätze sind ordnungsgemäß kon
+
+────────────────────────────────────────────────────────────
+TEST: BWS Morbus Scheuermann
+────────────────────────────────────────────────────────────
+  Gen: 2.0s | Val: 2.1s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- BWS Morbus Scheuermann FINALES ERGEBNIS ---
+## Brustwirbelsäule in 2 Ebenen
+
+## Befund
+Vermehrte Kyphose der Brustwirbelsäule. Keilwirbelbildung der Brustwirbelkörper Th7 bis Th9. Schmorl-Knoten an den Grund- und Deckplatten der Brustwirbelkörper Th6 bis Th10. Die übrigen BWK sind nach Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur sind im Übrigen unauffällig. Die kortikalen Randkonturen sind ansonsten glatt und scharf abgrenzbar. Die Abgänge der Bogenwurzeln, die Dorn-, Quer- und Gelenkfortsätze sind ordnungsgemäß konfiguriert. Regelrechte Form der Kostotransversal- und Kostovertebralgelenke. 
+
+────────────────────────────────────────────────────────────
+TEST: Schulter Omarthrose+Tendinosis calcarea
+────────────────────────────────────────────────────────────
+  Gen: 1.7s | Val: 1.8s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Schulter Omarthrose+Tendinosis calcarea FINALES ERGEBNIS ---
+## Schultergelenk rechts in 2 Ebenen
+
+## Befund
+Hochstand des Humeruskopfes. Gelenkspaltverschmälerung des Glenohumeralgelenkes mit subchondraler Sklerosierung und osteophytären Anbauten. Mineralgehalt und Knochenstruktur im Übrigen normal. AC-Gelenk altersentsprechend, keine Luxation.
+
+Unauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Kalkdichte Verschattung im Bereich der Supraspinatussehne.
+
+Normale Weichteile.
+
+## Ergebnis
+1. Omarthrose Grad 3 nach Kellgren & Lawrence rechts
+2. Kalzifikation der Supraspinatussehne rechts
+3. 
+
+────────────────────────────────────────────────────────────
+TEST: Schulter Fraktur
+────────────────────────────────────────────────────────────
+  Gen: 1.8s | Val: 2.0s | Status: ✅ PASS
+  Keine Widersprüche gefunden ✅
+
+--- Schulter Fraktur FINALES ERGEBNIS ---
+## Schultergelenk links in 2 Ebenen
+
+## Befund
+Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum humeri. Humeruskopf in regelrechter Artikulation. Mineralgehalt regelrecht. Die Gelenkflächen sind im Übrigen regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation.
+
+Unauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.
+
+Normale Weichteile.
+
+## Ergebnis
+1. Dislozierte Fraktur des Collum chirurgicum humer
+
+────────────────────────────────────────────────────────────
+TEST: Hüfte Coxarthrose
+────────────────────────────────────────────────────────────
+  Gen: 2.3s | Val: 1.7s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Hüfte Coxarthrose FINALES ERGEBNIS ---
+## Hüftgelenk links in 2 Ebenen
+
+## Befund
+Anatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne. Der CCD-Winkel ist im Normbereich. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen. Gelenkspaltverschmälerung, subchondrale Sklerosierung der Gelenkflächen und osteophytäre Randwulstbildung links. Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.
+
+## Ergebnis
+1. Coxarthro
+
+────────────────────────────────────────────────────────────
+TEST: Hüfte Schenkelhalsfraktur
+────────────────────────────────────────────────────────────
+  Gen: 1.6s | Val: 1.4s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Hüfte Schenkelhalsfraktur FINALES ERGEBNIS ---
+## Hüftgelenk rechts in 2 Ebenen
+
+## Befund
+Stellung des Hüftkopfes in der Pfanne regelrecht. Der CCD-Winkel ist im Normbereich. Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich des Schenkelhalses rechts. Die artikulierenden Flächen sind im Übrigen kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.
+
+## Ergebnis
+1. Nicht dislozierte Schenkelhalsfraktur rechts, Garden I.
+
+────────────────────────────────────────────────────────────
+TEST: Knie Gonarthrose
+────────────────────────────────────────────────────────────
+  Gen: 1.9s | Val: 1.8s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Knie Gonarthrose FINALES ERGEBNIS ---
+## Kniegelenk rechts in 2 Ebenen
+
+## Befund
+Normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Medialbetonte Gelenkspaltverschmälerung mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.
+
+## Ergebnis
+1. Femorotibiale Gonarthrose rechts Grad 3 nach K
+
+────────────────────────────────────────────────────────────
+TEST: Knie Gonarthrose K&L (Peter 08.09., Screenshot-Case)
+────────────────────────────────────────────────────────────
+  Gen: 2.4s | Val: 1.9s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Knie Gonarthrose K&L (Peter 08.09., Screenshot-Case) FINALES ERGEBNIS ---
+## Kniegelenk links in 2 Ebenen
+
+## Befund
+Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Mäßiggradige Verschmälerung des medialen femorotibialen Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung. Geringgradige Verschmälerung des retropatellaren Gelenkspaltes mit beginnender osteophytärer Randzuschärfung. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällig
+
+────────────────────────────────────────────────────────────
+TEST: Ellbogen Fraktur
+────────────────────────────────────────────────────────────
+  Gen: 1.8s | Val: 1.4s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Ellbogen Fraktur FINALES ERGEBNIS ---
+## Ellbogengelenk rechts in 2 Ebenen
+
+## Befund
+Mineralgehalt regelrecht. Kompakta und Kortikalis nach Breite und Kontur im Übrigen regelrecht. Dislozierte Kontinuitätsunterbrechung im Bereich des Radiusköpfchens. Artikulierende Flächen im Übrigen glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen. Unauffällige Darstellung des Weichteilmantels.
+
+## Ergebnis
+1. Dislozierte Fraktur des Radiusköpfchens rechts.
+
+────────────────────────────────────────────────────────────
+TEST: Hand Fraktur
+────────────────────────────────────────────────────────────
+  Gen: 1.8s | Val: 1.6s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Hand Fraktur FINALES ERGEBNIS ---
+## Hand links in 2 Ebenen
+
+## Befund
+Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille links. Ansonsten Kortikalis der übrigen Skelettelemente von glatter und scharfer Kontur, ohne pathologische Unterbrechung. Kompakta von normaler Breite.
+Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.
+Die periartikuläre Weichteilzone o. B.
+
+## Ergebnis
+1. Nicht dislozierte Fraktur der Kahnbeintaille links.
+
+────────────────────────────────────────────────────────────
+TEST: Handgelenk SLAC
+────────────────────────────────────────────────────────────
+  Gen: 1.9s | Val: 1.7s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Handgelenk SLAC FINALES ERGEBNIS ---
+## Handgelenk rechts in 2 Ebenen
+
+## Befund
+Knochenstruktur: Mineralgehalt regelrecht. Kortikalis glatte und scharfe Begrenzung, ohne pathologische Unterbrechung. Verbreiterung des scapholunären Gelenkspaltes.
+Gelenkflächen: Verschmälerung des radioscaphoidalen Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung. Die übrigen artikulierenden Flächen im Übrigen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander.
+Radius, Ulna und Ossa metacarpalia: Mitabgebildete Anteile unauffällig.
+Weichteile: Regelrechte Verhältnis
+
+────────────────────────────────────────────────────────────
+TEST: Beckenübersicht Coxarthrose+Beckenschiefstand
+────────────────────────────────────────────────────────────
+  Gen: 2.5s | Val: 2.0s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Beckenübersicht Coxarthrose+Beckenschiefstand FINALES ERGEBNIS ---
+## Beckenübersicht stehend
+
+## Befund
+Anatomisch normale und symmetrische Form des Beckenskeletts. Beckenschiefstand nach links um 4 mm bei einer Beinlängendifferenz von 4 mm links. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Rechts normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Links zeigt sich eine mäß
+
+────────────────────────────────────────────────────────────
+TEST: Sprunggelenk Arthrose
+────────────────────────────────────────────────────────────
+  Gen: 1.8s | Val: 1.8s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Sprunggelenk Arthrose FINALES ERGEBNIS ---
+## Sprunggelenk links in 2 Ebenen
+
+## Befund
+Ordnungsgemäße Konfiguration der Malleolengabel. Verschmälerung des Gelenkspaltes des oberen Sprunggelenkes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randzuschärfung. Die mitdargestellten Skelettabschnitte sind bezüglich Mineralgehalt und Knochenstruktur im Übrigen normal. Sie weisen eine glatte und scharfe Kortikalisbegrenzung ohne pathologische Konturunterbrechungen auf. Kein Hinweis auf intra- oder periartikuläre Verkalkungen. Unauffällige Weichteile.
+
+## Ergebnis
+1. Arthrose des oberen Sprunggelenkes Grad 3 nach Kellgre
+
+────────────────────────────────────────────────────────────
+TEST: HWS Discopathiezeichen (Peter 07.09., Regression)
+────────────────────────────────────────────────────────────
+  Gen: 2.0s | Val: 1.9s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- HWS Discopathiezeichen (Peter 07.09., Regression) FINALES ERGEBNIS ---
+## Halswirbelsäule in 2 Ebenen
+
+## Befund
+Streckhaltung der HWS. Die HWK sind nach Anzahl, Form und Größe regelrecht. Mineralgehalt und Knochenstruktur sind unauffällig. Die kortikalen Randkonturen sind einschließlich der Grund- und Deckplatten glatt und scharf abgrenzbar. Spondylophytenbildung C2–C7. Die Dorn-, Quer- und Gelenkfortsätze sind ordnungsgemäß konfiguriert. Die Unkovertebralgelenke und kleinen Zwischenwirbelgelenke sind ohne Auffälligkeiten. Verschmälerung des Intervertebralraums C3/C4 mit subchondraler Sklerosierung der Abschlussplatten. Verschmälerung der Intervertebralräume C4–
+
+────────────────────────────────────────────────────────────
+TEST: HWS Flachprofil-STT + kyphotische Fehlhaltung (Peter 07.09., Screenshot-Case)
+────────────────────────────────────────────────────────────
+  Gen: 2.1s | Val: 2.1s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- HWS Flachprofil-STT + kyphotische Fehlhaltung (Peter 07.09., Screenshot-Case) FINALES ERGEBNIS ---
+## Halswirbelsäule in 2 Ebenen
+
+## Befund
+Flachbogige linkskonvexe Seitausbiegung und kyphotische Fehlhaltung der HWS. Die HWK sind nach Anzahl, Form und Größe regelrecht. Mineralgehalt und Knochenstruktur sind unauffällig. Die kortikalen Randkonturen sind einschließlich der Grund- und Deckplatten glatt und scharf abgrenzbar. Die Dorn-, Quer- und Gelenkfortsätze sind ordnungsgemäß konfiguriert. Degenerative Veränderungen der Unkovertebralgelenke C3 bis C5, die kleinen Zwischenwirbelgelenke im Übrigen ohne Auffälligkeiten. Verschmälerung des Intervertebralraums C2 bis C4 mit subchondraler Skler
+
+────────────────────────────────────────────────────────────
+TEST: Schädel Fraktur
+────────────────────────────────────────────────────────────
+  Gen: 1.7s | Val: 1.9s | Status: ✅ PASS
+  Keine Widersprüche gefunden ✅
+
+--- Schädel Fraktur FINALES ERGEBNIS ---
+## Schädel in 2 Ebenen
+
+## Befund
+Die Schädelkalotte ist nach Form, Dicke und Größe normal. Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich des Os parietale links. Die übrigen Kalottenkonturen stellen sich glatt und scharf dar. Altersentsprechende Darstellung der Schädelnähte. Kein Nachweis pathologischer Verkalkungen.
+
+Anatomisch normal konfigurierte, glatt abgrenzbare Schädelbasis mit unauffälliger Darstellung von Planum sphenoidale, Sella und hinterer Schädelgrube. Regelrecht geformte, glatt und scharf begrenzte Konturen im Bereich des mitdargestellten Gesic
+
+────────────────────────────────────────────────────────────
+TEST: Nasennebenhöhlen Sinusitis
+────────────────────────────────────────────────────────────
+  Gen: 1.5s | Val: 1.4s | Status: ⚠️ WARN
+  📝 Call #2 hat korrigiert
+
+--- Nasennebenhöhlen Sinusitis FINALES ERGEBNIS ---
+## Röntgen der Nasennebenhöhlen
+
+## Befund
+Schleimhautschwellung und Verlegung des Sinus maxillaris beidseits mit Spiegelbildung links. Die übrigen Nebenhöhlen sind normal lufthältig.
+
+## Ergebnis
+1. Schleimhautschwellung und Verlegung des Sinus maxillaris beidseits, links mit Spiegelbildung (Verdacht auf Sinusitis maxillaris beidseits).
+
+======================================================================
+ZUSAMMENFASSUNG
+======================================================================
+
+✅ PASS: 2 | ⚠️ WARN: 16 | ❌ FAIL: 0 | ERROR: 0
+Total: 18
+
+──────────────────────────────────────────────────────────────────────
+⚠️ HWS Streckhaltung+Skoliose+Osteochondrose
+    📝 Call #2 hat korrigiert
+⚠️ LWS Osteochondrose+Spondylose+Facettenarthrose
+    📝 Call #2 hat korrigiert
+⚠️ BWS Morbus Scheuermann
+    📝 Call #2 hat korrigiert
+⚠️ Schulter Omarthrose+Tendinosis calcarea
+    📝 Call #2 hat korrigiert
+✅ Schulter Fraktur
+⚠️ Hüfte Coxarthrose
+    📝 Call #2 hat korrigiert
+⚠️ Hüfte Schenkelhalsfraktur
+    📝 Call #2 hat korrigiert
+⚠️ Knie Gonarthrose
+    📝 Call #2 hat korrigiert
+⚠️ Knie Gonarthrose K&L (Peter 08.09., Screenshot-Case)
+    📝 Call #2 hat korrigiert
+⚠️ Ellbogen Fraktur
+    📝 Call #2 hat korrigiert
+⚠️ Hand Fraktur
+    📝 Call #2 hat korrigiert
+⚠️ Handgelenk SLAC
+    📝 Call #2 hat korrigiert
+⚠️ Beckenübersicht Coxarthrose+Beckenschiefstand
+    📝 Call #2 hat korrigiert
+⚠️ Sprunggelenk Arthrose
+    📝 Call #2 hat korrigiert
+⚠️ HWS Discopathiezeichen (Peter 07.09., Regression)
+    📝 Call #2 hat korrigiert
+⚠️ HWS Flachprofil-STT + kyphotische Fehlhaltung (Peter 07.09., Screenshot-Case)
+    📝 Call #2 hat korrigiert
+✅ Schädel Fraktur
+⚠️ Nasennebenhöhlen Sinusitis
+    📝 Call #2 hat korrigiert

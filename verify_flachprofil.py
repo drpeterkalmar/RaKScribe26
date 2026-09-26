@@ -26,7 +26,7 @@ def _sa_token():
         _sa_creds.refresh(_tr.Request())
     return _sa_creds.token
 
-VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
+VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 os.environ["VERTEX_API_KEY"] = API_KEY
 sys.path.insert(0, str(ROOT))
@@ -73,8 +73,9 @@ def check_report(final, label):
         ("KEIN 'Coyote' im Report",                 "coyote" not in lower),
         ("'flachbogig' im Befundtext",              "flachbogig" in lower),
         ("Osteochondrose C2–C4 im Ergebnis",        "osteochondrose" in lower and "c2" in lower),
-        ("Gelenksarthrose C3–C5 im Ergebnis (auch Spondylarthrose ok)", ("gelenksarthrose" in lower or "spondylarthrose" in lower) and "c3" in lower),
-        ("Diskopathie C4–C7 im Ergebnis",           "diskopathie" in lower and "c4" in lower),
+        # Roh-STT "Und alle gelenksarthrose" = verhörte "Unkovertebralgelenksarthrose" → Unkovertebral-Lesart ist korrekt
+        ("Gelenksarthrose C3–C5 im Ergebnis (auch Spondylarthrose/Unkovertebralarthrose ok)", ("gelenksarthrose" in lower or "spondylarthrose" in lower or "unkovertebral" in lower or "uncovertebral" in lower) and "c3" in lower),
+        ("Diskopathie C4–C7 im Ergebnis",           ("diskopathie" in lower or "discopathie" in lower) and "c4" in lower),
         ("Fehlhaltung aus Diktat NICHT verschwiegen", "fehlhaltung" in lower or "kyphotisch" in lower),
     ]
     ok = True

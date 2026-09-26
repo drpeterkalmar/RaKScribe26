@@ -168,7 +168,7 @@ except (KeyError, FileNotFoundError):
         with open(CONFIG_FILE_PATH, 'w', encoding='utf-8') as f:
             f.write("[SETTINGS]\n"
                     "LLM_PROVIDER = gemini\n"
-                    "LLM_MODEL = gemini-2.5-flash\n"
+                    "LLM_MODEL = gemini-3.5-flash\n"
                     "API_KEY = \n"
                     "CHUNK_DURATION = 7\n"
                     "GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json\n")
@@ -182,12 +182,12 @@ except (KeyError, FileNotFoundError):
 
     # Frisch angelegte Defaults verwenden
     LLM_PROVIDER = 'gemini'
-    LLM_MODEL = 'gemini-2.5-flash'
+    LLM_MODEL = 'gemini-3.5-flash'
     API_KEY = ''
     CHUNK_DURATION = 7
     GOOGLE_JSON_FILENAME = 'rakscribe-0ff1ffd128a1.json'
     STT_ENGINE = 'google'
-    print("[INIT] Standard-Konfiguration aktiv (LLM: gemini-2.5-flash).")
+    print("[INIT] Standard-Konfiguration aktiv (LLM: gemini-3.5-flash).")
 
 # --- STT Engines Initialisierungs-Logik ---
 # Vertex API-Key: Auto-Load aus vertex-key.b64 (Base64, liegt neben der EXE) oder
@@ -341,8 +341,9 @@ if not init_google_speech():
 openai_client = None
 # Vertex AI Endpoint für Gemini (REST API, Auth via x-goog-api-key Header)
 VERTEX_ENDPOINT = (
-    "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/"
-    "locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
+    # v2.11.0: gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz), Web-Parität
+    "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/"
+    "locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 )
 try:
     if LLM_PROVIDER == 'gemini':
@@ -989,7 +990,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe26 (v2.10.15)")
+        self.title("RaKScribe26 (v2.11.0)")
         self.geometry("1100x800")
         self.configure(fg_color=BGC_MAIN)
 
@@ -1039,7 +1040,7 @@ class RaKScribeApp(ctk.CTk):
         title_label = ctk.CTkLabel(header, text="RaKScribe26", font=("Segoe UI", 28, "bold"), text_color="white")
         title_label.pack(side="left")
 
-        version_label = ctk.CTkLabel(header, text="v2.10.15", font=("Segoe UI", 12), text_color="#707070")
+        version_label = ctk.CTkLabel(header, text="v2.11.0", font=("Segoe UI", 12), text_color="#707070")
         version_label.pack(side="left", padx=(5, 10))
 
         self.status_badge = ctk.CTkLabel(header, text=" READY ", 

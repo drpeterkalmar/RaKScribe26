@@ -23,7 +23,7 @@ def _sa_token():
         _sa_creds.refresh(_tr.Request())
     return _sa_creds.token
 
-VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
+VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 os.environ["VERTEX_API_KEY"] = API_KEY
 sys.path.insert(0, str(ROOT))

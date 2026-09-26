@@ -29,7 +29,10 @@ type TemplatesMap = {
 const templates = templatesData as TemplatesMap;
 
 // Vertex AI endpoint for Gemini 2.5 Flash
-const VERTEX_ENDPOINT = 'https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent';
+// v2.11.0 (26.09.2026): gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz + EU-Verarbeitung).
+// A/B 54 Fall-Läufe: Normalbefund-Treue 84,5 % → 93,7 %, fehlende '## Befund'-Überschrift 6 → 0, FAIL 0.
+// gemini-2.5-flash wird von Google abgeschaltet (Phase 1: 20.10.2026).
+const VERTEX_ENDPOINT = 'https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent';
 
 // Speech-Context Phrasen für Google STT (medizinischer Jargon, boost 15.0)
 const MEDICAL_PHRASES = [
@@ -430,7 +433,7 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-09-neoarthrosis-interspinosa';
+const PROMPT_VERSION = '2026-09-26-gemini35-call0-woertlich';
 
 async function tryPraxisLogin(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -729,6 +732,7 @@ export default function App() {
       `- Schreibe NUR Diagnosen die im Diktat genannt wurden. Keine ERFUNDENEN Begriffe wie "Fehlhaltung" wenn das Diktat "Streckhaltung" sagt.\n` +
       `- "Flachprofil" existiert in der Radiologie NICHT — dieses Wort darf NIEMALS im Befund oder Ergebnis stehen. Wenn das Diktat eine flachbogige Seitabweichung nennt: Befundtext "flachbogige [links/rechts]konvexe Seitausbiegung", Ergebnis "Flachbogige [links/rechts]konvexe Skoliose".\n` +
       `- Fehlhaltung im Diktat (z.B. "kyphotische Fehlhaltung"): darf NICHT verschwiegen werden — nenne sie im Befundtext (z.B. "Kyphotische Fehlhaltung der HWS.") UND im Ergebnis.\n` +
+      `- ERGEBNIS 1:1 ZUM DIKTAT: JEDE diktierte Diagnose/Haltungsangabe wird ein EIGENER Ergebnis-Punkt in der DIKTIERTEN Wortwahl (inkl. Segmenthöhe). NIEMALS zwei diktierte Befunde zu einem Punkt verschmelzen, NIEMALS einen diktierten Begriff durch einen spezifischeren ersetzen (diktiert "Gelenksarthrose C3 bis C5" → Ergebnis "Gelenksarthrose C3 bis C5", NICHT "Unkovertebralarthrose").\n  ❌ FALSCH: Diktat "flachbogige Skoliose nach links, kyphotische Fehlhaltung, Gelenksarthrose C3 bis C5" → Ergebnis "1. Flachbogige linkskonvexe kyphotische Fehlhaltung der HWS. 2. Uncovertebralarthrose C3 bis C5."\n  ✅ RICHTIG: "1. Flachbogige linkskonvexe Skoliose der HWS. 2. Kyphotische Fehlhaltung der HWS. 3. Gelenksarthrose C3 bis C5."\n` +
       `- Verwende EXAKT die Begriffe aus dem Diktat. Wenn das Diktat "Streckhaltung" sagt, schreibe "Streckhaltung" — nicht "Fehlhaltung".\n` +
       `- Diagnose-Namen dürfen NICHT umformuliert werden. "Osteochondrose" bleibt "Osteochondrose", nicht "Diskopathie". "Coxarthrose" bleibt "Coxarthrose", nicht "Hüftgelenksarthrose".\n` +
       `- Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.\n` +
@@ -1637,7 +1641,8 @@ const chirp3Recognize = async (token: string, wavB64: string): Promise<string> =
 2. "mit" + unklarer Begriff nach Sehnen-Untersuchung → "mit Begleitbursitis"
 3. VERÄNDERE KEINE ZAHLEN! "18 mm" bleibt "18 mm", nicht "1,8 mm". "15 mm²" bleibt "15 mm²". Messwerte sind heilig.
 4. VERÄNDERE KEINE ANATOMISCHEN LOKALISATIONEN! "axillär" bleibt "axillär", nicht "lateral". 
-5. Gib NUR den korrigierten Text aus, keine Erklärungen
+5. KORRIGIERE NUR ECHTE SPRACHERKENNUNGSFEHLER (Unsinnswörter, falsch gehörte Silben). Ein korrekt erkannter Fachbegriff bleibt WÖRTLICH stehen — NIEMALS durch einen \"präziseren\" oder anderen Fachbegriff ersetzen (\"Gelenksarthrose\" bleibt \"Gelenksarthrose\", NICHT \"Uncovertebralarthrose\"; \"Diskopathie\" bleibt \"Diskopathie\"). NIEMALS zwei diktierte Befunde zusammenziehen (\"flachbogige Skoliose nach links, kyphotische Fehlhaltung\" bleiben ZWEI Befunde).
+6. Gib NUR den korrigierten Text aus, keine Erklärungen
 
 ## FEW-SHOT BEISPIELE:
 Roh: "Tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig"
@@ -2356,7 +2361,7 @@ Korrigierter Befund:`;
             </div>
             <h1 className="login-title">RaKScribe26 Web</h1>
             <p className="login-subtitle">Radiologische Befundungssoftware im Browser</p>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.10.15</p>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Version v2.11.0</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -2444,7 +2449,7 @@ Korrigierter Befund:`;
           <div className="brand-title-group">
             <div className="brand-name">
               <span>RaKScribe26</span>
-              <span className="brand-badge">Web v2.10.15</span>
+              <span className="brand-badge">Web v2.11.0</span>
             </div>
             <span className="brand-desc">Befundungsassistent</span>
           </div>

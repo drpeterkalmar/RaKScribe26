@@ -73,7 +73,7 @@ def extract_call0_table():
 def call0_gemini_correct(stt_text: str, prompt: str) -> str:
     return harness.call_gemini(prompt.replace("{roh_text}", stt_text), temperature=0.0)
 
-VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
+VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 def gemini(prompt: str, temp=0.0, tries=4) -> str:
     # harness.call_gemini: AQ-Key mit 401→SA-Bearer-Fallback + 429/5xx-Backoff (v2.10.9+)

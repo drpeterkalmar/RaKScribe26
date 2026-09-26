@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 API_KEY = os.environ.get("VERTEX_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-VERTEX_URL = "https://europe-west3-aiplatform.googleapis.com/v1/projects/895690562186/locations/europe-west3/publishers/google/models/gemini-2.5-flash:generateContent"
+VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 # Templates laden
 TEMPLATES_PATH = Path.home() / "RaKScribe26" / "web_app" / "src" / "templates.json"
@@ -30,6 +30,9 @@ Spezifische Regeln:
 - Spondylosis deformans/Spondylophyten in Segment X: ERGÄNZE "Spondylophytenbildung [Segment]" im Befundtext.
 - Unkovertebralgelenksarthrose/Uncovertebralarthrose in Segment X: FÜGE HINZU "Degenerative Veränderungen der Unkovertebralgelenke [Segment]". Die "kleinen Zwischenwirbelgelenke" (Facettengelenke) sind ANDERE Gelenke und bleiben "ohne Auffälligkeiten" wenn nicht genannt.
 - Fehlhaltung im Diktat (z.B. "kyphotische Fehlhaltung"): darf NICHT verschwiegen werden — nenne sie im Befundtext (z.B. "Kyphotische Fehlhaltung der HWS.") UND im Ergebnis.
+- ERGEBNIS 1:1 ZUM DIKTAT: JEDE diktierte Diagnose/Haltungsangabe wird ein EIGENER Ergebnis-Punkt in der DIKTIERTEN Wortwahl (inkl. Segmenthöhe). NIEMALS zwei diktierte Befunde zu einem Punkt verschmelzen, NIEMALS einen diktierten Begriff durch einen spezifischeren ersetzen (diktiert "Gelenksarthrose C3 bis C5" → Ergebnis "Gelenksarthrose C3 bis C5", NICHT "Unkovertebralarthrose").
+  ❌ FALSCH: Diktat "flachbogige Skoliose nach links, kyphotische Fehlhaltung, Gelenksarthrose C3 bis C5" → Ergebnis "1. Flachbogige linkskonvexe kyphotische Fehlhaltung der HWS. 2. Uncovertebralarthrose C3 bis C5."
+  ✅ RICHTIG: "1. Flachbogige linkskonvexe Skoliose der HWS. 2. Kyphotische Fehlhaltung der HWS. 3. Gelenksarthrose C3 bis C5."
 - Facettengelenksarthrose/Spondylarthrose in Segment X: ERSETZE "Kein Nachweis von Facettengelenksarthrosen" / "kleinen Zwischenwirbelgelenke ohne Auffälligkeiten" durch "Degenerative Veränderungen der kleinen Wirbelgelenke [Segment]".
 - Anterolisthese/Retrolisthese: Ersetze die normale Achsenverlaufsbeschreibung für das betroffene Segment.
 - Skoliose/skoliotische Fehlhaltung: ERSETZE "Normaler Achsenverlauf" / "achsengerechte Stellung" durch die Skoliose-Beschreibung.
