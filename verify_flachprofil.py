@@ -101,12 +101,11 @@ results["A"] = check_report(report_a, "KETTE A — EXE-Pfad (radiology_prompt.tx
 app_src = (ROOT / "web_app" / "src" / "App.tsx").read_text()
 
 # B-Step0: STT-Korrektur-Prompt exakt aus App.tsx
-m_corr = re.search(r"const correctionPrompt = `(.*?)`;", app_src, re.DOTALL)
-assert m_corr, "correctionPrompt nicht gefunden"
-corr_tpl = m_corr.group(1)
-assert "Flachprofil" in corr_tpl, "Flachprofil-Fix fehlt im STT-Korrektur-Prompt!"
-print("\nKette B/0: STT-Korrektur-Call (App.tsx correctionPrompt) ...")
-corrected = gemini(corr_tpl.replace("${rawText}", DIKTAT), temp=0.0)
+from call0_prompt import build_call0_prompt, call0_template  # v3.1: Prompt exakt wie Web-App
+corr_tpl = call0_template()
+assert "Flachprofil" in corr_tpl, "Flachprofil-Fix fehlt im STT-Korrektur-Prompt (misheard_words.json)!"
+print("\nKette B/0: STT-Korrektur-Call (App.tsx correctionPrompt + misheard_words.json) ...")
+corrected = gemini(build_call0_prompt(DIKTAT), temp=0.0)
 print(f"  Korrigiertes Diktat: {corrected[:200]}")
 
 # B-Step1: newDefaultPrompt aus App.tsx per Node evaluieren (Template-Literal + ${} frei von Interpolation)

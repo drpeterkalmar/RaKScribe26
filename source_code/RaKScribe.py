@@ -409,6 +409,29 @@ def load_prompt_template(filename="radiology_prompt.txt"):
 
 INITIAL_PROMPT_CONTENT = load_prompt_template()
 
+# v3.1: Fehlhör-Liste (misheard_words.json neben der EXE, sonst Bundle/Repo) — gleiche Datei und
+# gleiche Semantik wie die Web-App (web_app/src/misheard.ts). auto-Regeln ersetzen deterministisch
+# im chirp_3-Volltranskript, llm-Regeln gehen als <stt_hinweise> in den Gen-Prompt.
+try:
+    import misheard as _misheard
+    MISHEARD = _misheard.load(BASE_DIR)
+    MISHEARD_COMPILED = _misheard.compile_rules(MISHEARD)
+    MISHEARD_HINTS = _misheard.prompt_block(MISHEARD)
+    print(f"[INIT] Fehlhör-Liste {MISHEARD.get('version')}: {len(MISHEARD_COMPILED)} auto-Regeln aus {MISHEARD.get('_path')}")
+except Exception as _e_mh:
+    print(f"[INIT] Fehlhör-Liste nicht geladen: {_e_mh}")
+    _misheard, MISHEARD_COMPILED, MISHEARD_HINTS = None, [], ""
+
+
+def apply_misheard(text):
+    """Deterministische Fehlhör-Korrektur (mode 'auto'); ohne Liste unverändert."""
+    if not text or not MISHEARD_COMPILED:
+        return text
+    fixed = _misheard.apply(text, MISHEARD_COMPILED)
+    if fixed != text:
+        print(f"[MISHEARD] auto-korrigiert: {text[:120]!r} -> {fixed[:120]!r}")
+    return fixed
+
 def load_templates():
     path = os.path.join(BASE_DIR, "templates.json")
     if os.path.exists(path):
@@ -1035,7 +1058,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe 3.0.2 – Röntgen am Kai")
+        self.title("RaKScribe 3.1.0 – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
@@ -1678,7 +1701,7 @@ class RaKScribeApp(ctk.CTk):
 
     def process_dictation(self):
         try:
-            raw = self.final_transcript.strip()
+            raw = apply_misheard(self.final_transcript.strip())  # v3.1: Fehlhör-Liste vor Bypass/LLM
             if not raw:
                 self.after(0, lambda: (
                     messagebox.showinfo("Info", "Kein Text diktiert."),
@@ -1748,6 +1771,8 @@ class RaKScribeApp(ctk.CTk):
             # aus dem Diktat (ohne Befundworte), statt den Volltext als Titel zu
             # bekommen. Der Bypass-Pfad (Zeile ~1351) bleibt bei derive.
             p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
+            if MISHEARD_HINTS:  # v3.1: kontextabhängige Verhörer (mode 'llm') als Hinweis für Gemini
+                p_full = p_full + MISHEARD_HINTS + "\n"
             
             # RAG Few-Shot Beispiele laden (limit=0 für Normalbefunde, limit=1 für pathologische Befunde)
             limit_examples = 0 if is_normal_finding(raw) else 1

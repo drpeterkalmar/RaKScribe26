@@ -1,0 +1,122 @@
+{
+ "_doc": "Gemeinsame Testfälle für misheard.py (EXE) und misheard.ts (Web) — beide Engines müssen identisch ersetzen. 'in' = chirp_3-Roh, 'out' = nach auto-Regeln. Fälle mit 'keep' prüfen, dass NICHT ersetzt wird.",
+ "cases": [
+  {
+   "in": "Tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig",
+   "out": "Tendinopathie und den Supraspinatussehne mit begleitet ist, ansonsten unauffällig"
+  },
+  {
+   "in": "Mammasonographie beidseits unauffällig, Pirates 2",
+   "out": "Mammasonographie beidseits unauffällig, BI-RADS 2"
+  },
+  {
+   "in": "Pirats 4 links",
+   "out": "BI-RADS 4 links"
+  },
+  {
+   "in": "Kompression des Nervs am Sulcus bei Edelbogenflexion. 15 Quadratmillimeter",
+   "out": "Kompression des Nervs am Sulcus bei Ellbogenflexion. 15 mm²"
+  },
+  {
+   "in": "Hypertropha Musculus Anconeus Epidrochearis als Variante",
+   "out": "hypertropher M. anconeus epitrochlearis als Variante"
+  },
+  {
+   "in": "Sulcus Nervi mit 12 mm²",
+   "out": "Sulcus nervi ulnaris mit 12 mm²"
+  },
+  {
+   "in": "Sulcus Nervi ulnaris unauffällig",
+   "out": "Sulcus Nervi ulnaris unauffällig",
+   "keep": true
+  },
+  {
+   "in": "flachprofile nach links komplexes Coyote Fehlhaltung",
+   "out": "flachbogige Skoliose nach links komplexes kyphotische Fehlhaltung"
+  },
+  {
+   "in": "Flachbau linkskonvex, Cobbs Winkel 12 Grad, Scheitel DH 7",
+   "out": "flachbogig linkskonvex, Cobb-Winkel 12 Grad, Scheitel Th7"
+  },
+  {
+   "in": "TH12 und Th4 regelrecht",
+   "out": "Th12 und Th4 regelrecht"
+  },
+  {
+   "in": "Fibrosedosen am Calcaneus, Rizarthrose rechts",
+   "out": "Fibroostosen am Calcaneus, Rhizarthrose rechts"
+  },
+  {
+   "in": "Näoarthrosen interspinosa L4/L5",
+   "out": "Neoarthrosis interspinosa L4/L5"
+  },
+  {
+   "in": "Thorax b.a. seitlich: unauffällig",
+   "out": "Thorax p.a./seitlich: unauffällig"
+  },
+  {
+   "in": "Thorax ba unauffällig",
+   "out": "Thorax p.a. unauffällig"
+  },
+  {
+   "in": "HW ist unauffällig, HWS-Sono nicht",
+   "out": "HWS ist unauffällig, HWS-Sono nicht"
+  },
+  {
+   "in": "Diskozeichen L5/S1, Disco Zeichen L4",
+   "out": "Discopathiezeichen L5/S1, Discopathiezeichen L4"
+  },
+  {
+   "in": "Handgelenk rechts nicht dislozierte Frachtur der Cafés Taille",
+   "out": "Handgelenk rechts nicht dislozierte Fraktur der Scaphoidtaille"
+  },
+  {
+   "in": "Baustein Gelenkschirma 1",
+   "out": "unauffällig"
+  },
+  {
+   "in": "Hüfte beidseits im Übrigen Baustein",
+   "out": "Hüfte beidseits im Übrigen unauffällig"
+  },
+  {
+   "in": "Baustein",
+   "out": "Baustein",
+   "keep": true
+  },
+  {
+   "in": "18 mm Durchmesser, axillär, 1,8 mm",
+   "out": "18 mm Durchmesser, axillär, 1,8 mm",
+   "keep": true
+  },
+  {
+   "in": "Gelenksarthrose, Diskopathie, Kopfwinkel 130 Grad",
+   "out": "Gelenksarthrose, Diskopathie, Kopfwinkel 130 Grad",
+   "keep": true
+  },
+  {
+   "in": "Kompressionsfaktoren Th11 und Th12, Okzipitalappen unauffällig",
+   "out": "Kompressionsfrakturen Th11 und Th12, Okzipitallappen unauffällig"
+  },
+  {
+   "in": "Edgren-Venu Zeichen",
+   "out": "Edgren-Vaino Zeichen"
+  },
+  {
+   "in": "messiggradige Spinalkanalstenose",
+   "out": "mäßiggradige Spinalkanalstenose"
+  },
+  {
+   "in": "perinorale Fibrose, Rhamus profundus",
+   "out": "perineurale Fibrose, Ramus profundus"
+  },
+  {
+   "in": "Partie der Supraspinatussehne",
+   "out": "Partie der Supraspinatussehne",
+   "keep": true
+  },
+  {
+   "in": "Ruptur des pinnatus, Epitrochlearis-Variante",
+   "out": "Ruptur des Supraspinatus, epitrochlearis-Variante"
+  }
+ ]
+}

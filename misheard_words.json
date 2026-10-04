@@ -1,0 +1,604 @@
+{
+ "_doc": [
+  "RaKScribe misheard-words list — EINE Quelle für Web-App (web_app/src/misheard.ts importiert diese Datei direkt) und EXE (source_code/misheard.py; Datei liegt neben der EXE und ist dort editierbar).",
+  "mode 'auto': eindeutige Verhörer, deterministisch per Regex ersetzt (Web: vor Call 0; EXE: vor Normalbefund-Bypass/LLM). Greift auch ohne Gemini.",
+  "mode 'llm': kontextabhängig, nur als Hinweis an Gemini (Web: Call-0-Tabelle; EXE: <stt_hinweise> im Gen-Prompt).",
+  "hear = gehörte Varianten (Literal, Leerzeichen tolerant, Groß/Klein egal, Wortgrenzen). regex=true: hear ist ein Regex, mean darf $1..$9 enthalten.",
+  "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
+  "Kandidaten für neue Einträge: /usr/bin/python3 misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
+ ],
+ "version": "2026-10-04",
+ "rules": [
+  {
+   "hear": [
+    "Genusse pinnatus Sehne",
+    "Genusses pinnatus Sehne",
+    "pinnatus Sehne"
+   ],
+   "mean": "Supraspinatussehne",
+   "mode": "auto",
+   "source": "Peter 06/2026 Schulter"
+  },
+  {
+   "hear": [
+    "Genusse pinnatus",
+    "Genusses pinnatus",
+    "pinnatus"
+   ],
+   "mean": "Supraspinatus",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Szene Partie"
+   ],
+   "mean": "Tendinopathie",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Partie"
+   ],
+   "mean": "Tendinopathie",
+   "mode": "llm",
+   "note": "nur im Sehnen-Kontext"
+  },
+  {
+   "hear": [
+    "Bizeps Szene"
+   ],
+   "mean": "Bizepssehne",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Szene"
+   ],
+   "mean": "Sehne",
+   "mode": "llm",
+   "note": "nach Bizeps/Sehne"
+  },
+  {
+   "hear": [
+    "nur noch völlig(?!\\s+unauffällig)"
+   ],
+   "regex": true,
+   "show": [
+    "nur noch völlig"
+   ],
+   "mean": "unauffällig",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "begleitet ist",
+    "begleitend",
+    "begleitet"
+   ],
+   "mean": "mit Begleitbursitis",
+   "mode": "llm",
+   "note": "nach Sehnen-Untersuchung; sonst 'mit begleitender Bursitis'"
+  },
+  {
+   "hear": [
+    "Kalkschulter"
+   ],
+   "mean": "Tendinosis calcarea",
+   "mode": "auto",
+   "note": "Praxis-Terminologie"
+  },
+  {
+   "hear": [
+    "Kalkspick"
+   ],
+   "mean": "Kalkeinlagerung",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Pirat(?:e)?s\\s*([0-6])"
+   ],
+   "regex": true,
+   "show": [
+    "Pirates 2",
+    "Pirats 4",
+    "Pirates 0"
+   ],
+   "mean": "BI-RADS $1",
+   "mode": "auto",
+   "source": "Mamma",
+   "mean_show": "BI-RADS 2 / BI-RADS 4 / BI-RADS 0"
+  },
+  {
+   "hear": [
+    "Pirates"
+   ],
+   "mean": "BI-RADS 2",
+   "mode": "llm",
+   "note": "ohne Ziffer: BI-RADS-Kategorie aus dem Kontext"
+  },
+  {
+   "hear": [
+    "Hypertropha Musculus Anconeus Epidrochearis"
+   ],
+   "mean": "hypertropher M. anconeus epitrochlearis",
+   "mode": "auto",
+   "source": "Nervus ulnaris 08/2026"
+  },
+  {
+   "hear": [
+    "Epidrochearis",
+    "Epitrochlearis"
+   ],
+   "mean": "epitrochlearis",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Edelbogen(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "Edelbogenflexion",
+    "Edelbogen"
+   ],
+   "mean": "Ellbogen$1",
+   "mode": "auto",
+   "mean_show": "Ellbogenflexion / Ellbogen"
+  },
+  {
+   "hear": [
+    "Elbungs"
+   ],
+   "mean": "Ellbogens",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Quadratmillimeter",
+    "Quadrat Millimeter"
+   ],
+   "mean": "mm²",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Sulcus Nervi(?!\\s+ulnaris)"
+   ],
+   "regex": true,
+   "show": [
+    "Sulcus Nervi"
+   ],
+   "mean": "Sulcus nervi ulnaris",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "fast zirkulär",
+    "fastzirkulär",
+    "fast zirkular"
+   ],
+   "mean": "faszikulär",
+   "mode": "llm",
+   "note": "Nervensonographie; 'fast zirkulär' kann auch echt gemeint sein"
+  },
+  {
+   "hear": [
+    "Nerventechistenz"
+   ],
+   "mean": "Nervendehiszenz",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Kilo-Nevin",
+    "Kilo Nevin"
+   ],
+   "mean": "Kiloh-Nevin",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Einigung"
+   ],
+   "mean": "Einengung",
+   "mode": "llm",
+   "note": "bei Nerv/Sehne"
+  },
+  {
+   "hear": [
+    "Nervus Lunaris"
+   ],
+   "mean": "Nervus ulnaris",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "N. Lunaris"
+   ],
+   "mean": "N. ulnaris",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Hypothenamuskulatur"
+   ],
+   "mean": "Hypothenarmuskulatur",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Sulkus"
+   ],
+   "mean": "Sulcus",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Succus"
+   ],
+   "mean": "Sulcus",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Aktion not mesis",
+    "Aktionotmesis"
+   ],
+   "mean": "Axonotmesis",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "mess?iggradig(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "messigradige",
+    "messiggradige"
+   ],
+   "mean": "mäßiggradig$1",
+   "mode": "auto",
+   "mean_show": "mäßiggradige"
+  },
+  {
+   "hear": [
+    "Platnoster Synthese",
+    "Platnostersynthese"
+   ],
+   "mean": "Plattenosteosynthese",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Rhamus"
+   ],
+   "mean": "Ramus",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "perinoral(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "perinorale"
+   ],
+   "mean": "perineural$1",
+   "mode": "auto",
+   "mean_show": "perineurale"
+  },
+  {
+   "hear": [
+    "hoffmann die nählzeichen",
+    "hoffmann die nähzeichen"
+   ],
+   "mean": "Hoffmann-Tinel-Zeichen",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "bizeps sinnen naht"
+   ],
+   "mean": "Bizepssehnennaht",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Diskozeichen",
+    "Disko Zeichen",
+    "Disco Zeichen",
+    "Diskopathiezeichen",
+    "Discopathie Zeichen"
+   ],
+   "mean": "Discopathiezeichen",
+   "mode": "auto",
+   "source": "v2.10.2"
+  },
+  {
+   "hear": [
+    "Fibrosedosen",
+    "Fibrose dosen",
+    "Fibrosostosen",
+    "Fibro ostosen"
+   ],
+   "mean": "Fibroostosen",
+   "mode": "auto",
+   "source": "v2.10.4"
+  },
+  {
+   "hear": [
+    "Näoarthrosen",
+    "näo Arthrosen",
+    "neo Arthrosen"
+   ],
+   "mean": "Neoarthrosen",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Neoarthrosen interspinosa",
+    "Neoarthrose interspinosa"
+   ],
+   "mean": "Neoarthrosis interspinosa",
+   "mode": "auto",
+   "note": "Dornfortsätze, LWS; Singular, lateinische Form"
+  },
+  {
+   "hear": [
+    "Flachbau"
+   ],
+   "mean": "flachbogig",
+   "mode": "auto",
+   "source": "v2.10.5",
+   "note": "z. B. 'Flachbau linkskonvex' → 'flachbogig linkskonvex'"
+  },
+  {
+   "hear": [
+    "Flachbild",
+    "Flachbogen"
+   ],
+   "mean": "flachbogig",
+   "mode": "llm",
+   "note": "Wirbelsäulen-Kontext, vor Skoliose/konvex"
+  },
+  {
+   "hear": [
+    "Flachprofil(?:e|en)?"
+   ],
+   "regex": true,
+   "show": [
+    "Flachprofil",
+    "flachprofile",
+    "Flachprofilen"
+   ],
+   "mean": "flachbogige Skoliose",
+   "mode": "auto",
+   "source": "v2.10.3",
+   "note": "'Flachprofil' existiert in der Radiologie NICHT"
+  },
+  {
+   "hear": [
+    "Coyote Fehlhaltung",
+    "Coyote-Fehlhaltung"
+   ],
+   "mean": "kyphotische Fehlhaltung",
+   "mode": "auto",
+   "source": "v2.10.3"
+  },
+  {
+   "hear": [
+    "Cobbs-Winkel",
+    "Cobbs Winkel",
+    "Copfwinkel",
+    "Kopfwinkel nach Cobb"
+   ],
+   "mean": "Cobb-Winkel",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "lateraler Kopfwinkel"
+   ],
+   "mean": "Cobb-Winkel",
+   "mode": "llm",
+   "note": "NUR Wirbelsäule/Skoliose; ein alleinstehendes 'Kopfwinkel' z. B. an der Hüfte NIE ändern"
+  },
+  {
+   "hear": [
+    "(?:DH|TH)\\s?(1[0-2]|[1-9])"
+   ],
+   "regex": true,
+   "show": [
+    "DH4",
+    "TH4",
+    "TH12"
+   ],
+   "mean": "Th$1",
+   "mode": "auto",
+   "note": "Brustwirbel IMMER 'Th' + Zahl",
+   "mean_show": "Th4 / Th12 (Brustwirbel IMMER 'Th' + Zahl)"
+  },
+  {
+   "hear": [
+    "D4"
+   ],
+   "mean": "Th4",
+   "mode": "llm",
+   "note": "Wirbelsäule, analog für alle Zahlen 1–12"
+  },
+  {
+   "hear": [
+    "Edgren-Veno",
+    "Edgren-Venu",
+    "Edgren-Vanno",
+    "Edgren-Veyno",
+    "Edgren Vaino"
+   ],
+   "mean": "Edgren-Vaino",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Mammasono kaffil",
+    "Mammasono graphie"
+   ],
+   "mean": "Mammasonographie",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Scaphoid Taille",
+    "Scaphoid-Teile",
+    "Scaphoid-Teilie",
+    "Skaphoid Teile",
+    "Cafés Taille",
+    "Kaput Taille"
+   ],
+   "mean": "Scaphoidtaille",
+   "mode": "auto",
+   "source": "Handgelenk 06/2026"
+  },
+  {
+   "hear": [
+    "Rizarthrose(n?)"
+   ],
+   "regex": true,
+   "show": [
+    "Rizarthrose"
+   ],
+   "mean": "Rhizarthrose$1",
+   "mode": "auto",
+   "mean_show": "Rhizarthrose"
+  },
+  {
+   "hear": [
+    "Artro-Brostrom",
+    "Arthrobros-Trümmer-Tanke"
+   ],
+   "mean": "Arthro-Broström",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "Thorax b.a. seitlich",
+    "Thorax b.a. und seitlich"
+   ],
+   "mean": "Thorax p.a./seitlich",
+   "mode": "auto",
+   "source": "v2.10.7"
+  },
+  {
+   "hear": [
+    "Thorax b.a.",
+    "Thorax be a",
+    "Thorax ba"
+   ],
+   "mean": "Thorax p.a.",
+   "mode": "auto"
+  },
+  {
+   "hear": [
+    "b.a."
+   ],
+   "mean": "p.a.",
+   "mode": "llm",
+   "note": "Projektionsangabe nach Thorax/Röntgen"
+  },
+  {
+   "hear": [
+    "Z3",
+    "S3"
+   ],
+   "mean": "C3",
+   "mode": "llm",
+   "note": "zwischen Wirbelhöhen im HWS-Kontext (z. B. 'Z3 c5'); S3 ist sonst ein Sakralwirbel"
+  },
+  {
+   "hear": [
+    "HW"
+   ],
+   "mean": "HWS",
+   "mode": "auto",
+   "note": "Wirbelsäulen-Kontext ('HW ist unauffällig')"
+  },
+  {
+   "hear": [
+    "Frachtur(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "Frachtur"
+   ],
+   "mean": "Fraktur$1",
+   "mode": "auto",
+   "source": "fast-stt 06/2026",
+   "mean_show": "Fraktur"
+  },
+  {
+   "hear": [
+    "Kompressionsfaktoren"
+   ],
+   "mean": "Kompressionsfrakturen",
+   "mode": "auto",
+   "source": "MedDictate-de 10/2026"
+  },
+  {
+   "hear": [
+    "Okzipitalappen"
+   ],
+   "mean": "Okzipitallappen",
+   "mode": "auto",
+   "source": "MedDictate-de 10/2026"
+  },
+  {
+   "hear": [
+    "Appendikulit"
+   ],
+   "mean": "Appendikolith",
+   "mode": "auto",
+   "source": "MedDictate-de 10/2026"
+  },
+  {
+   "hear": [
+    "völliger",
+    "völlig"
+   ],
+   "mean": "unauffälliger / unauffällig",
+   "mode": "llm",
+   "note": "chirp hört 'unauffälliger' gelegentlich als 'völliger' — NUR wenn der Satz sonst sinnlos ist; Gegenteil-Gefahr"
+  },
+  {
+   "hear": [
+    "Baustein Gelenk\\s?Sch[ie]r?ma(?:\\s*[0-2])?"
+   ],
+   "regex": true,
+   "show": [
+    "Baustein Gelenkschema",
+    "Baustein Gelenkschirma",
+    "Baustein Gelenk Schema",
+    "Baustein Gelenkschema 0/1/2"
+   ],
+   "mean": "unauffällig",
+   "mode": "auto",
+   "group": "jargon"
+  },
+  {
+   "hear": [
+    "im Übrigen Baustein"
+   ],
+   "mean": "im Übrigen unauffällig",
+   "mode": "auto",
+   "group": "jargon"
+  },
+  {
+   "hear": [
+    "Baustein"
+   ],
+   "mean": "unauffällig",
+   "mode": "llm",
+   "group": "jargon",
+   "note": "alleine, am Ende eines Diktats"
+  }
+ ]
+}

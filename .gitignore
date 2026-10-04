@@ -14,6 +14,8 @@ ENV/
 /*.json
 !/templates.json
 !/taught_blocks.json
+!/misheard_words.json
+!/misheard_tests.json
 *.bat
 !start rakscribe.bat
 !source_code/build.bat
@@ -42,6 +44,8 @@ Befundvorlagen/
 !templates.json
 !web_app/src/templates.json
 !taught_blocks.json
+!misheard_words.json
+!misheard_tests.json
 
 # Web-App key injector - embeds private key, never commit
 web_app/public/inject-key.js

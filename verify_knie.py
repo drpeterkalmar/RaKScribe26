@@ -109,10 +109,9 @@ assert "Kellgren" in app_src, "K&L-Regel fehlt in App.tsx!"
 assert "untersuchung>" in app_src, "<untersuchung>-Block fehlt in App.tsx!"
 
 # B-0: STT-Korrektur
-m_corr = re.search(r"const correctionPrompt = `(.*?)`;", app_src, re.DOTALL)
-corr_tpl = m_corr.group(1)
+from call0_prompt import build_call0_prompt  # v3.1: Prompt exakt wie Web-App
 print("\nKette B/0: STT-Korrektur ...")
-corrected = gemini(corr_tpl.replace("${rawText}", DIKTAT), temp=0.0)
+corrected = gemini(build_call0_prompt(DIKTAT), temp=0.0)
 print(f"  → {corrected[:160]}")
 
 # B-1: newDefaultPrompt aus App.tsx + <untersuchung> (wie callGeminiLLM)

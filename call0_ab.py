@@ -6,7 +6,7 @@ sys.argv = [sys.argv[0], "gemini-2.5-flash", "europe-west3", "1"]
 import model_ab as M
 ROOT = pathlib.Path(__file__).parent
 app = (ROOT / "web_app/src/App.tsx").read_text()
-tpl = re.search(r"const correctionPrompt = `(.*?)`;", app, re.S).group(1)
+from call0_prompt import build_call0_prompt  # v3.1: Prompt exakt wie Web-App (Fehlhör-Block + auto-Regeln)
 res = json.load(open(ROOT / "stt_ab_results.json"))
 raws = [r for r in res["chirp_3 (IST)"] if not r["txt"].startswith("ERR")]
 import stt_ab as S  # TERMS
@@ -15,7 +15,7 @@ for model, loc in (("gemini-2.5-flash", "europe-west3"), ("gemini-3.5-flash", "e
     M.URL = f"{HOST[loc]}/v1/projects/rakscribe/locations/{loc}/publishers/google/models/{model}:generateContent"
     M.TIMES.clear(); hits = n = 0
     for r in raws:
-        prompt = re.sub(r"\$\{[^}]*\}", r["txt"], tpl)
+        prompt = build_call0_prompt(r["txt"])
         out = M.call(prompt)
         terms = S.TERMS.get(r["file"])
         if terms:

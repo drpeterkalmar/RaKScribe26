@@ -99,9 +99,9 @@ results["A"] = check_report(report_a, "KETTE A — EXE-Pfad")
 
 # ── Kette B: Web-Pfad ──
 app_src = (ROOT / "web_app" / "src" / "App.tsx").read_text()
-m_corr = re.search(r"const correctionPrompt = `(.*?)`;", app_src, re.DOTALL)
+from call0_prompt import build_call0_prompt  # v3.1: Prompt exakt wie Web-App
 print("\nKette B/0: STT-Korrektur ...")
-corrected = gemini(m_corr.group(1).replace("${rawText}", DIKTAT), temp=0.0)
+corrected = gemini(build_call0_prompt(DIKTAT), temp=0.0)
 print(f"  → {corrected[:160]}")
 
 m_node = re.search(r"const newDefaultPrompt =\s*\n(.*?)`</diktat>`;", app_src, re.DOTALL)

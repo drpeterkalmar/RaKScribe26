@@ -4,6 +4,9 @@ import {
   RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines
 } from 'lucide-react';
 import templatesData from './templates.json';
+// v3.1: Fehlhör-Liste — EINE Quelle für Web + EXE (Repo-Root /misheard_words.json, kein Spiegel)
+import misheardData from '../../misheard_words.json';
+import { compileMisheard, applyMisheard, misheardPromptBlock, type MisheardFile } from './misheard';
 
 // Types
 type Template = {
@@ -448,6 +451,11 @@ const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
 const PROMPT_VERSION = '2026-09-26-v2111-hotfix';
+// v3.1: Fehlhör-Liste — auto-Regeln laufen deterministisch VOR Call 0 (auch ohne Gemini),
+// llm-Regeln landen als Tabelle im Call-0-Prompt. Pflege NUR in /misheard_words.json.
+const MISHEARD: MisheardFile = misheardData as MisheardFile;
+const MISHEARD_COMPILED = compileMisheard(MISHEARD);
+const MISHEARD_PROMPT_BLOCK = misheardPromptBlock(MISHEARD);
 
 async function loadPraxisKey(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -1493,7 +1501,10 @@ const chirp3Recognize = async (token: string, wavB64: string): Promise<string> =
   // ─────────────────────────────────────────────────────────────────────────
 
   // Correct STT errors using Gemini Flash (standalone, no external dependency)
-  const correctTranscriptionWithGemini = async (rawText: string): Promise<string> => {
+  const correctTranscriptionWithGemini = async (rawTextIn: string): Promise<string> => {
+    // v3.1: deterministische Fehlhör-Korrektur zuerst (misheard_words.json, mode 'auto')
+    const rawText = applyMisheard(rawTextIn, MISHEARD_COMPILED);
+    if (rawText !== rawTextIn) console.log(`[MISHEARD] auto-korrigiert: "${rawTextIn.substring(0, 120)}" → "${rawText.substring(0, 120)}"`);
     if (!vertexApiKey) {
       return rawText; // No LLM available, return raw
     }
@@ -1503,66 +1514,7 @@ const chirp3Recognize = async (token: string, wavB64: string): Promise<string> =
 
     const correctionPrompt = `Du bist ein medizinischer Lektor für radiologische Diktate. Korrigiere Spracherkennungsfehler.
 
-## BEKANNTE STT-FEHLER (automatisch korrigieren):
-- "Genusse pinnatus" / "Genusses pinnatus" / "pinnatus" → "Supraspinatussehne" / "Supraspinatus"
-- "Szene Partie" / "Partie" → "Tendinopathie"
-- "Bizeps Szene" / "Szene" (nach Bizeps/Sehne) → "Bizepssehne" / "Sehne"
-- "nur noch völlig" → "unauffällig"
-- "begleitet ist" / "begleitend" / "begleitet" → "mit Begleitbursitis" / "mit begleitender Bursitis"
-- "Kalkschulter" → "Tendinosis calcarea"
-- "Kalkspick" / "Kalkspick" → "Kalkeinlagerung"
-- "Pirates" / "Pirates 2" / "Pirats" → "BI-RADS 2"
-- "Pirates 1" / "Pirates 3" / "Pirates 4" / "Pirates 5" → "BI-RADS 1" / "BI-RADS 3" / "BI-RADS 4" / "BI-RADS 5"
-- "Pirates 0" / "Pirates 6" → "BI-RADS 0" / "BI-RADS 6"
-- "Hypertropha Musculus Anconeus Epidrochearis" → "hypertropher M. anconeus epitrochlearis"
-- "Epidrochearis" / "Epitrochlearis" → "epitrochlearis"
-- "Edelbogenflexion" → "Ellbogenflexion"
-- "Edelbogen" → "Ellbogen"
-- "Quadratmillimeter" / "Quadrat Millimeter" → "mm²"
-- "Sulcus Nervi" → "Sulcus nervi ulnaris"
-- "fast zirkulär" / "fastzirkulär" / "fast zirkular" → "faszikulär"
-- "Nerventechistenz" / "Nerventechistenz" → "Nervendehiszenz"
-- "Elbungs" → "Ellbogens"
-- "Kilo-Nevin" → "Kiloh-Nevin"
-- "Einigung" (bei Nerv/Sehne) → "Einengung"
-- "Nervus Lunaris" / "N. Lunaris" → "Nervus ulnaris" / "N. ulnaris"
-- "Hypothenamuskulatur" → "Hypothenarmuskulatur"
-- "Sulkus" → "Sulcus"
-- "Aktion not mesis" / "Aktionotmesis" → "Axonotmesis"
-- "messigradige" / "messiggradige" → "mäßiggradige"
-- "Succus" → "Sulcus"
-- "Platnoster Synthese" / "Platnostersynthese" → "Plattenosteosynthese"
-- "Rhamus" → "Ramus"
-- "perinorale" → "perineurale"
-- "hoffmann die nählzeichen" / "hoffmann die nähzeichen" → "Hoffmann-Tinel-Zeichen"
-- "bizeps sinnen naht" → "Bizepssehnennaht"
-- "Diskozeichen" / "Disko Zeichen" / "Disco Zeichen" → "Discopathiezeichen"
-- "Diskopathiezeichen" / "Discopathie Zeichen" → "Discopathiezeichen"
-- "Fibrosedosen" / "Fibrose dosen" / "Fibrosostosen" / "Fibro ostosen" → "Fibroostosen"
-- "Näoarthrosen" / "näoarthrosen" / "neo Arthrosen" / "Näo Arthrosen" → "Neoarthrosen"
-- "Neoarthrosen interspinosa" / "Neoarthrose interspinosa" / "Näoarthrosen interspinosa" → "Neoarthrosis interspinosa" (NEOART HROSE der Dornfortsätze, LWS-Kontext; Singular, lateinische Form)
-- "Flachbau" / "Flachbau-" → "flachbogig" (z.B. "Flachbau linkskonvex" → "flachbogig linkskonvex")
-- "Flachbild" / "Flachbogen" (Wirbelsäulen-Kontext, vor Skoliose/konvex) → "flachbogig"
-- "Cobbs-Winkel" / "Cobbs Winkel" / "Copfwinkel" / "lateraler Kopfwinkel" / "Kopfwinkel nach Cobb" → "Cobb-Winkel" (NUR Wirbelsäule/Skoliose; ein alleinstehendes "Kopfwinkel" z.B. an der Hüfte NIE ändern)
-- "DH4" / "TH4" / "D4" (Wirbelsäule, analog für alle Zahlen 1–12) → "Th4" (Brustwirbel IMMER "Th" + Zahl)
-- "Edgren-Veno" / "Edgren-Venu" / "Edgren-Vanno" / "Edgren-Veyno" → "Edgren-Vaino"
-- "Mammasono kaffil" / "Mammasono graphie" → "Mammasonographie"
-- "Scaphoid Taille" / "Scaphoid-Teile" / "Skaphoid Teile" / "Cafés Taille" / "Kaput Taille" → "Scaphoidtaille"
-- "Rizarthrose" → "Rhizarthrose"
-- "Artro-Brostrom" / "Arthrobros-Trümmer-Tanke" → "Arthro-Broström"
-- "Thorax b.a. seitlich" / "Thorax b.a. und seitlich" → "Thorax p.a./seitlich"
-- "Thorax b.a." / "Thorax be a" / "Thorax ba" → "Thorax p.a."
-- "b.a." (Projektionsangabe, nach Thorax/Röntgen) → "p.a."
-- "Flachprofil" / "flachprofile" / "Flachprofilen" → "flachbogige Skoliose" (das Wort "Flachprofil" existiert in der Radiologie NICHT; gemeint ist eine flachbogige Seitneigung/Skoliose)
-- "Coyote Fehlhaltung" / "Coyote-Fehlhaltung" → "kyphotische Fehlhaltung" (HWS-Kontext)
-- "Z3" / "S3" (zwischen Wirbelhöhen, z.B. "Z3 c5") → "C3" (HWS-Kontext)
-- "HW" allein (Wirbelsäulen-Kontext, z.B. "HW ist unauffällig") → "HWS"
-
-## PRAXIS-JARGON (Dr. Kalmar / Dr. Riegler Shortcut-Phrasen):
-- "Baustein Gelenkschema" / "Baustein Gelenkschirma" / "Baustein Gelenk Schema" → "unauffällig"
-- "Baustein Gelenkschema 0" / "Baustein Gelenkschema 1" / "Baustein Gelenkschema 2" → "unauffällig"
-- "Baustein" (alleine, am Ende eines Diktats) → "unauffällig"
-- "im Übrigen Baustein" → "im Übrigen unauffällig"
+${MISHEARD_PROMPT_BLOCK}
 
 ## WICHTIGE REGELN:
 1. Behalte ALLE Pathologien bei — verliere NIEMALS eine Diagnose
