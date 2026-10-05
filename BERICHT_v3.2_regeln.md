@@ -143,6 +143,16 @@ von 9. Preis: eine unbekannte *Skelett*-Untersuchung wird knapper (nur die dikti
   „Verdacht auf“ wurde im Web einmal zu „Bild wie bei“; der Web-Validierer verlor in 5/8 Läufen den Weichteil-Satz
   (nach Präzisierung 0/8); „## Befund“ fehlte gelegentlich (wird jetzt automatisch ergänzt).
 
+## Ausgeliefert
+
+- Web: GitHub Pages live (Bundle `index-P54QA80B.js` enthält Prompt-Marker `2026-10-05-v32-telegram-regeln`, Badge
+  „v3.2.0“, die neuen Regeln und Fehlhör-Einträge).
+- EXE: Release **3.2.0 = Latest** (Download-Link „latest“ zeigt auf 3.2.0); Assets `rakscribe26.exe`,
+  `radiology_prompt.txt` (mit Marker), `templates.json` (142 Vorlagen, 140 mit Normal-Ergebnis),
+  `misheard_words.json`, `config.ini` — inhaltsgleich zum Repo.
+- Windows-UI-Test auf echtem Windows: **22/22** — darunter neu: alte `radiology_prompt_v4.txt` neben der EXE wird
+  ignoriert, Regionen-Trenner und Nummerierung laufen in der gebauten EXE.
+
 ## Offen
 
 - Kein Browser-Test der Web-Oberfläche in diesem Lauf (Leicht-Spur); die Web-Logik ist über TypeScript-Prüfung,
