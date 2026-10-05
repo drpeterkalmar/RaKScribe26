@@ -312,5 +312,42 @@
    "in": "Text\n\n## Ergebnis\n1. a",
    "out": "Text\n\n## Ergebnis\n1. a"
   }
+ ],
+ "csa": [
+  {
+   "name": "Peroneus: Klammer mit Platzhalter raus",
+   "in": "## T\n\n## Befund\nDer Nervus peroneus zeigt einen unauffälligen Verlauf ohne Nachweis einer faszikulären oder nervalen Auftreibung (Querschnittsfläche Collum fibulae: [CSA_Collum_Fibulae] mm²; Normwert < 13 mm²). Unauffälliger Abgang.\n\n## Ergebnis\nUnauffälliger Befund.",
+   "out": "## T\n\n## Befund\nDer Nervus peroneus zeigt einen unauffälligen Verlauf ohne Nachweis einer faszikulären oder nervalen Auftreibung. Unauffälliger Abgang.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "name": "Ulnaris: 'mit regelrechter Querschnittsfläche von [..]' raus",
+   "in": "## Befund\nAnatomisch regelrechter Verlauf des Nervs am Sulcus nervi ulnaris mit regelrechter Querschnittsfläche von [CSA_Sulcus] mm² (Normwert < 8 bis 9 mm²). Kein Nachweis.\n\n## Ergebnis\nX.",
+   "out": "## Befund\nAnatomisch regelrechter Verlauf des Nervs am Sulcus nervi ulnaris. Kein Nachweis.\n\n## Ergebnis\nX."
+  },
+  {
+   "name": "Tibialis: ganzer Satz mit Platzhalter raus",
+   "in": "## Befund\nIm Tarsaltunnel unauffällig. Der Nerv misst hier [CSA_Tarsaltunnel] mm² (Normwert < 14 mm²) und ist demzufolge normbreit. Weiter distal unauffällig.\n\n## Ergebnis\nX.",
+   "out": "## Befund\nIm Tarsaltunnel unauffällig. Weiter distal unauffällig.\n\n## Ergebnis\nX."
+  },
+  {
+   "name": "diktierte CSA im Befund bleibt, im Ergebnis raus",
+   "in": "## Befund\nDie Querschnittsfläche (CSA) misst 16 mm² (Normwert < 12 mm²).\n\n## Ergebnis\n1. Karpaltunnelsyndrom rechts mit Auftreibung des Nervs proximal des Retinaculums, Querschnittsfläche 16 mm².",
+   "out": "## Befund\nDie Querschnittsfläche (CSA) misst 16 mm² (Normwert < 12 mm²).\n\n## Ergebnis\n1. Karpaltunnelsyndrom rechts mit Auftreibung des Nervs proximal des Retinaculums."
+  },
+  {
+   "name": "ohne CSA unverändert",
+   "in": "## Befund\nUnauffällig.\n\n## Ergebnis\nUnauffälliger Befund.",
+   "out": "## Befund\nUnauffällig.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "name": "Platzhalter-Satz am Zeilenanfang",
+   "in": "## Befund\nDer Nerv misst hier [CSA_Tarsaltunnel] mm² (Normwert < 14 mm²) und ist normbreit. Distal unauffällig.\n\n## Ergebnis\nX.",
+   "out": "## Befund\nDistal unauffällig.\n\n## Ergebnis\nX."
+  },
+  {
+   "name": "Abkürzung 'N.' im Platzhalter-Satz (Medianus)",
+   "in": "## Befund\nUnauffällige Darstellung des Karpaltunnels. Die Querschnittsfläche (CSA) des N. medianus an seiner dicksten Stelle misst [CSA_Karpaltunnel] mm² (Normwert < 12 mm²). Der Nervus medianus wird nicht eingeengt.\n\n## Ergebnis\nX.",
+   "out": "## Befund\nUnauffällige Darstellung des Karpaltunnels. Der Nervus medianus wird nicht eingeengt.\n\n## Ergebnis\nX."
+  }
  ]
 }

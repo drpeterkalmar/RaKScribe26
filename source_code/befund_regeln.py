@@ -293,9 +293,32 @@ def befund_ueberschrift_sichern(report):
     return "\n".join(out)
 
 
+def csa_bereinigen(report):
+    """v3.2.2 (Skill-Regel 3ac, Georg 05.10.): Nicht diktierte Querschnittsflächen dürfen nicht im Befund stehen.
+    - Klammerzusatz mit Platzhalter '(Querschnittsfläche …: [CSA_x] mm²; Normwert < n mm²)' → komplett entfernen.
+    - Satzteil 'mit regelrechter/normaler Querschnittsfläche von [CSA_x] mm² (Normwert …)' → entfernen.
+    - Ganzer Satz mit übrig gebliebenem [CSA_…]-Platzhalter → entfernen.
+    - Im '## Ergebnis' werden Querschnittsflächen-Angaben gestrichen (Ergebnis = Diagnose, kein Messwert)."""
+    if not report or "CSA" not in report and "Querschnittsfläche" not in report:
+        return report
+    r = re.sub(r"\s*\((?:[^()]*?)\[CSA_[^\]]*\][^()]*\)", "", report)
+    r = re.sub(r"\s+mit\s+(?:regelrechter|normaler)\s+Querschnittsfläche\s+von\s+\[CSA_[^\]]*\]\s*mm²\s*(?:\([^()]*\))?", "", r)
+    # Satz-Einheit: alles außer Punkt/Zeilenende, aber Abkürzungen wie "N. medianus", "Lig." gehören zum Satz
+    u = r"(?:[^.\n]|\b(?:N|n|Nn|M|Mm|Lig|Ligg|ca|bzw)\.|\.\d)"
+    satz = r"[^.\n\s]" + u + r"*?\[CSA_[^\]]*\]" + u + r"*\."
+    r = re.sub(r"(?m)^[ \t]*" + satz + r"[ \t]*", "", r)   # Satz am Zeilenanfang: folgendes Leerzeichen mit
+    r = re.sub(r"[ \t]*" + satz, "", r)                    # Satz mitten in der Zeile: vorangehendes Leerzeichen mit
+    if "## Ergebnis" in r:
+        kopf, erg = r.split("## Ergebnis", 1)
+        erg = re.sub(r",?\s*(?:mit\s+(?:einer\s+)?)?(?:Querschnittsfläche|CSA)[^.,;\n]*?\d+(?:[.,]\d+)?\s*mm²(?:\s*\([^()]*\))?", "", erg)
+        r = kopf + "## Ergebnis" + erg
+    return r
+
+
 def nachbearbeiten(report):
-    """Deterministische Nachbearbeitung jedes Befundes (EXE + Web gleich): '## Befund' sichern, Ergebnis nummerieren."""
-    return ergebnis_nummerieren(befund_ueberschrift_sichern(report))
+    """Deterministische Nachbearbeitung jedes Befundes (EXE + Web gleich): CSA-Regel, '## Befund' sichern,
+    Ergebnis nummerieren."""
+    return ergebnis_nummerieren(befund_ueberschrift_sichern(csa_bereinigen(report)))
 
 
 def befunde_zusammenfuegen(reports):

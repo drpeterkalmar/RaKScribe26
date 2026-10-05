@@ -465,12 +465,24 @@ def apply_misheard(text):
     return fixed
 
 def load_templates():
-    path = os.path.join(BASE_DIR, "templates.json")
-    if os.path.exists(path):
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except: return {}
+    """v3.2.2 (Peter 05.10.: keine Extradateien): templates.json ist IN der EXE gebündelt und gewinnt immer.
+    Eine alte templates.json neben der EXE wird ignoriert (sie stammte aus früheren Releases und hätte
+    neuere Standardbefunde überdeckt). Ohne Bundle (Entwicklung): Datei neben dem Skript bzw. Repo-Root."""
+    cands = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        cands.append(os.path.join(meipass, "templates.json"))
+    here = os.path.dirname(os.path.abspath(__file__))
+    cands += [os.path.join(BASE_DIR, "templates.json"), os.path.join(here, "..", "templates.json")]
+    for path in cands:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                print(f"[INIT] Vorlagen: {len(data)} aus {path}")
+                return data
+            except Exception:
+                continue
     return {}
 
 RADIOLOGY_TEMPLATES = load_templates()
@@ -523,7 +535,32 @@ def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
 def detect_template(text):
     """Bessere Erkennungslogik für den Untersuchungstyp."""
     text_lower = text.lower()
-    
+
+    # v3.2.2 (Georg 05.10.): Nerven-Diktate OHNE "Sono"-Wort ("N. medianus rechts unauffällig",
+    # "Nervus ulnaris links …") fielen in allgemein/Unterarm/HWS → Standardbefund fehlte. Nerven-Kontext
+    # (Nervus/N./Plexus/Nervensono) + Nervenname → Nerven-Template, VOR allen Röntgen-Regeln.
+    # Sync: web_app/src/App.tsx detectTemplate (gleiche Liste, gleiche Reihenfolge).
+    if (re.search(r"\bnerv(?:us|i|en)?\b|\bn\.\s*[a-zäöü]|\bplexus\b|nervenson|nervenschall|nervenultraschall|tarsaltunnel", text_lower)
+            and not any(x in text_lower for x in ["injektion", "infiltration"])):
+        if "blockade" in text_lower:  # Skill 3ae: ultraschallgezielte Blockade hat eigenes Template
+            return "ultraschall_gezielte_blockade"
+        for keys, tkey in [
+            (["cutaneus femoris", "femoris cutaneus", "cutaneus lateralis", "femoralis cutaneus", "meralgi"], "sonografie_nerv_femoralis_cutaneus_lateralis"),
+            (["medianus", "karpaltunnelsyndrom"], "sonografie_nerv_medianus"),
+            (["ulnaris", "guyon"], "sonografie_nerv_ulnaris"),
+            (["radialis", "frohse", "wartenberg"], "sonografie_nerv_radialis"),
+            (["plexus cervicalis"], "sonografie_plexus_cervicalis"),
+            (["plexus"], "sonografie_plexus_brachialis"),
+            (["ischiadicus"], "sonografie_nerv_ischiadicus"),
+            (["peroneus", "fibularis"], "sonografie_nerv_peroneus"),
+            (["tibialis", "tarsaltunnel"], "sonografie_nerv_tibialis"),
+            (["femoralis"], "sonografie_nerv_femoralis"),
+            (["pudendus"], "sonografie_nervus_pudendus"),
+            (["iliohypogastricus", "ilioinguinalis"], "sonografie_nervus_iliohypogastricus_ilioinguinalis"),
+        ]:
+            if any(k in text_lower for k in keys):
+                return tkey
+
     # 0.0. Kombinierte Untersuchungen vorab prüfen
     if any(x in text_lower for x in ["becken", "wecken", "pelvis"]):
         if any(x in text_lower for x in ["tep", "prothese", "endoprothese", "h-tep"]):
@@ -564,6 +601,10 @@ def detect_template(text):
     
     # 0. Spezialregeln für Sonographie vorab prüfen (da sehr häufig)
     if any(x in text_lower for x in ["sono", "schall", "ultraschall", "duplex"]):
+        # v3.2.2: Schulter-Sonographie (Web-Parität — die EXE fiel hier bisher auf sonografie_allgemein)
+        if any(x in text_lower for x in ["schulter", "supraspinatus", "infraspinatus", "bizepssehne",
+                                          "rotatorenmanschette", "subacromial", "subakromial"]):
+            return "sonografie_schultergelenk"
         # Bauchdecke (vor abdomen/bauch, sonst greift das Allgemein-Abdomen)
         if "bauchdeck" in text_lower or "hernie" in text_lower or "rektusdiastase" in text_lower or "rectusdiastase" in text_lower:
             return "sonografie_bauchdecke"
@@ -1099,7 +1140,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe 3.2.1 – Röntgen am Kai")
+        self.title("RaKScribe 3.2.2 – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
@@ -1830,7 +1871,7 @@ class RaKScribeApp(ctk.CTk):
             tpl_lines = template_data['body'].split('\n')
             tpl_title = br.titel_mit_seite(derive_untersuchungs_titel(raw, tpl_lines[0].strip().rstrip(':')), raw)
             tpl_body = '\n'.join(tpl_lines[1:])
-            return f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{ergebnis}"
+            return br.nachbearbeiten(f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{ergebnis}")  # v3.2.2: CSA-Platzhalter raus
 
         p_base = br.strip_prompt_marker(INITIAL_PROMPT_CONTENT)
         p_full = p_base.replace('{roh_text}', raw)

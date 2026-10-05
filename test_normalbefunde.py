@@ -124,6 +124,24 @@ exec(compile(ast.Module(body=[fn], type_ignores=[]), "<detect_template>", "exec"
 detect = ns["detect_template"]
 
 DETECT_CASES = [
+    # v3.2.2 Nerven (Georg 05.10.)
+    ("N. medianus links unauffällig", "sonografie_nerv_medianus"),
+    ("Nervus ulnaris rechts unauffällig", "sonografie_nerv_ulnaris"),
+    ("Nervus radialis rechts unauffällig", "sonografie_nerv_radialis"),
+    ("Plexus brachialis rechts unauffällig", "sonografie_plexus_brachialis"),
+    ("Plexus cervicalis links unauffällig", "sonografie_plexus_cervicalis"),
+    ("Nervus ischiadicus rechts unauffällig", "sonografie_nerv_ischiadicus"),
+    ("Nervus fibularis links unauffällig", "sonografie_nerv_peroneus"),
+    ("Nervus tibialis rechts unauffällig", "sonografie_nerv_tibialis"),
+    ("Tarsaltunnel rechts unauffällig", "sonografie_nerv_tibialis"),
+    ("Nervus femoralis rechts unauffällig", "sonografie_nerv_femoralis"),
+    ("Nervus cutaneus femoris lateralis links unauffällig", "sonografie_nerv_femoralis_cutaneus_lateralis"),
+    ("Nervus pudendus unauffällig", "sonografie_nervus_pudendus"),
+    ("Nervus ilioinguinalis rechts unauffällig", "sonografie_nervus_iliohypogastricus_ilioinguinalis"),
+    ("Ultraschallgezielte Blockade des Nervus medianus rechts", "ultraschall_gezielte_blockade"),
+    ("Sono Schulter rechts unauffällig", "sonografie_schultergelenk"),
+    ("Unterarm rechts unauffällig", "unterarm_in_2_ebenen"),
+    ("Karpaltunnelaufnahme rechts unauffällig", "karpaltunnelaufnahme"),
     # (diktat, erwarteter key)
     ("HW ist unauffällig", "halswirbelsäule_in_2_ebenen"),
     ("Calcaneus rechts in 2 Ebenen unauffällig", "calcaneus_in_2_ebenen"),

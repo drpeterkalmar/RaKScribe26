@@ -6,7 +6,7 @@ const templates = JSON.parse(fs.readFileSync(new URL('./src/templates.json', imp
 const s = src.indexOf('const detectTemplate = (text: string): string => {');
 let i = src.indexOf('{', s), d = 0, e = i;
 for (; e < src.length; e++) { if (src[e] === '{') d++; if (src[e] === '}') { d--; if (!d) break; } }
-const body = src.slice(i, e + 1).replace(/: \[string, string\[\]\]\[\]/g, '');
+const body = src.slice(i, e + 1).replace(/: \[string, string\[\]\]\[\]/g, '').replace(/: \[string\[\], string\]\[\]/g, '');
 const det = new Function('templates', 'text', body);
 const faelle = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const out = {};

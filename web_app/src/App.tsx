@@ -765,7 +765,31 @@ export default function App() {
   // Detect modality template based on text keywords (1:1 from EXE Version)
   const detectTemplate = (text: string): string => {
     const textLower = text.toLowerCase();
-    
+
+    // v3.2.2 (Georg 05.10.): Nerven-Diktate OHNE "Sono"-Wort fielen in allgemein/Unterarm/HWS → Standardbefund
+    // fehlte. Nerven-Kontext + Nervenname → Nerven-Template, VOR allen Röntgen-Regeln. Sync: RaKScribe.py detect_template.
+    if (/\bnerv(?:us|i|en)?\b|\bn\.\s*[a-zäöü]|\bplexus\b|nervenson|nervenschall|nervenultraschall|tarsaltunnel/.test(textLower)
+        && !["injektion", "infiltration"].some(x => textLower.includes(x))) {
+      if (textLower.includes("blockade")) return "ultraschall_gezielte_blockade";  // Skill 3ae
+      const nervRules: [string[], string][] = [
+        [["cutaneus femoris", "femoris cutaneus", "cutaneus lateralis", "femoralis cutaneus", "meralgi"], "sonografie_nerv_femoralis_cutaneus_lateralis"],
+        [["medianus", "karpaltunnelsyndrom"], "sonografie_nerv_medianus"],
+        [["ulnaris", "guyon"], "sonografie_nerv_ulnaris"],
+        [["radialis", "frohse", "wartenberg"], "sonografie_nerv_radialis"],
+        [["plexus cervicalis"], "sonografie_plexus_cervicalis"],
+        [["plexus"], "sonografie_plexus_brachialis"],
+        [["ischiadicus"], "sonografie_nerv_ischiadicus"],
+        [["peroneus", "fibularis"], "sonografie_nerv_peroneus"],
+        [["tibialis", "tarsaltunnel"], "sonografie_nerv_tibialis"],
+        [["femoralis"], "sonografie_nerv_femoralis"],
+        [["pudendus"], "sonografie_nervus_pudendus"],
+        [["iliohypogastricus", "ilioinguinalis"], "sonografie_nervus_iliohypogastricus_ilioinguinalis"],
+      ];
+      for (const [keys, tkey] of nervRules) {
+        if (keys.some(k => textLower.includes(k))) return tkey;
+      }
+    }
+
     // Combined / complex templates check
     if (textLower.includes("becken") || textLower.includes("wecken") || textLower.includes("pelvis")) {
       if (textLower.includes("tep") || textLower.includes("prothese") || textLower.includes("endoprothese") || textLower.includes("h-tep")) {
@@ -1675,7 +1699,7 @@ Korrigierter Befund:`;
       const tplLines = activeTemplate.body.split('\n');
       const tplTitle = titelMitSeite(deriveUntersuchungsTitel(seg, (tplLines[0] || '').trim().replace(/:$/, '')), seg);
       const tplBody = tplLines.slice(1).join('\n');
-      return `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${ergebnis}`;
+      return nachbearbeiten(`## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${ergebnis}`);  // v3.2.2: CSA-Platzhalter raus
     }
 
     if (!vertexApiKey) {
@@ -2128,7 +2152,7 @@ Korrigierter Befund:`;
             <span className="brand-name">RaKScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
           </div>
-          <span className="version-chip">v3.2.1</span>
+          <span className="version-chip">v3.2.2</span>
         </div>
 
         <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>

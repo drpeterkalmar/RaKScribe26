@@ -33,6 +33,10 @@ print("── PY: Ergebnis-Nummerierung")
 for c in F["nummerieren"]:
     got = br.ergebnis_nummerieren(c["in"])
     check(got == c["out"], c["name"], f"got {got!r}")
+print("── PY: CSA-Regel (Skill 3ac)")
+for c in F["csa"]:
+    got = br.csa_bereinigen(c["in"])
+    check(got == c["out"], c["name"], f"got {got!r}")
 print("── PY: '## Befund' sichern")
 for c in F["befund_sichern"]:
     got = br.befund_ueberschrift_sichern(c["in"])

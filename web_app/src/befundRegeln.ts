@@ -207,7 +207,26 @@ export function befundUeberschriftSichern(report: string): string {
   return out.join('\n');
 }
 
-export const nachbearbeiten = (report: string): string => ergebnisNummerieren(befundUeberschriftSichern(report));
+// v3.2.2 (Skill-Regel 3ac, Georg 05.10.): nicht diktierte Querschnittsflächen raus, CSA nie im Ergebnis.
+// Sync: source_code/befund_regeln.py csa_bereinigen (gleiche Regexe, gleiche Fixtures).
+export function csaBereinigen(report: string): string {
+  if (!report || (!report.includes('CSA') && !report.includes('Querschnittsfläche'))) return report;
+  let r = report.replace(/\s*\((?:[^()]*?)\[CSA_[^\]]*\][^()]*\)/g, '');
+  r = r.replace(/\s+mit\s+(?:regelrechter|normaler)\s+Querschnittsfläche\s+von\s+\[CSA_[^\]]*\]\s*mm²\s*(?:\([^()]*\))?/g, '');
+  // Satz-Einheit: alles außer Punkt/Zeilenende, aber Abkürzungen wie "N. medianus", "Lig." gehören zum Satz
+  const u = String.raw`(?:[^.\n]|\b(?:N|n|Nn|M|Mm|Lig|Ligg|ca|bzw)\.|\.\d)`;
+  const satz = String.raw`[^.\n\s]` + u + String.raw`*?\[CSA_[^\]]*\]` + u + String.raw`*\.`;
+  r = r.replace(new RegExp(String.raw`^[ \t]*` + satz + String.raw`[ \t]*`, 'gm'), '');
+  r = r.replace(new RegExp(String.raw`[ \t]*` + satz, 'g'), '');
+  const idx = r.indexOf('## Ergebnis');
+  if (idx >= 0) {
+    const kopf = r.slice(0, idx), erg = r.slice(idx + '## Ergebnis'.length);
+    r = kopf + '## Ergebnis' + erg.replace(/,?\s*(?:mit\s+(?:einer\s+)?)?(?:Querschnittsfläche|CSA)[^.,;\n]*?\d+(?:[.,]\d+)?\s*mm²(?:\s*\([^()]*\))?/g, '');
+  }
+  return r;
+}
+
+export const nachbearbeiten = (report: string): string => ergebnisNummerieren(befundUeberschriftSichern(csaBereinigen(report)));
 
 export const befundeZusammenfuegen = (reports: string[]): string =>
   reports.map(r => (r || '').trim()).filter(Boolean).join('\n\n\n');
