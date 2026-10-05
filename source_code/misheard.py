@@ -27,13 +27,23 @@ def _candidates(base_dir):
 
 
 def load(base_dir):
+    """v3.2.1: Die NEUESTE Liste gewinnt (Feld "version", z. B. "2026-10-05b" — lexikographisch sortierbar).
+    Vorher gewann immer die Datei neben der EXE, auch wenn sie aus einem alten Release stammte und das
+    Update eine neuere Liste mitbrachte (neue Verhörer kamen dann nie an). Bei Gleichstand gewinnt die
+    Datei neben der EXE (= dort editierte Liste)."""
+    best = None
     for p in _candidates(base_dir):
-        if os.path.exists(p):
+        if not os.path.exists(p):
+            continue
+        try:
             with open(p, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            data["_path"] = p
-            return data
-    return {"version": "none", "rules": [], "_path": None}
+        except Exception:
+            continue
+        data["_path"] = p
+        if best is None or str(data.get("version", "")) > str(best.get("version", "")):
+            best = data
+    return best or {"version": "none", "rules": [], "_path": None}
 
 
 def _escape_literal(s):

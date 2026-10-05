@@ -143,6 +143,18 @@
    "in": "BWS thorakal unauffällig, Thorax o.B.",
    "out": "BWS thorakal unauffällig, Thorax o.B.",
    "keep": true
+  },
+  {
+   "in": "Wasser-Sip-Test: kein Reflux nachweisbar.",
+   "out": "Wasser-Siphon-Test: kein Reflux nachweisbar."
+  },
+  {
+   "in": "Im Wasser Sip Test geringer gastroösophagealer Reflux",
+   "out": "Im Wasser-Siphon-Test geringer gastroösophagealer Reflux"
+  },
+  {
+   "in": "wassersiptest negativ",
+   "out": "Wasser-Siphon-Test negativ"
   }
  ]
 }

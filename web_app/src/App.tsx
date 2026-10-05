@@ -2128,7 +2128,7 @@ Korrigierter Befund:`;
             <span className="brand-name">RaKScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
           </div>
-          <span className="version-chip">v3.2.0</span>
+          <span className="version-chip">v3.2.1</span>
         </div>
 
         <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>

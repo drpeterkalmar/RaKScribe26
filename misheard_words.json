@@ -7,7 +7,7 @@
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
   "Kandidaten für neue Einträge: /usr/bin/python3 misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
- "version": "2026-10-05",
+ "version": "2026-10-05b",
  "rules": [
   {
    "hear": [
@@ -710,6 +710,22 @@
    "mode": "llm",
    "group": "jargon",
    "note": "alleine, am Ende eines Diktats"
+  },
+  {
+   "hear": [
+    "Wasser-Sip-Test",
+    "Wasser Sip Test",
+    "Wasser-Sip Test",
+    "Wasser Sip-Test",
+    "Wassersip-Test",
+    "Wassersip Test",
+    "Wassersiptest",
+    "Wasser-Sip-Tests",
+    "Wasser Sip Tests"
+   ],
+   "mean": "Wasser-Siphon-Test",
+   "mode": "auto",
+   "source": "Peter 05.10.2026"
   }
  ]
 }
