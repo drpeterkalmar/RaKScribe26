@@ -150,7 +150,32 @@ DETECT_CASES = [
     ("Thorax p.a. und seitlich unauffällig", "thorax_in_2_ebenen"),
     ("Schädelfernröntgen unauffällig", "schädelfernröntgen"),
     ("Mammographie beidseits unauffällig", "mammographie_beidseits"),
+    # v3.2 (Peter 05.10.: unauffälliges Lungenröntgen wurde als Skelett befundet)
+    ("Lungenröntgen unauffällig", "thorax_in_2_ebenen"),
+    ("Torax unauffällig", "thorax_in_2_ebenen"),
+    ("Brustkorb Röntgen unauffällig", "thorax_in_2_ebenen"),
+    ("Thorax p.a./seitlich unauffällig", "thorax_in_2_ebenen"),
+    ("Thoraxaufnahme p.a. ohne Befund", "thorax_in_2_ebenen"),
+    ("Röntgen der Lunge unauffällig", "thorax_in_2_ebenen"),
+    ("Pulmo frei, Cor normal groß", "thorax_in_2_ebenen"),
+    ("BWS thorakal unauffällig", "brustwirbelsäule_in_2_ebenen"),
+    ("Knöcherner Hemithorax rechts unauffällig", "knöcherner_hemithorax"),
+    # v3.2: Georgs Mehr-Regionen-Fall — nach dem Trenner je Segment die richtige Vorlage
+    ("Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt", "schultergelenk_in_2_ebenen"),
+    ("Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt", "ellbogengelenk_in_2_ebenen"),
 ]
+# v3.2: dieselben Fälle durch die Web-Erkennung (App.tsx detectTemplate) — EXE und Web müssen gleich entscheiden
+import json as _json, subprocess as _sp, tempfile as _tf
+with _tf.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as _f:
+    _json.dump(DETECT_CASES, _f, ensure_ascii=False)
+_web = _sp.run(["node", "detect_test.mjs", _f.name], cwd=REPO / "web_app", capture_output=True, text=True)
+WEB_DETECT = _json.loads(_web.stdout) if _web.returncode == 0 and _web.stdout else {}
+if not WEB_DETECT:
+    failures.append("Web-detectTemplate nicht ausführbar: " + _web.stderr[-300:])
+for diktat, expected in DETECT_CASES:
+    if WEB_DETECT and WEB_DETECT.get(diktat) != expected:
+        print(f"❌ FAIL  WEB detectTemplate({diktat!r}) = {WEB_DETECT.get(diktat)!r}  erwartet: {expected!r}")
+        failures.append(f"Web detectTemplate({diktat!r}) → {WEB_DETECT.get(diktat)!r}")
 for diktat, expected in DETECT_CASES:
     got = detect(diktat)
     ok = got == expected
@@ -160,18 +185,11 @@ for diktat, expected in DETECT_CASES:
 
 # ── 3. BYPASS-SIMULATION (Headerformat v2.10.8) ──────────────────────────
 print("\n" + "=" * 70)
-print("TEIL 3: BYPASS-SIMULATION (## Titel vor ## Befund, Ergebnis = Rohtext)")
+print("TEIL 3: BYPASS-SIMULATION (## Titel vor ## Befund, v3.2: Ergebnis = Normal-Ergebnis, NIE das Diktat)")
 print("=" * 70)
+import prod_pipeline as _pp  # echte Bypass-Bausteine (normalbypass + befund_regeln) statt eigenem Nachbau
 def bypass_report(raw: str, key: str) -> str:
-    body = TPL[key]["body"].split("\n")
-    tpl_title = body[0].strip().rstrip(":")
-    tpl_rest = "\n".join(body[1:])
-    formatted = raw.strip()
-    formatted = re.sub(r"\bHW\b", "HWS", formatted)
-    formatted = formatted[0].upper() + formatted[1:]
-    if not formatted.endswith("."):
-        formatted += "."
-    return f"## {tpl_title}\n\n## Befund\n{tpl_rest}\n\n## Ergebnis\n{formatted}"
+    return _pp.bypass_report(raw, key)
 
 BYPASS_CASES = [
     ("HW ist unauffällig", "halswirbelsäule_in_2_ebenen"),
@@ -189,6 +207,9 @@ for raw, key in BYPASS_CASES:
         "## Ergebnis" in rep,
         rep.index("## Befund") < rep.index("## Ergebnis"),
         norm(kern)[:70] in norm(rep),
+        _pp.nb.is_pure_normal_finding(raw, _pp.DISPLAY_NAMES),  # v3.2: strenger Bypass greift
+        rep.split("## Ergebnis")[1].strip().rstrip(".") != raw.strip().rstrip("."),  # Diktat nie als Ergebnis
+        rep.split("## Ergebnis")[1].strip() == _pp.br.ergebnis_mit_seite(TPL[key].get("ergebnis", ""), raw),
     ]
     ok = all(checks)
     print(f"{'✅ PASS' if ok else '❌ FAIL'}  Bypass {key} (Header vor Befund + taught-Satz drin)")
@@ -255,13 +276,14 @@ def _derive_titel(raw: str, dn: str) -> str:
 _t = TPL["sonografie_unterschenkel"]["body"].split("\n")
 _p_title = _derive_titel(_peters_raw, _t[0].strip().rstrip(":"))
 _p_rest = "\n".join(_t[1:])
-_p_report = f"## {_p_title}\n\n## Befund\n{_p_rest}\n\n## Ergebnis\n{_peters_raw}"
+_p_report = _pp.bypass_report(_peters_raw, "sonografie_unterschenkel")  # v3.2: echte Bypass-Logik
 _p_befund = _p_report.split("## Befund")[1].split("## Ergebnis")[0]
 _p_ok = (
     _p_report.startswith("## Sonographie des Unterschenkels")  # eigenes Template = kanonischer Titel
     and "(Allgemein)" not in _p_report
     and "homogenem, echonormalem Parenchym" in _p_befund  # Unterschenkel-Template-Kernsatz
-    and _p_report.strip().endswith("## Ergebnis\n" + _peters_raw)
+    and _p_report.strip().endswith("## Ergebnis\n" + _pp.br.ergebnis_mit_seite(TPL["sonografie_unterschenkel"]["ergebnis"], _peters_raw))
+    and not _p_report.strip().endswith(_peters_raw)  # v3.2 (Peter 05.10.): Diktat nie 1:1 als Ergebnis
 )
 print(f"{'✅ PASS' if _p_ok else '❌ FAIL'}  Peters Fall: Titel aus Diktat 'Unterschenkel-Sonographie rechts', kein '(Allgemein)' im Report, Satz 1 im Befund")
 if not _p_ok:

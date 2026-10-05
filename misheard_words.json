@@ -7,7 +7,7 @@
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
   "Kandidaten für neue Einträge: /usr/bin/python3 misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
- "version": "2026-10-04",
+ "version": "2026-10-05",
  "rules": [
   {
    "hear": [
@@ -567,6 +567,117 @@
    "mean": "unauffälliger / unauffällig",
    "mode": "llm",
    "note": "chirp hört 'unauffälliger' gelegentlich als 'völliger' — NUR wenn der Satz sonst sinnlos ist; Gegenteil-Gefahr"
+  },
+  {
+   "hear": [
+    "Om(?:matrose|atrose|marthrose|ma-?trose|atrhose)(n?)"
+   ],
+   "regex": true,
+   "show": [
+    "Ommatrose",
+    "Omatrose",
+    "Ommarthrose"
+   ],
+   "mean": "Omarthrose$1",
+   "mean_show": "Omarthrose",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "T[ae]n(?:d[ei]|e)?n?osis\\s+[kc]a(?:l?[kc])?ar(?:i|e)a"
+   ],
+   "regex": true,
+   "show": [
+    "Tenenosis kakaria",
+    "Tendenosis kalkaria",
+    "Tendinosis kakaria"
+   ],
+   "mean": "Tendinosis calcarea",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "T[ae]n(?:de|e)nose(n?)"
+   ],
+   "regex": true,
+   "show": [
+    "Tendenose",
+    "Tenenose"
+   ],
+   "mean": "Tendinose$1",
+   "mean_show": "Tendinose",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "Messing am Kack Depot",
+    "Messing am Kack-Depot",
+    "Messing am Kackdepot",
+    "Messing am Kalkdepot",
+    "messend am Kack Depot",
+    "messendem Kack Depot"
+   ],
+   "mean": "messendem Kalkdepot",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "Kack Depot",
+    "Kack-Depot",
+    "Kackdepot",
+    "Kalk Depot"
+   ],
+   "mean": "Kalkdepot",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "(m)(?:äßig|ässig|essig|esig)\\s*-?\\s*gradig(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "mäßig gradige",
+    "messig-gradig",
+    "messig gradige"
+   ],
+   "mean": "$1äßiggradig$2",
+   "mean_show": "mäßiggradige",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "(gering|hoch|mittel)\\s+-?\\s*gradig(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "gering gradige",
+    "hoch gradige",
+    "mittel gradige"
+   ],
+   "mean": "$1gradig$2",
+   "mean_show": "geringgradige / hochgradige",
+   "mode": "auto",
+   "source": "Georg 05.10.2026 Schulter/Ellbogen (Telegram RaKScribe26 dev)"
+  },
+  {
+   "hear": [
+    "Torax(\\w*)"
+   ],
+   "regex": true,
+   "show": [
+    "Torax",
+    "Toraxaufnahme"
+   ],
+   "mean": "Thorax$1",
+   "mean_show": "Thorax",
+   "mode": "auto",
+   "source": "Peter 05.10.2026 Lungenröntgen"
   },
   {
    "hear": [

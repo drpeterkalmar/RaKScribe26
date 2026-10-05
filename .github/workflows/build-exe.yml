@@ -34,7 +34,7 @@ jobs:
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --add-data "../misheard_words.json;." RaKScribe.py
+          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files
@@ -59,7 +59,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=3.1.0" >> "$GITHUB_OUTPUT"
+            echo "tag=3.2.0" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset

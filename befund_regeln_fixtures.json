@@ -1,0 +1,316 @@
+{
+ "_doc": "Gemeinsame Testfälle für source_code/befund_regeln.py (EXE) und web_app/src/befundRegeln.ts (Web). Prüfung: /usr/bin/python3 befund_regeln_test.py (Python + Node). 'split.out' = erwartete Segmente.",
+ "split": [
+  {
+   "name": "Georg 05.10. Schulter+Ellbogen",
+   "in": "Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt",
+   "out": [
+    "Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt",
+    "Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt"
+   ]
+  },
+  {
+   "name": "Einregion Harness Schulter",
+   "in": "Schulter rechts, Röntgen, Omarthrose, Kalzifikation Supraspinatussehne, Humeruskopfhochstand. Ansonsten unauffällig.",
+   "out": [
+    "Schulter rechts, Röntgen, Omarthrose, Kalzifikation Supraspinatussehne, Humeruskopfhochstand. Ansonsten unauffällig."
+   ]
+  },
+  {
+   "name": "Region im Satz (keine Grenze) trennt nicht",
+   "in": "Ellbogen rechts, Epicondylitis, Schmerzen ausstrahlend bis in die Schulter rechts",
+   "out": [
+    "Ellbogen rechts, Epicondylitis, Schmerzen ausstrahlend bis in die Schulter rechts"
+   ]
+  },
+  {
+   "name": "Region nach Punkt trennt",
+   "in": "Ellbogen rechts Punkt Epicondylitis Punkt Schulter rechts unauffällig",
+   "out": [
+    "Ellbogen rechts Punkt Epicondylitis Punkt",
+    "Schulter rechts unauffällig"
+   ]
+  },
+  {
+   "name": "Teilstruktur Daumen in Hand trennt nicht",
+   "in": "Hand rechts. Rhizarthrose. Daumen rechts mit Arthrose des Sattelgelenkes.",
+   "out": [
+    "Hand rechts. Rhizarthrose. Daumen rechts mit Arthrose des Sattelgelenkes."
+   ]
+  },
+  {
+   "name": "Wirbelsäule ohne Seite trennt nicht",
+   "in": "HWS: Osteochondrose C5/C6. LWS: Spondylosis deformans L3 bis L5.",
+   "out": [
+    "HWS: Osteochondrose C5/C6. LWS: Spondylosis deformans L3 bis L5."
+   ]
+  },
+  {
+   "name": "Knie rechts/links = zwei Befunde",
+   "in": "Kniegelenk rechts: Gonarthrose. Kniegelenk links: unauffällig.",
+   "out": [
+    "Kniegelenk rechts: Gonarthrose.",
+    "Kniegelenk links: unauffällig."
+   ]
+  },
+  {
+   "name": "Seite vor Region",
+   "in": "Röntgen der rechten Schulter: Omarthrose. Röntgen der linken Schulter: unauffällig.",
+   "out": [
+    "Röntgen der rechten Schulter: Omarthrose.",
+    "Röntgen der linken Schulter: unauffällig."
+   ]
+  },
+  {
+   "name": "gleiche Region+Seite wiederholt",
+   "in": "Schulter rechts: Omarthrose. Schulter rechts zusätzlich Kalkdepot.",
+   "out": [
+    "Schulter rechts: Omarthrose. Schulter rechts zusätzlich Kalkdepot."
+   ]
+  },
+  {
+   "name": "Diagnosewort mit Region-Präfix ist kein Marker",
+   "in": "Ellbogen rechts. Ellbogengelenksarthrose rechts. Schulterhochstand rechts.",
+   "out": [
+    "Ellbogen rechts. Ellbogengelenksarthrose rechts. Schulterhochstand rechts."
+   ]
+  },
+  {
+   "name": "Harness Hüfte",
+   "in": "Hüfte links, Röntgen, Coxarthrose links, Gelenkspaltverschmälerung, subchondrale Sklerosierung. Ansonsten unauffällig.",
+   "out": [
+    "Hüfte links, Röntgen, Coxarthrose links, Gelenkspaltverschmälerung, subchondrale Sklerosierung. Ansonsten unauffällig."
+   ]
+  },
+  {
+   "name": "drei Regionen",
+   "in": "Schulter links Punkt unauffällig Punkt Knie links Punkt Gonarthrose Punkt Sprunggelenk links Punkt unauffällig",
+   "out": [
+    "Schulter links Punkt unauffällig Punkt",
+    "Knie links Punkt Gonarthrose Punkt",
+    "Sprunggelenk links Punkt unauffällig"
+   ]
+  },
+  {
+   "name": "Mamma trennt nicht",
+   "in": "Mammasonographie beidseits, Mamma rechts unauffällig, Mamma links Zyste 8 mm",
+   "out": [
+    "Mammasonographie beidseits, Mamma rechts unauffällig, Mamma links Zyste 8 mm"
+   ]
+  },
+  {
+   "name": "in 2 Ebenen zwischen Region und Seite",
+   "in": "Schulter in 2 Ebenen rechts: Omarthrose. Ellbogen in 2 Ebenen rechts: unauffällig.",
+   "out": [
+    "Schulter in 2 Ebenen rechts: Omarthrose.",
+    "Ellbogen in 2 Ebenen rechts: unauffällig."
+   ]
+  },
+  {
+   "name": "Komma-Stil",
+   "in": "Knie rechts, Gonarthrose, Hüfte rechts, unauffällig",
+   "out": [
+    "Knie rechts, Gonarthrose",
+    "Hüfte rechts, unauffällig"
+   ]
+  },
+  {
+   "name": "Sono-Präfix gehört zum Segment",
+   "in": "Sonographie Schulter rechts: Bursitis. Röntgen Knie rechts: unauffällig.",
+   "out": [
+    "Sonographie Schulter rechts: Bursitis.",
+    "Röntgen Knie rechts: unauffällig."
+   ]
+  },
+  {
+   "name": "Fuß mit ß",
+   "in": "Fuß links: Hallux valgus. Sprunggelenk links: unauffällig.",
+   "out": [
+    "Fuß links: Hallux valgus.",
+    "Sprunggelenk links: unauffällig."
+   ]
+  },
+  {
+   "name": "leer",
+   "in": "",
+   "out": [
+    ""
+   ]
+  }
+ ],
+ "nummerieren": [
+  {
+   "name": "unnummeriert → 1. 2.",
+   "in": "## Ergebnis\nMäßiggradige Omarthrose rechts.\nTendinosis calcarea.",
+   "out": "## Ergebnis\n1. Mäßiggradige Omarthrose rechts.\n2. Tendinosis calcarea."
+  },
+  {
+   "name": "schon nummeriert bleibt",
+   "in": "## Ergebnis\n1. Omarthrose.\n2. Kalkdepot.",
+   "out": "## Ergebnis\n1. Omarthrose.\n2. Kalkdepot."
+  },
+  {
+   "name": "Lücke wird neu gezählt, 1) → 1.",
+   "in": "## Ergebnis\n1) Omarthrose.\n3) Kalkdepot.",
+   "out": "## Ergebnis\n1. Omarthrose.\n2. Kalkdepot."
+  },
+  {
+   "name": "Aufzählungszeichen → Nummern",
+   "in": "## Ergebnis\n- Omarthrose.\n* Kalkdepot.\n• Bursitis.",
+   "out": "## Ergebnis\n1. Omarthrose.\n2. Kalkdepot.\n3. Bursitis."
+  },
+  {
+   "name": "einzelner Normalbefund unnummeriert",
+   "in": "## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+   "out": "## Ergebnis\nRegelrechte Darstellung des Kniegelenkes."
+  },
+  {
+   "name": "einzelner nummerierter Normalbefund → unnummeriert",
+   "in": "## Ergebnis\n1. Unauffälliger Befund.",
+   "out": "## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "name": "einzelne Pathologie → 1.",
+   "in": "## Ergebnis\nGonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).",
+   "out": "## Ergebnis\n1. Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
+  },
+  {
+   "name": "Voruntersuchung unnummeriert",
+   "in": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\nOmarthrose rechts.",
+   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\n1. Omarthrose rechts."
+  },
+  {
+   "name": "Fettmarken",
+   "in": "## Ergebnis\n**1.** Fraktur des Radiusköpfchens.\n**2.** Gelenkserguss.",
+   "out": "## Ergebnis\n1. Fraktur des Radiusköpfchens.\n2. Gelenkserguss."
+  },
+  {
+   "name": "kein Ergebnis → unverändert",
+   "in": "## Befund\nText ohne Ergebnis.",
+   "out": "## Befund\nText ohne Ergebnis."
+  },
+  {
+   "name": "zwei Regionen-Blöcke",
+   "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nA.\n\n## Ergebnis\nOmarthrose rechts.\nKalkdepot.\n\n\n## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nB.\n\n## Ergebnis\nGeringgradige Ellbogengelenksarthrose rechts.",
+   "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nA.\n\n## Ergebnis\n1. Omarthrose rechts.\n2. Kalkdepot.\n\n\n## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nB.\n\n## Ergebnis\n1. Geringgradige Ellbogengelenksarthrose rechts."
+  },
+  {
+   "name": "Leerzeilen zwischen Punkten bleiben",
+   "in": "## Ergebnis\n\nOmarthrose.\n\nKalkdepot.\n",
+   "out": "## Ergebnis\n\n1. Omarthrose.\n\n2. Kalkdepot.\n"
+  },
+  {
+   "name": "eingerückte Fortsetzung",
+   "in": "## Ergebnis\n1. Omarthrose rechts\n   (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Kalkdepot.",
+   "out": "## Ergebnis\n1. Omarthrose rechts\n   (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Kalkdepot."
+  }
+ ],
+ "titel_seite": [
+  {
+   "titel": "Kniegelenk in 2 Ebenen",
+   "raw": "Knie links unauffällig",
+   "out": "Kniegelenk links in 2 Ebenen"
+  },
+  {
+   "titel": "Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen",
+   "raw": "Sprunggelenk rechts gehalten unauffällig",
+   "out": "Sprunggelenk rechts in 2 Ebenen mit gehaltenen Aufnahmen"
+  },
+  {
+   "titel": "Halswirbelsäule in 2 Ebenen",
+   "raw": "HWS unauffällig",
+   "out": "Halswirbelsäule in 2 Ebenen"
+  },
+  {
+   "titel": "Mammasonographie beidseits",
+   "raw": "Mamma rechts und links unauffällig",
+   "out": "Mammasonographie beidseits"
+  },
+  {
+   "titel": "Hand in 2 Ebenen",
+   "raw": "Hände beidseits regelrecht",
+   "out": "Hand beidseits in 2 Ebenen"
+  },
+  {
+   "titel": "Hochauflösende Sonographie des N. ulnaris",
+   "raw": "Nervus ulnaris rechts unauffällig",
+   "out": "Hochauflösende Sonographie des N. ulnaris rechts"
+  },
+  {
+   "titel": "Unterschenkel-Sonographie rechts",
+   "raw": "Unterschenkel-Sonographie rechts unauffällig",
+   "out": "Unterschenkel-Sonographie rechts"
+  }
+ ],
+ "prompt_version": [
+  {
+   "in": "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-v32-telegram-regeln -->\n<role>x</role>",
+   "version": "2026-10-05-v32-telegram-regeln",
+   "stripped": "<role>x</role>"
+  },
+  {
+   "in": "<role>alter Prompt ohne Marker</role>",
+   "version": "",
+   "stripped": "<role>alter Prompt ohne Marker</role>"
+  }
+ ],
+ "ergebnis_seite": [
+  {
+   "ergebnis": "Regelrechte Darstellung des Kniegelenkes.",
+   "raw": "Knie rechts unauffällig",
+   "out": "Regelrechte Darstellung des Kniegelenkes rechts."
+  },
+  {
+   "ergebnis": "Regelrechte Darstellung des oberen Sprunggelenkes. Keine vermehrte Aufklappbarkeit des lateralen bzw. medialen Gelenkspaltes.",
+   "raw": "Sprunggelenk links gehalten unauffällig",
+   "out": "Regelrechte Darstellung des oberen Sprunggelenkes links. Keine vermehrte Aufklappbarkeit des lateralen bzw. medialen Gelenkspaltes."
+  },
+  {
+   "ergebnis": "Unauffälliger Befund.",
+   "raw": "Lungenröntgen unauffällig.",
+   "out": "Unauffälliger Befund."
+  },
+  {
+   "ergebnis": "Regelrechte Darstellung der HWS.",
+   "raw": "HWS unauffällig",
+   "out": "Regelrechte Darstellung der HWS."
+  },
+  {
+   "ergebnis": "Regelrechte Darstellung beider Schultergelenke.",
+   "raw": "Schultergelenke beidseits unter Belastung unauffällig",
+   "out": "Regelrechte Darstellung beider Schultergelenke."
+  },
+  {
+   "ergebnis": "",
+   "raw": "Knie links unauffällig",
+   "out": "Unauffälliger Befund."
+  },
+  {
+   "ergebnis": "Regelrechte Darstellung der Hand.",
+   "raw": "Hände beidseits regelrecht",
+   "out": "Regelrechte Darstellung der Hand beidseits."
+  }
+ ],
+ "befund_sichern": [
+  {
+   "name": "fehlendes ## Befund wird ergänzt",
+   "in": "## Thorax in 2 Ebenen\n\nDas Zwerchfell …\n\n## Ergebnis\n1. Kardiomegalie.",
+   "out": "## Thorax in 2 Ebenen\n\n## Befund\n\nDas Zwerchfell …\n\n## Ergebnis\n1. Kardiomegalie."
+  },
+  {
+   "name": "vorhandenes ## Befund bleibt",
+   "in": "## Thorax in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nUnauffälliger Befund.",
+   "out": "## Thorax in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "name": "zwei Blöcke, nur zweitem fehlt es",
+   "in": "## A\n\n## Befund\nx\n\n## Ergebnis\n1. a\n\n\n## B\n\ny\n\n## Ergebnis\n1. b",
+   "out": "## A\n\n## Befund\nx\n\n## Ergebnis\n1. a\n\n\n## B\n\n## Befund\n\ny\n\n## Ergebnis\n1. b"
+  },
+  {
+   "name": "ohne Titel unverändert",
+   "in": "Text\n\n## Ergebnis\n1. a",
+   "out": "Text\n\n## Ergebnis\n1. a"
+  }
+ ]
+}

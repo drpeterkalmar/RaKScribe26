@@ -93,54 +93,21 @@ def check_report(final, label):
     return ok
 
 results = {}
-
-# ── Kette A: EXE-Pfad (radiology_prompt.txt + <untersuchung> wie in RaKScribe.py process_dictation) ──
-prompt_txt = (ROOT / "radiology_prompt.txt").read_text()
-assert "Kellgren" in prompt_txt, "K&L-Regel fehlt in radiology_prompt.txt!"
-p_a = prompt_txt.replace("{roh_text}", DIKTAT).replace("{template_body}", TEMPLATE_BODY).replace("{region_name}", REGION)
-p_a = p_a.replace("{examples}", "") + f"\n<untersuchung>{REGION}</untersuchung>\n"
-print("Kette A: Gen-Call (radiology_prompt.txt + <untersuchung>) ...")
-report_a = gemini(p_a, temp=0.1)
-results["A"] = check_report(report_a, "KETTE A — EXE-Pfad")
-
-# ── Kette B: Web-Pfad ──
-app_src = (ROOT / "web_app" / "src" / "App.tsx").read_text()
-assert "Kellgren" in app_src, "K&L-Regel fehlt in App.tsx!"
-assert "untersuchung>" in app_src, "<untersuchung>-Block fehlt in App.tsx!"
-
-# B-0: STT-Korrektur
-from call0_prompt import build_call0_prompt  # v3.1: Prompt exakt wie Web-App
-print("\nKette B/0: STT-Korrektur ...")
-corrected = gemini(build_call0_prompt(DIKTAT), temp=0.0)
-print(f"  → {corrected[:160]}")
-
-# B-1: newDefaultPrompt aus App.tsx + <untersuchung> (wie callGeminiLLM)
-m_node = re.search(r"const newDefaultPrompt =\s*\n(.*?)`</diktat>`;", app_src, re.DOTALL)
-assert m_node, "newDefaultPrompt nicht gefunden"
-lines = []
-for ln in m_node.group(1).splitlines():
-    mm = re.match(r"\s*`(.*)` (\+|;)?\s*$", ln)
-    if mm:
-        lines.append(mm.group(1))
-default_prompt = "".join(lines).replace('\\\\n', '\n').replace('\\n', '\n').replace('\\"', '"')
-assert "Kellgren" in default_prompt and "UNTERSUCHUNGS-ÜBERSCHRIFT" in default_prompt
-p_b1 = (default_prompt
-        .replace("{roh_text}", corrected)
-        .replace("{template_body}", TEMPLATE_BODY)
-        .replace("{region_name}", REGION)
-        .replace("{examples}", "")
-        + f"\n<untersuchung>{REGION}</untersuchung>\n")
-print("Kette B/1: Gen-Call (App.tsx Default-Prompt + <untersuchung>) ...")
-report_b = gemini(p_b1, temp=0.1)
-
-# B-2: Validierung (Prompt exakt aus App.tsx)
-m_val = re.search(r"const validationPrompt = `(.*?)`;", app_src, re.DOTALL)
-val_tpl = m_val.group(1)
-val_prompt = val_tpl.replace("${rawDictation}", corrected).replace("${generatedReport}", report_b)
-print("Kette B/2: Validierungs-Call ...")
-validated = gemini(val_prompt, temp=0.0)
-final_b = validated if "## Befund" in validated else report_b
-results["B"] = check_report(final_b, "KETTE B — Web-Pfad (Call0 → Call1 → Call2)")
+# v3.2: beide Ketten = ECHTE Produktionsketten über prod_pipeline.py (Gen-Prompt aus radiology_prompt.txt — EINE
+# Quelle für EXE + Web —, SYS_MSG, Web-Call-0/Validator aus App.tsx, Regionen-Trenner + Ergebnis-Nummerierung).
+# Läufe: erstes Argument (Default 1); grün nur, wenn ALLE Läufe je Kette grün sind.
+import prod_pipeline as pp
+assert "Kellgren" in pp.GEN_PROMPT, "K&L-Regel fehlt in radiology_prompt.txt!"
+RUNS = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 1
+results = {"A": True, "B": True}
+for _run in range(RUNS):
+    print(f"\n── Lauf {_run + 1}/{RUNS} ──")
+    print("Kette A: EXE-Pfad (misheard → Trenner → radiology_prompt.txt + SYS_MSG → Nummerierung) ...")
+    report_a = pp.exe_kette(DIKTAT)
+    results["A"] &= check_report(report_a, "KETTE A — EXE-Pfad")
+    print("Kette B: Web-Pfad (Call 0 → Trenner → Gen → Call 2 → Nummerierung) ...")
+    final_b = pp.web_kette(DIKTAT)
+    results["B"] &= check_report(final_b, "KETTE B — Web-Pfad (Call0 → Call1 → Call2)")
 
 print(f"\n{'='*62}")
 print(f"ERGEBNIS: Kette A {'✅ PASS' if results['A'] else '❌ FAIL'} | Kette B {'✅ PASS' if results['B'] else '❌ FAIL'}")

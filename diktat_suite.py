@@ -54,17 +54,9 @@ NEGATION = ["kein ", "keine ", "keinem ", "keinen ", "keiner ", "kein nachweis",
 
 
 def is_normal_finding_app(text: str) -> bool:
-    tl = text.lower()
-    for kw in PATHOLOGY:
-        idx = tl.find(kw)
-        if idx == -1:
-            continue
-        before = tl[max(0, idx - 30):idx]
-        if not any(neg in before for neg in NEGATION):
-            return False
-    return any(kw in tl for kw in
-               ["unauffällig", "normal", "regelrecht", "ohne befund",
-                "kein nachweis", "unauffaellig"])
+    """v3.2: echte Bypass-Entscheidung (normalbypass.is_pure_normal_finding, Sync Web/EXE)."""
+    import prod_pipeline as _pp
+    return _pp.nb.is_pure_normal_finding(text, _pp.DISPLAY_NAMES)
 
 
 def asr(wav: pathlib.Path) -> str:
@@ -170,8 +162,10 @@ def main():
             title = derive(raw, l1)
             check(f"Bypass-Titel {raw[:30]!r} ohne '(Allgemein)'",
                   "(Allgemein)" not in title and len(title) > 3, title)
-            report = f"## {title}\n\n## Befund\n" + "\n".join(
-                tpl["body"].split("\n")[1:]) + f"\n\n## Ergebnis\n{raw.strip()}"
+            import prod_pipeline as _pp
+            report = _pp.bypass_report(raw, got)  # v3.2: Ergebnis = Normal-Ergebnis + Seite
+            check(f"Bypass-Ergebnis ≠ Diktat {raw[:30]!r}",
+                  report.split("## Ergebnis")[1].strip().rstrip(".") != raw.strip().rstrip("."))
             check(f"Bypass-Report-Struktur {raw[:30]!r}",
                   report.startswith("## ") and "## Befund" in report and "## Ergebnis" in report)
 

@@ -7,11 +7,21 @@ import templatesData from './templates.json';
 // v3.1: Fehlhör-Liste — EINE Quelle für Web + EXE (Repo-Root /misheard_words.json, kein Spiegel)
 import misheardData from '../../misheard_words.json';
 import { compileMisheard, applyMisheard, misheardPromptBlock, type MisheardFile } from './misheard';
+// v3.2: EIN Befund-Prompt für Web + EXE (Repo-Root /radiology_prompt.txt, versioniert) + gemeinsame
+// deterministische Regeln (Sync: source_code/befund_regeln.py, Fixtures: befund_regeln_fixtures.json)
+import genPromptRaw from '../../radiology_prompt.txt?raw';
+import {
+  splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite,
+  promptVersion, stripPromptMarker
+} from './befundRegeln';
+// v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: source_code/normalbypass.py, normal_bypass_tests.json)
+import { isPureNormalFinding } from './normalbypass';
 
 // Types
 type Template = {
   display_name: string;
   body: string;
+  ergebnis?: string;  // v3.2: Normal-Ergebnis der Untersuchung (Bypass + <normal_ergebnis> im LLM-Pfad)
 };
 
 type TemplatesMap = {
@@ -19,6 +29,13 @@ type TemplatesMap = {
 };
 
 const templates = templatesData as TemplatesMap;
+const DISPLAY_NAMES = Object.values(templates).map(t => t.display_name);
+// v3.2 (Peter 05.10.): Region nicht erkannt → KEIN Skelett-Standardtext (Lungenröntgen wurde sonst als Skelett befundet)
+const ALLGEMEIN_FALLBACK: Template = {
+  display_name: "Allgemeine Untersuchung",
+  body: "Allgemeine Untersuchung\n\nKein Nachweis pathologischer Veränderungen.",
+  ergebnis: "Unauffälliger Befund.",
+};
 
 // Vertex AI endpoint for Gemini 2.5 Flash
 // v2.11.0 (26.09.2026): gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz + EU-Verarbeitung).
@@ -266,40 +283,7 @@ function deriveUntersuchungsTitel(raw: string, displayName: string): string {
   return t || displayName.replace(/\s*\(Allgemein\)/i, "").trim();
 }
 
-function isNormalFinding(text: string): boolean {
-  const textLower = text.toLowerCase();
-  const pathologyKeywords = [
-    "arthrose", "fraktur", "osteo", "spondyl", "tendin", "calcarea", "bursitis",
-    "tenosynovitis", "teppich", "ruptur", "luxation", "skoliose", "kyphose",
-    "impression", "edgren", "scheuermann", "bi-rads", "morb", "thrombose",
-    "mondor", "tumor", "metastas", "entzünd", "ödem", "erguss",
-    "verschmäler", "skleros", "osteophyt", "beckenschief", "beinlängen",
-    "listhesis", "chondr", "fissur", "kontusion", "depression", "n. ulnaris",
-    "anconeus", "epitrochlear", "guyon", "flachbogig", "cobb", "schmorl",
-    "patholog", "verdacht", "suspekt", "läsion", "herd", "verkalkung",
-    "kalk", "fremdkörper", "emphysem", "infiltrat", "stauung",
-    "thromb", "vene", "axillär", "axillar"
-  ];
-  const negationPhrases = [
-    "kein ", "keine ", "keinem ", "keinen ", "keiner ", "kein nachweis",
-    "nicht nachweisbar", "nicht vorhanden", "ausschluss", "frei von",
-    "ohne nachweis", "ohne patholog", "ohne fraktur", "ohne arthrose",
-    "kein hinweis", "keine zeichen", "nicht nachweis"
-  ];
-  const hasPathology = pathologyKeywords.some(kw => {
-    const idx = textLower.indexOf(kw);
-    if (idx === -1) return false;
-    const before = textLower.substring(Math.max(0, idx - 30), idx);
-    const isNegated = negationPhrases.some(neg => before.includes(neg));
-    return !isNegated;
-  });
-  if (hasPathology) return false;
-  const normalKeywords = ["unauffällig", "normal", "regelrecht", "ohne befund", "kein nachweis", "unauffaellig"];
-  const hasNormal = normalKeywords.some(kw => textLower.includes(kw));
-  const isShort = textLower.split(/\s+/).filter(Boolean).length < 12;
-  return hasNormal && isShort;
-}
-
+// (v3.2: Bypass-Entscheidung = isPureNormalFinding in normalbypass.ts — gleiche Semantik wie die EXE, gemeinsame Fixtures)
 
 // ─────────────────────────────────────────────────────────────────────────
 // fetchWithRetry — robust fetch with timeout + automatic retry
@@ -450,7 +434,17 @@ function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate
 const KEY_VERSION = '2';
 // PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
 // localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-const PROMPT_VERSION = '2026-09-26-v2111-hotfix';
+// v3.2: Version = Marker der gemeinsamen Prompt-Datei (<!-- RAKSCRIBE_PROMPT_VERSION: … -->) — Prompt-Änderung
+// heißt Marker hochsetzen, dann rollt sie in Web (localStorage) UND EXE (versionierte Prompt-Wahl) aus.
+const PROMPT_VERSION = promptVersion(genPromptRaw) || 'ohne-marker';
+const GEN_PROMPT = stripPromptMarker(genPromptRaw);
+// systemInstruction — WORTGLEICH zu SYS_MSG in source_code/RaKScribe.py (befund_regeln_test.py prüft das)
+const SYS_MSG =
+  "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai' – Dr. P. Kalmar / Dr. G. Riegler. " +
+  "Strukturiere das Diktat nach den Regeln im Prompt mit dem Normalbefund-Template als vollständigem Gerüst. " +
+  "Ausgabe: zuerst '## ' + kanonische Untersuchungsbezeichnung mit diktierter Seite, dann '## Befund' als Fließtext " +
+  "ohne Labels und '## Ergebnis' nummeriert (1. 2. 3.) mit den diktierten Begriffen 1:1 inklusive Grad und Messwerten. " +
+  "Gib ausschließlich den fertigen Befundtext aus – keine Kommentare, keine Einleitung.";
 // v3.1: Fehlhör-Liste — auto-Regeln laufen deterministisch VOR Call 0 (auch ohne Gemini),
 // llm-Regeln landen als Tabelle im Call-0-Prompt. Pflege NUR in /misheard_words.json.
 const MISHEARD: MisheardFile = misheardData as MisheardFile;
@@ -596,12 +590,8 @@ export default function App() {
     return () => window.removeEventListener('focus', handleWindowFocus);
   }, [pendingCopyText]);
 
-  // RAG mock dataset
-  const ragDatabase: string[] = [
-    "Befund: HWS in 2 Ebenen. Harmonischer Achsenverlauf. Keine Spondylolisthesis. Keine Höhenminderung der Intervertebralräume. Ergebnis: Unauffälliger HWS-Befund.",
-    "Befund: Thorax in 2 Ebenen. Zwerchfellkuppen glatt begrenzt, Sinus frei. Lungenfelder regelrecht belüftet. Cor normal groß. Ergebnis: Herz-Lungen-Befund ohne pathologischen Befund.",
-    "Befund: Kniegelenk rechts in 2 Ebenen. Regelrechter Gelenkspalt, keine arthrotischen Randwülste. Intakter Knorpel. Ergebnis: Altersentsprechender Normalbefund."
-  ];
+  // (v3.2: Mock-RAG-Beispiele entfernt — unnummerierte Spielzeug-Befunde matchten fast jedes Diktat und
+  //  verdrängten Template-Format und Nummerierung; die Telegram-Referenz arbeitet ohne Beispiele.)
 
 
   // Audio recording refs
@@ -659,100 +649,12 @@ export default function App() {
 
     // (v3.0: frühere Auto-Load-Fallbacks vertex-key.txt/.b64/stt-key.* entfernt — Schlüssel kommen nur per Drag & Drop/Menü)
 
-    const newDefaultPrompt = 
-      `<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>\n` +
-      `<instructions>\n` +
-      `Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.\n\n` +
-      `## STRIKTE FORMATREGELN:\n` +
-      `1. Erstelle IMMER exakt drei Teile: die Untersuchungs-Überschrift als eigene Markdown-Überschrift ('## [Untersuchungsart]') und danach die zwei Hauptabschnitte '## Befund' und '## Ergebnis'. Kein weiterer Text, keine Kommentare, keine Erklärungen außerhalb dieser Teile.\n` +
-      `2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.\n\n` +
-      `## ABSCHNITT "## Befund":\n` +
-      `- UNTERSUCHUNGS-ÜBERSCHRIFT (eigene Zeile VOR '## Befund', als Markdown-Überschrift '## [Untersuchungsart]'): Verwende die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Zeile des Template-Bodies — AUSNAHME: Enthält <untersuchung> '(Allgemein)', ist das ein interner Sammel-Name, der NICHT als Befundtitel stehen darf; bilde die Untersuchungs-Überschrift dann aus dem DIKTAT (diktierte Untersuchungsbezeichnung OHNE Befundworte wie 'unauffällig'; z.B. 'Unterschenkel-Sonographie rechts unauffällig' → '## Unterschenkel-Sonographie rechts') — im Übrigen NIE das roh diktierte Wort für die Untersuchung (z.B. diktiert "Kniegelenk links" bei Template "Kniegelenk in 2 Ebenen" → "## Kniegelenk links in 2 Ebenen", NIEMALS "Kniegelenk" oder "Kniegelenk links" allein). Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift, sonst bleibt sie ohne Seitenangabe. Der Abschnitt "## Befund" beginnt DANACH direkt mit dem Befundtext — die Untersuchungsbezeichnung steht NICHT mehr als erster Satz im Befundtext.\n` +
-      `- Nutze das bereitgestellte Normalbefund-Template (\`<normalbefund_template>\`) als genaue strukturelle Basis. Die ERSTE ZEILE des Template-Bodies ist die kanonische Untersuchungs-Überschrift — ergänze falls nötig die fehlenden Formulierungsbestandteile (z.B. Template "Kniegelenk" + diktierter Zusatz "in 2 Ebenen" → "Kniegelenk in 2 Ebenen") und schreibe sie mit übernommener diktierter Seite als Untersuchungs-Überschrift ('## [Untersuchungsart]') VOR dem Abschnitt '## Befund'.\n` +
-      `- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt (z.B. Arthrose, Fraktur, TEP, Spondylarthrose, Osteochondrose, Beckenschiefstand).\n` +
-      `- Die kanonische Untersuchungsbezeichnung steht zusätzlich in <untersuchung> — sie hat Vorrang vor jeder roh diktierten Untersuchungsbezeichnung, AUSSER sie enthält '(Allgemein)': dann darf der interne Sammel-Name nicht als Titel erscheinen und die Überschrift wird aus dem Diktat abgeleitet.\n` +
-      `- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.\n` +
-      `- Übernimm Messwerte (z.B. 'Beckenschiefstand nach links um 4 mm', '-1,2 cm Beinlängendifferenz') exakt aus dem Diktat.\n` +
-      `- Schreibe im radiologischen Nominalstil (z.B. 'Kein Nachweis von Lockerungszeichen.', 'Intakte Hüft-TEP rechts.').\n\n` +
-      `## ABSCHNITT "## Ergebnis":\n` +
-      `- Fasse alle diagnosewesentlichen Pathologien kurz und stichpunktartig zusammen.\n` +
-      `- Schreibe präzise Diagnosen im Stil der Praxis: z.B. 'Intakte Hüft-TEP rechts.', 'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', 'Beckenschiefstand nach links um 4 mm bei Beinlängendifferenz links -4 mm.'.\n` +
-      `- Bei Normalbefund: 'Unauffälliger Befund.' oder der entsprechende Kurztext.\n` +
-      `## KONSISTENZ-REGELN (STRIKT):\n` +
-      `1. JEDER pathologische Befund aus dem Diktat MUSS im "## Ergebnis" genannt werden. Keine Diagnose darf fehlen.\n` +
-      `2. JEDER pathologische Befund aus dem "## Ergebnis" MUSS auch im "## Befund" beschrieben sein. Keine Diagnose darf nur in einem Abschnitt stehen.\n` +
-      `3. KEINE WIDERSPRÜCHE: Wenn im Befund eine Pathologie beschrieben wird, darf das Ergebnis nicht "unauffällig" lauten.\n` +
-      `4. KEINE WIDERSPRÜCHE: Wenn das Ergebnis eine Diagnose nennt, muss der Befund die entsprechenden morphologischen Kriterien beschreiben.\n` +
-      `5. Keine Diagnose darf ERFUNDEN werden, die nicht im Diktat genannt wurde. Du strukturierst, du diagnostizierst nicht.\n` +
-      `6. "ansonsten unauffällig" bezieht sich nur auf nicht genannte Bereiche – es darf NICHT das gesamte Ergebnis als unauffällig markieren wenn Pathologien vorhanden sind.\n\n` +
-      `## KONFLIKT-REGELN (NORMALBEFUND vs. PATHOLOGIE) — STRIKT EINZUHALTEN:\n` +
-      `Wenn das Diktat eine Pathologie nennt, MÜSSEN die entsprechenden Normalbefund-Sätze aus dem Template ENTFERNT oder ANGEPASST werden. KEINE WIDERSPRÜCHE im Befundtext!\n\n` +
-      `Spezifische Regeln:\n` +
-      `- Osteochondrose/Diskopathie in Segment X: ENTFERNE "Bandscheibenräume normal hoch" für dieses Segment. Schreibe stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums [Segment] mit subchondraler Sklerosierung der Abschlussplatten". Schreibe NICHT "Osteochondrose" als Wort in den Befundtext — nur Deskriptoren.\n` +
-      `- Spondylosis deformans/Spondylophyten in Segment X: ERGÄNZE "Spondylophytenbildung [Segment]" im Befundtext.\n` +
-      `- Unkovertebralgelenksarthrose/Uncovertebralarthrose in Segment X: FÜGE HINZU "Degenerative Veränderungen der Unkovertebralgelenke [Segment] mit Gelenkspaltverschmälerung, subchondraler Sklerosierung und Osteophytenbildung". Die "kleinen Zwischenwirbelgelenke" (Facettengelenke) sind ANDERE Gelenke und bleiben "ohne Auffälligkeiten" wenn nicht genannt.\n` +
-      `- Facettengelenksarthrose/Spondylarthrose in Segment X: ERSETZE "kleinen Zwischenwirbelgelenke ohne Auffälligkeiten" durch "Degenerative Veränderungen der kleinen Wirbelgelenke [Segment]".\n` +
-      `- Anterolisthese/Retrolisthese: Ersetze die normale Achsenverlaufsbeschreibung für das betroffene Segment durch die Listhese-Beschreibung.\n` +
-      `- Skoliose/skoliotische Fehlhaltung: ERSETZE "Normaler Achsenverlauf" durch die Skoliose-Beschreibung.\n` +
-      `- Streckhaltung: ERSETZE "Normaler Achsenverlauf" durch "Streckhaltung der HWS".\n` +
-      `- Haltungs-/Achsenbeschreibungen ("Flachbogige Konvexität", "Streckhaltung", "Skoliose") NUR wenn im Diktat genannt. Degenerative Diagnosen (Osteochondrose/Spondylose/Arthrose) rechtfertigen KEINE erfundene Achsenbeschreibung — der Template-Satz "Normaler Achsenverlauf" bleibt dann UNVERÄNDERT stehen.\n` +
-      `- Fraktur: ENTFERNE "Alle Wirbelkörper von normaler Form und Höhe" und ersetze durch Frakturbeschreibung.\n` +
-      `- Gelenksarthrose (Omarthrose/Coxarthrose/Gonarthrose/Arthrose etc.): ENTFERNE "Normale Form und Struktur der Gelenkkörper", "Die Gelenkflächen glatt und kongruent", "Die Gelenkränder unauffällig", "Die Gelenksspalten normal weit" — ALLE diese Normalbefund-Sätze MÜSSEN gestrichen werden wenn eine Arthrose vorliegt. Stattdessen arthrotische Deskriptoren: "Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung". NIEMALS "Normale Form und Struktur der Gelenkkörper" + arthrotische Deskriptoren im selben Satz (kein "bei ansonsten normaler Form").\n` +
-      `- Humeruskopfhochstand/Femurkopfhochstand: Ersetze die normale Gelenkpartner-Stellung durch den Hochstand. KEIN "bei ansonsten normaler Form und Struktur" — der Hochstand IST die Abweichung.\n` +
-      `- TEP/Prothese: ERSETZE "Normale Form und Struktur der Gelenkkörper" durch Prothesenbeschreibung.\n` +
-      `- Knochenzyste/Lyse/Tumor: ERSETZE "Knochenstruktur unauffällig" / "Mineralgehalt und Knochenstruktur regelrecht" durch pathologische Beschreibung.\n` +
-      `- Kalzifikation/Tendinosis calcarea: ERGÄNZE Verkalkungsbeschreibung im Befundtext.\n\n` +
-      `GRUNDREGEL: Wenn ein Normalbefund-Satz durch eine Pathologie hinfällig wird, MUSS er gestrichen oder ersetzt werden. Ein Befundtext darf NIEMALS eine Struktur als "normal/unauffällig/ordnungsgemäß" beschreiben UND GLEICHZEITIG als pathologisch verändert einstufen.\n` +
-      `BESCHREIBUNGSTEXT = NUR MORPHOLOGIE/DESKRIPTOREN. Diagnosen, Differentialdiagnosen und Diagnose-Namen gehören NUR ins Ergebnis, NICHT in den Befundtext.\n\n` +
-      `## VERBOTENE MUSTER (Anti-Patterns) — diese Fehler macht Gemini Flash oft, sie MÜSSEN vermieden werden:\n` +
-      `❌ FALSCH: "Normale Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung und Osteophytenbildung." (Widerspruch: erst normal, dann arthrotisch — der erste Satz MUSS WEG)\n` +
-      `✅ RICHTIG: "Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung." (nur arthrotische Deskriptoren)\n` +
-      `❌ FALSCH: "Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Medialbetonte Gelenkspaltverschmälerung." (Widerspruch: 3 Normalbefund-Sätze + 1 arthrotischer Befund — die 3 Normalbefund-Sätze MÜSSEN WEG)\n` +
-      `✅ RICHTIG: "Medialbetonte Gelenkspaltverschmälerung. Die periartikuläre Weichteilzone o. B." (nur arthrotische Deskriptoren + Weichteil-Normalbefund, da dieser nicht betroffen ist)\n` +
-      `❌ FALSCH: "Hochstand des Humeruskopfes bei ansonsten normaler Form und Struktur der Gelenkkörper." (Widerspruch: Hochstand + normale Form — "bei ansonsten normaler Form" MUSS WEG)\n` +
-      `✅ RICHTIG: "Hochstand des Humeruskopfes." (Hochstand ist die Abweichung, kein "bei ansonsten normaler Form")\n` +
-      `❌ FALSCH: "Normale Form und Struktur der Gelenkkörper. Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum." (Widerspruch: erst normale Form, dann Fraktur — der erste Satz MUSS WEG)\n` +
-      `✅ RICHTIG: "Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum humeri." (nur Frakturbeschreibung)\n` +
-      `❌ FALSCH: "Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander." (nach Fraktur eines Gelenkpartners — fehlender Qualifikator, impliziert ALLE Flächen normal)\n` +
-      `✅ RICHTIG: "Artikulierende Flächen im Übrigen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander." ("im Übrigen" qualifiziert: der frakturierte Teil ist ausgenommen)\n` +
-      `❌ FALSCH: "Mineralgehalt und Knochenstruktur regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Widerspruch: Knochenstruktur als regelrecht bezeichnet, dann Fraktur — "und Knochenstruktur" MUSS WEG)\n` +
-      `✅ RICHTIG: "Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Mineralgehalt darf normal bleiben, Knochenstruktur nicht bei Fraktur)\n` +
-      `❌ FALSCH: "Flachbogige linkskonvexe Skoliose." oder "Retrolisthese von L4 gegenüber L5." (Befundtext — Diagnosename statt Morphologie)\n` +
-      `✅ RICHTIG: "Flachbogige linkskonvexe Seitausbiegung." bzw. "Dorsaler Versatz von L4 gegenüber L5." (Morphologie im Befundtext, Diagnose "Skoliose"/"Retrolisthese" nur im Ergebnis)\n` +
-      `❌ FALSCH: "Flachbogige Konvexität." als Befund-Satz, ohne dass das Diktat eine Haltungs-/Achsenabweichung nennt (erfundene Haltungsbeschreibung)\n` +
-      `✅ RICHTIG: "Normaler Achsenverlauf." (Template-Satz bleibt stehen, wenn das Diktat nichts zur Achse/Haltung diktiert)\n` +
-      `## ERGEBNIS-REGELN:\n` +
-      `- Schreibe NUR Diagnosen die im Diktat genannt wurden. Keine ERFUNDENEN Begriffe wie "Fehlhaltung" wenn das Diktat "Streckhaltung" sagt.\n` +
-      `- "Flachprofil" existiert in der Radiologie NICHT — dieses Wort darf NIEMALS im Befund oder Ergebnis stehen. Wenn das Diktat eine flachbogige Seitabweichung nennt: Befundtext "flachbogige [links/rechts]konvexe Seitausbiegung", Ergebnis "Flachbogige [links/rechts]konvexe Skoliose".\n` +
-      `- Fehlhaltung im Diktat (z.B. "kyphotische Fehlhaltung"): darf NICHT verschwiegen werden — nenne sie im Befundtext (z.B. "Kyphotische Fehlhaltung der HWS.") UND im Ergebnis.\n` +
-      `- ERGEBNIS 1:1 ZUM DIKTAT: JEDE diktierte Diagnose/Haltungsangabe wird ein EIGENER Ergebnis-Punkt in der DIKTIERTEN Wortwahl (inkl. Segmenthöhe). NIEMALS zwei diktierte Befunde zu einem Punkt verschmelzen, NIEMALS einen diktierten Begriff durch einen spezifischeren ersetzen (diktiert "Gelenksarthrose C3 bis C5" → Ergebnis "Gelenksarthrose C3 bis C5", NICHT "Unkovertebralarthrose").\n  ❌ FALSCH: Diktat "flachbogige Skoliose nach links, kyphotische Fehlhaltung, Gelenksarthrose C3 bis C5" → Ergebnis "1. Flachbogige linkskonvexe kyphotische Fehlhaltung der HWS. 2. Uncovertebralarthrose C3 bis C5."\n  ✅ RICHTIG: "1. Flachbogige linkskonvexe Skoliose der HWS. 2. Kyphotische Fehlhaltung der HWS. 3. Gelenksarthrose C3 bis C5."\n` +
-      `- Verwende EXAKT die Begriffe aus dem Diktat. Wenn das Diktat "Streckhaltung" sagt, schreibe "Streckhaltung" — nicht "Fehlhaltung".\n` +
-      `- Diagnose-Namen dürfen NICHT umformuliert werden. "Osteochondrose" bleibt "Osteochondrose", nicht "Diskopathie". "Coxarthrose" bleibt "Coxarthrose", nicht "Hüftgelenksarthrose".\n` +
-      `- Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.\n` +
-      `- Wenn im Diktat "vereinbar mit [Diagnose]" gesagt wird, schreibe im Ergebnis IMMER "Bild wie bei [Diagnose]" (z.B. "vereinbar mit CIDP" → "Bild wie bei CIDP"). "Vereinbar mit" ist NUR eine Diktat-Formulierung und darf NICHT wörtlich ins Ergebnis übernommen werden.\n` +
-      `- Querschnittsfläche (CSA): NUR in den Befundtext aufnehmen, wenn sie EXPLIZIT im Diktat genannt wird. Wenn das Diktat keine CSA nennt, LASS die CSA-Erwähnung aus dem Template KOMPLETT WEG (kein Platzhalter, kein Normwert, nichts). Dies gilt für ALLE Nerven-Templates.\n` +
-      `## ARTHROSE-GRADUIERUNG NACH KELLGREN & LAWRENCE (PFLICHT):\n` +
-      `Bei ARTHROSE-Diagnosen in Ergebnis-Formulierungen mit Graduierung: "[Gelenksarthrose-Diagnose] Grad [X] nach Kellgren & Lawrence [Seite]". Die Grad-Zuordnung aus den Deskriptoren des Diktats/Befundtextes: geringe Osteophyten ohne/fragliche Verschmälerung = Grad 1 · geringe Osteophyten + geringe Verschmälerung/Randzuschärfung = Grad 2 · mäßiggradige Verschmälerung + multiple Osteophyten + subchondrale Sklerosierung = Grad 3 · aufgehobener Gelenkspalt + ausgeprägte Sklerosierung/Zysten = Grad 4.\n` +
-      `Beispiel: Diktat "maßgradige Gonarthrose medial" → Befundtext mit arthrotischen Deskriptoren, Ergebnis "Gonarthrose links, medial betont, Grad 2-3 nach Kellgren & Lawrence." — Gilt für Schulter (Omarthrose), Ellbogen, Hand, Handgelenk, Hüfte (Coxarthrose), Knie (Gonarthrose/Femorotibial + Patellofemoral getrennt gradieren), Sprunggelenk, Fuß. NICHT für: AC-Gelenk, ISG, Symphyse (dort nur Deskriptoren, keine K&L-Graduierung).\n` +
-      `## SCHREIBSTIL – orientiere dich strikt an diesen Praxis-Beispielen:\n` +
-      `- 'Intakte Hüft-TEP rechts, soweit in einer Ebene beurteilbar. Pfannenkomponente und Schaftkomponente in regelrechter Position. Kein periprothetischer Aufhellungssaum.'\n` +
-      `- 'Coxarthrose links mit deutlicher Gelenkspaltverschmälerung, subchondraler Sklerosierung und osteophytären Randwülsten.'\n` +
-      `- 'STT-Arthrose (Scaphoid-Trapezium-Trapezoideum) beidseits. Gelenkspaltverschmälerung und Sklerose.'\n` +
-      `- 'Osteochondrosis pubis. Unregelmäßigkeit der Symphysenfuge mit subchondraler Sklerose.'\n` +
-      `- 'Diskreter/ausgeprägter Beckenschiefstand nach links/rechts um X mm bei Beinlängendifferenz links/rechts -X mm.'\n` +
-      `- 'Unauffälliger HWS-Befund.' / 'Unauffälliger Befund.'\n` +
-      `</instructions>\n` +
-      `<normalbefund_template>\n` +
-      `{template_body}\n` +
-      `</normalbefund_template>\n\n` +
-      `{examples}\n\n` +
-      `<diktat>\n` +
-      `{roh_text}\n` +
-      `</diktat>`;
+    // v3.2: Default-Prompt = gemeinsame Datei radiology_prompt.txt (kein zweiter Prompt-Text mehr in App.tsx)
+    const defaultPrompt = GEN_PROMPT;
 
     if (!savedPrompt || savedPromptVersion !== PROMPT_VERSION || savedPrompt.includes("## Beurteilung") || savedPrompt.includes("Radiologe-Assistent</role>")) {
-      setSystemPrompt(newDefaultPrompt);
-      localStorage.setItem('system_prompt', newDefaultPrompt);
+      setSystemPrompt(defaultPrompt);
+      localStorage.setItem('system_prompt', defaultPrompt);
       localStorage.setItem('system_prompt_version', PROMPT_VERSION);
     } else {
       setSystemPrompt(savedPrompt);
@@ -1107,7 +1009,9 @@ export default function App() {
       ["lendenwirbelsäule_in_2_ebenen", ["lws", "lumbal", "lendenwirbel"]],
       ["halswirbelsäule_in_2_ebenen", ["hws", "cervical", "halswirbel"]],
       ["brustwirbelsäule_in_2_ebenen", ["bws", "thorakal", "brustwirbel"]],
-      ["thorax_in_2_ebenen", ["thorax", "lunge", "herz", "rö-th", "rö thor"]],
+      // v3.2: knöcherner Hemithorax VOR Thorax ("Hemithorax" enthält "thorax")
+      ["knöcherner_hemithorax", ["hemithorax", "rippenaufnahme", "rippenserie", "rippen in 2"]],
+      ["thorax_in_2_ebenen", ["thorax", "torax", "lunge", "pulmo", "brustkorb", "herz", "rö-th", "rö thor"]],
       ["handgelenk_in_2_ebenen", ["handgelenk"]],
       ["finger_in_2_ebenen", ["finger", "daumen", "kleinfinger", "zeigefinger", "mittelfinger", "ringfinger"]],
       ["hand_in_2_ebenen", ["hand", "mittelhand"]],
@@ -1141,19 +1045,6 @@ export default function App() {
   };
 
   // Run full-text search simulation in the local report list
-  const getFewShotExamples = (text: string): string => {
-    const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    if (words.length === 0) return "";
-
-    const matches = ragDatabase.filter(report => {
-      return words.some(word => report.toLowerCase().includes(word));
-    }).slice(0, 2);
-
-    if (matches.length === 0) return "";
-
-    return "\n### BEISPIELE FÜR TYPISCHE BERICHTE DIESER PRAXIS:\n" + 
-      matches.map((m, idx) => `Beispiel ${idx + 1}:\n${m}\n---`).join("\n");
-  };
 
   // ─────────────────────────────────────────────────────────────────────────
   // GOOGLE CLOUD STT — Service-Account (rakscribe-stt@) → JWT → Bearer Token
@@ -1576,7 +1467,7 @@ Korrigiert:`;
   const stripCodeFences = (text: string): string =>
     text.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
 
-  const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string): Promise<string> => {
+  const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string, normalErgebnis = 'Unauffälliger Befund.'): Promise<string> => {
     if (!vertexApiKey) {
       throw new Error("Es ist kein Vertex AI API-Key konfiguriert. Bitte in den Einstellungen eintragen.");
     }
@@ -1592,22 +1483,23 @@ Korrigiert:`;
     // das LLM die Überschrift aus dem Diktat (ohne Befundworte), statt den
     // Volltext als Titel zu bekommen. Der Bypass-Pfad (ohne LLM) bleibt bei
     // deriveUntersuchungsTitel — dort muss der Titel deterministisch entstehen.
-    let promptText = systemPrompt
-      .replace("{roh_text}", rawText)
-      .replace("{template_body}", templateBody)
-      .replace("{region_name}", regionName);
+    let promptText = stripPromptMarker(systemPrompt)
+      .replace("{roh_text}", () => rawText)
+      .replace("{template_body}", () => templateBody)
+      .replace("{region_name}", () => regionName);
 
     // Kanonische Untersuchungsbezeichnung als expliziter Block (Task 08.09.: roh diktierte
     // Kurzformen wie "Kniegelenk" dürfen die Bezeichnung nicht verdrängen)
     promptText = promptText + `\n<untersuchung>${regionName}</untersuchung>\n`;
+    // v3.2 (Peter 05.10.): Normal-Ergebnis der Untersuchung — fürs Ergebnis, wenn das Diktat keine Pathologie nennt
+    promptText = promptText + `<normal_ergebnis>${normalErgebnis}</normal_ergebnis>\n`;
 
     if (promptText.includes("{examples}")) {
-      promptText = promptText.replace("{examples}", examples);
+      promptText = promptText.replace("{examples}", () => examples);
     } else {
       promptText = promptText + "\n\n" + examples;
     }
 
-    const sysMsg = "Du bist ein präziser Radiologie-Assistent. Strukturiere das Diktat unter Verwendung des bereitgestellten Normalbefund-Templates. Setze zuerst eine ##-Überschrift mit der Untersuchungsart, dann ## Befund und ## Ergebnis als Haupttitel.";
 
     const lastGenBody = JSON.stringify({
         contents: [{
@@ -1618,7 +1510,7 @@ Korrigiert:`;
         }],
         systemInstruction: {
           parts: [{
-            text: sysMsg
+            text: SYS_MSG
           }]
         },
         generationConfig: {
@@ -1672,13 +1564,19 @@ Korrigiert:`;
    - "Normaler Achsenverlauf" MUSS ersetzt werden bei Skoliose, Streckhaltung, Anterolisthese oder anderen Achsenabweichungen.
    - "Alle Wirbelkörper von normaler Form und Höhe" MUSS angepasst werden bei Fraktur, Anterolisthese oder anderen Formveränderungen.
 4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" Abschnitt dürfen KEINE Diagnosenamen stehen (z.B. nicht "Osteochondrose im Segment C5/C6"). Stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums C5/C6 mit subchondraler Sklerosierung der Abschlussplatten". Diagnosen NUR im "## Ergebnis".
-5. KEINE ERFUNDENE DIAGNOSE: Der Befund darf keine Diagnosen enthalten, die im Diktat nicht erwähnt wurden. Umgekehrt MÜSSEN Arthrose-Diagnosen im Ergebnis nach Kellgren & Lawrence graduiert sein ("Grad [1-4] nach Kellgren & Lawrence"), wenn das betroffene Gelenk zur K&L-Liste gehört (Schulter/Ellbogen/Hand/Handgelenk/Hüfte/Knie/Sprunggelenk/Fuß — NICHT AC-Gelenk/ISG/Symphyse). Fehlt die Graduierung, ergänze sie aus den Deskriptoren: geringe Osteophyten=1, +geringe Verschmälerung=2, mäßiggradige Verschmälerung+multiple Osteophyten+Sklerosierung=3, aufgehobener Gelenkspalt=4. Beim Knie Femorotibial- und Patellofemoral-Kompartiment getrennt gradieren.
+5. KEINE ERFUNDENE DIAGNOSE: Der Befund darf keine Diagnosen enthalten, die im Diktat nicht erwähnt wurden. Umgekehrt MÜSSEN Arthrose-Diagnosen im Ergebnis nach Kellgren & Lawrence graduiert sein ("Grad [1-4] nach Kellgren & Lawrence"), wenn das betroffene Gelenk zur K&L-Liste gehört (Schulter/Ellbogen/Hand/Handgelenk/Hüfte/Knie/Sprunggelenk/Fuß — NICHT AC-Gelenk/ISG/Symphyse). Fehlt die Graduierung, ergänze sie im Format "(Arthrose Grad X nach Kellgren & Lawrence)" aus dem diktierten Adjektiv bzw. den Deskriptoren: beginnend/geringe Osteophyten=1, gering(gradig)=2, mäßig(gradig)/mittelgradig=3, hochgradig/aufgehobener Gelenkspalt=4. Beim Knie Femorotibial- und Patellofemoral-Kompartiment getrennt gradieren.
 6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen (Cobb-Winkel, mm, BI-RADS etc.).
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
 9. NORMALBEFUND ERHALTEN: Entferne NIEMALS Template-/Normalbefund-Sätze, die keiner diktierten Pathologie widersprechen — auch nicht zur Kürzung (z.B. Oberarm-/Unterarm-Abschnitte einer Nervensonographie bleiben vollständig stehen).
-10. DIAGNOSEBEGRIFFE NIE ERSETZEN: Jede diktierte Diagnose bleibt im Ergebnis in der DIKTIERTEN Wortwahl als eigener Punkt (\"Gelenksarthrose C3 bis C5\" bleibt so — NICHT \"Facettengelenksarthrose\" oder \"Uncovertebralarthrose\"). \"Bild wie bei [Diagnose]\" bleibt \"Bild wie bei\", NIE zurück zu \"vereinbar mit\". Messwerte wie CSA gehören NICHT ins Ergebnis. AUSNAHME zur Wortwahl: Steht im generierten Ergebnis \"Bild wie bei [Diagnose]\", ist das die PFLICHT-Umsetzung von diktiertem \"vereinbar mit\"/\"kompatibel mit\" — NIEMALS entfernen, sonst wird aus einer Verdachtsdiagnose eine gesicherte.
-8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite. Enthält die Überschrift '(Allgemein)', ersetze sie durch die aus dem Diktat abgeleitete Untersuchungsbezeichnung (ohne Befundworte wie 'unauffällig') — '(Allgemein)' selbst darf nie als Titel stehen.
+10. DIAGNOSEBEGRIFFE NIE ERSETZEN: Jede diktierte Diagnose bleibt im Ergebnis in der DIKTIERTEN Wortwahl als eigener Punkt (\"Gelenksarthrose C3 bis C5\" bleibt so — NICHT \"Facettengelenksarthrose\" oder \"Uncovertebralarthrose\"). \"Bild wie bei [Diagnose]\" bleibt \"Bild wie bei\", NIE zurück zu \"vereinbar mit\". Diktiertes \"Verdacht auf [Diagnose]\" bleibt WÖRTLICH \"Verdacht auf [Diagnose]\" (NIE \"Bild wie bei\"); die diktierte Seite bleibt in seitenbezogenen Ergebnis-Punkten stehen. Messwerte wie CSA gehören NICHT ins Ergebnis. AUSNAHME zur Wortwahl: Steht im generierten Ergebnis \"Bild wie bei [Diagnose]\", ist das die PFLICHT-Umsetzung von diktiertem \"vereinbar mit\"/\"kompatibel mit\" — NIEMALS entfernen, sonst wird aus einer Verdachtsdiagnose eine gesicherte.
+8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen", "## Schultergelenk rechts in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk" oder "Schulter rechts in 2 Ebenen"), ergänze sie vollständig mit übernommener diktierter Seite. Enthält die Überschrift '(Allgemein)', ersetze sie durch die aus dem Diktat abgeleitete Untersuchungsbezeichnung (ohne Befundworte wie 'unauffällig') — '(Allgemein)' selbst darf nie als Titel stehen.
+
+11. ERGEBNIS NUMMERIERT UND VOLLSTÄNDIG: Ergebnis-Punkte stehen je in einer Zeile, nummeriert "1. 2. 3." (Ausnahme: kompletter Normalbefund = EIN unnummerierter Satz). Diktierte Grad-Adjektive (geringgradig/mäßiggradig/hochgradig), Messwerte (z.B. "17 mm messendem Kalkdepot") und die Klammer "(Arthrose Grad X nach Kellgren & Lawrence)" MÜSSEN im Ergebnis stehen bleiben — NIE wegkürzen. Ein Befund mit seiner diktierten Deutung ("als indirekter Hinweis für …") bleibt EIN Punkt.
+14. ERGEBNIS NIE DAS DIKTAT ABSCHREIBEN: Das Ergebnis besteht aus strukturierten Diagnosen (nummeriert), nicht aus dem Diktattext (z.B. NIE "Knie rechts unauffällig."). Nennt das Diktat KEINE Pathologie, steht im Ergebnis das zur Untersuchung passende Normal-Ergebnis (z.B. "Regelrechte Darstellung des Kniegelenkes rechts.", Thorax "Unauffälliger Befund.").
+15. SEITE IM ERGEBNIS (gilt NUR für den Abschnitt ## Ergebnis): Jeder Ergebnis-Punkt mit seitenbezogener Diagnose (Extremität/Gelenk) nennt die diktierte Seite — z.B. "Verdacht auf Syndesmosenruptur rechts.". Entferne eine vorhandene Seite NIE; ergänzt du einen Ergebnis-Punkt, schreibe die Seite dazu. Im Befundtext steht die Seite in der Überschrift — dort KEINE Sätze wegen der Seite ergänzen, duplizieren oder umstellen; der Weichteil-Satz des Templates bleibt unverändert am Ende.
+12. FLIESSTEXT: Im Befund stehen KEINE Abschnitts-Labels ("Skelett:", "Knochenstruktur:", "Gelenkflächen:", "Weichteile:") und keine Fettschrift — entferne sie, der Satz bleibt. Der Weichteil-Satz steht am Ende des Befundtextes.
+13. STANDARDTEXT: Die Normalbefund-Sätze des Templates bleiben wörtlich stehen, sofern sie keiner Pathologie widersprechen — ersetze sie NIE durch eigene Formulierungen. Bei Arthrose steht der Kellgren-&-Lawrence-Deskriptor des Grades an der Stelle der Gelenkspalt-/Gelenkflächen-Normalsätze (Ellbogen danach "Ansonsten die artikulierenden Gelenkflächen regelrecht konfiguriert, glatt und scharf begrenzt.").
 
 Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
 Wenn es FEHLER gibt, korrigiere den Befund und gib die korrigierte Version zurück.
@@ -1756,6 +1654,48 @@ Korrigierter Befund:`;
       console.warn('[VALIDATE] Validation failed:', e.message);
       return generatedReport;
     }
+  };
+
+  // v3.2: Befund aus dem (korrigierten) Diktat — dieselbe Kette wie die EXE (RaKScribe.py _befund_fuer_segment):
+  // Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener Befund mit eigenem
+  // Template und eigenem Ergebnis (parallel), danach Ergebnis deterministisch nummeriert.
+  const befundFuerSegment = async (seg: string): Promise<string> => {
+    const detectedKey = detectTemplate(seg);
+    const activeTemplate = templates[detectedKey] || templates['allgemein'] || ALLGEMEIN_FALLBACK;
+    if (detectedKey === 'allgemein') {
+      console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
+      setStatusText('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
+    }
+
+    // RAG-Bypass-Shortcut für reine Normalbefunde (1:1 wie EXE)
+    if (isPureNormalFinding(seg, DISPLAY_NAMES) && detectedKey !== 'allgemein') {
+      console.log(`[BYPASS] Normalbefund erkannt. Generiere direkt aus Template.`);
+      // v3.2 (Peter 05.10.): Ergebnis = Normal-Ergebnis der Untersuchung (+ Seite) — NIE das Diktat abschreiben
+      const ergebnis = ergebnisMitSeite(activeTemplate.ergebnis || '', seg);
+      const tplLines = activeTemplate.body.split('\n');
+      const tplTitle = titelMitSeite(deriveUntersuchungsTitel(seg, (tplLines[0] || '').trim().replace(/:$/, '')), seg);
+      const tplBody = tplLines.slice(1).join('\n');
+      return `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${ergebnis}`;
+    }
+
+    if (!vertexApiKey) {
+      throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
+    }
+    const structuredText = await callGeminiLLM(seg, activeTemplate.body, activeTemplate.display_name, '', activeTemplate.ergebnis || 'Unauffälliger Befund.');
+    // Step 3: Konsistenz-Validierung gegen das Diktat
+    setStatusText('Validiere Befund-Konsistenz...');
+    const validatedReport = await validateReportConsistency(seg, structuredText);
+    return nachbearbeiten(validatedReport);
+  };
+
+  const befundAusDiktat = async (text: string): Promise<string> => {
+    const segmente = splitRegionen(text);
+    if (segmente.length > 1) {
+      console.log(`[MULTI] ${segmente.length} Regionen: ${segmente.map(x => x.slice(0, 40)).join(' | ')}`);
+      setStatusText(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
+    }
+    const teile = await Promise.all(segmente.map(befundFuerSegment));
+    return befundeZusammenfuegen(teile);
   };
 
   const testGeminiAPI = async (): Promise<void> => {
@@ -2045,63 +1985,13 @@ Korrigierter Befund:`;
       finalRawText = correctedText;
       setTranscript(finalRawText);
 
-      // 1:1 Matching logic from EXE version
-      const detectedKey = detectTemplate(finalRawText);
-      const activeTemplate = templates[detectedKey] || templates['allgemein'] || {
-        display_name: "Allgemeine Untersuchung",
-        body: "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
-      };
-      if (detectedKey === 'allgemein') {
-        console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
-        setStatusText('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
-      }
-
-      // RAG-Bypass-Shortcut for pure normal findings (1:1 from EXE version)
-      if (isNormalFinding(finalRawText) && detectedKey !== 'allgemein') {
-        console.log(`[BYPASS] Normalbefund erkannt. Generiere direkt aus Template.`);
-        let formattedRaw = finalRawText.trim();
-        formattedRaw = formattedRaw.replace(/\bHW\b/g, 'HWS');
-        if (formattedRaw) {
-          formattedRaw = formattedRaw[0].toUpperCase() + formattedRaw.slice(1);
-          if (!formattedRaw.endsWith('.')) {
-            formattedRaw += '.';
-          }
-        }
-        
-        const tplLines = activeTemplate.body.split('\n');
-        const tplTitle = deriveUntersuchungsTitel(finalRawText, (tplLines[0] || '').trim().replace(/:$/, ''));
-        const tplBody = tplLines.slice(1).join('\n');
-        const report = `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${formattedRaw}`;
-        setStructuredReport(report);
-        setStatus('ready');
-        setStatusText('Bereit');
-        
-        await copyTextToClipboard(report);
-        return;
-      }
-
-      // Normal path: structure with LLM
-      const examples = getFewShotExamples(finalRawText);
-      if (!vertexApiKey) {
-        throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
-      }
-
-      const structuredText = await callGeminiLLM(
-        finalRawText, 
-        activeTemplate.body, 
-        activeTemplate.display_name, 
-        examples
-      );
-
-      // Step 3: Konsistenz-Validierung gegen das Diktat
-      setStatusText('Validiere Befund-Konsistenz...');
-      const validatedReport = await validateReportConsistency(finalRawText, structuredText);
-
-      setStructuredReport(validatedReport);
+      // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
+      const report = await befundAusDiktat(finalRawText);
+      setStructuredReport(report);
       setStatus('ready');
       setStatusText('Bereit');
 
-      await copyTextToClipboard(validatedReport);
+      await copyTextToClipboard(report);
 
     } catch (err: any) {
       console.error(err);
@@ -2149,61 +2039,13 @@ Korrigierter Befund:`;
       setTranscript(finalRawText);
       console.log(`[UPLOAD] Transcription (corrected): ${finalRawText.substring(0, 200)}...`);
 
-      // Step 2: Template detection + LLM structuring (same as stopRecording)
-      const detectedKey = detectTemplate(finalRawText);
-      const activeTemplate = templates[detectedKey] || templates['allgemein'] || {
-        display_name: "Allgemeine Untersuchung",
-        body: "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
-      };
-      if (detectedKey === 'allgemein') {
-        console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
-        setStatusText('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
-      }
-
-      // Normalbefund-Bypass
-      if (isNormalFinding(finalRawText) && detectedKey !== 'allgemein') {
-        console.log(`[BYPASS] Normalbefund erkannt. Generiere direkt aus Template.`);
-        let formattedRaw = finalRawText.trim();
-        formattedRaw = formattedRaw.replace(/\bHW\b/g, 'HWS');
-        if (formattedRaw) {
-          formattedRaw = formattedRaw[0].toUpperCase() + formattedRaw.slice(1);
-          if (!formattedRaw.endsWith('.')) {
-            formattedRaw += '.';
-          }
-        }
-        const tplLines = activeTemplate.body.split('\n');
-        const tplTitle = deriveUntersuchungsTitel(finalRawText, (tplLines[0] || '').trim().replace(/:$/, ''));
-        const tplBody = tplLines.slice(1).join('\n');
-        const report = `## ${tplTitle}\n\n## Befund\n${tplBody}\n\n## Ergebnis\n${formattedRaw}`;
-        setStructuredReport(report);
-        setStatus('ready');
-        setStatusText('Bereit');
-        await copyTextToClipboard(report);
-        return;
-      }
-
-      // Normal path: structure with LLM
-      const examples = getFewShotExamples(finalRawText);
-      if (!vertexApiKey) {
-        throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
-      }
-
+      // Step 2: v3.2 — dieselbe Kette wie Aufnahme und EXE (Regionen trennen → Bypass/Gemini → Ergebnis nummerieren)
       setStatusText('KI-Strukturierung läuft (Gemini Flash)...');
-      const structuredText = await callGeminiLLM(
-        finalRawText,
-        activeTemplate.body,
-        activeTemplate.display_name,
-        examples
-      );
-
-      // Step 3: Konsistenz-Validierung gegen das Diktat
-      setStatusText('Validiere Befund-Konsistenz...');
-      const validatedReport = await validateReportConsistency(finalRawText, structuredText);
-
-      setStructuredReport(validatedReport);
+      const report = await befundAusDiktat(finalRawText);
+      setStructuredReport(report);
       setStatus('ready');
       setStatusText('Bereit');
-      await copyTextToClipboard(validatedReport);
+      await copyTextToClipboard(report);
 
     } catch (err: any) {
       console.error('[UPLOAD] Error:', err?.message || err?.name || JSON.stringify(err), err?.stack?.substring(0, 200) || '');
@@ -2286,7 +2128,7 @@ Korrigierter Befund:`;
             <span className="brand-name">RaKScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
           </div>
-          <span className="version-chip">v3.0</span>
+          <span className="version-chip">v3.2.0</span>
         </div>
 
         <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>

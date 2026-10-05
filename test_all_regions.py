@@ -17,65 +17,14 @@ API_KEY = os.environ.get("VERTEX_API_KEY", "") or os.environ.get("GEMINI_API_KEY
 VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 # Templates laden
-TEMPLATES_PATH = Path.home() / "RaKScribe26" / "web_app" / "src" / "templates.json"
+TEMPLATES_PATH = Path(__file__).parent / "templates.json"
 with open(TEMPLATES_PATH) as f:
     TEMPLATES = json.load(f)
 
-CONFLICT_RULES = """
-## KONFLIKT-REGELN (NORMALBEFUND vs. PATHOLOGIE) — STRIKT EINZUHALTEN:
-Wenn das Diktat eine Pathologie nennt, MÜSSEN die entsprechenden Normalbefund-Sätze aus dem Template ENTFERNT oder ANGEPASST werden. KEINE WIDERSPRÜCHE im Befundtext!
-
-Spezifische Regeln:
-- Osteochondrose/Diskopathie in Segment X: ENTFERNE "Bandscheibenräume normal hoch" / "Kein Nachweis von Discopathien" für dieses Segment. Schreibe stattdessen Deskriptoren: "Verschmälerung des Intervertebralraums [Segment] mit subchondraler Sklerosierung der Abschlussplatten". Schreibe NICHT "Osteochondrose" als Wort in den Befundtext — nur Deskriptoren.
-- Spondylosis deformans/Spondylophyten in Segment X: ERGÄNZE "Spondylophytenbildung [Segment]" im Befundtext.
-- Unkovertebralgelenksarthrose/Uncovertebralarthrose in Segment X: FÜGE HINZU "Degenerative Veränderungen der Unkovertebralgelenke [Segment]". Die "kleinen Zwischenwirbelgelenke" (Facettengelenke) sind ANDERE Gelenke und bleiben "ohne Auffälligkeiten" wenn nicht genannt.
-- Fehlhaltung im Diktat (z.B. "kyphotische Fehlhaltung"): darf NICHT verschwiegen werden — nenne sie im Befundtext (z.B. "Kyphotische Fehlhaltung der HWS.") UND im Ergebnis.
-- ERGEBNIS 1:1 ZUM DIKTAT: JEDE diktierte Diagnose/Haltungsangabe wird ein EIGENER Ergebnis-Punkt in der DIKTIERTEN Wortwahl (inkl. Segmenthöhe). NIEMALS zwei diktierte Befunde zu einem Punkt verschmelzen, NIEMALS einen diktierten Begriff durch einen spezifischeren ersetzen (diktiert "Gelenksarthrose C3 bis C5" → Ergebnis "Gelenksarthrose C3 bis C5", NICHT "Unkovertebralarthrose").
-  ❌ FALSCH: Diktat "flachbogige Skoliose nach links, kyphotische Fehlhaltung, Gelenksarthrose C3 bis C5" → Ergebnis "1. Flachbogige linkskonvexe kyphotische Fehlhaltung der HWS. 2. Uncovertebralarthrose C3 bis C5."
-  ✅ RICHTIG: "1. Flachbogige linkskonvexe Skoliose der HWS. 2. Kyphotische Fehlhaltung der HWS. 3. Gelenksarthrose C3 bis C5."
-- Facettengelenksarthrose/Spondylarthrose in Segment X: ERSETZE "Kein Nachweis von Facettengelenksarthrosen" / "kleinen Zwischenwirbelgelenke ohne Auffälligkeiten" durch "Degenerative Veränderungen der kleinen Wirbelgelenke [Segment]".
-- Anterolisthese/Retrolisthese: Ersetze die normale Achsenverlaufsbeschreibung für das betroffene Segment.
-- Skoliose/skoliotische Fehlhaltung: ERSETZE "Normaler Achsenverlauf" / "achsengerechte Stellung" durch die Skoliose-Beschreibung.
-- Streckhaltung: ERSETZE "Normaler Achsenverlauf" / "achsengerechte Stellung" durch "Streckhaltung".
-- Haltungs-/Achsenbeschreibungen ("Flachbogige Konvexität", "Streckhaltung", "Skoliose") NUR wenn im Diktat genannt. Degenerative Diagnosen (Osteochondrose/Spondylose/Arthrose) rechtfertigen KEINE erfundene Achsenbeschreibung — "Normaler Achsenverlauf" / "achsengerechte Stellung" bleibt dann UNVERÄNDERT.
-- Fraktur: ENTFERNE "Alle Wirbelkörper von normaler Form und Höhe" / "Normale Form und Struktur der Gelenkkörper" und ersetze durch Frakturbeschreibung.
-- Omarthrose/Coxarthrose/Gonarthrose/Gelenksarthrose etc.: ENTFERNE "Normale Form und Struktur der Gelenkkörper", "Die Gelenkflächen glatt und kongruent", "Die Gelenkränder unauffällig", "Die Gelenksspalten normal weit" — ALLE diese Normalbefund-Sätze MÜSSEN gestrichen werden wenn eine Arthrose vorliegt. Stattdessen arthrotische Deskriptoren (Gelenkspaltverschmälerung, subchondrale Sklerosierung, Osteophytenbildung). NIEMALS "Normale Form und Struktur der Gelenkkörper" + arthrotische Deskriptoren im selben Satz (kein "bei ansonsten normaler Form").
-- Humeruskopfhochstand/Femurkopfhochstand: Ersetze die normale Gelenkpartner-Stellung durch den Hochstand. KEIN "bei ansonsten normaler Form und Struktur" — der Hochstand IST die Abweichung.
-- TEP/Prothese: ERSETZE "Normale Form und Struktur der Gelenkkörper" durch Prothesenbeschreibung.
-- Knochenzyste/Lyse/Tumor: ERSETZE "Knochenstruktur unauffällig" / "Mineralgehalt und Knochenstruktur regelrecht" durch pathologische Beschreibung.
-- Kalzifikation/Tendinosis calcarea: ERGÄNZE Verkalkungsbeschreibung im Befundtext.
-
-GRUNDREGEL: Wenn ein Normalbefund-Satz durch eine Pathologie hinfällig wird, MUSS er gestrichen oder ersetzt werden. Ein Befundtext darf NIEMALS eine Struktur als "normal/unauffällig/ordnungsgemäß" beschreiben UND GLEICHZEITIG als pathologisch verändert einstufen.
-BESCHREIBUNGSTEXT = NUR MORPHOLOGIE/DESKRIPTOREN. Diagnosen gehören NUR ins Ergebnis, NICHT in den Befundtext.
-
-## VERBOTENE MUSTER (Anti-Patterns) — diese Fehler macht Gemini Flash oft, sie MÜSSEN vermieden werden:
-❌ FALSCH: "Normale Form und Struktur der Gelenkkörper. Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung und Osteophytenbildung." (Widerspruch: erst normal, dann arthrotisch — der erste Satz MUSS WEG)
-✅ RICHTIG: "Verschmälerung des Gelenkspaltes mit subchondraler Sklerosierung der Gelenkflächen und osteophytärer Randwulstbildung." (nur arthrotische Deskriptoren)
-❌ FALSCH: "Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Medialbetonte Gelenkspaltverschmälerung." (Widerspruch: 3 Normalbefund-Sätze + 1 arthrotischer Befund — die 3 Normalbefund-Sätze MÜSSEN WEG)
-✅ RICHTIG: "Medialbetonte Gelenkspaltverschmälerung. Die periartikuläre Weichteilzone o. B." (nur arthrotische Deskriptoren + Weichteil-Normalbefund, da dieser nicht betroffen ist)
-❌ FALSCH: "Hochstand des Humeruskopfes bei ansonsten normaler Form und Struktur der Gelenkkörper." (Widerspruch: Hochstand + normale Form — "bei ansonsten normaler Form" MUSS WEG)
-✅ RICHTIG: "Hochstand des Humeruskopfes." (Hochstand ist die Abweichung, kein "bei ansonsten normaler Form")
-❌ FALSCH: "Normale Form und Struktur der Gelenkkörper. Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum." (Widerspruch: erst normale Form, dann Fraktur — der erste Satz MUSS WEG)
-✅ RICHTIG: "Dislozierte Kontinuitätsunterbrechung im Bereich des Collum chirurgicum humeri." (nur Frakturbeschreibung)
-❌ FALSCH: "Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander." (nach Fraktur eines Gelenkpartners — fehlender Qualifikator, impliziert ALLE Flächen normal)
-✅ RICHTIG: "Artikulierende Flächen im Übrigen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander." ("im Übrigen" qualifiziert: der frakturierte Teil ist ausgenommen)
-❌ FALSCH: "Mineralgehalt und Knochenstruktur regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Widerspruch: Knochenstruktur als regelrecht bezeichnet, dann Fraktur — "und Knochenstruktur" MUSS WEG)
-✅ RICHTIG: "Mineralgehalt regelrecht. Nicht dislozierte Kontinuitätsunterbrechung im Bereich der Kahnbeintaille." (Mineralgehalt darf normal bleiben, Knochenstruktur nicht bei Fraktur)
-❌ FALSCH: "Flachbogige linkskonvexe Skoliose." oder "Retrolisthese von L4 gegenüber L5." (Befundtext — Diagnosename statt Morphologie)
-✅ RICHTIG: "Flachbogige linkskonvexe Seitausbiegung." bzw. "Dorsaler Versatz von L4 gegenüber L5." (Morphologie im Befundtext, Diagnose "Skoliose"/"Retrolisthese" nur im Ergebnis)
-❌ FALSCH: "Flachbogige Konvexität." als Befund-Satz, ohne dass das Diktat eine Haltungs-/Achsenabweichung nennt (erfundene Haltungsbeschreibung)
-✅ RICHTIG: "Normaler Achsenverlauf." (Template-Satz bleibt stehen, wenn das Diktat nichts zur Achse/Haltung diktiert)
-
-## ERGEBNIS-REGELN:
-- Schreibe NUR Diagnosen die im Diktat genannt wurden. Keine ERFUNDENEN Begriffe.
-- Verwende EXAKT die Begriffe aus dem Diktat.
-- Diagnose-Namen dürfen NICHT umformuliert werden. "Osteochondrose" bleibt "Osteochondrose", nicht "Diskopathie". "Coxarthrose" bleibt "Coxarthrose", nicht "Hüftgelenksarthrose".
-- Wenn das Diktat nur Deskriptoren nennt (z.B. "Schleimhautschwellung, Spiegelbildung") schreibe diese als Befund, aber erfinde KEINE Diagnose (z.B. nicht "Sinusitis") für das Ergebnis — nur das Diktat entscheidet ob eine Diagnose gestellt wird.
-
-## ARTHROSE-GRADUIERUNG NACH KELLGREN & LAWRENCE (PFLICHT):
-Bei ARTHROSE-Diagnosen im Ergebnis IMMER mit Graduierung: "[Gelenksarthrose-Diagnose] Grad [X] nach Kellgren & Lawrence [Seite]". Die Grad-Zuordnung aus den Deskriptoren: geringe Osteophyten ohne/fragliche Verschmälerung = Grad 1 · geringe Osteophyten + geringe Verschmälerung/Randzuschärfung = Grad 2 · mäßiggradige Verschmälerung + multiple Osteophyten + subchondrale Sklerosierung = Grad 3 · aufgehobener Gelenkspalt + ausgeprägte Sklerosierung/Zysten = Grad 4.
-Gilt für: Schulter (Omarthrose), Ellbogen, Hand, Handgelenk, Hüfte (Coxarthrose), Knie (Femorotibial + Patellofemoral getrennt gradieren), Sprunggelenk, Fuß. NICHT für: AC-Gelenk, ISG, Symphyse.
-"""
+# v3.2: KEINE Prompt-Kopie mehr im Harness — Gen-Prompt = radiology_prompt.txt (eine Quelle für EXE + Web),
+# Validator = App.tsx validationPrompt, systemInstruction = SYS_MSG aus RaKScribe.py (siehe prod_pipeline.py).
+import prod_pipeline as _pp  # noqa: E402
+CONFLICT_RULES = _pp.GEN_PROMPT[_pp.GEN_PROMPT.index("## KONFLIKT-REGELN"):_pp.GEN_PROMPT.index("## STILBEISPIELE")]
 
 # ─── Testfälle ───
 TEST_CASES = [
@@ -169,12 +118,15 @@ def _get_sa_token():
 
 _SA_TOKEN_CACHE = None
 
-def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
+def call_gemini(prompt, token=None, temperature=0.0, timeout=120, system=None):
     headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
-    body = json.dumps({
+    payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": temperature, "thinkingConfig": {"thinkingBudget": 0}}
-    }).encode()
+    }
+    if system:
+        payload["systemInstruction"] = {"parts": [{"text": system}]}
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
     _retries = 0
     while True:
@@ -228,78 +180,15 @@ def derive_titel_harness(raw, display_name):
 
 
 def build_gen_prompt(raw_text, template_body, region_name=None):
-    untersuchung = f"\n<untersuchung>{region_name}</untersuchung>\n" if region_name else ""
-    return f"""<role>Radiologie-Assistent der Praxis "Röntgen am Kai" – Dr. P. Kalmar / Dr. G. Riegler</role>
-
-<instructions>
-Du bist ein präziser radiologischer Befundungsassistent für die Praxis "Röntgen am Kai" in Graz. Deine Aufgabe ist es, das diktierte Stichwortprotokoll des Arztes in einen formalen, professionellen radiologischen Befund zu strukturieren, der sich EXAKT an den historischen Befundvorlagen der Praxis orientiert.
-{untersuchung}
-
-## STRIKTE FORMATREGELN:
-1. Erstelle IMMER exakt drei Teile: die Untersuchungs-Überschrift als eigene Markdown-Überschrift ('## [Untersuchungsart]') und danach die zwei Hauptabschnitte '## Befund' und '## Ergebnis'. Kein weiterer Text.
-2. Gib NUR den fertigen Befundtext aus – keine Einleitung, kein Schlusswort.
-
-## ABSCHNITT "## Befund":
-- UNTERSUCHUNGS-ÜBERSCHRIFT (eigene Zeile VOR '## Befund', als Markdown-Überschrift '## [Untersuchungsart]'): Verwende AUSSCHLIESSLICH die kanonische Untersuchungsbezeichnung aus <untersuchung> bzw. der ersten Template-Zeile — AUSNAHME: Enthält <untersuchung> '(Allgemein)', ist das ein interner Sammel-Name, der NICHT als Befundtitel stehen darf; bilde die Untersuchungs-Überschrift dann aus dem DIKTAT (diktierte Untersuchungsbezeichnung OHNE Befundworte wie 'unauffällig'; z.B. 'Unterschenkel-Sonographie rechts unauffällig' → '## Unterschenkel-Sonographie rechts') — NIE das roh diktierte Wort für die Untersuchung allein. Übernimm die diktierte Seite (links/rechts/beidseits) in die Überschrift (z.B. diktiert "Kniegelenk links" → "## Kniegelenk links in 2 Ebenen"). Der Abschnitt "## Befund" beginnt danach direkt mit dem Befundtext — die Untersuchungsbezeichnung steht NICHT mehr als erster Satz im Befundtext.
-- Nutze das bereitgestellte Normalbefund-Template als genaue strukturelle Basis.
-- Passe gezielt die Sätze an, bei denen das Diktat pathologische Befunde nennt.
-- Behalte ALLE nicht genannten Regionen und Sätze des Templates UNVERÄNDERT.
-- Schreibe im radiologischen Nominalstil.
-
-## ABSCHNITT "## Ergebnis":
-- Fasse alle diagnosewesentlichen Pathologien nummeriert zusammen.
-- Bei Normalbefund: 'Unauffälliger Befund.'
-
-## KONSISTENZ-REGELN (STRIKT):
-1. JEDER pathologische Befund aus dem Diktat MUSS im "## Ergebnis" genannt werden.
-2. JEDER pathologische Befund aus dem "## Ergebnis" MUSS auch im "## Befund" beschrieben sein.
-3. KEINE WIDERSPRÜCHE: Wenn im Befund eine Pathologie beschrieben wird, darf das Ergebnis nicht "unauffällig" lauten.
-4. Keine Diagnose darf ERFUNDEN werden.
-5. "ansonsten unauffällig" bezieht sich nur auf nicht genannte Bereiche.
-{CONFLICT_RULES}
-</instructions>
-
-<normalbefund_template>
-{template_body}
-</normalbefund_template>
-
-<diktat>
-{raw_text}
-</diktat>
-"""
+    """Gen-Prompt wie die EXE (radiology_prompt.txt + <untersuchung>) — Web nutzt dieselbe Datei."""
+    p = (_pp.GEN_PROMPT.replace("{roh_text}", raw_text).replace("{template_body}", template_body)
+         .replace("{region_name}", region_name or "").replace("{examples}", ""))
+    return p + (f"\n<untersuchung>{region_name}</untersuchung>\n" if region_name else "")
 
 
 def build_val_prompt(raw_dictation, generated_report):
-    return f"""Du bist ein radiologischer Qualitätskontrolleur. Du erhältst das ursprüngliche Diktat und den daraus generierten Befund. Prüfe STRENG:
-
-1. VOLLSTÄNDIGKEIT: Jede Pathologie/Diagnose aus dem Diktat muss im Befund UND im Ergebnis vorkommen.
-2. WIDERSPRUCHSFREIHEIT: Befund und Ergebnis dürfen sich nicht widersprechen.
-3. WIDERSPRUCHSFREIHEIT IM BEFUNDTEXT: Ein Normalbefund-Satz darf NICHT bestehen bleiben, wenn die entsprechende Struktur pathologisch verändert ist. Spezifisch:
-   - "Bandscheibenräume normal hoch" / "Kein Nachweis von Discopathien" MUSS gestrichen/angepasst werden wenn Osteochondrose/Diskopathie vorliegt.
-   - "Gelenkflächen glatt und kongruent" / "Gelenkränder unauffällig" / "Gelenksspalten normal weit" MÜSSEN angepasst werden bei Arthrose.
-   - "Normale Form und Struktur der Gelenkkörper" MUSS angepasst werden bei Fraktur, TEP, Tumor.
-   - "Normaler Achsenverlauf" / "achsengerechte Stellung" MUSS ersetzt werden bei Skoliose, Streckhaltung, Listhese.
-   - "Knochenstruktur unauffällig" / "Mineralgehalt und Knochenstruktur regelrecht" MUSS angepasst werden bei Lyse, Zyste, Tumor.
-4. BESCHREIBUNGSTEXT = NUR MORPHOLOGIE: Im "## Befund" dürfen KEINE Diagnosenamen stehen. Stattdessen Deskriptoren. Diagnosen NUR im "## Ergebnis".
-5. KEINE ERFUNDENE DIAGNOSE. Umgekehrt MÜSSEN Arthrose-Diagnosen im Ergebnis nach Kellgren & Lawrence graduiert sein ("Grad [1-4] nach Kellgren & Lawrence"), wenn das Gelenk zur K&L-Liste gehört (Schulter/Ellbogen/Hand/Handgelenk/Hüfte/Knie/Sprunggelenk/Fuß — NICHT AC/ISG/Symphyse). Fehlt die Graduierung, ergänze sie aus den Deskriptoren (geringe Osteophyten=1, +geringe Verschmälerung=2, mäßiggradig+multiple Osteophyten+Sklerosierung=3, aufgehobener Spalt=4). Knie: Femorotibial und Patellofemoral getrennt.
-6. ZAHLEN UND MESSWERTE: Alle Zahlen aus dem Diktat müssen exakt im Befund stehen.
-7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler korrekt interpretiert wurden. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen (z.B. "Flachbogige Konvexität" ohne Diktat-Grundlage). Übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
-8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform (nur "Kniegelenk"), ergänze sie vollständig mit übernommener diktierter Seite.
-
-Wenn der Befund FEHLERFREI ist, gib ihn UNVERÄNDERT zurück.
-Wenn es FEHLER gibt, korrigiere und gib die korrigierte Version zurück.
-Gib NUR den fertigen Befundtext aus (mit Untersuchungs-Überschrift, ## Befund und ## Ergebnis), keine Erklärungen.
-
-<diktat>
-{raw_dictation}
-</diktat>
-
-<generierter_befund>
-{generated_report}
-</generierter_befund>
-
-Korrigierter Befund:
-"""
+    """Validator (Web Call 2) exakt aus App.tsx."""
+    return _pp.val_prompt(raw_dictation, generated_report)
 
 
 def check_contradictions(report, template_body):
@@ -372,7 +261,7 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
     try:
         gen_prompt = build_gen_prompt(diktat, template_body, region_name=derive_titel_harness(diktat, TEMPLATES[template_key].get("display_name", "")))
         t0 = time.time()
-        report = call_gemini(gen_prompt, token, temperature=0.1)
+        report = call_gemini(gen_prompt, token, temperature=0.0, system=_pp.SYS_MSG)
         gen_time = time.time() - t0
     except Exception as e:
         return {"name": name, "status": "ERROR", "issues": [f"Gen call failed: {e}"]}
@@ -387,6 +276,7 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
         return {"name": name, "status": "ERROR", "issues": [f"Val call failed: {e}"]}
 
     final = validated if validated and "## Befund" in validated else report
+    final = _pp.br.nachbearbeiten(final)  # v3.2: wie Produktion (EXE + Web)
     was_corrected = validated.strip() != report.strip()
 
     # Checks

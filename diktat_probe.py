@@ -112,20 +112,9 @@ def main():
                 "kein hinweis", "keine zeichen", "nicht nachweis"]
 
     def is_normal_finding_app(text: str) -> bool:
-        tl = text.lower()
-        has_pathology = False
-        for kw in PATHOLOGY:
-            idx = tl.find(kw)
-            if idx == -1:
-                continue
-            before = tl[max(0, idx - 30):idx]
-            if not any(neg in before for neg in NEGATION):
-                has_pathology = True
-                break
-        if has_pathology:
-            return False
-        normal_kw = ["unauffällig", "normal", "regelrecht", "ohne befund", "kein nachweis", "unauffaellig"]
-        return any(kw in tl for kw in normal_kw)
+        # v3.2: echte Bypass-Entscheidung (normalbypass.is_pure_normal_finding, Sync Web/EXE)
+        import prod_pipeline as _pp
+        return _pp.nb.is_pure_normal_finding(text, _pp.DISPLAY_NAMES)
 
     diktate = ["test_diktat.ogg", "test-audio-bws.ogg", "mamma_diktat.ogg",
                "schulter_diktat.ogg", "test_diktat2.ogg", "test-audio.ogg"]
@@ -188,7 +177,8 @@ def main():
             l1 = tpl["body"].split("\n")[0].strip().rstrip(":")
             title = derive(raw, l1)
             rec["bypass_title"] = title
-            rec["bypass_report"] = f"## {title}\n\n## Befund\n" + "\n".join(tpl["body"].split("\n")[1:]) + f"\n\n## Ergebnis\n{raw.strip()}"
+            import prod_pipeline as _pp
+            rec["bypass_report"] = _pp.bypass_report(raw, det_key)  # v3.2: Ergebnis = Normal-Ergebnis
         try:
             gen_prompt = harness.build_gen_prompt(raw, tpl["body"], region_name=tpl["display_name"])
             rec["call1_report"] = gemini(gen_prompt)

@@ -117,6 +117,32 @@
   {
    "in": "Ruptur des pinnatus, Epitrochlearis-Variante",
    "out": "Ruptur des Supraspinatus, epitrochlearis-Variante"
+  },
+  {
+   "in": "Schulter rechts Punkt neue Zeile mäßig gradige Ommatrose Punkt mäßig gradige Tenenosis kakaria mit 17 mm Messing am Kack Depot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendenose der Extensorensehnen Punkt",
+   "out": "Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt"
+  },
+  {
+   "in": "Messig-gradige Omatrose links, hoch gradige Coxarthrose, Kack-Depot 8 mm",
+   "out": "Mäßiggradige Omarthrose links, hochgradige Coxarthrose, Kalkdepot 8 mm"
+  },
+  {
+   "in": "Mäßiggradige Omarthrose, Tendinosis calcarea, Tendinose der Extensoren, geringgradige Arthrose",
+   "out": "Mäßiggradige Omarthrose, Tendinosis calcarea, Tendinose der Extensoren, geringgradige Arthrose",
+   "keep": true
+  },
+  {
+   "in": "Tenenosis calcarea der Supraspinatussehne, Tendenosen der Flexoren",
+   "out": "Tendinosis calcarea der Supraspinatussehne, Tendinosen der Flexoren"
+  },
+  {
+   "in": "Torax p.a. und seitlich unauffällig. Toraxaufnahme",
+   "out": "Thorax p.a. und seitlich unauffällig. Thoraxaufnahme"
+  },
+  {
+   "in": "BWS thorakal unauffällig, Thorax o.B.",
+   "out": "BWS thorakal unauffällig, Thorax o.B.",
+   "keep": true
   }
  ]
 }

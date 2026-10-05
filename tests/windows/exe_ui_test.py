@@ -97,9 +97,12 @@ def dummy_key():
                     "client_id": "0", "token_uri": "https://oauth2.googleapis.com/token"}}
 
 
-def run_case(case, with_key, demo, send_f10):
+def run_case(case, with_key, demo, send_f10, old_prompt=False):
     work = pathlib.Path(tempfile.mkdtemp(prefix=f"rks_{case}_"))
     shutil.copy(EXE, work / EXE.name)
+    if old_prompt:
+        # v3.2: alte Prompt-Datei ohne Versionsmarker neben der EXE (wie in Georgs Ordner) — darf NICHT gewinnen
+        (work / "radiology_prompt_v4.txt").write_text("<role>alter v4-Prompt</role>\n{template_body}\n{roh_text}", encoding="utf-8")
     appdata = work / "appdata"; appdata.mkdir()
     if with_key:
         (appdata / "RaKScribe").mkdir()
@@ -156,7 +159,7 @@ if a:
     check("A_gesperrt", "Mikrofon-Auswahl nicht leer", bool(s.get("mic_dropdown")), s.get("mic_dropdown", ""))
 
 # C: mit Test-Schlüssel + Demo-Befund
-c = run_case("C_entsperrt", with_key=True, demo=True, send_f10=False)
+c = run_case("C_entsperrt", with_key=True, demo=True, send_f10=False, old_prompt=True)
 if c:
     s = c["state"]
     check("C_entsperrt", "Sperre weg", not s["gate_visible"])
@@ -166,6 +169,12 @@ if c:
     check("C_entsperrt", "Befund: 3 Überschriften formatiert", s["report_heading_tags"] == 3, str(s["report_heading_tags"]))
     check("C_entsperrt", "Befund: ## ausgeblendet", s["report_hidden_hash_tags"] == 3, str(s["report_hidden_hash_tags"]))
     check("C_entsperrt", "Kopiertext bleibt Markdown", s["report_text_keeps_markdown"])
+    # v3.2: gebündelter versionierter Prompt gewinnt gegen alte radiology_prompt_v4.txt; Regel-Modul im Bundle
+    check("C_entsperrt", "Alte radiology_prompt_v4.txt ignoriert (eingebauter Prompt)",
+          s.get("prompt_quelle") == "eingebaut" and bool(s.get("prompt_version")),
+          f"{s.get('prompt_quelle')} / {s.get('prompt_version')}")
+    check("C_entsperrt", "Mehrere Regionen → 2 Befunde", s.get("multi_region_segmente") == 2, str(s.get("multi_region_segmente")))
+    check("C_entsperrt", "Ergebnis wird nummeriert", s.get("ergebnis_nummeriert") is True, str(s.get("ergebnis_nummeriert")))
     sw_, sh_ = s["screen"]
     gw, gh_ = [int(x) for x in s["geometry"].split("+")[0].split("x")]
     check("C_entsperrt", "Fenster passt auf den Bildschirm", gw <= sw_ and gh_ <= sh_, f"{gw}×{gh_} auf {sw_}×{sh_}")

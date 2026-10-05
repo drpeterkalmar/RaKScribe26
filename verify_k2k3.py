@@ -11,9 +11,8 @@ sys.argv = sys.argv[:1]
 import test_all_regions as H
 assert "gemini-3.5-flash" in H.VERTEX_URL
 app = (ROOT / "web_app/src/App.tsx").read_text()
-m_node = re.search(r"const newDefaultPrompt =\s*\n(.*?)`</diktat>`;", app, re.S)
-lines = [mm.group(1) for ln in m_node.group(1).splitlines() if (mm := re.match(r"\s*`(.*)` (\+|;)?\s*$", ln))]
-GEN = "".join(lines).replace('\\\\n', '\n').replace('\\n', '\n').replace('\\"', '"').replace('\\`', '`')
+import prod_pipeline as pp  # v3.2: Gen-Prompt = radiology_prompt.txt (eine Quelle EXE + Web), SYS_MSG wie Produktion
+GEN = pp.GEN_PROMPT
 VAL = re.search(r"const validationPrompt = `(.*?)`;", app, re.S).group(1).replace('\\`', '`').replace('\\"', '"')
 assert "restoreBildWieBei" in app and "NORMALBEFUND ERHALTEN" in VAL and "DIAGNOSEBEGRIFFE NIE ERSETZEN" in VAL
 
@@ -31,7 +30,7 @@ def chain(diktat, tkey):
     t = H.TEMPLATES[tkey]
     p1 = GEN.replace("{roh_text}", diktat).replace("{template_body}", t["body"]).replace("{region_name}", t["display_name"]).replace("{examples}", "")
     p1 += "\n<untersuchung>" + t["display_name"] + "</untersuchung>\n"
-    c1 = re.sub(r"^```[a-z]*\s*|\s*```$", "", H.call_gemini(p1, temperature=0.0).strip())
+    c1 = re.sub(r"^```[a-z]*\s*|\s*```$", "", H.call_gemini(p1, temperature=0.0, system=pp.SYS_MSG).strip())
     c2 = re.sub(r"^```[a-z]*\s*|\s*```$", "", H.call_gemini(VAL.replace("${rawDictation}", diktat).replace("${generatedReport}", c1), temperature=0.0).strip())
     ratio = len(befund(c2)) / max(len(befund(c1)), 1)
     final = c1 if (ratio < 0.7 or "## Ergebnis" not in c2) else c2  # = App-Guard

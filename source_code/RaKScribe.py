@@ -29,6 +29,9 @@ import base64
 import urllib.request
 import urllib.error
 from openai import OpenAI
+from concurrent.futures import ThreadPoolExecutor
+import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
+import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -379,14 +382,28 @@ try:
 except Exception as e:
     messagebox.showerror("LLM Client Fehler", f"Fehler bei Initialisierung des LLM-Clients:\n{e}")
 
+PROMPT_QUELLE = ""
+PROMPT_HINWEIS = ""
+
+
 def load_prompt_template(filename="radiology_prompt.txt"):
+    """v3.2: versionierte Prompt-Wahl. Eingebaut = radiology_prompt.txt aus dem EXE-Bundle (Release-Stand).
+    radiology_prompt_v4.txt / radiology_prompt.txt neben der EXE gewinnen nur noch, wenn ihr Versionsmarker
+    (<!-- RAKSCRIBE_PROMPT_VERSION: … -->) mindestens so neu ist wie der eingebaute — eine alte Datei
+    (z.B. früher im Prompt-Editor gespeichert) überlebt so kein Update mehr still."""
+    global PROMPT_QUELLE, PROMPT_HINWEIS
     try:
-        prompt_path = os.path.join(BASE_DIR, "radiology_prompt_v4.txt")
-        if not os.path.exists(prompt_path):
-            prompt_path = os.path.join(BASE_DIR, "radiology_prompt.txt") # Fallback
-            
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read()
+        def _lies(pfad):
+            return _read_text_robust(pfad) if os.path.exists(pfad) else ""
+        builtin = _lies(os.path.join(RESOURCES_DIR, filename))
+        lokale = [(name, _lies(os.path.join(BASE_DIR, name))) for name in ("radiology_prompt_v4.txt", filename)]
+        text, PROMPT_QUELLE, PROMPT_HINWEIS = br.waehle_prompt(builtin, lokale)
+        print(f"[INIT] Befund-Prompt {br.prompt_version(text) or '(ohne Version)'} aus {PROMPT_QUELLE or '-'}")
+        if PROMPT_HINWEIS:
+            print(f"[INIT] {PROMPT_HINWEIS}")
+        if not text:
+            raise FileNotFoundError(filename)
+        return text
     except FileNotFoundError:
         return (
             "<role>Radiologe-Assistent</role>\n"
@@ -408,6 +425,21 @@ def load_prompt_template(filename="radiology_prompt.txt"):
         return ""
 
 INITIAL_PROMPT_CONTENT = load_prompt_template()
+
+# v3.2: systemInstruction — WORTGLEICH zu SYS_MSG in web_app/src/App.tsx (befund_regeln_test.py prüft das)
+SYS_MSG = (
+    "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai' – Dr. P. Kalmar / Dr. G. Riegler. "
+    "Strukturiere das Diktat nach den Regeln im Prompt mit dem Normalbefund-Template als vollständigem Gerüst. "
+    "Ausgabe: zuerst '## ' + kanonische Untersuchungsbezeichnung mit diktierter Seite, dann '## Befund' als Fließtext "
+    "ohne Labels und '## Ergebnis' nummeriert (1. 2. 3.) mit den diktierten Begriffen 1:1 inklusive Grad und Messwerten. "
+    "Gib ausschließlich den fertigen Befundtext aus – keine Kommentare, keine Einleitung."
+)
+# v3.2: RAG-Few-Shots aus practice_reports.db — Standard AUS (A/B 05.10.: alte Praxisbefunde ohne Nummerierung
+# verschlechtern Format/Standardtext, Telegram-Referenz arbeitet ohne Beispiele). config.ini RAG_BEISPIELE = 1 schaltet ein.
+try:
+    RAG_BEISPIELE = int(config['SETTINGS'].get('RAG_BEISPIELE', '0').strip() or 0)
+except Exception:
+    RAG_BEISPIELE = 0
 
 # v3.1: Fehlhör-Liste (misheard_words.json neben der EXE, sonst Bundle/Repo) — gleiche Datei und
 # gleiche Semantik wie die Web-App (web_app/src/misheard.ts). auto-Regeln ersetzen deterministisch
@@ -442,6 +474,13 @@ def load_templates():
     return {}
 
 RADIOLOGY_TEMPLATES = load_templates()
+DISPLAY_NAMES = [v.get("display_name", "") for v in RADIOLOGY_TEMPLATES.values()]
+# v3.2 (Peter 05.10.): Region nicht erkannt → KEIN Skelett-Standardtext (Lungenröntgen wurde sonst als Skelett befundet)
+ALLGEMEIN_FALLBACK = {
+    "display_name": "Allgemeine Untersuchung",
+    "body": "Allgemeine Untersuchung\n\nKein Nachweis pathologischer Veränderungen.",
+    "ergebnis": "Unauffälliger Befund.",
+}
 
 def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
     """Befundtitel fuer Bypass & <untersuchung>-Embed (v2.10.12/13, Peter 09.09.).
@@ -693,7 +732,9 @@ def detect_template(text):
         ("lendenwirbelsäule_in_2_ebenen", ["lws", "lumbal", "lendenwirbel"]),
         ("halswirbelsäule_in_2_ebenen", ["hws", "cervical", "halswirbel"]),
         ("brustwirbelsäule_in_2_ebenen", ["bws", "thorakal", "brustwirbel"]),
-        ("thorax_in_2_ebenen", ["thorax", "lunge", "herz", "rö-th", "rö thor"]),
+        # v3.2: knöcherner Hemithorax VOR Thorax ("Hemithorax" enthält "thorax")
+        ("knöcherner_hemithorax", ["hemithorax", "rippenaufnahme", "rippenserie", "rippen in 2"]),
+        ("thorax_in_2_ebenen", ["thorax", "torax", "lunge", "pulmo", "brustkorb", "herz", "rö-th", "rö thor"]),
         
         # Obere Extremitäten Röntgen (Reihenfolge: Finger/Handgelenk vor Hand!)
         ("handgelenk_in_2_ebenen", ["handgelenk"]),
@@ -1058,7 +1099,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe 3.1.0 – Röntgen am Kai")
+        self.title("RaKScribe 3.2.0 – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
@@ -1109,6 +1150,10 @@ class RaKScribeApp(ctk.CTk):
         self.register_hotkey()
         self.after(150, self.refresh_key_state)
         self.after(400, self._selftest_hook)
+        if PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST"):
+            self.after(1200, lambda: messagebox.showinfo(
+                "Befund-Prompt aktualisiert",
+                PROMPT_HINWEIS + "\n\nDie alte Datei wird nicht mehr verwendet und kann gelöscht werden."))
 
     def create_widgets(self):
         # ── Kopfzeile ───────────────────────────────────────────────
@@ -1252,6 +1297,12 @@ class RaKScribeApp(ctk.CTk):
                     "report_text_keeps_markdown": self.result_text.get("1.0", "end").lstrip().startswith("##"),
                     "toggle_calls": getattr(self, "_toggle_calls", 0),
                     "mic_dropdown": self.device_dropdown.get(),
+                    # v3.2: gebündelter Prompt + Regel-Modul auf echtem Windows nachweisen
+                    "prompt_version": br.prompt_version(INITIAL_PROMPT_CONTENT),
+                    "prompt_quelle": PROMPT_QUELLE,
+                    "multi_region_segmente": len(br.split_regionen(
+                        "Schulter rechts Punkt Omarthrose Punkt Ellbogen rechts Punkt Ellbogengelenksarthrose")),
+                    "ergebnis_nummeriert": br.ergebnis_nummerieren("## Ergebnis\nOmarthrose.\nKalkdepot.").endswith("2. Kalkdepot."),
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -1536,18 +1587,11 @@ class RaKScribeApp(ctk.CTk):
             self.update_status("PROCESSING", "busy")
             
             # Schätze ETA basierend darauf, ob es ein Normalbefund ist
-            def is_normal_finding(text):
-                text_lower = text.lower()
-                normal_keywords = ["unauffällig", "normal", "regelrecht", "ohne befund", "kein nachweis", "unauffaellig"]
-                has_normal = any(kw in text_lower for kw in normal_keywords)
-                is_short = len(text_lower.split()) < 12
-                return has_normal and is_short
-
             raw_est = self.transcript_text.get("1.0", "end-1c").strip()
             if raw_est.startswith("[..") and raw_est.endswith("..]"):
                 raw_est = raw_est[3:-3].strip()
             
-            is_normal = is_normal_finding(raw_est) if raw_est else False
+            is_normal = _nb.is_pure_normal_finding(raw_est, DISPLAY_NAMES) if raw_est else False
             if is_normal:
                 self.eta_seconds = 1
             else:
@@ -1716,169 +1760,22 @@ class RaKScribeApp(ctk.CTk):
                 self.result_text.insert("1.0", "... Befund wird geladen ...")
             ))
 
-            # Helferfunktion: Erkennt ob es sich um einen reinen Normalbefund handelt
-            def is_normal_finding(text):
-                text_lower = text.lower()
-                normal_keywords = ["unauffällig", "normal", "regelrecht", "ohne befund", "kein nachweis", "unauffaellig"]
-                has_normal = any(kw in text_lower for kw in normal_keywords)
-                is_short = len(text_lower.split()) < 12
-                return has_normal and is_short
+            # v3.2: Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener
+            # Befund (eigenes Template, eigenes Ergebnis), parallel erzeugt und untereinander ausgegeben.
+            segmente = br.split_regionen(raw)
+            if len(segmente) > 1:
+                print(f"[MULTI] {len(segmente)} Regionen: " + " | ".join(x[:40] for x in segmente))
+                with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
+                    teile = list(ex.map(self._befund_fuer_segment, segmente))
+                report = br.befunde_zusammenfuegen(teile) if all(_report_complete(t) for t in teile) else ""
+            else:
+                report = self._befund_fuer_segment(raw)
 
-            # Dynamische Template-Auswahl
-            template_key = detect_template(raw)
-            template_data = RADIOLOGY_TEMPLATES.get(template_key, {
-                "display_name": "Allgemeine Untersuchung",
-                "body": "Allgemeine Untersuchung\n\nNormale Form und Struktur der untersuchten Strukturen. Mineralgehalt und Knochenstruktur regelrecht. Kein Nachweis pathologischer Veränderungen. Keine pathologischen Verkalkungen. Unauffällige Weichteile."
-            })
-
-            # RAG-Bypass-Shortcut für reine Normalbefunde (nur bei ERKANNTER Region —
-            # bei 'allgemein' lieber LLM-Strukturierung, damit echte Normalbefund-Templates greifen)
-            if is_normal_finding(raw) and template_key != "allgemein":
-                print(f"[BYPASS] Normalbefund erkannt: '{raw}'. Generiere direkt aus Template '{template_key}'.")
-                formatted_raw = raw.strip()
-                formatted_raw = re.sub(r'\bHW\b', 'HWS', formatted_raw)
-                if formatted_raw:
-                    # Ersten Buchstaben großschreiben
-                    formatted_raw = formatted_raw[0].upper() + formatted_raw[1:]
-                    # Punkt am Ende sicherstellen
-                    if not formatted_raw.endswith('.'):
-                        formatted_raw += '.'
-                tpl_lines = template_data['body'].split('\n')
-                tpl_title = derive_untersuchungs_titel(raw, tpl_lines[0].strip().rstrip(':'))
-                tpl_body = '\n'.join(tpl_lines[1:])
-                report = f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{formatted_raw}"
-                
-                # Live in die Textbox schreiben und Status zurücksetzen
+            if report:
                 self.after(0, lambda r=report: (
                     self.result_text.delete("1.0", "end"),
-                    self.result_text.insert("1.0", r),
-                    self.update_status("READY", "ready"),
-                    self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                    self.level_indicator.configure(fg_color=READY_GREEN, width=0),
-                    self.copy_formatted_report(),
-                    self.after(500, lambda: keyboard.press_and_release('ctrl+v'))
+                    self.result_text.insert("1.0", r)
                 ))
-                return
-            
-            p_base = INITIAL_PROMPT_CONTENT
-            p_full = p_base.replace('{roh_text}', raw)
-            p_full = p_full.replace('{template_body}', template_data['body'])
-            p_full = p_full.replace('{region_name}', template_data['display_name'])
-            # v2.10.13 (K3-Review Befund 2/3): Der LLM-Pfad bekommt die KANONISCHE
-            # Bezeichnung (display_name, inkl. "(Allgemein)"), damit die
-            # "(Allgemein)"-Ausnahme im Gen-Prompt ECHT feuern kann — bei
-            # pathologischen (Allgemein)-Diktaten leitet das LLM die Überschrift
-            # aus dem Diktat (ohne Befundworte), statt den Volltext als Titel zu
-            # bekommen. Der Bypass-Pfad (Zeile ~1351) bleibt bei derive.
-            p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
-            if MISHEARD_HINTS:  # v3.1: kontextabhängige Verhörer (mode 'llm') als Hinweis für Gemini
-                p_full = p_full + MISHEARD_HINTS + "\n"
-            
-            # RAG Few-Shot Beispiele laden (limit=0 für Normalbefunde, limit=1 für pathologische Befunde)
-            limit_examples = 0 if is_normal_finding(raw) else 1
-            db_path = os.path.join(BASE_DIR, "practice_reports.db")
-            cat = classify_report(raw)
-            examples_str = get_few_shot_examples(raw, cat, db_path, limit=limit_examples)
-            
-            if "{examples}" in p_full:
-                p_full = p_full.replace("{examples}", examples_str)
-            else:
-                p_full = p_full + "\n\n" + examples_str
-            
-            sys_msg = (
-                "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai' – Dr. P. Kalmar / Dr. G. Riegler. "
-                "Strukturiere das Diktat exakt nach den historischen Befundvorlagen der Praxis. "
-                "Nutze ## Befund und ## Ergebnis als einzige Haupttitel. "
-                "Im ## Befund: Verwende das Template als strukturelle Basis, passe gezielt pathologische Abschnitte an, "
-                "behalte Normalbefunde unverändert, übernimm Messwerte exakt. "
-                "Im ## Ergebnis: Kurze präzise Diagnosen im Nominalstil (z.B. 'Intakte Hüft-TEP rechts.', "
-                "'Coxarthrose links.', 'STT-Arthrose beidseits.', 'Osteochondrosis pubis.', "
-                "'Beckenschiefstand nach links um 4 mm.'). "
-                "Gib ausschließlich den fertigen Befundtext aus – keine Kommentare, keine Einleitung."
-            )
-
-            report = ""
-            if LLM_PROVIDER == 'gemini':
-                # Vertex AI REST API Call (Auth via x-goog-api-key Header)
-                try:
-                    key = _load_vertex_key() or API_KEY or os.environ.get("GEMINI_API_KEY", "")
-                    headers = {
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": key,
-                    }
-                    body = json.dumps({
-                        "contents": [{"role": "user", "parts": [{"text": p_full}]}],
-                        "systemInstruction": {"parts": [{"text": sys_msg}]},
-                        # v2.10.15: thinkingBudget 0 (Web-Parität seit v2.10.1) — ohne denkt
-                        # Gemini dynamisch mit: Befund 7 s → ~1,5 s, gleiche Qualität (90-Fall-A/B).
-                        "generationConfig": {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}},
-                    }).encode()
-                    # v2.11.1 HOTFIX: ALLE Text-parts zusammensetzen (Gemini 3.5 splittet Antworten, z.B. '## L' | 'endenwirbel…')
-                    # + Vollständigkeits-Check (## Befund + ## Ergebnis, finishReason STOP) + bis zu 3 Versuche bei Fehler/Unvollständigkeit.
-                    report, last_err = "", None
-                    for _attempt in range(3):
-                        try:
-                            req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
-                            with urllib.request.urlopen(req, timeout=120) as resp:
-                                result = json.loads(resp.read())
-                            if "error" in result:
-                                raise Exception(result["error"].get("message", result["error"]))
-                            cand = result["candidates"][0]
-                            txt = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", [])
-                                          if isinstance(p.get("text"), str) and not p.get("thought")).strip()
-                            txt = re.sub(r'^```[a-zA-Z]*\s*\n?', '', txt)
-                            txt = re.sub(r'\n?```\s*$', '', txt).strip()
-                            if _report_complete(txt) and cand.get("finishReason", "STOP") == "STOP":
-                                report = txt
-                                break
-                            last_err = Exception("Befund unvollständig (## Ergebnis fehlt)")
-                            print(f"[GEN] Versuch {_attempt + 1}: Befund unvollständig — neuer Versuch")
-                        except Exception as _e:
-                            last_err = _e
-                            if "401" in str(_e) or "Unauthorized" in str(_e):
-                                break
-                            print(f"[GEN] Versuch {_attempt + 1} fehlgeschlagen: {_e}")
-                            time.sleep(2 * (_attempt + 1))
-                    if not report:
-                        raise last_err or Exception("Gemini lieferte keinen Befund")
-                    self.after(0, lambda r=report: (
-                        self.result_text.delete("1.0", "end"),
-                        self.result_text.insert("1.0", r)
-                    ))
-                except Exception as e:
-                    report = ""
-                    log_exception("Gemini Vertex AI Generate")
-                    if "401" in str(e) or "Unauthorized" in str(e):
-                        messagebox.showerror("Generierungs-Fehler",
-                            "Gemini: HTTP 401 — der API-Key fehlt oder ist ungültig.\n\n"
-                            f"Gesucht in: {BASE_DIR}\n"
-                            "  - rakscribe-praxis-key.json (Drive-Ordner RaKScribe — EIN-Key-Setup)\n"
-                            "  - vertex-key.b64 (Drive-Ordner RaKScribe)\n"
-                            "  - vertex-key.txt\n"
-                            "  - config.ini [API_KEY]\n\n"
-                            "Bitte die Key-Dateien aus dem Drive-Ordner RaKScribe in diesen Ordner legen.")
-                    else:
-                        messagebox.showerror("Generierungs-Fehler", f"Fehler bei der Gemini (Vertex AI) Generierung:\n{e}")
-            else:
-                kwargs = {
-                    "model": LLM_MODEL,
-                    "messages": [{"role": "system", "content": sys_msg}, {"role": "user", "content": p_full}],
-                    "temperature": 0.0,
-                    "stream": True
-                }
-                if LLM_PROVIDER == 'ollama':
-                    kwargs["extra_body"] = {"options": {"num_ctx": 2048}}
-
-                resp = openai_client.chat.completions.create(**kwargs)
-                for chunk in resp:
-                    delta = chunk.choices[0].delta.content
-                    if delta:
-                        report += delta
-                        self.after(0, lambda r=report: (
-                            self.result_text.delete("1.0", "end"),
-                            self.result_text.insert("1.0", r)
-                        ))
-
             # v2.11.1 (Prüfbericht W4): leeren/unvollständigen Befund NIE ins Zielprogramm einfügen
             if not _report_complete(report):
                 self.after(0, lambda: (
@@ -1887,7 +1784,6 @@ class RaKScribeApp(ctk.CTk):
                     self.level_indicator.configure(fg_color=READY_GREEN, width=0)
                 ))
                 return
-            # Nach erfolgreichem Streaming
             self.after(0, lambda: (
                 self.update_status("READY", "ready"),
                 self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
@@ -1896,12 +1792,132 @@ class RaKScribeApp(ctk.CTk):
                 self.after(500, lambda: keyboard.press_and_release('ctrl+v'))
             ))
         except Exception as e:
-            self.after(0, lambda e=e: (
-                messagebox.showerror("LLM Error", str(e)),
+            log_exception("Befund-Generierung")
+            if "401" in str(e) or "Unauthorized" in str(e):
+                msg = ("Gemini: HTTP 401 — der API-Key fehlt oder ist ungültig.\n\n"
+                       f"Gesucht in: {BASE_DIR}\n"
+                       "  - rakscribe-praxis-key.json (Drive-Ordner RaKScribe — EIN-Key-Setup)\n"
+                       "  - vertex-key.b64 (Drive-Ordner RaKScribe)\n"
+                       "  - vertex-key.txt\n"
+                       "  - config.ini [API_KEY]\n\n"
+                       "Bitte die Key-Dateien aus dem Drive-Ordner RaKScribe in diesen Ordner legen.")
+            else:
+                msg = f"Fehler bei der Befund-Generierung:\n{e}"
+            self.after(0, lambda m=msg: (
+                messagebox.showerror("Generierungs-Fehler", m),
                 self.update_status("ERROR", "busy"),
                 self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
                 self.level_indicator.configure(fg_color=READY_GREEN, width=0)
             ))
+
+    def _ist_normalbefund(self, raw, template_key):
+        """Bypass ohne LLM nur bei REINEM Normalbefund (nur Untersuchung + Normal-Worte, v3.2 Peter 05.10.)
+        UND erkannter Region — jedes weitere Wort ("sonst", Pathologie, Beschreibung) → LLM."""
+        return _nb.is_pure_normal_finding(raw, DISPLAY_NAMES) and template_key != "allgemein"
+
+    def _befund_fuer_segment(self, raw):
+        """Ein Befund (## Titel / ## Befund / ## Ergebnis) für EIN Diktat-Segment = eine Region.
+        Läuft im Worker-Thread (bei mehreren Regionen parallel) — KEINE UI-Zugriffe hier."""
+        template_key = detect_template(raw)
+        template_data = RADIOLOGY_TEMPLATES.get(template_key, ALLGEMEIN_FALLBACK)
+
+        # RAG-Bypass-Shortcut für reine Normalbefunde (nur bei ERKANNTER Region —
+        # bei 'allgemein' lieber LLM-Strukturierung, damit echte Normalbefund-Templates greifen)
+        if self._ist_normalbefund(raw, template_key):
+            print(f"[BYPASS] Normalbefund erkannt: '{raw}'. Generiere direkt aus Template '{template_key}'.")
+            # v3.2 (Peter 05.10.): Ergebnis = Normal-Ergebnis der Untersuchung (+ Seite) — NIE das Diktat abschreiben
+            ergebnis = br.ergebnis_mit_seite(template_data.get('ergebnis', ''), raw)
+            tpl_lines = template_data['body'].split('\n')
+            tpl_title = br.titel_mit_seite(derive_untersuchungs_titel(raw, tpl_lines[0].strip().rstrip(':')), raw)
+            tpl_body = '\n'.join(tpl_lines[1:])
+            return f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{ergebnis}"
+
+        p_base = br.strip_prompt_marker(INITIAL_PROMPT_CONTENT)
+        p_full = p_base.replace('{roh_text}', raw)
+        p_full = p_full.replace('{template_body}', template_data['body'])
+        p_full = p_full.replace('{region_name}', template_data['display_name'])
+        # v2.10.13 (K3-Review Befund 2/3): Der LLM-Pfad bekommt die KANONISCHE
+        # Bezeichnung (display_name, inkl. "(Allgemein)"), damit die
+        # "(Allgemein)"-Ausnahme im Gen-Prompt ECHT feuern kann — bei
+        # pathologischen (Allgemein)-Diktaten leitet das LLM die Überschrift
+        # aus dem Diktat (ohne Befundworte), statt den Volltext als Titel zu
+        # bekommen. Der Bypass-Pfad bleibt bei derive.
+        p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
+        # v3.2 (Peter 05.10.): Normal-Ergebnis der Untersuchung — fürs Ergebnis, wenn das Diktat keine Pathologie nennt
+        p_full = p_full + "<normal_ergebnis>" + (template_data.get('ergebnis') or "Unauffälliger Befund.") + "</normal_ergebnis>\n"
+        if MISHEARD_HINTS:  # v3.1: kontextabhängige Verhörer (mode 'llm') als Hinweis für Gemini
+            p_full = p_full + MISHEARD_HINTS + "\n"
+
+        # RAG Few-Shot Beispiele (practice_reports.db) — v3.2: Standard AUS (RAG_BEISPIELE in config.ini)
+        examples_str = ""
+        if RAG_BEISPIELE > 0 and not _nb.is_pure_normal_finding(raw, DISPLAY_NAMES):
+            db_path = os.path.join(BASE_DIR, "practice_reports.db")
+            examples_str = get_few_shot_examples(raw, classify_report(raw), db_path, limit=RAG_BEISPIELE)
+        if "{examples}" in p_full:
+            p_full = p_full.replace("{examples}", examples_str)
+        else:
+            p_full = p_full + "\n\n" + examples_str
+
+        report = ""
+        if LLM_PROVIDER == 'gemini':
+            # Vertex AI REST API Call (Auth via x-goog-api-key Header)
+            key = _load_vertex_key() or API_KEY or os.environ.get("GEMINI_API_KEY", "")
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": key,
+            }
+            body = json.dumps({
+                "contents": [{"role": "user", "parts": [{"text": p_full}]}],
+                "systemInstruction": {"parts": [{"text": SYS_MSG}]},
+                # v2.10.15: thinkingBudget 0 (Web-Parität seit v2.10.1) — ohne denkt
+                # Gemini dynamisch mit: Befund 7 s → ~1,5 s, gleiche Qualität (90-Fall-A/B).
+                "generationConfig": {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}},
+            }).encode()
+            # v2.11.1 HOTFIX: ALLE Text-parts zusammensetzen (Gemini 3.5 splittet Antworten, z.B. '## L' | 'endenwirbel…')
+            # + Vollständigkeits-Check (## Befund + ## Ergebnis, finishReason STOP) + bis zu 3 Versuche bei Fehler/Unvollständigkeit.
+            last_err = None
+            for _attempt in range(3):
+                try:
+                    req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
+                    with urllib.request.urlopen(req, timeout=120) as resp:
+                        result = json.loads(resp.read())
+                    if "error" in result:
+                        raise Exception(result["error"].get("message", result["error"]))
+                    cand = result["candidates"][0]
+                    txt = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", [])
+                                  if isinstance(p.get("text"), str) and not p.get("thought")).strip()
+                    txt = re.sub(r'^```[a-zA-Z]*\s*\n?', '', txt)
+                    txt = re.sub(r'\n?```\s*$', '', txt).strip()
+                    if _report_complete(txt) and cand.get("finishReason", "STOP") == "STOP":
+                        report = txt
+                        break
+                    last_err = Exception("Befund unvollständig (## Ergebnis fehlt)")
+                    print(f"[GEN] Versuch {_attempt + 1}: Befund unvollständig — neuer Versuch")
+                except Exception as _e:
+                    last_err = _e
+                    if "401" in str(_e) or "Unauthorized" in str(_e):
+                        break
+                    print(f"[GEN] Versuch {_attempt + 1} fehlgeschlagen: {_e}")
+                    time.sleep(2 * (_attempt + 1))
+            if not report:
+                raise last_err or Exception("Gemini lieferte keinen Befund")
+        else:
+            kwargs = {
+                "model": LLM_MODEL,
+                "messages": [{"role": "system", "content": SYS_MSG}, {"role": "user", "content": p_full}],
+                "temperature": 0.0,
+                "stream": True
+            }
+            if LLM_PROVIDER == 'ollama':
+                kwargs["extra_body"] = {"options": {"num_ctx": 2048}}
+            resp = openai_client.chat.completions.create(**kwargs)
+            for chunk in resp:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    report += delta
+
+        # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
+        return br.nachbearbeiten(report)
 
     def copy_formatted_report(self):
         try:
