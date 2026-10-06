@@ -151,6 +151,7 @@ def lade_rakscribe():
     sys.__stdout__ = open(os.devnull, "w")  # Start-Log der EXE nicht in die Testausgabe
     try:
         exec(compile(code, str(ROOT / "source_code" / "RaKScribe.py"), "exec"), mod.__dict__)
+        mod.init_runtime()  # Umbau Schritt 16: Start-Initialisierung wie main()
     finally:
         sys.__stdout__ = _out
     mod.messagebox = mb

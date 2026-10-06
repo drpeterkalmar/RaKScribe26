@@ -1,7 +1,7 @@
-## RaKScribe 2.0 Offline - (c) 2025 Dr. Peter Kalmar - Licensed under GPLv3
-# Hybrid Streaming Diktat und Structured Reporting - Vollständig Offline
-# STT: Faster-Whisper large-v3-turbo (Pseudo-Streaming mit Chunks)
-# LLM: MedGemma via Ollama (lokale OpenAI-kompatible API)
+## RaKScribe (Windows-EXE) - (c) 2025-2026 Dr. Peter Kalmar - Licensed under GPLv3
+# Diktat → strukturierter Befund. STT: Google Streaming (Live-Anzeige) + chirp_3 (Endtext); LLM: Gemini 3.5 Flash (EU).
+# Diese Datei = Oberfläche + main() (Umbau 06.10.2026). Logik ohne UI in: config, keys, detect, stt, gemini, pipeline,
+# aufnahme, jobstate, clipboard_win, befund_regeln, normalbypass, misheard. Beim Import passiert nichts (init_runtime).
 
 import keyboard
 import tkinter as tk
@@ -81,19 +81,10 @@ def log_exception(label):
 # Override built-in print to automatically write to our log file
 print = log
 
-log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
-log(f"BASE_DIR: {BASE_DIR}")
-log(f"RESOURCES_DIR: {RESOURCES_DIR}")
-
-# Google Cloud Imports (optional, dynamically checked)
+# Umbau Schritt 16 (Gutachten P2-1): beim Import passiert nichts — Start-Initialisierung in init_runtime() (main).
+# Bis dahin gelten diese Standardwerte (Tests/Selbsttest setzen sie über init_runtime()).
 google_speech_available = False
-try:
-    from google.cloud import speech
-    from google.oauth2 import service_account
-    google_speech_available = True
-    log("[INIT] Google Cloud Speech Bibliotheken erfolgreich geladen.")
-except Exception as e:
-    log_exception("[INIT] Fehler beim Laden der Google Cloud Speech Bibliotheken")
+speech = None                    # google.cloud.speech (in init_runtime geladen)
 
 
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
@@ -101,19 +92,10 @@ CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
 # =========================================================================
 # === CONFIG LOADING === (Umbau Schritt 10: config.py — Standardwerte, nur Syntaxfehler sind fatal)
 # =========================================================================
-try:
-    CFG = _cfg.load_config(CONFIG_FILE_PATH)
-except _cfg.KonfigFehler as _e_cfg:
-    messagebox.showerror("Konfigurations-Fehler", str(_e_cfg))
-    sys.exit()
-if CFG.angelegt:
-    print(f"[INIT] config.ini fehlte und wurde neu angelegt: {CONFIG_FILE_PATH}")
-for _w in CFG.warnungen:
-    print(f"[INIT] WARNUNG: {_w}")
+CFG = _cfg.Config()  # Standardwerte; init_runtime() liest config.ini
 LLM_PROVIDER = CFG.llm_provider
 LLM_MODEL = CFG.llm_model
 API_KEY = CFG.api_key
-print(f"[INIT] Konfiguration: LLM {LLM_PROVIDER} / {LLM_MODEL}")
 
 # --- STT Engines Initialisierungs-Logik ---
 # Schlüssel: seit v3.2.3 ausschließlich rakscribe-praxis-key.json (Gemini + STT in EINER Datei).
@@ -133,7 +115,6 @@ def _load_praxis_key():
 def _load_vertex_key():
     return _keys.load_vertex_key(BASE_DIR, USER_KEY_PATH, log=print)
 
-VERTEX_KEY_FILE = _load_vertex_key()
 
 speech_client = None
 GOOGLE_CONFIG = None
@@ -187,33 +168,31 @@ def init_google_speech():
         print(f"[INIT] Fehler bei Google SpeechClient Initialisierung: {e}")
         return False
 
-# Initialisiere die Google Cloud Speech Engine beim Start
-if not init_google_speech():
-    print("[INIT] Warnung: Google STT konnte beim Start nicht initialisiert werden.")
-
 # --- LLM Client Initialisierung ---
 openai_client = None
 VERTEX_ENDPOINT = _gem.VERTEX_ENDPOINT  # Umbau Schritt 14: Gemini-Aufruf in gemini.py
-try:
-    if LLM_PROVIDER == 'gemini':
-        key = _load_vertex_key()
-        if key:
-            VERTEX_API_KEY = key
-            print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
+
+
+def _init_llm():
+    global openai_client
+    try:
+        if LLM_PROVIDER == 'gemini':
+            if _load_vertex_key():
+                print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
+            else:
+                print("[WARN] Kein Gemini-Key — rakscribe-praxis-key.json laden.")
+        elif LLM_PROVIDER == 'openai':
+            key = API_KEY if API_KEY else os.environ.get("OPENAI_API_KEY", "")
+            if not key:
+                print("[WARN] Kein OpenAI API-Key gefunden in config.ini oder OPENAI_API_KEY Umgebungsvariable.")
+            openai_client = OpenAI(
+                api_key=key if key else "dummy_key"
+            )
+            print(f"[INIT] OpenAI-Client konfiguriert (Modell: {LLM_MODEL}) [OK]")
         else:
-            print("[WARN] Kein Gemini-Key — rakscribe-praxis-key.json laden.")
-    elif LLM_PROVIDER == 'openai':
-        key = API_KEY if API_KEY else os.environ.get("OPENAI_API_KEY", "")
-        if not key:
-            print("[WARN] Kein OpenAI API-Key gefunden in config.ini oder OPENAI_API_KEY Umgebungsvariable.")
-        openai_client = OpenAI(
-            api_key=key if key else "dummy_key"
-        )
-        print(f"[INIT] OpenAI-Client konfiguriert (Modell: {LLM_MODEL}) [OK]")
-    else:
-        print("[WARN] Unbekannter oder nicht unterstützter LLM-Provider konfiguriert.")
-except Exception as e:
-    messagebox.showerror("LLM Client Fehler", f"Fehler bei Initialisierung des LLM-Clients:\n{e}")
+            print("[WARN] Unbekannter oder nicht unterstützter LLM-Provider konfiguriert.")
+    except Exception as e:
+        messagebox.showerror("LLM Client Fehler", f"Fehler bei Initialisierung des LLM-Clients:\n{e}")
 
 PROMPT_QUELLE = ""
 PROMPT_HINWEIS = ""
@@ -257,25 +236,29 @@ def load_prompt_template(filename="radiology_prompt.txt"):
         messagebox.showerror("Fehler", f"Fehler beim Laden der Prompt-Datei: {e}")
         return ""
 
-INITIAL_PROMPT_CONTENT = load_prompt_template()
+INITIAL_PROMPT_CONTENT = ""  # init_runtime(): load_prompt_template()
 
 SYS_MSG = _gem.SYS_MSG  # wortgleich zur Web-App (befund_regeln_test.py prüft das)
 # v3.2: RAG-Few-Shots aus practice_reports.db — Standard AUS (A/B 05.10.: alte Praxisbefunde ohne Nummerierung
 # verschlechtern Format/Standardtext, Telegram-Referenz arbeitet ohne Beispiele). config.ini RAG_BEISPIELE = 1 schaltet ein.
-RAG_BEISPIELE = CFG.rag_beispiele
+RAG_BEISPIELE = 0  # init_runtime(): config.ini RAG_BEISPIELE
 
 # v3.1: Fehlhör-Liste (misheard_words.json neben der EXE, sonst Bundle/Repo) — gleiche Datei und
 # gleiche Semantik wie die Web-App (web_app/src/misheard.ts). auto-Regeln ersetzen deterministisch
 # im chirp_3-Volltranskript, llm-Regeln gehen als <stt_hinweise> in den Gen-Prompt.
-try:
-    import misheard as _misheard
-    MISHEARD = _misheard.load(BASE_DIR)
-    MISHEARD_COMPILED = _misheard.compile_rules(MISHEARD)
-    MISHEARD_HINTS = _misheard.prompt_block(MISHEARD)
-    print(f"[INIT] Fehlhör-Liste {MISHEARD.get('version')}: {len(MISHEARD_COMPILED)} auto-Regeln aus {MISHEARD.get('_path')}")
-except Exception as _e_mh:
-    print(f"[INIT] Fehlhör-Liste nicht geladen: {_e_mh}")
-    _misheard, MISHEARD_COMPILED, MISHEARD_HINTS = None, [], ""
+_misheard, MISHEARD_COMPILED, MISHEARD_HINTS = None, [], ""
+
+
+def _init_misheard():
+    global _misheard, MISHEARD_COMPILED, MISHEARD_HINTS
+    try:
+        import misheard as _mh
+        daten = _mh.load(BASE_DIR)
+        _misheard, MISHEARD_COMPILED, MISHEARD_HINTS = _mh, _mh.compile_rules(daten), _mh.prompt_block(daten)
+        print(f"[INIT] Fehlhör-Liste {daten.get('version')}: {len(MISHEARD_COMPILED)} auto-Regeln aus {daten.get('_path')}")
+    except Exception as _e_mh:
+        print(f"[INIT] Fehlhör-Liste nicht geladen: {_e_mh}")
+        _misheard, MISHEARD_COMPILED, MISHEARD_HINTS = None, [], ""
 
 
 def apply_misheard(text):
@@ -308,8 +291,8 @@ def load_templates():
                 continue
     return {}
 
-RADIOLOGY_TEMPLATES = load_templates()
-DISPLAY_NAMES = [v.get("display_name", "") for v in RADIOLOGY_TEMPLATES.values()]
+RADIOLOGY_TEMPLATES = {}  # init_runtime(): load_templates()
+DISPLAY_NAMES = []
 # v3.2 (Peter 05.10.): Region nicht erkannt → KEIN Skelett-Standardtext (Lungenröntgen wurde sonst als Skelett befundet)
 ALLGEMEIN_FALLBACK = {
     "display_name": "Allgemeine Untersuchung",
@@ -1314,7 +1297,53 @@ class RaKScribeApp(ctk.CTk):
         keyboard.add_hotkey('f10', lambda: self.after(0, self.toggle_recording), suppress=True)
         keyboard.add_hotkey('f9', lambda: self.after(0, self.reset_dictation), suppress=True)
 
-if __name__ == "__main__":
+def init_runtime():
+    """Start der EXE (Umbau Schritt 16): Log-Kopf, Google-Bibliotheken, config.ini, Schlüssel + Speech-Client,
+    LLM-Client, Befund-Prompt, Fehlhör-Liste, Vorlagen — in dieser Reihenfolge wie bisher beim Import."""
+    global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY
+    global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES
+    log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
+    log(f"BASE_DIR: {BASE_DIR}")
+    log(f"RESOURCES_DIR: {RESOURCES_DIR}")
+    # Google Cloud Imports (optional, dynamically checked)
+    try:
+        from google.cloud import speech as _speech
+        from google.oauth2 import service_account  # noqa: F401  (Verfügbarkeit prüfen)
+        speech = _speech
+        google_speech_available = True
+        log("[INIT] Google Cloud Speech Bibliotheken erfolgreich geladen.")
+    except Exception:
+        log_exception("[INIT] Fehler beim Laden der Google Cloud Speech Bibliotheken")
+    # config.ini (Umbau Schritt 10: config.py — Standardwerte, nur Syntaxfehler sind fatal)
+    try:
+        CFG = _cfg.load_config(CONFIG_FILE_PATH)
+    except _cfg.KonfigFehler as e_cfg:
+        messagebox.showerror("Konfigurations-Fehler", str(e_cfg))
+        sys.exit()
+    if CFG.angelegt:
+        print(f"[INIT] config.ini fehlte und wurde neu angelegt: {CONFIG_FILE_PATH}")
+    for w in CFG.warnungen:
+        print(f"[INIT] WARNUNG: {w}")
+    LLM_PROVIDER, LLM_MODEL, API_KEY = CFG.llm_provider, CFG.llm_model, CFG.api_key
+    print(f"[INIT] Konfiguration: LLM {LLM_PROVIDER} / {LLM_MODEL}")
+    # Initialisiere die Google Cloud Speech Engine beim Start
+    if not init_google_speech():
+        print("[INIT] Warnung: Google STT konnte beim Start nicht initialisiert werden.")
+    _init_llm()
+    INITIAL_PROMPT_CONTENT = load_prompt_template()
+    # v3.2: RAG-Few-Shots aus practice_reports.db — Standard AUS (A/B 05.10.). config.ini RAG_BEISPIELE = 1 schaltet ein.
+    RAG_BEISPIELE = CFG.rag_beispiele
+    _init_misheard()
+    RADIOLOGY_TEMPLATES = load_templates()
+    DISPLAY_NAMES = [v.get("display_name", "") for v in RADIOLOGY_TEMPLATES.values()]
+
+
+def main():
+    init_runtime()
     ctk.set_appearance_mode("dark")
     app = RaKScribeApp()
     app.mainloop()
+
+
+if __name__ == "__main__":
+    main()

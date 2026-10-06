@@ -28,6 +28,7 @@ if MODE == "ready":
     (tmpdir / "appdata" / "RaKScribe" / "rakscribe-praxis-key.json").write_text(pathlib.Path(os.environ["PRAXIS_KEY"]).read_text())
 code = code.replace('if __name__ == "__main__":', 'if False:')
 exec(compile(code, str(src), "exec"), mod.__dict__)
+mod.init_runtime()  # Umbau Schritt 16: Start-Initialisierung wie main()
 ctk = mod.ctk
 ctk.set_appearance_mode("dark")
 app = mod.RaKScribeApp()
