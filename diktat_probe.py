@@ -85,16 +85,13 @@ def main():
     global harness
     import test_all_regions as harness
 
-    # detect_template (EXE-Code, AST-extract) + is_normal_finding (App.tsx-Spiegel)
-    import ast as _ast
-    rak = (ROOT / "source_code/RaKScribe.py").read_text()
-    _tree = _ast.parse(rak)
-    _ns = {"re": re}
-    for _node in _ast.walk(_tree):
-        if isinstance(_node, _ast.FunctionDef) and _node.name in ("detect_template", "derive_untersuchungs_titel"):
-            exec(_ast.get_source_segment(rak, _node), _ns)
-    detect_template = _ns["detect_template"]
-    derive = _ns["derive_untersuchungs_titel"]
+    # detect_template + derive = echte EXE-Funktionen (source_code/detect.py, Umbau Schritt 12)
+    sys.path.insert(0, str(ROOT / "source_code"))
+    import detect as _detect
+    _tpl = json.load(open(ROOT / "templates.json", encoding="utf-8"))
+    def detect_template(text):
+        return _detect.detect_template(text, _tpl)
+    derive = _detect.derive_untersuchungs_titel
 
     PATHOLOGY = ["arthrose", "fraktur", "osteo", "spondyl", "tendin", "calcarea", "bursitis",
                  "tenosynovitis", "teppich", "ruptur", "luxation", "skoliose", "kyphose",

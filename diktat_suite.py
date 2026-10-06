@@ -9,7 +9,6 @@ Pflichtlauf bei JEDEM detect_template-Trigger-/Prompt-Templates-Change:
   3. Detector-Asserts (Röntgen/Sono-Disambiguierung).
 Exit 1 bei FAIL. Laufzeit ~3-4 min (Gemini live, serial wegen Rate-Limit).
 """
-import ast as _ast
 import base64
 import json
 import pathlib
@@ -27,17 +26,13 @@ VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/
 sys.path.insert(0, str(ROOT))
 import test_all_regions as harness  # noqa: E402
 
-# --- echtes detect_template + derive via AST (kein Nachbau-Drift) ---
-RAK = (ROOT / "source_code" / "RaKScribe.py").read_text()
-import sys as _s3; _s3.path.insert(0, str(ROOT / "source_code"))  # v3.2.3
-import befund_regeln as _br3
-_ns = {"re": re, "br": _br3, "RADIOLOGY_TEMPLATES": json.load(
-    open(ROOT / "web_app" / "src" / "templates.json"))}
-for _n in _ast.walk(_ast.parse(RAK)):
-    if isinstance(_n, _ast.FunctionDef) and _n.name in ("detect_template", "derive_untersuchungs_titel"):
-        exec(_ast.get_source_segment(RAK, _n), _ns)
-detect_template = _ns["detect_template"]
-derive = _ns["derive_untersuchungs_titel"]
+# --- echtes detect_template + derive (source_code/detect.py, Umbau Schritt 12 — kein AST-Extrakt mehr) ---
+import sys as _s3; _s3.path.insert(0, str(ROOT / "source_code"))
+import detect as _detect
+_TPL = json.load(open(ROOT / "templates.json", encoding="utf-8"))
+def detect_template(text):
+    return _detect.detect_template(text, _TPL)
+derive = _detect.derive_untersuchungs_titel
 
 PATHOLOGY = ["arthrose", "fraktur", "osteo", "spondyl", "tendin", "calcarea", "bursitis",
              "tenosynovitis", "teppich", "ruptur", "luxation", "skoliose", "kyphose",

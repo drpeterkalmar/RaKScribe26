@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """titel_fixtures.py — EINE Quelle der Wahrheit für die derive-Titel-Tests.
 
-K3-Review-Befund 7/8 (v2.10.13-Nacharbeit): Die drei Implementierungen
-(RaKScribe.py, App.tsx + 2 Test-Klone) testen bisher ihre eigenen Klone.
-Dieses Modul hält die gemeinsamen Cases als Daten (PY→TS-Paritätsmatrix);
-test_normalbefunde.py TEIL 4b konsumiert sie tabellengetrieben.
-
-Die PY-Semantik hier ist bewusst identisch mit source_code/RaKScribe.py
-derive_untersuchungs_titel (v2.10.13). Bei Änderung dort: HIER MITSYNCEN
-(und den Kommentar-Bump beachten).
+K3-Review-Befund 7/8 (v2.10.13-Nacharbeit): Dieses Modul hält die gemeinsamen Cases als Daten
+(PY→TS-Paritätsmatrix); test_normalbefunde.py TEIL 4b prüft damit die echte Funktion
+source_code/detect.py derive_untersuchungs_titel (Umbau Schritt 12: direkt importiert, kein Klon mehr).
 """
-import re
 
 # (raw, display_name) → erwarteter Titel. Abgedeckte K3-Randfälle:
 TITEL_FIXTURES = [
@@ -57,36 +51,11 @@ def run_fixtures(derive_fn) -> tuple:
     return not fails, fails
 
 
-def derive_titel_py(raw: str, dn: str) -> str:
-    """Gemeinsame PY-Referenzimplementierung (Sync mit RaKScribe.py v2.10.13)."""
-    if not re.search(r"\(allgemein\)", dn or "", re.I):
-        return dn
-    t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
-    t = re.sub(r"\s+", " ", t)
-    t = re.sub(r"[.?!]\s*$", "", t).strip()
-    for _ in range(3):
-        stripped = False
-        for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
-                  r"ohne pathologischem Befund", r"kein pathologischer Befund",
-                  r"regelrecht", r"normal"):
-            m = re.search(r"(?:^|[\s,])" + f + r"\s*$", t, re.I)
-            if m:
-                pre = t[:m.start()].strip()
-                if re.search(r"\bnicht\s*$", pre, re.I):
-                    continue
-                t = pre.strip()
-                stripped = True
-        if not stripped:
-            break
-    t = re.sub(r"[.,?!:]+$", "", t).strip()
-    t = re.sub(r"\(\s*allgemein\s*\)", "", t, flags=re.I).strip()
-    if len(t) > 80:
-        t = t[:80].strip()
-    return t or re.sub(r"\s*\(Allgemein\)", "", dn, flags=re.I).strip()
-
-
 if __name__ == "__main__":
-    ok, fails = run_fixtures(derive_titel_py)
+    import pathlib, sys
+    sys.path.insert(0, str(pathlib.Path(__file__).parent / "source_code"))
+    import detect
+    ok, fails = run_fixtures(detect.derive_untersuchungs_titel)
     for f in fails:
         print("FAIL:", f)
     print("PARITÄT:", "PASS" if ok else "FAIL")

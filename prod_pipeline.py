@@ -2,7 +2,7 @@
 
 Keine Prompt-Kopien: Gen-Prompt = radiology_prompt.txt (eine Quelle für EXE + Web), systemInstruction =
 SYS_MSG aus RaKScribe.py, Validator (Web Call 2) und Call 0 aus App.tsx, Regionen-Trenner/Nummerierung/
-Normalbefund-Bypass = source_code/befund_regeln.py, Template-Erkennung = echter detect_template (AST-Extract).
+Normalbefund-Bypass = source_code/befund_regeln.py, Template-Erkennung = source_code/detect.py (direkt importiert).
 
     import prod_pipeline as pp
     pp.exe_kette(diktat)          # EXE: misheard → split → je Region detect → Bypass | Gen (+SYS_MSG) → nummerieren
@@ -11,7 +11,7 @@ Normalbefund-Bypass = source_code/befund_regeln.py, Template-Erkennung = echter 
 
 Live-Calls laufen über test_all_regions.call_gemini (AQ-Key → SA-Bearer-Fallback + 429-Backoff).
 """
-import ast, json, os, pathlib, re, sys
+import json, os, pathlib, re, sys
 from concurrent.futures import ThreadPoolExecutor
 
 ROOT = pathlib.Path(__file__).parent
@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "source_code"))
 import misheard  # noqa: E402
 import befund_regeln as br  # noqa: E402
 import normalbypass as nb  # noqa: E402
+import detect as _detect  # noqa: E402  (Umbau Schritt 12: kein AST-Extrakt mehr)
 
 TEMPLATES = json.loads((ROOT / "templates.json").read_text())
 DISPLAY_NAMES = [v["display_name"] for v in TEMPLATES.values()]
@@ -30,18 +31,11 @@ _EXE_SRC = (ROOT / "source_code" / "RaKScribe.py").read_text()
 _APP_SRC = (ROOT / "web_app" / "src" / "App.tsx").read_text()
 
 
-def _exe_funcs(*names):
-    ns = {"re": re, "RADIOLOGY_TEMPLATES": TEMPLATES}
-    tree = ast.parse(_EXE_SRC)
-    for n in tree.body:
-        if isinstance(n, ast.FunctionDef) and n.name in names:
-            exec(compile(ast.Module([n], []), n.name, "exec"), ns)
-    return ns
+def detect_template(raw):
+    return _detect.detect_template(raw, TEMPLATES)
 
 
-_NS = _exe_funcs("detect_template", "derive_untersuchungs_titel")
-detect_template = _NS["detect_template"]
-derive_untersuchungs_titel = _NS["derive_untersuchungs_titel"]
+derive_untersuchungs_titel = _detect.derive_untersuchungs_titel
 
 _m = re.search(r'SYS_MSG = \(\s*((?:"[^"]*"\s*)+)\)', _EXE_SRC)
 SYS_MSG = "".join(re.findall(r'"([^"]*)"', _m.group(1)))

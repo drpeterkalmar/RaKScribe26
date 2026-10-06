@@ -7,8 +7,8 @@ Prüft:
    radiology-shoulder-dictation) muss im zugeordneten App-Template nahezu
    vollständigt satzidentisch enthalten sein. Das war v2.10.9 der Kernfehler:
    App-Templates waren eine ältere, kürzere Generation.
-2. DETECTOR-UNIT-TESTS: Der echte detect_template aus source_code/RaKScribe.py
-   (per AST extrahiert, nicht nachgebaut) muss die 16 neuen Keys erreichen.
+2. DETECTOR-UNIT-TESTS: Der echte detect_template (source_code/detect.py, direkt
+   importiert) muss die 16 neuen Keys erreichen.
 3. BYPASS-SIMULATION: Der Normalbefund-Bypass (kein LLM) muss für neue Templates
    das v2.10.8-Headerformat produzieren: ## Titel vor ## Befund.
 4. TITELZEILEN-GATE (v2.10.11): Zeile 1 JEDES Templates = display_name — sonst
@@ -17,10 +17,9 @@ Prüft:
 
 Exit-Code 0 = alle Gates PASS. Läuft ohne Netz.
 """
-import ast
 import sys as _sys0, pathlib as _pl0
-_sys0.path.insert(0, str(_pl0.Path(__file__).parent / "source_code"))  # v3.2.3: detect_template nutzt befund_regeln
-import befund_regeln as _br0
+_sys0.path.insert(0, str(_pl0.Path(__file__).parent / "source_code"))
+import detect as _detect  # Umbau Schritt 12: echte Erkennung direkt importiert (kein AST-Extrakt mehr)
 import json
 import os
 import re
@@ -118,13 +117,13 @@ if not sub_ok:
 
 # ── 2. DETECTOR-UNIT-TESTS (echter Code, per AST extrahiert) ─────────────
 print("\n" + "=" * 70)
-print("TEIL 2: DETECTOR-TESTS (echter detect_template aus RaKScribe.py)")
+print("TEIL 2: DETECTOR-TESTS (echter detect_template aus source_code/detect.py)")
 print("=" * 70)
-tree = ast.parse((REPO / "source_code" / "RaKScribe.py").read_text())
-fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "detect_template")
-ns = {"re": re, "RADIOLOGY_TEMPLATES": TPL, "br": _br0}
-exec(compile(ast.Module(body=[fn], type_ignores=[]), "<detect_template>", "exec"), ns)
-detect = ns["detect_template"]
+
+
+def detect(diktat):
+    return _detect.detect_template(diktat, TPL)
+
 
 DETECT_CASES = [
     # v3.2.2 Nerven (Georg 05.10.)
@@ -306,33 +305,7 @@ else:
 # läuft über sonografie_allgemein. Titel kommt (generisches '(Allgemein)'-Template,
 # v2.10.12) aus dem DIKTAT — NIEMALS '(Allgemein)' im Report; Satz 1 bleibt im Befund.
 _peters_raw = "Unterschenkel-Sonographie rechts unauffällig."
-def _derive_titel(raw: str, dn: str) -> str:
-    # Sync mit derive_untersuchungs_titel (RaKScribe.py) / deriveUntersuchungsTitel (App.tsx)
-    # v2.10.13: optionale Umlaut-Gruppe, Negations-Guard, ':'-Strip, Loop-Strip.
-    if "(allgemein)" not in dn.lower():
-        return dn
-    t = re.sub(r"\bHW\b", "HWS", (raw or "").strip())
-    t = re.sub(r"\s+", " ", t)
-    t = re.sub(r"[.?!]\s*$", "", t).strip()
-    for _ in range(3):
-        stripped = False
-        for f in (r"unauff(?:ae|ä)?llig", r"o\.?\s?B\.?", r"ohne pathologischen Befund",
-                  r"ohne pathologischem Befund", r"kein pathologischer Befund",
-                  r"regelrecht", r"normal"):
-            m = re.search(r"(?:^|[\s,])" + f + r"\s*$", t, re.I)
-            if m:
-                pre = t[:m.start()].strip()
-                if re.search(r"\bnicht\s*$", pre, re.I):
-                    continue
-                t = pre.strip()
-                stripped = True
-        if not stripped:
-            break
-    t = re.sub(r"[.,?!:]+$", "", t).strip()
-    t = re.sub(r"\(\s*allgemein\s*\)", "", t, flags=re.I).strip()
-    if len(t) > 80:
-        t = t[:80].strip()
-    return t or re.sub(r"\s*\(Allgemein\)", "", dn, flags=re.I).strip()
+_derive_titel = _detect.derive_untersuchungs_titel  # echte Funktion (Umbau Schritt 12, vorher Klon)
 # v2.10.13-fix2: Peters Unterschenkel-Diktat detectet jetzt das EIGENE Template
 # (sonografie_unterschenkel statt allgemein-Fallback) — Fall umgezogen.
 _t = TPL["sonografie_unterschenkel"]["body"].split("\n")
@@ -352,28 +325,12 @@ if not _p_ok:
     failures.append("Peters Unterschenkel-Fall: Bypass-Report falsch formatiert")
 
 # ── 4b. TITEL-FIXTURES (v2.10.13, K3-Befund 7/8): tabellengetriebene Regression ──
-# Eine Quelle der Wahrheit (titel_fixtures.py) für alle 3 Implementierungen.
-# Die ECHTE RaKScribe.py-Funktion läuft per AST-Extract (kein Nachbau-Drift möglich).
+# Eine Quelle der Wahrheit (titel_fixtures.py); geprüft wird die ECHTE Funktion aus source_code/detect.py.
 try:
     import titel_fixtures
-    _src_all = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "source_code", "RaKScribe.py")).read()
-    import ast as _ast
-    _tree = _ast.parse(_src_all)
-    _fn_src = None
-    for _node in _ast.walk(_tree):
-        if isinstance(_node := getattr(_node, "name", "") and _node, _ast.FunctionDef) and _node.name == "derive_untersuchungs_titel":
-            _fn_src = _ast.get_source_segment(_src_all, _node)
-            break
-    if _fn_src:
-        _ns = {"re": re}
-        exec(_fn_src, _ns)
-        _ok, _fails = titel_fixtures.run_fixtures(_ns["derive_untersuchungs_titel"])
-    else:
-        _ok, _fails = titel_fixtures.run_fixtures(titel_fixtures.derive_titel_py)
-        _fails.insert(0, "echte Funktion nicht gefunden — Referenzimplementierung getestet")
+    _ok, _fails = titel_fixtures.run_fixtures(_detect.derive_untersuchungs_titel)
     if _ok:
-        print(f"✅ PASS  Titel-Fixtures: alle {len(titel_fixtures.TITEL_FIXTURES)} Cases gegen echte RaKScribe.py-Funktion")
+        print(f"✅ PASS  Titel-Fixtures: alle {len(titel_fixtures.TITEL_FIXTURES)} Cases gegen echte detect.py-Funktion")
     else:
         for _f in _fails:
             print(f"❌ FAIL  Titel-Fixture: {_f}")

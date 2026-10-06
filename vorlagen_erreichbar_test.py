@@ -1,20 +1,17 @@
 """Gate v3.2.3 (Peter 06.10.): Jede Vorlage ist erreichbar und wird korrekt priorisiert — EXE = Web.
 1. Erreichbarkeit: "<Vorlagenname> unauffällig" und "<Vorlagenname> rechts unauffällig" treffen für ALLE Vorlagen ihren Key.
 2. Vorrang: vorlagen_vorrang_tests.json (Kollisionsfälle: Vorfuß/Fuß, Funktion/HWS, MRT/Röntgen, Blockade/Sono …).
-3. Parität: echte EXE-detect_template (AST-Extract) und Web-detectTemplate (Function-Extract) liefern dasselbe.
+3. Parität: echte EXE-detect_template (source_code/detect.py) und Web-detectTemplate liefern dasselbe.
 Aufruf: /usr/bin/python3 vorlagen_erreichbar_test.py"""
-import ast, json, pathlib, re, subprocess, sys, tempfile
+import json, pathlib, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).parent
 sys.path.insert(0, str(ROOT / "source_code"))
-import befund_regeln as br
+import detect
 
 T = json.loads((ROOT / "templates.json").read_text(encoding="utf-8"))
-ns = {"re": re, "RADIOLOGY_TEMPLATES": T, "br": br}
-for n in ast.parse((ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")).body:
-    if isinstance(n, ast.FunctionDef) and n.name == "detect_template":
-        exec(compile(ast.Module([n], []), n.name, "exec"), ns)
-det = ns["detect_template"]
+def det(d):
+    return detect.detect_template(d, T)
 
 faelle = []
 for k, v in T.items():
