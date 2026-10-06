@@ -16,6 +16,9 @@ export class AbbruchFehler extends Error {
 export const istAbbruch = (err: unknown): boolean =>
   err instanceof Error && err.name === 'AbortError';
 
+/** Meldungstext eines Fehlers (catch-Variable ist unknown). */
+export const fehlermeldung = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
 export async function fetchWithRetry(
   url: string,
   options: RequestInit,

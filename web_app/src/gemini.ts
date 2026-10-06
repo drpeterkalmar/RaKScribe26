@@ -1,7 +1,7 @@
 // Gemini-Aufrufe der Web-App (Umbau Schritt 18): Call 0 (STT-Korrektur), Call 1 (Befund), Call 2 (Validierung),
 // Schlüsselprüfung. Aus App.tsx herausgelöst — Prompts und Requests unverändert (Snapshots: tests/offline/snapshots).
 // Sync: source_code/gemini.py (SYS_MSG, parts-Join, Vollständigkeit), prod_pipeline.py liest validationPrompt hier.
-import { fetchWithRetry, istAbbruch } from './net.ts';
+import { fetchWithRetry, istAbbruch, fehlermeldung } from './net.ts';
 import { applyMisheard, type Compiled } from './misheard.ts';
 import { stripPromptMarker } from './befundRegeln.ts';
 
@@ -11,15 +11,21 @@ import { stripPromptMarker } from './befundRegeln.ts';
 // gemini-2.5-flash wird von Google abgeschaltet (Phase 1: 20.10.2026).
 // v2.11.1 HOTFIX: Gemini 3.5 teilt Antworten gelegentlich in mehrere parts auf ('## L' | 'endenwirbelsäule…').
 // Immer ALLE Text-parts zusammensetzen (Thinking-parts ausgenommen) — nie nur parts[0] lesen.
-export const joinGeminiText = (data: any): string =>
+// Antwort-Typen von generateContent (nur die gelesenen Felder)
+export type GeminiPart = { text?: unknown; thought?: boolean };
+export type GeminiAntwort = {
+  candidates?: { content?: { parts?: GeminiPart[] }; finishReason?: string }[];
+  error?: { message?: string };
+};
+export const joinGeminiText = (data: GeminiAntwort): string =>
   (data?.candidates?.[0]?.content?.parts || [])
-    .filter((p: any) => typeof p?.text === 'string' && !p?.thought)
-    .map((p: any) => p.text)
+    .filter((p): p is GeminiPart & { text: string } => typeof p?.text === 'string' && !p?.thought)
+    .map(p => p.text)
     .join('');
 
 // v2.11.1: Ein Befund gilt nur als vollständig, wenn '## Befund' UND ein nicht-leeres '## Ergebnis' vorhanden sind
 // und Gemini regulär beendet hat (finishReason STOP). Sonst: Retry bzw. Fallback — NIE Halb-Befunde ausgeben.
-export const geminiFinishedOk = (data: any): boolean => {
+export const geminiFinishedOk = (data: GeminiAntwort): boolean => {
   const fr = data?.candidates?.[0]?.finishReason;
   return !fr || fr === 'STOP';
 };
@@ -83,7 +89,7 @@ ${MISHEARD_PROMPT_BLOCK}
 2. "mit" + unklarer Begriff nach Sehnen-Untersuchung → "mit Begleitbursitis"
 3. VERÄNDERE KEINE ZAHLEN! "18 mm" bleibt "18 mm", nicht "1,8 mm". "15 mm²" bleibt "15 mm²". Messwerte sind heilig.
 4. VERÄNDERE KEINE ANATOMISCHEN LOKALISATIONEN! "axillär" bleibt "axillär", nicht "lateral". 
-5. KORRIGIERE NUR ECHTE SPRACHERKENNUNGSFEHLER (Unsinnswörter, falsch gehörte Silben). Ein korrekt erkannter Fachbegriff bleibt WÖRTLICH stehen — NIEMALS durch einen \"präziseren\" oder anderen Fachbegriff ersetzen (\"Gelenksarthrose\" bleibt \"Gelenksarthrose\", NICHT \"Uncovertebralarthrose\"; \"Diskopathie\" bleibt \"Diskopathie\"). NIEMALS zwei diktierte Befunde zusammenziehen (\"flachbogige Skoliose nach links, kyphotische Fehlhaltung\" bleiben ZWEI Befunde).
+5. KORRIGIERE NUR ECHTE SPRACHERKENNUNGSFEHLER (Unsinnswörter, falsch gehörte Silben). Ein korrekt erkannter Fachbegriff bleibt WÖRTLICH stehen — NIEMALS durch einen "präziseren" oder anderen Fachbegriff ersetzen ("Gelenksarthrose" bleibt "Gelenksarthrose", NICHT "Uncovertebralarthrose"; "Diskopathie" bleibt "Diskopathie"). NIEMALS zwei diktierte Befunde zusammenziehen ("flachbogige Skoliose nach links, kyphotische Fehlhaltung" bleiben ZWEI Befunde).
 6. Gib NUR den korrigierten Text aus, keine Erklärungen
 
 ## FEW-SHOT BEISPIELE:
@@ -116,7 +122,7 @@ export const validationPrompt = (rawDictation: string, generatedReport: string):
 7. SPRACHERKENNUNGSKORREKTUR: Prüfe nur, ob OFFENSICHTLICHE Spracherkennungsfehler im Diktat korrekt interpretiert wurden (z.B. "Antibiotik" → "Antelisthese", "Strichunkelvertebalatosen" → "Unkovertebralgelenksarthrosen"). Korrigiere NUR Wörter, die es medizinisch nicht gibt. ERFINDE NIEMALS Beschreibungen, die im Diktat nicht stehen: Wenn das Diktat keine Haltungs-/Achsenabweichung nennt, darf KEIN "Flachbogige Konvexität" o. ä. ergänzt werden. Und übernimm KEIN STT-Nonsense-Wort in den Befund: "Flachprofil" existiert nicht (korrekt: "flachbogige Skoliose" bzw. "flachbogige Seitausbiegung").
 
 9. NORMALBEFUND ERHALTEN: Entferne NIEMALS Template-/Normalbefund-Sätze, die keiner diktierten Pathologie widersprechen — auch nicht zur Kürzung (z.B. Oberarm-/Unterarm-Abschnitte einer Nervensonographie bleiben vollständig stehen).
-10. DIAGNOSEBEGRIFFE NIE ERSETZEN: Jede diktierte Diagnose bleibt im Ergebnis in der DIKTIERTEN Wortwahl als eigener Punkt (\"Gelenksarthrose C3 bis C5\" bleibt so — NICHT \"Facettengelenksarthrose\" oder \"Uncovertebralarthrose\"). \"Bild wie bei [Diagnose]\" bleibt \"Bild wie bei\", NIE zurück zu \"vereinbar mit\". Diktiertes \"Verdacht auf [Diagnose]\" bleibt WÖRTLICH \"Verdacht auf [Diagnose]\" (NIE \"Bild wie bei\"); die diktierte Seite bleibt in seitenbezogenen Ergebnis-Punkten stehen. Messwerte wie CSA gehören NICHT ins Ergebnis. AUSNAHME zur Wortwahl: Steht im generierten Ergebnis \"Bild wie bei [Diagnose]\", ist das die PFLICHT-Umsetzung von diktiertem \"vereinbar mit\"/\"kompatibel mit\" — NIEMALS entfernen, sonst wird aus einer Verdachtsdiagnose eine gesicherte.
+10. DIAGNOSEBEGRIFFE NIE ERSETZEN: Jede diktierte Diagnose bleibt im Ergebnis in der DIKTIERTEN Wortwahl als eigener Punkt ("Gelenksarthrose C3 bis C5" bleibt so — NICHT "Facettengelenksarthrose" oder "Uncovertebralarthrose"). "Bild wie bei [Diagnose]" bleibt "Bild wie bei", NIE zurück zu "vereinbar mit". Diktiertes "Verdacht auf [Diagnose]" bleibt WÖRTLICH "Verdacht auf [Diagnose]" (NIE "Bild wie bei"); die diktierte Seite bleibt in seitenbezogenen Ergebnis-Punkten stehen. Messwerte wie CSA gehören NICHT ins Ergebnis. AUSNAHME zur Wortwahl: Steht im generierten Ergebnis "Bild wie bei [Diagnose]", ist das die PFLICHT-Umsetzung von diktiertem "vereinbar mit"/"kompatibel mit" — NIEMALS entfernen, sonst wird aus einer Verdachtsdiagnose eine gesicherte.
 8. UNTERSUCHUNGS-ÜBERSCHRIFT: Die Untersuchungsbezeichnung muss als eigene Markdown-Überschrift ('## [Untersuchungsart]') direkt VOR '## Befund' stehen (z.B. "## Kniegelenk links in 2 Ebenen", "## Schultergelenk rechts in 2 Ebenen") und darf NICHT als erster Satz im Befundtext stehen. Fehlt sie oder ist sie eine roh diktierte Kurzform ohne Formulierungsbestandteile (z.B. nur "Kniegelenk" oder "Schulter rechts in 2 Ebenen"), ergänze sie vollständig mit übernommener diktierter Seite. Enthält die Überschrift '(Allgemein)', ersetze sie durch die aus dem Diktat abgeleitete Untersuchungsbezeichnung (ohne Befundworte wie 'unauffällig') — '(Allgemein)' selbst darf nie als Titel stehen.
 
 11. ERGEBNIS NUMMERIERT UND VOLLSTÄNDIG: Ergebnis-Punkte stehen je in einer Zeile, nummeriert "1. 2. 3." (Ausnahme: kompletter Normalbefund = EIN unnummerierter Satz). Diktierte Grad-Adjektive (geringgradig/mäßiggradig/hochgradig), Messwerte (z.B. "17 mm messendem Kalkdepot") und die Klammer "(Arthrose Grad X nach Kellgren & Lawrence)" MÜSSEN im Ergebnis stehen bleiben — NIE wegkürzen. Ein Befund mit seiner diktierten Deutung ("als indirekter Hinweis für …") bleibt EIN Punkt.
@@ -182,9 +188,9 @@ export const correctTranscriptionWithGemini = async (rawTextIn: string, ctx: Gen
       return rawText;
     }
     return corrected;
-  } catch (e: any) {
+  } catch (e: unknown) {
     if (istAbbruch(e)) throw e;  // Abbruch (Neu/F9) nicht als „Korrektur fehlgeschlagen“ weiterlaufen lassen
-    console.warn('[CORRECT] Correction failed:', e.message);
+    console.warn('[CORRECT] Correction failed:', fehlermeldung(e));
     return rawText;
   }
 };
@@ -341,9 +347,9 @@ export const validateReportConsistency = async (rawDictation: string, generatedR
       console.log('[VALIDATE] Befund wurde korrigiert ⚠️');
     }
     return restored;
-  } catch (e: any) {
+  } catch (e: unknown) {
     if (istAbbruch(e)) throw e;
-    console.warn('[VALIDATE] Validation failed:', e.message);
+    console.warn('[VALIDATE] Validation failed:', fehlermeldung(e));
     return generatedReport;
   }
 };

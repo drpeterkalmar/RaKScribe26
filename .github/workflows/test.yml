@@ -77,3 +77,6 @@ jobs:
       - name: Typprüfung Web
         working-directory: web_app
         run: npx tsc -p tsconfig.app.json --noEmit
+      - name: Lint Web (Gutachten P2-15)
+        working-directory: web_app
+        run: npx eslint src --max-warnings=0

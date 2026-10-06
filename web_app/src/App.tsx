@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLatest } from './useLatest.ts';
 import {
   Mic, MicOff, Copy, Check, Upload, Download, Sparkles, X, KeyRound, Menu, Trash2,
   RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines
@@ -10,16 +11,16 @@ import { compileMisheard, misheardPromptBlock, type MisheardFile } from './mishe
 // v3.2: EIN Befund-Prompt für Web + EXE (Repo-Root /radiology_prompt.txt, versioniert) + gemeinsame
 // deterministische Regeln (Sync: source_code/befund_regeln.py, Fixtures: befund_regeln_fixtures.json)
 import genPromptRaw from '../../radiology_prompt.txt?raw';
-import { promptVersion, stripPromptMarker, type VorrangDaten } from './befundRegeln';
+import { stripPromptMarker, type VorrangDaten } from './befundRegeln';
 import vorrangData from '../../vorlagen_vorrang.json';
 // Umbau Schritt 17: Vorlagen-Erkennung + Befundtitel (src/detect.ts); Bypass/Regeln nutzt src/pipeline.ts
 import { type Template, type TemplatesMap } from './detect.ts';
 // Umbau Schritt 8 (Gutachten P2-7/P2-9/P2-10): Netz mit Abbruch, Spracherkennung, Lauf-Verwaltung
-import { istAbbruch } from './net.ts';
+import { istAbbruch, fehlermeldung } from './net.ts';
 // Umbau Schritt 18: Gemini-Aufrufe (Call 0/1/2, Schlüsselprüfung) und Befund-Kette als Module
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
 import { befundAusDiktat, type PipelineKontext } from './pipeline.ts';
-import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext } from './stt.ts';
+import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel } from './stt.ts';
 import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
@@ -57,17 +58,61 @@ const ALLGEMEIN_FALLBACK: Template = {
 // Keys mit älterer Markierung werden beim Start verworfen (Fix für veraltete
 // localStorage-Keys, die den frischen Key blockiert haben — vgl. 401 in der EXE).
 const KEY_VERSION = '2';
-// PROMPT_VERSION: bump → neuer Default-Prompt überschreibt in ALLEN Browsern den gespeicherten
-// localStorage-Prompt (ohne Bump sieht ein bestehender Browser Prompt-Updates NIE).
-// v3.2: Version = Marker der gemeinsamen Prompt-Datei (<!-- RAKSCRIBE_PROMPT_VERSION: … -->) — Prompt-Änderung
-// heißt Marker hochsetzen, dann rollt sie in Web (localStorage) UND EXE (versionierte Prompt-Wahl) aus.
-const PROMPT_VERSION = promptVersion(genPromptRaw) || 'ohne-marker';
+// Gen-Prompt = gemeinsame Datei radiology_prompt.txt (Versionsmarker entfernt). Seit Umbau Schritt 19 (Gutachten P3-2)
+// immer direkt aus dem Bundle — der frühere localStorage-Prompt (Editor gibt es seit v3.0 nicht mehr) entfällt.
 const GEN_PROMPT = stripPromptMarker(genPromptRaw);
 // v3.1: Fehlhör-Liste — auto-Regeln laufen deterministisch VOR Call 0 (auch ohne Gemini),
 // llm-Regeln landen als Tabelle im Call-0-Prompt. Pflege NUR in /misheard_words.json.
 const MISHEARD: MisheardFile = misheardData as MisheardFile;
 const MISHEARD_COMPILED = compileMisheard(MISHEARD);
 const MISHEARD_PROMPT_BLOCK = misheardPromptBlock(MISHEARD);
+
+// Umbau Schritt 19: getypter Zugriff auf Fenster-Erweiterungen (statt `window as any`)
+type PraxisFenster = Window & { __praxisSttKey?: SttSchluessel | null; webkitAudioContext?: typeof AudioContext };
+const fenster = window as PraxisFenster;
+const AudioKontextKlasse = (): typeof AudioContext => window.AudioContext || (fenster.webkitAudioContext as typeof AudioContext);
+type PraxisSchluessel = { type?: string; private_key?: string; vertex_api_key?: string; stt?: SttSchluessel };
+
+// Gespeicherte Schlüssel beim Start (vorher im Mount-Effect). Stale-Key-Schutz: Schlüssel einer älteren
+// Key-Generation verwerfen (Fix für veraltete localStorage-Keys, die den frischen Key blockiert haben).
+function gespeicherterVertexKey(): string {
+  const k = localStorage.getItem('vertex_api_key');
+  if (k && localStorage.getItem('key_version') !== KEY_VERSION) {
+    console.log('[INIT] Veralteter gespeicherter Key (alte Key-Generation) verworfen');
+    localStorage.removeItem('vertex_api_key');
+    localStorage.removeItem('praxis_stt_key');
+    return '';
+  }
+  return k || '';
+}
+// v3.0: STT-Schlüssel aus dem letzten Laden wiederherstellen (kein erneutes Reinziehen nötig)
+function gespeicherterSttKey(): SttSchluessel | null {
+  const s = localStorage.getItem('praxis_stt_key');
+  if (s && localStorage.getItem('key_version') === KEY_VERSION) {
+    try {
+      const j = JSON.parse(s) as SttSchluessel;
+      if (j && j.private_key) {
+        fenster.__praxisSttKey = j;
+        return j;
+      }
+    } catch { /* ignorieren */ }
+  }
+  return null;
+}
+
+async function audioEingaenge(requestPermission: boolean): Promise<MediaDeviceInfo[] | null> {
+  try {
+    if (requestPermission) {
+      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      tempStream.getTracks().forEach(track => track.stop());
+    }
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter(device => device.kind === 'audioinput');
+  } catch (err) {
+    console.error("Fehler beim Laden der Audiogeräte:", err);
+    return null;
+  }
+}
 
 async function loadPraxisKey(pw: string): Promise<boolean> {
   if (!pw) return false;
@@ -93,10 +138,10 @@ async function loadPraxisKey(pw: string): Promise<boolean> {
   }
 
   try {
-    const json = JSON.parse(candidate);
+    const json = JSON.parse(candidate) as PraxisSchluessel;
     if (json.type === 'service_account' && json.private_key) {
       // STT-Key global verfügbar machen (App setzt ihn beim Mount via Event)
-      (window as any).__praxisSttKey = json;
+      fenster.__praxisSttKey = json as SttSchluessel;
       localStorage.setItem('praxis_stt_key', JSON.stringify(json));
       localStorage.setItem('key_version', KEY_VERSION);
       window.dispatchEvent(new Event('praxis-stt-key'));
@@ -107,7 +152,7 @@ async function loadPraxisKey(pw: string): Promise<boolean> {
       // Kombinierter Praxis-Key: EIN Login setzt LLM- und STT-Key (Drive: rakscribe-praxis-key.json)
       localStorage.setItem('vertex_api_key', json.vertex_api_key);
       localStorage.setItem('key_version', KEY_VERSION);
-      (window as any).__praxisSttKey = json.stt;
+      fenster.__praxisSttKey = json.stt;
       localStorage.setItem('praxis_stt_key', JSON.stringify(json.stt));
       window.dispatchEvent(new Event('vertex-key-external'));
       window.dispatchEvent(new Event('praxis-stt-key'));
@@ -150,8 +195,8 @@ export default function App() {
   const [reportView, setReportView] = useState<'formatiert' | 'text'>('formatiert');
 
   // Configuration States
-  const [vertexApiKey, setVertexApiKey] = useState<string>('');
-  const [sttKeyJson, setSttKeyJson] = useState<any>(null);
+  const [vertexApiKey, setVertexApiKey] = useState<string>(gespeicherterVertexKey);
+  const [sttKeyJson, setSttKeyJson] = useState<SttSchluessel | null>(gespeicherterSttKey);
   const keysReady = !!vertexApiKey && !!(sttKeyJson && sttKeyJson.private_key);
   // Umbau Schritt 8 (Gutachten P2-9): Ergebnis der einmaligen Schlüsselprüfung je geladenem Gemini-Schlüssel
   const [keyPruefung, setKeyPruefung] = useState<{ key: string; stand: 'ok' | 'fehler'; meldung?: string }>({ key: '', stand: 'ok' });
@@ -166,19 +211,16 @@ export default function App() {
       });
     return () => { aktiv = false; };
   }, [vertexApiKey]);
-  const keysReadyRef = useRef(keysReady);
-  keysReadyRef.current = keysReady;
-  const [systemPrompt, setSystemPrompt] = useState<string>('');
+  const keysReadyRef = useLatest(keysReady);
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const keyFileRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>(() => localStorage.getItem('selected_audio_device_id') || '');
 
   // Application States
   const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
-  const statusRef = useRef(status);
-  statusRef.current = status;
+  const statusRef = useLatest(status);
   const [statusText, setStatusText] = useState<string>('Bereit');
   const [transcript, setTranscript] = useState<string>('');
   const [structuredReport, setStructuredReport] = useState<string>('');
@@ -239,84 +281,48 @@ export default function App() {
 
   // States and refs for chunked transcription feedback
   const [isTranscribingChunk, setIsTranscribingChunk] = useState<boolean>(false);
-  const chunkIntervalRef = useRef<any>(null);
+  const chunkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastProcessedIndexRef = useRef<number>(0);  // Umbau Schritt 9: Sample-Index im Puffer
   const chunkTranscriptsRef = useRef<string[]>([]);
-  const pendingPromisesRef = useRef<Promise<any>[]>([]);
+  const pendingPromisesRef = useRef<Promise<string>[]>([]);
   const activeRequestsCountRef = useRef<number>(0);
   const actualSampleRateRef = useRef<number>(16000);
 
 
-  // Load configuration from local storage
+  // Schlüssel aus Datei/Drag & Drop/Einfügen übernehmen (loadPraxisKey meldet per Event) — Umbau Schritt 19:
+  // Startwerte kommen aus gespeicherterVertexKey/gespeicherterSttKey, Listener werden wieder abgemeldet (P3-2)
   useEffect(() => {
-    const savedVertexKey = localStorage.getItem('vertex_api_key');
-    const savedKeyVersion = localStorage.getItem('key_version');
-    const savedPrompt = localStorage.getItem('system_prompt');
-    const savedPromptVersion = localStorage.getItem('system_prompt_version');
-    const savedDeviceId = localStorage.getItem('selected_audio_device_id');
-
-    // Stale-Key-Schutz: Gespeicherte Keys aus einer älteren Key-Generation verwerfen.
-    if (savedVertexKey && savedKeyVersion !== KEY_VERSION) {
-      console.log('[INIT] Veralteter gespeicherter Key (alte Key-Generation) verworfen');
-      localStorage.removeItem('vertex_api_key');
-      localStorage.removeItem('praxis_stt_key');
-      setVertexApiKey('');
-    } else if (savedVertexKey) {
-      setVertexApiKey(savedVertexKey);
-    }
-    window.addEventListener('vertex-key-external', () => {
+    const onVertexKey = () => {
       const k = localStorage.getItem('vertex_api_key');
       if (k) setVertexApiKey(k);
-    });
-    // v3.0: STT-Schlüssel aus dem letzten Laden wiederherstellen (kein erneutes Reinziehen nötig)
-    const savedStt = localStorage.getItem('praxis_stt_key');
-    if (savedStt && savedKeyVersion === KEY_VERSION) {
-      try { const j = JSON.parse(savedStt); if (j && j.private_key) (window as any).__praxisSttKey = j; } catch { /* ignorieren */ }
-    }
-    localStorage.removeItem('is_authenticated');
-    if (savedDeviceId) setSelectedDeviceId(savedDeviceId);
-
-    // Praxis-Login: STT-Key aus dem Login-Vorgang übernehmen
+    };
     const onPraxisKey = () => {
-      const k = (window as any).__praxisSttKey;
+      const k = fenster.__praxisSttKey;
       if (k && k.private_key) setSttKeyJson(k);
     };
+    window.addEventListener('vertex-key-external', onVertexKey);
     window.addEventListener('praxis-stt-key', onPraxisKey);
-    if ((window as any).__praxisSttKey) onPraxisKey();
-
+    localStorage.removeItem('is_authenticated');
+    // P3-2: der Prompt kommt immer aus radiology_prompt.txt — alte localStorage-Kopie entfernen
+    localStorage.removeItem('system_prompt');
+    localStorage.removeItem('system_prompt_version');
     // (v3.0: frühere Auto-Load-Fallbacks vertex-key.txt/.b64/stt-key.* entfernt — Schlüssel kommen nur per Drag & Drop/Menü)
-
-    // v3.2: Default-Prompt = gemeinsame Datei radiology_prompt.txt (kein zweiter Prompt-Text mehr in App.tsx)
-    const defaultPrompt = GEN_PROMPT;
-
-    if (!savedPrompt || savedPromptVersion !== PROMPT_VERSION || savedPrompt.includes("## Beurteilung") || savedPrompt.includes("Radiologe-Assistent</role>")) {
-      setSystemPrompt(defaultPrompt);
-      localStorage.setItem('system_prompt', defaultPrompt);
-      localStorage.setItem('system_prompt_version', PROMPT_VERSION);
-    } else {
-      setSystemPrompt(savedPrompt);
-    }
+    return () => {
+      window.removeEventListener('vertex-key-external', onVertexKey);
+      window.removeEventListener('praxis-stt-key', onPraxisKey);
+    };
   }, []);
 
-  const loadAudioDevices = async (requestPermission = false) => {
-    try {
-      if (requestPermission) {
-        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        tempStream.getTracks().forEach(track => track.stop());
-      }
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputs = devices.filter(device => device.kind === 'audioinput');
-      setAudioDevices(audioInputs);
-    } catch (err) {
-      console.error("Fehler beim Laden der Audiogeräte:", err);
-    }
-  };
-
   useEffect(() => {
-    loadAudioDevices(true);
-    const handleDeviceChange = () => loadAudioDevices(false);
+    let aktiv = true;
+    const laden = (requestPermission: boolean) => {
+      audioEingaenge(requestPermission).then(g => { if (aktiv && g) setAudioDevices(g); });
+    };
+    laden(true);
+    const handleDeviceChange = () => laden(false);
     navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
     return () => {
+      aktiv = false;
       navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
     };
   }, []);
@@ -348,42 +354,12 @@ export default function App() {
     localStorage.removeItem('vertex_api_key');
     localStorage.removeItem('praxis_stt_key');
     localStorage.removeItem('key_version');
-    (window as any).__praxisSttKey = null;
+    fenster.__praxisSttKey = null;
     setVertexApiKey('');
     setSttKeyJson(null);
     setMenuOpen(false);
   };
 
-  // Drag & Drop irgendwo ins Fenster
-  useEffect(() => {
-    let depth = 0;
-    const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types || []).includes('Files');
-    const onEnter = (e: DragEvent) => { if (!hasFiles(e)) return; e.preventDefault(); depth++; setDragActive(true); };
-    const onOver = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
-    const onLeave = (e: DragEvent) => { if (!hasFiles(e)) return; depth = Math.max(0, depth - 1); if (!depth) setDragActive(false); };
-    const onDrop = async (e: DragEvent) => {
-      if (!hasFiles(e)) return;
-      e.preventDefault(); depth = 0; setDragActive(false);
-      const f = e.dataTransfer?.files?.[0];
-      if (!f) return;
-      if (/^audio\//.test(f.type) || /\.(ogg|mp3|wav|m4a|opus|webm)$/i.test(f.name)) {
-        if (keysReadyRef.current) handleAudioUploadRef.current(f);
-        else setKeyError('Bitte zuerst den Praxis-Schlüssel laden — danach können Audio-Dateien verarbeitet werden.');
-        return;
-      }
-      try { await applyKeyText(await f.text()); } catch { setKeyError('Datei konnte nicht gelesen werden.'); }
-    };
-    window.addEventListener('dragenter', onEnter);
-    window.addEventListener('dragover', onOver);
-    window.addEventListener('dragleave', onLeave);
-    window.addEventListener('drop', onDrop);
-    return () => {
-      window.removeEventListener('dragenter', onEnter);
-      window.removeEventListener('dragover', onOver);
-      window.removeEventListener('dragleave', onLeave);
-      window.removeEventListener('drop', onDrop);
-    };
-  }, []);
 
   // Menü schließen bei Klick außerhalb / Esc
   useEffect(() => {
@@ -408,7 +384,7 @@ export default function App() {
   // Beliebige Audiodatei (OGG/MP3/WAV) → mono 16kHz WAV (für Google STT)
   const decodeFileToWavBlob = async (file: File | Blob): Promise<Blob> => {
     const arrayBuffer = await file.arrayBuffer();
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (AudioKontextKlasse())();
     try {
       const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
       // Gutachten P2-8c: Rate prüfen — unter 16 kHz würde das Audio sonst als 16 kHz (zu schnell) verschickt
@@ -449,7 +425,7 @@ export default function App() {
   const sttKontext = (lauf: Lauf): SttKontext => ({ sttKey: sttKeyJson, signal: lauf.signal, status: lauf.nurAktuell(setStatusText) });
   // Umbau Schritt 18: Kontext für Gemini-Aufrufe (src/gemini.ts) und Befund-Kette (src/pipeline.ts)
   const genKontext = (lauf: Lauf, signal: AbortSignal): PipelineKontext => ({
-    apiKey: vertexApiKey, prompt: systemPrompt, signal, status: lauf.nurAktuell(setStatusText),
+    apiKey: vertexApiKey, prompt: GEN_PROMPT, signal, status: lauf.nurAktuell(setStatusText),
     misheard: { compiled: MISHEARD_COMPILED, block: MISHEARD_PROMPT_BLOCK },
     templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES, fallback: ALLGEMEIN_FALLBACK,
   });
@@ -540,11 +516,11 @@ export default function App() {
         try {
           await testGeminiAPI(vertexApiKey);
           setKeyPruefung({ key: vertexApiKey, stand: 'ok' });
-        } catch (verifyErr: any) {
-          setKeyPruefung({ key: vertexApiKey, stand: 'fehler', meldung: verifyErr.message });
+        } catch (verifyErr: unknown) {
+          setKeyPruefung({ key: vertexApiKey, stand: 'fehler', meldung: fehlermeldung(verifyErr) });
           setStatus('ready');
           setStatusText('API-Key ungültig');
-          alert("Fehler bei der Key-Verifikation:\n\n" + verifyErr.message + "\n\nBitte überprüfen Sie Ihren API-Key in den Einstellungen.");
+          alert("Fehler bei der Key-Verifikation:\n\n" + fehlermeldung(verifyErr) + "\n\nBitte überprüfen Sie Ihren API-Key in den Einstellungen.");
           return;
         }
       }
@@ -581,7 +557,7 @@ export default function App() {
       }).catch(() => { /* nicht unterstützt oder abgelehnt — Aufnahme läuft trotzdem */ });
 
       // Start AudioContext at native preferred hardware sample rate (avoids resampling dropouts)
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = AudioKontextKlasse();
       const audioContext = new AudioContextClass();
       audioContextRef.current = audioContext;
       actualSampleRateRef.current = audioContext.sampleRate;
@@ -619,11 +595,11 @@ export default function App() {
       }
       chunkIntervalRef.current = setInterval(() => processNextAudioChunk(lauf), 6000);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setStatus('ready');
       setStatusText('Fehler beim Mikrofonzugriff.');
-      alert("Mikrofonzugriff verweigert oder nicht verfügbar: " + err.message);
+      alert("Mikrofonzugriff verweigert oder nicht verfügbar: " + fehlermeldung(err));
     }
   };
 
@@ -668,9 +644,9 @@ export default function App() {
             st('Volltranskription läuft (komplettes Diktat)...');
             finalRawText = (await transcribeAudio(fullWavBlob, true, sttKontext(lauf))).trim();
           }
-        } catch (fullAudioErr: any) {
+        } catch (fullAudioErr: unknown) {
           if (istAbbruch(fullAudioErr)) throw fullAudioErr;
-          console.warn('[FULL-AUDIO] Re-transcription failed, falling back to chunk transcripts:', fullAudioErr.message);
+          console.warn('[FULL-AUDIO] Re-transcription failed, falling back to chunk transcripts:', fehlermeldung(fullAudioErr));
           sttFehler = fullAudioErr;
           finalRawText = chunkText();
         }
@@ -747,15 +723,42 @@ export default function App() {
     setStatusText('Bereit');
   };
 
-  // Refs to avoid stale closures in global keyboard event listeners
-  const startRecordingRef = useRef(startRecording);
-  startRecordingRef.current = startRecording;
-  const stopRecordingRef = useRef(stopRecording);
-  stopRecordingRef.current = stopRecording;
-  const handleResetRef = useRef(handleReset);
-  handleResetRef.current = handleReset;
-  const handleAudioUploadRef = useRef(handleAudioUpload);
-  handleAudioUploadRef.current = handleAudioUpload;
+  // Refs to avoid stale closures in global keyboard event listeners (Umbau Schritt 19: useLatest)
+  const startRecordingRef = useLatest(startRecording);
+  const stopRecordingRef = useLatest(stopRecording);
+  const handleResetRef = useLatest(handleReset);
+  const handleAudioUploadRef = useLatest(handleAudioUpload);
+
+  // Drag & Drop irgendwo ins Fenster
+  useEffect(() => {
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types || []).includes('Files');
+    const onEnter = (e: DragEvent) => { if (!hasFiles(e)) return; e.preventDefault(); depth++; setDragActive(true); };
+    const onOver = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
+    const onLeave = (e: DragEvent) => { if (!hasFiles(e)) return; depth = Math.max(0, depth - 1); if (!depth) setDragActive(false); };
+    const onDrop = async (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); depth = 0; setDragActive(false);
+      const f = e.dataTransfer?.files?.[0];
+      if (!f) return;
+      if (/^audio\//.test(f.type) || /\.(ogg|mp3|wav|m4a|opus|webm)$/i.test(f.name)) {
+        if (keysReadyRef.current) handleAudioUploadRef.current(f);
+        else setKeyError('Bitte zuerst den Praxis-Schlüssel laden — danach können Audio-Dateien verarbeitet werden.');
+        return;
+      }
+      try { await applyKeyText(await f.text()); } catch { setKeyError('Datei konnte nicht gelesen werden.'); }
+    };
+    window.addEventListener('dragenter', onEnter);
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onEnter);
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [keysReadyRef, handleAudioUploadRef]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -776,7 +779,7 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [statusRef, keysReadyRef, startRecordingRef, stopRecordingRef, handleResetRef]);
 
   // Clean up interval on unmount
   useEffect(() => {
