@@ -37,7 +37,7 @@ def tok(c):
         c.refresh(gtr.Request())
     return c.token
 
-APP = (ROOT / "web_app/src/App.tsx").read_text()
+APP = (ROOT / "web_app/src/stt.ts").read_text()  # Umbau Schritt 8: Phrasenlisten der Web-App in src/stt.ts
 CHIRP_PHRASES = re.findall(r'"([^"]+)"', re.search(r"const CHIRP_PHRASES: string\[\] = \[(.*?)\];", APP, re.S).group(1))
 
 def ensure_data():

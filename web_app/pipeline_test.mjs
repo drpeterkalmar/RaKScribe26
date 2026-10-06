@@ -6,6 +6,10 @@ import { LaufVerwaltung, befundLauf } from './src/lauf.ts';
 import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
 import { wavFromInt16 } from './src/audio.ts';
+import { readFileSync } from 'node:fs';
+import { befundAusDiktat } from './src/pipeline.ts';
+import { correctTranscriptionWithGemini, validationPrompt, correctionPrompt, SYS_MSG, VERTEX_ENDPOINT } from './src/gemini.ts';
+import { nachbearbeiten } from './src/befundRegeln.ts';
 
 let fail = 0, n = 0;
 const check = (ok, label, detail = '') => { n++; if (!ok) fail++; console.log(ok ? 'PASS' : 'FAIL', '|', label, ok ? '' : `\n      ${detail}`); };
@@ -153,6 +157,51 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   globalThis.fetch = async () => { versuche++; return versuche < 2 ? json(503, {}) : json(200, { ok: 1 }); };
   const r = await fetchWithRetry('https://example.invalid/y', {}, 5000, 3);
   check(r.status === 200 && versuche === 2, 'ohne Abbruch: 503 → Retry → 200 (wie bisher)');
+}
+
+// ── 3b. Gemini-Kette der Web-App (Umbau Schritt 18): Prompts = Snapshot, Call 1 + Call 2, Abbruch ──────
+{
+  const snap = (f) => readFileSync(new URL('../tests/offline/snapshots/' + f, import.meta.url), 'utf8');
+  check(validationPrompt('${rawDictation}', '${generatedReport}') === snap('val_prompt.txt'), 'validationPrompt = Snapshot (Text unverändert)');
+  check(correctionPrompt('${MISHEARD_PROMPT_BLOCK}', '${rawText}') === snap('call0_prompt.txt'), 'correctionPrompt (Call 0) = Snapshot');
+  const lies = (rel) => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
+  const templates = lies('../templates.json');
+  const ctxBasis = { apiKey: 'AQ.dummy', prompt: readFileSync(new URL('../radiology_prompt.txt', import.meta.url), 'utf8'),
+    status: () => {}, templates, vorrang: lies('../vorlagen_vorrang.json'),
+    displayNames: Object.values(templates).map(t => t.display_name), fallback: templates.allgemein };
+  const C1 = '## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nVerschmälerung des medialen Gelenkspaltes mit Osteophyten.\n\n## Ergebnis\nMäßiggradige Gonarthrose rechts.';
+  const C2 = C1.replace('Osteophyten.', 'Osteophyten und subchondraler Sklerosierung.');
+  const bodies = [];
+  globalThis.fetch = async (url, opt) => {
+    bodies.push({ url, headers: opt.headers, body: JSON.parse(opt.body) });
+    const text = bodies.length === 1 ? C1 : C2;
+    return json(200, { candidates: [{ content: { parts: [{ text: text.slice(0, 7) }, { text: text.slice(7) }] }, finishReason: 'STOP' }] });
+  };
+  const seg = 'Knie rechts mäßiggradige Gonarthrose';
+  const rep = await befundAusDiktat(seg, ctxBasis);
+  check(rep === nachbearbeiten(C2) && bodies.length === 2, 'LLM-Pfad: Call 1 + Call 2, Ergebnis = nachbearbeitete Validierung', rep);
+  check(bodies.every(b => b.url === VERTEX_ENDPOINT && b.headers['x-goog-api-key'] === 'AQ.dummy'), 'beide Aufrufe: EU-Endpoint + Schlüssel');
+  const p1 = bodies[0].body.contents[0].parts[0].text;
+  check(bodies[0].body.systemInstruction.parts[0].text === SYS_MSG && p1.includes('<untersuchung>Kniegelenk in 2 Ebenen</untersuchung>')
+        && p1.includes(seg) && !p1.includes('RAKSCRIBE_PROMPT_VERSION'), 'Call 1: SYS_MSG, Vorlage, Diktat, ohne Versionsmarker');
+  check(bodies[1].body.contents[0].parts[0].text === validationPrompt(seg, C1), 'Call 2 = validationPrompt(Diktat, Call-1-Befund)');
+
+  // Abbruch während Call 1: darf nicht als „Validierung fehlgeschlagen“ weiterlaufen
+  const ac2 = new AbortController();
+  globalThis.fetch = (url, opt) => new Promise((_, rej) => opt.signal.addEventListener('abort', () => { const e = new Error('abgebrochen'); e.name = 'AbortError'; rej(e); }));
+  const lauf = befundAusDiktat(seg, { ...ctxBasis, signal: ac2.signal });
+  setTimeout(() => ac2.abort(), 10);
+  let e2 = null;
+  try { await lauf; } catch (e) { e2 = e; }
+  check(e2 && e2.name === 'AbortError', 'Abbruch während Gemini → AbortError (kein Befund)');
+  const ac3 = new AbortController();
+  const korr = correctTranscriptionWithGemini('Knie rechts', { ...ctxBasis, signal: ac3.signal });
+  setTimeout(() => ac3.abort(), 10);
+  let e3 = null;
+  try { await korr; } catch (e) { e3 = e; }
+  check(e3 && e3.name === 'AbortError', 'Call 0: Abbruch wird durchgereicht (nicht still der Rohtext)');
+  globalThis.fetch = async () => json(200, { error: { message: 'kaputt' } });
+  check(await correctTranscriptionWithGemini('Knie rechts', ctxBasis) === 'Knie rechts', 'Call 0: Fehlerantwort → Rohtext (wie bisher)');
 }
 
 // ── 4. Base64 ohne FileReader = Node-Base64 ─────────────────────────────────────────────────────────────

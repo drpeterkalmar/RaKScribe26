@@ -1,7 +1,7 @@
 """prod_pipeline.py — baut die ECHTEN Produktionsketten von EXE und Web für Harness/verify_* nach (v3.2).
 
 Keine Prompt-Kopien: Gen-Prompt = radiology_prompt.txt (eine Quelle für EXE + Web), systemInstruction =
-SYS_MSG aus source_code/gemini.py, Validator (Web Call 2) und Call 0 aus App.tsx, Regionen-Trenner/Nummerierung/
+SYS_MSG aus source_code/gemini.py, Validator (Web Call 2) und Call 0 aus web_app/src/gemini.ts, Regionen-Trenner/Nummerierung/
 Normalbefund-Bypass = source_code/befund_regeln.py, Template-Erkennung = source_code/detect.py (direkt importiert).
 
     import prod_pipeline as pp
@@ -29,7 +29,7 @@ _MH = misheard.load(str(ROOT))
 _MH_COMPILED = misheard.compile_rules(_MH)
 MISHEARD_HINTS = misheard.prompt_block(_MH)
 
-_APP_SRC = (ROOT / "web_app" / "src" / "App.tsx").read_text()
+_GEMINI_TS = (ROOT / "web_app" / "src" / "gemini.ts").read_text()  # Umbau Schritt 18: Web-Prompts aus App.tsx hierher
 
 
 def detect_template(raw):
@@ -44,7 +44,7 @@ GEN_PROMPT_RAW = (ROOT / "radiology_prompt.txt").read_text()
 PROMPT_VERSION = br.prompt_version(GEN_PROMPT_RAW)
 GEN_PROMPT = br.strip_prompt_marker(GEN_PROMPT_RAW)
 
-_mv = re.search(r"const validationPrompt = `(.*?)`;", _APP_SRC, re.S)
+_mv = re.search(r"export const validationPrompt = \(rawDictation: string, generatedReport: string\): string => `(.*?)`;", _GEMINI_TS, re.S)
 VAL_TEMPLATE = _mv.group(1).replace("\\`", "`").replace('\\"', '"')
 
 

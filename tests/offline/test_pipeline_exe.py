@@ -94,5 +94,38 @@ erg = pl.befund_aus_diktat("Schulter rechts Punkt Omarthrose Punkt Ellbogen rech
 check("Mehr-Regionen: LLM-Fehler → Region benannt, Ellbogen-Bypass bleibt, nicht vollständig",
       erg.fehler == ["Schulter rechts"] and "## Ellbogengelenk" in erg.report and not erg.vollstaendig, str(erg.fehler))
 
+# Umbau Schritt 18: Web-Prompts liegen jetzt in web_app/src/gemini.ts — Harness liest sie dort, Text unverändert
+SNAP = ROOT / "tests" / "offline" / "snapshots"
+check("prod_pipeline.VAL_TEMPLATE (Call 2) = Snapshot vor dem Umbau", pp.VAL_TEMPLATE == (SNAP / "val_prompt.txt").read_text(encoding="utf-8"))
+import call0_prompt as c0  # noqa: E402
+_c0 = c0.call0_template().replace('\\"', '"')
+_snap0 = (SNAP / "call0_prompt.txt").read_text(encoding="utf-8").replace("${MISHEARD_PROMPT_BLOCK}", c0.misheard.prompt_block_web(c0._DATA))
+check("call0_prompt.call0_template() (Call 0) = Snapshot vor dem Umbau", _c0 == _snap0)
+
+# Web = EXE: Normalbefund-Kette (Erkennung → Bypass → Titel/Seite → Nachbearbeitung) ohne Netz
+import subprocess, tempfile  # noqa: E402
+bypass = []
+for c in cases:
+    raw = pp.misheard.apply(c["in"].strip(), pp._MH_COMPILED)
+    if raw:
+        bypass.append(raw)
+bypass += ["Schulter rechts unauffällig. Ellbogen rechts unauffällig.", "Sono Schulter links unauffällig",
+           "Unterschenkel-Sonographie rechts unauffällig.", "HWS o.B.", "Thorax p.a. unauffällig"]
+k_bypass = pp.exe_kontext(llm=lambda p: "## X\n\n## Befund\nLLM-Antwort mit genügend Länge im Befund.\n\n## Ergebnis\nLLM.")
+nur_bypass, exe_reports = [], []
+for d in bypass:
+    segs = br.split_regionen(d)
+    if all(pl.ist_normalbefund(s, pp.detect_template(s), pp.DISPLAY_NAMES) for s in segs):
+        nur_bypass.append(d)
+        exe_reports.append(pl.befund_aus_diktat(d, k_bypass).report)
+with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+    json.dump(nur_bypass, f, ensure_ascii=False)
+r = subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "sync_test.mjs", "--bypass", f.name],
+                   cwd=ROOT / "web_app", capture_output=True, text=True)
+web_reports = json.loads(r.stdout) if r.returncode == 0 and r.stdout else []
+abw = [(d, e[:80], w[:80]) for d, e, w in zip(nur_bypass, exe_reports, web_reports) if e != w]
+check(f"Normalbefund-Kette Web = EXE ({len(nur_bypass)} Diktate, inkl. Mehr-Regionen)",
+      len(web_reports) == len(nur_bypass) >= 15 and not abw, str(abw[:2]) + r.stderr[-300:])
+
 print("\n" + ("✅ PIPELINE EXE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

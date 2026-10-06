@@ -22,7 +22,7 @@ export interface MisheardFile {
   rules: MisheardRule[];
 }
 
-interface Compiled { re: RegExp; repl: string }
+export interface Compiled { re: RegExp; repl: string }
 
 const B_LEFT = '(?<![\\p{L}\\p{N}_])';
 const B_RIGHT = '(?![\\p{L}\\p{N}_])';

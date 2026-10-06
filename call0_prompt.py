@@ -1,6 +1,7 @@
 """call0_prompt.py — baut den Call-0-Prompt (STT-Korrektur) EXAKT wie die Web-App.
 
-Seit v3.1 steht im App.tsx-Template `${MISHEARD_PROMPT_BLOCK}` statt der handgepflegten Tabelle;
+Seit v3.1 steht im Web-Template `${MISHEARD_PROMPT_BLOCK}` statt der handgepflegten Tabelle (seit Umbau Schritt 18
+in web_app/src/gemini.ts correctionPrompt);
 Harness-/Verify-Skripte dürfen den Prompt daher nicht mehr per Regex + rawText-Replace allein bauen.
 
     from call0_prompt import build_call0_prompt
@@ -17,9 +18,9 @@ _COMPILED = misheard.compile_rules(_DATA)
 
 
 def call0_template():
-    app = (ROOT / "web_app" / "src" / "App.tsx").read_text()
-    m = re.search(r"const correctionPrompt = `(.*?)`;", app, re.S)
-    assert m, "correctionPrompt nicht in App.tsx gefunden"
+    src = (ROOT / "web_app" / "src" / "gemini.ts").read_text()
+    m = re.search(r"export const correctionPrompt = \(MISHEARD_PROMPT_BLOCK: string, rawText: string\): string => `(.*?)`;", src, re.S)
+    assert m, "correctionPrompt nicht in web_app/src/gemini.ts gefunden"
     tpl = m.group(1)
     assert "${MISHEARD_PROMPT_BLOCK}" in tpl, "App.tsx-Call-0-Prompt ohne ${MISHEARD_PROMPT_BLOCK} — Skript veraltet?"
     return tpl.replace("${MISHEARD_PROMPT_BLOCK}", misheard.prompt_block_web(_DATA))

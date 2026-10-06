@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """test_parts_join.py — v2.11.1 Offline-Gate (deterministisch, ohne API):
-Die ECHTEN Helper aus App.tsx (per esbuild transpiliert) und source_code/gemini.py (direkt importiert)
+Die ECHTEN Helper aus web_app/src/gemini.ts und source_code/gemini.py (beide direkt importiert)
 gegen synthetische Gemini-Antworten: Split '## L' | 'endenwirbelsäule…' (mit thoughtSignature),
 Thought-Part, abgeschnittene Antwort (MAX_TOKENS), fehlendes Ergebnis, Befund ohne '## Befund'-Zeile.
 Plus Rohantworten aus parts_stress_raw.json, falls vorhanden. Exit 1 bei Abweichung."""
@@ -28,22 +28,15 @@ if raw_file.exists():
         t = "".join(p.get("text", "") for p in d["candidates"][0]["content"]["parts"] if not p.get("thought"))
         CASES.append((f"echt#{i}", d, t, True, True))
 
-# --- TS: echte Helper extrahieren + mit esbuild transpilieren ---
-app = (ROOT / "web_app/src/App.tsx").read_text()
-names = ["joinGeminiText", "geminiFinishedOk", "befundSection", "isCompleteReport"]
-src = []
-for n in names:
-    m = re.search(rf"^const {n} = .*?;\n(?=\n|const |//)", app, re.S | re.M)
-    assert m, n
-    src.append(m.group(0))
-ts = "\n".join(src) + "\nconst cases = " + json.dumps([[c[0], c[1]] for c in CASES], ensure_ascii=False) + ";\n" \
-     "console.log(JSON.stringify(cases.map(([n, d]) => { const t = joinGeminiText(d); return [n, t, isCompleteReport(t.trim()), geminiFinishedOk(d)]; })));\n"
+# --- TS: echte Helper aus web_app/src/gemini.ts (Umbau Schritt 18: direkt importiert, kein esbuild-Extrakt mehr) ---
+gem_url = (ROOT / "web_app" / "src" / "gemini.ts").as_uri()
+js = (f"import {{ joinGeminiText, isCompleteReport, geminiFinishedOk }} from {json.dumps(gem_url)};\n"
+      "const cases = " + json.dumps([[c[0], c[1]] for c in CASES], ensure_ascii=False) + ";\n"
+      "console.log(JSON.stringify(cases.map(([n, d]) => { const t = joinGeminiText(d); return [n, t, isCompleteReport(t.trim()), geminiFinishedOk(d)]; })));\n")
 with tempfile.TemporaryDirectory() as td:
-    p = pathlib.Path(td) / "t.ts"; p.write_text(ts)
-    js = subprocess.run(["npx", "esbuild", str(p), "--format=cjs", "--log-level=error"], cwd=ROOT / "web_app",
-                        capture_output=True, text=True, check=True).stdout
-    (pathlib.Path(td) / "t.js").write_text(js)
-    ts_out = json.loads(subprocess.run(["node", str(pathlib.Path(td) / "t.js")], capture_output=True, text=True, check=True).stdout)
+    (pathlib.Path(td) / "t.mjs").write_text(js)
+    ts_out = json.loads(subprocess.run(["node", "--experimental-strip-types", "--no-warnings", str(pathlib.Path(td) / "t.mjs")],
+                                       capture_output=True, text=True, check=True).stdout)
 
 # --- PY: echte EXE-Logik (source_code/gemini.py) ---
 fails = 0
