@@ -21,6 +21,7 @@ ENV/
 !/vorlagen_vorrang.json
 !/vorlagen_vorrang_tests.json
 !/detect_fixtures.json
+!/sync_fixtures.json
 *.bat
 !start rakscribe.bat
 !source_code/build.bat
@@ -56,6 +57,7 @@ Befundvorlagen/
 !vorlagen_vorrang.json
 !vorlagen_vorrang_tests.json
 !detect_fixtures.json
+!sync_fixtures.json
 
 # Web-App key injector - embeds private key, never commit
 web_app/public/inject-key.js

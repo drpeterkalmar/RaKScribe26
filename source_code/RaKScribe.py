@@ -29,6 +29,7 @@ import urllib.request
 import urllib.error
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
+import stt as _stt  # Umbau Schritt 13: chirp_3, Segmentierung 50 s/4 s, Overlap-Stitch, Phrasenlisten
 import detect as _detect  # Umbau Schritt 12: Vorlagen-Erkennung + Befundtitel (reine Funktionen)
 import keys as _keys  # Umbau Schritt 11: Praxis-Schlüssel, STT-Credentials, Token-Cache
 import config as _cfg  # Umbau Schritt 10 (Gutachten P2-4): config.ini mit Standardwerten
@@ -94,61 +95,6 @@ try:
 except Exception as e:
     log_exception("[INIT] Fehler beim Laden der Google Cloud Speech Bibliotheken")
 
-
-# -------------------------------------------------------------
-# --- Liste wichtiger medizinischer Fachbegriffe ---
-# -------------------------------------------------------------
-MEDICAL_PHRASES = [
-    "Hochauflösender Nervenschall", "Thorax pa/seitlich", "MRT", "MR", "CT", "Computertomografie", "DXA", "Knochendichtemessung",
-    "Humerus", "Femur", "Tibia", "Fibula", "Patella", "Karpaltunnel", "Rotatorenmanschette",
-    "Achillessehne", "Kalkaneus", "Acromioclaviculargelenk", "Sacroiliacalgelenk", "Halswirbelsäule (HWS)",
-    "Brustwirbelsäule (BWS)", "Lendenwirbelsäule (LWS)", "Kreuzband", "Tarsus", "Metatarsus",
-    "Fraktur", "Spondylarthrose", "Spondylarthrosen", "Spondylodese", "Spondyolyse", "Spondylosis deformans", "Spondylose", "pontifizierend", "pontifizierende", "Arthrose", "Coxarthrose", "Gonarthrose", "Meniskus", "Hinterhorn-Läsion",
-    "Korbhenkelriss", "Bandscheibenprolaps", "Spinalkanalstenose", "Osteochondrose", "Osteochondrosen", "Nearthrosis interspinosa",
-    "Osteomyelitis", "Rheumatoide Arthritis", "Kapsel-Band-Läsion", "Osteoporose", "Bakerzyste",
-    "Knochenödem", "Einklemmungssyndrom", "Arthrographie", "Szintigraphie", "Vertebroplastie",
-    "Facetteninfiltration", "CT-gesteuerte Biopsie", "MR-Arthrographie", "Skelettaufnahme", "Ganzbeinaufnahme",
-    "Gelenkspaltverschmälerung", "Subluxation", "Wirbelkörperkompression", "Rotatorenmanschettenruptur",
-    "Labrumläsion", "Subchondrale Sklerosierung", "Nervus medianus", "Nervus radialis",
-    "Liquor", "Zerebrospinalflüssigkeit", "Kortex", "Großhirnrinde", "Weiße Substanz", "Basalganglien",
-    "Hypophyse", "Corpus callosum", "Sinus cavernosus", "Aorta", "Arteria carotis interna", "Arteria carotis externa",
-    "Pulmonalarterie", "Vena cava superior", "Vena cava inferior", "A. vertebralis",
-    "Aneurysma", "Intrakranielles Aneurysma", "Ischämie", "Ischämischer Infarkt", "Intracranielle Blutung",
-    "Subarachnoidalblutung (SAB)", "Subduralhämatom (SDH)", "Epiduralhämatom (EDH)", "Multiple Sklerose (MS)",
-    "Hypophysenadenom", "Hydrozephalus", "Normaldruckhydrozephalus", "Vaskulitis", "Stenose", "Carotisstenose",
-    "Koronarstenose", "Dissektion", "Aortendissektion", "Thrombus", "Thrombose", "Embolie", "PAE", "Plaqubildung", "Softplaque",
-    "gemischte Plaqueformation", "IMT-Komplex", "Intima-Media-Hyperplasie", "Intimahyperplasie",
-    "Varizen", "T1-gewichtete Sequenz", "T2-gewichtete Sequenz", "Flair-Sequenz", "Diffusion-weighted Imaging (DWI)",
-    "Time-of-Flight (TOF) Angio", "MRA", "CTA", "Kontrastmittel (KM)", "Plaque", "Atherosklerotische Plaque",
-    "Angioplastie", "Sakkuläres Aneurysma", "Gefäßokklusion",
-    "Lunge", "Oberlappen", "Unterlappen", "Trachea", "Bronchien", "Mediastinum", "Herz", "Ventrikel",
-    "Perikard", "Leber", "Gallenblase", "Pankreas", "Niere", "Milz", "Uterus", "Adnexe", "Appendix",
-    "Schilddrüse", "Infiltrat", "Pulmonales Infiltrat", "Pleuraerguss", "Pneumothorax", "Spannungspneumothorax",
-    "Kardiomegalie", "Aortenklappeninsuffizienz", "Leberzirrhose", "Cholezystitis", "Pankreatitis",
-    "Nierenstein", "Ureterstein", "Nephrolithiasis", "Adnexitis", "Ovarielle Zyste", "Lymphknoten",
-    "Lymphadenopathie", "Appendizitis", "Struma", "Verschattung", "Milzruptur", "Hernie", "Hiatushernie",
-    "Inguinalhernie", "Dilatation", "Aszites", "Zystische Läsion", "Liquidation", "Faszienverdickung",
-    "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
-    "Echoarm", "Echogen",
-    "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-    "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen", "Thorax p.a.", "Thorax p.a./seitlich",
-    "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
-    "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
-    "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
-    "Kontraindikation", "Artefakt", "Pixel", "Voxel", "Echoarmut", "Echogenität", "Hyperintens", "Hypointens",
-    "Dosis-Längen-Produkt (DLP)", "Field of View (FOV)", "Standard-Abweichung (SD)", "Flüssigkeitsspiegel",
-    "Röntgen-Thorax", "Projektionsaufnahme", "Z.n.", "Zustand nach", "Adenokarzinom", "Cholangiokarzinom",
-    "Fibrose", "Hämangiom", "Atelektase", "Bronchiektasen", "Emphysem", "Sarkom", "Neurofibrom", "Lipom",
-    "Aortenaneurysma", "Klaustrophobie", "Sequester", "Vollbild", "Partialruptur", "Tendinose", "Impingement",
-    "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
-    "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
-    "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-    "Flachbogig", "S-förmige", "HWS", "HWK",
-    "Flachbogige Skoliose", "flachbogige Skoliose", "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
-    "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
-    "Discopathiezeichen", "Diskopathiezeichen",
-    "Neoarthrosis interspinosa", "Neoarthrosen interspinosa", "Neoarthrose interspinosa"
-]
 
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
 
@@ -224,7 +170,7 @@ def init_google_speech():
             enable_automatic_punctuation=True,
             speech_contexts=[
                 speech.SpeechContext(
-                    phrases=MEDICAL_PHRASES,
+                    phrases=_stt.MEDICAL_PHRASES,
                     boost=10.0
                 )
             ]
@@ -523,79 +469,6 @@ def transcribe_full_chirp3(pcm_int16, samplerate=16000, loc='eu'):
         log_exception("[CHIRP3] Fehler in transcribe_full_chirp3")
         return None
 
-# v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation), identisch zur Web-App (CHIRP_PHRASES).
-CHIRP_PHRASES = [
-    "flachbogig",
-    "flachbogige Skoliose",
-    "rechtskonvex",
-    "linkskonvex",
-    "Cobb-Winkel",
-    "Th1",
-    "Th2",
-    "Th3",
-    "Th4",
-    "Th5",
-    "Th6",
-    "Th7",
-    "Th8",
-    "Th9",
-    "Th10",
-    "Th11",
-    "Th12",
-    "Schmorlsche Impressionen",
-    "Edgren-Vaino-Zeichen",
-    "Morbus Scheuermann",
-    "Osteochondrose",
-    "Spondylosis deformans",
-    "Spondylarthrose",
-    "Unkovertebralgelenksarthrose",
-    "Facettengelenksarthrose",
-    "Discopathiezeichen",
-    "Diskopathie",
-    "Antelisthese",
-    "Retrolisthese",
-    "Neoarthrosis interspinosa",
-    "kyphotische Fehlhaltung",
-    "Streckhaltung",
-    "Fibroostosen",
-    "Kellgren und Lawrence",
-    "Gonarthrose",
-    "Coxarthrose",
-    "Omarthrose",
-    "Rhizarthrose",
-    "Retropatellararthrose",
-    "Femorotibialkompartiment",
-    "Scaphoidtaille",
-    "Kahnbeintaille",
-    "Collum chirurgicum",
-    "Radiusköpfchen",
-    "Humeruskopfhochstand",
-    "Garden",
-    "Supraspinatussehne",
-    "Infraspinatussehne",
-    "Subscapularissehne",
-    "lange Bizepssehne",
-    "Tenosynovitis",
-    "Tendinopathie",
-    "Tendinosis calcarea",
-    "Begleitbursitis",
-    "Enthesiopathie",
-    "Plantarfaszie",
-    "Arthro-Broström",
-    "Mammasonographie",
-    "BI-RADS",
-    "Morbus Mondor",
-    "Sulcus nervi ulnaris",
-    "Nervus ulnaris",
-    "Musculus anconeus epitrochlearis",
-    "Hoffmann-Tinel-Zeichen",
-    "Kiloh-Nevin",
-    "Hypothenarmuskulatur",
-    "faszikulär",
-    "Thorax p.a.",
-]
-
-
 def _report_complete(t):
     """v2.11.1: vollständig = '## Befund' + nicht-leeres '## Ergebnis'."""
     t = t or ""
@@ -605,25 +478,6 @@ def _report_complete(t):
     body = pre.split("## Befund")[1] if "## Befund" in pre else "\n".join(l for l in pre.splitlines() if not l.strip().startswith("#"))
     return len(body.strip()) > 20
 
-
-def _chirp3_request(token, loc, wav_b64, timeout=60):
-    import urllib.request as _ur
-    host = 'speech' if loc == 'global' else loc + '-speech'
-    url = (f"https://{host}.googleapis.com/v2/projects/rakscribe/"
-           f"locations/{loc}/recognizers/_:recognize")
-    cfg = {"languageCodes": ["de-DE"], "model": "chirp_3",
-           "autoDecodingConfig": {},
-           "features": {"enableAutomaticPunctuation": True},
-           "adaptation": {"phraseSets": [{"inlinePhraseSet": {"phrases": [
-               {"value": p, "boost": 10} for p in CHIRP_PHRASES]}}]}}
-    body = json.dumps({"config": cfg, "content": wav_b64}).encode()
-    req = _ur.Request(url, data=body, headers={
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json"})
-    with _ur.urlopen(req, timeout=timeout) as resp:
-        j = json.loads(resp.read())
-    return " ".join(res["alternatives"][0]["transcript"]
-                    for res in j.get("results", []))
 
 def _get_stt_access_token():
     """Bearer-Token für chirp_3 (keys.SttTokenCache; Ablaufzeit als UTC, Gutachten P3-6)."""
@@ -635,45 +489,11 @@ def _get_stt_access_token():
         log_exception("[CHIRP3] Token-Fehler")
         return None
 
-def _stitch_overlaps(a, b, window=14):
-    aw, bw = a.split(), b.split()
-    best = 0
-    for L in range(min(window, len(aw), len(bw)), 0, -1):
-        tail = [w.lower().strip('.,:;') for w in aw[-L:]]
-        head = [w.lower().strip('.,:;') for w in bw[:L]]
-        if sum(1 for x, y in zip(tail, head) if x == y) >= int(L * 0.8):
-            best = L
-            break
-    return (a + " " + " ".join(bw[best:])) if best else (a + " " + b)
+# Umbau Schritt 13: chirp_3-Aufruf, Segmentierung und Overlap-Stitch in stt.py (Namen hier für die Aufrufer)
+_chirp3_request = _stt.chirp3_request
+_stitch_overlaps = _stt.stitch_overlaps
+_chirp3_worker = _stt.chirp3_worker
 
-def _chirp3_worker(pcm_int16, samplerate, loc, token):
-    import urllib.request as _ur
-    raw = pcm_int16.tobytes()
-    total = len(raw) // 2
-    SEG = 50 * samplerate      # 50s Segmente
-    OV = 4 * samplerate        # 4s Rueckhoeren
-    texts = []
-    start = 0
-    while start < len(pcm_int16):
-        end = min(start + SEG, len(pcm_int16))
-        seg = pcm_int16[start:end]
-        buf = io.BytesIO()
-        with wave.open(buf, 'wb') as wf:
-            wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(samplerate)
-            wf.writeframes(seg.tobytes())
-        import base64 as _b64
-        b64 = _b64.b64encode(buf.getvalue()).decode()
-        txt = _chirp3_request(token, loc, b64)
-        if txt is None:
-            return None
-        texts.append(txt)
-        if end >= len(pcm_int16):
-            break
-        start = end - OV
-    full = texts[0]
-    for nxt in texts[1:]:
-        full = _stitch_overlaps(full, nxt)
-    return full
 
 # === v3.0 DESIGN-TOKENS (ruhig, kontrastreich, für abgedunkelte Befundräume) ===
 BGC_MAIN = "#0D1016"
