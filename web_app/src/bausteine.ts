@@ -78,13 +78,17 @@ const seiteVon = (text: string): string | null => {
 const seiteTauschen = (txt: string, nach: string): string =>
   txt.replace(new RegExp('(?<![a-zäöü])' + (nach === 'rechts' ? 'links' : 'rechts') + '(?![a-zäöü])', 'g'), nach);
 
+// Untersuchungen ohne Seite — „Pleuraerguss rechts“ im Zusatz macht keinen „Thorax rechts“ (Sync: bausteine.py UNPAARIG)
+const UNPAARIG = new RegExp('thorax|abdomen|oberbauch|nieren|becken|sch[äa]del|hws|bws|lws|wirbels[äa]ule|halsgef|schilddr|' +
+  'oesophag|ösophag|magen|darm|schluck|nnh|nebenh[öo]hle|fernr[öo]ntgen|zahn|lymph|urograph|harntrakt|hyster', 'i');
+
 export const vorlage = (key: string, b: Bausteine, diktat = '') => {
   const x = b[key];
   let titel = x.titel || '', befund = x.befund || '', ergebnis = x.ergebnis || '';
   const seite = seiteVon(diktat), eigen = seiteVon(titel);
   if ((seite === 'rechts' || seite === 'links') && (eigen === 'rechts' || eigen === 'links') && seite !== eigen) {
     [titel, befund, ergebnis] = [titel, befund, ergebnis].map(s => seiteTauschen(s, seite));
-  } else if (seite && !eigen && !/(?<![a-zäöü])(beidseits|bds\.?)(?![a-zäöü])/i.test(titel)) {
+  } else if (seite && !eigen && !/(?<![a-zäöü])(beidseits|bds\.?)(?![a-zäöü])/i.test(titel) && !UNPAARIG.test(titel)) {
     const m = /\s+in\s+(?:\d|zwei|einer|drei)\b/i.exec(titel);
     titel = m ? titel.slice(0, m.index) + ' ' + seite + titel.slice(m.index) : titel + ' ' + seite;
   }

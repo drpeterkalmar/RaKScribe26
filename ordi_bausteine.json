@@ -1,5 +1,5 @@
 {
- "_info": "Ordinations-Textbausteine (Peter 06.10.2026, Quelle Drive: Standardbefunde/Textbausteine Ordi/Blockrtf). Auslösen im Diktat mit 'Baustein <Kürzel>' (z. B. 'Baustein Mammo 1', 'Baustein Ösophagus 2'). Nur der Baustein diktiert → Text wörtlich. Mit Zusatz → Baustein ist die Vorlage, nur das Diktierte wird ergänzt/geändert. art=satz: Satz wird an der Stelle eingesetzt. Grußformeln/Unterschriften entfernt. EINE Datei für EXE (gebündelt) und Web (importiert).",
+ "_info": "Ordinations-Textbausteine (Peter 06.10.2026, Quelle Drive: Standardbefunde/Textbausteine Ordi/Blockrtf). Auslösen im Diktat mit 'Baustein <Kürzel>' (z. B. 'Baustein Mammo 1', 'Baustein Ösophagus 2'). Nur der Baustein diktiert → Text wörtlich. Mit Zusatz → Baustein ist die Vorlage, nur das Diktierte wird ergänzt/geändert. art=satz: Satz wird an der Stelle eingesetzt. Grußformeln/Unterschriften entfernt; Kollegen-Altvarianten (Porsch, Oswald, Thimary, Schreibmayer, Peinsith) gelöscht (Peter 06.10.), ausgenommen mam1–mam3 (von Peter ausdrücklich genannt). EINE Datei für EXE (gebündelt) und Web (importiert).",
  "version": "2026-10-06",
  "bausteine": {
   "A1": {
@@ -264,17 +264,6 @@
     "beinarterien bds"
    ]
   },
-  "Carotis": {
-   "gruppe": "Gefäße",
-   "art": "befund",
-   "titel": "Farbcodierte Duplexsonographie der Halsgefäße",
-   "befund": "Unauffällige morphologische Darstellung der Arteria carotis communis, interna und externa beidseits.\nDie Intima-Media-Dicke im Normbereich. Keine Plaques. In der farbcodierten Duplex-Sonographie normale Flussgeschwindigkeit und Flussrichtung sämtlicher extracerebraler hirnversorgenden Arterien, einschließlich der Arteria vertebralis beidseits. Zeichen hämodynamisch relevanter Stenosen nicht nachzuweisen.",
-   "ergebnis": "Unauffällige Duplex-Sonographie der extrakraniellen hirnversorgenden Arterien.",
-   "sprich": [
-    "carotis",
-    "karotis"
-   ]
-  },
   "Duplex-Sono Halsgefäße": {
    "gruppe": "Gefäße",
    "art": "befund",
@@ -292,17 +281,9 @@
    "befund": "Die Arteria carotis communis, Arteria carotis interna und Arteria carotis externa kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar.\nAuch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar.\nDer Intima-Media-Komplex mit 0.9 mm im Normbereich gelegen.",
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
-    "fdcar"
-   ]
-  },
-  "fdcarschr": {
-   "gruppe": "Gefäße",
-   "art": "befund",
-   "titel": "Farbcodierte Duplexsonographie und Dopplersonographie der Halsgefäße",
-   "befund": "Keine signifikanten Stenosen abgrenzbar.\nRegelrechtes Flussmuster und regelrechte Strömungsgeschwindigkeit in ACC, ACI und ACE bds..\nAnterograde, regelrechte Perfusion der A. vertebralis bds..",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "fdcarschr"
+    "carotis",
+    "fdcar",
+    "karotis"
    ]
   },
   "fdcaruk": {
@@ -313,36 +294,6 @@
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
     "fdcaruk"
-   ]
-  },
-  "fdexa": {
-   "gruppe": "Gefäße",
-   "art": "befund",
-   "titel": "Farbcodierte Duplexsonographie der Beinarterien rechts",
-   "befund": "Normales triphasisches Flusssignal im Bereich der A. femoralis communis und an den gesamten Beinarterien von der Leiste bis zur Sprunggelenksregion. Kein Hinweis auf Stenosen. Keine arteriosklerotischen Plaques nachzuweisen.",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "fdexa"
-   ]
-  },
-  "oswfdcar": {
-   "gruppe": "Gefäße",
-   "art": "befund",
-   "titel": "Farbcodierte Duplexsonographie der Carotis beidseits",
-   "befund": "Rechte Seite:\nRegelrechtes Strömungsprofil der ACC, ACE und ACI ohne Nachweis einer hämodynamisch relevanten Stenose. Die A. vertebralis regelrecht perfundiert.\nLinke Seite:\nRegelrechtes Strömungsprofil der ACC, ACE und ACI ohne Nachweis einer hämodynamisch relevanten Stenose. Die A. vertebralis regelrecht perfundiert.",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "oswfdcar"
-   ]
-  },
-  "oswfdexv": {
-   "gruppe": "Gefäße",
-   "art": "befund",
-   "titel": "Farbcodierte Duplexsonographie der Beinvenen links",
-   "befund": "Regelrechtes Strömungsprofil der Vena femoralis sowie Vena poplitea in allen Abschnitten, ohne Nachweis einer tiefen Venenthrombose. Die Vena tibialis anterior, posterior und fibularis gut komprimierbar. Kein Anhaltspunkt für tiefe Venenthrombose.",
-   "ergebnis": "Unauffällige Duplexsonographie der Beinvenen links.",
-   "sprich": [
-    "oswfdexv"
    ]
   },
   "veneu": {
@@ -689,16 +640,6 @@
     "nnhu"
    ]
   },
-  "oswth": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax in 2 Ebenen",
-   "befund": "Das Herz normal groß. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Das Lungenparenchym frei von rezent bronchopneumonischen Infiltraten sowie neoplastischen Rundherden. Keine\nStauungs- bzw. Lungenüberwässerungszeichen. Die Zwerchfellkuppen bds.- gut abgrenzbar. Die Zwerchfellsinus bds. frei. Kein Hinweis auf Pleuraerguss.",
-   "ergebnis": "Unauffälliger Befund an Cor und Pulmo.",
-   "sprich": [
-    "oswth"
-   ]
-  },
   "Patella bds": {
    "gruppe": "Röntgen Skelett/Thorax/Schädel",
    "art": "befund",
@@ -792,16 +733,6 @@
     "schaedel"
    ]
   },
-  "t1": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "THORAX",
-   "befund": "Infiltrative Veränderungen nicht nachzuweisen. Die Sinus frei.\nDas Herz in Form und Größe im Normbereich.",
-   "ergebnis": "Altersentsprechend unauffälliges Thoraxröntgen.",
-   "sprich": [
-    "t 1"
-   ]
-  },
   "th": {
    "gruppe": "Röntgen Skelett/Thorax/Schädel",
    "art": "befund",
@@ -809,17 +740,8 @@
    "befund": "Unauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich.",
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
-    "th"
-   ]
-  },
-  "th-osw": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax 2 Ebenen",
-   "befund": "Das Herz von normaler Form und Größe. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Das Lungenparenchym frei von rezent bronchopneumonischen Infiltraten sowie neoplastischen Rundherden.\nKeine Stauungs- bzw. Lungenüberwässerungszeichen. Die Zwerchfellkuppen beidseits gut abgrenzbar. Die Zwerchfellsinus beidseits frei. Kein Hinweis auf Pleuraerguss.",
-   "ergebnis": "Unauffälliger Befund an Cor und Pulmo ohne Nachweis von sekundärblastomatösen Absiedelungen.",
-   "sprich": [
-    "th osw"
+    "th",
+    "thorax"
    ]
   },
   "th1": {
@@ -842,16 +764,6 @@
     "thk"
    ]
   },
-  "Thorax": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax",
-   "befund": "Keine infiltrativen Veränderungen nachzuweisen. Die Sinus frei. Die Herzgröße im Normbereich. Hili und Mediastinum unauffällig.",
-   "ergebnis": "Unauffälliges Thoraxröntgen.",
-   "sprich": [
-    "thorax"
-   ]
-  },
   "Thorax TBC": {
    "gruppe": "Röntgen Skelett/Thorax/Schädel",
    "art": "befund",
@@ -860,26 +772,6 @@
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
     "thorax tbc"
-   ]
-  },
-  "Thorax TBC Porsch": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax pa",
-   "befund": "Keine infiltrativen Veränderungen. Die Sinus frei. Normale Herzgröße. Keine spezifischen Lungenveränderungen.",
-   "ergebnis": "Unauffälliges Thoraxröntgen.",
-   "sprich": [
-    "thorax tbc porsch"
-   ]
-  },
-  "thosw": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax in 2 Ebenen",
-   "befund": "Das Herz von normaler Form und Größe. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Verstärkt peribronchiale Gerüstzeichnung wie bei Bronchitis/Peribronchitis. Ein umschriebenes Infiltrat nicht abzugrenzen.\nKeine Stauungszeichen. Kein Hinweis auf Pleuraerguss.",
-   "ergebnis": "Zeichen der Bronchitis /Peribronchitis. Im Übrigen unauffälliger Befund an Cor und Pulmo.",
-   "sprich": [
-    "thosw"
    ]
   },
   "thrip": {
@@ -892,36 +784,6 @@
     "thrip"
    ]
   },
-  "thschr": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax pa/seitlich",
-   "befund": "Die Herzgröße im Normbereich. Mediastinum und Hili gefäßtypisch konfiguriert.\nDie Lungen frei von rezenten entzündlichen Infiltraten. Kein Pleuraerguss.",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "thschr"
-   ]
-  },
-  "thshr": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax pa/seitlich",
-   "befund": "Die Herzgröße im Normbereich. Keine pulmonalvenösen Stauungszeichen.\nMediastinum und Hili gefäßtypisch konfiguriert.\nDie Lungen frei von rezenten entzündlichen Infiltraten.\nKein Pleuraerguss.",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "thshr"
-   ]
-  },
-  "ththim": {
-   "gruppe": "Röntgen Skelett/Thorax/Schädel",
-   "art": "befund",
-   "titel": "Thorax pa/seitlich",
-   "befund": "Der Herzschatten in der Größennorm gelegen, keine akuten Stauungszeichen. Hili und Mediastinum gefäßtypisch. Diskret verstärkte peribronchiale Lungengerüstzeichnung im Mittellappen als Hinweis auf Bronchitis. Pneumonische Infiltrate nicht abgrenzbar. Die Recessus frei, keine pleuralen Ergüsse.",
-   "ergebnis": "Normale Herzgröße, diskrete Bronchitiszeichen im Mittellappen.\nAnsonsten unauffälliger Befund.",
-   "sprich": [
-    "ththim"
-   ]
-  },
   "zahnkinduk": {
    "gruppe": "Röntgen Skelett/Thorax/Schädel",
    "art": "befund",
@@ -930,16 +792,6 @@
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
     "zahnkinduk"
-   ]
-  },
-  "abd - porsch": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie Abdomen",
-   "befund": "Die Leber größenmäßig im Normbereich, von homogener Parenchymstruktur. Die Gallenblase, die ableitenden Gallenwege, das Pankreas und die Milz unauffällig, ebenso beide Nieren unauffällig. Normale Aortenweite.",
-   "ergebnis": "Unauffällige Sonographie des Abdomens.",
-   "sprich": [
-    "abd porsch"
    ]
   },
   "lym": {
@@ -952,36 +804,6 @@
    "sprich": [
     "lym",
     "lymphknoten"
-   ]
-  },
-  "oswsoob": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Oberbauches inklusive der Nieren",
-   "befund": "Die Leber von normaler Form und Größe. Das Parenchym homogen. Kein Nachweis von fokal parenchymersetzenden Leberläsionen. Die Gallenblase zartwandig und konkrement-frei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pancreas und die Milz unauffällig.",
-   "ergebnis": "Unauffälliger sonographischer Befund der Oberbauchorgane.",
-   "sprich": [
-    "oswsoob"
-   ]
-  },
-  "oswsoob+niere": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Oberbauches inklusive der Nieren",
-   "befund": "Die Leber von normaler Form und Größe. Das Parenchym homogen. Kein Nachweis von fokal parenchymersetzenden Leberläsionen. Die Gallenblase zartwandig und konkrement-frei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pancreas und die Milz unauffällig. Beide Nieren von normaler Form und Größe. Regelrechtes Pyelon-Parenchym-Verhältnis. Kein Hinweis auf Harnabflussstörung. Kein Nachweis eines kalkdichten Konkrements in Projektion auf beide Nieren.\nKein Nachweis freier Flüssigkeit im kleinen Becken.",
-   "ergebnis": "Unauffälliger sonographischer Befund der Oberbauchorgane inklusive beider Nieren.",
-   "sprich": [
-    "oswsoob niere"
-   ]
-  },
-  "Schilddrüse": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie der Schilddrüse",
-   "befund": "Beide Schilddrüsenlappen von normaler Größe und homogener Parenchymstruktur. Fokale Schilddrüsenläsionen nicht nachzuweisen. Keine Zeichen einer Thyreoiditis.",
-   "ergebnis": "Unauffällige Sonographie der Schilddrüse.",
-   "sprich": [
-    "schilddruese"
    ]
   },
   "Sono Abdomen Frau - Uranitsch": {
@@ -1014,16 +836,6 @@
     "sonoabdu"
    ]
   },
-  "sonoabschr": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Oberbauches",
-   "befund": "Die Leber frei von fokalen, parenchymersetzenden Läsionen.\nDie Gallenglase zart bewandet und konkrementfrei.\nNormale Weite der intra- und extrahepatischen Gallenwege.\nPancreas und Milz unauffällig.\nDie Nieren bds. orthotop gelegen und unauffällig.",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "sonoabschr"
-   ]
-  },
   "sonolku": {
    "gruppe": "Sonographie Abdomen/Hals",
    "art": "befund",
@@ -1032,16 +844,6 @@
    "ergebnis": "Unauffälliger Befund. Für sekundärblastomatöse Veränderungen kein Anhaltspunkt.",
    "sprich": [
     "sonolku"
-   ]
-  },
-  "us": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Oberbauches",
-   "befund": "Die Leber größenmäßig im Normbereich, die Parenchymstruktur homogen.\nDie Gallenblase, die ableitenden Gallenwege, das Pancreas und beide Nieren unauffällig.\nUnauffällige Darstellung der Milz.",
-   "ergebnis": "Unauffällige Sonographie des Oberbauches.",
-   "sprich": [
-    "us"
    ]
   },
   "US Abdomen Frau - Uranitsch": {
@@ -1062,56 +864,6 @@
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
     "us abdomen mann uranitsch"
-   ]
-  },
-  "usabdNEU": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Abdomens",
-   "befund": "Leber: Normale Größe, unauffällige Parenchymstruktur.\nMilz: Unauffällig.\nGallenblase und ableitende Gallenwege: Unauffälliger Befund.\nPancreas: In allen Abschnitten einsehbar, unauffällig.\nRetroperitoneum und Aorta: Unauffällig.\nNieren: Normale Größe und Parenchym-Pyelon-Relation. Keine Harnstauung. Keine konkrementverdächtigen Reflexe.",
-   "ergebnis": "Unauffällige Sonographie des Abdomens.",
-   "sprich": [
-    "usabdneu"
-   ]
-  },
-  "usabdom_neu_Dr_Porsch": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Abdomens",
-   "befund": "Die Leber größenmäßig im Normbereich, die Parenchymstruktur homogen. Die Gallenblase. Die ableitenden Gallenwege, das Pancreas unauffällig.\nNormale Milzgröße. Unauffällige Darstellung beider Nieren.\nNormal weite Aorta. Keine wandverdickten Darmschlingen Darstellbar.",
-   "ergebnis": "Unauffällige Sonographie des Abdomens.",
-   "sprich": [
-    "usabdom neu dr porsch"
-   ]
-  },
-  "usabdpo": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Abdomens",
-   "befund": "Die Leber größenmäßig im Normbereich ohne fokale Läsionen. Unauffällige Darstellung der Gallenblase, der ableitenden Gallenwege, des Pancreas und der Milz. Unauffällige Darstellung beider Nieren und des Retroperitoneums. Keine freie Flüssigkeit im Becken.",
-   "ergebnis": "Unauffällige Sonographie des Abdomens.",
-   "sprich": [
-    "usabdpo"
-   ]
-  },
-  "usabosw": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Abdomens",
-   "befund": "Die Leber von normaler Form und Größe. Das Parenchym homogen. Kein Nachweis von fokalparenchymersetzenden Leberläsionen. Die Gallenblase zartwandig und konkrementfrei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pancreas und die Milz unauffällig. Beide Nieren von normaler Form und Größe. Kein Hinweis auf Harnabflussstörung. Regelrechtes Pyelon-Parenchym-Verhältnis. Die Harnblase nur geringgradig gefüllt, soweit beurteilbar, unauffällig.\nKein Nachweis freier Flüssigkeit.",
-   "ergebnis": "Unauffälliger sonographischer Befund des Abdomens.",
-   "sprich": [
-    "usabosw"
-   ]
-  },
-  "usabthim": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie der Oberbauches",
-   "befund": "Homogene Echotextur des Leberparenchyms ohne Nachweis fokaler Läsionen. Steinfreie Gallenblase mit zarter Berandung. Regelrechte Größe, Form und Lage beider Nieren. Kein Harnstau bds.. Unauffällige Darstellung von Milz, Pancreas sowie cranialem Retroperitoneum.",
-   "ergebnis": "Unauffällige Oberbauchsonographie.",
-   "sprich": [
-    "usabthim"
    ]
   },
   "usnr": {
@@ -1168,16 +920,6 @@
     "usobnimaenner"
    ]
   },
-  "usobosw": {
-   "gruppe": "Sonographie Abdomen/Hals",
-   "art": "befund",
-   "titel": "Sonographie des Oberbauches",
-   "befund": "Erhöhte Echogenität des Leberparenchyms wie bei Steatosis hepatis. Kein Nachweis von suspekten Leberherden. Die Gallenblase zartwandig und konkrementfrei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pankreas unauffällig. Die Milz normal groß. Beide Nieren von normaler Form und Größe, mit regelrechtem Pyelon-Parenchym-Verhältnis. Kein Hinweis auf Harnabflussstörung.",
-   "ergebnis": "Steatosis hepatis.",
-   "sprich": [
-    "usobosw"
-   ]
-  },
   "ussd": {
    "gruppe": "Sonographie Abdomen/Hals",
    "art": "befund",
@@ -1185,6 +927,7 @@
    "befund": "Beide Schilddrüsenlappen von normaler Form und Größe mit einem Volumen der Einzellappen von.. ml links und.. ml rechts. Der Isthmus normal breit. Gute\nSchluckverschieblichkeit. Farbdopplersonographisch keine Auffälligkeiten.",
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
+    "schilddruese",
     "ussd"
    ]
   },
@@ -1338,16 +1081,6 @@
     "upss score"
    ]
   },
-  "usknie": {
-   "gruppe": "Sonographie Bewegungsapparat/Nerven",
-   "art": "befund",
-   "titel": "Sonographie Kniegelenk rechts",
-   "befund": "Unauffällige Darstellung der Kniegelenksbandstrukturen, insbesonders unauffällige Darstellung des Ligamentum patellae, der Quadrizepssehne sowie der Seitenbänder medial und lateral. Unauffällige Darstellung der Kniekehle. Kein Hinweis auf Gelenkserguss.",
-   "ergebnis": "Unauffälliger Befund.",
-   "sprich": [
-    "usknie"
-   ]
-  },
   "Fraktur": {
    "gruppe": "Zusatzsätze",
    "art": "satz",
@@ -1377,16 +1110,6 @@
    "ergebnis": "Unauffälliger Befund.",
    "sprich": [
     "madu"
-   ]
-  },
-  "magenp": {
-   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
-   "art": "befund",
-   "titel": "Magen",
-   "befund": "Nach unbehinderter KM-Passage durch den Oesophagus Darstellung eines linksgelegenen Magens mit unauffälligem Schleimhautrelief. Ulceröse oder neoplastische Veränderungen nicht nachweisbar. Der Bulbus duodeni konzentrisch entfaltbar. Der Verlauf der Duodenalschlinge unauffällig. Der Hiatus im Liegen o. B..",
-   "ergebnis": "Unauffälliges Magenröntgen.",
-   "sprich": [
-    "magenp"
    ]
   },
   "magensu": {
@@ -1433,26 +1156,6 @@
     "oesophagus in doppelkontrast"
    ]
   },
-  "oesp": {
-   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
-   "art": "befund",
-   "titel": "Schluckakt",
-   "befund": "Normale orale Boluskontrolle, normale Einleitung des Schluckaktes. Seitengleich symmetrisch ablaufender buccopharyngealer Schluckakt.\nUnbehinderte KM-Passage durch den Oesophagus. Organische Wandveränderungen am Oesophagus oder Hypopharynx nicht nachzuweisen. Im Liegen und im Wassersiphontest kein gastrooesophagealer Reflux.",
-   "ergebnis": "Unauffälliges Schluckaktröntgen.",
-   "sprich": [
-    "oesp"
-   ]
-  },
-  "oespo": {
-   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
-   "art": "befund",
-   "titel": "Schluckakt",
-   "befund": "Seitengleich symmetrisch ablaufender buccopharyngealer Schluckakt. Normale KM-Passage durch den Oesophagus. Organische Wandveränderungen am Oesophagus oder Hypopharynx nicht nachweisbar. Im Liegen und im Wasser-Siphon-Test kein gastrooesophagealer Reflux.",
-   "ergebnis": "Unauffälliges Schluckaktröntgen.",
-   "sprich": [
-    "oespo"
-   ]
-  },
   "oessu": {
    "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
    "art": "befund",
@@ -1495,16 +1198,6 @@
    "ergebnis": "Unauffälliger Video-Schluckakt.",
    "sprich": [
     "video schluckakt"
-   ]
-  },
-  "videopo": {
-   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
-   "art": "befund",
-   "titel": "Videoschluckakt",
-   "befund": "Normale orale Boluskontrolle. Normale Einleitung des Schluckaktes. Zeitgerechte Hebung des Zungenbeines. Normale Kippung der Epiglottis. Normale Öffnung des oberen Oesophagussphincters. Unauffällige propulsive Peristaltik. Normaler Kontrastabfluss in den Magen. Im Wasser-Siphon-Test ein gastrooesophagealer Reflux nicht nachzuweisen.",
-   "ergebnis": "Unauffälliger Videoschluckakt.",
-   "sprich": [
-    "videopo"
    ]
   },
   "Videoschluckakt Reflux": {

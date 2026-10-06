@@ -121,6 +121,11 @@ def _seite_tauschen(txt, nach):
     return re.sub(r"(?<![a-zäöü])" + von + r"(?![a-zäöü])", nach, txt)
 
 
+# Untersuchungen ohne Seite — „Pleuraerguss rechts“ im Zusatz macht keinen „Thorax rechts“
+UNPAARIG = (r"thorax|abdomen|oberbauch|nieren|becken|sch[äa]del|hws|bws|lws|wirbels[äa]ule|halsgef|schilddr|"
+            r"oesophag|ösophag|magen|darm|schluck|nnh|nebenh[öo]hle|fernr[öo]ntgen|zahn|lymph|urograph|harntrakt|hyster")
+
+
 def vorlage(key, bausteine, diktat=""):
     """Baustein als Vorlage {titel, body, display_name, ergebnis} — Seite aus dem Diktat übernommen."""
     b = bausteine[key]
@@ -129,7 +134,8 @@ def vorlage(key, bausteine, diktat=""):
     eigen = _seite(titel)
     if seite in ("rechts", "links") and eigen in ("rechts", "links") and seite != eigen:
         titel, befund, ergebnis = (_seite_tauschen(x, seite) for x in (titel, befund, ergebnis))
-    elif seite and not eigen and not re.search(r"(?<![a-zäöü])(beidseits|bds\.?)(?![a-zäöü])", titel, re.I):
+    elif seite and not eigen and not re.search(r"(?<![a-zäöü])(beidseits|bds\.?)(?![a-zäöü])", titel, re.I) \
+            and not re.search(UNPAARIG, titel, re.I):
         m = re.search(r"\s+in\s+(?:\d|zwei|einer|drei)\b", titel, re.I)
         titel = titel[:m.start()] + " " + seite + titel[m.start():] if m else titel + " " + seite
     return {"titel": titel, "body": titel + "\n" + befund, "display_name": titel,

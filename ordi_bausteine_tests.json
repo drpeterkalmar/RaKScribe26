@@ -179,11 +179,11 @@
   },
   {
    "diktat": "Baustein Thorax",
-   "baustein": "Thorax",
+   "baustein": "th",
    "rest": "",
    "nur": true,
    "satz": "Baustein Thorax",
-   "bericht": "## Thorax\n\n## Befund\nKeine infiltrativen Veränderungen nachzuweisen. Die Sinus frei. Die Herzgröße im Normbereich. Hili und Mediastinum unauffällig.\n\n## Ergebnis\nUnauffälliges Thoraxröntgen."
+   "bericht": "## Thorax pa/seitlich\n\n## Befund\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich.\n\n## Ergebnis\nUnauffälliger Befund."
   },
   {
    "diktat": "Baustein th",
@@ -203,11 +203,11 @@
   },
   {
    "diktat": "Baustein thosw",
-   "baustein": "thosw",
-   "rest": "",
-   "nur": true,
+   "baustein": null,
+   "rest": null,
+   "nur": null,
    "satz": "Baustein thosw",
-   "bericht": "## Thorax in 2 Ebenen\n\n## Befund\nDas Herz von normaler Form und Größe. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Verstärkt peribronchiale Gerüstzeichnung wie bei Bronchitis/Peribronchitis. Ein umschriebenes Infiltrat nicht abzugrenzen.\nKeine Stauungszeichen. Kein Hinweis auf Pleuraerguss.\n\n## Ergebnis\nZeichen der Bronchitis /Peribronchitis. Im Übrigen unauffälliger Befund an Cor und Pulmo."
+   "bericht": null
   },
   {
    "diktat": "Baustein Oberbauch Nieren",
@@ -227,19 +227,19 @@
   },
   {
    "diktat": "Baustein Carotis",
-   "baustein": "Carotis",
+   "baustein": "fdcar",
    "rest": "",
    "nur": true,
    "satz": "Baustein Carotis",
-   "bericht": "## Farbcodierte Duplexsonographie der Halsgefäße\n\n## Befund\nUnauffällige morphologische Darstellung der Arteria carotis communis, interna und externa beidseits.\nDie Intima-Media-Dicke im Normbereich. Keine Plaques. In der farbcodierten Duplex-Sonographie normale Flussgeschwindigkeit und Flussrichtung sämtlicher extracerebraler hirnversorgenden Arterien, einschließlich der Arteria vertebralis beidseits. Zeichen hämodynamisch relevanter Stenosen nicht nachzuweisen.\n\n## Ergebnis\nUnauffällige Duplex-Sonographie der extrakraniellen hirnversorgenden Arterien."
+   "bericht": "## Farbcodierte Duplexsonographie der Halsgefäße\n\n## Befund\nDie Arteria carotis communis, Arteria carotis interna und Arteria carotis externa kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar.\nAuch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar.\nDer Intima-Media-Komplex mit 0.9 mm im Normbereich gelegen.\n\n## Ergebnis\nUnauffälliger Befund."
   },
   {
    "diktat": "Baustein Karotis",
-   "baustein": "Carotis",
+   "baustein": "fdcar",
    "rest": "",
    "nur": true,
    "satz": "Baustein Karotis",
-   "bericht": "## Farbcodierte Duplexsonographie der Halsgefäße\n\n## Befund\nUnauffällige morphologische Darstellung der Arteria carotis communis, interna und externa beidseits.\nDie Intima-Media-Dicke im Normbereich. Keine Plaques. In der farbcodierten Duplex-Sonographie normale Flussgeschwindigkeit und Flussrichtung sämtlicher extracerebraler hirnversorgenden Arterien, einschließlich der Arteria vertebralis beidseits. Zeichen hämodynamisch relevanter Stenosen nicht nachzuweisen.\n\n## Ergebnis\nUnauffällige Duplex-Sonographie der extrakraniellen hirnversorgenden Arterien."
+   "bericht": "## Farbcodierte Duplexsonographie der Halsgefäße\n\n## Befund\nDie Arteria carotis communis, Arteria carotis interna und Arteria carotis externa kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar.\nAuch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar.\nDer Intima-Media-Komplex mit 0.9 mm im Normbereich gelegen.\n\n## Ergebnis\nUnauffälliger Befund."
   },
   {
    "diktat": "Baustein Fraktur",
@@ -259,11 +259,11 @@
   },
   {
    "diktat": "Baustein Schilddrüse",
-   "baustein": "Schilddrüse",
+   "baustein": "ussd",
    "rest": "",
    "nur": true,
    "satz": "Baustein Schilddrüse",
-   "bericht": "## Sonographie der Schilddrüse\n\n## Befund\nBeide Schilddrüsenlappen von normaler Größe und homogener Parenchymstruktur. Fokale Schilddrüsenläsionen nicht nachzuweisen. Keine Zeichen einer Thyreoiditis.\n\n## Ergebnis\nUnauffällige Sonographie der Schilddrüse."
+   "bericht": "## Sonographie der Schilddrüse\n\n## Befund\nBeide Schilddrüsenlappen von normaler Form und Größe mit einem Volumen der Einzellappen von.. ml links und.. ml rechts. Der Isthmus normal breit. Gute\nSchluckverschieblichkeit. Farbdopplersonographisch keine Auffälligkeiten.\n\n## Ergebnis\nUnauffälliger Befund."
   },
   {
    "diktat": "Baustein Phlebo",
@@ -307,11 +307,11 @@
   },
   {
    "diktat": "Thorax pa seitlich, Baustein Thorax, zusätzlich Pleuraerguss rechts",
-   "baustein": "Thorax",
+   "baustein": "th",
    "rest": "Thorax pa seitlich,  , zusätzlich Pleuraerguss rechts",
    "nur": false,
    "satz": "Thorax pa seitlich, Baustein Thorax, zusätzlich Pleuraerguss rechts",
-   "bericht": "## Thorax rechts\n\n## Befund\nKeine infiltrativen Veränderungen nachzuweisen. Die Sinus frei. Die Herzgröße im Normbereich. Hili und Mediastinum unauffällig.\n\n## Ergebnis\nUnauffälliges Thoraxröntgen."
+   "bericht": "## Thorax pa/seitlich\n\n## Befund\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich.\n\n## Ergebnis\nUnauffälliger Befund."
   },
   {
    "diktat": "Mammographie unauffällig",

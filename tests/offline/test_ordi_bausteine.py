@@ -19,7 +19,7 @@ def check(name, ok, detail=""):
 
 B = bs.laden(str(ROOT / "ordi_bausteine.json"))
 F = json.loads((ROOT / "ordi_bausteine_tests.json").read_text(encoding="utf-8"))["faelle"]
-check(f"{len(B)} Bausteine geladen", len(B) >= 140, len(B))
+check(f"{len(B)} Bausteine geladen", len(B) >= 100, len(B))
 
 # 1. Python gegen die von Hand geprüften Erwartungen
 for f in F:
