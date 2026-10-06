@@ -32,7 +32,7 @@ from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
-import exe_zustand as _zs  # v3.2.3 (Gutachten P1-2): F10/F9-Zustandslogik
+import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
 
 # =========================================================================
@@ -1093,6 +1093,13 @@ ZWISCHENABLAGE_GESPERRT = ("Die Zwischenablage ist durch ein anderes Programm ge
                            "„Befund kopieren“ erneut kopieren und selbst einfügen.")
 
 
+def _js_vorschau_processing():
+    """Selbsttest: was F10 im Zustand „Befund wird erstellt" auslöst (None = ignoriert)."""
+    js = _js.JobState()
+    js.simuliere_verarbeitung()
+    return js.vorschau("toggle")
+
+
 def keys_ready():
     """v3.0: App ist nur bedienbar, wenn Gemini- UND STT-Schlüssel vorhanden sind."""
     return bool(_load_vertex_key()) and (_SA_CREDENTIALS is not None or speech_client is not None)
@@ -1108,12 +1115,14 @@ class RaKScribeApp(ctk.CTk):
         self.configure(fg_color=BGC_MAIN)
         self._status_raw = "READY"
         self.gate = None
-        self._lauf = _zs.LaufZaehler()  # v3.2.3: veraltete Verarbeitungs-Läufe schreiben/fügen nichts mehr ein
+        self._job = _js.JobState(log=log)  # veraltete Läufe schreiben/fügen nichts mehr ein (Gutachten P1-2/P2-5)
 
         # Audio settings
         self.samplerate = 16000
         self.is_recording = False
-        self.final_transcript = ""
+        self.final_transcript = ""   # Endtext für den Befund — NUR der Stopp-Pfad setzt ihn (chirp_3 oder Rettung)
+        self.stream_transcript = ""  # Live-Anzeige: finale Streaming-Abschnitte (Gutachten P2-5: nie in final_transcript)
+        self.stream_interim = ""     # Live-Anzeige: letzter Zwischenstand
         self.audio_queue = queue.Queue()
         self.chunk_worker_thread = None
         self.stream = None
@@ -1310,7 +1319,9 @@ class RaKScribeApp(ctk.CTk):
                     # v3.2.3: gebündelte vorlagen_vorrang.json + Zustandsmodul auf echtem Windows nachweisen
                     "vorlage_vorfuss": detect_template("Vorfuß rechts in 2 Ebenen unauffällig"),
                     "vorlage_mrt_knie": detect_template("MRT Knie rechts unauffällig"),
-                    "f10_waehrend_verarbeitung": _zs.f10_aktion("PROCESSING", False),
+                    "f10_waehrend_verarbeitung": "ignorieren" if _js_vorschau_processing() is None else "start",
+                    "is_recording": bool(self.is_recording),
+                    "job_zustand": self._job.zustand,
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -1343,6 +1354,11 @@ class RaKScribeApp(ctk.CTk):
                     with open(trig, "r", encoding="utf-8") as f:
                         phase = f.read().strip() or "trigger"
                     os.remove(trig)
+                    if phase == "simulate_processing":
+                        # Fall D (Umbau Schritt 4): „Befund wird erstellt" ohne Aufnahme — danach drückt der Test F10/F9
+                        self._job.simuliere_verarbeitung()
+                        self.update_status("PROCESSING", "busy")
+                        self.record_btn.configure(state="disabled", text=" Verarbeite... (Selbsttest) ")
                     dump(phase)
                 except Exception:
                     pass
@@ -1449,6 +1465,7 @@ class RaKScribeApp(ctk.CTk):
     def refresh_key_state(self):
         ok = keys_ready()
         if ok:
+            self._job.entsperren()
             self.key_chip.configure(text="  ✓ Schlüssel aktiv  ", fg_color="#15261F", text_color=READY_GREEN)
             if self.gate is not None:
                 self.gate.destroy()
@@ -1457,6 +1474,7 @@ class RaKScribeApp(ctk.CTk):
                 self.update_status("READY", "ready")
             self.record_btn.configure(state="normal")
         else:
+            self._job.sperren()
             self.key_chip.configure(text="  Kein Schlüssel  ", fg_color="#2D2413", text_color=WARN_AMBER)
             self.record_btn.configure(state="disabled")
             self.update_status("LOCKED", "ready")
@@ -1537,43 +1555,68 @@ class RaKScribeApp(ctk.CTk):
             self.after(1000, self.update_processing_timer)
 
     def reset_dictation(self):
-        aktion = _zs.f9_aktion(self._status_raw, self.is_recording)
+        # F9/Neu: läuft eine Aufnahme → Mikrofon zu, nichts verarbeiten; läuft die Verarbeitung → Lauf abbrechen
+        # (v3.2.3, Gutachten P1-2: Ergebnis wird verworfen, nichts eingefügt). Die Generationsnummer steigt in jedem Fall.
+        aktion = self._job.ereignis("reset")
         if aktion == "stop_und_reset":
-            self.toggle_recording()
-        # v3.2.3 (Gutachten P1-2): F9 während der Verarbeitung bricht ab — der laufende Lauf wird ungültig
-        # und fügt nichts mehr ein; die UI ist sofort wieder bereit.
-        self._lauf.neu()
-        if aktion == "abbrechen":
+            self.is_recording = False
+            self._stream_schliessen()
+        elif aktion == "abbrechen":
             log("[UI] Verarbeitung abgebrochen (F9) — Ergebnis wird verworfen.")
         log("[UI] Zurücksetzen angefordert. Lösche Transkription, Befund und Aufnahmedaten.")
         self.final_transcript = ""
+        self.stream_transcript = ""
+        self.stream_interim = ""
         self.recorded_audio_chunks = []
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
-        self.update_status("READY", "ready")
+        if self._job.zustand == _js.LOCKED:
+            self.refresh_key_state()
+        else:
+            self.update_status("READY", "ready")
+            self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(width=0)
-        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+
+    def _stream_schliessen(self):
+        if self.stream:
+            try:
+                self.stream.stop()
+                self.stream.close()
+                log("[RECORD] sounddevice InputStream erfolgreich gestoppt und geschlossen.")
+            except Exception:
+                log_exception("[RECORD] Fehler beim Stoppen des Streams")
+            self.stream = None
+
+    def _ui(self, gen, fn):
+        """UI-Änderung aus einem Hintergrund-Thread — nur, wenn der Lauf gen noch aktuell ist."""
+        self.after(0, lambda: fn() if self._job.aktuell(gen) else None)
 
     def toggle_recording(self):
         self._toggle_calls = getattr(self, "_toggle_calls", 0) + 1
-        # v3.2.3 (Gutachten P1-2): F10 während "Befund wird erstellt" ignorieren — sonst startete eine neue
-        # Aufnahme in den laufenden Job hinein (vermischte/leere Befunde, "Bereit" bei laufendem Mikrofon).
-        if _zs.f10_aktion(self._status_raw, self.is_recording) == "ignorieren":
-            log("[RECORD] F10 während der Verarbeitung ignoriert.")
+        aktion = self._job.vorschau("toggle")
+        if aktion is None:
+            if self._job.zustand == _js.PROCESSING:
+                # v3.2.3 (Gutachten P1-2): F10 während "Befund wird erstellt" ignorieren — sonst startete eine neue
+                # Aufnahme in den laufenden Job hinein (vermischte/leere Befunde, "Bereit" bei laufendem Mikrofon).
+                log("[RECORD] F10 während der Verarbeitung ignoriert.")
+            else:
+                self.refresh_key_state()  # gesperrt: Schlüssel fehlt
             return
-        if not self.is_recording and not keys_ready():
+        if aktion == "start" and not keys_ready():
             self.refresh_key_state()
             return
         if not speech_client:
             if not init_google_speech():
                 messagebox.showerror("Fehler", "Google Cloud Speech-to-Text konnte nicht initialisiert werden. Bitte prüfen Sie Ihre Credentials (JSON-Datei) und die Internetverbindung.")
                 return
+        self._job.ereignis("toggle")
+        gen = self._job.gen
 
-        if not self.is_recording:
+        if aktion == "start":
             log("[RECORD] Aufnahme wird gestartet...")
-            self._lauf.neu()
-            self._transkript_fix = False
             self.final_transcript = ""
+            self.stream_transcript = ""
+            self.stream_interim = ""
             self.recorded_audio_chunks = []
             self.recorded_audio_chunks_all = []
             self.transcript_text.delete("1.0", "end")
@@ -1589,20 +1632,13 @@ class RaKScribeApp(ctk.CTk):
             self.update_recording_timer()
 
             # Store thread reference to join later
-            self.record_thread = threading.Thread(target=self.record, daemon=True)
+            self.record_thread = threading.Thread(target=self.record, args=(gen,), daemon=True)
             self.record_thread.start()
             log("[RECORD] Aufnahme-Thread wurde gestartet.")
         else:
             log("[RECORD] Aufnahme wird beendet...")
             self.is_recording = False
-            if self.stream:
-                try:
-                    self.stream.stop()
-                    self.stream.close()
-                    log("[RECORD] sounddevice InputStream erfolgreich gestoppt und geschlossen.")
-                except Exception as stream_err:
-                    log_exception("[RECORD] Fehler beim Stoppen des Streams")
-                self.stream = None
+            self._stream_schliessen()
 
             self.update_status("PROCESSING", "busy")
             
@@ -1620,75 +1656,66 @@ class RaKScribeApp(ctk.CTk):
             self.processing_start_time = time.time()
             self.record_btn.configure(state="disabled", text=f" Verarbeite... (ca. {self.eta_seconds}s) ")
             self.update_processing_timer()
-            
-            # Run wait and process in background thread
-            lauf_nr = self._lauf.neu()  # v3.2.3: diese Verarbeitung = Lauf lauf_nr
 
             def wait_and_process():
-                log("[PROCESS] Warte auf Beendigung des Aufnahme-Threads...")
-                if hasattr(self, 'record_thread') and self.record_thread:
-                    self.record_thread.join(timeout=6.0) # Wait for generator to finish yielding and responses to drain
-                log("[PROCESS] Aufnahme-Thread beendet oder Timeout erreicht.")
-                
-                # ═══ CHIRP 3 Volltranskription (v2.9.10) ═══
-                # Das Streaming (7s-Chunks) dient nur der Live-Anzeige. Für die
-                # finale Transkription wird die KOMPLETTE Aufnahme noch einmal
-                # an chirp_3 (STT v2, WER 2,4% vs 16,7%) geschickt.
                 try:
-                    all_pcm = np.concatenate(self.recorded_audio_chunks_all, axis=0) \
-                        if getattr(self, 'recorded_audio_chunks_all', None) else None
-                    if all_pcm is not None and len(all_pcm) > 16000:
-                        log(f"[CHIRP3] Volltranskription: {len(all_pcm)/16000:.0f}s Audio")
-                        self.after(0, lambda: self.update_status("PROCESSING", "busy"))
-                        token = _get_stt_access_token()
-                        chirp_text = _chirp3_worker(all_pcm, 16000, 'eu', token) if token else None
-                        if not self._lauf.aktuell(lauf_nr):
-                            log("[PROCESS] Lauf abgebrochen — chirp_3-Ergebnis verworfen.")
-                            return
-                        if chirp_text and chirp_text.strip():
-                            self._transkript_fix = True
-                            self.final_transcript = chirp_text.strip()
-                            log(f"[CHIRP3] OK: {len(self.final_transcript)} Zeichen")
-                            self.after(0, lambda: (
-                                self.transcript_text.delete("1.0", "end"),
-                                self.transcript_text.insert("1.0", self.final_transcript.strip())
-                            ))
-                        else:
-                            log("[CHIRP3] Kein Ergebnis — nutze Streaming-Transkript weiter.")
-                except Exception as e_chirp:
-                    log_exception("[CHIRP3] Volltranskription fehlgeschlagen — Streaming-Transkript bleibt.")
-
-                # Safety net: If final_transcript is empty but they saw text, salvage it
-                if not self.final_transcript.strip():
-                    salvaged = self.transcript_text.get("1.0", "end-1c").strip()
-                    # Wenn der gesamte Text in [.. ..] eingeschlossen ist, extrahieren wir ihn
-                    if salvaged.startswith("[..") and salvaged.endswith("..]"):
-                        salvaged = salvaged[3:-3].strip()
-                    else:
-                        # Ansonsten entfernen wir verbleibende interimistische [.. ..] Blöcke
-                        salvaged = re.sub(r'\[\.\..*?\.\.\]', '', salvaged).strip()
-                    if salvaged:
-                        self.final_transcript = salvaged
-                        log(f"[GOOGLE] Text gerettet: '{salvaged}'")
-
-                if not self._lauf.aktuell(lauf_nr):
-                    log("[PROCESS] Lauf abgebrochen — keine Befund-Erstellung.")
-                    return
-                self._transkript_fix = True
-                self.process_dictation(lauf_nr)
+                    self._warten_und_verarbeiten(gen)
+                except Exception as e:
+                    log_exception("[PROCESS] Unerwarteter Fehler")
+                    self.after(0, lambda m=f"Fehler bei der Verarbeitung:\n{e}": self._ende_fehler(gen, m))
 
             threading.Thread(target=wait_and_process, daemon=True).start()
 
-    def cancel_recording_due_to_error(self):
+    def _warten_und_verarbeiten(self, gen):
+        log("[PROCESS] Warte auf Beendigung des Aufnahme-Threads...")
+        if hasattr(self, 'record_thread') and self.record_thread:
+            self.record_thread.join(timeout=6.0) # Wait for generator to finish yielding and responses to drain
+        log("[PROCESS] Aufnahme-Thread beendet oder Timeout erreicht.")
+
+        # ═══ CHIRP 3 Volltranskription (v2.9.10) ═══
+        # Das Streaming dient nur der Live-Anzeige. Für die finale Transkription wird die KOMPLETTE Aufnahme
+        # noch einmal an chirp_3 (STT v2, WER 2,4% vs 16,7%) geschickt.
+        chirp_text = None
+        try:
+            all_pcm = np.concatenate(self.recorded_audio_chunks_all, axis=0) \
+                if getattr(self, 'recorded_audio_chunks_all', None) else None
+            if all_pcm is not None and len(all_pcm) > 16000:
+                log(f"[CHIRP3] Volltranskription: {len(all_pcm)/16000:.0f}s Audio")
+                self._ui(gen, lambda: self.update_status("PROCESSING", "busy"))
+                token = _get_stt_access_token()
+                chirp_text = _chirp3_worker(all_pcm, 16000, 'eu', token) if token else None
+        except Exception:
+            log_exception("[CHIRP3] Volltranskription fehlgeschlagen — Streaming-Transkript bleibt.")
+        if not self._job.aktuell(gen):
+            log("[PROCESS] Lauf abgebrochen — chirp_3-Ergebnis verworfen, keine Befund-Erstellung.")
+            return
+
+        # Endtext festlegen: ab hier keine Streaming-Antworten mehr übernehmen (Gutachten P2-5)
+        self._job.ereignis("chirp_done", gen)
+        if chirp_text and chirp_text.strip():
+            self.final_transcript = chirp_text.strip()
+            log(f"[CHIRP3] OK: {len(self.final_transcript)} Zeichen")
+            text = self.final_transcript
+            self._ui(gen, lambda: (
+                self.transcript_text.delete("1.0", "end"),
+                self.transcript_text.insert("1.0", text)
+            ))
+        else:
+            log("[CHIRP3] Kein Ergebnis — nutze Streaming-Transkript weiter.")
+            # Rettung: finale Streaming-Abschnitte, sonst der letzte Zwischenstand (wie bisher aus der Anzeige)
+            salvaged = self.stream_transcript.strip() or self.stream_interim.strip()
+            if salvaged:
+                self.final_transcript = salvaged
+                log(f"[GOOGLE] Text gerettet: {len(salvaged)} Zeichen")
+
+        self.process_dictation(gen)
+
+    def cancel_recording_due_to_error(self, gen):
+        if self._job.ereignis("capture_failed", gen) is None:
+            return  # Fehler einer alten Aufnahme — die laufende nicht abwürgen
         log("[RECORD] Aufnahme aufgrund eines Fehlers abgebrochen.")
         self.is_recording = False
-        if self.stream:
-            try:
-                self.stream.stop()
-                self.stream.close()
-            except:
-                pass
-            self.stream = None
+        self._stream_schliessen()
         self.update_status("ERROR", "busy")
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
@@ -1711,19 +1738,23 @@ class RaKScribeApp(ctk.CTk):
                 time.sleep(0.02)
         log(f"[GOOGLE] google_streaming_generator beendet. Insgesamt {yield_count} Chunks gesendet.")
 
-    def update_interim_text(self, transcript, is_final):
-        if getattr(self, "_transkript_fix", False):
-            return  # v3.2.3 (Gutachten P2-5): nach chirp_3-Endtext keine verspäteten Streaming-Antworten mehr anhängen
+    def update_interim_text(self, transcript, is_final, gen):
+        # Gutachten P2-5: Streaming-Text nur für die Anzeige (stream_transcript), nie in final_transcript; nach dem
+        # Endtext (chirp_3) oder aus einem alten Lauf verwirft die Zustandsmaschine verspätete Antworten.
+        if self._job.ereignis("stream_final" if is_final else "stream_interim", gen) is None:
+            return
         if not is_final:
+            self.stream_interim = transcript
             self.transcript_text.delete("1.0", "end")
-            self.transcript_text.insert("1.0", self.final_transcript + " [.. " + transcript + " ..]")
-        if is_final:
-            log(f"[GOOGLE] Finaler Zwischenabschnitt erkannt: '{transcript}'")
-            self.final_transcript += transcript + " "
+            self.transcript_text.insert("1.0", self.stream_transcript + " [.. " + transcript + " ..]")
+        else:
+            log(f"[GOOGLE] Finaler Zwischenabschnitt erkannt: {len(transcript)} Zeichen")
+            self.stream_transcript += transcript + " "
+            self.stream_interim = ""
             self.transcript_text.delete("1.0", "end")
-            self.transcript_text.insert("1.0", self.final_transcript.strip())
+            self.transcript_text.insert("1.0", self.stream_transcript.strip())
 
-    def record(self):
+    def record(self, gen):
         def callback(indata, frames, time_info, status):
             if self.is_recording:
                 if not getattr(self, 'first_callback_logged', False):
@@ -1754,14 +1785,14 @@ class RaKScribeApp(ctk.CTk):
                     if not result.alternatives:
                         continue
                     transcript = result.alternatives[0].transcript
-                    self.after(0, self.update_interim_text, transcript, result.is_final)
+                    self.after(0, self.update_interim_text, transcript, result.is_final, gen)
                 log("[GOOGLE] response-Schleife regulär beendet.")
             log("[RECORD] sounddevice InputStream block verlassen.")
         except Exception as e:
             log_exception("[RECORD] Fehler im record-Thread")
-            if self.is_recording:
-                self.after(0, lambda: messagebox.showerror("Streaming Fehler", f"Fehler bei der Google-Spracherkennung:\n{e}"))
-                self.after(0, self.cancel_recording_due_to_error)
+            if self.is_recording and self._job.aktuell(gen):
+                self._ui(gen, lambda: messagebox.showerror("Streaming Fehler", f"Fehler bei der Google-Spracherkennung:\n{e}"))
+                self.after(0, self.cancel_recording_due_to_error, gen)
 
     def update_level_bar(self, rms):
         max_val = 10000  # Kalibriert auf typische Sprachlautstärke (vorher 1500)
@@ -1775,22 +1806,14 @@ class RaKScribeApp(ctk.CTk):
             color = "#F39C12"
         self.level_indicator.configure(fg_color=color)
 
-    def process_dictation(self, lauf_nr=None):
-        if lauf_nr is None:
-            lauf_nr = self._lauf.nr
-        aktuell = lambda: self._lauf.aktuell(lauf_nr)
+    def process_dictation(self, gen):
         try:
             raw = apply_misheard(self.final_transcript.strip())  # v3.1: Fehlhör-Liste vor Bypass/LLM
             if not raw:
-                self.after(0, lambda: (
-                    messagebox.showinfo("Info", "Kein Text diktiert."),
-                    self.update_status("READY", "ready"),
-                    self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                    self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-                ))
+                self.after(0, lambda: self._ende_kein_text(gen))
                 return
 
-            self.after(0, lambda: (
+            self._ui(gen, lambda: (
                 self.result_text.delete("1.0", "end"),
                 self.result_text.insert("1.0", "... Befund wird geladen ...")
             ))
@@ -1799,30 +1822,26 @@ class RaKScribeApp(ctk.CTk):
             # Befund (eigenes Template, eigenes Ergebnis), parallel erzeugt und untereinander ausgegeben.
             segmente = br.split_regionen(raw)
             if len(segmente) > 1:
-                print(f"[MULTI] {len(segmente)} Regionen: " + " | ".join(x[:40] for x in segmente))
+                print(f"[MULTI] {len(segmente)} Regionen")
                 with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
                     teile = list(ex.map(self._befund_fuer_segment, segmente))
                 report = br.befunde_zusammenfuegen(teile) if all(_report_complete(t) for t in teile) else ""
             else:
                 report = self._befund_fuer_segment(raw)
 
-            if not aktuell():
+            if not self._job.aktuell(gen):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
                 return
             if report:
-                self.after(0, lambda r=report: (
+                self._ui(gen, lambda r=report: (
                     self.result_text.delete("1.0", "end"),
                     self.result_text.insert("1.0", r)
                 ))
             # v2.11.1 (Prüfbericht W4): leeren/unvollständigen Befund NIE ins Zielprogramm einfügen
             if not _report_complete(report):
-                self.after(0, lambda: (
-                    self.update_status("ERROR", "busy"),
-                    self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                    self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-                ))
+                self.after(0, lambda: self._ende_fehler(gen, None))
                 return
-            self.after(0, lambda: self._fertig_kopieren_einfuegen(lauf_nr))
+            self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
         except Exception as e:
             log_exception("Befund-Generierung")
             if "401" in str(e) or "Unauthorized" in str(e):
@@ -1831,12 +1850,25 @@ class RaKScribeApp(ctk.CTk):
                        "über Menü → „Schlüssel-Datei laden…“ neu laden.")
             else:
                 msg = f"Fehler bei der Befund-Generierung:\n{e}"
-            self.after(0, lambda m=msg: (
-                messagebox.showerror("Generierungs-Fehler", m),
-                self.update_status("ERROR", "busy"),
-                self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-            ))
+            self.after(0, lambda m=msg: self._ende_fehler(gen, m))
+
+    def _ende_kein_text(self, gen):
+        if self._job.ereignis("kein_text", gen) is None:
+            return
+        messagebox.showinfo("Info", "Kein Text diktiert.")
+        self.update_status("READY", "ready")
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self.level_indicator.configure(fg_color=READY_GREEN, width=0)
+
+    def _ende_fehler(self, gen, msg):
+        """Läuft im UI-Thread: Befund gescheitert → Status Fehler, Knopf wieder frei, ggf. Dialog."""
+        if self._job.ereignis("report_failed", gen) is None:
+            return
+        if msg:
+            messagebox.showerror("Generierungs-Fehler", msg)
+        self.update_status("ERROR", "busy")
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self.level_indicator.configure(fg_color=READY_GREEN, width=0)
 
     def _ist_normalbefund(self, raw, template_key):
         """Bypass ohne LLM nur bei REINEM Normalbefund (nur Untersuchung + Normal-Worte, v3.2 Peter 05.10.)
@@ -1963,15 +1995,15 @@ class RaKScribeApp(ctk.CTk):
                 messagebox.showerror("Nicht kopiert", ZWISCHENABLAGE_GESPERRT)
         return ok
 
-    def _fertig_kopieren_einfuegen(self, lauf_nr):
+    def _fertig_kopieren_einfuegen(self, gen):
         """Läuft im UI-Thread. Nur einfügen, wenn der Lauf noch aktuell ist UND das Kopieren nachweislich klappte —
         sonst würde Strg+V den vorigen Zwischenablage-Inhalt (= letzten Befund) ins RIS schreiben."""
-        if not self._lauf.aktuell(lauf_nr):
+        if self._job.ereignis("report_done", gen) is None:
             return
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
         if self.copy_formatted_report():
-            self.after(500, lambda: self._lauf.aktuell(lauf_nr) and keyboard.press_and_release('ctrl+v'))
+            self.after(500, lambda: self._job.aktuell(gen) and keyboard.press_and_release('ctrl+v'))
         else:
             self.update_status("ERROR", "busy")
             messagebox.showerror("Nicht eingefügt", "Der Befund ist fertig, wurde aber NICHT eingefügt.\n\n"

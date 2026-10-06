@@ -7,6 +7,8 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
   C  Start mit Test-Schlüssel (selbst erzeugter Dummy, NICHT der Praxis-Schlüssel) im Benutzerprofil
                            → Sperre weg, Aufnahme-Button aktiv, Befund formatiert (## versteckt, Überschriften fett),
                              Kopiertext bleibt Markdown
+  D  F10 während „Befund wird erstellt" (Selbsttest simuliert die Verarbeitung) → startet KEINE Aufnahme;
+     F9 bricht die Verarbeitung ab → Bereit (Umbau Schritt 4, Gutachten P1-2)
 Die EXE schreibt ihren UI-Zustand per Selbsttest-Modus (RAKSCRIBE_SELFTEST) als JSON; dazu je ein Screenshot.
 Ergebnis: <out>/report.md, <out>/results.json, <out>/*.png  — Exit 1 bei FAIL.
 
@@ -97,7 +99,31 @@ def dummy_key():
                     "client_id": "0", "token_uri": "https://oauth2.googleapis.com/token"}}
 
 
-def run_case(case, with_key, demo, send_f10, old_prompt=False):
+def press(vk, wait=0.1):
+    import win32api, win32con
+    win32api.keybd_event(vk, 0, 0, 0); time.sleep(0.1)
+    win32api.keybd_event(vk, 0, win32con.KEYEVENTF_KEYUP, 0)
+    time.sleep(wait)
+
+
+def fall_d(state):
+    """F10/F9 während der (simulierten) Verarbeitung. Liefert die drei Zustände oder None."""
+    import win32con
+    pathlib.Path(str(state) + ".trigger").write_text("simulate_processing", encoding="utf-8")
+    sim = wait_json(state, "simulate_processing", 20)
+    if sim is None:
+        return None
+    press(win32con.VK_F10, 2.5)
+    press(win32con.VK_ESCAPE)  # falls Windows F10 als Menütaste behandelt hat
+    pathlib.Path(str(state) + ".trigger").write_text("D_nach_f10", encoding="utf-8")
+    nach_f10 = wait_json(state, "D_nach_f10", 20)
+    press(win32con.VK_F9, 1.5)
+    pathlib.Path(str(state) + ".trigger").write_text("D_nach_f9", encoding="utf-8")
+    nach_f9 = wait_json(state, "D_nach_f9", 20)
+    return {"sim": sim, "nach_f10": nach_f10, "nach_f9": nach_f9}
+
+
+def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False):
     work = pathlib.Path(tempfile.mkdtemp(prefix=f"rks_{case}_"))
     shutil.copy(EXE, work / EXE.name)
     if old_prompt:
@@ -135,7 +161,9 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False):
             win32api.keybd_event(win32con.VK_ESCAPE, 0, win32con.KEYEVENTF_KEYUP, 0)
             pathlib.Path(str(state) + ".trigger").write_text("after_f10", encoding="utf-8")
             after = wait_json(state, "after_f10", 20)
-        return {"state": st, "after_f10": after, "screenshot": f"{case}.png", "size": size, "t_start": round(t_start, 1)}
+        d = fall_d(state) if mit_fall_d else None
+        return {"state": st, "after_f10": after, "fall_d": d, "screenshot": f"{case}.png", "size": size,
+                "t_start": round(t_start, 1)}
     finally:
         kill_all(p)
 
@@ -159,7 +187,7 @@ if a:
     check("A_gesperrt", "Mikrofon-Auswahl nicht leer", bool(s.get("mic_dropdown")), s.get("mic_dropdown", ""))
 
 # C: mit Test-Schlüssel + Demo-Befund
-c = run_case("C_entsperrt", with_key=True, demo=True, send_f10=False, old_prompt=True)
+c = run_case("C_entsperrt", with_key=True, demo=True, send_f10=False, old_prompt=True, mit_fall_d=True)
 if c:
     s = c["state"]
     check("C_entsperrt", "Sperre weg", not s["gate_visible"])
@@ -181,6 +209,18 @@ if c:
     sw_, sh_ = s["screen"]
     gw, gh_ = [int(x) for x in s["geometry"].split("+")[0].split("x")]
     check("C_entsperrt", "Fenster passt auf den Bildschirm", gw <= sw_ and gh_ <= sh_, f"{gw}×{gh_} auf {sw_}×{sh_}")
+    # D (Umbau Schritt 4, Gutachten P1-2): F10 während „Befund wird erstellt" startet keine Aufnahme, F9 bricht ab
+    d = c.get("fall_d") or {}
+    sim, f10, f9 = d.get("sim"), d.get("nach_f10"), d.get("nach_f9")
+    check("D_verarbeitung", "Verarbeitung simuliert", bool(sim) and sim.get("status") == "PROCESSING",
+          str(sim and sim.get("status")))
+    check("D_verarbeitung", "F10 während Verarbeitung startet keine Aufnahme",
+          bool(sim and f10) and f10["status"] == "PROCESSING" and not f10.get("is_recording")
+          and f10["toggle_calls"] > sim["toggle_calls"],
+          (f"Status {f10['status']}, Aufnahme {f10.get('is_recording')}, F10-Hotkey "
+           f"{f10['toggle_calls'] - sim['toggle_calls']}× empfangen") if (sim and f10) else "kein Zustand nach F10")
+    check("D_verarbeitung", "F9 bricht die Verarbeitung ab → Bereit", bool(f9) and f9["status"] == "READY"
+          and f9.get("job_zustand") == "READY", str(f9 and (f9["status"], f9.get("job_zustand"))))
 
 ok = all(r["ok"] for r in results) and a and c
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c},

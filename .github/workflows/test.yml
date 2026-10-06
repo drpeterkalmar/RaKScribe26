@@ -31,6 +31,8 @@ jobs:
       - name: Web-Abhängigkeiten
         working-directory: web_app
         run: npm ci
+      - name: Python-Abhängigkeiten (EXE-Ablauftest)
+        run: pip install numpy
 
       - name: Regeln (PY + TS)
         run: python befund_regeln_test.py
@@ -44,8 +46,10 @@ jobs:
         run: python test_parts_join.py
       - name: Vorlagen erreichbar (EXE = Web)
         run: python vorlagen_erreichbar_test.py
-      - name: EXE-Zustand (F10/F9)
-        run: python exe_zustand_test.py
+      - name: EXE-Zustandsmaschine (F10/F9, Generationsnummer)
+        run: python tests/offline/test_jobstate.py
+      - name: EXE-Ablauf (Aufnahme → Befund → Einfügen, mit Attrappen)
+        run: python tests/offline/test_exe_ablauf.py
       - name: EXE-Zwischenablage (Wiederholung, Gegenlesen)
         run: python tests/offline/test_clipboard.py
       - name: Typprüfung Web
