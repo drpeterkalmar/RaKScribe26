@@ -29,6 +29,7 @@ import urllib.request
 import urllib.error
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
+import keys as _keys  # Umbau Schritt 11: Praxis-Schlüssel, STT-Credentials, Token-Cache
 import config as _cfg  # Umbau Schritt 10 (Gutachten P2-4): config.ini mit Standardwerten
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
@@ -169,57 +170,21 @@ print(f"[INIT] Konfiguration: LLM {LLM_PROVIDER} / {LLM_MODEL}")
 
 # --- STT Engines Initialisierungs-Logik ---
 # Schlüssel: seit v3.2.3 ausschließlich rakscribe-praxis-key.json (Gemini + STT in EINER Datei).
-def _read_text_robust(path):
-    # Windows-Editoren speichern gern UTF-16/BOM/CRLF — alle Varianten vertragen
-    with open(path, 'rb') as f:
-        raw = f.read()
-    if raw.startswith(b'\xff\xfe') or raw.startswith(b'\xfe\xff'):
-        raw = raw.decode('utf-16').encode('utf-8')
-    if raw.startswith(b'\xef\xbb\xbf'):
-        raw = raw[3:]
-    return raw.decode('utf-8', errors='replace')
-
-USER_KEY_DIR = os.path.join(os.environ.get('APPDATA') or os.path.expanduser('~'), 'RaKScribe')
-USER_KEY_PATH = os.path.join(USER_KEY_DIR, 'rakscribe-praxis-key.json')
+_read_text_robust = _keys.read_text_robust
+USER_KEY_DIR, USER_KEY_PATH = _keys.user_key_paths()
 
 
 def _praxis_key_path():
-    # v3.0: neben der EXE (wie bisher) ODER im Benutzerprofil (%APPDATA%\RaKScribe, per Menü geladen —
-    # überlebt EXE-Updates, kein erneutes Kopieren nach jedem Download).
-    for p in (os.path.join(BASE_DIR, 'rakscribe-praxis-key.json'), USER_KEY_PATH):
-        if os.path.exists(p):
-            return p
-    return None
+    return _keys.praxis_key_path(BASE_DIR, USER_KEY_PATH)
 
 
 def _load_praxis_key():
-    # EIN-Key-Setup (v2.9.9): rakscribe-praxis-key.json = {"vertex_api_key": "AQ...",
-    # "stt": {SA-JSON}} — dieselbe Datei wie im Web (v2.9.4). EINE Datei
-    # versorgt Gemini UND Speech-to-Text. Liefert (gemini_key, stt_dict).
-    p = _praxis_key_path()
-    try:
-        if p:
-            data = json.loads(_read_text_robust(p))
-            gk = str(data.get('vertex_api_key') or '').strip()
-            stt = data.get('stt') if isinstance(data.get('stt'), dict) else None
-            if gk:
-                print(f"[INIT] Gemini-Key aus rakscribe-praxis-key.json geladen ({len(gk)} Zeichen)")
-            if stt:
-                print("[INIT] STT-Key aus rakscribe-praxis-key.json geladen (SA-JSON)")
-            return (gk, stt)
-    except Exception as e:
-        print(f"[INIT] rakscribe-praxis-key.json nicht verwertbar: {e}")
-    return ("", None)
+    """(gemini_key, stt_dict) aus rakscribe-praxis-key.json (keys.py)."""
+    return _keys.load_praxis_key(BASE_DIR, USER_KEY_PATH, log=print)
+
 
 def _load_vertex_key():
-    # v3.2.3 (Peter 06.10.: Schlüsseldateien aufräumen): EINZIGE Quelle ist rakscribe-praxis-key.json (neben der EXE
-    # oder per Menü in %APPDATA%\RaKScribe). Die alten Einzeldateien vertex-key.b64/.txt und config.ini API_KEY
-    # enthielten nur noch rotierte (ungültige) Schlüssel und werden nicht mehr gelesen — sonst entsperrte eine
-    # liegengebliebene Altdatei die App und jeder Befund endete mit HTTP 401.
-    gk, _stt = _load_praxis_key()
-    if not gk:
-        print("[INIT] Kein Gemini-Key: rakscribe-praxis-key.json fehlt (neben der EXE oder per Menü laden).")
-    return gk
+    return _keys.load_vertex_key(BASE_DIR, USER_KEY_PATH, log=print)
 
 VERTEX_KEY_FILE = _load_vertex_key()
 
@@ -227,7 +192,7 @@ speech_client = None
 GOOGLE_CONFIG = None
 STREAMING_CONFIG = None
 _SA_CREDENTIALS = None
-_STT_TOKEN_CACHE = {'token': None, 'exp': 0}
+_STT_TOKEN_CACHE = _keys.SttTokenCache()
 
 def init_google_speech():
     global speech_client, GOOGLE_CONFIG, STREAMING_CONFIG
@@ -243,8 +208,9 @@ def init_google_speech():
     if not _pstt:
         print("[INIT] Keine STT-Credentials: rakscribe-praxis-key.json fehlt (neben der EXE oder per Menü laden).")
         return False
-    credentials = service_account.Credentials.from_service_account_info(_pstt)
+    credentials = _keys.stt_credentials(_pstt)
     _SA_CREDENTIALS = credentials
+    _STT_TOKEN_CACHE.leeren()  # neuer Schlüssel → kein Token des alten Service-Accounts weiterverwenden
     try:
         speech_client = speech.SpeechClient(credentials=credentials)
         
@@ -978,25 +944,12 @@ def _chirp3_request(token, loc, wav_b64, timeout=60):
                     for res in j.get("results", []))
 
 def _get_stt_access_token():
+    """Bearer-Token für chirp_3 (keys.SttTokenCache; Ablaufzeit als UTC, Gutachten P3-6)."""
     try:
         if GOOGLE_CONFIG is None:
             return None
-        # JWT-Flow: SA-JSON direkt aus dem geladenen Service-Account-File
-        from google.oauth2 import service_account as _sa
-        from google.auth.transport.requests import Request as _Req
-        global _STT_TOKEN_CACHE
-        now = time.time()
-        if _STT_TOKEN_CACHE.get('token') and _STT_TOKEN_CACHE.get('exp', 0) > now + 120:
-            return _STT_TOKEN_CACHE['token']
-        creds = _SA_CREDENTIALS
-        if creds is None:
-            return None
-        if not creds.valid:
-            creds.refresh(_Req())
-        _STT_TOKEN_CACHE['token'] = creds.token
-        _STT_TOKEN_CACHE['exp'] = creds.expiry.timestamp() if creds.expiry else now + 3000
-        return _STT_TOKEN_CACHE['token']
-    except Exception as e:
+        return _STT_TOKEN_CACHE.get(_SA_CREDENTIALS)
+    except Exception:
         log_exception("[CHIRP3] Token-Fehler")
         return None
 
@@ -1409,8 +1362,7 @@ class RaKScribeApp(ctk.CTk):
             return
         try:
             data = json.loads(_read_text_robust(path))
-            if not (str(data.get("vertex_api_key", "")).strip() and isinstance(data.get("stt"), dict)
-                    and data["stt"].get("private_key")):
+            if not _keys.ist_praxis_schluessel(data):
                 raise ValueError("kein kombinierter Praxis-Schlüssel")
             os.makedirs(USER_KEY_DIR, exist_ok=True)
             shutil.copyfile(path, USER_KEY_PATH)
