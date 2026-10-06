@@ -542,6 +542,11 @@ def detect_template(text):
                    ("gesamt" in text_lower and "wirbel" in text_lower) or \
                    ("komplett" in text_lower and "wirbel" in text_lower)
 
+    # Umbau Schritt 7 (Gutachten P1-3): Ganzaufnahme a.-p. hat eigenes Template — vor wirbelsäule_gesamt prüfen
+    # (wie web_app/src/App.tsx detectTemplate)
+    if "ganzaufnahme" in text_lower and not has_cervical:
+        return "ganzaufnahme_der_wirbelsäule_a-p"
+
     if is_full_spine or (has_cervical and has_thoracic and has_lumbar):
         return "wirbelsäule_gesamt"
     if has_cervical and has_lumbar:

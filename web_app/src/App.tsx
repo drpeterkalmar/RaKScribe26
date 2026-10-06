@@ -919,6 +919,10 @@ export default function App() {
       if (textLower.includes("plexus")) {
         return "sonografie_plexus_brachialis";
       }
+      // Umbau Schritt 7 (Gutachten P1-3): Blockade/Injektion wie in der EXE (RaKScribe.py detect_template, Sono-Zweig)
+      if (textLower.includes("blockade") || textLower.includes("injektion")) {
+        return "ultraschall_gezielte_blockade";
+      }
       if (textLower.includes("nerv") || textLower.includes("neuro") || textLower.includes("suralis") || textLower.includes("peroneus") || textLower.includes("tibialis")) {
         return "sonografie_nerv_allgemein";
       }

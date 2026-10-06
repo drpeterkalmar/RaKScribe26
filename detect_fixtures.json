@@ -1,5 +1,5 @@
 {
-  "_doc": "Paritäts-Fixture der Vorlagen-Erkennung (Umbau 06.10.2026, Gutachten P1-3/P2-3). Erwartungswert = Stand der EXE-Erkennung bei Anlage (v3.2.3: EXE = Web, alle Vorlagen erreichbar). Inhalt: je Vorlage '<display_name> unauffällig', '<display_name> rechts unauffällig', '<key ohne _> o.B.'; alle Diktate aus befund_regeln_fixtures.json (split/ergebnis_seite/titel_seite), normal_bypass_tests.json, misheard_tests.json (in + out), DETECT_CASES aus test_normalbefunde.py und vorlagen_vorrang_tests.json. Geprüft in test_normalbefunde.py TEIL 2c: EXE (detect_template) UND Web (detectTemplate) müssen den Erwartungswert liefern. Eine bewusste Erkennungsänderung heißt: Erwartungswert hier anpassen (Peter entscheidet). 'unerreichbar' = dokumentierte Vorlagen, die über keinen der drei Namens-Diktate erreichbar sind (Gutachten: 22, seit v3.2.3: 0).",
+  "_doc": "Paritäts-Fixture der Vorlagen-Erkennung (Umbau 06.10.2026, Gutachten P1-3/P2-3). Erwartungswert = Stand der EXE-Erkennung bei Anlage (v3.2.3: EXE = Web, alle Vorlagen erreichbar). Inhalt: je Vorlage '<display_name> unauffällig', '<display_name> rechts unauffällig', '<key ohne _> o.B.'; alle Diktate aus befund_regeln_fixtures.json (split/ergebnis_seite/titel_seite), normal_bypass_tests.json, misheard_tests.json (in + out), DETECT_CASES aus test_normalbefunde.py und vorlagen_vorrang_tests.json. Geprüft in test_normalbefunde.py TEIL 2c: EXE (detect_template) UND Web (detectTemplate) müssen den Erwartungswert liefern. Eine bewusste Erkennungsänderung heißt: Erwartungswert hier anpassen (Peter entscheidet). 'unerreichbar' = dokumentierte Vorlagen, die über keinen der drei Namens-Diktate erreichbar sind (Gutachten: 22, seit v3.2.3: 0). Umbau Schritt 7: 7 längere Diktate ergänzt, bei denen die alte Erkennung (hinter den Vorrang-Regeln) noch abwich — Blockade/Injektion im Sono-Zweig = EXE-Stand, Ganzaufnahme = Web-Stand.",
   "unerreichbar": [],
   "faelle": [
     ["Schädel in 2 Ebenen unauffällig", "schädel_in_2_ebenen"],
@@ -664,6 +664,13 @@
     ["Sono Leiste rechts unauffällig", "sonografie_allgemein"],
     ["Irgendwas unauffällig", "allgemein"],
     ["HWS Funktionsaufnahmen in Flexion und Extension unauffällig", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["Knie rechts in 2 Ebenen, Vergleich mit MRT vom Vorjahr: Gonarthrose", "kniegelenk_in_2_ebenen"]
+    ["Knie rechts in 2 Ebenen, Vergleich mit MRT vom Vorjahr: Gonarthrose", "kniegelenk_in_2_ebenen"],
+    ["Aufnahme der gesamten Wirbelsäule im Stehen als Ganzaufnahme unauffällig", "ganzaufnahme_der_wirbelsäule_a-p"],
+    ["Röntgen der Wirbelsäule im Stehen als Ganzaufnahme, flachbogige Skoliose", "ganzaufnahme_der_wirbelsäule_a-p"],
+    ["Röntgen im Stehen Ganzaufnahme der HWS bis LWS", "ganzaufnahme_der_wirbelsäule_a-p"],
+    ["Sonographie der rechten Leiste mit anschließender Injektion", "ultraschall_gezielte_blockade"],
+    ["Sonographie der rechten Leiste mit anschließender Blockade", "ultraschall_gezielte_blockade"],
+    ["Sonographie rechte Hüfte mit Injektion", "ultraschall_gezielte_blockade"],
+    ["Sonographie Ellbogen rechts, anschließend Blockade", "ultraschall_gezielte_blockade"]
   ]
 }
