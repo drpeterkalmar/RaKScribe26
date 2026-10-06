@@ -28,7 +28,6 @@ import base64
 import urllib.request
 import urllib.error
 from openai import OpenAI
-from concurrent.futures import ThreadPoolExecutor
 import gemini as _gem  # Umbau Schritt 14: Gemini-Request, parts-Join, Vollständigkeit, Retry
 import stt as _stt  # Umbau Schritt 13: chirp_3, Segmentierung 50 s/4 s, Overlap-Stitch, Phrasenlisten
 import detect as _detect  # Umbau Schritt 12: Vorlagen-Erkennung + Befundtitel (reine Funktionen)
@@ -475,6 +474,44 @@ def _get_stt_access_token():
 _chirp3_request = _stt.chirp3_request
 _stitch_overlaps = _stt.stitch_overlaps
 _chirp3_worker = _stt.chirp3_worker
+
+
+def _llm_aufruf(prompt):
+    """Gen-Prompt → Rohbefund. Gemini (Standard): gemini.py; openai/ollama: Chat-Completions (Streaming)."""
+    if LLM_PROVIDER == 'gemini':
+        # gemini.py: alle Text-parts, Vollständigkeit + finishReason STOP, bis zu 3 Versuche, Abbruch bei 401
+        return _gem.generate(prompt, SYS_MSG, _load_vertex_key(), log=print)
+    p_full = prompt
+    report = ""
+    kwargs = {
+        "model": LLM_MODEL,
+        "messages": [{"role": "system", "content": SYS_MSG}, {"role": "user", "content": p_full}],
+        "temperature": 0.0,
+        "stream": True
+    }
+    if LLM_PROVIDER == 'ollama':
+        kwargs["extra_body"] = {"options": {"num_ctx": 2048}}
+    resp = openai_client.chat.completions.create(**kwargs)
+    for chunk in resp:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            report += delta
+    return report
+
+
+def _rag_beispiele(seg):
+    """RAG Few-Shot Beispiele (practice_reports.db) — v3.2: Standard AUS (RAG_BEISPIELE in config.ini)."""
+    if RAG_BEISPIELE > 0 and not _nb.is_pure_normal_finding(seg, DISPLAY_NAMES):
+        db_path = os.path.join(BASE_DIR, "practice_reports.db")
+        return get_few_shot_examples(seg, classify_report(seg), db_path, limit=RAG_BEISPIELE)
+    return ""
+
+
+def _pipeline_kontext():
+    """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden)."""
+    return _pl.Kontext(templates=RADIOLOGY_TEMPLATES, display_names=DISPLAY_NAMES, prompt=INITIAL_PROMPT_CONTENT,
+                       llm=lambda p: _llm_aufruf(p), misheard=apply_misheard, hinweise=MISHEARD_HINTS,
+                       beispiele=_rag_beispiele, fallback=ALLGEMEIN_FALLBACK, log=print, ausnahme_log=log_exception)
 
 
 # === v3.0 DESIGN-TOKENS (ruhig, kontrastreich, für abgedunkelte Befundräume) ===
@@ -1184,35 +1221,15 @@ class RaKScribeApp(ctk.CTk):
 
     def process_dictation(self, gen):
         try:
-            raw = apply_misheard(self.final_transcript.strip())  # v3.1: Fehlhör-Liste vor Bypass/LLM
-            if not raw:
-                self.after(0, lambda: self._ende_kein_text(gen))
-                return
-
-            self._ui(gen, lambda: (
+            # Umbau Schritt 15: die ganze Kette ohne Oberfläche in pipeline.py (dieselbe Funktion wie prod_pipeline)
+            erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(), beim_start=lambda: self._ui(gen, lambda: (
                 self.result_text.delete("1.0", "end"),
                 self.result_text.insert("1.0", "... Befund wird geladen ...")
-            ))
-
-            # v3.2: Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener
-            # Befund (eigenes Template, eigenes Ergebnis), parallel erzeugt und untereinander ausgegeben.
-            segmente = br.split_regionen(raw)
-            fehler, ausnahmen = [], []
-            if len(segmente) > 1:
-                print(f"[MULTI] {len(segmente)} Regionen")
-                with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
-                    futures = [ex.submit(self._befund_fuer_segment, seg) for seg in segmente]
-                teile = []
-                for fut in futures:
-                    try:
-                        teile.append(fut.result())
-                    except Exception as e_seg:  # eine Region scheitert → die anderen trotzdem zeigen (Gutachten P2-6)
-                        log_exception("Befund-Generierung (Region)")
-                        ausnahmen.append(e_seg)
-                        teile.append(e_seg)
-                report, fehler = _pl.assemble_regions(segmente, teile, _report_complete)
-            else:
-                report = self._befund_fuer_segment(raw)
+            )))
+            if erg.leer:
+                self.after(0, lambda: self._ende_kein_text(gen))
+                return
+            report, fehler, ausnahmen = erg.report, erg.fehler, erg.ausnahmen
 
             if not self._job.aktuell(gen):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
@@ -1233,7 +1250,7 @@ class RaKScribeApp(ctk.CTk):
                 self.after(0, lambda m=msg: self._ende_fehler(gen, m))
                 return
             # v2.11.1 (Prüfbericht W4): leeren/unvollständigen Befund NIE ins Zielprogramm einfügen
-            if not _report_complete(report):
+            if not erg.vollstaendig:
                 self.after(0, lambda: self._ende_fehler(gen, None))
                 return
             self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
@@ -1262,76 +1279,6 @@ class RaKScribeApp(ctk.CTk):
         self.update_status("ERROR", "busy")
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-
-    def _ist_normalbefund(self, raw, template_key):
-        """Bypass ohne LLM nur bei REINEM Normalbefund (nur Untersuchung + Normal-Worte, v3.2 Peter 05.10.)
-        UND erkannter Region — jedes weitere Wort ("sonst", Pathologie, Beschreibung) → LLM."""
-        return _nb.is_pure_normal_finding(raw, DISPLAY_NAMES) and template_key != "allgemein"
-
-    def _befund_fuer_segment(self, raw):
-        """Ein Befund (## Titel / ## Befund / ## Ergebnis) für EIN Diktat-Segment = eine Region.
-        Läuft im Worker-Thread (bei mehreren Regionen parallel) — KEINE UI-Zugriffe hier."""
-        template_key = detect_template(raw)
-        template_data = RADIOLOGY_TEMPLATES.get(template_key, ALLGEMEIN_FALLBACK)
-
-        # RAG-Bypass-Shortcut für reine Normalbefunde (nur bei ERKANNTER Region —
-        # bei 'allgemein' lieber LLM-Strukturierung, damit echte Normalbefund-Templates greifen)
-        if self._ist_normalbefund(raw, template_key):
-            print(f"[BYPASS] Normalbefund erkannt: '{raw}'. Generiere direkt aus Template '{template_key}'.")
-            # v3.2 (Peter 05.10.): Ergebnis = Normal-Ergebnis der Untersuchung (+ Seite) — NIE das Diktat abschreiben
-            ergebnis = br.ergebnis_mit_seite(template_data.get('ergebnis', ''), raw)
-            tpl_lines = template_data['body'].split('\n')
-            tpl_title = br.titel_mit_seite(derive_untersuchungs_titel(raw, tpl_lines[0].strip().rstrip(':')), raw)
-            tpl_body = '\n'.join(tpl_lines[1:])
-            return br.nachbearbeiten(f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{ergebnis}")  # v3.2.2: CSA-Platzhalter raus
-
-        p_base = br.strip_prompt_marker(INITIAL_PROMPT_CONTENT)
-        p_full = p_base.replace('{roh_text}', raw)
-        p_full = p_full.replace('{template_body}', template_data['body'])
-        p_full = p_full.replace('{region_name}', template_data['display_name'])
-        # v2.10.13 (K3-Review Befund 2/3): Der LLM-Pfad bekommt die KANONISCHE
-        # Bezeichnung (display_name, inkl. "(Allgemein)"), damit die
-        # "(Allgemein)"-Ausnahme im Gen-Prompt ECHT feuern kann — bei
-        # pathologischen (Allgemein)-Diktaten leitet das LLM die Überschrift
-        # aus dem Diktat (ohne Befundworte), statt den Volltext als Titel zu
-        # bekommen. Der Bypass-Pfad bleibt bei derive.
-        p_full = p_full + "\n<untersuchung>" + template_data['display_name'] + "</untersuchung>\n"
-        # v3.2 (Peter 05.10.): Normal-Ergebnis der Untersuchung — fürs Ergebnis, wenn das Diktat keine Pathologie nennt
-        p_full = p_full + "<normal_ergebnis>" + (template_data.get('ergebnis') or "Unauffälliger Befund.") + "</normal_ergebnis>\n"
-        if MISHEARD_HINTS:  # v3.1: kontextabhängige Verhörer (mode 'llm') als Hinweis für Gemini
-            p_full = p_full + MISHEARD_HINTS + "\n"
-
-        # RAG Few-Shot Beispiele (practice_reports.db) — v3.2: Standard AUS (RAG_BEISPIELE in config.ini)
-        examples_str = ""
-        if RAG_BEISPIELE > 0 and not _nb.is_pure_normal_finding(raw, DISPLAY_NAMES):
-            db_path = os.path.join(BASE_DIR, "practice_reports.db")
-            examples_str = get_few_shot_examples(raw, classify_report(raw), db_path, limit=RAG_BEISPIELE)
-        if "{examples}" in p_full:
-            p_full = p_full.replace("{examples}", examples_str)
-        else:
-            p_full = p_full + "\n\n" + examples_str
-
-        report = ""
-        if LLM_PROVIDER == 'gemini':
-            # gemini.py: alle Text-parts, Vollständigkeit + finishReason STOP, bis zu 3 Versuche, Abbruch bei 401
-            report = _gem.generate(p_full, SYS_MSG, _load_vertex_key(), log=print)
-        else:
-            kwargs = {
-                "model": LLM_MODEL,
-                "messages": [{"role": "system", "content": SYS_MSG}, {"role": "user", "content": p_full}],
-                "temperature": 0.0,
-                "stream": True
-            }
-            if LLM_PROVIDER == 'ollama':
-                kwargs["extra_body"] = {"options": {"num_ctx": 2048}}
-            resp = openai_client.chat.completions.create(**kwargs)
-            for chunk in resp:
-                delta = chunk.choices[0].delta.content
-                if delta:
-                    report += delta
-
-        # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
-        return br.nachbearbeiten(report)
 
     def copy_formatted_report(self, aus_knopf=False):
         """Befund (Markdown + HTML für Word) in die Zwischenablage. v3.2.3 (Gutachten P1-1): gibt True/False zurück,

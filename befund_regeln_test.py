@@ -75,8 +75,10 @@ app = (ROOT / "web_app/src/App.tsx").read_text()
 check("radiology_prompt.txt?raw" in app, "Web importiert radiology_prompt.txt (eine Quelle)")
 check("const newDefaultPrompt =" not in app, "kein zweiter Gen-Prompt mehr in App.tsx")
 exe = (ROOT / "source_code/RaKScribe.py").read_text()
-check("befund_regeln" in exe and "waehle_prompt" in exe and "split_regionen" in exe and "br.nachbearbeiten" in exe,
-      "EXE nutzt befund_regeln (Prompt-Wahl, Trenner, Nummerierung)")
+pl = (ROOT / "source_code/pipeline.py").read_text()  # Umbau Schritt 15: Befund-Kette der EXE in pipeline.py
+check("befund_regeln" in exe and "waehle_prompt" in exe and "_pl.befund_aus_diktat(" in exe
+      and "br.split_regionen(raw)" in pl and "br.nachbearbeiten(roh)" in pl,
+      "EXE nutzt befund_regeln (Prompt-Wahl, Trenner, Nummerierung über pipeline.py)")
 wf = (ROOT / ".github/workflows/build-exe.yml").read_text()
 check("radiology_prompt.txt;." in wf and "befund_regeln" in wf, "EXE-Build bündelt Prompt + befund_regeln")
 import gemini  # noqa: E402  (Umbau Schritt 14: SYS_MSG der EXE liegt in gemini.py)

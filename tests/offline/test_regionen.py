@@ -38,8 +38,9 @@ check("Regionsname aus erstem Satz, gekürzt", pl.region_name("Sprunggelenk link
       and len(pl.region_name("x" * 90)) == 40 and pl.region_name("") == "?")
 
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("EXE nutzt assemble_regions + Fehlerdialog statt stummem Abbruch",
-      "_pl.assemble_regions(segmente, teile, _report_complete)" in src and "if fehler:" in src
+pl_src = (ROOT / "source_code" / "pipeline.py").read_text(encoding="utf-8")
+check("EXE nutzt pipeline (assemble_regions) + Fehlerdialog statt stummem Abbruch",
+      "_pl.befund_aus_diktat(" in src and "if fehler:" in src and "assemble_regions(segmente, teile, gemini.report_complete)" in pl_src
       and 'report = br.befunde_zusammenfuegen(teile) if all(' not in src)
 
 print("\n" + ("✅ MEHR-REGIONEN PASS" if not fails else f"❌ {fails} FAIL"))

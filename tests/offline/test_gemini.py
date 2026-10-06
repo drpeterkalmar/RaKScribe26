@@ -71,7 +71,7 @@ check("Netzfehler, dann Erfolg → Befund", g.generate("P", "S", "k", urlopen=ne
 check("Thinking-parts werden ignoriert", g.join_text(antwort([{"text": "denke", "thought": True}, {"text": VOLL}])["candidates"][0]) == VOLL)
 
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("EXE nutzt gemini.generate (kein eigener Request-Code mehr)", "_gem.generate(p_full, SYS_MSG" in src
+check("EXE nutzt gemini.generate (kein eigener Request-Code mehr)", "_gem.generate(prompt, SYS_MSG" in src
       and '"systemInstruction"' not in src and "SYS_MSG = (" not in src)
 
 print("\n" + ("✅ GEMINI PASS" if not fails else f"❌ {fails} FAIL"))

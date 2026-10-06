@@ -21,6 +21,7 @@ import befund_regeln as br  # noqa: E402
 import normalbypass as nb  # noqa: E402
 import detect as _detect  # noqa: E402  (Umbau Schritt 12: kein AST-Extrakt mehr)
 import gemini as _gemini  # noqa: E402  (Umbau Schritt 14)
+import pipeline as _pipeline  # noqa: E402  (Umbau Schritt 15: EXE-Kette = dieselbe Funktion wie in der EXE)
 
 TEMPLATES = json.loads((ROOT / "templates.json").read_text())
 DISPLAY_NAMES = [v["display_name"] for v in TEMPLATES.values()]
@@ -48,16 +49,10 @@ VAL_TEMPLATE = _mv.group(1).replace("\\`", "`").replace('\\"', '"')
 
 
 def gen_prompt(raw, template_key=None, examples="", prompt=None, hints=True, template=None):
-    """Gen-Prompt exakt wie RaKScribe.py _befund_fuer_segment (Web identisch bis auf die llm-Hinweise)."""
+    """Gen-Prompt exakt wie die EXE (pipeline.gen_prompt; Web identisch bis auf die llm-Hinweise)."""
     t = template or TEMPLATES.get(template_key or detect_template(raw), TEMPLATES.get("allgemein"))
-    p = br.strip_prompt_marker(prompt if prompt is not None else GEN_PROMPT_RAW)
-    p = (p.replace("{roh_text}", raw).replace("{template_body}", t["body"])
-          .replace("{region_name}", t["display_name"]))
-    p = p + "\n<untersuchung>" + t["display_name"] + "</untersuchung>\n"
-    p = p + "<normal_ergebnis>" + (t.get("ergebnis") or "Unauffälliger Befund.") + "</normal_ergebnis>\n"
-    if hints and MISHEARD_HINTS:
-        p = p + MISHEARD_HINTS + "\n"
-    return p.replace("{examples}", examples) if "{examples}" in p else p + "\n\n" + examples
+    return _pipeline.gen_prompt(raw, t, prompt if prompt is not None else GEN_PROMPT_RAW,
+                                MISHEARD_HINTS if hints else "", examples)
 
 
 def val_prompt(diktat, report):
@@ -82,23 +77,26 @@ def _clean(txt):
     return re.sub(r"\n?```\s*$", "", txt).strip()
 
 
+def exe_kontext(examples="", prompt=None, log=None, llm=None):
+    """pipeline.Kontext wie in der EXE; LLM-Aufruf = Harness (test_all_regions.call_gemini) oder übergeben."""
+    return _pipeline.Kontext(
+        templates=TEMPLATES, display_names=DISPLAY_NAMES,
+        prompt=prompt if prompt is not None else GEN_PROMPT_RAW,
+        llm=llm or (lambda p: _clean(_call(p, system=SYS_MSG))),
+        misheard=lambda t: misheard.apply(t, _MH_COMPILED), hinweise=MISHEARD_HINTS,
+        beispiele=lambda seg: examples, log=lambda *a: None, protokoll=log)
+
+
 def exe_segment(seg, examples="", prompt=None, log=None):
-    key = detect_template(seg)
-    if nb.is_pure_normal_finding(seg, DISPLAY_NAMES) and key != "allgemein":
-        rep = bypass_report(seg, key)
-    else:
-        rep = _clean(_call(gen_prompt(seg, key, examples=examples, prompt=prompt), system=SYS_MSG))
-    if log is not None:
-        log.append({"segment": seg, "template": key, "roh": rep})
-    return br.nachbearbeiten(rep)
+    return _pipeline.befund_fuer_segment(seg, exe_kontext(examples, prompt, log))
 
 
-def exe_kette(diktat, examples="", prompt=None, log=None):
-    raw = misheard.apply(diktat.strip(), _MH_COMPILED)
-    segs = br.split_regionen(raw)
-    with ThreadPoolExecutor(max_workers=len(segs)) as ex:
-        teile = list(ex.map(lambda s: exe_segment(s, examples, prompt, log), segs))
-    return br.befunde_zusammenfuegen(teile)
+def exe_kette(diktat, examples="", prompt=None, log=None, llm=None):
+    """EXE-Kette = pipeline.befund_aus_diktat (dieselbe Funktion wie RaKScribe.py)."""
+    erg = _pipeline.befund_aus_diktat(diktat, exe_kontext(examples, prompt, log, llm))
+    if erg.ausnahmen:
+        raise erg.ausnahmen[0]  # wie bisher: Fehler einer Region bricht die Messung ab
+    return erg.report
 
 
 def web_segment(seg, log=None):

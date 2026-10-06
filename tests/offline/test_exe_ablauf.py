@@ -126,16 +126,11 @@ check("chirp_3 leer → Streaming-Text gerettet, Befund eingefügt", app.final_t
 # 6. Mehr-Regionen-Diktat, eine Region scheitert (Gutachten P2-6) → fertige Region sichtbar, Hinweis, kein Strg+V
 app = neue_app()
 CHIRP["text"] = "Schulter rechts unauffällig. Ellbogen rechts Punkt Ellbogengelenksarthrose Punkt"
-echt = app._befund_fuer_segment
+def llm_stub(prompt):  # Ellbogen-Region braucht Gemini (Pathologie) → Gemini fällt aus
+    raise RuntimeError("Gemini: HTTP 503")
 
 
-def segment(seg):
-    if "Ellbogen" in seg:
-        raise RuntimeError("Gemini: HTTP 503")
-    return echt(seg)
-
-
-app._befund_fuer_segment = segment
+mod._llm_aufruf = llm_stub
 aufnehmen(app)
 bis_fertig(app); time.sleep(0.05); S.pump(app)
 check("Mehr-Regionen: fertige Region steht im Befund-Feld", app.result_text.text.startswith("## Schultergelenk"),
