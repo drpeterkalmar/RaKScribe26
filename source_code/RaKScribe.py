@@ -24,12 +24,12 @@ import json
 import sqlite3
 from difflib import get_close_matches
 import traceback
-import configparser
 import base64
 import urllib.request
 import urllib.error
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
+import config as _cfg  # Umbau Schritt 10 (Gutachten P2-4): config.ini mit Standardwerten
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
@@ -151,48 +151,21 @@ MEDICAL_PHRASES = [
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
 
 # =========================================================================
-# === CONFIG LOADING ===
+# === CONFIG LOADING === (Umbau Schritt 10: config.py — Standardwerte, nur Syntaxfehler sind fatal)
 # =========================================================================
-config = configparser.ConfigParser()
-
 try:
-    config.read(CONFIG_FILE_PATH)
-    if not config.sections():
-        raise FileNotFoundError
-
-    LLM_PROVIDER = config['SETTINGS'].get('LLM_PROVIDER', 'gemini').strip().lower()
-    LLM_MODEL = config['SETTINGS'].get('LLM_MODEL', 'gemini-3.5-flash').strip()  # v3.2.3: fehlende Zeile ≠ Fehler
-    API_KEY = config['SETTINGS'].get('API_KEY', '').strip().replace('"', '')
-    CHUNK_DURATION = int(config['SETTINGS'].get('CHUNK_DURATION', '7').strip())
-    GOOGLE_JSON_FILENAME = config['SETTINGS'].get('GOOGLE_JSON_FILENAME', 'rakscribe-0ff1ffd128a1.json').strip().replace('"', '')
-    STT_ENGINE = 'google'
-
-except (KeyError, FileNotFoundError):
-    # Fehlende/unvollständige config.ini wird automatisch neu angelegt — kein Neustart nötig.
-    # (Nur wenn eine vorhanden-Datei PARSE-Fehler hat, warnen wir.)
-    config_was_corrupt = os.path.exists(CONFIG_FILE_PATH)
-    if not config_was_corrupt:
-        with open(CONFIG_FILE_PATH, 'w', encoding='utf-8') as f:
-            f.write("[SETTINGS]\n"
-                    "LLM_PROVIDER = gemini\n"
-                    "LLM_MODEL = gemini-3.5-flash\n"
-                    "CHUNK_DURATION = 7\n")  # v3.2.3: keine Schlüssel mehr in config.ini (nur Praxis-Schlüssel)
-        print(f"[INIT] config.ini fehlte und wurde neu angelegt: {CONFIG_FILE_PATH}")
-
-    if config_was_corrupt:
-        messagebox.showerror("Konfigurations-Fehler",
-                             f"Datei 'config.ini' ist fehlerhaft (ungültige Werte).\n\nPfad: {CONFIG_FILE_PATH}\n\n"
-                             f"Bitte prüfen oder die Datei löschen — beim nächsten Start wird sie neu angelegt.")
-        sys.exit()
-
-    # Frisch angelegte Defaults verwenden
-    LLM_PROVIDER = 'gemini'
-    LLM_MODEL = 'gemini-3.5-flash'
-    API_KEY = ''
-    CHUNK_DURATION = 7
-    GOOGLE_JSON_FILENAME = 'rakscribe-0ff1ffd128a1.json'
-    STT_ENGINE = 'google'
-    print("[INIT] Standard-Konfiguration aktiv (LLM: gemini-3.5-flash).")
+    CFG = _cfg.load_config(CONFIG_FILE_PATH)
+except _cfg.KonfigFehler as _e_cfg:
+    messagebox.showerror("Konfigurations-Fehler", str(_e_cfg))
+    sys.exit()
+if CFG.angelegt:
+    print(f"[INIT] config.ini fehlte und wurde neu angelegt: {CONFIG_FILE_PATH}")
+for _w in CFG.warnungen:
+    print(f"[INIT] WARNUNG: {_w}")
+LLM_PROVIDER = CFG.llm_provider
+LLM_MODEL = CFG.llm_model
+API_KEY = CFG.api_key
+print(f"[INIT] Konfiguration: LLM {LLM_PROVIDER} / {LLM_MODEL}")
 
 # --- STT Engines Initialisierungs-Logik ---
 # Schlüssel: seit v3.2.3 ausschließlich rakscribe-praxis-key.json (Gemini + STT in EINER Datei).
@@ -388,10 +361,7 @@ SYS_MSG = (
 )
 # v3.2: RAG-Few-Shots aus practice_reports.db — Standard AUS (A/B 05.10.: alte Praxisbefunde ohne Nummerierung
 # verschlechtern Format/Standardtext, Telegram-Referenz arbeitet ohne Beispiele). config.ini RAG_BEISPIELE = 1 schaltet ein.
-try:
-    RAG_BEISPIELE = int(config['SETTINGS'].get('RAG_BEISPIELE', '0').strip() or 0)
-except Exception:
-    RAG_BEISPIELE = 0
+RAG_BEISPIELE = CFG.rag_beispiele
 
 # v3.1: Fehlhör-Liste (misheard_words.json neben der EXE, sonst Bundle/Repo) — gleiche Datei und
 # gleiche Semantik wie die Web-App (web_app/src/misheard.ts). auto-Regeln ersetzen deterministisch

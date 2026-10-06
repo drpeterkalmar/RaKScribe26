@@ -34,7 +34,7 @@ jobs:
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=jobstate --hidden-import=pipeline --hidden-import=aufnahme --hidden-import=clipboard_win --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." RaKScribe.py
+          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=jobstate --hidden-import=pipeline --hidden-import=aufnahme --hidden-import=config --hidden-import=clipboard_win --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files

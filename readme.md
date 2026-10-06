@@ -91,24 +91,24 @@ Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installatio
 
 ---
 
-## ⚙️ Konfigurations-Beispiel (`config.ini`)
+## ⚙️ Konfiguration (`config.ini`, optional)
 
 ```ini
 [SETTINGS]
-# LLM-Provider: 'gemini' (Google AI Studio) oder 'openai' (OpenAI)
+# Befund-KI: gemini = Gemini 3.5 Flash über Vertex AI am EU-Endpoint (Modell und Endpoint sind fest eingebaut).
+# Der Schlüssel kommt ausschließlich aus rakscribe-praxis-key.json — nicht hier eintragen.
 LLM_PROVIDER = gemini
-LLM_MODEL = gemini-1.5-flash
+LLM_MODEL = gemini-3.5-flash
 
-# API-Key: bleibt leer – der Key kommt aus rakscribe-praxis-key.json
-API_KEY = 
-
-# Chunk-Dauer in Sekunden für das Google Streaming (empfohlen: 7)
-CHUNK_DURATION = 7
-
-# Dateiname der Google Cloud JSON-Schlüsseldatei (nur Legacy – wird von
-# rakscribe-praxis-key.json abgelöst)
-GOOGLE_JSON_FILENAME = google-service-account.json
+# Optional (Standard 0 = aus): Anzahl Praxis-Beispiele aus practice_reports.db im Prompt
+# RAG_BEISPIELE = 0
 ```
+
+Fehlt die Datei, legt die EXE sie beim Start mit diesen Werten an. Fehlt eine Zeile oder ist ein Wert unbrauchbar,
+gilt der Standardwert (Hinweis in `rakscribe.log`). Nur eine nicht lesbare Datei (z. B. ohne `[SETTINGS]`-Kopf)
+führt zu einer Fehlermeldung beim Start — dann Datei korrigieren oder löschen.
+Frühere Einträge `API_KEY` (für Gemini), `CHUNK_DURATION`, `GOOGLE_JSON_FILENAME` und `STT_ENGINE` werden nicht mehr
+ausgewertet und dürfen gelöscht werden.
 
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

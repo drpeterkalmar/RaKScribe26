@@ -50,6 +50,8 @@ jobs:
         run: python tests/offline/test_jobstate.py
       - name: EXE-Aufnahme getrennt von der Live-Anzeige
         run: python tests/offline/test_capture.py
+      - name: EXE-Konfiguration (config.ini)
+        run: python tests/offline/test_config.py
       - name: EXE-Mehr-Regionen-Befund
         run: python tests/offline/test_regionen.py
       - name: EXE-Ablauf (Aufnahme → Befund → Einfügen, mit Attrappen)
