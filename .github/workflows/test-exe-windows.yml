@@ -71,23 +71,18 @@ jobs:
           name: windows-ui-test-${{ steps.rel.outputs.tag }}
           path: ui-report/
 
-      - name: Im Release dokumentieren (Screenshots + Ergebnis)
+      - name: Im Release dokumentieren (nur Text — Release enthält NUR die EXE, Peter 05.10.)
         if: always() && hashFiles('ui-report/report.md') != ''
         shell: bash
         run: |
+          # Screenshots bleiben im Actions-Artefakt; als Release-Download nur rakscribe26.exe (Peter: keine Extradateien)
           TAG="${{ steps.rel.outputs.tag }}"
           cd ui-report
-          for f in A_gesperrt.png C_entsperrt.png; do
-            [ -f "$f" ] && cp "$f" "windows-ui-$f"
-          done
-          cp report.md windows-ui-test-report.md
-          gh release upload "$TAG" windows-ui-*.png windows-ui-test-report.md --clobber
-          BASE="https://github.com/${{ github.repository }}/releases/download/$TAG"
           OLD=$(gh release view "$TAG" --json body -q .body | sed '/<!-- windows-ui-test -->/,$d')
           {
             printf '%s\n\n<!-- windows-ui-test -->\n' "$OLD"
             cat report.md
-            printf '\n![Ohne Schlüssel](%s/windows-ui-A_gesperrt.png)\n![Mit Test-Schlüssel](%s/windows-ui-C_entsperrt.png)\n' "$BASE" "$BASE"
+            printf '\nScreenshots: Artefakt windows-ui-test-%s im Actions-Lauf.\n' "$TAG"
             printf '\n[Actions-Lauf](%s/%s/actions/runs/%s)\n' "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}"
           } > notes.md
           gh release edit "$TAG" --notes-file notes.md
