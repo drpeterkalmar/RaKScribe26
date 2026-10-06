@@ -55,7 +55,9 @@ jobs:
         run: |
           # Keys duerfen NICHT auf GitHub Pages landen (public repo!). Schluessel kommen nur per Praxis-Key-Datei
           # im Browser (Drag & Drop / Menue). v3.2.3 (Gutachten P2-11): Build ABBRECHEN statt einzelne Namen loeschen.
-          if grep -rlE "PRIVATE KEY-----(\\n|[[:space:]])*[A-Za-z0-9+/]{40}|\"private_key\"[[:space:]]*:|AQ\.[A-Za-z0-9_-]{20,}" web_app/dist; then
+          # Umbau Schritt 22: auch PEM-Dateien mit echten Zeilenumbrüchen (Zeilenende nach "KEY-----") und JSON-maskierte
+          # Zeilenumbrüche (\n) erkennen; der App-Code selbst ("-----BEGIN PRIVATE KEY-----|…", ".private_key") bleibt erlaubt.
+          if grep -rlE 'PRIVATE KEY-----([[:space:]]*$|(\\n|[[:space:]])*[A-Za-z0-9+/]{40})|"private_key"[[:space:]]*:|AQ\.[A-Za-z0-9_-]{20,}' web_app/dist; then
             echo "::error::Schluesselmaterial im Pages-Bundle gefunden - Deploy abgebrochen"; exit 1
           fi
           if ls web_app/dist | grep -iE "key|cred|secret"; then
