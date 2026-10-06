@@ -27,6 +27,14 @@ def prompt_version(text):
     return m.group(1) if m else ""
 
 
+def version_kleiner(a, b):
+    """Natürlicher Vergleich von Versionsmarkern: Zahlen als Zahlen (v3.3.2, Gutachten P3-5 — vorher gewann
+    am selben Tag „…-v4“ gegen „…-v32“, weil Text verglichen wurde)."""
+    def teile(s):
+        return [(0, int(t), "") if t.isdigit() else (1, 0, t) for t in re.findall(r"\d+|[^\d]+", s or "")]
+    return teile(a) < teile(b)
+
+
 def strip_prompt_marker(text):
     """Prompt ohne Markerzeile (der Marker geht nicht an Gemini)."""
     return _MARKER_RE.sub("", text or "", count=1)
@@ -48,7 +56,7 @@ def waehle_prompt(builtin_text, lokale):
         if not text:
             continue
         lv = prompt_version(text)
-        if bv and (not lv or lv < bv):
+        if bv and (not lv or version_kleiner(lv, bv)):
             veraltet.append(f"{pfad} ({lv or 'ohne Version'})")
             continue
         return text, pfad, ""

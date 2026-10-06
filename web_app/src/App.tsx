@@ -79,7 +79,8 @@ type PraxisSchluessel = { type?: string; private_key?: string; vertex_api_key?: 
 // Key-Generation verwerfen (Fix für veraltete localStorage-Keys, die den frischen Key blockiert haben).
 function gespeicherterVertexKey(): string {
   const k = localStorage.getItem('vertex_api_key');
-  if (k && localStorage.getItem('key_version') !== KEY_VERSION) {
+  // v3.3.2 (Gutachten P3-8): auch ein allein liegender STT-Schlüssel alter Generation wird entfernt
+  if ((k || localStorage.getItem('praxis_stt_key')) && localStorage.getItem('key_version') !== KEY_VERSION) {
     console.log('[INIT] Veralteter gespeicherter Key (alte Key-Generation) verworfen');
     localStorage.removeItem('vertex_api_key');
     localStorage.removeItem('praxis_stt_key');
@@ -362,6 +363,14 @@ export default function App() {
     setMenuOpen(false);
   };
 
+
+  // v3.3.2 (Gutachten P3-4): Esc schließt auch den Dialog „Schlüssel einfügen“
+  useEffect(() => {
+    if (!pasteOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPasteOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [pasteOpen]);
 
   // Menü schließen bei Klick außerhalb / Esc
   useEffect(() => {

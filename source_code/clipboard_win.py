@@ -18,13 +18,15 @@ _HTML_HEADER = ("Version:1.0\r\nStartHTML:{0:08d}\r\nEndHTML:{1:08d}\r\n"
 
 def html_format_bytes(md_text, md_to_html):
     """Clipboard-Format "HTML Format" (CF_HTML) für Word/RIS: Header mit Offsets + HTML-Dokument (UTF-8).
-    Offsets wie seit v2.x berechnet (Zeichen, nicht Bytes — siehe Umbau-Bericht, offener Punkt)."""
+    Offsets in BYTES (UTF-8), wie CF_HTML es verlangt. v3.3.2: vorher Zeichen — bei Umlauten zeigten
+    EndHTML/EndFragment zu früh, und Word konnte das Befund-Ende abschneiden."""
     html = md_to_html(md_text)
     frag = f"<html><head><meta charset='utf-8'></head><body>{html}</body></html>"
+    b = lambda s: len(s.encode("utf-8"))  # noqa: E731
     s_html = len(_HTML_HEADER.format(0, 0, 0, 0))
-    s_frag = s_html + frag.find("<body>") + 6
-    e_frag = s_html + frag.find("</body>")
-    e_html = s_html + len(frag)
+    s_frag = s_html + b(frag[:frag.find("<body>") + 6])
+    e_frag = s_html + b(frag[:frag.find("</body>")])
+    e_html = s_html + b(frag)
     return (_HTML_HEADER.format(s_html, e_html, s_frag, e_frag) + frag).encode('utf-8')
 
 

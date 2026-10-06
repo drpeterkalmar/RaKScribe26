@@ -51,6 +51,18 @@ def bis_fertig(app, timeout=8):
     return S.pump(app, lambda: app._job.zustand in ("READY", "ERROR") and app._status_raw != "PROCESSING", timeout)
 
 
+# 0. v3.3.2 (Gutachten P3-4): hat RaKScribe selbst den Fokus, kein Strg+V (sonst doppelter Befund in der eigenen Box)
+app = neue_app()
+_alt = mod._fokus_ist_eigenes_fenster
+mod._fokus_ist_eigenes_fenster = lambda: True
+aufnehmen(app)
+bis_fertig(app)
+S.pump(app, lambda: False, 0.8)
+check("Fokus auf RaKScribe: kopiert, aber KEIN Strg+V", S.AUFZ.tasten == [] and S.CLIPBOARD.data.get(13),
+      str(S.AUFZ.tasten))
+mod._fokus_ist_eigenes_fenster = _alt
+app._aufnahme_stoppen()
+
 # 1. Normaler Ablauf
 app = neue_app()
 app.toggle_recording()

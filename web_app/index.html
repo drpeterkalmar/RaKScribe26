@@ -10,6 +10,17 @@
     <meta name="theme-color" content="#141821" />
     <meta name="description" content="RaKScribe26 Web - Intelligentes Reporting und strukturiertes radiologisches Befunden direkt im Browser." />
     <title>RaKScribe __RAKSCRIBE_VERSION__ – Befundungsassistent</title>
+    <script>
+      // v3.3.2 (Gutachten P3-7): Direkt nach einem Update kann ein zwischengespeicherter alter Index auf gelöschte
+      // Programmdateien zeigen → weißer Bildschirm. Fehlt eine /assets/-Datei, einmal frisch neu laden.
+      window.addEventListener('error', function (e) {
+        var t = e.target, u = t && (t.src || t.href) || '';
+        if (u.indexOf('/assets/') < 0 || sessionStorage.getItem('rks_reload')) return;
+        sessionStorage.setItem('rks_reload', '1');
+        location.replace(location.pathname + '?v=' + Date.now());
+      }, true);
+      window.addEventListener('load', function () { setTimeout(function () { sessionStorage.removeItem('rks_reload'); }, 5000); });
+    </script>
   </head>
   <body>
     <div id="root"></div>

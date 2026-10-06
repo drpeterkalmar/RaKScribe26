@@ -88,10 +88,16 @@ hdr = dict(l.split(":", 1) for l in raw.split("\r\n")[:6])
 sh, eh, sf, ef = (int(hdr[k]) for k in ("StartHTML", "EndHTML", "StartFragment", "EndFragment"))
 check("CF_HTML: StartHTML → '<html>', EndHTML = Ende", raw[sh:].startswith("<html>") and eh == len(raw))
 check("CF_HTML: Fragment = Body-Inhalt", raw[sf:ef] == "<p>Befund</p>")
+# v3.3.2: Offsets in BYTES — mit Umlauten zeigte EndFragment früher zu früh (Word schnitt das Befund-Ende ab)
+rb = c.html_format_bytes("Größere Ergüsse überall", md)
+hdr = dict(l.split(":", 1) for l in rb.decode("utf-8").split("\r\n")[:6])
+sh, eh, sf, ef = (int(hdr[k]) for k in ("StartHTML", "EndHTML", "StartFragment", "EndFragment"))
+check("CF_HTML Umlaute: Byte-Offsets treffen <html>, Fragment und Ende",
+      rb[sh:].startswith(b"<html>") and eh == len(rb) and rb[sf:ef].decode("utf-8") == "<p>Größere Ergüsse überall</p>")
 
 # Verdrahtung in RaKScribe.py (die EXE selbst läuft nur unter Windows)
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("Strg+V nur nach erfolgreichem Kopieren", "if self.copy_formatted_report():" in src
+check("Strg+V nur nach erfolgreichem Kopieren", "if self.copy_formatted_report():" in src and "self._einfuegen()" in src
       and src.count("press_and_release('ctrl+v')") == 1)
 check("Kopieren über clipboard_win.clipboard_set", "_cb.clipboard_set(md_text, cb=win32clipboard" in src)
 check("Fehlschlag → Status ERROR + Fehlerdialog", 'messagebox.showerror("Nicht eingefügt"' in src

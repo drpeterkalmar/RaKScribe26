@@ -66,6 +66,13 @@ t, q, h = br.waehle_prompt(NEU, [("radiology_prompt_v4.txt", ""), ("radiology_pr
 check(t == GLEICH_EDIT and q == "radiology_prompt.txt" and not h, "lokal gespeichert mit aktuellem Marker → lokal", (q, h))
 t, q, h = br.waehle_prompt("", [("radiology_prompt_v4.txt", ""), ("radiology_prompt.txt", ALT_V4)])
 check(t == ALT_V4, "ohne Bundle (Entwicklung) → lokale Datei", (q, h))
+# v3.3.2 (Gutachten P3-5): Zahlen im Marker numerisch vergleichen
+V32 = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-v32 -->\nNEU32"
+V4 = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-v4 -->\nALT4"
+t, q, h = br.waehle_prompt(V32, [("radiology_prompt.txt", V4)])
+check(t == V32 and "v4" in h, "Marker v4 ist älter als v32 (numerisch, nicht Text)", (q, h))
+check(br.version_kleiner("2026-10-05", "2026-10-05-a") and not br.version_kleiner("2026-10-05-b", "2026-10-05-a")
+      and br.version_kleiner("2026-9-30", "2026-10-01"), "version_kleiner: Datum + Buchstabe")
 
 print("── SYNC: Prompt-Datei ↔ Apps")
 prompt = (ROOT / "radiology_prompt.txt").read_text()

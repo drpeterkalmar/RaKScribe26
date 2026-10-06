@@ -72,7 +72,7 @@ def stitch_overlaps(a, b, window=14):
     for L in range(min(window, len(aw), len(bw)), 0, -1):
         tail = [w.lower().strip('.,:;') for w in aw[-L:]]
         head = [w.lower().strip('.,:;') for w in bw[:L]]
-        if sum(1 for x, y in zip(tail, head) if x == y) >= int(L * 0.8):
+        if sum(1 for x, y in zip(tail, head) if x == y) >= max(1, int(L * 0.8)):  # v3.3.2: ohne max(1,…) galt L=1 immer als Treffer
             best = L
             break
     return (a + " " + " ".join(bw[best:])) if best else (a + " " + b)

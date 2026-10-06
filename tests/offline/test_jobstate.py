@@ -102,7 +102,7 @@ check("Streaming nur in stream_transcript, nie in final_transcript",
       "self.final_transcript +=" not in src and "self.stream_transcript += transcript" in src)
 check("Streaming-Callback trägt Generationsnummer", "self.update_interim_text, text, is_final, gen)" in src)
 check("Einfügen nur für aktuellen Lauf", 'self._job.ereignis("report_done", gen) is None' in src
-      and "self._job.aktuell(gen) and keyboard.press_and_release('ctrl+v')" in src)
+      and "self._job.aktuell(gen) and self._einfuegen()" in src)
 check("Selbsttest kennt simulate_processing (Fall D)", '"simulate_processing"' in src)
 wt = (ROOT / "tests" / "windows" / "exe_ui_test.py").read_text(encoding="utf-8")
 check("Windows-UI-Test hat Fall D (F10 während Verarbeitung)", "simulate_processing" in wt and '"D_verarbeitung"' in wt)

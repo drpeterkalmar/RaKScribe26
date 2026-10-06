@@ -1,32 +1,130 @@
 {
-  "_doc": "Gemeinsame Fixtures für Funktionen, die EXE (source_code/*.py) und Web (web_app/src/*.ts) doppelt haben (Umbau Schritte 13/20, Gutachten P2-2). Erwartung = heutiges Verhalten beider Apps. report_complete: gemini.report_complete (EXE) = isCompleteReport (Web, src/gemini.ts) — [Text, vollständig?]. stitch: stitch_overlaps (stt.py) = stitchOverlaps (stt.ts) — [a, b, erwartet]. BEKANNT (nicht geändert, Entscheidung Peter): bei fehlender Überlappung wird das erste Wort von b verworfen (L = 1 gilt immer als Treffer, Fälle 'Ganz anderer Text…', 'x'/'y'); bei leerem a weichen EXE und Web ab (Web verwirft das erste Wort von b) — daher kein Fall mit leerem a.",
+  "_doc": "Gemeinsame Fixtures für Funktionen, die EXE (source_code/*.py) und Web (web_app/src/*.ts) doppelt haben (Umbau Schritte 13/20, Gutachten P2-2). Erwartung = heutiges Verhalten beider Apps. report_complete: gemini.report_complete (EXE) = isCompleteReport (Web, src/gemini.ts) — [Text, vollständig?]. stitch: stitch_overlaps (stt.py) = stitchOverlaps (stt.ts) — [a, b, erwartet]. Seit v3.3.2 (Gutachten-Restpunkte): ohne echte Überlappung bleibt das erste Wort von b erhalten (Schwelle max(1, 80 %)); leeres a verhält sich in EXE und Web gleich.",
   "stitch": [
-    ["Das Kniegelenk rechts in zwei Ebenen zeigt eine", "zeigt eine mäßiggradige Gonarthrose medial.", "Das Kniegelenk rechts in zwei Ebenen zeigt eine mäßiggradige Gonarthrose medial."],
-    ["Befund eins zwei drei vier fünf sechs sieben acht", "fünf sechs sieben acht neun zehn", "Befund eins zwei drei vier fünf sechs sieben acht neun zehn"],
-    ["Ganz anderer Text am Ende", "Neuer Abschnitt ohne Überlappung", "Ganz anderer Text am Ende Abschnitt ohne Überlappung"],
-    ["Am Ende steht Gonarthrose.", "gonarthrose, und weiter geht es", "Am Ende steht Gonarthrose. und weiter geht es"],
-    ["eins zwei drei vier fünf", "eins zwei drei vier fünf", "eins zwei drei vier fünf "],
-    ["a b c d e f g h i j k l m n o p", "c d e f g h i j k l m n o p q r", "a b c d e f g h i j k l m n o p q r"],
-    ["Tendinosis calcarea der Supraspinatussehne mit", "Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig.", "Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig."],
-    ["x", "y", "x "],
-    ["eins zwei drei vier fünf", "eins zwei DREI vier sechs sieben", "eins zwei drei vier fünf sieben"],
-    ["Wort1 Wort2: Wort3; Wort4", "wort3 wort4 Wort5", "Wort1 Wort2: Wort3; Wort4 Wort5"],
-    ["nur erster Teil", "", "nur erster Teil "],
-    ["Text mit  doppeltem Leerzeichen am Ende", "am Ende weiter", "Text mit  doppeltem Leerzeichen am Ende weiter"],
-    ["z.B. eine Läsion bei L4/5,", "L4/5 und L5/S1", "z.B. eine Läsion bei L4/5, und L5/S1"]
+    [
+      "Das Kniegelenk rechts in zwei Ebenen zeigt eine",
+      "zeigt eine mäßiggradige Gonarthrose medial.",
+      "Das Kniegelenk rechts in zwei Ebenen zeigt eine mäßiggradige Gonarthrose medial."
+    ],
+    [
+      "Befund eins zwei drei vier fünf sechs sieben acht",
+      "fünf sechs sieben acht neun zehn",
+      "Befund eins zwei drei vier fünf sechs sieben acht neun zehn"
+    ],
+    [
+      "Ganz anderer Text am Ende",
+      "Neuer Abschnitt ohne Überlappung",
+      "Ganz anderer Text am Ende Neuer Abschnitt ohne Überlappung"
+    ],
+    [
+      "Am Ende steht Gonarthrose.",
+      "gonarthrose, und weiter geht es",
+      "Am Ende steht Gonarthrose. und weiter geht es"
+    ],
+    [
+      "eins zwei drei vier fünf",
+      "eins zwei drei vier fünf",
+      "eins zwei drei vier fünf "
+    ],
+    [
+      "a b c d e f g h i j k l m n o p",
+      "c d e f g h i j k l m n o p q r",
+      "a b c d e f g h i j k l m n o p q r"
+    ],
+    [
+      "Tendinosis calcarea der Supraspinatussehne mit",
+      "Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig.",
+      "Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig."
+    ],
+    [
+      "x",
+      "y",
+      "x y"
+    ],
+    [
+      "eins zwei drei vier fünf",
+      "eins zwei DREI vier sechs sieben",
+      "eins zwei drei vier fünf sieben"
+    ],
+    [
+      "Wort1 Wort2: Wort3; Wort4",
+      "wort3 wort4 Wort5",
+      "Wort1 Wort2: Wort3; Wort4 Wort5"
+    ],
+    [
+      "nur erster Teil",
+      "",
+      "nur erster Teil "
+    ],
+    [
+      "Text mit  doppeltem Leerzeichen am Ende",
+      "am Ende weiter",
+      "Text mit  doppeltem Leerzeichen am Ende weiter"
+    ],
+    [
+      "z.B. eine Läsion bei L4/5,",
+      "L4/5 und L5/S1",
+      "z.B. eine Läsion bei L4/5, und L5/S1"
+    ],
+    [
+      "",
+      "Erstes Wort bleibt erhalten",
+      " Erstes Wort bleibt erhalten"
+    ],
+    [
+      "Befund rechts ohne Erguss.",
+      "Ergebnis: unauffällig.",
+      "Befund rechts ohne Erguss. Ergebnis: unauffällig."
+    ]
   ],
   "report_complete": [
-    ["## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nRegelrechte Stellung, keine Fraktur, normale Weite des Gelenkspaltes.\n\n## Ergebnis\n1. Unauffällig.", true],
-    ["## Kniegelenk rechts\n\n## Befund\nRegelrechte Stellung, keine Fraktur, normale Weite.\n\n## Ergebnis\nkurz", false],
-    ["## Kniegelenk rechts\n\n## Befund\nRegelrechte Stellung, keine Fraktur, normale Weite.\n\n## Ergebnis\n   \n", false],
-    ["## Kniegelenk rechts\n\n## Befund\nRegelrechte Stellung, keine Fraktur.", false],
-    ["## Kniegelenk rechts\nRegelrechte Stellung der Skelettanteile ohne Befund-Überschrift.\n\n## Ergebnis\nUnauffälliger Befund.", true],
-    ["## Kniegelenk rechts\n\n## Befund\nKurz.\n\n## Ergebnis\nUnauffälliger Befund.", false],
-    ["", false],
-    ["## Ergebnis\nUnauffälliger Befund.", false],
-    ["Fließtext ohne Überschriften mit genug Länge für einen Befund.\n## Ergebnis\nUnauffälliger Befund.", true],
-    ["## Befund\n## Befund doppelt mit genug Text dahinter, damit es lang ist.\n## Ergebnis\nUnauffälliger Befund.", false],
-    ["## Titel\n\n## Befund\nText mit ## Ergebnis im Satz, aber ohne Abschnitt danach genug lang.\n\n## Ergebnis\nUnauffälliger Befund.", false],
-    ["## Titel\n\n## Befund\n                         \n\n## Ergebnis\nUnauffälliger Befund.", false]
+    [
+      "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nRegelrechte Stellung, keine Fraktur, normale Weite des Gelenkspaltes.\n\n## Ergebnis\n1. Unauffällig.",
+      true
+    ],
+    [
+      "## Kniegelenk rechts\n\n## Befund\nRegelrechte Stellung, keine Fraktur, normale Weite.\n\n## Ergebnis\nkurz",
+      false
+    ],
+    [
+      "## Kniegelenk rechts\n\n## Befund\nRegelrechte Stellung, keine Fraktur, normale Weite.\n\n## Ergebnis\n   \n",
+      false
+    ],
+    [
+      "## Kniegelenk rechts\n\n## Befund\nRegelrechte Stellung, keine Fraktur.",
+      false
+    ],
+    [
+      "## Kniegelenk rechts\nRegelrechte Stellung der Skelettanteile ohne Befund-Überschrift.\n\n## Ergebnis\nUnauffälliger Befund.",
+      true
+    ],
+    [
+      "## Kniegelenk rechts\n\n## Befund\nKurz.\n\n## Ergebnis\nUnauffälliger Befund.",
+      false
+    ],
+    [
+      "",
+      false
+    ],
+    [
+      "## Ergebnis\nUnauffälliger Befund.",
+      false
+    ],
+    [
+      "Fließtext ohne Überschriften mit genug Länge für einen Befund.\n## Ergebnis\nUnauffälliger Befund.",
+      true
+    ],
+    [
+      "## Befund\n## Befund doppelt mit genug Text dahinter, damit es lang ist.\n## Ergebnis\nUnauffälliger Befund.",
+      false
+    ],
+    [
+      "## Titel\n\n## Befund\nText mit ## Ergebnis im Satz, aber ohne Abschnitt danach genug lang.\n\n## Ergebnis\nUnauffälliger Befund.",
+      false
+    ],
+    [
+      "## Titel\n\n## Befund\n                         \n\n## Ergebnis\nUnauffälliger Befund.",
+      false
+    ]
   ]
 }

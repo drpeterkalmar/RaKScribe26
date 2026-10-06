@@ -18,7 +18,6 @@ import win32clipboard
 import json
 import sqlite3
 import traceback
-from openai import OpenAI
 import gemini as _gem  # Umbau Schritt 14: Gemini-Request, parts-Join, Vollständigkeit, Retry
 import stt as _stt  # Umbau Schritt 13: chirp_3, Segmentierung 50 s/4 s, Overlap-Stitch, Phrasenlisten
 import detect as _detect  # Umbau Schritt 12: Vorlagen-Erkennung + Befundtitel (reine Funktionen)
@@ -190,6 +189,7 @@ def _init_llm():
             key = API_KEY if API_KEY else os.environ.get("OPENAI_API_KEY", "")
             if not key:
                 print("[WARN] Kein OpenAI API-Key gefunden in config.ini oder OPENAI_API_KEY Umgebungsvariable.")
+            from openai import OpenAI  # v3.3.2: nur laden, wenn LLM_PROVIDER = openai (Startzeit)
             openai_client = OpenAI(
                 api_key=key if key else "dummy_key"
             )
@@ -498,6 +498,20 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 GEMINI_401_TEXT = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
                    "Bitte die aktuelle rakscribe-praxis-key.json aus dem Drive-Ordner RaKScribe\n"
                    "über Menü → „Schlüssel-Datei laden…“ neu laden.")
+def _fokus_ist_eigenes_fenster():
+    """True, wenn das Vordergrundfenster zu RaKScribe selbst gehört (v3.3.2, Gutachten P3-4: Strg+V landete dann
+    als zweite Kopie in der eigenen Befund-Box statt im RIS). Außerhalb von Windows immer False."""
+    try:
+        import ctypes
+        u32 = ctypes.windll.user32
+        hwnd = u32.GetForegroundWindow()
+        pid = ctypes.c_ulong(0)
+        u32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        return bool(hwnd) and pid.value == os.getpid()
+    except Exception:
+        return False
+
+
 ZWISCHENABLAGE_GESPERRT = ("Die Zwischenablage ist durch ein anderes Programm gesperrt — Befund bitte mit "
                            "„Befund kopieren“ erneut kopieren und selbst einfügen.")
 
@@ -1272,11 +1286,19 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
         if self.copy_formatted_report():
-            self.after(500, lambda: self._job.aktuell(gen) and keyboard.press_and_release('ctrl+v'))
+            self.after(500, lambda: self._job.aktuell(gen) and self._einfuegen())
         else:
             self.update_status("ERROR", "busy")
             messagebox.showerror("Nicht eingefügt", "Der Befund ist fertig, wurde aber NICHT eingefügt.\n\n"
                                  + ZWISCHENABLAGE_GESPERRT)
+
+    def _einfuegen(self):
+        """Strg+V ins Vordergrundfenster — außer RaKScribe selbst hat den Fokus (dann liegt der Befund nur kopiert bereit)."""
+        if _fokus_ist_eigenes_fenster():
+            log("[PASTE] RaKScribe selbst im Vordergrund — kein Strg+V, Befund liegt in der Zwischenablage.")
+            self.status_badge.configure(text="   ●  Befund kopiert — im RIS mit Strg+V einfügen   ", text_color=TEXT_PRIMARY)
+            return
+        keyboard.press_and_release('ctrl+v')
 
     def register_hotkey(self):
         # Selbsttest ruft dieselben Handler (auf GitHub-Windows erreichen künstliche Tasten den Hook nicht)

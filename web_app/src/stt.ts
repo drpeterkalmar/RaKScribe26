@@ -141,7 +141,7 @@ export function stitchOverlaps(a: string, b: string, window = 14): string {
   for (let L = Math.min(window, aw.length, bw.length); L > 0; L--) {
     const tail = aw.slice(-L).map(w => w.toLowerCase().replace(/[.,:;]/g, ''));
     const head = bw.slice(0, L).map(w => w.toLowerCase().replace(/[.,:;]/g, ''));
-    if (tail.filter((w, i) => w === head[i]).length >= Math.floor(L * 0.8)) { best = L; break; }
+    if (tail.filter((w, i) => w === head[i]).length >= Math.max(1, Math.floor(L * 0.8))) { best = L; break; }  // v3.3.2 (Sync: stt.py)
   }
   return best ? a + ' ' + bw.slice(best).join(' ') : a + ' ' + b;
 }
