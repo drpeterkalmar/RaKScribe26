@@ -11,11 +11,14 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable, List, Optional
 
+import bausteine as bs
 import befund_regeln as br
 import detect
 import gemini
 import normalbypass as nb
 import protokoll
+
+ORDI_BAUSTEINE = bs.laden()  # v3.3 (Peter 06.10.): gebündelt, keine Extradatei
 
 FEHLTEXT = "Befund für Region {region} konnte nicht erstellt werden — bitte erneut diktieren."
 
@@ -55,6 +58,7 @@ class Kontext:
     log: Callable[..., Any] = print
     ausnahme_log: Optional[Callable[[str], Any]] = None  # wird IM except-Block gerufen (Traceback)
     protokoll: Optional[list] = None             # Mess-Harness: je Segment {segment, template, roh}
+    bausteine: Optional[dict] = None             # v3.3: Ordi-Textbausteine (Standard: gebündelte ordi_bausteine.json)
 
 
 @dataclass
@@ -108,6 +112,21 @@ def gen_prompt(raw, template_data, prompt, hinweise="", beispiele=""):
 
 def befund_fuer_segment(seg, ctx):
     """Ein Befund (## Titel / ## Befund / ## Ergebnis) für EIN Diktat-Segment = eine Region."""
+    bausteine = ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine
+    b_key, b_rest = bs.befund_baustein(seg, bausteine)
+    if b_key:  # v3.3 (Peter 06.10.): „Baustein Mammo 1“ → Ordi-Textbaustein statt Vorlage
+        template_key = "baustein:" + b_key
+        if bs.nur_baustein(b_rest):
+            ctx.log(f"[BAUSTEIN] '{b_key}' wörtlich (ohne KI).")
+            roh = bs.bericht(b_key, bausteine, seg)
+        else:
+            template_data = bs.vorlage(b_key, bausteine, seg)
+            beispiele = ctx.beispiele(seg) if ctx.beispiele else ""
+            hinweise = (ctx.hinweise + "\n" if ctx.hinweise else "") + bs.KI_HINWEIS.format(key=b_key)
+            roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, hinweise, beispiele))
+        if ctx.protokoll is not None:
+            ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
+        return br.nachbearbeiten(roh)
     template_key = detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     if ist_normalbefund(seg, template_key, ctx.display_names):
@@ -130,6 +149,8 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
         raw = ctx.misheard(raw)  # v3.1: Fehlhör-Liste vor Bypass/LLM
     if not raw:
         return Ergebnis(leer=True)
+    # v3.3: Satz-Bausteine („Baustein A1“, „Baustein Fraktur“) wörtlich an derselben Stelle einsetzen
+    raw = bs.saetze_einsetzen(raw, ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine)
     if beim_start:
         beim_start()
     # v3.2: Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener Befund

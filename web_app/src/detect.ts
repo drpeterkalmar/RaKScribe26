@@ -252,7 +252,7 @@ export function detectTemplate(text: string, templates: TemplatesMap, vorrangDat
     return "knochendichtemessung_dexa";
   }
 
-  if (textLower.includes("mamma")) {
+  if (textLower.includes("mamma") || /(?<![a-zäöüß])mammo(?![a-zäöüß])/.test(textLower)) {  // v3.3: auch „Mammo“
     // Mammasonographie (Ultraschall) vs Mammographie (Röntgen) — 'mamma' als Trigger,
     // denn 'Mammasonographie' enthält 'mamma' aber NIE 'mammo' (v2.10.13-Fix)
     

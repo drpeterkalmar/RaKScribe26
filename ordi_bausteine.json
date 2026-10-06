@@ -1,0 +1,1521 @@
+{
+ "_info": "Ordinations-Textbausteine (Peter 06.10.2026, Quelle Drive: Standardbefunde/Textbausteine Ordi/Blockrtf). Auslösen im Diktat mit 'Baustein <Kürzel>' (z. B. 'Baustein Mammo 1', 'Baustein Ösophagus 2'). Nur der Baustein diktiert → Text wörtlich. Mit Zusatz → Baustein ist die Vorlage, nur das Diktierte wird ergänzt/geändert. art=satz: Satz wird an der Stelle eingesetzt. Grußformeln/Unterschriften entfernt. EINE Datei für EXE (gebündelt) und Web (importiert).",
+ "version": "2026-10-06",
+ "bausteine": {
+  "A1": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Unauffälliger Befund. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe A1 entsprechend weniger als 4 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "a 1"
+   ]
+  },
+  "A2": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Normale Knochendichtewerte bei teilweise abgebauter Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe A2 entsprechend 4 bis 5 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "a 2"
+   ]
+  },
+  "A3": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Normale Knochendichtewerte bei abgebauter Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe A3, entsprechend 5 bis 7 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "a 3"
+   ]
+  },
+  "B1": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Osteopenie bei normaler Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe B1, entsprechend 5 bis 7 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "b 1"
+   ]
+  },
+  "B2": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Teilweise abgebaute Mikroarchitektur bei Osteopenie. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe B2, entsprechend 7 bis 10 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "b 2"
+   ]
+  },
+  "B3": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Osteopenie mit degradierter Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe B3 entsprechend 10 bis 14 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "b 3"
+   ]
+  },
+  "Bauchfett": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Zur Differenzierung Bauchfett (VAT) – dies bei erhöhten Werten mit kardiometabolischen Risiken verbunden – zu subcutanem Fett (SAT) ergänzende Ganzkörperfettmessung empfohlen. Diese Untersuchung könnte bei uns jederzeit mit Voranmeldung durchgeführt werden (keine Kassenleistung).",
+   "sprich": [
+    "bauchfett"
+   ]
+  },
+  "C1": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Osteoporose mit normaler Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe C1 entsprechend 10 bis 14 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "c 1"
+   ]
+  },
+  "C2": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Osteoporose bei teilweise abgebauter Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe C2 entsprechend 14 bis 20 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "c 2"
+   ]
+  },
+  "C3": {
+   "gruppe": "DEXA",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Osteoporose mit abgebauter Mikroarchitektur. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe C3, entsprechend über 20 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "sprich": [
+    "c 3"
+   ]
+  },
+  "fettmessung": {
+   "gruppe": "DEXA",
+   "art": "struktur",
+   "titel": "Ganzkörperzusammensetzung",
+   "befund": "BMI:... kg/m²\nMageranteil: … g\nGesamtfettanteil: … g, … Zentile, … % Körperfettanteil\nAndroid: … %.\nGynoid: … %.\nA-G-Verhältnis: ….\nViszerales Fettgewebe: … g\nSubcutanes Fettgewebe: … g.\nRMR: … cal/Tag.\nRSMI: … kg/m².",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fettmessung"
+   ]
+  },
+  "fettrie": {
+   "gruppe": "DEXA",
+   "art": "struktur",
+   "titel": "Ganzkörperzusammensetzung",
+   "befund": "Gesamtmasse: … g\nFettmasse: … g\nMagermasse: … g\nFettgewebsanteil: … %\nZentile:...\nAndroid: … %.\nGynoid: … %.\nA-G-Verhältnis:...\nBMI: … kg/m²\nViszerales Fettgewebe: … g\nSubcutanes Fettgewebe: … g.\nRMR: … cal/Tag.\nRSMI: … kg/m².",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fettrie"
+   ]
+  },
+  "osteokal": {
+   "gruppe": "DEXA",
+   "art": "struktur",
+   "titel": "Osteodensitometrie der LWS sowie der Hüftregion beidseits, TBS und FRAX – GE LUNAR Prodigy Primo",
+   "befund": "LWS:\nDie gemittelte Knochendichte im Bereich LWK1 bis LWK4 beträgt... g/cm² Calziumhydroxylapatit, entsprechend … % bei einem T-Wert (Vergleichskollektiv junger Erwachsener) von...\nDer niedrigste Einzelwert in Höhe L3 gelegen mit … % bei einem T-Wert von ….\nHüftregion links:\nDie gemittelte Knochendichte im Bereich der Gesamtregion beträgt …. g/cm² Calziumhydroxylapatit, entsprechend … % bei einem T-Wert (Vergleichskollektiv junger Erwachsener) von ….\nDer niedrigste Einzelwert in der Halsregion gelegen mit … % bei einem T-Wert von ….\nHüftregion rechts:\nDie gemittelte Knochendichte im Bereich der Gesamtregion beträgt … g/cm² Calziumhydroxylapatit, entsprechend … % bei einem T-Wert (Vergleichskollektiv junger Erwachsener) von ….\nDer niedrigste Einzelwert in der Halsregion gelegen mit … % bei einem T-Wert von ….\nTBS: Der Trabekelscore LWK1 bis LWK4 beträgt ….\nTBS>1,310 entsprechend einer normalen Mikroarchitektur\nTBS<1,311 entsprechend einer beeinträchtigten Mikroarchitektur\nTBS<1,230 entsprechend einer zerstörten Mikroarchitektur\nFRAX:\nTBS korrigierte 10-Jahreswahrscheinlichkeit für eine Fraktur:\nTypische Osteoporosefraktur … %, Hüftfraktur … %.",
+   "ergebnis": "Osteoporose mit mäßiggradig verringertem TBS.",
+   "sprich": [
+    "osteokal"
+   ]
+  },
+  "hsg": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Hysterosalpingographie",
+   "befund": "Lagerung der Patientin in Steinschnittlage. Einführen eines Scheidenspekulums. Desinfektion der Portio mittels Betaisodona. Einführen des HSG-Katheters und Applikation von nicht-ionischem Kontrastmittel.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hsg"
+   ]
+  },
+  "HSG Schemabefund": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Hysterosalpingographie",
+   "befund": "Lagerung der Patientin in Steinschnittlage. Einführen eines Scheidenspekulums. Desinfektion der Portio mittels Betaisodona. Einführen des HSG-Katheters und Applikation von nicht-ionischem Kontrastmittel.\nDas Uteruscavum regelrecht konfiguriert, glatt konturiert, homogen kontrastiert.\nUngehinderter KM-Übertritt in normal verlaufende, unauffällig kontrastierte Eileiter.\nAm Tubenende ungehinderter KM-Übertritt in die freie Bauchhöhle.\nAuf den Spätaufnahmen unauffällige KM-Verteilung im Abdomen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hsg schemabefund"
+   ]
+  },
+  "hys": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Hysterosalpingographie",
+   "befund": "Komplikationsloses Kanülieren der Portio sowie Applikation von nicht-ionischem Kontrastmittel. Das Uteruscavum regelrecht konfiguriert, glatt konturiert, unauffällig strukturiert. Ungehinderter KM-Übertritt in normal verlaufende, unauffällig kontrastierte Eileiter. Ungehinderter KM-Übertritt in die freie Bauchhöhle. Auf den Spätaufnahmen unauffällige KM-Verteilung im Abdomen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hys"
+   ]
+  },
+  "hysuk": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Hysterosalpingographie",
+   "befund": "Komplikationsloses Kanülieren der Portio sowie Applikation von nicht-ionischem Kontrastmittel. Der Uterus retroflektiert. Das Uteruscavum, soweit beurteilbar, ohne Auffälligkeiten, glatt konturiert. Ungehinderter KM-Übertritt in normal verlaufende, unauffällig kontrastierter Eileiter. Ungehinderter KM-Übertritt in die freie Bauchhöhle.\nAuf den Spätaufnahmen unauffällige KM-Verteilung im Abdomen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hysuk"
+   ]
+  },
+  "IVP": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Harntrakt nativ, Zonografie nativ, sowie Ausscheidungsurografie",
+   "befund": "Auf der Leeraufnahme keine konkrementsuspekten Kalkschatten nachweisbar. 5min nach i.V. Applikation von 80ml Optiray findet sich eine prompte seitengleiche Ausscheidung über zwei normal gelegene, normal große Nieren mit glatter Oberfläche.\nDie corticopapilläre Distanz beidseits normal breit, die Kelche scharf konturiert, die Nierenbecken homogen kontrastiert, die Harnleiter schlank, regelrecht verlaufend. Der Abfluss ungehindert. Der Harnblasenschatten glatt begrenzt, unauffällig kontrastiert. Auf den Aufnahmen im Stehen pre- und postmiktionell keine Erweiterung des Befundes erhebbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "ivp"
+   ]
+  },
+  "IVP2": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Harntrakt nativ sowie Ausscheidungsurographie",
+   "befund": "Auf der Leeraufnahme keine konkrementsuspekten Kalkschatten nachweisbar. 7 Minuten nach iv-Applikation von 80 ml Iomeron findet sich eine prompte seitengleiche Ausscheidung über zwei normal gelegene, normal große Nieren mit glatter Oberfläche. Die Kelche beidseits scharf konturiert, die Nierenbecken homogen kontrastiert, die Harnleiter schlank regelrecht verlaufend, der Abfluss ungehindert. Der Harnblasenschatten glatt begrenzt. Postmiktionell mäßiggradiger Restharn nachweisbar.",
+   "ergebnis": "Mäßiggradiger Restharn postmiktionem. Ansonsten unauffälliger Befund ohne Nachweis schattengebender Konkremente.",
+   "sprich": [
+    "ivp 2"
+   ]
+  },
+  "phlebo": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Aszendierende Pressphlebografie des linken Beins",
+   "befund": "Anlegen einer Staubinde, Punktion einer Fußrückenvene sowie Applikation von 50ml Optiray.\nDie tiefen Unterschenkelvenen paarig angelegt, unauffällig kontrastiert. Die V. poplitea gedoppelt, zeigt unauffälligen Klappenapparat, die V. femoralis superficialis regelrecht verlaufend, zeigt unauffälligen Klappenapparat. Freier Abstrom über die Beckenvenen. Beim Pressen kein retrograder Blutstrom im Bereich der V. saphena magna bzw. parva nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "phlebo",
+    "phlebographie"
+   ]
+  },
+  "Phlebo Standardsatz": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Anlegen einer Staubinde in Knöchelregion. Punktion einer Fußrückenvene sowie Applikation von 50 ml Iomeron. Danach Öffnen der Staubinde sowie neuerliche Applikation von 40 ml über das oberflächliche Venensystem.",
+   "sprich": [
+    "phlebo standardsatz"
+   ]
+  },
+  "phlebo2uk": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Aszendierende Pressphlebographie beider Beine",
+   "befund": "Anlegen einer Staubinde in Knöchelregion. Punktion einer Fußrückenvene sowie Applikation von 100 ml Iomeron je Bein.\nRechts:\nDie tiefen Unterschenkelvenen paarig angelegt, unauffällig kontrastiert. Die V. poplitea sowie die V. femoralis superficialis regelrecht verlaufend, zeigen unauffälligen Klappenapparat. Freier Abstrom über die Beckenvenen.\nBeim Pressen kein retrograder Blutstrom im Bereich der V. saphena magna bzw. parva nachweisbar.",
+   "ergebnis": "Unauffälliger Befund rechts.\nLinks:\nDie tiefen Unterschenkelvenen paarig angelegt, unauffällig kontrastiert. Die V. poplitea sowie die V. femoralis superficialis regelrecht verlaufend, zeigen unauffälligen Klappenapparat. Freier Abstrom über die Beckenvenen.\nBeim Pressen kein retrograder Blutstrom im Bereich der V. saphena magna bzw. parva nachweisbar.\nErgebnis:\nUnauffälliger Befund links.",
+   "sprich": [
+    "phlebo 2 uk"
+   ]
+  },
+  "phlebou": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "befund",
+   "titel": "Aszendierende Pressphlebographie des rechten Beins",
+   "befund": "Anlegen einer Staubinde in der Knöchelregion. Punktion einer Fußrückenvene sowie Applikation von 100 ml Iomeron. Danach Öffnen der Staubinde sowie neuerliche Applikation von 40 ml über das oberflächliche Venensystem.\nDie tiefen Unterschenkelvenen paarig angelegt, unauffällig kontrastiert. Die V. poplitea sowie die V. femoralis superficialis regelrecht verlaufend, zeigen unauffälligen Klappenapparat. Freier Abstrom über die Beckenvenen. Beim Pressen kein retrograder Blutstrom im Bereich der V. saphena magna bzw. parva nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "phlebou"
+   ]
+  },
+  "Präparat": {
+   "gruppe": "Durchleuchtung/Kontrast",
+   "art": "struktur",
+   "titel": "Präparatradiographie in 2 Ebenen",
+   "befund": "",
+   "ergebnis": "Der Markierungsclip ist im Präparat enthalten.\nDer Minimalabstand der resezierten radiographisch … mm großen Läsion / der enthaltenen Verkalkungen zum Ablationsrand beträgt cranial... mm, medial … mm, caudal … mm bzw. lateral … mm\nEs erfolgte die umgehende telefonische Befundmitteilung.",
+   "sprich": [
+    "praeparat"
+   ]
+  },
+  "Beinarterien bds.": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Sonographie der Arterien der unteren Extremität bds.",
+   "befund": "Es zeigen sich in den einsehbaren Anteilen (inguinal, Oberschenkeladduktorenkanal, popliteal, proximaler Unterschenkel) ein regulärer Gefäßverlauf. Duplexsonographisch zeigt sich ein reguläres Flusssignal ohne Hinweis auf stenosetypische Flussbeschleunigungen.",
+   "ergebnis": "Unauffällige Sonographie/Duplexsonographie der großen arteriellen Beingefäße bds.",
+   "sprich": [
+    "beinarterien bds"
+   ]
+  },
+  "Carotis": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Halsgefäße",
+   "befund": "Unauffällige morphologische Darstellung der Arteria carotis communis, interna und externa beidseits.\nDie Intima-Media-Dicke im Normbereich. Keine Plaques. In der farbcodierten Duplex-Sonographie normale Flussgeschwindigkeit und Flussrichtung sämtlicher extracerebraler hirnversorgenden Arterien, einschließlich der Arteria vertebralis beidseits. Zeichen hämodynamisch relevanter Stenosen nicht nachzuweisen.",
+   "ergebnis": "Unauffällige Duplex-Sonographie der extrakraniellen hirnversorgenden Arterien.",
+   "sprich": [
+    "carotis",
+    "karotis"
+   ]
+  },
+  "Duplex-Sono Halsgefäße": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Halsgefäße",
+   "befund": "Unauffällige Darstellung der extracerebralen hirnversorgenden Arterien. Die Dicke des Intima-Media-Komplexes im Normbereich. Keine Intimaverdickungen. Keine Plaque-bildungen.\nNormale Flussgeschwindigkeit und Flussrichtung auch in der Arteria vertebralis beidseits. Kein Hinweis auf Stenosen.",
+   "ergebnis": "Unauffällige Duplex-Sonographie der Halsgefäße.",
+   "sprich": [
+    "duplex sono halsgefaesse"
+   ]
+  },
+  "fdcar": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Halsgefäße",
+   "befund": "Die Arteria carotis communis, Arteria carotis interna und Arteria carotis externa kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar.\nAuch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar.\nDer Intima-Media-Komplex mit 0.9 mm im Normbereich gelegen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fdcar"
+   ]
+  },
+  "fdcarschr": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie und Dopplersonographie der Halsgefäße",
+   "befund": "Keine signifikanten Stenosen abgrenzbar.\nRegelrechtes Flussmuster und regelrechte Strömungsgeschwindigkeit in ACC, ACI und ACE bds..\nAnterograde, regelrechte Perfusion der A. vertebralis bds..",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fdcarschr"
+   ]
+  },
+  "fdcaruk": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Halsgefäße",
+   "befund": "Die Arteria carotis externa, Arteria carotis interna und Arteria carotis communis kommen beidseits sonomorphologisch unauffällig zur Darstellung. Farbdopplersonographisch in allen Gefäßabschnitten normaler Flow nachweisbar. Auch im Bereich der Arteria vertebralis beidseits normaler antegrader Flow nachweisbar.\nDer Intima-Media-Komplex mit 0,9 mm im Normbereich gelegen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fdcaruk"
+   ]
+  },
+  "fdexa": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Beinarterien rechts",
+   "befund": "Normales triphasisches Flusssignal im Bereich der A. femoralis communis und an den gesamten Beinarterien von der Leiste bis zur Sprunggelenksregion. Kein Hinweis auf Stenosen. Keine arteriosklerotischen Plaques nachzuweisen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fdexa"
+   ]
+  },
+  "oswfdcar": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Carotis beidseits",
+   "befund": "Rechte Seite:\nRegelrechtes Strömungsprofil der ACC, ACE und ACI ohne Nachweis einer hämodynamisch relevanten Stenose. Die A. vertebralis regelrecht perfundiert.\nLinke Seite:\nRegelrechtes Strömungsprofil der ACC, ACE und ACI ohne Nachweis einer hämodynamisch relevanten Stenose. Die A. vertebralis regelrecht perfundiert.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "oswfdcar"
+   ]
+  },
+  "oswfdexv": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Beinvenen links",
+   "befund": "Regelrechtes Strömungsprofil der Vena femoralis sowie Vena poplitea in allen Abschnitten, ohne Nachweis einer tiefen Venenthrombose. Die Vena tibialis anterior, posterior und fibularis gut komprimierbar. Kein Anhaltspunkt für tiefe Venenthrombose.",
+   "ergebnis": "Unauffällige Duplexsonographie der Beinvenen links.",
+   "sprich": [
+    "oswfdexv"
+   ]
+  },
+  "veneu": {
+   "gruppe": "Gefäße",
+   "art": "befund",
+   "titel": "Farbcodierte Duplexsonographie der Beinvenen rechts",
+   "befund": "Die V. femoralis, die V. poplitea, die V. fibularis sowie tibialis posterior in allen Abschnitten gut komprimierbar ohne Hinweis auf Thrombose.\nAuch im Bereich der Muskelvenen keine Auffälligkeiten, farbdopplersonographisch o. B..",
+   "ergebnis": "Unauffälliger Befund.\nKein Anhaltspunkt für TVT.",
+   "sprich": [
+    "beinvenen",
+    "venen",
+    "veneu"
+   ]
+  },
+  "BHB": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Es wurde mit der Patientin vereinbart, diese Untersuchung bei den Barmherzigen Brüdern in der Marschallgasse durchführen zu lassen. Bitte sich diesbezüglich in der Gynäkologischen Ambulanz (Tel.: 0316/7067-13103 Sekretariat: Frau Karin Muhr) anzumelden.",
+   "sprich": [
+    "bhb"
+   ]
+  },
+  "Core": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Der Befund wurde mit der Patientin besprochen, eine Überweisung zur Core-Cut-Biopsie ausgehändigt.",
+   "sprich": [
+    "core",
+    "core cut"
+   ]
+  },
+  "lkh Brustambulanz": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Es wurde mit der Patientin vereinbart, diese Untersuchung am LKH Graz an der Brustambulanz der Klinischen Abteilung für Allgemeine Radiologische Diagnostik durchführen zu lassen. Bitte sich diesbezüglich im Sekretariat der Radiologie (Tel.: 0316/385 12058) anzumelden.",
+   "sprich": [
+    "brustambulanz",
+    "lkh brustambulanz"
+   ]
+  },
+  "lkh west": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Es wurde mit der Patientin vereinbart, diese Untersuchung im LKH Graz II (West) an der Radiologie durchführen zu lassen. Bitte sich diesbezüglich im Sekretariat der Radiologie (Tel.: 0316/5466-6739 Frau Pitschko, Montag – Freitag 10 bis 11 Uhr) anzumelden.",
+   "sprich": [
+    "lkh west"
+   ]
+  },
+  "Mam 1A": {
+   "gruppe": "Mammographie",
+   "art": "befund",
+   "titel": "Mammographie bds.",
+   "befund": "Inspektion/Palpation: Unauffälliger Befund.\nMammographie: Es zeigt sich ein seitengleich symmetrischer Befund bei einem regulär strukturiertem Drüsenparenchym.\nSuspekte Mikrokalzifikationen gelangen nicht zur Ansicht.\nSubcutis und Cutis unauffällig.\nSonographie: Beidseits keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar. Jährliche Kontrollen ab dem 40. Lebensjahr empfohlen.\nBI-RADS I. ACR 2.",
+   "sprich": [
+    "mam 1 a",
+    "mamma 1 a",
+    "mammo 1 a",
+    "mammographie 1 a",
+    "mamo 1 a"
+   ]
+  },
+  "mam1": {
+   "gruppe": "Mammographie",
+   "art": "befund",
+   "titel": "Mammographie beidseits",
+   "befund": "Inspektion und Palpation: Unauffälliger Befund.\nMammographie: Es zeigt sich ein seitengleich symmetrischer Befund bei einem regulär strukturierten Drüsenparenchym. Suspekte Mikrokalzifikationen gelangen nicht zur Ansicht. Subcutis und Cutis unauffällig.",
+   "ergebnis": "Unauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar. Eine Kontrolle in einem Jahr wurde mit der Patientin vereinbart.\nBI-RADS",
+   "sprich": [
+    "mam 1",
+    "mamma 1",
+    "mammo 1",
+    "mammographie 1",
+    "mamo 1"
+   ]
+  },
+  "mam2": {
+   "gruppe": "Mammographie",
+   "art": "befund",
+   "titel": "Mammographie bds.",
+   "befund": "Inspektion und Palpation: Unauffälliger Befund.\nMammographie: Das Drüsenparenchym beidseits zur Gänze rückgebildet. Suspekter Mikrokalk nicht nachweisbar. Subcutis und Cutis unauffällig.",
+   "ergebnis": "Involutionsmamma beidseits.\nKontrolle wurde der Patientin in einem Jahr empfohlen.\nBI-RADS 1, ACR 1.",
+   "sprich": [
+    "mam 2",
+    "mamma 2",
+    "mammo 2",
+    "mammographie 2",
+    "mamo 2"
+   ]
+  },
+  "mam3": {
+   "gruppe": "Mammographie",
+   "art": "befund",
+   "titel": "Mammographie beidseits",
+   "befund": "Inspektion und Palpation: Unauffälliger Befund.\nMammographie: Verglichen zur Voruntersuchung vom ergibt sich keine Änderung. Weiterhin unauffällig strukturiertes Drüsenparenchym. Suspekter Mikrokalk nicht nachweisbar. Subcutis und Cutis unauffällig.",
+   "ergebnis": "Altersentsprechend unauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar.\nEine Kontrolle wurde mit der Patientin in einem Jahr vereinbart.\nBI-RADS",
+   "sprich": [
+    "mam 3",
+    "mamma 3",
+    "mammo 3",
+    "mammographie 3",
+    "mamo 3"
+   ]
+  },
+  "Palp": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Palpatorisch beide Mammae unauffällig. Die Axillen frei.",
+   "sprich": [
+    "palp",
+    "palpation"
+   ]
+  },
+  "Stanze": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Die mammotomgezielte Vakuumsaugbiopsie wird nach tel. Voranmeldung ambulant auf der Universitätsklinik für Radiologie/Brustambulanz, Tel.: 0316/385-12058 bzw. 0316/385-83006 oder im Röntgen des LKW-West, Tel.: 0316/5466-14644 durchgeführt.",
+   "sprich": [
+    "stanze"
+   ]
+  },
+  "Uranitsch Stefan": {
+   "gruppe": "Mammographie",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Es wurde mit der Patientin vereinbart die weitere Abklärung über Dr. Stefan Uranitsch durchführen zu lassen (Tel.: 0676 4000 364).",
+   "sprich": [
+    "uranitsch stefan"
+   ]
+  },
+  "Abdomenleeraufnahme": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Abdomenleeraufnahme",
+   "befund": "Normale Darmgasverteilung. Schattengebende Konkremente im Verlauf der Harnwege nicht nachzuweisen.",
+   "ergebnis": "Unauffällige Abdomenleeraufnahme.",
+   "sprich": [
+    "abdomenleeraufnahme"
+   ]
+  },
+  "becken": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Beckenübersicht stehend",
+   "befund": "Das Beckenskelett horizontal, regelrecht konfiguriert und unauffällig strukturiert. Hüftgelenke und SI-Gelenke unauffällig.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "becken"
+   ]
+  },
+  "BWS-NB - U": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "BWS ap/seitlich",
+   "befund": "Normaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Costotransversalgelenke o. B..",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "bws",
+    "bws nb u",
+    "bws normal"
+   ]
+  },
+  "fern": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Schädelfernröntgen",
+   "befund": "Die dargestellten knöchernen Schädelstrukturen ohne Auffälligkeiten. Die mitdargestellten Nebenhöhlen o. B.. Die Sella normal weit. Der Sellaboden eben.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fern"
+   ]
+  },
+  "fern_neu-Dr._U": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Schädelfernröntgen",
+   "befund": "Die Sella normal weit. Der Sellaboden eben. Die mitdargestellten Nebenhöhlen o. B..\nDie mitdargestellten HW-Abschnitte ohne Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fern neu dr u"
+   ]
+  },
+  "fernp": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Seitliches Fernröntgen",
+   "befund": "Zahnstellung auf beiliegender Aufnahme ersichtlich. Unauffällige Frontobasis.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "fernp"
+   ]
+  },
+  "gel": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "",
+   "befund": "Normale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B..",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "gel",
+    "gelenk"
+   ]
+  },
+  "hws": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "HWS ap und seitlich",
+   "befund": "Normaler Achsenverlauf. Alle Wirbelkörper von normaler Form, Höhe und Begrenzung. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o.B..\nDer Cervicalkanal normal weit, die Kopfgelenke o.B..",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hws"
+   ]
+  },
+  "HWS-NB": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "HWS ap/seitlich",
+   "befund": "Normaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B..\nDer Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B..",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hws nb",
+    "hws normal"
+   ]
+  },
+  "hwsfu-normal": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "HWS ap/seitlich mit Funktionsaufnahmen",
+   "befund": "Normaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B.. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B.. Normale Ante- und Retroflexion.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hwsfu normal"
+   ]
+  },
+  "hü": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Hüfte in 2 Ebenen",
+   "befund": "Regelrechte Darstellung der ossären Strukturen, regelrechte Darstellung beider Gelenksspalten. Kein Hinweis auf ossär traumatische Veränderungen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "hue",
+    "huefte"
+   ]
+  },
+  "kiefergelenk wied": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Kiefergelenke beidseits in geschlossenen und geöffneten Zustand",
+   "befund": "Normal weite Kiefergelenksspalten. Normale Konfiguration der Kieferköpfchen. Bei Mundöffnung normale Beweglichkeit beider Kiefergelenke vor das Tuberculum articulare.",
+   "ergebnis": "Unauffällige knöcherne Konfiguration beider Kiefergelenke.",
+   "sprich": [
+    "kiefergelenk wied"
+   ]
+  },
+  "Knie+Patella": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Kniegelenk ap/seitlich sowie Patella tangential",
+   "befund": "Normale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Die Gelenksspalten normal weit. Die periarticuläre Weichteilzone o. B.. Die Patella normal konfiguriert zentriert das femoropatellare Gleitlager unauffällig.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "knie patella"
+   ]
+  },
+  "Knochenalter Junge": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "struktur",
+   "titel": "Hand links, Knochenalterbestimmung",
+   "befund": "Zum Zeitpunkt der Untersuchung beträgt das Alter des Jungen … Jahre und … Monate, die Körpergröße … cm. Das ermittelte Knochenalter nach Greulich und Pyle beträgt … Jahre.\nDie errechnete Endkörpergröße beträgt … cm.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "knochenalter junge"
+   ]
+  },
+  "Knochenalter Mädchen": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "struktur",
+   "titel": "Hand links, Knochenalterbestimmung",
+   "befund": "Zum Zeitpunkt der Untersuchung beträgt das Alter des Mädchens … Jahre und … Monate, die Körpergröße … cm. Das ermittelte Knochenalter nach Greulich und Pyle beträgt … Jahre.\nDie errechnete Endkörpergröße beträgt … cm.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "knochenalter maedchen"
+   ]
+  },
+  "LWS normal": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "LWS ap/seitlich im Stehen",
+   "befund": "Normaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B..",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "lws",
+    "lws normal"
+   ]
+  },
+  "nnh": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Nasennebenhöhlen der 1. und 2. Serie",
+   "befund": "Alle Nebenhöhlen von mittlerer Ausdehnung, normal lufthältig und demnach nicht pathologisch verändert.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nnh"
+   ]
+  },
+  "nnhp": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Nasennebenhöhlen",
+   "befund": "Die Nasennebenhöhlen strahlentransparent. Die knöcherne Begrenzung erhalten. Das Septum median. Kein Sekretspiegel.",
+   "ergebnis": "Unauffälliges Nasennebenhöhlenröntgen.",
+   "sprich": [
+    "nnhp"
+   ]
+  },
+  "nnhu": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Nasennebenhöhlen der 1. und 2. Serie",
+   "befund": "Alle Nebenhöhlen von mittlerer Ausdehnung, normal lufthältig und demnach nicht pathologisch verändert.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nnhu"
+   ]
+  },
+  "oswth": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax in 2 Ebenen",
+   "befund": "Das Herz normal groß. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Das Lungenparenchym frei von rezent bronchopneumonischen Infiltraten sowie neoplastischen Rundherden. Keine\nStauungs- bzw. Lungenüberwässerungszeichen. Die Zwerchfellkuppen bds.- gut abgrenzbar. Die Zwerchfellsinus bds. frei. Kein Hinweis auf Pleuraerguss.",
+   "ergebnis": "Unauffälliger Befund an Cor und Pulmo.",
+   "sprich": [
+    "oswth"
+   ]
+  },
+  "Patella bds": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Patella-Defileeaufnahme 30, 60 und 90° beidseits",
+   "befund": "Zentrierte Patella, keine Patellalateralisation.\nRegelrechte Darstellung der retropatellären Gelenksränder.\nKeine Weichteilverkalkungen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "patella bds",
+    "patella beidseits"
+   ]
+  },
+  "patella pein": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Patella-Defileeaufnahme 30, 60 und 90° beidseits",
+   "befund": "Zentrierte Patella, keine Patellalateralisation.\nRegelrechte Darstellung der retropatellären Gelenksränder.\nKeine Weichteilverkalkungen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "patella pein"
+   ]
+  },
+  "rippen": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Knöcherner Halbthorax rechts",
+   "befund": "Die Rippen glatt konturiert, unauffällig strukturiert. Kein Hinweis auf frische oder alte Fraktur.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "rippen"
+   ]
+  },
+  "Rippen links": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Knöcherner Hemithorax links",
+   "befund": "Die Rippen links glatt konturiert, unauffällig strukturiert. Kein Hinweis auf frische oder alte Fraktur.",
+   "ergebnis": "Unauffälliger Befund.\nBemerkung: Bei Anhalten der klinischen Beschwerdesymptomatik empfehle Kontrolle in 1 Woche.",
+   "sprich": [
+    "rippen li",
+    "rippen links"
+   ]
+  },
+  "Rippen rechts": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Knöcherner Hemithorax rechts",
+   "befund": "Die Rippen rechts glatt konturiert, unauffällig strukturiert. Kein Hinweis auf frische oder alte Fraktur.",
+   "ergebnis": "Unauffälliger Befund.\nBemerkung: Bei Anhalten der klinischen Beschwerdesymptomatik empfehle Kontrolle in 1 Woche.",
+   "sprich": [
+    "rippen re",
+    "rippen rechts"
+   ]
+  },
+  "ripuk": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Knöcherner Halbthorax rechts",
+   "befund": "Die Rippen glatt konturiert, unauffällig strukturiert. Kein Hinwies auf frische oder alte Fraktur.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "ripuk"
+   ]
+  },
+  "schulter": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Schulter ap und axial",
+   "befund": "Normale Form und Struktur der Gelenkkörper, die Gelenkflächen glatt und kongruent, die Gelenkränder unauffällig, der Gelenkspalt normal weit, die acromiohumerale Distanz regelrecht, die periarticulären Weichteile ohne Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "schulter"
+   ]
+  },
+  "schuro": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Rechte Schulter ap in Außen- und Innenrotation sowie Sonographie der Rotatorenmanschette",
+   "befund": "Normale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Der Gelenksspalt normal weit. Die acromiohumerale Distanz regelrecht. Die periarticulären Weichteile o. B..\nDie Supraspinatussehne glatt konturiert, unauffällig strukturiert. Die Bursa-Faszien-Grenzfläche regelrecht. Im Bereich der langen Bizepssehne sowie der Subscapularissehne und der Infraspinatussehne keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "schuro"
+   ]
+  },
+  "schädel": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Schädel pa und seitlich",
+   "befund": "Die Schädelkapsel von normaler Form, Dicke und Struktur. Die Naht- und Gefäßzeichnung unauffällig. Die Schädelinnenfläche eben. Die Sella normal weit, regelmäßig begrenzt. Auch die übrigen Abschnitte der Basis unauffällig. Keine pathologischen endocraniellen Verkalkungen nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "schaedel"
+   ]
+  },
+  "t1": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "THORAX",
+   "befund": "Infiltrative Veränderungen nicht nachzuweisen. Die Sinus frei.\nDas Herz in Form und Größe im Normbereich.",
+   "ergebnis": "Altersentsprechend unauffälliges Thoraxröntgen.",
+   "sprich": [
+    "t 1"
+   ]
+  },
+  "th": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Unauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "th"
+   ]
+  },
+  "th-osw": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax 2 Ebenen",
+   "befund": "Das Herz von normaler Form und Größe. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Das Lungenparenchym frei von rezent bronchopneumonischen Infiltraten sowie neoplastischen Rundherden.\nKeine Stauungs- bzw. Lungenüberwässerungszeichen. Die Zwerchfellkuppen beidseits gut abgrenzbar. Die Zwerchfellsinus beidseits frei. Kein Hinweis auf Pleuraerguss.",
+   "ergebnis": "Unauffälliger Befund an Cor und Pulmo ohne Nachweis von sekundärblastomatösen Absiedelungen.",
+   "sprich": [
+    "th osw"
+   ]
+  },
+  "th1": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Unauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Kalkeinlagerungen im Aortenbogenbereich. Der Herzschatten größen- und konfigurationsmäßig im Normbereich gelegen.",
+   "ergebnis": "Mäßige Aortensklerose.\nSonst unauffälliger Befund an den Thoraxorganen.",
+   "sprich": [
+    "th 1"
+   ]
+  },
+  "thk": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Unauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Kalkeinlagerungen im Aortenbogenbereich. Der Herz schatten größen- und konfigurationsmäßig im Normbereich gelegen.",
+   "ergebnis": "Geringe Aortensklerose, sonst unauffälliger Befund an den Thoraxorganen.",
+   "sprich": [
+    "thk"
+   ]
+  },
+  "Thorax": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax",
+   "befund": "Keine infiltrativen Veränderungen nachzuweisen. Die Sinus frei. Die Herzgröße im Normbereich. Hili und Mediastinum unauffällig.",
+   "ergebnis": "Unauffälliges Thoraxröntgen.",
+   "sprich": [
+    "thorax"
+   ]
+  },
+  "Thorax TBC": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa",
+   "befund": "Unauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit, der Herz-Gefäßschatten im Normbereich.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "thorax tbc"
+   ]
+  },
+  "Thorax TBC Porsch": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa",
+   "befund": "Keine infiltrativen Veränderungen. Die Sinus frei. Normale Herzgröße. Keine spezifischen Lungenveränderungen.",
+   "ergebnis": "Unauffälliges Thoraxröntgen.",
+   "sprich": [
+    "thorax tbc porsch"
+   ]
+  },
+  "thosw": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax in 2 Ebenen",
+   "befund": "Das Herz von normaler Form und Größe. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Verstärkt peribronchiale Gerüstzeichnung wie bei Bronchitis/Peribronchitis. Ein umschriebenes Infiltrat nicht abzugrenzen.\nKeine Stauungszeichen. Kein Hinweis auf Pleuraerguss.",
+   "ergebnis": "Zeichen der Bronchitis /Peribronchitis. Im Übrigen unauffälliger Befund an Cor und Pulmo.",
+   "sprich": [
+    "thosw"
+   ]
+  },
+  "thrip": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich sowie knöcherner Halbthorax rechts",
+   "befund": "Unauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit, der Herz-Gefäßschatten im Normbereich.\nDie Rippen rechts glatt konturiert, unauffällig strukturiert. Kein Hinweis auf frische oder alte Fraktur.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "thrip"
+   ]
+  },
+  "thschr": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Die Herzgröße im Normbereich. Mediastinum und Hili gefäßtypisch konfiguriert.\nDie Lungen frei von rezenten entzündlichen Infiltraten. Kein Pleuraerguss.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "thschr"
+   ]
+  },
+  "thshr": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Die Herzgröße im Normbereich. Keine pulmonalvenösen Stauungszeichen.\nMediastinum und Hili gefäßtypisch konfiguriert.\nDie Lungen frei von rezenten entzündlichen Infiltraten.\nKein Pleuraerguss.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "thshr"
+   ]
+  },
+  "ththim": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Der Herzschatten in der Größennorm gelegen, keine akuten Stauungszeichen. Hili und Mediastinum gefäßtypisch. Diskret verstärkte peribronchiale Lungengerüstzeichnung im Mittellappen als Hinweis auf Bronchitis. Pneumonische Infiltrate nicht abgrenzbar. Die Recessus frei, keine pleuralen Ergüsse.",
+   "ergebnis": "Normale Herzgröße, diskrete Bronchitiszeichen im Mittellappen.\nAnsonsten unauffälliger Befund.",
+   "sprich": [
+    "ththim"
+   ]
+  },
+  "zahnkinduk": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Zahnstatus",
+   "befund": "Alle Zähne periapical o. B.. Die noch fehlenden Zähne der 2. Dentition bis auf die 8er am Oberkiefer bereits alle angelegt, in regelrechter Position.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "zahnkinduk"
+   ]
+  },
+  "abd - porsch": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie Abdomen",
+   "befund": "Die Leber größenmäßig im Normbereich, von homogener Parenchymstruktur. Die Gallenblase, die ableitenden Gallenwege, das Pankreas und die Milz unauffällig, ebenso beide Nieren unauffällig. Normale Aortenweite.",
+   "ergebnis": "Unauffällige Sonographie des Abdomens.",
+   "sprich": [
+    "abd porsch"
+   ]
+  },
+  "lym": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Die cervicalen, axillären und inguinalen Lymphknoten beidseits unauffällig. Kein Hinweis auf pathologisch vergrößerte oder suspekte Lymphknoten.",
+   "sprich": [
+    "lym",
+    "lymphknoten"
+   ]
+  },
+  "oswsoob": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Oberbauches inklusive der Nieren",
+   "befund": "Die Leber von normaler Form und Größe. Das Parenchym homogen. Kein Nachweis von fokal parenchymersetzenden Leberläsionen. Die Gallenblase zartwandig und konkrement-frei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pancreas und die Milz unauffällig.",
+   "ergebnis": "Unauffälliger sonographischer Befund der Oberbauchorgane.",
+   "sprich": [
+    "oswsoob"
+   ]
+  },
+  "oswsoob+niere": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Oberbauches inklusive der Nieren",
+   "befund": "Die Leber von normaler Form und Größe. Das Parenchym homogen. Kein Nachweis von fokal parenchymersetzenden Leberläsionen. Die Gallenblase zartwandig und konkrement-frei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pancreas und die Milz unauffällig. Beide Nieren von normaler Form und Größe. Regelrechtes Pyelon-Parenchym-Verhältnis. Kein Hinweis auf Harnabflussstörung. Kein Nachweis eines kalkdichten Konkrements in Projektion auf beide Nieren.\nKein Nachweis freier Flüssigkeit im kleinen Becken.",
+   "ergebnis": "Unauffälliger sonographischer Befund der Oberbauchorgane inklusive beider Nieren.",
+   "sprich": [
+    "oswsoob niere"
+   ]
+  },
+  "Schilddrüse": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Schilddrüse",
+   "befund": "Beide Schilddrüsenlappen von normaler Größe und homogener Parenchymstruktur. Fokale Schilddrüsenläsionen nicht nachzuweisen. Keine Zeichen einer Thyreoiditis.",
+   "ergebnis": "Unauffällige Sonographie der Schilddrüse.",
+   "sprich": [
+    "schilddruese"
+   ]
+  },
+  "Sono Abdomen Frau - Uranitsch": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Oberbauchorgane sowie beider Nieren",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pancreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal beidseits keine Auffälligkeiten. Der Uterus von normaler Form, Größe und Struktur.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "sono abdomen frau uranitsch"
+   ]
+  },
+  "Sono Oberbauch mit Nieren - Uranitsch": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Oberbauchorgane sowie beider Nieren",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pancreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "sono oberbauch mit nieren uranitsch"
+   ]
+  },
+  "sonoabdu": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Im linken Leberlappen eine kleine blande Zyste nachweisbar. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Das Pancreas sonomorphologisch unauffällig.\nDie Milz o.B.. Beide Nieren von normaler Form, Größe und Struktur. Aorta und Vena carva von regulärem Verlauf und Kaliber. Kein Hinweise auf retroperitoneale Raumforderung. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal bds. keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "sonoabdu"
+   ]
+  },
+  "sonoabschr": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Oberbauches",
+   "befund": "Die Leber frei von fokalen, parenchymersetzenden Läsionen.\nDie Gallenglase zart bewandet und konkrementfrei.\nNormale Weite der intra- und extrahepatischen Gallenwege.\nPancreas und Milz unauffällig.\nDie Nieren bds. orthotop gelegen und unauffällig.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "sonoabschr"
+   ]
+  },
+  "sonolku": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens sowie der cervikalen, axillären und inguinalen Lymphknoten",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o.B. Das Pancreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal bds. keine Auffälligkeiten.\nCervikal, axillär und inguinal bds. kein Hinweis auf suspekt vergrößerte Lymphknoten.",
+   "ergebnis": "Unauffälliger Befund. Für sekundärblastomatöse Veränderungen kein Anhaltspunkt.",
+   "sprich": [
+    "sonolku"
+   ]
+  },
+  "us": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Oberbauches",
+   "befund": "Die Leber größenmäßig im Normbereich, die Parenchymstruktur homogen.\nDie Gallenblase, die ableitenden Gallenwege, das Pancreas und beide Nieren unauffällig.\nUnauffällige Darstellung der Milz.",
+   "ergebnis": "Unauffällige Sonographie des Oberbauches.",
+   "sprich": [
+    "us"
+   ]
+  },
+  "US Abdomen Frau - Uranitsch": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal beidseits keine Auffälligkeiten. Der Uterus von normaler Form, Größe und Struktur.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "us abdomen frau uranitsch"
+   ]
+  },
+  "US Abdomen Mann - Uranitsch": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal beidseits keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "us abdomen mann uranitsch"
+   ]
+  },
+  "usabdNEU": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Leber: Normale Größe, unauffällige Parenchymstruktur.\nMilz: Unauffällig.\nGallenblase und ableitende Gallenwege: Unauffälliger Befund.\nPancreas: In allen Abschnitten einsehbar, unauffällig.\nRetroperitoneum und Aorta: Unauffällig.\nNieren: Normale Größe und Parenchym-Pyelon-Relation. Keine Harnstauung. Keine konkrementverdächtigen Reflexe.",
+   "ergebnis": "Unauffällige Sonographie des Abdomens.",
+   "sprich": [
+    "usabdneu"
+   ]
+  },
+  "usabdom_neu_Dr_Porsch": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Die Leber größenmäßig im Normbereich, die Parenchymstruktur homogen. Die Gallenblase. Die ableitenden Gallenwege, das Pancreas unauffällig.\nNormale Milzgröße. Unauffällige Darstellung beider Nieren.\nNormal weite Aorta. Keine wandverdickten Darmschlingen Darstellbar.",
+   "ergebnis": "Unauffällige Sonographie des Abdomens.",
+   "sprich": [
+    "usabdom neu dr porsch"
+   ]
+  },
+  "usabdpo": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Die Leber größenmäßig im Normbereich ohne fokale Läsionen. Unauffällige Darstellung der Gallenblase, der ableitenden Gallenwege, des Pancreas und der Milz. Unauffällige Darstellung beider Nieren und des Retroperitoneums. Keine freie Flüssigkeit im Becken.",
+   "ergebnis": "Unauffällige Sonographie des Abdomens.",
+   "sprich": [
+    "usabdpo"
+   ]
+  },
+  "usabosw": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Abdomens",
+   "befund": "Die Leber von normaler Form und Größe. Das Parenchym homogen. Kein Nachweis von fokalparenchymersetzenden Leberläsionen. Die Gallenblase zartwandig und konkrementfrei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pancreas und die Milz unauffällig. Beide Nieren von normaler Form und Größe. Kein Hinweis auf Harnabflussstörung. Regelrechtes Pyelon-Parenchym-Verhältnis. Die Harnblase nur geringgradig gefüllt, soweit beurteilbar, unauffällig.\nKein Nachweis freier Flüssigkeit.",
+   "ergebnis": "Unauffälliger sonographischer Befund des Abdomens.",
+   "sprich": [
+    "usabosw"
+   ]
+  },
+  "usabthim": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Oberbauches",
+   "befund": "Homogene Echotextur des Leberparenchyms ohne Nachweis fokaler Läsionen. Steinfreie Gallenblase mit zarter Berandung. Regelrechte Größe, Form und Lage beider Nieren. Kein Harnstau bds.. Unauffällige Darstellung von Milz, Pancreas sowie cranialem Retroperitoneum.",
+   "ergebnis": "Unauffällige Oberbauchsonographie.",
+   "sprich": [
+    "usabthim"
+   ]
+  },
+  "usnr": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie beider Nieren",
+   "befund": "Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nieren",
+    "usnr"
+   ]
+  },
+  "usob": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Oberbauchorgane",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "oberbauch",
+    "usob"
+   ]
+  },
+  "usob+usly": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Abdomens sowie der cervikalen, axillären und inguinalen Lymphknoten",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o.B. Das Pancreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal bds. keine Auffälligkeiten.\nCervikal, axillär und inguinal bds. kein Hinweis auf suspekt vergrößerte Lymphknoten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "usob usly"
+   ]
+  },
+  "USOBNI": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Oberbauchorgane sowie beider Nieren",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "oberbauch mit nieren",
+    "oberbauch nieren",
+    "usobni"
+   ]
+  },
+  "usobnimänner": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Oberbauchorgane sowie beider Nieren",
+   "befund": "Die Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o.B. Das Pancreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Harnblase glatt begrenzt, endoluminal unauffällig. Parailiacal bds. keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "usobnimaenner"
+   ]
+  },
+  "usobosw": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie des Oberbauches",
+   "befund": "Erhöhte Echogenität des Leberparenchyms wie bei Steatosis hepatis. Kein Nachweis von suspekten Leberherden. Die Gallenblase zartwandig und konkrementfrei. Normale Weite der intra- und extrahepatischen Gallenwege. Kein Hinweis auf Cholestase. Das Pankreas unauffällig. Die Milz normal groß. Beide Nieren von normaler Form und Größe, mit regelrechtem Pyelon-Parenchym-Verhältnis. Kein Hinweis auf Harnabflussstörung.",
+   "ergebnis": "Steatosis hepatis.",
+   "sprich": [
+    "usobosw"
+   ]
+  },
+  "ussd": {
+   "gruppe": "Sonographie Abdomen/Hals",
+   "art": "befund",
+   "titel": "Sonographie der Schilddrüse",
+   "befund": "Beide Schilddrüsenlappen von normaler Form und Größe mit einem Volumen der Einzellappen von.. ml links und.. ml rechts. Der Isthmus normal breit. Gute\nSchluckverschieblichkeit. Farbdopplersonographisch keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "ussd"
+   ]
+  },
+  "Achillessehne": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Ultraschall Achillessehne",
+   "befund": "Es zeigt sich eine normale Breite der Achillessehne ohne NW einer Sehnenverdickung in sämtlichen Abschnitten. Die Sehnenfasern sind parallel angeordnet ohne NW einer Ruptur. Kein NW echoarmer Sehnenanteile. Kein NW einer Neoangiogenese.\nNormbreite Plantaris medialis Sehne. In der heutigen US-Untersuchung keine wesentliche Sehnenverdickung, oder vermehrte Flüssigkeitsansammlung an der Sehne oder zwischen Plantaris Sehne und Achillessehne fassbar. An der Enthese der Achillessehne kein NW einer Sehnenauftreibung. Kein NW intratendinöser Verkalkungen oder einer Spornbildung.\nDie Bursa subachillea/retrocalcanea und die subkutane Bursa unauffällig. Kein NW einer Haglund-Deformität.\nKein NW einer Ergussbildung im oberen dorsalen Sprunggelenk.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "achillessehne"
+   ]
+  },
+  "Ellbogen mit Nerven": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Ellbogen inklusive Nerven",
+   "befund": "Am anterioren Gelenkskompartiment (Capitello-radial und trochleo-humeral) keine Auffälligkeiten insbesondere kein NW eines Gelenksergusses oder einer Chondropathie (soweit sonomorphologisch fassbar).\nDie Biceps brachii Sehne (langer und kurzer Kopf) zeigt eine regelrechte Echotextur ohne NW einer Tendinose oder Enthesiopathie an der Tuberositas radii. Kein NW eines Risses. Unauffällige Aponeurosis bicipitalis. Kein NW einer Bursitis bicipitoradialis.\nDer Musculus pronator teres, M. brachialis und M. brachioradialis unauffällig.\nDie Extensorensehnenplatte am Epicondylus lateralis intakt mit regelrechter Sehnentextur ohne NW von (Mikro) Rissen oder einer Hypervaskularisation. Der laterale Gelenksspalt normweit, ohne Ergussbildung. Das radiale Kollateralband (RCL), Das Lig. anulare und das ulnare laterale Kollateralband (ULCL) intakt.\nDie Flexorensehnenplatte am Epicondylus medialis intakt mit regelrechter Sehnentextur ohne NW von (Mikro) Rissen oder einer Hypervaskularisation. Der mediale Gelenksspalt normweit, ohne Ergussbildung. Sämtliche Anteile des ulnaren Kollateralbandes (UCL) intakt.\nDie Triceps brachii Sehne zeigt eine regelrechte Echotextur ohne NW einer Tendinose oder Enthesiopathie am Olecranon. Kein NW einer Bursitis. Kein NW eines Gelenksergusses im Recessus posterior.\nUnauffälliger Nervus medianus. Anatomisch regelrechter Verlauf des Nervus medianus am Musculus pronator teres ohne fassbare Kompressionszeichen oder Verlagerung nach medial. Kein NW eines Nerven-Knochenkontaktes.\nUnauffälliger N. ulnaris. Anatomisch regelrechter Verlauf des Nervs am Sulcus nervi ulnaris mit regelechter Querschnitssfläche von (Normwert 7mm2). Kein NW einer Nervenkompression am medialen Septum intermusculare oder am Osborne Ligament (zwischen den Köpfen des M. flexor carpi ulnaris). Die Osborne Faszie/das Retinaculum unauffällig. Kein NW eines Schnappens des Nervs über den Epicondylus medialis humeri bei Ellbogenflexion. Keine Kompression des Nervs durch die Osborne Faszie oder die mediale Tricpesmuskulatur bei Armflexion.\nRegelrechte Aufteilung des Nervus radialis in einen Ramus profundus und Ramus superficialis in der Ellenbeuge.\nDer Ramus profundus zeigt einen normalen Verlauf in der Ellenbeuge. Ein Nerven-Arterien Konflikt mit der Arteria radialis recurrens lässt sich nicht abgrenzen. Kein NW einer höhergradigen Auftreibung des Nervs an der Frohse Arkade. Beim Verlauf durch den M. supinator kein Auffälligkeiten. Der Nerv verliert sich distal des Musculus supinator.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "ellbogen mit nerven"
+   ]
+  },
+  "Hüfte mit Nerven": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Ultraschall Hüfte/Inguinalregion mit Nerven",
+   "befund": "Entlang der Inguinalregion und Femoralregion keine Auffälligkeiten. Kein NW einer Narbenbildung. Kein NW einer direkten oder indirekten Leistenhernie oder einer Femoralhernie in Ruhe und im Pressversuch. Der Leistenkanal erscheint regelrecht.\nKein NW einer Insuffizienz der Faszia transversalis/posterioren Inguinalwand im Pressversuch.\nDie Conjoint Tendon (Musculus transversus abdominis/M. obliquus internus) regelrecht. Kein NW einer Tendinose am Ansatz an der Symphyse. Die Symphyse regelrecht. Kein NW einer Tendinose der M. rectus abdominis und M. adductor longus Sehne. Kein NW eines Gelenksergusses. Kein NW eines secondary cleft Zeichens.\nDie indirekte und direkte Rectus femoris Sehne regelrecht ohne NW einer Tendinose. Die Iliopsoassehnen regelrecht ohne NW einer Tendinose. In Hüftgelenksflexion und folglicher Aussenrotation und Extension und unter sonomorphologischer Kontrolle kein NW einer schnappenden Sehne.\nKein NW einer Tendinose der Sehne des M. sartorius und M. tensor fasciae latae am Ursprung an der Spina iliaca anterior superior.\nDie Glutealsehnen (M. gluteus minimus und anteriores/posteriores Band M. gluteus medius) regelrecht ohne NW einer Tendinose oder Enthesiopathie am Trochanter major. Kein NW einer Bursitis trochanterica superficialis et subtendinea.\nDie Hamstringmuskulatur und Sehnen am Tuber ischiadicum regelrecht ohne NW einer Tendinose oder einer Rissbildung.\nKein NW eines Hüftgelenksergusses. Das anteriore Labrum soweit fassbar regelrecht. Der Gelenksspalt erscheint nicht verschmälert.\nEntlang der kutanen Hautäste anterior (Nervus femoris cutaneus lateralis, intermedius und medialis, N. saphenus), lateral (Ramus lateralis N. iliohypogasticus) und posterior (N. femoris cutaneus posterior) sowie der großen Hauptstämme (N. ischiadicus und N. femoralis) keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "huefte mit nerven"
+   ]
+  },
+  "Knie mit Nerven": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Ultraschall Knie mit Nerven",
+   "befund": "Regerechte Echotextur sämtlicher Anteile der Quadricepssehne und des Lig. patellae. Kein NW einer Tendinose oder eines Partialrisses. Kein NW von ossären Anbauten an der Patella und der Tuberositas tibiae.\nDer Hoffa-Fettkörper, soweit methodisch fassbar, unauffällig. Kein NW einer Bursitis infrapatellaris profunda. Kein NW eines Gelenksergusses.\nDas Lig. collaterale laterale und mediale intakt. Kein NW einer (Partial) Ruptur oder Bandverdickung im Sinne einer Zerrung. Die Menisci, soweit einsehbar mit regelrechter, dreiecksförmiger Struktur ohne NW eines Risses.\nDie Bicepssehne sowie die Popliteussehe und der Tractus iliotbialis unauffällig ohne NW einer Tendinose. Kein NW vermehrter Flüssigkeit am Condylus lateralis femoris im Sinne eines Tractus iliotibialis Friktionssyndroms.\nAn der Fossa poplitea keine Auffälligkeiten. Regelrechte Darstellung der Muskulatur. Kein NW vermehrter Flüssigkeitsbildung zwischen M. gastrocnemius medialis und M. semimembranosus im Sinne einer Bakerzyste/Arthrocele. An der Vena und Arteria poplitea keine Auffälligkeiten.\nEntlang der kutanen Nervenäste anterior (N. saphenus, Ramus infrapatellaris n. sapheni, N. femoris cutaneus anterior und lateralis) sowie posterior (N. femoris cutaneus posterior, N. suralis) und den großen Nerven (N. ischiadicus, N. peroneus und N. tibialis) keine Auffälligkeiten. Kein NW eines Neuroms oder einer nervalen Auftreibung. Kein NW einer Nerven-Narbenaffektion.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "knie mit nerven"
+   ]
+  },
+  "Knie Ramus infrapatellaris": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Ultraschall Knie Ramus infrapatellaris",
+   "befund": "St.p. KTEP mit typischen postoperativen Veränderungen an der Quadricepssehne und dem Lig. patellae. die Sehnenstrukturen intakt.\nDer Hoffa-Fettkörper, soweit methodisch fassbar, unauffällig. Kein NW einer Bursitis infrapatellaris profunda. Kein NW eines höhergradigen Gelenksergusses. Der lat. und mediale Recessus unauffällig ohne NW einer synivoalien Hypertrophie.\nDas Lig. collaterale mediale und laterale intakt.\nDie Bicepssehne intakt. Geringe kortikale Irregularitäten am Gerdy Tuberkel im Bereich des Ansatzes des Tractus iliotbialis.\nDer Hauptschmerzpunkt projiziert sich auf den Verlauf des Ramus infrapatellaris. Der Nerv entspringt weit proximal aus dem Nervus saphenus und zieht am M. sartorius nach distal. Geringe narbige Veränderungen im Bereich der Narbe anterior infrapatellar ohne NW einer Neurombildung. Am Schmerzpunkt ebenso kein NW einer Neurombildung.\nZur Diagnosesicherung einer Nervenaffektion des Ramus infrapatellaris erfolgt nach mündlicher Aufklärung des Pat. über mögliche Risiken einer Ultraschall-gezielten Injektion (insbesondere: Infektion, Nervenverletzung, Blutung) sowie Einwilligung des Patienten unter Einhaltung hygienischer Standards (DEGUM Leitlinien 2018) eine Ultraschall-gezielte perineurale Injektion mit 1ml Xylonest (1%) ca. 10cm oberhalb des Kniegelenkes. Kein NW von Komplikationen. Ca. 10 Minuten nach Injektion lt. Pat. Schmerzreduktion von",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "knie ramus infrapatellaris"
+   ]
+  },
+  "Nervus femoris cutaneus lateralis PATHOLOGISCH": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Nervus femoris cutaneus lateralis/Meralgia paraesthetica",
+   "befund": "Darstellung des Nervus femoris cutaneus lateralis von knapp oberhalb der Spina iliaca anterior superior (ASIS) inklusive sämtlicher abgehender Endäste.\nDer Nervus femoris cutaneus lateralis verläuft über die ASIS und zeigt einen direkten Kontakt zum Knochen. Auf Höhe der ASIS ist der Nerv im Vergleich zur kontralateralen Seite deutlich verdickt.\nKnapp distal der ASIS teilt sich der Nerv im Fett-Zwickel zwischen M. sartorius und M. tensor fasciae latae in seine Endäste. Entlang der keine Auffälligkeiten insbesondere kein NW eines Neuroms oder einer Kontinuitätsunterbrechung.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nervus femoris cutaneus lateralis pathologisch"
+   ]
+  },
+  "Nervus iliohypogastricus, Nervus ilioinguinalis, Nervus genitofemoralis Blockade": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Nervus iliohypogastricus/Nervus ilioinguinalis und Nervus genitofemoralis und Ultraschall-gezielte Blockade",
+   "befund": "Darstellung des Nervus iliohypogastricus und ilioinguinalis an seinem Verlauf zwischen Musculus transversus abdominis und Musculus obliquus internus bis nach distal inguinal. Darstellung des Ramus femoralis des N. genitofemoralis ab Höhe des Leistenbandes nach distal.\nEntlang der Inguinalregion keine Auffälligkeiten. Kein NW einer Narbenbildung. Kein NW einer direkten oder indirekten Leistenhernie in Ruhe und im Pressversuch. Der Leistenkanal erscheint regelrecht.\nDie schräge Bauchmuskulatur erscheint seitensymmetrisch ohne NW einer Atrophie. Entlang des Nervus iliohypogasticus und Nervus ilioinguinalis an der seitlichen Bauchmuskulatur keine Auffälligkeiten insbesondere kein NW eines Neuroms oder einer Narbenbildung.\nDer Ramus femoralis des N. genitofemoralis ist unauffällig.\nZur Diagnosesicherung einer Nervenaffektion des N. iliohypogastricus/Nervus ilioinguinalis erfolgt nach mündlicher Aufklärung des Pat. über mögliche Risiken einer Ultraschall-gezielten Injektion (insbesondere: Infektion, Nervenverletzung, Blutung) sowie Einwilligung des Patienten unter Einhaltung hygienischer Standards (DEGUM Leitlinien 2018) eine Ultraschall-gezielte perineurale Injektion mit 2ml Xylonest (1%) zwischen Musculus transversus abdomins und M. obliquus internus Kein NW von Komplikationen. Ca. 10 Minuten nach Injektion lt. Pat. deutliche Schmerzreduktion von NRS auf NRS.\nZur Diagnosesicherung einer Affektion des Ramus genitalis des N. genitofemoralis erfolgt nach mündlicher Aufklärung des Pat. über mögliche Risiken einer Ultraschall-gezielten Injektion (insbesondere: Infektion, Nervenverletzung, Blutung) sowie Einwilligung des Patienten unter Einhaltung hygienischer Standards (DEGUM Leitlinien 2018) eine Ultraschall-gezielte perineurale Injektion mit 1ml Xylonest (1%) in den Leistenkanal. Kein NW von Komplikationen. Ca. 10 Minuten nach Injektion lt. Pat. deutliche Schmerzreduktion von NRS auf NRS.\nZur Diagnosesicherung einer Affektion des Ramus femoralis des N. genitofemoralis erfolgt nach mündlicher Aufklärung des Pat. über mögliche Risiken einer Ultraschall-gezielten Injektion (insbesondere: Infektion, Nervenverletzung, Blutung) sowie Einwilligung des Patienten unter Einhaltung hygienischer Standards (DEGUM Leitlinien 2018) eine Ultraschall-gezielte perineurale Injektion mit 1ml Xylonest (1%) knapp infraligamentär. Kein NW von Komplikationen. Ca. 10 Minuten nach Injektion lt. Pat. deutliche Schmerzreduktion von NRS auf NRS.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nervus iliohypogastricus nervus ilioinguinalis nervus genitofemoralis blockade"
+   ]
+  },
+  "Nervus ischiadicus, Nervus peroneus, Nervus tibialis und Nervus suralis": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall N. ischiadicus, N. peroneus und N. tibialis und N. suralis",
+   "befund": "Darstellung des Nervus ischiadicus beginnend ab dem Foramen infrapiriforme nach distal sowie des N. peroneus und N. tibialis inklusive sämtlicher abgehender Endäste.\nDer N. ischiadicus zeigt vom Foramen infrapiriforme bis auf Höhe der Aufzweigung in den N. tibialis und N. peroneus ein seitensymmetrisches Kaliber ohne NW einer neraveln auftreibung oder faszikulären Verdickung. Der M. piriformis seitensymetrisch ohne NW einer Muskelhypertrophie. Entlang des Nervs insbesondere am Tuber ischiadicum keine Auffälligkeiten. Kein NW einer Hamstring-Tendinose.\nDer Nervus peroneus zeigt einen unauffälligen Verlauf vom Angang aus dem N. ischiadicus bis distal des Collum fibulae ohne Nachweis einer faszikulären oder nervalen Auftreibung (Querschnittsfläche Collum fibulae: ; Normwert < 13mm2). Der Ramus superficialis und Ramus profundus sowie seine Endäste stellen sich regelrecht dar ohne NW einer Kontinuitätsunterbrechung oder eines Neuroms.\nDer N. tibialis über seinen gesamten Verlauf unauffällig mit regelrechtem Kaliber (Querschnittsfläche Fossa poplitea: ; Normwert < 24mm2; posteriorer Tarsaltunnel: ;Normwert < 14mm2). Im weiteren Verlauf nach distal stellen sich der Ramus plantaris medialis und lateralis inklusive seiner abgehenden Äste unauffällig dar. Kein NW einer Tendovaginitis am Knot-of Henry. Kein NW eines Morton-Neuroms.\nDer Nervus suralis über seinen gesamten Verlauf unauffällig.\nDie dorsale Ober – und Unterschenkelmuskulatur sowie die anteriore Unterschenkelmuskulatur und die Peroneusmuskulatur seitensymmetrisch ohne NW einer Echogenitätsteigerung im Sinne einer Denervation oder einer Atrophie. Kein NW von Muskel-Faszikulationen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nervus ischiadicus nervus peroneus nervus tibialis und nervus suralis"
+   ]
+  },
+  "Nervus pudendus Blockade": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Nervus pudendus und Ultraschall-gezielte Blockade",
+   "befund": "Darstellung des Nervus pudendus am extra-abdominellen Verlauf gluteal.\nDer Nervus pudendus lässt sich extra-abdominell medial des Nervus ischiadicus auf Höhe des Ligamentum sacrospinale sonomorpholgisch abgrenzen. In diesem Bereich keine Auffälligkeiten, insbesondere kein NW einer nervalen Verdickung. Das Ligamentum sacrospinale und Lig. sacrotuberale erscheinen regelrecht ohne NW einer Verdickung. Der Nervus pudendus ohne eindeutigen intraligamentären Verlauf. Der Musculus obturator internus erschein soweit einsehbar nicht hypertroph.\nZur Diagnosesicherung einer Pudendusneralgie (Nantes Kriterien; Labat 2008) erfolgt nach schriftlicher Aufklärung des Pat. über mögliche Risiken einer Ultraschall-gezielten Injektion (insbesondere: Infektion, Nervenverletzung, Blutung) sowie Einwilligung des Patienten unter Einhaltung hygienischer Standards (DEGUM Leitlinien 2018) eine Ultraschall-gezielte perineurale Injektion mit 1ml Xylonest (1%). Kein NW von Komplikationen. Ca. 10 Minuten nach Injektion lt. Pat. deutliche Schmerzreduktion von NRS auf NRS.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "nervus pudendus blockade"
+   ]
+  },
+  "Occipital beidseits": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Occipital bds.",
+   "befund": "Regelrechte Darstellung der Processi spinosi und transversi.\nDie cervicalen Facettengelenke sind allseits regelrecht ohne NW einer Gelenksirregularität oder osteophytärer Anbauten.\nSeitensymmetrische, zervikale Muskulatur ohne NW einer Atrophie oder Denervation.\nFolglich wird der Nervus occipitalis major bds. zwischen Musculus obliquus und M. semispinalis aufgesucht und nach prox. und distal verfolgt.\nAuffallend kräftiger Muskelbauch des Musculus semispinalis capitis bds. Der Nervus occipitalis major mit relativ steilem Verlauf durch die Muskulatur jedoch ohne NW einer Verdickung.\nDer Nervus occipitalis tertius und minor regelrecht ohne NW einer Auftreibung.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "occipital beidseits"
+   ]
+  },
+  "Plexus brachialis, Nervus medianus, Nervus ulnaris und Nervus radialis": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Plexus brachialis, N. medianus, N. ulnaris und N. radialis",
+   "befund": "Darstellung des Plexus brachialis sowie sämtlicher großer Nervenäste der oberen Extremität von supraclaviculär bis nach distal inklusive sämtlicher abgehender Endäste.\nSupracalviculär und infraclaviculär regelrechtes Kaliber der Nervenwurzeln C5 – TH1 der Trunci und Fasciculi. Kein Nachweis einer nervalen Verdickung. Unauffällige Nerven-Echogenität. Die Kontinuität sämtlicher Fasern erhalten.\nDer costoclaviculäre Raum imponiert normweit. Der Musculus subclavicus und die Pectoralmuksulatur seitensymetrisch und nicht hypertrophiert. In Ruhe und bei Armelevation (ca. 160°) kein Nachweis einer signifikanten Flussbeschleunigung in der Arteria subclavia somit auch kein Nachweis eines arteriellen costoclaviculären TOS (Thoracic outlet syndroms).\nEntlang des Nervus medianus, des Nervus ulnaris und des N. radialis keine Auffälligkeiten. Alle Nerven weisen ein regelrechtes Kaliber auf. Kein Nachweis einer faszikulären Auftreibung. Am Karpaltunnel, am Sulcus n. radialis und am Sulcus n. ulnaris keine Auffälligkeiten.\nDie Kennmuskulatur C5-TH1 sowie die vom N. medianus, N. ulnaris und N. radialis seitensymmetrisch ohne Nachweis einer Echogenitätsteigerung im Sinne einer Denervation oder einer Atrophie. Kein Nachweis von Muskel-Faszikulationen.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "plexus brachialis nervus medianus nervus ulnaris und nervus radialis"
+   ]
+  },
+  "rotatosu": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Sonographie der Rotatorenmanschette",
+   "befund": "Die Supraspinatussehne glatt konturiert, unauffällig strukturiert. Die Bursa-Fasciengrenzfläche regelrecht. Im Bereich der langen Bizepssehne, sowie der Subscapularissehne und der Infraspinatussehne keine Auffälligkeiten.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "rotatosu"
+   ]
+  },
+  "Schulter mit Plexus": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Hochauflösender Ultraschall Schulter inklusive Plexus",
+   "befund": "Regelrechte Darstellung des Caput longum des M. biceps brachii, ohne NW einer Tendionse oder einer Tendovaginitis. Die Sehne regelrecht im Sulcus intertubercularis verankert ohne NW einer (Sub) Luxation in Außen- oder Innenrotation. Die Bicepspulleys erscheinen intakt. Das Rotatorenintervall unauffällig ohne NW einer vermehrten Flüssigkeitsimbibierung oder Fettgewebsobliteration.\nDie Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne NW einer Tendinose oder einer Rissbildung. Geringe Geröllzystenbildung am Ansatz an der Supraspinatus und Infraspinatssehne. Kein NW einer Muskelatrophie/fettigen Degeneration an den Muskelbäuchen. (an der Supraspinatussehne zeigt sich im anterioren/mittleren/posterioren Drittel am Foot-Print/gelenksseitg/interstitiell/Bursaseitig eine Partiaruptur/Transmuralruptur (Ausdehnung: anterior-posterior:; longitudinal:)\nSoweit sonomorphologisch fassbar regelrechte Darstellung des subacromialen Raums. Die Supraspinatusehne gleitet regelrecht bei Armabduktion durch den subacromialen Raum.\nKein NW eines Gelenksergusses im posterioren Recessus. Der Spinogelnoidale Notch unauffällig. Die Bursa subacromialis-subdeltoidea ohne Wandverdickung oder vermehrter Flüssigkeitsansammlung.. Das Lig. acromioclaviculare nicht verdickt. Kein NW eines Step-sign (Anschoppen der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion.\nDas AC-Gelenk regelrecht ohne NW einer Gelenkshypertrophie oder einer vermehrten Vaskularisation. Der Gelenksspalt bei Kompression stabil.\nInfraclaviculäre unauffällige Darstellung des Plexus brachialis bis in seine Aufteilung in die Endäste axillär.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "schulter mit plexus"
+   ]
+  },
+  "Sprunggelenk mit Nerven": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Ultraschall Sprunggelenk und Fuß inklusive Nerven",
+   "befund": "Kein NW eines Gelenksergusses im oberen Sprunggelenk. Der einsehbaren talare Knorpel regelrecht. Kein NW von osteophytären Anbauten am Talus im Sinne eines Vd. auf anteriores Impingement. Die Mittelfussgelenke mit normweitem Gelenksspalt, ohne NW einer Arthrose.\nDas anteriore talofibulare Band, calcaneofibulare Band, die anteriore Syndesmose und das Lig. deltoideum intakt. Kein NW vermehrter Flüssigkeit im Bereich des Sinus tarsi als indirekter Hinweis für eine Verletzung. Kein NW eines Risses oder einer narbig verheilten Rissbildung.\nDie Extensoren- und Flexorensehen intakt. Kein NW einer Tendinose oder Tendovaginitis. Die Peroneussehnen ebenso intakt. Kein NW eines Längsrisses. Beim aktiven und passiven Flexionsversuch kein NW von schnappenden Peroneussehnen.\nDie Plantarfaszie intakt ohne NW einer Verdickung. Die Achillessehne intakt mit regelrechter Echotextur ohne NW einer Tendinose. Kein NW einer Enthesiopathie bei regelrechter, rundlicher Konfiguration des Calcaneus. Kein NW einer Bursits retro- oder subachillea.\nAn den MTP, PIP, IP und DIP Gelenken keine Auffälligkeiten insbesondere kein NW einer Gelenksspaltverschmälerung, Synovitis oder Enthesitis.\nDie plantaren Platten allseits intakt. Unauffällige Darstellung der Sesambeine. Kein NW einer Bursitis sub- oder intermetatarsale. Kein NW eines Mortonneurom.\nAm posterioren Tarsaltunnel stellt sich der N. tibialis regelrecht dar. Der Nerv misst hier … (Normwert < 14mm2) und ist demzufolge normbreit. Entlang der Rr. Calcanei mediales keine Auffälligkeiten.\nIm weiteren Verlauf nach distal stellen sich der Ramus plantaris medialis und lateralis inklusive seiner abgehenden Äste unauffällig dar. Kein NW einer Tendovaginitis am Knot-of Henry. Kein NW eines Morton-Neuroms.\nDie dorsale Unterschenkelmuskulatur sowie die kleinen Fussmuskel seitensymmetrisch ohne NW einer Echogenitätsteigerung im Sinne einer Denervation oder einer Atrophie. Kein NW von Muskel-Faszikulationen.\nDie Äste des Ramus superficialis N. peronei teilen sich ca. 10cm oberhalb des Sprunggelenk in einen Ramus cutaneus dorsalis medialis und intermedius. Entlang der Endäste keine Auffälligkeiten.\nDer Ramus profundus N. peronei auf Höhe des Sprunggelenkes und im weiteren Verlauf unauffällig. NW einer sekundären Affektion auf Höhe des Sprunggelenks. Keine Neurombildung.\nDer Nervus suralis auf Höhe des 5. Strahls regelrecht ohne NW eines Neuroms.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "sprunggelenk mit nerven"
+   ]
+  },
+  "UPSS Score": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "struktur",
+   "titel": "Hochauflösender Ultraschall multipler Nerven (UPSS Score)",
+   "befund": "Zur Differenzierung/Abgrenzung einer akuten/subakuten axonalen/demyelinisierenden Neuropathie kommt der UPSS Score zur Anwendung.\nUPSA (Periphere Sensomotorische Nerven 0-16)\nNervus medianus Oberarm: (< 12 mm²/ > 12 mm²/> 18 mm²)\nNervus medianus mittlerer Arm: (< 12,5 mm²/> 12,5 mm²/ >18,75 mm²)\nNervus medianus Unterarm: (< 10 mm²/ > 10 mm²/ > 15 mm²)\nNervus ulnaris Oberarm: (< 9,5 mm²/ > 9,5 mm²/ > 14,25 mm²)\nNervus ulnaris Unterarm: (< 8,5 mm²/ > 8,5 mm²/ > 12,75 mm²)\nNervus peroneus: (< 11,5 mm²/ > 11,5 mm²/ > 17,25 mm²)\nNervus tibialis (Fossa poplitea der): (< 33 mm²/ > 33 mm²/ > 49,5 mm²)\nNervus tibialis: (< 14 mm²/ > 14 mm²/ > 21 mm²)\nUPSB (Nervenwurzel und N. vagus 0-3)\nNervenwurzel C6: (< 4,2 mm/ > 4,2 mm)\nNervenwurzel C5: (< 2,9 mm/ > 2,9 mm)\nNervus vagus: (< 3,5 mm²/ > 3,5 mm²)\nUPSC (Sensible Nerven 0-3)\nNervus suralis: (< 3,5 mm²/ > 3,5 mm²)\nRamus superficialis Nervus radialis: (< 3 mm²/> 3 mm²)\nRamus superficialis Nervus peroneus: (< 3,5 mm²/ > 3,5 mm²)\nInterpretation:\nUPSA and UPSS eher CIDP\nUPSB eher Guillain Barre Syndrom",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "upss score"
+   ]
+  },
+  "usknie": {
+   "gruppe": "Sonographie Bewegungsapparat/Nerven",
+   "art": "befund",
+   "titel": "Sonographie Kniegelenk rechts",
+   "befund": "Unauffällige Darstellung der Kniegelenksbandstrukturen, insbesonders unauffällige Darstellung des Ligamentum patellae, der Quadrizepssehne sowie der Seitenbänder medial und lateral. Unauffällige Darstellung der Kniekehle. Kein Hinweis auf Gelenkserguss.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "usknie"
+   ]
+  },
+  "Fraktur": {
+   "gruppe": "Zusatzsätze",
+   "art": "satz",
+   "titel": "",
+   "befund": "",
+   "ergebnis": "",
+   "text": "Da eine frische, nicht verschobene Fraktur bei initialen Röntgenaufnahmen manchmal nicht erkennbar ist, sollte bei Anhalten der Beschwerdesymptomatik eine Röntgenkontrolle in 1 Woche durchgeführt werden.",
+   "sprich": [
+    "fraktur"
+   ]
+  },
+  "darmpassage": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Magen-Darm-Passage",
+   "befund": "Regelrechter Schluckakt. Unauffällige Darstellung des normal weiten, glatt konturierten Oesophagus. Ungehinderter oesophagogastrischer Übertritt ohne Hinweis auf Hiatushernie oder vermehrten Reflux. Normal geformter Magen mit glatten Konturen und regelrechtem Schleimhautrelief. Ungehinderte Passage des Kontrastmittels. Gute Aufweitbarkeit des Bulbus duodeni. Kein Nachweis eines konstanten Kontrastmitteldepots oder verändertem Faltenreliefs. Unauffällige Darstellung des duodenalen C ohne Hinweis auf Aufspreizung, Raumforderung oder Entzündungszeichen. Die Passage durch das Jejunum und Ileum erfolgt zeitgerecht, wobei sich die einzelnen Darmschlingen unauffällig darstellen lassen. Regelrechte Einmündung des normal geformten terminalen Ileums in den unteren Coecalpol. Im weiteren Verlauf ungehinderte Kontrastmittelpassage durch den Colonrahmen mit zeitgerechter Kontrastierung der Ampulla recti.",
+   "ergebnis": "Regelrechte Passage des Oesophagus, des Magens, des Dünndarms sowie des Dickdarms.",
+   "sprich": [
+    "darmpassage"
+   ]
+  },
+  "madu": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Magen-Duodenum in Doppelkontrast",
+   "befund": "Normale Oesophaguspassage. Reguläre Einmündung in einen normal gelegenen, mittelweiten Magen mit glatten Konturen sowie unauffälligem Schleimhautrelief. Gute Umformung. Der Bulbus duodeni gut entfaltbar, glatt begrenzt. Der Pylorus median gelegen. Die C-Schleife ohne Auffälligkeiten. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "madu"
+   ]
+  },
+  "magenp": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Magen",
+   "befund": "Nach unbehinderter KM-Passage durch den Oesophagus Darstellung eines linksgelegenen Magens mit unauffälligem Schleimhautrelief. Ulceröse oder neoplastische Veränderungen nicht nachweisbar. Der Bulbus duodeni konzentrisch entfaltbar. Der Verlauf der Duodenalschlinge unauffällig. Der Hiatus im Liegen o. B..",
+   "ergebnis": "Unauffälliges Magenröntgen.",
+   "sprich": [
+    "magenp"
+   ]
+  },
+  "magensu": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Magen-Duodenum in Doppelkontrast",
+   "befund": "Normale Oesophagus-Passage. Regelrechte Einmündung in einen normal gelegenen, mittelweiten Magen mit glatten Konturen sowie unauffälligem Schleimhautrelief. Gute Umformung. Der Bulbus duodeni gut entfaltbar, glatt begrenzt. Der Pylorus median gelegen. Die C-Schleife ohne Auffälligkeiten. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "magensu"
+   ]
+  },
+  "oesmagu": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Oesophagus-Magenduodenum in Doppelkontrast",
+   "befund": "Normale Oesophagus-Passage. Der Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Regelrechte Einmündung in einen normal gelegenen mittelweiten Magen mit glatten Konturen sowie unauffälligem Schleimhautrelief. Gute Umformung. Der Bulbus duodeni gut entfaltbar, glatt begrenzt. Der Pylorus median gelegen. Die C-Schleife ohne Auffälligkeiten. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "oesmagu",
+    "oesophagus magen"
+   ]
+  },
+  "oesoph2": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Oesophagus in Doppelkontrast",
+   "befund": "Der Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar, jedoch im Rahmen des Wasser-Siphon-Tests ein gastrooesophagealer Reflux bis ins proximale Oesophagusdrittel erkennbar.",
+   "ergebnis": "Gastrooesophagealer Reflux im Wasser-Siphon-Test. Im Übrigen unauffälliger Befund.",
+   "sprich": [
+    "oesoph 2",
+    "oesophagus 2",
+    "speiseroehre 2"
+   ]
+  },
+  "Oesophagus in Doppelkontrast": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Oesophagus in Doppelkontrast",
+   "befund": "Konventionell: Der Hypopharynx gut entfaltbar, glatt begrenzt, symmetrisch mit unauffälligem Schleimhautbeschlagsbild. Der Oesophagus hinsichtlich Lage, Verlauf, Kontur und Kaliber unauffällig, das Schleimhautbeschlagsbild regulär.\nDynamisch: Die orale Boluskontrolle intakt. Reguläre Hebung des weichen Gaumens. Die Hebung von Hyoid und Larynx regelrecht. Die pharyngeale Kontraktionswelle ge\nDer Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Auch der Hypopharynx gut entfaltbar, glatt begrenzt, mit unauffälligem Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "oesophagus doppelkontrast",
+    "oesophagus in doppelkontrast"
+   ]
+  },
+  "oesp": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Schluckakt",
+   "befund": "Normale orale Boluskontrolle, normale Einleitung des Schluckaktes. Seitengleich symmetrisch ablaufender buccopharyngealer Schluckakt.\nUnbehinderte KM-Passage durch den Oesophagus. Organische Wandveränderungen am Oesophagus oder Hypopharynx nicht nachzuweisen. Im Liegen und im Wassersiphontest kein gastrooesophagealer Reflux.",
+   "ergebnis": "Unauffälliges Schluckaktröntgen.",
+   "sprich": [
+    "oesp"
+   ]
+  },
+  "oespo": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Schluckakt",
+   "befund": "Seitengleich symmetrisch ablaufender buccopharyngealer Schluckakt. Normale KM-Passage durch den Oesophagus. Organische Wandveränderungen am Oesophagus oder Hypopharynx nicht nachweisbar. Im Liegen und im Wasser-Siphon-Test kein gastrooesophagealer Reflux.",
+   "ergebnis": "Unauffälliges Schluckaktröntgen.",
+   "sprich": [
+    "oespo"
+   ]
+  },
+  "oessu": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Oesophagus in Doppelkontrast",
+   "befund": "Der Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar. Auch im Rahmen des Wasser-Siphon-Tests kein gastrooesophagealer Reflux erkennbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "oesophagus",
+    "oesophagus 1",
+    "oessu",
+    "speiseroehre"
+   ]
+  },
+  "schluckakt": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Schluckakt",
+   "befund": "Seitengleich symmetrisch ablaufender buccopharyngealer Schluckakt. Unbehinderte\nKontrastmittelpassage durch den Oesophagus. Organische Wandveränderungen am\nOesophagus oder Hypopharynx nicht nachzuweisen.\nIm Liegen keine Hiatushernie, kein gastro-oesophagealer Reflux.",
+   "ergebnis": "Unauffälliges Schluckaktröntgen.",
+   "sprich": [
+    "schluckakt"
+   ]
+  },
+  "video": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Videokinematographie des Schluckaktes",
+   "befund": "Die orale Boluskontrolle intakt. Reguläre Elevation des weichen Gaumens. Die Hebung von Hyoid und Larynx regelrecht. Die Kippung der Epiglottis unter die Horizontale. Der pharyngooesophageale Sphincter öffnet zeitgerecht und vollständig. Die Oesophagusperistaltik regelrecht. Der Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation sowie im Rahmen des Wasser-Siphon-Tests kein gastrooesophagealer Reflux nachweisbar.",
+   "ergebnis": "Unauffälliger Befund.",
+   "sprich": [
+    "video",
+    "videoschluckakt"
+   ]
+  },
+  "Video-Schluckakt": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Video-Schluckakt (digitale Fluoroskopie, Workstationbefundung)",
+   "befund": "Normale orale Boluskontrolle. Normale Hebung des Zungenbeines und des Larynx. Bei Einleitung des Schluckaktes normale Kippung der Epiglottis. Zeitgerechte Öffnung des oberen Oesophagussphinkters. Normale propulsive Peristaltik und zeitgerechte Öffnung des unteren Sphinkters. Organische Wandver-änderungen am Oesophagus oder Hypopharynx nicht nachzuweisen. Im Liegen kein gastro-oeso-phagealer Reflux.",
+   "ergebnis": "Unauffälliger Video-Schluckakt.",
+   "sprich": [
+    "video schluckakt"
+   ]
+  },
+  "videopo": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Videoschluckakt",
+   "befund": "Normale orale Boluskontrolle. Normale Einleitung des Schluckaktes. Zeitgerechte Hebung des Zungenbeines. Normale Kippung der Epiglottis. Normale Öffnung des oberen Oesophagussphincters. Unauffällige propulsive Peristaltik. Normaler Kontrastabfluss in den Magen. Im Wasser-Siphon-Test ein gastrooesophagealer Reflux nicht nachzuweisen.",
+   "ergebnis": "Unauffälliger Videoschluckakt.",
+   "sprich": [
+    "videopo"
+   ]
+  },
+  "Videoschluckakt Reflux": {
+   "gruppe": "Ösophagus/Magen/Darm/Schluckakt",
+   "art": "befund",
+   "titel": "Videokinematographie des Schluckaktes",
+   "befund": "Die orale Boluskontrolle intakt. Reguläre Elevation des weichen Gaumens. Die Hebung von Hyoid und Larynx regelrecht. Die Kippung der Epiglottis unter die Horizontale. Der pharyngooesophageale Sphincter öffnet zeitgerecht und vollständig. Die Oesophagusperistaltik regelrecht. Der Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Husten und Pressen kein gastrooesophagealer Reflux nachweisbar.\nIm Rahmen des Wasser-Siphon-Tests jedoch spontaner Reflux bis ins proximale Oesophagusdrittel erkennbar.",
+   "ergebnis": "Gastrooesophagealer Reflux im Rahmen des Wasser-Siphon-Tests.\nSonst unauffälliger Befund.",
+   "sprich": [
+    "videoschluckakt reflux"
+   ]
+  }
+ }
+}

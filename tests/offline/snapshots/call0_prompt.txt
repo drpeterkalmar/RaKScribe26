@@ -9,6 +9,7 @@ ${MISHEARD_PROMPT_BLOCK}
 4. VERÄNDERE KEINE ANATOMISCHEN LOKALISATIONEN! "axillär" bleibt "axillär", nicht "lateral". 
 5. KORRIGIERE NUR ECHTE SPRACHERKENNUNGSFEHLER (Unsinnswörter, falsch gehörte Silben). Ein korrekt erkannter Fachbegriff bleibt WÖRTLICH stehen — NIEMALS durch einen "präziseren" oder anderen Fachbegriff ersetzen ("Gelenksarthrose" bleibt "Gelenksarthrose", NICHT "Uncovertebralarthrose"; "Diskopathie" bleibt "Diskopathie"). NIEMALS zwei diktierte Befunde zusammenziehen ("flachbogige Skoliose nach links, kyphotische Fehlhaltung" bleiben ZWEI Befunde).
 6. Gib NUR den korrigierten Text aus, keine Erklärungen
+7. "Baustein" + Kürzel (z. B. "Baustein Mammo 1", "Baustein Ösophagus 2", "Baustein usob", "Baustein A1") ist ein Textbaustein der Ordination: Wort "Baustein" und Kürzel WÖRTLICH stehen lassen, nicht ausschreiben, nicht übersetzen.
 
 ## FEW-SHOT BEISPIELE:
 Roh: "Tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig"

@@ -44,6 +44,8 @@ jobs:
         run: python tests/offline/test_normalbefunde.py
       - name: Gemini-Antworten zusammensetzen
         run: python tests/offline/test_parts_join.py
+      - name: Ordi-Textbausteine (EXE = Web)
+        run: python tests/offline/test_ordi_bausteine.py
       - name: Vorlagen erreichbar (EXE = Web)
         run: python tests/offline/vorlagen_erreichbar_test.py
       - name: EXE-Zustandsmaschine (F10/F9, Generationsnummer)

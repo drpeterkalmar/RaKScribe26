@@ -1,0 +1,373 @@
+{
+ "_info": "Paritäts-Fälle Ordi-Bausteine (EXE bausteine.py = Web bausteine.ts), von Hand geprüft 06.10.2026.",
+ "faelle": [
+  {
+   "diktat": "Baustein Mammo 1",
+   "baustein": "mam1",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Mammo 1",
+   "bericht": "## Mammographie beidseits\n\n## Befund\nInspektion und Palpation: Unauffälliger Befund.\nMammographie: Es zeigt sich ein seitengleich symmetrischer Befund bei einem regulär strukturierten Drüsenparenchym. Suspekte Mikrokalzifikationen gelangen nicht zur Ansicht. Subcutis und Cutis unauffällig.\n\n## Ergebnis\nUnauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar. Eine Kontrolle in einem Jahr wurde mit der Patientin vereinbart.\nBI-RADS"
+  },
+  {
+   "diktat": "Baustein Mammo eins A",
+   "baustein": "Mam 1A",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Mammo eins A",
+   "bericht": "## Mammographie bds.\n\n## Befund\nInspektion/Palpation: Unauffälliger Befund.\nMammographie: Es zeigt sich ein seitengleich symmetrischer Befund bei einem regulär strukturiertem Drüsenparenchym.\nSuspekte Mikrokalzifikationen gelangen nicht zur Ansicht.\nSubcutis und Cutis unauffällig.\nSonographie: Beidseits keine Auffälligkeiten.\n\n## Ergebnis\nUnauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar. Jährliche Kontrollen ab dem 40. Lebensjahr empfohlen.\nBI-RADS I. ACR 2."
+  },
+  {
+   "diktat": "Baustein Mamo 2.",
+   "baustein": "mam2",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Mamo 2.",
+   "bericht": "## Mammographie bds.\n\n## Befund\nInspektion und Palpation: Unauffälliger Befund.\nMammographie: Das Drüsenparenchym beidseits zur Gänze rückgebildet. Suspekter Mikrokalk nicht nachweisbar. Subcutis und Cutis unauffällig.\n\n## Ergebnis\nInvolutionsmamma beidseits.\nKontrolle wurde der Patientin in einem Jahr empfohlen.\nBI-RADS 1, ACR 1."
+  },
+  {
+   "diktat": "Baustein Mammographie 3 unauffällig",
+   "baustein": "mam3",
+   "rest": "unauffällig",
+   "nur": true,
+   "satz": "Baustein Mammographie 3 unauffällig",
+   "bericht": "## Mammographie beidseits\n\n## Befund\nInspektion und Palpation: Unauffälliger Befund.\nMammographie: Verglichen zur Voruntersuchung vom ergibt sich keine Änderung. Weiterhin unauffällig strukturiertes Drüsenparenchym. Suspekter Mikrokalk nicht nachweisbar. Subcutis und Cutis unauffällig.\n\n## Ergebnis\nAltersentsprechend unauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar.\nEine Kontrolle wurde mit der Patientin in einem Jahr vereinbart.\nBI-RADS"
+  },
+  {
+   "diktat": "Baustein Ösophagus 2",
+   "baustein": "oesoph2",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Ösophagus 2",
+   "bericht": "## Oesophagus in Doppelkontrast\n\n## Befund\nDer Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar, jedoch im Rahmen des Wasser-Siphon-Tests ein gastrooesophagealer Reflux bis ins proximale Oesophagusdrittel erkennbar.\n\n## Ergebnis\nGastrooesophagealer Reflux im Wasser-Siphon-Test. Im Übrigen unauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Oesophagus zwei, zusätzlich kleine Hiatushernie",
+   "baustein": "oesoph2",
+   "rest": "zusätzlich kleine Hiatushernie",
+   "nur": false,
+   "satz": "Baustein Oesophagus zwei, zusätzlich kleine Hiatushernie",
+   "bericht": "## Oesophagus in Doppelkontrast\n\n## Befund\nDer Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar, jedoch im Rahmen des Wasser-Siphon-Tests ein gastrooesophagealer Reflux bis ins proximale Oesophagusdrittel erkennbar.\n\n## Ergebnis\nGastrooesophagealer Reflux im Wasser-Siphon-Test. Im Übrigen unauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Ösophagus",
+   "baustein": "oessu",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Ösophagus",
+   "bericht": "## Oesophagus in Doppelkontrast\n\n## Befund\nDer Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar. Auch im Rahmen des Wasser-Siphon-Tests kein gastrooesophagealer Reflux erkennbar.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein mam2 unauffällig",
+   "baustein": "mam2",
+   "rest": "unauffällig",
+   "nur": true,
+   "satz": "Baustein mam2 unauffällig",
+   "bericht": "## Mammographie bds.\n\n## Befund\nInspektion und Palpation: Unauffälliger Befund.\nMammographie: Das Drüsenparenchym beidseits zur Gänze rückgebildet. Suspekter Mikrokalk nicht nachweisbar. Subcutis und Cutis unauffällig.\n\n## Ergebnis\nInvolutionsmamma beidseits.\nKontrolle wurde der Patientin in einem Jahr empfohlen.\nBI-RADS 1, ACR 1."
+  },
+  {
+   "diktat": "Baustein Rippen links",
+   "baustein": "Rippen links",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Rippen links",
+   "bericht": "## Knöcherner Hemithorax links\n\n## Befund\nDie Rippen links glatt konturiert, unauffällig strukturiert. Kein Hinweis auf frische oder alte Fraktur.\n\n## Ergebnis\nUnauffälliger Befund.\nBemerkung: Bei Anhalten der klinischen Beschwerdesymptomatik empfehle Kontrolle in 1 Woche."
+  },
+  {
+   "diktat": "Baustein Rippen rechts",
+   "baustein": "Rippen rechts",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Rippen rechts",
+   "bericht": "## Knöcherner Hemithorax rechts\n\n## Befund\nDie Rippen rechts glatt konturiert, unauffällig strukturiert. Kein Hinweis auf frische oder alte Fraktur.\n\n## Ergebnis\nUnauffälliger Befund.\nBemerkung: Bei Anhalten der klinischen Beschwerdesymptomatik empfehle Kontrolle in 1 Woche."
+  },
+  {
+   "diktat": "Baustein Hü links",
+   "baustein": "hü",
+   "rest": "links",
+   "nur": true,
+   "satz": "Baustein Hü links",
+   "bericht": "## Hüfte links in 2 Ebenen\n\n## Befund\nRegelrechte Darstellung der ossären Strukturen, regelrechte Darstellung beider Gelenksspalten. Kein Hinweis auf ossär traumatische Veränderungen.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein veneu links",
+   "baustein": "veneu",
+   "rest": "links",
+   "nur": true,
+   "satz": "Baustein veneu links",
+   "bericht": "## Farbcodierte Duplexsonographie der Beinvenen links\n\n## Befund\nDie V. femoralis, die V. poplitea, die V. fibularis sowie tibialis posterior in allen Abschnitten gut komprimierbar ohne Hinweis auf Thrombose.\nAuch im Bereich der Muskelvenen keine Auffälligkeiten, farbdopplersonographisch o. B..\n\n## Ergebnis\nUnauffälliger Befund.\nKein Anhaltspunkt für TVT."
+  },
+  {
+   "diktat": "Baustein veneu",
+   "baustein": "veneu",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein veneu",
+   "bericht": "## Farbcodierte Duplexsonographie der Beinvenen rechts\n\n## Befund\nDie V. femoralis, die V. poplitea, die V. fibularis sowie tibialis posterior in allen Abschnitten gut komprimierbar ohne Hinweis auf Thrombose.\nAuch im Bereich der Muskelvenen keine Auffälligkeiten, farbdopplersonographisch o. B..\n\n## Ergebnis\nUnauffälliger Befund.\nKein Anhaltspunkt für TVT."
+  },
+  {
+   "diktat": "Baustein A1",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Unauffälliger Befund. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe A1 entsprechend weniger als 4 Spontanfrakturen pro tausend Personen pro Jahr.",
+   "bericht": null
+  },
+  {
+   "diktat": "Knochendichte, Baustein B2.",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Knochendichte, Teilweise abgebaute Mikroarchitektur bei Osteopenie. In Anlehnung an die Manitoba-Studie entspricht dies einer Risikogruppe B2, entsprechend 7 bis 10 Spontanfrakturen pro tausend Personen pro Jahr..",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein usob, Leber mit Steatose",
+   "baustein": "usob",
+   "rest": "Leber mit Steatose",
+   "nur": false,
+   "satz": "Baustein usob, Leber mit Steatose",
+   "bericht": "## Sonographie der Oberbauchorgane\n\n## Befund\nDie Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Gelenkschema 1",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Baustein Gelenkschema 1",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Baustein",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein HWS",
+   "baustein": "hws",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein HWS",
+   "bericht": "## HWS ap und seitlich\n\n## Befund\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form, Höhe und Begrenzung. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o.B..\nDer Cervicalkanal normal weit, die Kopfgelenke o.B..\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein HWS normal",
+   "baustein": "HWS-NB",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein HWS normal",
+   "bericht": "## HWS ap/seitlich\n\n## Befund\nNormaler Achsenverlauf. Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Die Dornfortsätze o. B..\nDer Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B..\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Video",
+   "baustein": "video",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Video",
+   "bericht": "## Videokinematographie des Schluckaktes\n\n## Befund\nDie orale Boluskontrolle intakt. Reguläre Elevation des weichen Gaumens. Die Hebung von Hyoid und Larynx regelrecht. Die Kippung der Epiglottis unter die Horizontale. Der pharyngooesophageale Sphincter öffnet zeitgerecht und vollständig. Die Oesophagusperistaltik regelrecht. Der Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation sowie im Rahmen des Wasser-Siphon-Tests kein gastrooesophagealer Reflux nachweisbar.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Video Schluckakt",
+   "baustein": "Video-Schluckakt",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Video Schluckakt",
+   "bericht": "## Video-Schluckakt (digitale Fluoroskopie, Workstationbefundung)\n\n## Befund\nNormale orale Boluskontrolle. Normale Hebung des Zungenbeines und des Larynx. Bei Einleitung des Schluckaktes normale Kippung der Epiglottis. Zeitgerechte Öffnung des oberen Oesophagussphinkters. Normale propulsive Peristaltik und zeitgerechte Öffnung des unteren Sphinkters. Organische Wandver-änderungen am Oesophagus oder Hypopharynx nicht nachzuweisen. Im Liegen kein gastro-oeso-phagealer Reflux.\n\n## Ergebnis\nUnauffälliger Video-Schluckakt."
+  },
+  {
+   "diktat": "Baustein Thorax",
+   "baustein": "Thorax",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Thorax",
+   "bericht": "## Thorax\n\n## Befund\nKeine infiltrativen Veränderungen nachzuweisen. Die Sinus frei. Die Herzgröße im Normbereich. Hili und Mediastinum unauffällig.\n\n## Ergebnis\nUnauffälliges Thoraxröntgen."
+  },
+  {
+   "diktat": "Baustein th",
+   "baustein": "th",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein th",
+   "bericht": "## Thorax pa/seitlich\n\n## Befund\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Der Herz-Gefäßschatten im Normbereich.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein th1",
+   "baustein": "th1",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein th1",
+   "bericht": "## Thorax pa/seitlich\n\n## Befund\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Kalkeinlagerungen im Aortenbogenbereich. Der Herzschatten größen- und konfigurationsmäßig im Normbereich gelegen.\n\n## Ergebnis\nMäßige Aortensklerose.\nSonst unauffälliger Befund an den Thoraxorganen."
+  },
+  {
+   "diktat": "Baustein thosw",
+   "baustein": "thosw",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein thosw",
+   "bericht": "## Thorax in 2 Ebenen\n\n## Befund\nDas Herz von normaler Form und Größe. Schlanker Aortenknopf. Unauffällige Darstellung des Mediastinums. Die Lungenhili normal groß. Verstärkt peribronchiale Gerüstzeichnung wie bei Bronchitis/Peribronchitis. Ein umschriebenes Infiltrat nicht abzugrenzen.\nKeine Stauungszeichen. Kein Hinweis auf Pleuraerguss.\n\n## Ergebnis\nZeichen der Bronchitis /Peribronchitis. Im Übrigen unauffälliger Befund an Cor und Pulmo."
+  },
+  {
+   "diktat": "Baustein Oberbauch Nieren",
+   "baustein": "USOBNI",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Oberbauch Nieren",
+   "bericht": "## Sonographie der Oberbauchorgane sowie beider Nieren\n\n## Befund\nDie Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein USOBNI",
+   "baustein": "USOBNI",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein USOBNI",
+   "bericht": "## Sonographie der Oberbauchorgane sowie beider Nieren\n\n## Befund\nDie Leber von normaler Form, Größe und Struktur. Die Gallenblase normal weit, konkrementfrei. Die abführenden Gallenwege nicht ausgeweitet. Die Milz o. B.. Das Pankreas sonomorphologisch unauffällig. Beide Nieren von normaler Form, Größe und Struktur. Das zentrale Reflexband unauffällig. Die Aorta und Vena cava von normalem Verlauf und Kaliber.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Carotis",
+   "baustein": "Carotis",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Carotis",
+   "bericht": "## Farbcodierte Duplexsonographie der Halsgefäße\n\n## Befund\nUnauffällige morphologische Darstellung der Arteria carotis communis, interna und externa beidseits.\nDie Intima-Media-Dicke im Normbereich. Keine Plaques. In der farbcodierten Duplex-Sonographie normale Flussgeschwindigkeit und Flussrichtung sämtlicher extracerebraler hirnversorgenden Arterien, einschließlich der Arteria vertebralis beidseits. Zeichen hämodynamisch relevanter Stenosen nicht nachzuweisen.\n\n## Ergebnis\nUnauffällige Duplex-Sonographie der extrakraniellen hirnversorgenden Arterien."
+  },
+  {
+   "diktat": "Baustein Karotis",
+   "baustein": "Carotis",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Karotis",
+   "bericht": "## Farbcodierte Duplexsonographie der Halsgefäße\n\n## Befund\nUnauffällige morphologische Darstellung der Arteria carotis communis, interna und externa beidseits.\nDie Intima-Media-Dicke im Normbereich. Keine Plaques. In der farbcodierten Duplex-Sonographie normale Flussgeschwindigkeit und Flussrichtung sämtlicher extracerebraler hirnversorgenden Arterien, einschließlich der Arteria vertebralis beidseits. Zeichen hämodynamisch relevanter Stenosen nicht nachzuweisen.\n\n## Ergebnis\nUnauffällige Duplex-Sonographie der extrakraniellen hirnversorgenden Arterien."
+  },
+  {
+   "diktat": "Baustein Fraktur",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Da eine frische, nicht verschobene Fraktur bei initialen Röntgenaufnahmen manchmal nicht erkennbar ist, sollte bei Anhalten der Beschwerdesymptomatik eine Röntgenkontrolle in 1 Woche durchgeführt werden.",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein Palpation",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Palpatorisch beide Mammae unauffällig. Die Axillen frei.",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein Schilddrüse",
+   "baustein": "Schilddrüse",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Schilddrüse",
+   "bericht": "## Sonographie der Schilddrüse\n\n## Befund\nBeide Schilddrüsenlappen von normaler Größe und homogener Parenchymstruktur. Fokale Schilddrüsenläsionen nicht nachzuweisen. Keine Zeichen einer Thyreoiditis.\n\n## Ergebnis\nUnauffällige Sonographie der Schilddrüse."
+  },
+  {
+   "diktat": "Baustein Phlebo",
+   "baustein": "phlebo",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Phlebo",
+   "bericht": "## Aszendierende Pressphlebografie des linken Beins\n\n## Befund\nAnlegen einer Staubinde, Punktion einer Fußrückenvene sowie Applikation von 50ml Optiray.\nDie tiefen Unterschenkelvenen paarig angelegt, unauffällig kontrastiert. Die V. poplitea gedoppelt, zeigt unauffälligen Klappenapparat, die V. femoralis superficialis regelrecht verlaufend, zeigt unauffälligen Klappenapparat. Freier Abstrom über die Beckenvenen. Beim Pressen kein retrograder Blutstrom im Bereich der V. saphena magna bzw. parva nachweisbar.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein IVP",
+   "baustein": "IVP",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein IVP",
+   "bericht": "## Harntrakt nativ, Zonografie nativ, sowie Ausscheidungsurografie\n\n## Befund\nAuf der Leeraufnahme keine konkrementsuspekten Kalkschatten nachweisbar. 5min nach i.V. Applikation von 80ml Optiray findet sich eine prompte seitengleiche Ausscheidung über zwei normal gelegene, normal große Nieren mit glatter Oberfläche.\nDie corticopapilläre Distanz beidseits normal breit, die Kelche scharf konturiert, die Nierenbecken homogen kontrastiert, die Harnleiter schlank, regelrecht verlaufend. Der Abfluss ungehindert. Der Harnblasenschatten glatt begrenzt, unauffällig kontrastiert. Auf den Aufnahmen im Stehen pre- und postmiktionell keine Erweiterung des Befundes erhebbar.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Baustein Präparat",
+   "baustein": "Präparat",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Präparat",
+   "bericht": "## Präparatradiographie in 2 Ebenen\n\n## Befund\n\n\n## Ergebnis\nDer Markierungsclip ist im Präparat enthalten.\nDer Minimalabstand der resezierten radiographisch … mm großen Läsion / der enthaltenen Verkalkungen zum Ablationsrand beträgt cranial... mm, medial … mm, caudal … mm bzw. lateral … mm\nEs erfolgte die umgehende telefonische Befundmitteilung."
+  },
+  {
+   "diktat": "Baustein osteokal",
+   "baustein": "osteokal",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein osteokal",
+   "bericht": "## Osteodensitometrie der LWS sowie der Hüftregion beidseits, TBS und FRAX – GE LUNAR Prodigy Primo\n\n## Befund\nLWS:\nDie gemittelte Knochendichte im Bereich LWK1 bis LWK4 beträgt... g/cm² Calziumhydroxylapatit, entsprechend … % bei einem T-Wert (Vergleichskollektiv junger Erwachsener) von...\nDer niedrigste Einzelwert in Höhe L3 gelegen mit … % bei einem T-Wert von ….\nHüftregion links:\nDie gemittelte Knochendichte im Bereich der Gesamtregion beträgt …. g/cm² Calziumhydroxylapatit, entsprechend … % bei einem T-Wert (Vergleichskollektiv junger Erwachsener) von ….\nDer niedrigste Einzelwert in der Halsregion gelegen mit … % bei einem T-Wert von ….\nHüftregion rechts:\nDie gemittelte Knochendichte im Bereich der Gesamtregion beträgt … g/cm² Calziumhydroxylapatit, entsprechend … % bei einem T-Wert (Vergleichskollektiv junger Erwachsener) von ….\nDer niedrigste Einzelwert in der Halsregion gelegen mit … % bei einem T-Wert von ….\nTBS: Der Trabekelscore LWK1 bis LWK4 beträgt ….\nTBS>1,310 entsprechend einer normalen Mikroarchitektur\nTBS<1,311 entsprechend einer beeinträchtigten Mikroarchitektur\nTBS<1,230 entsprechend einer zerstörten Mikroarchitektur\nFRAX:\nTBS korrigierte 10-Jahreswahrscheinlichkeit für eine Fraktur:\nTypische Osteoporosefraktur … %, Hüftfraktur … %.\n\n## Ergebnis\nOsteoporose mit mäßiggradig verringertem TBS."
+  },
+  {
+   "diktat": "Baustein schuro links",
+   "baustein": "schuro",
+   "rest": "links",
+   "nur": true,
+   "satz": "Baustein schuro links",
+   "bericht": "## Rechte Schulter ap in Außen- und Innenrotation sowie Sonographie der Rotatorenmanschette links\n\n## Befund\nNormale Form und Struktur der Gelenkkörper. Die Gelenkflächen glatt und kongruent. Die Gelenkränder unauffällig. Der Gelenksspalt normal weit. Die acromiohumerale Distanz regelrecht. Die periarticulären Weichteile o. B..\nDie Supraspinatussehne glatt konturiert, unauffällig strukturiert. Die Bursa-Faszien-Grenzfläche regelrecht. Im Bereich der langen Bizepssehne sowie der Subscapularissehne und der Infraspinatussehne keine Auffälligkeiten.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Thorax pa seitlich, Baustein Thorax, zusätzlich Pleuraerguss rechts",
+   "baustein": "Thorax",
+   "rest": "Thorax pa seitlich,  , zusätzlich Pleuraerguss rechts",
+   "nur": false,
+   "satz": "Thorax pa seitlich, Baustein Thorax, zusätzlich Pleuraerguss rechts",
+   "bericht": "## Thorax rechts\n\n## Befund\nKeine infiltrativen Veränderungen nachzuweisen. Die Sinus frei. Die Herzgröße im Normbereich. Hili und Mediastinum unauffällig.\n\n## Ergebnis\nUnauffälliges Thoraxröntgen."
+  },
+  {
+   "diktat": "Mammographie unauffällig",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Mammographie unauffällig",
+   "bericht": null
+  },
+  {
+   "diktat": "Ösophagus 2 unauffällig",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Ösophagus 2 unauffällig",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein Core",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Der Befund wurde mit der Patientin besprochen, eine Überweisung zur Core-Cut-Biopsie ausgehändigt.",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein th 1",
+   "baustein": "th1",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein th 1",
+   "bericht": "## Thorax pa/seitlich\n\n## Befund\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Kalkeinlagerungen im Aortenbogenbereich. Der Herzschatten größen- und konfigurationsmäßig im Normbereich gelegen.\n\n## Ergebnis\nMäßige Aortensklerose.\nSonst unauffälliger Befund an den Thoraxorganen."
+  },
+  {
+   "diktat": "Baustein Ösophagus Doppelkontrast",
+   "baustein": "Oesophagus in Doppelkontrast",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein Ösophagus Doppelkontrast",
+   "bericht": "## Oesophagus in Doppelkontrast\n\n## Befund\nKonventionell: Der Hypopharynx gut entfaltbar, glatt begrenzt, symmetrisch mit unauffälligem Schleimhautbeschlagsbild. Der Oesophagus hinsichtlich Lage, Verlauf, Kontur und Kaliber unauffällig, das Schleimhautbeschlagsbild regulär.\nDynamisch: Die orale Boluskontrolle intakt. Reguläre Hebung des weichen Gaumens. Die Hebung von Hyoid und Larynx regelrecht. Die pharyngeale Kontraktionswelle ge\nDer Oesophagus in allen Abschnitten gut entfaltbar, glatt begrenzt, zeigt unauffälliges Schleimhautbeschlagsbild. Auch der Hypopharynx gut entfaltbar, glatt begrenzt, mit unauffälligem Schleimhautbeschlagsbild. Bei Kopftieflagerung sowie unter Provokation kein gastrooesophagealer Reflux nachweisbar.\n\n## Ergebnis\nUnauffälliger Befund."
+  },
+  {
+   "diktat": "Mammographie links, Baustein Core.",
+   "baustein": null,
+   "rest": null,
+   "nur": null,
+   "satz": "Mammographie links, Der Befund wurde mit der Patientin besprochen, eine Überweisung zur Core-Cut-Biopsie ausgehändigt..",
+   "bericht": null
+  },
+  {
+   "diktat": "Baustein IVP 2",
+   "baustein": "IVP2",
+   "rest": "",
+   "nur": true,
+   "satz": "Baustein IVP 2",
+   "bericht": "## Harntrakt nativ sowie Ausscheidungsurographie\n\n## Befund\nAuf der Leeraufnahme keine konkrementsuspekten Kalkschatten nachweisbar. 7 Minuten nach iv-Applikation von 80 ml Iomeron findet sich eine prompte seitengleiche Ausscheidung über zwei normal gelegene, normal große Nieren mit glatter Oberfläche. Die Kelche beidseits scharf konturiert, die Nierenbecken homogen kontrastiert, die Harnleiter schlank regelrecht verlaufend, der Abfluss ungehindert. Der Harnblasenschatten glatt begrenzt. Postmiktionell mäßiggradiger Restharn nachweisbar.\n\n## Ergebnis\nMäßiggradiger Restharn postmiktionem. Ansonsten unauffälliger Befund ohne Nachweis schattengebender Konkremente."
+  }
+ ]
+}

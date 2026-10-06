@@ -6,17 +6,33 @@ import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './d
 import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
+import { ORDI_BAUSTEINE, befundBaustein, nurBaustein, bericht as bausteinBericht, vorlage as bausteinVorlage, kiHinweis, saetzeEinsetzen, type Bausteine } from './bausteine.ts';
 
 export type PipelineKontext = GenKontext & {
   templates: TemplatesMap;
   vorrang: VorrangDaten;
   displayNames: string[];
+  bausteine?: Bausteine;  // v3.3: Ordi-Textbausteine (Standard: ordi_bausteine.json)
 };
 
 // v3.2: Befund aus dem (korrigierten) Diktat — dieselbe Kette wie die EXE (RaKScribe.py _befund_fuer_segment):
 // Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener Befund mit eigenem
 // Template und eigenem Ergebnis (parallel), danach Ergebnis deterministisch nummeriert.
 export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Promise<string> => {
+  // v3.3 (Peter 06.10.): „Baustein Mammo 1“ → Ordi-Textbaustein statt Vorlage (1:1 wie EXE pipeline.py)
+  const bausteine = ctx.bausteine ?? ORDI_BAUSTEINE;
+  const [bKey, bRest] = befundBaustein(seg, bausteine);
+  if (bKey) {
+    if (nurBaustein(bRest)) {
+      console.log(`[BAUSTEIN] '${bKey}' wörtlich (ohne KI).`);
+      return nachbearbeiten(bausteinBericht(bKey, bausteine, seg));
+    }
+    if (!ctx.apiKey) throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
+    const v = bausteinVorlage(bKey, bausteine, seg);
+    const roh = await callGeminiLLM(seg, v.body, v.display_name, kiHinweis(bKey), v.ergebnis, ctx);
+    ctx.status('Validiere Befund-Konsistenz...');
+    return nachbearbeiten(await validateReportConsistency(seg, roh, ctx));
+  }
   const detectedKey = detectTemplate(seg, ctx.templates, ctx.vorrang);
   const activeTemplate = ctx.templates[detectedKey] || ctx.templates['allgemein'];  // templates.json enthält „allgemein“
   if (detectedKey === 'allgemein') {
@@ -46,6 +62,7 @@ export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Prom
 };
 
 export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promise<string> => {
+  text = saetzeEinsetzen(text, ctx.bausteine ?? ORDI_BAUSTEINE);  // v3.3: „Baustein A1“, „Baustein Fraktur“ → Satz
   const segmente = splitRegionen(text);
   if (segmente.length > 1) {
     console.log(`[MULTI] ${segmente.length} Regionen: ${segmente.map(diktatLog).join(' | ')}`);

@@ -226,8 +226,8 @@ def detect_template(text, templates):
     if any(x in text_lower for x in ["dexa", "knochendichte", "densitometrie", "odm"]):
         return "knochendichtemessung_dexa"
         
-    # 3. Mammographie / Fernröntgen
-    if "mamma" in text_lower:
+    # 3. Mammographie / Fernröntgen — v3.3 (Peter 06.10.): auch Kurzwort „Mammo“
+    if "mamma" in text_lower or re.search(r"(?<![a-zäöüß])mammo(?![a-zäöüß])", text_lower):
         if any(x in text_lower for x in ["sono", "schall", "ultraschall", "mammasono"]):
             return "mammasonographie_beidseits"
         return "mammographie_beidseits"
