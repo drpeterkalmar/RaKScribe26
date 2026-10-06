@@ -5,6 +5,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import { LaufVerwaltung, befundLauf } from './src/lauf.ts';
 import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
+import { wavFromInt16 } from './src/audio.ts';
 
 let fail = 0, n = 0;
 const check = (ok, label, detail = '') => { n++; if (!ok) fail++; console.log(ok ? 'PASS' : 'FAIL', '|', label, ok ? '' : `\n      ${detail}`); };
@@ -119,6 +120,24 @@ fehler = null;
 globalThis.location = { hostname: 'localhost' };
 try { await transcribeAudio(wav, true, { sttKey, signal: ac.signal }); } catch (e) { fehler = e; }
 check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('localhost:8765')), 'Abbruch → AbortError, auch lokal kein Whisper', aufrufe.join(' '));
+
+// ── 2b. Langes Diktat (> 59 s): Segmente 50 s + 4 s Rückhören direkt aus der WAV (ohne AudioContext) ────
+{
+  const bodies = [];
+  globalThis.fetch = async (url, opt) => {
+    if (url.includes('oauth2')) return json(200, { access_token: 'tok', expires_in: 3600 });
+    const b = JSON.parse(opt.body); bodies.push(b);
+    const texte = ['eins zwei drei vier fünf sechs sieben acht', 'fünf sechs sieben acht neun zehn'];
+    return json(200, { results: [{ alternatives: [{ transcript: texte[bodies.length - 1] }] }] });
+  };
+  const s = Int16Array.from({ length: 70 * 16000 }, (_, i) => (i % 200) - 100);
+  const text = await transcribeAudio(wavFromInt16(s), true, { sttKey });
+  const laengen = bodies.map(b => { const bin = Buffer.from(b.content, 'base64'); return bin.readUInt32LE(40) / 2; });
+  check(bodies.length === 2 && laengen[0] === 50 * 16000 && laengen[1] === 24 * 16000, '70-s-Diktat → 2 chirp_3-Segmente (50 s, 24 s)', laengen.join(','));
+  const zweites = Buffer.from(bodies[1].content, 'base64');
+  check(zweites.readInt16LE(44) === s[46 * 16000] && zweites.readUInt32LE(24) === 16000, 'Segment 2 beginnt bei 46 s (4 s Rückhören), 16 kHz');
+  check(text === 'eins zwei drei vier fünf sechs sieben acht neun zehn', 'Überlappung zusammengefügt', text);
+}
 
 // ── 3. fetchWithRetry: Abbruch während der Retry-Pause → sofort AbortError, kein weiterer Versuch ────────
 {

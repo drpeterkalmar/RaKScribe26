@@ -21,6 +21,8 @@ import { isPureNormalFinding } from './normalbypass';
 import { fetchWithRetry, istAbbruch } from './net.ts';
 import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext } from './stt.ts';
 import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
+// Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
+import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
 
 // Types
 type Template = {
@@ -108,97 +110,7 @@ function deriveUntersuchungsTitel(raw: string, displayName: string): string {
 
 // (v3.2: Bypass-Entscheidung = isPureNormalFinding in normalbypass.ts — gleiche Semantik wie die EXE, gemeinsame Fixtures)
 
-// Helper to encode AudioBuffer to WAV
-function audioBufferToWav(buffer: AudioBuffer): Blob {
-  const numOfChan = 1; // mono
-  const sampleRate = buffer.sampleRate;
-  const format = 1; // raw PCM
-  const bitDepth = 16;
-  const result = buffer.getChannelData(0);
-  
-  const arrayBuffer = new ArrayBuffer(44 + result.length * 2);
-  const view = new DataView(arrayBuffer);
-  
-  // RIFF identifier
-  writeString(view, 0, 'RIFF');
-  // file length
-  view.setUint32(4, 36 + result.length * 2, true);
-  // RIFF type
-  writeString(view, 8, 'WAVE');
-  // format chunk identifier
-  writeString(view, 12, 'fmt ');
-  // format chunk length
-  view.setUint32(16, 16, true);
-  // sample format (raw)
-  view.setUint16(20, format, true);
-  // channel count
-  view.setUint16(22, numOfChan, true);
-  // sample rate
-  view.setUint32(24, sampleRate, true);
-  // byte rate
-  view.setUint32(28, sampleRate * numOfChan * (bitDepth / 8), true);
-  // block align
-  view.setUint16(32, numOfChan * (bitDepth / 8), true);
-  // bits per sample
-  view.setUint16(34, bitDepth, true);
-  // data chunk identifier
-  writeString(view, 36, 'data');
-  // chunk length
-  view.setUint32(40, result.length * 2, true);
-  
-  // float to 16-bit PCM
-  let offset = 44;
-  for (let i = 0; i < result.length; i++, offset += 2) {
-    let s = Math.max(-1, Math.min(1, result[i]));
-    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-  }
-  
-  return new Blob([view], { type: 'audio/wav' });
-}
-
-function writeString(view: DataView, offset: number, string: string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
-}
-
-function mergeFloat32Arrays(chunks: any[]): Float32Array {
-  const totalLength = chunks.reduce((acc, val) => acc + val.length, 0);
-  const mergedArray = new Float32Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    mergedArray.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return mergedArray;
-}
-
-function downsampleBuffer(buffer: any, inputSampleRate: number, outputSampleRate: number): Float32Array {
-  if (inputSampleRate === outputSampleRate) {
-    return buffer;
-  }
-  if (inputSampleRate < outputSampleRate) {
-    return buffer;
-  }
-  const sampleRateRatio = inputSampleRate / outputSampleRate;
-  const newLength = Math.round(buffer.length / sampleRateRatio);
-  const result = new Float32Array(newLength);
-  let offsetResult = 0;
-  let offsetBuffer = 0;
-  while (offsetResult < result.length) {
-    const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-    let accum = 0;
-    let count = 0;
-    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-      accum += buffer[i];
-      count++;
-    }
-    result[offsetResult] = count > 0 ? accum / count : 0;
-    offsetResult++;
-    offsetBuffer = nextOffsetBuffer;
-  }
-  return result;
-}
+// (WAV/Downsampling: src/audio.ts — Umbau Schritt 9; alter Encoder als Referenz in web_app/audio_test.mjs)
 
 
 // v3.0: Kein Login mehr. Die App ist gesperrt, bis der Praxis-Schlüssel geladen ist (Drag & Drop irgendwo
@@ -365,7 +277,6 @@ export default function App() {
   const [statusText, setStatusText] = useState<string>('Bereit');
   const [transcript, setTranscript] = useState<string>('');
   const [structuredReport, setStructuredReport] = useState<string>('');
-  const [micLevel, setMicLevel] = useState<number>(0);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [pendingCopyText, setPendingCopyText] = useState<string>('');
 
@@ -412,12 +323,19 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const audioChunksRef = useRef<Float32Array[]>([]);
+  // Umbau Schritt 9: EIN wachsender 16-kHz-Int16-Puffer statt Liste von Float32-Blöcken in nativer Rate
+  const pufferRef = useRef<Int16Puffer>(new Int16Puffer());
+  const resamplerRef = useRef<Resampler16k | null>(null);
+  // Pegel ohne React-State (Gutachten P2-8a): Callback schreibt in die Ref, requestAnimationFrame zeichnet
+  const micLevelRef = useRef<number>(0);
+  const levelBarRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   // States and refs for chunked transcription feedback
   const [isTranscribingChunk, setIsTranscribingChunk] = useState<boolean>(false);
   const chunkIntervalRef = useRef<any>(null);
-  const lastProcessedIndexRef = useRef<number>(0);
+  const lastProcessedIndexRef = useRef<number>(0);  // Umbau Schritt 9: Sample-Index im Puffer
   const chunkTranscriptsRef = useRef<string[]>([]);
   const pendingPromisesRef = useRef<Promise<any>[]>([]);
   const activeRequestsCountRef = useRef<number>(0);
@@ -897,32 +815,33 @@ export default function App() {
   const decodeFileToWavBlob = async (file: File | Blob): Promise<Blob> => {
     const arrayBuffer = await file.arrayBuffer();
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
-    let channelData: Float32Array;
-    if (decodedAudio.numberOfChannels > 1) {
-      const length = decodedAudio.length;
-      channelData = new Float32Array(length);
-      for (let ch = 0; ch < decodedAudio.numberOfChannels; ch++) {
-        const chData = decodedAudio.getChannelData(ch);
-        for (let i = 0; i < length; i++) {
-          channelData[i] += chData[i] / decodedAudio.numberOfChannels;
-        }
+    try {
+      const decodedAudio = await audioContext.decodeAudioData(arrayBuffer);
+      // Gutachten P2-8c: Rate prüfen — unter 16 kHz würde das Audio sonst als 16 kHz (zu schnell) verschickt
+      if (decodedAudio.sampleRate < 16000) {
+        throw new Error(`Audiodatei mit ${decodedAudio.sampleRate} Hz wird nicht unterstützt (mindestens 16 kHz).`);
       }
-    } else {
-      channelData = decodedAudio.getChannelData(0);
-    }
-    const resampled = downsampleBuffer(channelData, decodedAudio.sampleRate, 16000);
-    if (resampled.length === 0) {
+      let channelData: Float32Array;
+      if (decodedAudio.numberOfChannels > 1) {
+        const length = decodedAudio.length;
+        channelData = new Float32Array(length);
+        for (let ch = 0; ch < decodedAudio.numberOfChannels; ch++) {
+          const chData = decodedAudio.getChannelData(ch);
+          for (let i = 0; i < length; i++) {
+            channelData[i] += chData[i] / decodedAudio.numberOfChannels;
+          }
+        }
+      } else {
+        channelData = decodedAudio.getChannelData(0);
+      }
+      const samples = float32ToInt16At16k(channelData, decodedAudio.sampleRate);
+      if (samples.length === 0) {
+        throw new Error('Audiodatei ist leer oder zu kurz.');
+      }
+      return wavFromInt16(samples);  // Umbau Schritt 9: ohne zweiten AudioContext (gleiche Bytes)
+    } finally {
       await audioContext.close();
-      throw new Error('Audiodatei ist leer oder zu kurz.');
     }
-    const ctxWav = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-    const audioBuf = ctxWav.createBuffer(1, resampled.length, 16000);
-    audioBuf.copyToChannel(resampled as any, 0);
-    const wavBlob = audioBufferToWav(audioBuf);
-    ctxWav.close();
-    await audioContext.close();
-    return wavBlob;
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1256,25 +1175,14 @@ Korrigierter Befund:`;
 
   // Helper function to process the next chunk of recorded audio (Live-Anzeige)
   const processNextAudioChunk = (lauf: Lauf) => {
-    const currentChunks = audioChunksRef.current;
+    const samples = pufferRef.current.ansicht();
     const lastProcessedIndex = lastProcessedIndexRef.current;
-    
-    if (currentChunks.length > lastProcessedIndex) {
-      const segmentChunks = currentChunks.slice(lastProcessedIndex);
-      lastProcessedIndexRef.current = currentChunks.length;
-      
-      const merged = mergeFloat32Arrays(segmentChunks);
-      const currentSampleRate = actualSampleRateRef.current;
-      const resampled = downsampleBuffer(merged, currentSampleRate, 16000);
-      
-      if (resampled.length === 0) return;
-      
-      const ctxTemp = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      const audioBuf = ctxTemp.createBuffer(1, resampled.length, 16000);
-      audioBuf.copyToChannel(resampled as any, 0);
-      const wavBlob = audioBufferToWav(audioBuf);
-      ctxTemp.close();
-      
+
+    if (samples.length > lastProcessedIndex) {
+      // Umbau Schritt 9: Chunk = Ausschnitt aus dem 16-kHz-Puffer (kein AudioContext je Chunk)
+      const wavBlob = sliceWav(samples, lastProcessedIndex, samples.length);
+      lastProcessedIndexRef.current = samples.length;
+
       const chunkIdx = chunkTranscriptsRef.current.length;
       chunkTranscriptsRef.current.push(''); // placeholder
       
@@ -1305,9 +1213,16 @@ Korrigierter Befund:`;
   // Mikrofon, Audio-Graph und Stream schließen (Stopp und Neu/F9)
   const audioStoppen = () => {
     if (processorRef.current) {
+      processorRef.current.onaudioprocess = null;  // keine verspäteten Blöcke nach dem Stopp
       processorRef.current.disconnect();
       processorRef.current = null;
     }
+    cancelAnimationFrame(rafRef.current);
+    micLevelRef.current = 0;
+    if (levelBarRef.current) levelBarRef.current.style.width = '0%';
+    // Gutachten P2-8d: Bildschirmsperre wieder erlauben
+    wakeLockRef.current?.release().catch(() => {});
+    wakeLockRef.current = null;
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
@@ -1351,8 +1266,8 @@ Korrigierter Befund:`;
       setStructuredReport('');
       setStatus('recording');
       setStatusText('Aufnahme läuft...');
-      audioChunksRef.current = [];
-      
+      pufferRef.current = new Int16Puffer();
+
       // Reset chunk refs
       lastProcessedIndexRef.current = 0;
       chunkTranscriptsRef.current = [];
@@ -1370,12 +1285,18 @@ Korrigierter Befund:`;
         }
       });
       mediaStreamRef.current = stream;
+      // Gutachten P2-8d: Bildschirm bleibt während der Aufnahme an (iPhone beendet sonst die Aufnahme)
+      navigator.wakeLock?.request('screen').then(lock => {
+        if (mediaStreamRef.current === stream) wakeLockRef.current = lock;
+        else lock.release().catch(() => {});
+      }).catch(() => { /* nicht unterstützt oder abgelehnt — Aufnahme läuft trotzdem */ });
 
       // Start AudioContext at native preferred hardware sample rate (avoids resampling dropouts)
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContextClass();
       audioContextRef.current = audioContext;
       actualSampleRateRef.current = audioContext.sampleRate;
+      resamplerRef.current = new Resampler16k(audioContext.sampleRate);
       console.log(`[AUDIO] AudioContext initialized at native sample rate: ${audioContext.sampleRate} Hz`);
 
       const source = audioContext.createMediaStreamSource(stream);
@@ -1387,12 +1308,21 @@ Korrigierter Befund:`;
 
       processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
-        audioChunksRef.current.push(new Float32Array(inputData));
-        
+        // Umbau Schritt 9: sofort auf 16 kHz Int16 — nur das landet im Puffer
+        if (resamplerRef.current) pufferRef.current.anhaengen(resamplerRef.current.push(inputData));
+
         let sum = 0;
         for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
-        setMicLevel(Math.min(100, Math.round(Math.sqrt(sum / inputData.length) * 400)));
+        micLevelRef.current = Math.min(100, Math.round(Math.sqrt(sum / inputData.length) * 400));
       };
+
+      // Pegelanzeige: höchstens einmal pro Bildschirmbild, ohne React-Neuzeichnen der App
+      const pegelZeichnen = () => {
+        if (levelBarRef.current) levelBarRef.current.style.width = `${micLevelRef.current}%`;
+        rafRef.current = requestAnimationFrame(pegelZeichnen);
+      };
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(pegelZeichnen);
 
       // Set up chunked interval for real-time visual feedback
       if (chunkIntervalRef.current) {
@@ -1415,14 +1345,15 @@ Korrigierter Befund:`;
 
     setStatus('processing');
     setStatusText('Verarbeite Audio...');
-    setMicLevel(0);
 
     if (chunkIntervalRef.current) {
       clearInterval(chunkIntervalRef.current);
       chunkIntervalRef.current = null;
     }
 
-    // Process any remaining audio since the last interval tick BEFORE closing context
+    // Rest des Resamplers in den Puffer, dann den letzten Chunk BEFORE closing context
+    if (resamplerRef.current) pufferRef.current.anhaengen(resamplerRef.current.flush());
+    resamplerRef.current = null;
     processNextAudioChunk(lauf);
     audioStoppen();
 
@@ -1440,24 +1371,13 @@ Korrigierter Befund:`;
         let finalRawText = '';
         let sttFehler: unknown = null;
         try {
-          // Merge ALL recorded audio chunks into one continuous buffer
-          const allChunks = audioChunksRef.current;
-          if (allChunks.length > 0) {
-            const mergedAll = mergeFloat32Arrays(allChunks);
-            const currentSampleRate = actualSampleRateRef.current;
-            const resampledAll = downsampleBuffer(mergedAll, currentSampleRate, 16000);
-
-            if (resampledAll.length > 0) {
-              const ctxFull = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-              const audioBufFull = ctxFull.createBuffer(1, resampledAll.length, 16000);
-              audioBufFull.copyToChannel(resampledAll as any, 0);
-              const fullWavBlob = audioBufferToWav(audioBufFull);
-              ctxFull.close();
-
-              console.log(`[FULL-AUDIO] Re-transcribing complete recording (${resampledAll.length} samples, ${(resampledAll.length / 16000).toFixed(1)}s)`);
-              st('Volltranskription läuft (komplettes Diktat)...');
-              finalRawText = (await transcribeAudio(fullWavBlob, true, sttKontext(lauf))).trim();
-            }
+          // Das komplette Diktat liegt schon als 16-kHz-Int16 im Puffer (Umbau Schritt 9)
+          const alle = pufferRef.current.ansicht();
+          if (alle.length > 0) {
+            const fullWavBlob = wavFromInt16(alle);
+            console.log(`[FULL-AUDIO] Re-transcribing complete recording (${alle.length} samples, ${(alle.length / 16000).toFixed(1)}s)`);
+            st('Volltranskription läuft (komplettes Diktat)...');
+            finalRawText = (await transcribeAudio(fullWavBlob, true, sttKontext(lauf))).trim();
           }
         } catch (fullAudioErr: any) {
           if (istAbbruch(fullAudioErr)) throw fullAudioErr;
@@ -1525,7 +1445,7 @@ Korrigierter Befund:`;
       chunkIntervalRef.current = null;
     }
     audioStoppen();
-    setMicLevel(0);
+    resamplerRef.current = null;
     lastProcessedIndexRef.current = 0;
     chunkTranscriptsRef.current = [];
     pendingPromisesRef.current = [];
@@ -1666,7 +1586,7 @@ Korrigierter Befund:`;
             <h2><Mic size={16} /> Diktat</h2>
             {status === 'recording' && (
               <div className="level" aria-label="Pegel">
-                <div className="level-track"><div className="level-bar" style={{ width: `${micLevel}%` }} /></div>
+                <div className="level-track"><div className="level-bar" ref={levelBarRef} style={{ width: '0%' }} /></div>
               </div>
             )}
             {isTranscribingChunk && <LoaderCircle size={16} className="spin muted" />}

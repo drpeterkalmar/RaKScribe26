@@ -4,6 +4,7 @@
 // Gutachten P2-10: Whisper (http://localhost:8765) nur noch, wenn die App selbst auf localhost läuft oder
 // localStorage.whisper_fallback === '1' — sonst kommt die echte Google-Fehlermeldung beim Nutzer an.
 import { fetchWithRetry, istAbbruch } from './net.ts';
+import { int16AusWav, sliceWav } from './audio.ts';
 
 export type SttSchluessel = { client_email: string; private_key: string };
 export type SttKontext = {
@@ -415,35 +416,15 @@ export async function transcribeFullAudioWithGoogle(wavBlob: Blob, ctx: SttKonte
 
   console.log('[FULL-AUDIO] chirp_3 Segmentierung (>60s)');
   ctx.status?.('Volltranskription läuft (langes Diktat, chirp_3, bitte warten)...');
-  // WAV decodieren → Float32 → s16le-PCM
-  const arrayBuffer = await wavBlob.arrayBuffer();
-  const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  const ctxTemp = new AC({ sampleRate: 16000 });
-  const audioBuf = await ctxTemp.decodeAudioData(arrayBuffer);
-  ctxTemp.close();
-  const f32 = audioBuf.getChannelData(0);
-  const s16 = new Int16Array(f32.length);
-  for (let i = 0; i < f32.length; i++) {
-    const s = Math.max(-1, Math.min(1, f32[i]));
-    s16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
+  // Umbau Schritt 9 (Gutachten P2-8c): Samples direkt aus der eigenen 16-kHz-WAV lesen — kein AudioContext/
+  // decodeAudioData mehr (auf Geräten, die { sampleRate: 16000 } ignorieren, kam sonst verlangsamtes Audio an)
+  const s16 = await int16AusWav(wavBlob);
   const SR = 16000, SEG = 50 * SR, OV = 4 * SR;
   const texts: string[] = [];
   let start = 0;
   while (start < s16.length) {
     const end = Math.min(start + SEG, s16.length);
-    const seg = s16.slice(start, end);
-    // Int16 → WAV-Container
-    const wav = new ArrayBuffer(44 + seg.length * 2);
-    const view = new DataView(wav);
-    const ws = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-    ws(0, 'RIFF'); view.setUint32(4, 36 + seg.length * 2, true); ws(8, 'WAVE');
-    ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true); view.setUint32(24, SR, true);
-    view.setUint32(28, SR * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
-    ws(36, 'data'); view.setUint32(40, seg.length * 2, true);
-    new Int16Array(wav, 44).set(seg);
-    texts.push(await chirp3Recognize(token, base64AusBytes(new Uint8Array(wav)), ctx.signal));
+    texts.push(await chirp3Recognize(token, await blobToBase64(sliceWav(s16, start, end)), ctx.signal));
     if (end >= s16.length) break;
     start = end - OV;
   }
