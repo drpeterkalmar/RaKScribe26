@@ -335,6 +335,17 @@ try:
         for _f in _fails:
             print(f"❌ FAIL  Titel-Fixture: {_f}")
         failures.append(f"Titel-Fixtures: {len(_fails)} Fälle falsch")
+    # Umbau Schritt 17: dieselben Fälle durch die Web-Funktion (src/detect.ts deriveUntersuchungsTitel)
+    with _tf.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as _f3:
+        _json.dump([[r, d] for r, d, _w in titel_fixtures.TITEL_FIXTURES], _f3, ensure_ascii=False)
+    _w3 = _sp.run(["node", "detect_test.mjs", "--titel", _f3.name], cwd=REPO / "web_app", capture_output=True, text=True)
+    _ts_titel = _json.loads(_w3.stdout) if _w3.returncode == 0 and _w3.stdout else None
+    _ts_fails = [f"{r!r} → {g!r} (erwartet {w!r})" for (r, d, w), g in zip(titel_fixtures.TITEL_FIXTURES, _ts_titel or []) if g != w]
+    if _ts_titel is None or _ts_fails:
+        print(f"❌ FAIL  Titel-Fixtures Web: {_ts_fails[:3] or _w3.stderr[-300:]}")
+        failures.append("Titel-Fixtures Web (deriveUntersuchungsTitel) weichen ab")
+    else:
+        print(f"✅ PASS  Titel-Fixtures: alle {len(_ts_titel)} Cases auch gegen Web deriveUntersuchungsTitel (detect.ts)")
 except Exception as _e:
     print(f"❌ FAIL  Titel-Fixtures-Modul: {_e}")
     failures.append(f"Titel-Fixtures: {_e}")
