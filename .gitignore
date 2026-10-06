@@ -25,7 +25,6 @@ ENV/
 !/phrases.json
 *.bat
 !start rakscribe.bat
-!source_code/build.bat
 
 # Compilation
 build/

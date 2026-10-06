@@ -139,7 +139,7 @@ def lade_rakscribe():
     sys.path.insert(0, str(ROOT / "source_code"))
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="rks_test_"))
     import shutil
-    for f in ("templates.json", "radiology_prompt.txt", "misheard_words.json", "vorlagen_vorrang.json", "phrases.json"):
+    for f in ("templates.json", "radiology_prompt.txt", "misheard_words.json", "vorlagen_vorrang.json", "phrases.json", "VERSION"):
         shutil.copy(ROOT / f, tmp / f)  # wie die gebündelten Dateien der EXE
     os.environ["APPDATA"] = str(tmp / "appdata")
     spec = importlib.util.spec_from_loader("rks_test", loader=None)

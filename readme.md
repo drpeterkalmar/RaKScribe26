@@ -111,4 +111,17 @@ Frühere Einträge `API_KEY` (für Gemini), `CHUNK_DURATION`, `GOOGLE_JSON_FILEN
 ausgewertet und dürfen gelöscht werden.
 
 ---
+
+## 🛠️ Build und Version (für Entwickler)
+
+- **EXE nur per GitHub-Workflow** „Build Windows EXE“ (`.github/workflows/build-exe.yml`): Paketliste `requirements.txt`
+  (feste Versionen), Vorlagen/Prompt/Fehlhör-Liste/Phrasen/VERSION werden in die EXE gebündelt. Ein lokales `build.bat`
+  gibt es nicht mehr (es bündelte die Daten nicht — die EXE fiel dann auf „allgemein“ zurück).
+  Manueller Lauf: mit Tag → Release; ohne Tag → Vorabversion `test-<Lauf-Nr.>`; „release“ angehakt → Release mit der
+  Version aus `VERSION`.
+- **Versionsnummer nur in `VERSION`** (Repo-Root): EXE-Titel und -Badge, Web-Badge und Seitentitel lesen sie
+  (`tests/offline/test_version_sync.py`).
+- **Tests** laufen bei jedem Push (`.github/workflows/test.yml`); der Web-Deploy startet erst, wenn sie grün sind.
+
+---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

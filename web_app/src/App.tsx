@@ -14,6 +14,8 @@ import { compileMisheard, misheardPromptBlock, type MisheardFile } from './mishe
 // v3.2: EIN Befund-Prompt für Web + EXE (Repo-Root /radiology_prompt.txt, versioniert) + gemeinsame
 // deterministische Regeln (Sync: source_code/befund_regeln.py, Fixtures: befund_regeln_fixtures.json)
 import genPromptRaw from '../../radiology_prompt.txt?raw';
+// Umbau Schritt 21 (Gutachten P2-12): Versionsnummer aus der Datei /VERSION (eine Quelle für EXE, Web, Release)
+import appVersionRaw from '../../VERSION?raw';
 import { stripPromptMarker, type VorrangDaten } from './befundRegeln';
 import vorrangData from '../../vorlagen_vorrang.json';
 // Umbau Schritt 17: Vorlagen-Erkennung + Befundtitel (src/detect.ts); Bypass/Regeln nutzt src/pipeline.ts
@@ -65,6 +67,7 @@ const KEY_VERSION = '2';
 // Gen-Prompt = gemeinsame Datei radiology_prompt.txt (Versionsmarker entfernt). Seit Umbau Schritt 19 (Gutachten P3-2)
 // immer direkt aus dem Bundle — der frühere localStorage-Prompt (Editor gibt es seit v3.0 nicht mehr) entfällt.
 const GEN_PROMPT = stripPromptMarker(genPromptRaw);
+const APP_VERSION = appVersionRaw.trim();
 // v3.1: Fehlhör-Liste — auto-Regeln laufen deterministisch VOR Call 0 (auch ohne Gemini),
 // llm-Regeln landen als Tabelle im Call-0-Prompt. Pflege NUR in /misheard_words.json.
 const MISHEARD: MisheardFile = misheardData as MisheardFile;
@@ -809,7 +812,7 @@ export default function App() {
             <span className="brand-name">RaKScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
           </div>
-          <span className="version-chip">v3.2.3</span>
+          <span className="version-chip">v{APP_VERSION}</span>
         </div>
 
         <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>

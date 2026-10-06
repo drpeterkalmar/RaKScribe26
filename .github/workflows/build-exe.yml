@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v2.8.0). Leave empty to auto-increment from source.'
+        description: 'Release-Tag (z. B. 3.2.4). Leer = Test-Build als Vorabversion test-<Lauf-Nr.>'
         required: false
         default: ''
+      release:
+        description: 'Ohne Tag: Release mit der Version aus der Datei VERSION veröffentlichen'
+        type: boolean
+        required: false
+        default: false
   push:
     tags:
       - 'v*'
@@ -29,12 +34,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller customtkinter keyboard markdown numpy openai pillow pyperclip pywin32 sounddevice google-cloud-speech google-api-core grpcio-status
+          pip install -r requirements.txt
 
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=jobstate --hidden-import=pipeline --hidden-import=aufnahme --hidden-import=config --hidden-import=keys --hidden-import=detect --hidden-import=stt --hidden-import=gemini --hidden-import=clipboard_win --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." --add-data "../phrases.json;." RaKScribe.py
+          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=jobstate --hidden-import=pipeline --hidden-import=aufnahme --hidden-import=config --hidden-import=keys --hidden-import=detect --hidden-import=stt --hidden-import=gemini --hidden-import=clipboard_win --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." --add-data "../phrases.json;." --add-data "../VERSION;." RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files
@@ -52,12 +57,16 @@ jobs:
         id: version
         shell: bash
         run: |
+          # Umbau Schritt 21 (Gutachten P2-12): ein manueller Lauf ohne Tag überschreibt KEIN bestehendes Release mehr,
+          # sondern erzeugt eine Vorabversion test-<Lauf-Nr.>. Die Versionsnummer steht nur noch in der Datei VERSION.
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"; echo "prerelease=false" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event_name }}" = "push" ]; then
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"; echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.inputs.release }}" = "true" ]; then
+            echo "tag=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"; echo "prerelease=false" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=3.2.3" >> "$GITHUB_OUTPUT"
+            echo "tag=test-${{ github.run_id }}" >> "$GITHUB_OUTPUT"; echo "prerelease=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset
@@ -67,4 +76,4 @@ jobs:
           name: RaKScribe26 ${{ steps.version.outputs.tag }}
           files: release/*
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.prerelease }}

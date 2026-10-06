@@ -89,6 +89,20 @@ speech = None                    # google.cloud.speech (in init_runtime geladen)
 
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.ini')
 
+
+def app_version():
+    """Versionsnummer aus der Datei VERSION (Umbau Schritt 21: EINE Quelle für EXE-Titel, Badge, Web, Release-Tag).
+    In der EXE gebündelt (--add-data VERSION), in der Entwicklung im Repo-Root."""
+    for d in (RESOURCES_DIR, BASE_DIR):
+        try:
+            with open(os.path.join(d, "VERSION"), encoding="utf-8") as f:
+                v = f.read().strip()
+            if v:
+                return v
+        except OSError:
+            continue
+    return "?"
+
 # =========================================================================
 # === CONFIG LOADING === (Umbau Schritt 10: config.py — Standardwerte, nur Syntaxfehler sind fatal)
 # =========================================================================
@@ -553,7 +567,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe 3.2.3 – Röntgen am Kai")
+        self.title(f"RaKScribe {app_version()} – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
@@ -628,7 +642,7 @@ class RaKScribeApp(ctk.CTk):
                      height=18, anchor="w").pack(anchor="w")
         ctk.CTkLabel(names, text="Röntgen am Kai", font=(UI_FONT, 11), text_color=TEXT_FAINT,
                      height=14, anchor="w").pack(anchor="w")
-        ctk.CTkLabel(brand, text=" v3.0 ", font=(UI_FONT, 11, "bold"), text_color=ACCENT_PURPLE,
+        ctk.CTkLabel(brand, text=f" v{app_version()} ", font=(UI_FONT, 11, "bold"), text_color=ACCENT_PURPLE,
                      fg_color="#1A2640", corner_radius=9, height=20).pack(side="left")
 
         right = ctk.CTkFrame(header, fg_color="transparent")

@@ -174,8 +174,13 @@ print(f"RaKScribe EXE-UI-Test {TAG} — Bildschirm {screen_size()}", flush=True)
 a = run_case("A_gesperrt", with_key=False, demo=False, send_f10=True)
 if a:
     s = a["state"]
-    # Titel muss den Release-Tag tragen (TAG kommt vom Workflow, z. B. "3.1.0"); ohne Tag: irgendeine 3.x
-    exp_ver = TAG.lstrip("v") if TAG not in ("?", "") else "3."
+    # Titel muss den Release-Tag tragen (TAG kommt vom Workflow, z. B. "3.1.0"); Test-Build (test-<Lauf>) oder ohne
+    # Tag: die Version aus der Datei VERSION im ausgecheckten Repo (Umbau Schritt 21)
+    _version_datei = pathlib.Path(__file__).resolve().parents[2] / "VERSION"
+    if TAG in ("?", "") or TAG.startswith("test-"):
+        exp_ver = _version_datei.read_text(encoding="utf-8").strip() if _version_datei.exists() else "3."
+    else:
+        exp_ver = TAG.lstrip("v")
     check("A_gesperrt", f"Titel enthält Version {exp_ver}", exp_ver in s["title"], s["title"])
     check("A_gesperrt", "Sperre sichtbar", s["gate_visible"])
     check("A_gesperrt", "Aufnahme-Button gesperrt", s["record_btn_state"] == "disabled", s["record_btn_state"])

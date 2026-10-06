@@ -47,7 +47,8 @@ jobs:
         shell: bash
         run: |
           TAG="${{ github.event.inputs.tag }}"
-          if [ -z "$TAG" ]; then TAG=$(gh release view --json tagName -q .tagName); fi
+          # neuestes Release inkl. Vorabversion test-<Lauf> (Umbau Schritt 21) = das gerade gebaute
+          if [ -z "$TAG" ]; then TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName'); fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           gh release download "$TAG" --pattern rakscribe26.exe --dir exe --clobber
           ls -la exe

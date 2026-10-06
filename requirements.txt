@@ -1,9 +1,15 @@
+# EXE-Build (Windows, Python 3.12) — EINE Paketliste für .github/workflows/build-exe.yml (pip install -r requirements.txt).
+# Versionen = Stand des erfolgreichen Release-Builds v3.2.3 (06.10.2026). Build nur per Workflow (kein build.bat mehr).
+pyinstaller==6.22.3
+customtkinter==6.0.0
 keyboard==0.13.5
-Markdown==3.10
-numpy==2.3.4
-openai==2.7.2
-pillow==11.3.0
+markdown==3.11
+numpy==2.5.3
+openai==3.24.0
+pillow==12.3.0
 pyperclip==1.11.0
-pywin32==311
-sounddevice==0.5.3
-ttkbootstrap==1.18.2
+pywin32==312; sys_platform == "win32"
+sounddevice==0.5.6
+google-cloud-speech==2.41.0
+google-api-core==2.41.0
+grpcio-status==1.84.0

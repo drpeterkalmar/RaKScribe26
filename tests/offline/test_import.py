@@ -45,7 +45,7 @@ check("Import zeigt keinen Dialog", len(S.AUFZ.dialoge) == dialoge_vorher)
 check("Import startet keinen Google-Client und lädt nichts", rks.speech_client is None and rks.speech is None
       and rks.RADIOLOGY_TEMPLATES == {} and rks.INITIAL_PROMPT_CONTENT == "")
 
-for f in ("templates.json", "radiology_prompt.txt", "misheard_words.json", "vorlagen_vorrang.json", "phrases.json"):
+for f in ("templates.json", "radiology_prompt.txt", "misheard_words.json", "vorlagen_vorrang.json", "phrases.json", "VERSION"):
     shutil.copy(ROOT / f, tmp / f)  # wie die gebündelten Dateien
 sys.__stdout__ = open(os.devnull, "w")
 try:
