@@ -129,17 +129,14 @@ def migrate(templates: dict) -> dict:
 
 
 def main():
-    exe_path = REPO / "templates.json"
-    web_path = REPO / "web_app" / "src" / "templates.json"
+    exe_path = REPO / "templates.json"  # seit Umbau Schritt 20 die einzige Vorlagen-Datei (EXE + Web)
 
     before = json.loads(exe_path.read_text())
-    assert before == json.loads(web_path.read_text()), "EXE/Web templates divergiert vor Migration!"
 
     after = migrate(before)
 
     payload = json.dumps(after, ensure_ascii=False, indent=2) + "\n"
     exe_path.write_text(payload)
-    web_path.write_text(payload)  # byte-identisch
 
     print(f"Keys: {len(before)} → {len(after)} (+{len(after)-len(before)})")
     print("Ersetzte Bodies:", len(PLAN_REPLACE))

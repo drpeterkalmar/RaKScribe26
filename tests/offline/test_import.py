@@ -45,7 +45,7 @@ check("Import zeigt keinen Dialog", len(S.AUFZ.dialoge) == dialoge_vorher)
 check("Import startet keinen Google-Client und lädt nichts", rks.speech_client is None and rks.speech is None
       and rks.RADIOLOGY_TEMPLATES == {} and rks.INITIAL_PROMPT_CONTENT == "")
 
-for f in ("templates.json", "radiology_prompt.txt", "misheard_words.json", "vorlagen_vorrang.json"):
+for f in ("templates.json", "radiology_prompt.txt", "misheard_words.json", "vorlagen_vorrang.json", "phrases.json"):
     shutil.copy(ROOT / f, tmp / f)  # wie die gebündelten Dateien
 sys.__stdout__ = open(os.devnull, "w")
 try:
@@ -56,6 +56,7 @@ check("init_runtime(): config.ini angelegt, Log geschrieben", (tmp / "config.ini
 check("init_runtime(): Vorlagen, Prompt, Fehlhör-Liste geladen", len(rks.RADIOLOGY_TEMPLATES) > 100
       and "RAKSCRIBE_PROMPT_VERSION" in rks.INITIAL_PROMPT_CONTENT and rks.MISHEARD_COMPILED)
 check("init_runtime(): ohne Schlüssel kein Speech-Client, App gesperrt", rks.speech_client is None and not rks.keys_ready())
+check("init_runtime(): gebündelte phrases.json ladbar (292 / 68)", rks._selbsttest_phrasen() == [292, 68], str(rks._selbsttest_phrasen()))
 check("Vorlagen-Erkennung nach init_runtime", rks.detect_template("Vorfuß rechts in 2 Ebenen unauffällig") == "vorfuß_in_2_ebenen")
 
 code = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")

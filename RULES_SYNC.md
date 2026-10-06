@@ -8,12 +8,15 @@ Regel, **wo** sie in RaKScribe umgesetzt ist und **welcher Test** sie absichert.
 | Baustein | Datei | gilt für |
 |---|---|---|
 | **Befund-Prompt (eine Quelle)** | `radiology_prompt.txt` (Versionsmarker `<!-- RAKSCRIBE_PROMPT_VERSION: … -->`) | EXE (gebündelt + versionierte Wahl), Web (`?raw`-Import, `PROMPT_VERSION` = Marker), Harness/verify (`prod_pipeline.py`) |
-| systemInstruction | `SYS_MSG` in `RaKScribe.py` = `SYS_MSG` in `App.tsx` (wortgleich, Test) | EXE + Web |
-| Validator (nur Web, Call 2) | `validationPrompt` in `App.tsx` | Web; Harness liest ihn aus App.tsx |
+| systemInstruction | `SYS_MSG` in `source_code/gemini.py` = `SYS_MSG` in `web_app/src/gemini.ts` (wortgleich, Test) | EXE + Web |
+| Validator (nur Web, Call 2) | `validationPrompt` in `web_app/src/gemini.ts` (Snapshot `tests/offline/snapshots/val_prompt.txt`) | Web; Harness liest ihn aus gemini.ts |
 | Deterministische Regeln | `source_code/befund_regeln.py` ≡ `web_app/src/befundRegeln.ts`, Fixtures `befund_regeln_fixtures.json` | EXE + Web |
 | Normalbefund-Bypass | `source_code/normalbypass.py` ≡ `web_app/src/normalbypass.ts`, Fixtures `normal_bypass_tests.json` | EXE + Web |
 | Fehlhör-Liste | `misheard_words.json` (+ `misheard_tests.json`) | EXE + Web |
-| Vorlagen | `templates.json` ≡ `web_app/src/templates.json` (inkl. Feld `ergebnis`) | EXE + Web |
+| Vorlagen | `templates.json` (eine Datei, inkl. Feld `ergebnis`; Web importiert sie aus dem Root) | EXE + Web |
+| Vorlagen-Erkennung | `source_code/detect.py` ≡ `web_app/src/detect.ts` + `vorlagen_vorrang.json`, Parität `detect_fixtures.json` | EXE + Web |
+| Phrasenlisten STT | `phrases.json` (`medical_exe`, `medical_web`, `chirp`) | EXE + Web |
+| Doppelte Hilfsfunktionen | `sync_fixtures.json` (stitch_overlaps ≡ stitchOverlaps, report_complete ≡ isCompleteReport) | EXE + Web |
 
 Abkürzungen: **P** = `radiology_prompt.txt` (EXE + Web + Harness), **V** = Web-Validator, **D** = deterministisch (Code, beide Apps), **T** = Vorlage/Liste.
 

@@ -88,6 +88,21 @@ sys_exe = gemini.SYS_MSG
 sys_web = "".join(re.findall(r'"([^"]*)"', m_web.group(1))) if m_web else None
 check(sys_exe is not None and sys_exe == sys_web, "systemInstruction EXE == Web", f"EXE={sys_exe!r}\n      WEB={sys_web!r}")
 
+print("── SYNC: gemeinsame Daten (Umbau Schritt 20, Gutachten P2-2/P2-13)")
+PH = json.loads((ROOT / "phrases.json").read_text())
+check({"chirp", "medical_exe", "medical_web"} <= set(PH) and (len(PH["chirp"]), len(PH["medical_exe"]), len(PH["medical_web"])) == (68, 292, 565),
+      "phrases.json: chirp 68, medical_exe 292, medical_web 565", {k: len(v) for k, v in PH.items() if k != "_doc"})
+check(len(set(PH["medical_web"])) == len(PH["medical_web"]) and len(set(PH["chirp"])) == len(PH["chirp"]), "Phrasenlisten ohne Doppelte (Web/chirp)")
+stt_py = (ROOT / "source_code/stt.py").read_text()
+stt_ts = (ROOT / "web_app/src/stt.ts").read_text()
+check("phrases.json" in stt_py and "MEDICAL_PHRASES = [" not in stt_py and "CHIRP_PHRASES = [" not in stt_py
+      and '"medical_exe"' in stt_py and '"chirp"' in stt_py, "EXE liest Phrasen nur aus phrases.json (medical_exe, chirp)")
+check("MEDICAL_PHRASES" not in stt_ts and "CHIRP_PHRASES" not in stt_ts and "../../phrases.json" in app
+      and "phrasesData.medical_web" in app and "phrasesData.chirp" in app, "Web liest Phrasen nur aus phrases.json (medical_web, chirp)")
+check('--add-data "../phrases.json;."' in wf, "EXE-Build bündelt phrases.json")
+check(not (ROOT / "web_app/src/templates.json").exists() and "import templatesData from '../../templates.json'" in app,
+      "Vorlagen nur einmal: templates.json im Root (Web importiert sie, keine Kopie)")
+
 print("── TS: dieselben Fixtures durch web_app/src/befundRegeln.ts")
 ts = subprocess.run(["node", "--experimental-strip-types", "befund_regeln_test.mjs"], cwd=ROOT / "web_app",
                     capture_output=True, text=True)

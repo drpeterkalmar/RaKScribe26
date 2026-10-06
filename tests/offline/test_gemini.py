@@ -70,6 +70,9 @@ netz = Netz([OSError("x"), antwort([{"text": VOLL}])])
 check("Netzfehler, dann Erfolg → Befund", g.generate("P", "S", "k", urlopen=netz, sleep=lambda s: None) == VOLL)
 check("Thinking-parts werden ignoriert", g.join_text(antwort([{"text": "denke", "thought": True}, {"text": VOLL}])["candidates"][0]) == VOLL)
 
+SF = json.loads((ROOT / "sync_fixtures.json").read_text(encoding="utf-8"))
+falsch = [t[:40] for t, soll in SF["report_complete"] if g.report_complete(t) != soll]
+check(f"report_complete: {len(SF['report_complete'])} gemeinsame Fälle mit der Web-App (sync_fixtures.json)", not falsch, str(falsch))
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 check("EXE nutzt gemini.generate (kein eigener Request-Code mehr)", "_gem.generate(prompt, SYS_MSG" in src
       and '"systemInstruction"' not in src and "SYS_MSG = (" not in src)

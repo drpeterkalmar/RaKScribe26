@@ -30,9 +30,7 @@ def tok(c):
         c.refresh(gtr.Request())
     return c.token
 
-APP = (ROOT / "web_app/src/stt.ts").read_text()  # Umbau Schritt 8: Phrasenlisten der Web-App in src/stt.ts
-m = re.search(r"const CHIRP_PHRASES: string\[\] = \[(.*?)\];", APP, re.S)
-CHIRP_PHRASES = re.findall(r'"([^"]+)"', m.group(1)) if m else []
+CHIRP_PHRASES = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))["chirp"]  # Umbau Schritt 20: phrases.json
 
 # Referenzen (radiologist-verified, fast-stt/references + Skill) — für WER
 REF = {

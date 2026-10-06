@@ -1,7 +1,7 @@
 """Spracherkennung der EXE (Umbau Schritt 13) — ohne Tk/Windows/Google-Bibliotheken importierbar.
 
-- MEDICAL_PHRASES: Phrasen für das Streaming (Live-Anzeige, latest_long).
-- CHIRP_PHRASES: kuratiertes chirp_3-PhraseSet (identisch zur Web-App, web_app/src/stt.ts).
+- medical_phrases(): Phrasen für das Streaming (Live-Anzeige, latest_long) — aus phrases.json (medical_exe).
+- chirp_phrases(): kuratiertes chirp_3-PhraseSet (identisch zur Web-App) — aus phrases.json (chirp).
 - chirp3_request / chirp3_worker: komplettes Diktat an chirp_3 (STT v2, Location eu); > 50 s in Segmenten
   50 s + 4 s Rückhören, Überlappung per Wortvergleich zusammengefügt (stitch_overlaps).
 Der Streaming-Teil (Mikrofon → Live-Anzeige) liegt in aufnahme.py (Umbau Schritt 6).
@@ -10,134 +10,38 @@ Tests: tests/offline/test_stt.py, sync_fixtures.json (gleiche Fälle für die We
 import base64
 import io
 import json
+import os
+import sys
 import urllib.request
 import wave
 
-# Streaming-Live-Anzeige (latest_long, Boost 10): medizinische Fachbegriffe
-MEDICAL_PHRASES = [
-    "Hochauflösender Nervenschall", "Thorax pa/seitlich", "MRT", "MR", "CT", "Computertomografie", "DXA", "Knochendichtemessung",
-    "Humerus", "Femur", "Tibia", "Fibula", "Patella", "Karpaltunnel", "Rotatorenmanschette",
-    "Achillessehne", "Kalkaneus", "Acromioclaviculargelenk", "Sacroiliacalgelenk", "Halswirbelsäule (HWS)",
-    "Brustwirbelsäule (BWS)", "Lendenwirbelsäule (LWS)", "Kreuzband", "Tarsus", "Metatarsus",
-    "Fraktur", "Spondylarthrose", "Spondylarthrosen", "Spondylodese", "Spondyolyse", "Spondylosis deformans", "Spondylose", "pontifizierend", "pontifizierende", "Arthrose", "Coxarthrose", "Gonarthrose", "Meniskus", "Hinterhorn-Läsion",
-    "Korbhenkelriss", "Bandscheibenprolaps", "Spinalkanalstenose", "Osteochondrose", "Osteochondrosen", "Nearthrosis interspinosa",
-    "Osteomyelitis", "Rheumatoide Arthritis", "Kapsel-Band-Läsion", "Osteoporose", "Bakerzyste",
-    "Knochenödem", "Einklemmungssyndrom", "Arthrographie", "Szintigraphie", "Vertebroplastie",
-    "Facetteninfiltration", "CT-gesteuerte Biopsie", "MR-Arthrographie", "Skelettaufnahme", "Ganzbeinaufnahme",
-    "Gelenkspaltverschmälerung", "Subluxation", "Wirbelkörperkompression", "Rotatorenmanschettenruptur",
-    "Labrumläsion", "Subchondrale Sklerosierung", "Nervus medianus", "Nervus radialis",
-    "Liquor", "Zerebrospinalflüssigkeit", "Kortex", "Großhirnrinde", "Weiße Substanz", "Basalganglien",
-    "Hypophyse", "Corpus callosum", "Sinus cavernosus", "Aorta", "Arteria carotis interna", "Arteria carotis externa",
-    "Pulmonalarterie", "Vena cava superior", "Vena cava inferior", "A. vertebralis",
-    "Aneurysma", "Intrakranielles Aneurysma", "Ischämie", "Ischämischer Infarkt", "Intracranielle Blutung",
-    "Subarachnoidalblutung (SAB)", "Subduralhämatom (SDH)", "Epiduralhämatom (EDH)", "Multiple Sklerose (MS)",
-    "Hypophysenadenom", "Hydrozephalus", "Normaldruckhydrozephalus", "Vaskulitis", "Stenose", "Carotisstenose",
-    "Koronarstenose", "Dissektion", "Aortendissektion", "Thrombus", "Thrombose", "Embolie", "PAE", "Plaqubildung", "Softplaque",
-    "gemischte Plaqueformation", "IMT-Komplex", "Intima-Media-Hyperplasie", "Intimahyperplasie",
-    "Varizen", "T1-gewichtete Sequenz", "T2-gewichtete Sequenz", "Flair-Sequenz", "Diffusion-weighted Imaging (DWI)",
-    "Time-of-Flight (TOF) Angio", "MRA", "CTA", "Kontrastmittel (KM)", "Plaque", "Atherosklerotische Plaque",
-    "Angioplastie", "Sakkuläres Aneurysma", "Gefäßokklusion",
-    "Lunge", "Oberlappen", "Unterlappen", "Trachea", "Bronchien", "Mediastinum", "Herz", "Ventrikel",
-    "Perikard", "Leber", "Gallenblase", "Pankreas", "Niere", "Milz", "Uterus", "Adnexe", "Appendix",
-    "Schilddrüse", "Infiltrat", "Pulmonales Infiltrat", "Pleuraerguss", "Pneumothorax", "Spannungspneumothorax",
-    "Kardiomegalie", "Aortenklappeninsuffizienz", "Leberzirrhose", "Cholezystitis", "Pankreatitis",
-    "Nierenstein", "Ureterstein", "Nephrolithiasis", "Adnexitis", "Ovarielle Zyste", "Lymphknoten",
-    "Lymphadenopathie", "Appendizitis", "Struma", "Verschattung", "Milzruptur", "Hernie", "Hiatushernie",
-    "Inguinalhernie", "Dilatation", "Aszites", "Zystische Läsion", "Liquidation", "Faszienverdickung",
-    "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
-    "Echoarm", "Echogen",
-    "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-    "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen", "Thorax p.a.", "Thorax p.a./seitlich",
-    "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
-    "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
-    "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
-    "Kontraindikation", "Artefakt", "Pixel", "Voxel", "Echoarmut", "Echogenität", "Hyperintens", "Hypointens",
-    "Dosis-Längen-Produkt (DLP)", "Field of View (FOV)", "Standard-Abweichung (SD)", "Flüssigkeitsspiegel",
-    "Röntgen-Thorax", "Projektionsaufnahme", "Z.n.", "Zustand nach", "Adenokarzinom", "Cholangiokarzinom",
-    "Fibrose", "Hämangiom", "Atelektase", "Bronchiektasen", "Emphysem", "Sarkom", "Neurofibrom", "Lipom",
-    "Aortenaneurysma", "Klaustrophobie", "Sequester", "Vollbild", "Partialruptur", "Tendinose", "Impingement",
-    "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
-    "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
-    "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-    "Flachbogig", "S-förmige", "HWS", "HWK",
-    "Flachbogige Skoliose", "flachbogige Skoliose", "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
-    "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
-    "Discopathiezeichen", "Diskopathiezeichen",
-    "Neoarthrosis interspinosa", "Neoarthrosen interspinosa", "Neoarthrose interspinosa"
-]
+# Phrasenlisten (Umbau Schritt 20, Gutachten P2-2): EINE Datei phrases.json für EXE + Web (im EXE-Bundle per
+# --add-data). medical_exe = Streaming-Boost der EXE, chirp = kuratiertes chirp_3-PhraseSet (identisch zur Web-App).
+_PHRASEN = None
 
 
-# v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation), identisch zur Web-App (CHIRP_PHRASES).
-CHIRP_PHRASES = [
-    "flachbogig",
-    "flachbogige Skoliose",
-    "rechtskonvex",
-    "linkskonvex",
-    "Cobb-Winkel",
-    "Th1",
-    "Th2",
-    "Th3",
-    "Th4",
-    "Th5",
-    "Th6",
-    "Th7",
-    "Th8",
-    "Th9",
-    "Th10",
-    "Th11",
-    "Th12",
-    "Schmorlsche Impressionen",
-    "Edgren-Vaino-Zeichen",
-    "Morbus Scheuermann",
-    "Osteochondrose",
-    "Spondylosis deformans",
-    "Spondylarthrose",
-    "Unkovertebralgelenksarthrose",
-    "Facettengelenksarthrose",
-    "Discopathiezeichen",
-    "Diskopathie",
-    "Antelisthese",
-    "Retrolisthese",
-    "Neoarthrosis interspinosa",
-    "kyphotische Fehlhaltung",
-    "Streckhaltung",
-    "Fibroostosen",
-    "Kellgren und Lawrence",
-    "Gonarthrose",
-    "Coxarthrose",
-    "Omarthrose",
-    "Rhizarthrose",
-    "Retropatellararthrose",
-    "Femorotibialkompartiment",
-    "Scaphoidtaille",
-    "Kahnbeintaille",
-    "Collum chirurgicum",
-    "Radiusköpfchen",
-    "Humeruskopfhochstand",
-    "Garden",
-    "Supraspinatussehne",
-    "Infraspinatussehne",
-    "Subscapularissehne",
-    "lange Bizepssehne",
-    "Tenosynovitis",
-    "Tendinopathie",
-    "Tendinosis calcarea",
-    "Begleitbursitis",
-    "Enthesiopathie",
-    "Plantarfaszie",
-    "Arthro-Broström",
-    "Mammasonographie",
-    "BI-RADS",
-    "Morbus Mondor",
-    "Sulcus nervi ulnaris",
-    "Nervus ulnaris",
-    "Musculus anconeus epitrochlearis",
-    "Hoffmann-Tinel-Zeichen",
-    "Kiloh-Nevin",
-    "Hypothenarmuskulatur",
-    "faszikulär",
-    "Thorax p.a.",
-]
+def _phrasen():
+    global _PHRASEN
+    if _PHRASEN is None:
+        hier = os.path.dirname(os.path.abspath(__file__))
+        for d in (getattr(sys, "_MEIPASS", None), hier, os.path.dirname(hier)):
+            if d and os.path.exists(os.path.join(d, "phrases.json")):
+                with open(os.path.join(d, "phrases.json"), encoding="utf-8") as f:
+                    _PHRASEN = json.load(f)
+                break
+        else:
+            raise FileNotFoundError("phrases.json nicht gefunden (EXE-Bundle: --add-data phrases.json)")
+    return _PHRASEN
+
+
+def medical_phrases():
+    """Streaming (Live-Anzeige, latest_long, Boost 10): medizinische Fachbegriffe der EXE (292)."""
+    return _phrasen()["medical_exe"]
+
+
+def chirp_phrases():
+    """v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation), identisch zur Web-App (68)."""
+    return _phrasen()["chirp"]
 
 
 def chirp3_request(token, loc, wav_b64, timeout=60, urlopen=None):
@@ -150,7 +54,7 @@ def chirp3_request(token, loc, wav_b64, timeout=60, urlopen=None):
            "autoDecodingConfig": {},
            "features": {"enableAutomaticPunctuation": True},
            "adaptation": {"phraseSets": [{"inlinePhraseSet": {"phrases": [
-               {"value": p, "boost": 10} for p in CHIRP_PHRASES]}}]}}
+               {"value": p, "boost": 10} for p in chirp_phrases()]}}]}}
     body = json.dumps({"config": cfg, "content": wav_b64}).encode()
     req = urllib.request.Request(url, data=body, headers={
         "Authorization": "Bearer " + token,

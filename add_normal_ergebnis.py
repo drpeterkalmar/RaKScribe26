@@ -110,9 +110,8 @@ OHNE = {"knochendichtemessung_dexa", "ultraschall_gezielte_blockade"}
 
 
 def main():
-    exe_p, web_p = REPO / "templates.json", REPO / "web_app/src/templates.json"
+    exe_p = REPO / "templates.json"  # seit Umbau Schritt 20 die einzige Vorlagen-Datei (EXE + Web)
     t = json.loads(exe_p.read_text())
-    assert t == json.loads(web_p.read_text()), "EXE/Web templates divergiert!"
     for k in list(TAUGHT) + list(KONVENTION):
         assert k in t, f"unbekannter Key {k}"
     for k, v in t.items():
@@ -121,7 +120,7 @@ def main():
             continue
         v["ergebnis"] = TAUGHT.get(k) or KONVENTION.get(k) or "Unauffälliger Befund."
     payload = json.dumps(t, ensure_ascii=False, indent=2) + "\n"
-    exe_p.write_text(payload); web_p.write_text(payload)
+    exe_p.write_text(payload)
     print(f"{sum('ergebnis' in v for v in t.values())}/{len(t)} Templates mit Normal-Ergebnis")
 
 

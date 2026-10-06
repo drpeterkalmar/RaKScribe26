@@ -37,8 +37,7 @@ def tok(c):
         c.refresh(gtr.Request())
     return c.token
 
-APP = (ROOT / "web_app/src/stt.ts").read_text()  # Umbau Schritt 8: Phrasenlisten der Web-App in src/stt.ts
-CHIRP_PHRASES = re.findall(r'"([^"]+)"', re.search(r"const CHIRP_PHRASES: string\[\] = \[(.*?)\];", APP, re.S).group(1))
+CHIRP_PHRASES = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))["chirp"]  # Umbau Schritt 20: phrases.json
 
 def ensure_data():
     AUD.mkdir(parents=True, exist_ok=True)

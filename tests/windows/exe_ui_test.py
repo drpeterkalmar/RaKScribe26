@@ -206,6 +206,7 @@ if c:
     check("C_entsperrt", "Vorlagen-Vorrang gebündelt (MRT Knie)", s.get("vorlage_mrt_knie") == "mr_des_kniegelenkes:", str(s.get("vorlage_mrt_knie")))
     check("C_entsperrt", "F10 während Verarbeitung wird ignoriert", s.get("f10_waehrend_verarbeitung") == "ignorieren", str(s.get("f10_waehrend_verarbeitung")))
     check("C_entsperrt", "Ergebnis wird nummeriert", s.get("ergebnis_nummeriert") is True, str(s.get("ergebnis_nummeriert")))
+    check("C_entsperrt", "Phrasenlisten gebündelt (292 Streaming, 68 chirp_3)", s.get("phrasen") == [292, 68], str(s.get("phrasen")))
     sw_, sh_ = s["screen"]
     gw, gh_ = [int(x) for x in s["geometry"].split("+")[0].split("x")]
     check("C_entsperrt", "Fenster passt auf den Bildschirm", gw <= sw_ and gh_ <= sh_, f"{gw}×{gh_} auf {sw_}×{sh_}")

@@ -4,7 +4,10 @@ import {
   Mic, MicOff, Copy, Check, Upload, Download, Sparkles, X, KeyRound, Menu, Trash2,
   RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines
 } from 'lucide-react';
-import templatesData from './templates.json';
+// Umbau Schritt 20 (Gutachten P2-13): Vorlagen nur noch EINMAL im Repo-Root (wie misheard_words.json)
+import templatesData from '../../templates.json';
+// Umbau Schritt 20: Phrasenlisten der Spracherkennung — EINE Datei für EXE + Web
+import phrasesData from '../../phrases.json';
 // v3.1: Fehlhör-Liste — EINE Quelle für Web + EXE (Repo-Root /misheard_words.json, kein Spiegel)
 import misheardData from '../../misheard_words.json';
 import { compileMisheard, misheardPromptBlock, type MisheardFile } from './misheard';
@@ -20,7 +23,7 @@ import { istAbbruch, fehlermeldung } from './net.ts';
 // Umbau Schritt 18: Gemini-Aufrufe (Call 0/1/2, Schlüsselprüfung) und Befund-Kette als Module
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
 import { befundAusDiktat, type PipelineKontext } from './pipeline.ts';
-import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel } from './stt.ts';
+import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
 import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
@@ -36,7 +39,8 @@ const ALLGEMEIN_FALLBACK: Template = {
   ergebnis: "Unauffälliger Befund.",
 };
 
-// (Phrasenlisten MEDICAL_PHRASES/CHIRP_PHRASES: src/stt.ts)
+// Phrasenlisten (phrases.json): 6-s-Chunks mit medical_web, chirp_3 mit chirp (wie bisher, ohne Doppelte)
+const PHRASEN: Phrasen = { medical: phrasesData.medical_web, chirp: phrasesData.chirp };
 
 
 
@@ -422,7 +426,7 @@ export default function App() {
   // „Neu“/F9 bricht ab; ein abgebrochener oder überholter Lauf schreibt nichts mehr und kopiert nichts.
   const laeufeRef = useRef(new LaufVerwaltung());
   const aufnahmeLaufRef = useRef<Lauf | null>(null);
-  const sttKontext = (lauf: Lauf): SttKontext => ({ sttKey: sttKeyJson, signal: lauf.signal, status: lauf.nurAktuell(setStatusText) });
+  const sttKontext = (lauf: Lauf): SttKontext => ({ sttKey: sttKeyJson, phrasen: PHRASEN, signal: lauf.signal, status: lauf.nurAktuell(setStatusText) });
   // Umbau Schritt 18: Kontext für Gemini-Aufrufe (src/gemini.ts) und Befund-Kette (src/pipeline.ts)
   const genKontext = (lauf: Lauf, signal: AbortSignal): PipelineKontext => ({
     apiKey: vertexApiKey, prompt: GEN_PROMPT, signal, status: lauf.nurAktuell(setStatusText),

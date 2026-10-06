@@ -2,11 +2,11 @@
 // Fehlerweitergabe der Spracherkennung, kein Whisper-Aufruf auf GitHub Pages. fetch wird nachgebaut.
 //   cd web_app && node --experimental-strip-types pipeline_test.mjs
 import { generateKeyPairSync } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { LaufVerwaltung, befundLauf } from './src/lauf.ts';
 import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
 import { wavFromInt16 } from './src/audio.ts';
-import { readFileSync } from 'node:fs';
 import { befundAusDiktat } from './src/pipeline.ts';
 import { correctTranscriptionWithGemini, validationPrompt, correctionPrompt, SYS_MSG, VERTEX_ENDPOINT } from './src/gemini.ts';
 import { nachbearbeiten } from './src/befundRegeln.ts';
@@ -82,6 +82,8 @@ const OPT = { transkriptVorPruefung: true, fehlerPrefix: 'Fehler: ' };
 // ── 2. Spracherkennung: Google-403 kommt an, kein localhost-Aufruf auf GitHub Pages ──────────────────────
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } });
 const sttKey = { client_email: 'test@example.iam.gserviceaccount.com', private_key: privateKey };
+const PHR = JSON.parse(readFileSync(new URL('../phrases.json', import.meta.url), 'utf8'));
+const phrasen = { medical: PHR.medical_web, chirp: PHR.chirp };  // wie App.tsx (Umbau Schritt 20)
 let aufrufe = [];
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 globalThis.fetch = async (url) => {
@@ -98,19 +100,19 @@ const wav = new Blob([new Uint8Array(44 + 32000)], { type: 'audio/wav' });
 globalThis.location = { hostname: 'drpeterkalmar.github.io' };
 check(!whisperErlaubt(), 'GitHub Pages: Whisper-Fallback aus');
 let fehler = null;
-try { await transcribeAudio(wav, true, { sttKey }); } catch (e) { fehler = e; }
+try { await transcribeAudio(wav, true, { sttKey, phrasen }); } catch (e) { fehler = e; }
 check(fehler && /Permission denied: Cloud Speech-to-Text API/.test(fehler.message), 'Google-403 → Meldung kommt beim Nutzer an', fehler && fehler.message);
 check(!aufrufe.some(u => u.includes('localhost')), 'kein localhost-Aufruf auf Nicht-localhost', aufrufe.join(' '));
 check(aufrufe.some(u => u.includes('eu-speech.googleapis.com')), 'chirp_3 wurde versucht');
 
 aufrufe = [];
 fehler = null;
-try { await transcribeAudio(wav, false, { sttKey }); } catch (e) { fehler = e; }
+try { await transcribeAudio(wav, false, { sttKey, phrasen }); } catch (e) { fehler = e; }
 check(fehler && /Permission denied/.test(fehler.message) && !aufrufe.some(u => u.includes('localhost')), 'Chunk-Pfad (latest_long): ebenso kein Whisper, Google-Meldung', aufrufe.join(' '));
 
 globalThis.location = { hostname: 'localhost' };
 aufrufe = [];
-const lokal = await transcribeAudio(wav, true, { sttKey });
+const lokal = await transcribeAudio(wav, true, { sttKey, phrasen });
 check(lokal === 'Whisper-Text' && aufrufe.some(u => u.includes('localhost:8765')), 'localhost: Whisper-Fallback wie bisher');
 
 globalThis.location = { hostname: 'drpeterkalmar.github.io' };
@@ -122,8 +124,26 @@ const ac = new AbortController(); ac.abort();
 aufrufe = [];
 fehler = null;
 globalThis.location = { hostname: 'localhost' };
-try { await transcribeAudio(wav, true, { sttKey, signal: ac.signal }); } catch (e) { fehler = e; }
+try { await transcribeAudio(wav, true, { sttKey, phrasen, signal: ac.signal }); } catch (e) { fehler = e; }
 check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('localhost:8765')), 'Abbruch → AbortError, auch lokal kein Whisper', aufrufe.join(' '));
+
+// ── 2a. Phrasenlisten aus phrases.json landen in den Requests (Umbau Schritt 20) ──────────────────────────────
+{
+  const gesendet = [];
+  globalThis.fetch = async (url, opt) => {
+    if (url.includes('oauth2')) return json(200, { access_token: 'tok', expires_in: 3600 });
+    gesendet.push({ url, body: JSON.parse(opt.body) });
+    return json(200, { results: [{ alternatives: [{ transcript: 'ok' }] }] });
+  };
+  await transcribeAudio(wav, true, { sttKey, phrasen });
+  await transcribeAudio(wav, false, { sttKey, phrasen });
+  const chirp = gesendet[0].body.config.adaptation.phraseSets[0].inlinePhraseSet.phrases;
+  const chunk = gesendet[1].body.config.speechContexts[0];
+  check(chirp.map(p => p.value).join('|') === PHR.chirp.join('|') && chirp.every(p => p.boost === 10) && PHR.chirp.length === 68,
+        'chirp_3: PhraseSet = phrases.json chirp (68, Boost 10)');
+  check(chunk.phrases.join('|') === PHR.medical_web.join('|') && chunk.boost === 15 && new Set(chunk.phrases).size === chunk.phrases.length,
+        '6-s-Chunk: speechContexts = phrases.json medical_web (ohne Doppelte, Boost 15)');
+}
 
 // ── 2b. Langes Diktat (> 59 s): Segmente 50 s + 4 s Rückhören direkt aus der WAV (ohne AudioContext) ────
 {
@@ -135,7 +155,7 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
     return json(200, { results: [{ alternatives: [{ transcript: texte[bodies.length - 1] }] }] });
   };
   const s = Int16Array.from({ length: 70 * 16000 }, (_, i) => (i % 200) - 100);
-  const text = await transcribeAudio(wavFromInt16(s), true, { sttKey });
+  const text = await transcribeAudio(wavFromInt16(s), true, { sttKey, phrasen });
   const laengen = bodies.map(b => { const bin = Buffer.from(b.content, 'base64'); return bin.readUInt32LE(40) / 2; });
   check(bodies.length === 2 && laengen[0] === 50 * 16000 && laengen[1] === 24 * 16000, '70-s-Diktat → 2 chirp_3-Segmente (50 s, 24 s)', laengen.join(','));
   const zweites = Buffer.from(bodies[1].content, 'base64');

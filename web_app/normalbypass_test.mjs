@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { isPureNormalFinding } from './src/normalbypass.ts';
 
-const T = JSON.parse(readFileSync(new URL('./src/templates.json', import.meta.url), 'utf8'));
+const T = JSON.parse(readFileSync(new URL('../templates.json', import.meta.url), 'utf8'));  // Umbau Schritt 20: nur noch eine Vorlagen-Datei
 const DN = Object.values(T).map(v => v.display_name);
 const cases = JSON.parse(readFileSync(new URL('../normal_bypass_tests.json', import.meta.url), 'utf8')).cases;
 let fail = 0;

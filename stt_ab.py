@@ -25,9 +25,7 @@ def tok():
         _c.refresh(gtr.Request())
     return _c.token
 
-APP = (ROOT / "web_app/src/stt.ts").read_text()  # Umbau Schritt 8: Phrasenlisten der Web-App in src/stt.ts
-m = re.search(r"MEDICAL_PHRASES(?::\s*string\[\])?\s*=\s*\[(.*?)\];", APP, re.S)
-PHRASES = re.findall(r"['\"]([^'\"]+)['\"]", m.group(1)) if m else []
+PHRASES = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))["medical_web"]  # Umbau Schritt 20: phrases.json
 
 # Termini (Stamm, case-insensitive; Alternativen mit |)
 TERMS = {

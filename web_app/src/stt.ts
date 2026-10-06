@@ -7,270 +7,16 @@ import { fetchWithRetry, istAbbruch } from './net.ts';
 import { int16AusWav, sliceWav } from './audio.ts';
 
 export type SttSchluessel = { client_email: string; private_key: string };
+// Phrasenlisten (Umbau Schritt 20, Gutachten P2-2): EINE Datei /phrases.json für EXE + Web. App.tsx importiert sie
+// und gibt sie hier mit — medical = 6-s-Chunk-Boost (latest_long, 15.0), chirp = kuratiertes chirp_3-PhraseSet.
+export type Phrasen = { medical: string[]; chirp: string[] };
+
 export type SttKontext = {
   sttKey: SttSchluessel | null;
+  phrasen: Phrasen;
   signal?: AbortSignal;
   status?: (text: string) => void;
 };
-
-// Speech-Context Phrasen für Google STT (medizinischer Jargon, boost 15.0)
-export const MEDICAL_PHRASES: string[] = [
-  "Hochauflösender Nervenschall", "Thorax pa/seitlich", "MRT", "MR", "CT", "Computertomografie", "DXA", "Knochendichtemessung",
-  "Humerus", "Femur", "Tibia", "Fibula", "Patella", "Karpaltunnel", "Rotatorenmanschette",
-  "Achillessehne", "Kalkaneus", "Acromioclaviculargelenk", "Sacroiliacalgelenk", "Halswirbelsäule (HWS)",
-  "Brustwirbelsäule (BWS)", "Lendenwirbelsäule (LWS)", "Kreuzband", "Tarsus", "Metatarsus",
-  "Fraktur", "Spondylarthrose", "Spondylarthrosen", "Spondylodese", "Spondyolyse", "Spondylosis deformans", "Spondylose", "pontifizierend", "pontifizierende", "Arthrose", "Coxarthrose", "Gonarthrose", "Meniskus", "Hinterhorn-Läsion",
-  "Korbhenkelriss", "Bandscheibenprolaps", "Spinalkanalstenose", "Osteochondrose", "Osteochondrosen", "Nearthrosis interspinosa",
-  "Osteomyelitis", "Rheumatoide Arthritis", "Kapsel-Band-Läsion", "Osteoporose", "Bakerzyste",
-  "Knochenödem", "Einklemmungssyndrom", "Arthrographie", "Szintigraphie", "Vertebroplastie",
-  "Facetteninfiltration", "CT-gesteuerte Biopsie", "MR-Arthrographie", "Skelettaufnahme", "Ganzbeinaufnahme",
-  "Gelenkspaltverschmälerung", "Subluxation", "Wirbelkörperkompression", "Rotatorenmanschettenruptur",
-  "Labrumläsion", "Subchondrale Sklerosierung", "Nervus medianus", "Nervus radialis",
-  "Liquor", "Zerebrospinalflüssigkeit", "Kortex", "Großhirnrinde", "Weiße Substanz", "Basalganglien",
-  "Hypophyse", "Corpus callosum", "Sinus cavernosus", "Aorta", "Arteria carotis interna", "Arteria carotis externa",
-  "Pulmonalarterie", "Vena cava superior", "Vena cava inferior", "A. vertebralis",
-  "Aneurysma", "Intrakranielles Aneurysma", "Ischämie", "Ischämischer Infarkt", "Intracranielle Blutung",
-  "Subarachnoidalblutung (SAB)", "Subduralhämatom (SDH)", "Epiduralhämatom (EDH)", "Multiple Sklerose (MS)",
-  "Hypophysenadenom", "Hydrozephalus", "Normaldruckhydrozephalus", "Vaskulitis", "Stenose", "Carotisstenose",
-  "Koronarstenose", "Dissektion", "Aortendissektion", "Thrombus", "Thrombose", "Embolie", "PAE", "Plaqubildung", "Softplaque",
-  "gemischte Plaqueformation", "IMT-Komplex", "Intima-Media-Hyperplasie", "Intimahyperplasie",
-  "Varizen", "T1-gewichtete Sequenz", "T2-gewichtete Sequenz", "Flair-Sequenz", "Diffusion-weighted Imaging (DWI)",
-  "Time-of-Flight (TOF) Angio", "MRA", "CTA", "Kontrastmittel (KM)", "Plaque", "Atherosklerotische Plaque",
-  "Angioplastie", "Sakkuläres Aneurysma", "Gefäßokklusion",
-  "Lunge", "Oberlappen", "Unterlappen", "Trachea", "Bronchien", "Mediastinum", "Herz", "Ventrikel",
-  "Perikard", "Leber", "Gallenblase", "Pankreas", "Niere", "Milz", "Uterus", "Adnexe", "Appendix",
-  "Schilddrüse", "Infiltrat", "Pulmonales Infiltrat", "Pleuraerguss", "Pneumothorax", "Spannungspneumothorax",
-  "Kardiomegalie", "Aortenklappeninsuffizienz", "Leberzirrhose", "Cholezystitis", "Pankreatitis",
-  "Nierenstein", "Ureterstein", "Nephrolithiasis", "Adnexitis", "Ovarielle Zyste", "Lymphknoten",
-  "Lymphadenopathie", "Appendizitis", "Struma", "Verschattung", "Milzruptur", "Hernie", "Hiatushernie",
-  "Inguinalhernie", "Dilatation", "Aszites", "Zystische Läsion", "Liquidation", "Faszienverdickung",
-  "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
-  "Echoarm", "Echogen",
-  "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen", "Neoarthrosis interspinosa", "Neoarthrosen interspinosa", "Thorax p.a.", "Thorax p.a./seitlich",
-  "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
-  "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
-  "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
-  "Kontraindikation", "Artefakt", "Pixel", "Voxel", "Echoarmut", "Echogenität", "Hyperintens", "Hypointens",
-  "Dosis-Längen-Produkt (DLP)", "Field of View (FOV)", "Standard-Abweichung (SD)", "Flüssigkeitsspiegel",
-  "Röntgen-Thorax", "Projektionsaufnahme", "Z.n.", "Zustand nach", "Adenokarzinom", "Cholangiokarzinom",
-  "Fibrose", "Hämangiom", "Atelektase", "Bronchiektasen", "Emphysem", "Sarkom", "Neurofibrom", "Lipom",
-  "Aortenaneurysma", "Klaustrophobie", "Sequester", "Vollbild", "Partialruptur", "Tendinose", "Impingement",
-  "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
-  "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
-  "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-  "Flachbogig", "S-förmige", "Discopathiezeichen", "Diskopathiezeichen",
-  // ── Schulter/Sonographie-spezifisch ──
-  "Tenosynovitis", "Tenosynovitis der langen Bizepssehne", "Bizepssehne", "Bizepssehnenscheide",
-  "Tendinopathie", "Tendinose", "Tendinosis", "Tendinosis calcarea",
-  "Supraspinatussehne", "Supraspinatus", "Infraspinatussehne", "Infraspinatus",
-  "Subscapularis", "Subscapularissehne", "Teres minor", "Teres-minor-Sehne",
-  "Rotatorenmanschette", "Rotatorenmanschettenruptur", "Rotatorenmanschetten-Tendinose",
-  "Bursitis", "Bursitis subacromialis", "Subacromialbursa", "Subakromialbursa",
-  "begleitende Bursitis", "Begleitbursitis", "begleitbursitis",
-  "Kalkschulter", "Kalkspick", "Kalkablagerung", "Verkalkung der Supraspinatussehne",
-  "Impingement", "Impingementsyndrom", "subacromiales Impingement",
-  "Akromion", "Akromioklavikulargelenk", "AC-Gelenk", "Klavikula",
-  "Coracoid", "Processus coracoideus", "Labrum glenoidale", "Labrumläsion",
-  "SLAP-Läsion", "Bankart-Läsion", "Hill-Sachs-Läsion",
-  "Glenohumeralgelenk", "Glenoid", "Bizepssehnenanker",
-  "Lange Bizepssehne", "Lange-Bizeps-Sehne", "Bizepslongussehne",
-  "Schultergelenksonographie", "Schultersonographie", "Schulterultraschall",
-  "Röntgen und Sonographie des Schultergelenkes",
-  "Röntgen und der Sonographie",
-  "Kalkeinlagerung", "Kalkdepot", "Kalkherd",
-  "Sehnenkalkeinlagerung", "Tendinosis calcarea der Supraspinatussehne",
-  "Partialruptur der Supraspinatussehne", "Full-Thickness-Ruptur",
-  "Gelenkerguss", "Gelenkspalt", "Gelenkkapsel",
-  // ── Allgemein radiologische Begriffe (ergänzt) ──
-  "unauffällig", "Unauffällig", "unauffälliger Befund",
-  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
-  "regelrecht", "Regelrecht", "regelrechte Darstellung",
-  "ohne pathologischen Befund", "kein pathologischer Befund",
-  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
-  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
-  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
-  "Röntgen und Sonographie", "Röntgen und der Sonographie",
-  "des linken Schultergelenkes", "des rechten Schultergelenkes",
-  "des linken Kniegelenkes", "des rechten Kniegelenkes",
-  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
-  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
-  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
-  "des linken Handgelenkes", "des rechten Handgelenkes",
-  // ── Praxis-Jargon / Shortcut-Phrasen ──
-  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
-  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
-  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
-  "Metatarsale", "Phalanx", "Basis",
-  // ── Mamma/Mammasonographie-spezifisch ──
-  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
-  "Mammographie", "Mammografie", "Mammographie beidseits",
-  "Drüsenparenchym", "Brustdrüse", "Mamma",
-  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
-  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
-  "Morbus Mondor", "Mondor", "Mondor-Disease",
-  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
-  "kutane Venenthrombose", "Venenthrombose",
-  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
-  "Axillen", "Axillen beidseits frei",
-  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
-  "Architekturstörung", "Architekturstörungen",
-  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
-  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
-  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
-  "Inspektion und Palpation", "Palpationsbefund",
-  "Durchmesser", "mm Durchmesser",
-  // ── Nervus-ulnaris / Neurosonographie-spezifisch ──
-  "Nervus ulnaris", "N. ulnaris", "Sulcus nervi ulnaris", "Sulcus ulnaris",
-  "Loge de Guyon", "Guyon-Loge", "Ramus dorsalis", "Ramus superficialis", "Ramus profundus",
-  "Querschnittsfläche", "Querschnittsflaeche", "Quadratmillimeter", "mm²",
-  "M. anconeus", "Musculus anconeus", "M. anconeus epitrochlearis", "anconeus epitrochlearis",
-  "hypertropher M. anconeus", "hypertrophe Musculus anconeus",
-  "Epicondylus medialis humeri", "Epicondylus medialis", "mediales Septum intermusculare",
-  "Osborne Ligament", "Osborne-Ligament", "Osborne Faszie", "Retinaculum",
-  "M. flexor carpi ulnaris", "Flexor carpi ulnaris", "FCU",
-  "Ellbogenflexion", "Ellbogenstreckung", "Ellbogengelenk",
-  "Aggravation", "Kompression des Nervs", "Nervenkompression",
-  "faszikulär", "faszikulaer", "nervale Auftreibung", "Denervation",
-  "Hypothenarmuskulatur", "Lumbricalmuskulatur", "M. adductor pollicis", "Muskel-Faszikulationen",
-  "Echogenitätssteigerung", "Atrophie", "seitensymmetrisch",
-  "Schnappen des Nervs", "Loge de Guyon unauffällig",
-  "N. radialis", "Nervus radialis", "Ramus profundus", "Ramus superficialis",
-  "Frohse-Arkade", "Frohse Arkade", "Supinator", "M. supinator", "Musculus supinator",
-  "Wartenberg-Syndrom", "Wartenberg", "Arteria radialis recurrens",
-  "Sulcus n. radialis", "Strecksehnenfach", "4. Strecksehnenfaches",
-  "N. cutaneus brachii lateralis inferior", "N. cutaneus antebrachii posterior",
-  "M. brachioradialis", "Handgelenksextensoren",
-  // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
-  "flachbogig", "flachbogige", "flachbogige Skoliose", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
-  "HWS", "HWK",
-  "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
-  "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
-  "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
-  "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
-  "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
-  "multisegmentale", "Schmalsche Impressionen", "Deckplattenimpressionen",
-  "Edgren-Vaino-Zeichen", "Edgren Vaino Zeichen", "Edgren-Vaino Zeichen",
-  "Morbus Scheuermann", "Scheuermann", "Scheuermann-Krankheit",
-  "Kyphose", "hyperkyphotisch", "harmonische Kyphose",
-  "Bogenwurzeln", "Dornfortsätze", "Querfortsätze", "Processus articulares",
-  "Articulationes costotransversales", "Articulationes costovertebrales",
-  "Spatien intervertebralia", "Canalis spinalis", "Platae terminales",
-  "BWS-Röntgen", "BWS in 2 Ebenen", "Brustwirbelsäule", "BWS",
-  // ── Allgemein radiologische Begriffe (ergänzt) ──
-  "unauffällig", "Unauffällig", "unauffälliger Befund",
-  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
-  "regelrecht", "Regelrecht", "regelrechte Darstellung",
-  "ohne pathologischen Befund", "kein pathologischer Befund",
-  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
-  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
-  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
-  "Röntgen und Sonographie", "Röntgen und der Sonographie",
-  "des linken Schultergelenkes", "des rechten Schultergelenkes",
-  "des linken Kniegelenkes", "des rechten Kniegelenkes",
-  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
-  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
-  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
-  "des linken Handgelenkes", "des rechten Handgelenkes",
-  // ── Praxis-Jargon / Shortcut-Phrasen ──
-  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
-  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
-  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
-  "Metatarsale", "Phalanx", "Basis",
-  // ── Mamma/Mammasonographie-spezifisch ──
-  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
-  "Mammographie", "Mammografie", "Mammographie beidseits",
-  "Drüsenparenchym", "Brustdrüse", "Mamma",
-  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
-  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
-  "Morbus Mondor", "Mondor", "Mondor-Disease",
-  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
-  "kutane Venenthrombose", "Venenthrombose",
-  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
-  "Axillen", "Axillen beidseits frei",
-  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
-  "Architekturstörung", "Architekturstörungen",
-  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
-  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
-  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
-  "Inspektion und Palpation", "Palpationsbefund",
-  "Durchmesser", "mm Durchmesser",
-];
-
-
-// v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation). A/B echte + synthetische Diktate:
-// Termini 41/47 → 45/47 (flachbogig, Cobb-Winkel, Mammasonographie, Discopathiezeichen, Fibroostosen,
-// Rhizarthrose, Arthro-Broström). BEWUSST KURZ — die 692er-Liste verschlechterte chirp_3 (25/29 statt 26/29).
-export const CHIRP_PHRASES: string[] = [
-  "flachbogig",
-  "flachbogige Skoliose",
-  "rechtskonvex",
-  "linkskonvex",
-  "Cobb-Winkel",
-  "Th1",
-  "Th2",
-  "Th3",
-  "Th4",
-  "Th5",
-  "Th6",
-  "Th7",
-  "Th8",
-  "Th9",
-  "Th10",
-  "Th11",
-  "Th12",
-  "Schmorlsche Impressionen",
-  "Edgren-Vaino-Zeichen",
-  "Morbus Scheuermann",
-  "Osteochondrose",
-  "Spondylosis deformans",
-  "Spondylarthrose",
-  "Unkovertebralgelenksarthrose",
-  "Facettengelenksarthrose",
-  "Discopathiezeichen",
-  "Diskopathie",
-  "Antelisthese",
-  "Retrolisthese",
-  "Neoarthrosis interspinosa",
-  "kyphotische Fehlhaltung",
-  "Streckhaltung",
-  "Fibroostosen",
-  "Kellgren und Lawrence",
-  "Gonarthrose",
-  "Coxarthrose",
-  "Omarthrose",
-  "Rhizarthrose",
-  "Retropatellararthrose",
-  "Femorotibialkompartiment",
-  "Scaphoidtaille",
-  "Kahnbeintaille",
-  "Collum chirurgicum",
-  "Radiusköpfchen",
-  "Humeruskopfhochstand",
-  "Garden",
-  "Supraspinatussehne",
-  "Infraspinatussehne",
-  "Subscapularissehne",
-  "lange Bizepssehne",
-  "Tenosynovitis",
-  "Tendinopathie",
-  "Tendinosis calcarea",
-  "Begleitbursitis",
-  "Enthesiopathie",
-  "Plantarfaszie",
-  "Arthro-Broström",
-  "Mammasonographie",
-  "BI-RADS",
-  "Morbus Mondor",
-  "Sulcus nervi ulnaris",
-  "Nervus ulnaris",
-  "Musculus anconeus epitrochlearis",
-  "Hoffmann-Tinel-Zeichen",
-  "Kiloh-Nevin",
-  "Hypothenarmuskulatur",
-  "faszikulär",
-  "Thorax p.a.",
-];
 
 // ── Base64 ohne FileReader (gleiches Ergebnis wie readAsDataURL, auch in Node testbar) ──
 export function base64AusBytes(bytes: Uint8Array): string {
@@ -352,7 +98,7 @@ export async function transcribeChunkWithGoogle(wavBlob: Blob, ctx: SttKontext):
       config: {
         encoding: 'LINEAR16', sampleRateHertz: 16000, languageCode: 'de-DE',
         enableAutomaticPunctuation: true, model: 'latest_long', useEnhanced: true,  // WER-Test 03.09.: short verliert Material
-        speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
+        speechContexts: [{ phrases: ctx.phrasen.medical, boost: 15.0 }],
       },
       audio: { content: base64Data },
     }),
@@ -365,7 +111,8 @@ export async function transcribeChunkWithGoogle(wavBlob: Blob, ctx: SttKontext):
 
 // FULL-AUDIO Transkription (v2.9.10): chirp_3 via STT v2 (Location eu).
 // WER-Test 04.09.: chirp_3 = 2,4% (auch bei Echo/Daempfung) vs latest_long = 16,7%.
-export async function chirp3Recognize(token: string, wavB64: string, signal?: AbortSignal): Promise<string> {
+// v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation), BEWUSST KURZ — die 692er-Liste verschlechterte chirp_3.
+export async function chirp3Recognize(token: string, wavB64: string, chirpPhrasen: string[], signal?: AbortSignal): Promise<string> {
   const url = 'https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize';
   const response = await fetchWithRetry(url, {
     method: 'POST',
@@ -376,7 +123,7 @@ export async function chirp3Recognize(token: string, wavB64: string, signal?: Ab
         model: 'chirp_3',
         autoDecodingConfig: {},
         features: { enableAutomaticPunctuation: true },
-        adaptation: { phraseSets: [{ inlinePhraseSet: { phrases: CHIRP_PHRASES.map(value => ({ value, boost: 10 })) } }] },
+        adaptation: { phraseSets: [{ inlinePhraseSet: { phrases: chirpPhrasen.map(value => ({ value, boost: 10 })) } }] },
       },
       content: wavB64,
     }),
@@ -411,7 +158,7 @@ export async function transcribeFullAudioWithGoogle(wavBlob: Blob, ctx: SttKonte
 
   if (estimatedDurationSec <= 59) {
     ctx.status?.('Volltranskription läuft (chirp_3, komplettes Diktat)...');
-    return await chirp3Recognize(token, base64Data, ctx.signal);
+    return await chirp3Recognize(token, base64Data, ctx.phrasen.chirp, ctx.signal);
   }
 
   console.log('[FULL-AUDIO] chirp_3 Segmentierung (>60s)');
@@ -424,7 +171,7 @@ export async function transcribeFullAudioWithGoogle(wavBlob: Blob, ctx: SttKonte
   let start = 0;
   while (start < s16.length) {
     const end = Math.min(start + SEG, s16.length);
-    texts.push(await chirp3Recognize(token, await blobToBase64(sliceWav(s16, start, end)), ctx.signal));
+    texts.push(await chirp3Recognize(token, await blobToBase64(sliceWav(s16, start, end)), ctx.phrasen.chirp, ctx.signal));
     if (end >= s16.length) break;
     start = end - OV;
   }

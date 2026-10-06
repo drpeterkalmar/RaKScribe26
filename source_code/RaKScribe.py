@@ -151,7 +151,7 @@ def init_google_speech():
             enable_automatic_punctuation=True,
             speech_contexts=[
                 speech.SpeechContext(
-                    phrases=_stt.MEDICAL_PHRASES,
+                    phrases=_stt.medical_phrases(),
                     boost=10.0
                 )
             ]
@@ -530,6 +530,13 @@ ZWISCHENABLAGE_GESPERRT = ("Die Zwischenablage ist durch ein anderes Programm ge
                            "„Befund kopieren“ erneut kopieren und selbst einfügen.")
 
 
+def _selbsttest_phrasen():
+    try:
+        return [len(_stt.medical_phrases()), len(_stt.chirp_phrases())]
+    except Exception as e:
+        return str(e)
+
+
 def _js_vorschau_processing():
     """Selbsttest: was F10 im Zustand „Befund wird erstellt" auslöst (None = ignoriert)."""
     js = _js.JobState()
@@ -755,6 +762,8 @@ class RaKScribeApp(ctk.CTk):
                     "vorlage_vorfuss": detect_template("Vorfuß rechts in 2 Ebenen unauffällig"),
                     "vorlage_mrt_knie": detect_template("MRT Knie rechts unauffällig"),
                     "f10_waehrend_verarbeitung": "ignorieren" if _js_vorschau_processing() is None else "start",
+                    # Umbau Schritt 20: gebündelte phrases.json (Streaming / chirp_3)
+                    "phrasen": _selbsttest_phrasen(),
                     "is_recording": bool(self.is_recording),
                     "job_zustand": self._job.zustand,
                     "time": time.strftime("%H:%M:%S"),
@@ -1336,6 +1345,10 @@ def init_runtime():
     _init_misheard()
     RADIOLOGY_TEMPLATES = load_templates()
     DISPLAY_NAMES = [v.get("display_name", "") for v in RADIOLOGY_TEMPLATES.values()]
+    try:  # Umbau Schritt 20: gebündelte phrases.json früh prüfen (sonst fiele erst die Spracherkennung aus)
+        print(f"[INIT] Phrasen: {len(_stt.medical_phrases())} Streaming, {len(_stt.chirp_phrases())} chirp_3")
+    except Exception:
+        log_exception("[INIT] phrases.json nicht ladbar")
 
 
 def main():

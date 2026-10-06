@@ -70,9 +70,9 @@ check("chirp3_request: EU-Endpoint, Bearer-Token, Timeout 60 s",
       gesehen["url"] == "https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize"
       and gesehen["auth"] == "Bearer tok" and gesehen["timeout"] == 60, str(gesehen.get("url")))
 cfg = gesehen["body"]["config"]
-check("chirp3_request: Modell chirp_3, de-DE, PhraseSet = CHIRP_PHRASES (Boost 10)",
+check("chirp3_request: Modell chirp_3, de-DE, PhraseSet = phrases.json chirp (Boost 10)",
       cfg["model"] == "chirp_3" and cfg["languageCodes"] == ["de-DE"] and gesehen["body"]["content"] == "QUJD"
-      and [p["value"] for p in cfg["adaptation"]["phraseSets"][0]["inlinePhraseSet"]["phrases"]] == stt.CHIRP_PHRASES
+      and [p["value"] for p in cfg["adaptation"]["phraseSets"][0]["inlinePhraseSet"]["phrases"]] == stt.chirp_phrases()
       and {p["boost"] for p in cfg["adaptation"]["phraseSets"][0]["inlinePhraseSet"]["phrases"]} == {10})
 check("chirp3_request: Ergebnisse mit Leerzeichen verbunden", t == "Knie rechts unauffällig.")
 stt.chirp3_request("tok", "global", "", urlopen=urlopen)
@@ -82,13 +82,13 @@ import subprocess
 ts = subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "sync_test.mjs"], cwd=ROOT / "web_app",
                     capture_output=True, text=True)
 check("Web stitchOverlaps: dieselben Fälle (sync_test.mjs)", ts.returncode == 0, ts.stdout[-500:] + ts.stderr[-500:])
-ts_chirp = subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "sync_test.mjs", "--chirp"],
-                          cwd=ROOT / "web_app", capture_output=True, text=True).stdout
-check("CHIRP_PHRASES EXE = Web (68, gleiche Reihenfolge)", ts_chirp and json.loads(ts_chirp) == stt.CHIRP_PHRASES)
-check("Phrasenlisten: MEDICAL 292, CHIRP 68 (Stand Gutachten)", (len(stt.MEDICAL_PHRASES), len(stt.CHIRP_PHRASES)) == (292, 68))
+PHR = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))
+check("Phrasenlisten aus phrases.json: Streaming 292, chirp_3 68 (Stand Gutachten)",
+      stt.medical_phrases() == PHR["medical_exe"] and stt.chirp_phrases() == PHR["chirp"]
+      and (len(stt.medical_phrases()), len(stt.chirp_phrases())) == (292, 68))
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 check("EXE nutzt stt.py (keine eigenen Listen/Worker mehr)", "_stt.chirp3_worker" in src and "CHIRP_PHRASES = [" not in src
-      and "MEDICAL_PHRASES = [" not in src and "phrases=_stt.MEDICAL_PHRASES" in src)
+      and "MEDICAL_PHRASES = [" not in src and "phrases=_stt.medical_phrases()" in src)
 
 print("\n" + ("✅ SPRACHERKENNUNG PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

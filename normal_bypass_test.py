@@ -10,7 +10,6 @@ sys.path.insert(0, str(ROOT / "source_code"))
 from normalbypass import is_pure_normal_finding  # noqa: E402
 
 T = json.loads((ROOT / "templates.json").read_text())
-assert T == json.loads((ROOT / "web_app/src/templates.json").read_text()), "EXE/Web templates divergiert"
 DN = [v["display_name"] for v in T.values()]
 cases = json.loads((ROOT / "normal_bypass_tests.json").read_text())["cases"]
 fail = 0

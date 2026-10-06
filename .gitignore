@@ -22,6 +22,7 @@ ENV/
 !/vorlagen_vorrang_tests.json
 !/detect_fixtures.json
 !/sync_fixtures.json
+!/phrases.json
 *.bat
 !start rakscribe.bat
 !source_code/build.bat
@@ -48,7 +49,6 @@ Befundvorlagen/
 # Google Service Account Keys - NEVER commit
 *.json
 !templates.json
-!web_app/src/templates.json
 !taught_blocks.json
 !misheard_words.json
 !misheard_tests.json
@@ -58,6 +58,7 @@ Befundvorlagen/
 !vorlagen_vorrang_tests.json
 !detect_fixtures.json
 !sync_fixtures.json
+!phrases.json
 
 # Web-App key injector - embeds private key, never commit
 web_app/public/inject-key.js
