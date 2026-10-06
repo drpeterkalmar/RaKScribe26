@@ -21,7 +21,7 @@ import urllib.request
 
 ROOT = pathlib.Path(__file__).parent
 PUBLIC = ROOT / "web_app" / "public"
-API_KEY = (ROOT / "web_app" / "public" / "vertex-key.txt").read_text().strip()
+API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
 VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 sys.path.insert(0, str(ROOT))
@@ -29,7 +29,9 @@ import test_all_regions as harness  # noqa: E402
 
 # --- echtes detect_template + derive via AST (kein Nachbau-Drift) ---
 RAK = (ROOT / "source_code" / "RaKScribe.py").read_text()
-_ns = {"re": re, "RADIOLOGY_TEMPLATES": json.load(
+import sys as _s3; _s3.path.insert(0, str(ROOT / "source_code"))  # v3.2.3
+import befund_regeln as _br3
+_ns = {"re": re, "br": _br3, "RADIOLOGY_TEMPLATES": json.load(
     open(ROOT / "web_app" / "src" / "templates.json"))}
 for _n in _ast.walk(_ast.parse(RAK)):
     if isinstance(_n, _ast.FunctionDef) and _n.name in ("detect_template", "derive_untersuchungs_titel"):

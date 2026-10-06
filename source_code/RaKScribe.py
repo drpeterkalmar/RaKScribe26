@@ -32,6 +32,7 @@ from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
+import exe_zustand as _zs  # v3.2.3 (Gutachten P1-1/P1-2): Zwischenablage mit Gegenlesen, F10/F9-Zustandslogik
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -157,7 +158,7 @@ try:
         raise FileNotFoundError
 
     LLM_PROVIDER = config['SETTINGS'].get('LLM_PROVIDER', 'gemini').strip().lower()
-    LLM_MODEL = config['SETTINGS']['LLM_MODEL'].strip()
+    LLM_MODEL = config['SETTINGS'].get('LLM_MODEL', 'gemini-3.5-flash').strip()  # v3.2.3: fehlende Zeile ≠ Fehler
     API_KEY = config['SETTINGS'].get('API_KEY', '').strip().replace('"', '')
     CHUNK_DURATION = int(config['SETTINGS'].get('CHUNK_DURATION', '7').strip())
     GOOGLE_JSON_FILENAME = config['SETTINGS'].get('GOOGLE_JSON_FILENAME', 'rakscribe-0ff1ffd128a1.json').strip().replace('"', '')
@@ -172,9 +173,7 @@ except (KeyError, FileNotFoundError):
             f.write("[SETTINGS]\n"
                     "LLM_PROVIDER = gemini\n"
                     "LLM_MODEL = gemini-3.5-flash\n"
-                    "API_KEY = \n"
-                    "CHUNK_DURATION = 7\n"
-                    "GOOGLE_JSON_FILENAME = rakscribe-0ff1ffd128a1.json\n")
+                    "CHUNK_DURATION = 7\n")  # v3.2.3: keine Schlüssel mehr in config.ini (nur Praxis-Schlüssel)
         print(f"[INIT] config.ini fehlte und wurde neu angelegt: {CONFIG_FILE_PATH}")
 
     if config_was_corrupt:
@@ -193,8 +192,7 @@ except (KeyError, FileNotFoundError):
     print("[INIT] Standard-Konfiguration aktiv (LLM: gemini-3.5-flash).")
 
 # --- STT Engines Initialisierungs-Logik ---
-# Vertex API-Key: Auto-Load aus vertex-key.b64 (Base64, liegt neben der EXE) oder
-# vertex-key.txt (Klartext). Damit muss der Key NICHT in config.ini eingetragen werden.
+# Schlüssel: seit v3.2.3 ausschließlich rakscribe-praxis-key.json (Gemini + STT in EINER Datei).
 def _read_text_robust(path):
     # Windows-Editoren speichern gern UTF-16/BOM/CRLF — alle Varianten vertragen
     with open(path, 'rb') as f:
@@ -238,40 +236,14 @@ def _load_praxis_key():
     return ("", None)
 
 def _load_vertex_key():
-    # PRIORITAET (Fix 03.09.26): Datei-Keys VOR config.ini — eine alte config.ini
-    # mit totem API_KEY darf den frischen vertex-key.b64 nicht mehr überstimmen.
-    # v2.9.9: rakscribe-praxis-key.json (EIN-Key-Setup) hat oberste Priorität.
-    _praxis_gemini, _praxis_stt = _load_praxis_key()
-    if _praxis_gemini:
-        return _praxis_gemini
-    b64_path = os.path.join(BASE_DIR, 'vertex-key.b64')
-    txt_path = os.path.join(BASE_DIR, 'vertex-key.txt')
-    try:
-        if os.path.exists(b64_path):
-            content = _read_text_robust(b64_path).strip()
-            k = base64.b64decode(content).decode('utf-8').strip()
-            if k:
-                print(f"[INIT] Gemini-Key aus vertex-key.b64 geladen ({len(k)} Zeichen)")
-                return k
-            else:
-                print("[INIT] vertex-key.b64 ist LEER.")
-    except Exception as e:
-        print(f"[INIT] Konnte vertex-key.b64 nicht lesen: {e}")
-    try:
-        if os.path.exists(txt_path):
-            k = _read_text_robust(txt_path).strip()
-            if k:
-                print(f"[INIT] Gemini-Key aus vertex-key.txt geladen ({len(k)} Zeichen)")
-                return k
-    except Exception as e:
-        print(f"[INIT] Konnte vertex-key.txt nicht lesen: {e}")
-    # config.ini nur als LETZTE Rückfallebene (Legacy-Verhalten)
-    k = API_KEY.strip()
-    if k:
-        print("[INIT] Gemini-Key aus config.ini API_KEY geladen (Legacy — bitte vertex-key.b64 nutzen)")
-        return k
-    print(f"[INIT] WARNUNG: Kein Gemini-Key gefunden (gesucht: {b64_path}, {txt_path}, config.ini API_KEY).")
-    return ""
+    # v3.2.3 (Peter 06.10.: Schlüsseldateien aufräumen): EINZIGE Quelle ist rakscribe-praxis-key.json (neben der EXE
+    # oder per Menü in %APPDATA%\RaKScribe). Die alten Einzeldateien vertex-key.b64/.txt und config.ini API_KEY
+    # enthielten nur noch rotierte (ungültige) Schlüssel und werden nicht mehr gelesen — sonst entsperrte eine
+    # liegengebliebene Altdatei die App und jeder Befund endete mit HTTP 401.
+    gk, _stt = _load_praxis_key()
+    if not gk:
+        print("[INIT] Kein Gemini-Key: rakscribe-praxis-key.json fehlt (neben der EXE oder per Menü laden).")
+    return gk
 
 VERTEX_KEY_FILE = _load_vertex_key()
 
@@ -288,38 +260,15 @@ def init_google_speech():
     if not google_speech_available:
         print("[INIT] Google Cloud Speech Bibliotheken nicht installiert.")
         return False
-    # STT-Key-Reihenfolge (v2.9.9): rakscribe-praxis-key.json (EIN-Key-Setup) >
-    # rakscribe-stt-key.json (Drive) > rakscribe-stt-key.b64 (Base64-JSON) >
-    # config.ini-GOOGLE_JSON_FILENAME (Legacy). Alles im EXE-Verzeichnis (BASE_DIR).
-    stt_json = os.path.join(BASE_DIR, 'rakscribe-stt-key.json')
-    stt_b64 = os.path.join(BASE_DIR, 'rakscribe-stt-key.b64')
-    legacy_json = os.path.join(BASE_DIR, GOOGLE_JSON_FILENAME)
-    SERVICE_ACCOUNT_FILE = None
-    credentials = None
+    # v3.2.3 (Peter 06.10.): STT-Schlüssel NUR aus rakscribe-praxis-key.json. Die alten Einzeldateien
+    # (rakscribe-stt-key.json/.b64, config.ini GOOGLE_JSON_FILENAME) sind rotiert und werden nicht mehr gelesen.
     global _SA_CREDENTIALS
     _gk, _pstt = _load_praxis_key()
-    if _pstt:
-        credentials = service_account.Credentials.from_service_account_info(_pstt)
-        _SA_CREDENTIALS = credentials
-        SERVICE_ACCOUNT_FILE = 'rakscribe-praxis-key.json'
-    elif os.path.exists(stt_json):
-        SERVICE_ACCOUNT_FILE = stt_json
-        credentials = service_account.Credentials.from_service_account_file(stt_json)
-    elif os.path.exists(stt_b64):
-        key_data = json.loads(base64.b64decode(_read_text_robust(stt_b64).strip()).decode('utf-8'))
-        credentials = service_account.Credentials.from_service_account_info(key_data)
-        SERVICE_ACCOUNT_FILE = stt_b64
-        print("[INIT] STT-Key aus rakscribe-stt-key.b64 geladen (Base64)")
-    elif os.path.exists(legacy_json):
-        SERVICE_ACCOUNT_FILE = legacy_json
-        credentials = service_account.Credentials.from_service_account_file(legacy_json)
-    else:
-        print(f"[INIT] Keine STT-Credentials gefunden. Gesucht in {BASE_DIR}:")
-        print("       - rakscribe-praxis-key.json (Drive-Ordner RaKScribe — EIN-Key-Setup)")
-        print("       - rakscribe-stt-key.json (Drive-Ordner RaKScribe)")
-        print("       - rakscribe-stt-key.b64 (Drive-Ordner RaKScribe)")
-        print(f"       - {GOOGLE_JSON_FILENAME} (Legacy)")
+    if not _pstt:
+        print("[INIT] Keine STT-Credentials: rakscribe-praxis-key.json fehlt (neben der EXE oder per Menü laden).")
         return False
+    credentials = service_account.Credentials.from_service_account_info(_pstt)
+    _SA_CREDENTIALS = credentials
     try:
         speech_client = speech.SpeechClient(credentials=credentials)
         
@@ -363,12 +312,12 @@ VERTEX_ENDPOINT = (
 )
 try:
     if LLM_PROVIDER == 'gemini':
-        key = _load_vertex_key() or API_KEY or os.environ.get("GEMINI_API_KEY", "")
+        key = _load_vertex_key()
         if key:
             VERTEX_API_KEY = key
             print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
         else:
-            print("[WARN] Kein Gemini/Vertex API-Key gefunden in config.ini oder GEMINI_API_KEY Umgebungsvariable.")
+            print("[WARN] Kein Gemini-Key — rakscribe-praxis-key.json laden.")
     elif LLM_PROVIDER == 'openai':
         key = API_KEY if API_KEY else os.environ.get("OPENAI_API_KEY", "")
         if not key:
@@ -534,6 +483,14 @@ def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
 
 def detect_template(text):
     """Bessere Erkennungslogik für den Untersuchungstyp."""
+    # v3.2.3 (Peter 06.10.: alle Vorlagen erreichbar + korrekt priorisiert): zuerst Vorrang-Regeln und diktierter
+    # Vorlagenname aus vorlagen_vorrang.json (EINE Datei für EXE + Web), danach die bisherige Erkennung.
+    _br = globals().get("br")
+    if _br is None:
+        import befund_regeln as _br
+    _vorrang = _br.vorrang_vorlage(text, RADIOLOGY_TEMPLATES)
+    if _vorrang:
+        return _vorrang
     text_lower = text.lower()
 
     # v3.2.2 (Georg 05.10.): Nerven-Diktate OHNE "Sono"-Wort ("N. medianus rechts unauffällig",
@@ -1140,12 +1097,13 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("RaKScribe 3.2.2 – Röntgen am Kai")
+        self.title("RaKScribe 3.2.3 – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
         self._status_raw = "READY"
         self.gate = None
+        self._lauf = _zs.LaufZaehler()  # v3.2.3: veraltete Verarbeitungs-Läufe schreiben/fügen nichts mehr ein
 
         # Audio settings
         self.samplerate = 16000
@@ -1344,6 +1302,10 @@ class RaKScribeApp(ctk.CTk):
                     "multi_region_segmente": len(br.split_regionen(
                         "Schulter rechts Punkt Omarthrose Punkt Ellbogen rechts Punkt Ellbogengelenksarthrose")),
                     "ergebnis_nummeriert": br.ergebnis_nummerieren("## Ergebnis\nOmarthrose.\nKalkdepot.").endswith("2. Kalkdepot."),
+                    # v3.2.3: gebündelte vorlagen_vorrang.json + Zustandsmodul auf echtem Windows nachweisen
+                    "vorlage_vorfuss": detect_template("Vorfuß rechts in 2 Ebenen unauffällig"),
+                    "vorlage_mrt_knie": detect_template("MRT Knie rechts unauffällig"),
+                    "f10_waehrend_verarbeitung": _zs.f10_aktion("PROCESSING", False),
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -1570,9 +1532,14 @@ class RaKScribeApp(ctk.CTk):
             self.after(1000, self.update_processing_timer)
 
     def reset_dictation(self):
-        if self.is_recording:
+        aktion = _zs.f9_aktion(self._status_raw, self.is_recording)
+        if aktion == "stop_und_reset":
             self.toggle_recording()
-        
+        # v3.2.3 (Gutachten P1-2): F9 während der Verarbeitung bricht ab — der laufende Lauf wird ungültig
+        # und fügt nichts mehr ein; die UI ist sofort wieder bereit.
+        self._lauf.neu()
+        if aktion == "abbrechen":
+            log("[UI] Verarbeitung abgebrochen (F9) — Ergebnis wird verworfen.")
         log("[UI] Zurücksetzen angefordert. Lösche Transkription, Befund und Aufnahmedaten.")
         self.final_transcript = ""
         self.recorded_audio_chunks = []
@@ -1584,6 +1551,11 @@ class RaKScribeApp(ctk.CTk):
 
     def toggle_recording(self):
         self._toggle_calls = getattr(self, "_toggle_calls", 0) + 1
+        # v3.2.3 (Gutachten P1-2): F10 während "Befund wird erstellt" ignorieren — sonst startete eine neue
+        # Aufnahme in den laufenden Job hinein (vermischte/leere Befunde, "Bereit" bei laufendem Mikrofon).
+        if _zs.f10_aktion(self._status_raw, self.is_recording) == "ignorieren":
+            log("[RECORD] F10 während der Verarbeitung ignoriert.")
+            return
         if not self.is_recording and not keys_ready():
             self.refresh_key_state()
             return
@@ -1594,6 +1566,8 @@ class RaKScribeApp(ctk.CTk):
 
         if not self.is_recording:
             log("[RECORD] Aufnahme wird gestartet...")
+            self._lauf.neu()
+            self._transkript_fix = False
             self.final_transcript = ""
             self.recorded_audio_chunks = []
             self.recorded_audio_chunks_all = []
@@ -1643,6 +1617,8 @@ class RaKScribeApp(ctk.CTk):
             self.update_processing_timer()
             
             # Run wait and process in background thread
+            lauf_nr = self._lauf.neu()  # v3.2.3: diese Verarbeitung = Lauf lauf_nr
+
             def wait_and_process():
                 log("[PROCESS] Warte auf Beendigung des Aufnahme-Threads...")
                 if hasattr(self, 'record_thread') and self.record_thread:
@@ -1661,7 +1637,11 @@ class RaKScribeApp(ctk.CTk):
                         self.after(0, lambda: self.update_status("PROCESSING", "busy"))
                         token = _get_stt_access_token()
                         chirp_text = _chirp3_worker(all_pcm, 16000, 'eu', token) if token else None
+                        if not self._lauf.aktuell(lauf_nr):
+                            log("[PROCESS] Lauf abgebrochen — chirp_3-Ergebnis verworfen.")
+                            return
                         if chirp_text and chirp_text.strip():
+                            self._transkript_fix = True
                             self.final_transcript = chirp_text.strip()
                             log(f"[CHIRP3] OK: {len(self.final_transcript)} Zeichen")
                             self.after(0, lambda: (
@@ -1686,7 +1666,11 @@ class RaKScribeApp(ctk.CTk):
                         self.final_transcript = salvaged
                         log(f"[GOOGLE] Text gerettet: '{salvaged}'")
 
-                self.process_dictation()
+                if not self._lauf.aktuell(lauf_nr):
+                    log("[PROCESS] Lauf abgebrochen — keine Befund-Erstellung.")
+                    return
+                self._transkript_fix = True
+                self.process_dictation(lauf_nr)
 
             threading.Thread(target=wait_and_process, daemon=True).start()
 
@@ -1723,6 +1707,8 @@ class RaKScribeApp(ctk.CTk):
         log(f"[GOOGLE] google_streaming_generator beendet. Insgesamt {yield_count} Chunks gesendet.")
 
     def update_interim_text(self, transcript, is_final):
+        if getattr(self, "_transkript_fix", False):
+            return  # v3.2.3 (Gutachten P2-5): nach chirp_3-Endtext keine verspäteten Streaming-Antworten mehr anhängen
         if not is_final:
             self.transcript_text.delete("1.0", "end")
             self.transcript_text.insert("1.0", self.final_transcript + " [.. " + transcript + " ..]")
@@ -1784,7 +1770,10 @@ class RaKScribeApp(ctk.CTk):
             color = "#F39C12"
         self.level_indicator.configure(fg_color=color)
 
-    def process_dictation(self):
+    def process_dictation(self, lauf_nr=None):
+        if lauf_nr is None:
+            lauf_nr = self._lauf.nr
+        aktuell = lambda: self._lauf.aktuell(lauf_nr)
         try:
             raw = apply_misheard(self.final_transcript.strip())  # v3.1: Fehlhör-Liste vor Bypass/LLM
             if not raw:
@@ -1812,6 +1801,9 @@ class RaKScribeApp(ctk.CTk):
             else:
                 report = self._befund_fuer_segment(raw)
 
+            if not aktuell():
+                log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
+                return
             if report:
                 self.after(0, lambda r=report: (
                     self.result_text.delete("1.0", "end"),
@@ -1825,23 +1817,13 @@ class RaKScribeApp(ctk.CTk):
                     self.level_indicator.configure(fg_color=READY_GREEN, width=0)
                 ))
                 return
-            self.after(0, lambda: (
-                self.update_status("READY", "ready"),
-                self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE),
-                self.level_indicator.configure(fg_color=READY_GREEN, width=0),
-                self.copy_formatted_report(),
-                self.after(500, lambda: keyboard.press_and_release('ctrl+v'))
-            ))
+            self.after(0, lambda: self._fertig_kopieren_einfuegen(lauf_nr))
         except Exception as e:
             log_exception("Befund-Generierung")
             if "401" in str(e) or "Unauthorized" in str(e):
-                msg = ("Gemini: HTTP 401 — der API-Key fehlt oder ist ungültig.\n\n"
-                       f"Gesucht in: {BASE_DIR}\n"
-                       "  - rakscribe-praxis-key.json (Drive-Ordner RaKScribe — EIN-Key-Setup)\n"
-                       "  - vertex-key.b64 (Drive-Ordner RaKScribe)\n"
-                       "  - vertex-key.txt\n"
-                       "  - config.ini [API_KEY]\n\n"
-                       "Bitte die Key-Dateien aus dem Drive-Ordner RaKScribe in diesen Ordner legen.")
+                msg = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
+                       "Bitte die aktuelle rakscribe-praxis-key.json aus dem Drive-Ordner RaKScribe\n"
+                       "über Menü → „Schlüssel-Datei laden…“ neu laden.")
             else:
                 msg = f"Fehler bei der Befund-Generierung:\n{e}"
             self.after(0, lambda m=msg: (
@@ -1902,7 +1884,7 @@ class RaKScribeApp(ctk.CTk):
         report = ""
         if LLM_PROVIDER == 'gemini':
             # Vertex AI REST API Call (Auth via x-goog-api-key Header)
-            key = _load_vertex_key() or API_KEY or os.environ.get("GEMINI_API_KEY", "")
+            key = _load_vertex_key()
             headers = {
                 "Content-Type": "application/json",
                 "x-goog-api-key": key,
@@ -1961,9 +1943,12 @@ class RaKScribeApp(ctk.CTk):
         return br.nachbearbeiten(report)
 
     def copy_formatted_report(self):
+        """Befund (Markdown + HTML für Word) in die Zwischenablage. v3.2.3 (Gutachten P1-1): gibt True/False zurück,
+        versucht es mehrmals (RIS/Teams halten die Zwischenablage oft kurz fest) und liest gegen."""
+        md_text = self.result_text.get("1.0", "end-1c").strip()
+        if not md_text:
+            return False
         try:
-            md_text = self.result_text.get("1.0", "end-1c").strip()
-            if not md_text: return
             html = markdown.markdown(md_text)
             frag = f"<html><head><meta charset='utf-8'></head><body>{html}</body></html>"
             header = "Version:1.0\r\nStartHTML:{0:08d}\r\nEndHTML:{1:08d}\r\nStartFragment:{2:08d}\r\nEndFragment:{3:08d}\r\nSourceURL:none\r\n"
@@ -1971,15 +1956,33 @@ class RaKScribeApp(ctk.CTk):
             s_frag = s_html + frag.find("<body>") + 6
             e_frag = s_html + frag.find("</body>")
             e_html = s_html + len(frag)
-            final = header.format(s_html, e_html, s_frag, e_frag) + frag
-            
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardData(win32clipboard.RegisterClipboardFormat("HTML Format"), final.encode('utf-8'))
-            win32clipboard.SetClipboardData(win32clipboard.CF_UNICODETEXT, md_text)
-            win32clipboard.CloseClipboard()
+            final = (header.format(s_html, e_html, s_frag, e_frag) + frag).encode('utf-8')
+        except Exception:
+            log_exception("[COPY] HTML-Aufbereitung fehlgeschlagen — kopiere nur Text")
+            final = None
+        ok = _zs.zwischenablage_setzen(win32clipboard, final, md_text)
+        if ok:
             self.update_status("COPIED", "ready")
-        except: pass
+        else:
+            log("[COPY] Zwischenablage nach mehreren Versuchen nicht gesetzt (von anderem Programm belegt?)")
+        return ok
+
+    def _fertig_kopieren_einfuegen(self, lauf_nr):
+        """Läuft im UI-Thread. Nur einfügen, wenn der Lauf noch aktuell ist UND das Kopieren nachweislich klappte —
+        sonst würde Strg+V den vorigen Zwischenablage-Inhalt (= letzten Befund) ins RIS schreiben."""
+        if not self._lauf.aktuell(lauf_nr):
+            return
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self.level_indicator.configure(fg_color=READY_GREEN, width=0)
+        if self.copy_formatted_report():
+            self.after(500, lambda: self._lauf.aktuell(lauf_nr) and keyboard.press_and_release('ctrl+v'))
+        else:
+            self.update_status("ERROR", "busy")
+            messagebox.showwarning(
+                "Nicht eingefügt",
+                "Der Befund ist fertig, konnte aber nicht in die Zwischenablage kopiert werden "
+                "(ein anderes Programm hält sie gerade fest).\n\nDer Befund wurde NICHT eingefügt. "
+                "Bitte im RaKScribe-Fenster auf „Kopieren“ klicken und selbst einfügen.")
 
     def register_hotkey(self):
         keyboard.add_hotkey('f10', lambda: self.after(0, self.toggle_recording), suppress=True)

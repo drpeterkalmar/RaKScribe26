@@ -47,9 +47,14 @@ jobs:
 
       - name: SECURITY - no key files in Pages bundle
         run: |
-          # Keys duerfen NICHT auf GitHub Pages landen (public repo!).
-          # Login: Praxis-Key-Datei ins Passwortfeld (tryPraxisLogin). STT faellt auf Whisper zurueck.
-          rm -f web_app/dist/vertex-key.b64 web_app/dist/stt-key.b64
+          # Keys duerfen NICHT auf GitHub Pages landen (public repo!). Schluessel kommen nur per Praxis-Key-Datei
+          # im Browser (Drag & Drop / Menue). v3.2.3 (Gutachten P2-11): Build ABBRECHEN statt einzelne Namen loeschen.
+          if grep -rlE "PRIVATE KEY-----(\\n|[[:space:]])*[A-Za-z0-9+/]{40}|\"private_key\"[[:space:]]*:|AQ\.[A-Za-z0-9_-]{20,}" web_app/dist; then
+            echo "::error::Schluesselmaterial im Pages-Bundle gefunden - Deploy abgebrochen"; exit 1
+          fi
+          if ls web_app/dist | grep -iE "key|cred|secret"; then
+            echo "::error::Schluesseldatei im Pages-Bundle - Deploy abgebrochen"; exit 1
+          fi
           echo "dist listing:" && ls web_app/dist | head -20
       - name: GitHub Pages konfigurieren
         uses: actions/configure-pages@v4

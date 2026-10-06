@@ -12,8 +12,9 @@ import { compileMisheard, applyMisheard, misheardPromptBlock, type MisheardFile 
 import genPromptRaw from '../../radiology_prompt.txt?raw';
 import {
   splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite,
-  promptVersion, stripPromptMarker
+  promptVersion, stripPromptMarker, vorrangVorlage, type VorrangDaten
 } from './befundRegeln';
+import vorrangData from '../../vorlagen_vorrang.json';
 // v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: source_code/normalbypass.py, normal_bypass_tests.json)
 import { isPureNormalFinding } from './normalbypass';
 
@@ -764,6 +765,9 @@ export default function App() {
 
   // Detect modality template based on text keywords (1:1 from EXE Version)
   const detectTemplate = (text: string): string => {
+    // v3.2.3 (Peter 06.10.): Vorrang-Regeln + diktierter Vorlagenname aus vorlagen_vorrang.json zuerst (Sync: RaKScribe.py)
+    const vorrang = vorrangVorlage(text, templates, vorrangData as VorrangDaten);
+    if (vorrang) return vorrang;
     const textLower = text.toLowerCase();
 
     // v3.2.2 (Georg 05.10.): Nerven-Diktate OHNE "Sono"-Wort fielen in allgemein/Unterarm/HWS → Standardbefund
@@ -2152,7 +2156,7 @@ Korrigierter Befund:`;
             <span className="brand-name">RaKScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
           </div>
-          <span className="version-chip">v3.2.2</span>
+          <span className="version-chip">v3.2.3</span>
         </div>
 
         <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>

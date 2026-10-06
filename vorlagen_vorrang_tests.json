@@ -1,0 +1,278 @@
+[
+ [
+  "Vorfuß rechts in 2 Ebenen unauffällig",
+  "vorfuß_in_2_ebenen"
+ ],
+ [
+  "Vorfuß links: Hallux valgus",
+  "vorfuß_in_2_ebenen"
+ ],
+ [
+  "Mittelfuß links unauffällig",
+  "mittelfuß_in_2_ebenen"
+ ],
+ [
+  "Mittelfuß rechts: Fraktur MT5",
+  "mittelfuß_in_2_ebenen"
+ ],
+ [
+  "Fuß rechts in 2 Ebenen: Fraktur im Mittelfuß",
+  "fuß_in_2_ebenen"
+ ],
+ [
+  "Fuß links unauffällig",
+  "fuß_in_2_ebenen"
+ ],
+ [
+  "Skaphoidaufnahme rechts unauffällig",
+  "skaphoidaufnahme"
+ ],
+ [
+  "Scaphoid Aufnahme links unauffällig",
+  "skaphoidaufnahme"
+ ],
+ [
+  "Naviculareserie rechts unauffällig",
+  "naviculareserie"
+ ],
+ [
+  "Funktionsaufnahmen der HWS unauffällig",
+  "funktionsaufnahmen_der_halswirbelsäule"
+ ],
+ [
+  "HWS Funktionsaufnahmen: keine Instabilität",
+  "funktionsaufnahmen_der_halswirbelsäule"
+ ],
+ [
+  "LWS Funktion unauffällig",
+  "funktionsaufnahmen_der_lendenwirbelsäule"
+ ],
+ [
+  "HWS in 2 Ebenen unauffällig",
+  "halswirbelsäule_in_2_ebenen"
+ ],
+ [
+  "HWS: Osteochondrose C5/C6, Funktion eingeschränkt",
+  "halswirbelsäule_in_2_ebenen"
+ ],
+ [
+  "Schrägaufnahme der HWS unauffällig",
+  "schrägaufnahme_der_halswirbelsäule"
+ ],
+ [
+  "Ganzaufnahme der Wirbelsäule unauffällig",
+  "ganzaufnahme_der_wirbelsäule_a-p"
+ ],
+ [
+  "Gesamte Wirbelsäule unauffällig",
+  "wirbelsäule_gesamt"
+ ],
+ [
+  "Axialaufnahme Ellbogen rechts unauffällig",
+  "axialaufnahme_des_ellbogens"
+ ],
+ [
+  "Ellbogen rechts in 2 Ebenen unauffällig",
+  "ellbogengelenk_in_2_ebenen"
+ ],
+ [
+  "Schulter rechts tangential unauffällig",
+  "schultergelenk_tangential_bizepssehnenkanal"
+ ],
+ [
+  "Schultergelenke a.-p. unter Belastung unauffällig",
+  "schultergelenke_a-p_unter_belastung"
+ ],
+ [
+  "Schulter rechts: Schmerzen unter Belastung, Omarthrose",
+  "schultergelenk_in_2_ebenen"
+ ],
+ [
+  "Schulter rechts unauffällig",
+  "schultergelenk_in_2_ebenen"
+ ],
+ [
+  "Defilee Patella beidseits unauffällig",
+  "defileeaufnahmen_der_patella_in_30°_60°_und_90°"
+ ],
+ [
+  "Knie rechts in 2 Ebenen unauffällig",
+  "kniegelenk_in_2_ebenen"
+ ],
+ [
+  "ISG unauffällig",
+  "iliosakralgelenke_a-p"
+ ],
+ [
+  "Iliosakralgelenke: Sakroiliitis beidseits",
+  "iliosakralgelenke_a-p"
+ ],
+ [
+  "MRT ISG unauffällig",
+  "mr_der_iliosakralgelenke:"
+ ],
+ [
+  "Beckenübersicht mit Hüft-TEP beidseits unauffällig",
+  "beckenübersicht_mit_beidseitiger_hüftprothese"
+ ],
+ [
+  "Becken: Hüftprothese rechts regelrecht",
+  "beckenübersicht_mit_einseitiger_hüftprothese"
+ ],
+ [
+  "Beckenübersicht unauffällig",
+  "beckenübersicht_stehend"
+ ],
+ [
+  "Doppelkontrast Magen unauffällig",
+  "oesophagus_magenduodenum_doppelkontrast"
+ ],
+ [
+  "Magen-Darm-Passage unauffällig",
+  "durchleuchtung:_magen-darm-passage_mdp"
+ ],
+ [
+  "Sono Abdomen komplett unauffällig",
+  "sonografie_abdomen_komplett"
+ ],
+ [
+  "Hochauflösende Nervensonographie unauffällig",
+  "sonografie_nerven"
+ ],
+ [
+  "Nervensonographie N. medianus rechts unauffällig",
+  "sonografie_nerv_medianus"
+ ],
+ [
+  "Ultraschall-gezielte Blockade rechts",
+  "ultraschall_gezielte_blockade"
+ ],
+ [
+  "Sonographisch gezielte Infiltration Schulter rechts",
+  "ultraschall_gezielte_blockade"
+ ],
+ [
+  "MRT Knie rechts: Meniskusriss Innenmeniskus",
+  "mr_des_kniegelenkes:"
+ ],
+ [
+  "MR des Kniegelenkes links unauffällig",
+  "mr_des_kniegelenkes:"
+ ],
+ [
+  "MRT der LWS: Bandscheibenvorfall L4/L5",
+  "mr_der_lendenwirbelsäule:"
+ ],
+ [
+  "MRT HWS unauffällig",
+  "mr_der_halswirbelsäule:"
+ ],
+ [
+  "MRT BWS unauffällig",
+  "mr_der_brustwirbelsäule:"
+ ],
+ [
+  "MRT Schulter rechts: Supraspinatusruptur",
+  "mr_des_schultergelenkes:"
+ ],
+ [
+  "MRT Schädel unauffällig",
+  "mr_des_gehirnschädels:"
+ ],
+ [
+  "MR Angiographie der Hirngefäße unauffällig",
+  "mr_der_craniellen_gefäße:"
+ ],
+ [
+  "MRT Hypophyse unauffällig",
+  "mr_der_hypophyse:"
+ ],
+ [
+  "MRT der Mamma beidseits unauffällig",
+  "mr_der_mamma:"
+ ],
+ [
+  "MRCP unauffällig",
+  "mr-cholangiopankreatografie_mrcp:"
+ ],
+ [
+  "MRT Sprunggelenk rechts unauffällig",
+  "mr_des_sprunggelenke:"
+ ],
+ [
+  "MRT Thorax unauffällig",
+  "mr_des_thorax:"
+ ],
+ [
+  "MRT der Nasennebenhöhlen unauffällig",
+  "mr_der_nasennebenhöhlen:"
+ ],
+ [
+  "MR der Becken- und Beingefäße unauffällig",
+  "mr_der_becken-_und_beingefäße:"
+ ],
+ [
+  "MRT der inneren Gehörgänge unauffällig",
+  "mr_der_inneren_gehörgänge_felsenbeine:"
+ ],
+ [
+  "Mammographie beidseits unauffällig",
+  "mammographie_beidseits"
+ ],
+ [
+  "Thorax p.a. und seitlich unauffällig",
+  "thorax_in_2_ebenen"
+ ],
+ [
+  "Lungenröntgen unauffällig",
+  "thorax_in_2_ebenen"
+ ],
+ [
+  "N. medianus rechts unauffällig",
+  "sonografie_nerv_medianus"
+ ],
+ [
+  "Sono Schulter rechts unauffällig",
+  "sonografie_schultergelenk"
+ ],
+ [
+  "Knie rechts: Gonarthrose, MRT empfohlen",
+  "kniegelenk_in_2_ebenen"
+ ],
+ [
+  "Thorax: kein Hinweis auf Infiltrat, ggf. CT",
+  "thorax_in_2_ebenen"
+ ],
+ [
+  "Sprunggelenk rechts in 2 Ebenen mit Fuß unauffällig",
+  "sprunggelenk_mit_fuss"
+ ],
+ [
+  "Calcaneus seitlich rechts unauffällig",
+  "calcaneus_seitlich"
+ ],
+ [
+  "Nervensonographie N. suralis rechts unauffällig",
+  "sonografie_nerv_allgemein"
+ ],
+ [
+  "Hochauflösende Nervensonographie N. suralis links unauffällig",
+  "sonografie_nerv_allgemein"
+ ],
+ [
+  "Sono Leiste rechts unauffällig",
+  "sonografie_allgemein"
+ ],
+ [
+  "Irgendwas unauffällig",
+  "allgemein"
+ ],
+ [
+  "HWS Funktionsaufnahmen in Flexion und Extension unauffällig",
+  "funktionsaufnahmen_der_halswirbelsäule"
+ ],
+ [
+  "Knie rechts in 2 Ebenen, Vergleich mit MRT vom Vorjahr: Gonarthrose",
+  "kniegelenk_in_2_ebenen"
+ ]
+]

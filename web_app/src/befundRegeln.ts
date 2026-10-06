@@ -230,3 +230,44 @@ export const nachbearbeiten = (report: string): string => ergebnisNummerieren(be
 
 export const befundeZusammenfuegen = (reports: string[]): string =>
   reports.map(r => (r || '').trim()).filter(Boolean).join('\n\n\n');
+
+// ── v3.2.3 (Peter 06.10.: alle Vorlagen erreichbar + korrekt priorisiert) ──────────────────────────────────
+// Vorrang-Regeln + Namens-Treffer aus ../../vorlagen_vorrang.json. Sync: source_code/befund_regeln.py vorrang_vorlage.
+export type VorrangRegel = { key: string; alle?: string[]; keins?: string[]; bereich?: string };
+export type VorrangDaten = { regeln: VorrangRegel[]; fuellwoerter?: string[]; kopf_woerter?: number; name_ausnahmen?: Record<string, string> };
+
+export const vorlageNormalisieren = (text: string): string => {
+  let t = (text || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+  t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  t = t.replace(/ph/g, 'f');
+  t = t.replace(/[^a-z0-9]+/g, ' ');
+  return t.trim();
+};
+
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const vorrangVorlage = (text: string, templates: Record<string, { display_name: string }>, d: VorrangDaten): string | null => {
+  let woerter = vorlageNormalisieren(text).split(' ').filter(Boolean);
+  const fuell = new Set(d.fuellwoerter || []);
+  while (woerter.length && fuell.has(woerter[0])) woerter = woerter.slice(1);
+  const voll = woerter.join(' ');
+  const kopf = woerter.slice(0, d.kopf_woerter ?? 5).join(' ');
+  for (const r of d.regeln || []) {
+    if (!(r.key in templates)) continue;
+    const ziel = r.bereich === 'text' ? voll : kopf;
+    if ((r.alle || []).every(p => new RegExp(p).test(ziel)) && !(r.keins || []).some(p => new RegExp(p).test(voll))) return r.key;
+  }
+  let best: string | null = null, bestLen = 0;
+  const ausnahmen = d.name_ausnahmen || {};
+  for (const [key, v] of Object.entries(templates)) {
+    const dn = v.display_name || '';
+    if (key === 'allgemein' || dn.toLowerCase().includes('(allgemein)')) continue;
+    const n = vorlageNormalisieren(dn);
+    if (n.split(' ').length < 2 || n.length <= bestLen) continue;
+    const m = new RegExp('(?:^| )' + escRe(n) + '(?: |$)').exec(voll);
+    if (!m || voll.slice(0, m.index).split(' ').filter(Boolean).length > 2) continue;
+    if (key in ausnahmen && new RegExp(ausnahmen[key]).test(voll)) continue;
+    best = key; bestLen = n.length;
+  }
+  return best;
+};

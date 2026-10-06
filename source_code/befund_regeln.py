@@ -324,3 +324,73 @@ def nachbearbeiten(report):
 def befunde_zusammenfuegen(reports):
     """Mehrere Einzelbefunde (je ## Titel/## Befund/## Ergebnis) untereinander."""
     return "\n\n\n".join(r.strip() for r in reports if r and r.strip())
+
+
+# ── v3.2.3 (Peter 06.10.: alle Vorlagen erreichbar + korrekt priorisiert) ─────────────────────────────────
+# Vorrang-Regeln + Namens-Treffer aus vorlagen_vorrang.json (EINE Datei für EXE + Web).
+# Sync: web_app/src/befundRegeln.ts vorrangVorlage (gleiche Normalisierung, gleiche Regex, gleiche Fixtures).
+import json as _json
+import os as _os
+import sys as _sys
+import unicodedata as _ud
+
+_VORRANG = None
+
+
+def _vorrang_laden():
+    global _VORRANG
+    if _VORRANG is None:
+        kandidaten = [getattr(_sys, "_MEIPASS", None), _os.path.dirname(_os.path.abspath(__file__)),
+                      _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))]
+        for d in kandidaten:
+            if d and _os.path.exists(_os.path.join(d, "vorlagen_vorrang.json")):
+                with open(_os.path.join(d, "vorlagen_vorrang.json"), encoding="utf-8") as f:
+                    _VORRANG = _json.load(f)
+                break
+        else:
+            _VORRANG = {"regeln": [], "fuellwoerter": [], "kopf_woerter": 5, "name_ausnahmen": {}}
+    return _VORRANG
+
+
+def vorlage_normalisieren(text):
+    """klein, ä→ae, ö→oe, ü→ue, ß→ss, Akzente weg, ph→f, alles außer a-z0-9 → Leerzeichen."""
+    t = (text or "").lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    t = "".join(c for c in _ud.normalize("NFD", t) if not _ud.combining(c))
+    t = t.replace("ph", "f")
+    t = re.sub(r"[^a-z0-9]+", " ", t)
+    return t.strip()
+
+
+def vorrang_vorlage(text, templates, daten=None):
+    """Gibt den Vorlagen-Key zurück, wenn eine Vorrang-Regel oder ein diktierter Vorlagenname greift, sonst None
+    (dann entscheidet die bisherige Erkennung)."""
+    d = daten or _vorrang_laden()
+    woerter = vorlage_normalisieren(text).split()
+    fuell = set(d.get("fuellwoerter", []))
+    while woerter and woerter[0] in fuell:
+        woerter = woerter[1:]
+    voll = " ".join(woerter)
+    kopf = " ".join(woerter[:d.get("kopf_woerter", 5)])
+    for r in d.get("regeln", []):
+        if r["key"] not in templates:
+            continue
+        ziel = voll if r.get("bereich") == "text" else kopf
+        if all(re.search(p, ziel) for p in r.get("alle", [])) and not any(re.search(p, voll) for p in r.get("keins", [])):
+            return r["key"]
+    # Namens-Treffer: längster diktierter Vorlagenname (≥ 2 Wörter), Beginn in den ersten 3 Wörtern
+    best, best_len = None, 0
+    ausnahmen = d.get("name_ausnahmen", {})
+    for key, v in templates.items():
+        dn = v.get("display_name", "")
+        if key == "allgemein" or "(allgemein)" in dn.lower():
+            continue
+        n = vorlage_normalisieren(dn)
+        if len(n.split()) < 2 or len(n) <= best_len:
+            continue
+        m = re.search(r"(?:^| )" + re.escape(n) + r"(?: |$)", voll)
+        if not m or len(voll[:m.start()].split()) > 2:
+            continue
+        if key in ausnahmen and re.search(ausnahmen[key], voll):
+            continue
+        best, best_len = key, len(n)
+    return best

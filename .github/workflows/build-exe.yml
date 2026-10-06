@@ -34,7 +34,7 @@ jobs:
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." RaKScribe.py
+          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=exe_zustand --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files
@@ -46,7 +46,7 @@ jobs:
           # config.ini legt die EXE beim ersten Start selbst an. Keine Extradateien mehr zum Herunterladen.
           # SECURITY (03.09.26): KEINE Key-Dateien mehr in Release-Assets (public repo!).
           # Verteilung der Keys nur ueber den privaten Drive-Ordner RaKScribe.
-          # vertex-key.b64 / rakscribe-stt-key.b64 liegen im Drive → neben die EXE kopieren.
+          # Einziger Schluessel: rakscribe-praxis-key.json (Drive) → in der EXE per Menue laden (v3.2.3).
 
       - name: Determine version
         id: version
@@ -57,7 +57,7 @@ jobs:
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=3.2.2" >> "$GITHUB_OUTPUT"
+            echo "tag=3.2.3" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload release asset

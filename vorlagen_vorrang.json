@@ -1,0 +1,319 @@
+{
+  "_info": "Vorrang-Regeln der Vorlagen-Erkennung (v3.2.3, Peter 06.10.: alle Vorlagen erreichbar + korrekt priorisiert). EINE Datei für EXE (gebündelt) und Web (importiert). Interpreter: befund_regeln.vorrang_vorlage ≡ befundRegeln.vorrangVorlage. Ablauf: (1) Diktat normalisieren (klein, ä→ae, ß→ss, ph→f, Satzzeichen→Leerzeichen); kopf = erste 5 Wörter nach führenden Füllwörtern. (2) Regeln der Reihe nach: alle Muster in 'alle' treffen (im kopf, bei 'bereich':'text' im ganzen Diktat), keins aus 'keins' im ganzen Diktat → diese Vorlage. (3) Sonst: längster diktierter Vorlagenname (mind. 2 Wörter). (4) Sonst: bisherige Erkennung. Muster sind ASCII-Regex auf dem normalisierten Text (gleich in Python und JS). Vorlagen mit '(Allgemein)' im Namen sind interne Sammel-Vorlagen: erreichbar über den Fallback ihrer Gruppe (Nerv ohne bekannten Namen → sonografie_nerv_allgemein), nicht über den Namen.",
+  "version": "2026-10-06",
+  "kopf_woerter": 5,
+  "fuellwoerter": [
+    "roentgen",
+    "rontgen",
+    "aufnahme",
+    "aufnahmen",
+    "untersuchung",
+    "befund",
+    "der",
+    "des",
+    "die",
+    "das",
+    "vom",
+    "von",
+    "bitte"
+  ],
+  "name_ausnahmen": {
+    "sonografie_nerven": "(^| )(n|nn|nervus|nervi) [a-z]"
+  },
+  "regeln": [
+    {
+      "key": "mr-cholangiopankreatografie_mrcp:",
+      "alle": [
+        "(^| )mrcp( |$)|(^| )mr ?t? ?cholangio|magnetresonanz\\w* ?cholangio"
+      ]
+    },
+    {
+      "key": "mr_der_craniellen_gefäße:",
+      "alle": [
+        "^(mrt?|mra|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(kraniell|craniell|intrakraniell|intracraniell|hirngefaess|hirnarterie|circulus|willisi)"
+      ]
+    },
+    {
+      "key": "mr_der_halsarterien:",
+      "alle": [
+        "^(mrt?|mra|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(halsarterie|halsgefaess|karotis|carotis|supraaortal)"
+      ]
+    },
+    {
+      "key": "mr_der_nierenarterien:",
+      "alle": [
+        "^(mrt?|mra|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "nierenarterie"
+      ]
+    },
+    {
+      "key": "mr_der_becken-_und_beingefäße:",
+      "alle": [
+        "^(mrt?|mra|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(beingefaess|beinarterie|becken und bein|becken bein)"
+      ]
+    },
+    {
+      "key": "mr_der_hypophyse:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(hypofyse|sella)"
+      ]
+    },
+    {
+      "key": "mr_der_inneren_gehörgänge_felsenbeine:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(gehoerg(a|ae)ng|felsenbein|kleinhirnbrueckenwinkel|(^| )kbw( |$)|(^| )iac( |$))"
+      ]
+    },
+    {
+      "key": "mr_der_nasennebenhöhlen:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(nasennebenhoehle|(^| )nnh( |$)|sinus)"
+      ]
+    },
+    {
+      "key": "mr_der_halsweichteile:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(halsweichteil|hals weichteil|(^| )hals( |$))"
+      ]
+    },
+    {
+      "key": "mr_der_halswirbelsäule:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(halswirbel|(^| )hws( |$))"
+      ]
+    },
+    {
+      "key": "mr_der_brustwirbelsäule:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(brustwirbel|(^| )bws( |$))"
+      ]
+    },
+    {
+      "key": "mr_der_lendenwirbelsäule:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(lendenwirbel|(^| )lws( |$))"
+      ]
+    },
+    {
+      "key": "mr_der_iliosakralgelenke:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(iliosakral|ileosakral|sakroiliakal|(^| )isg( |$))"
+      ]
+    },
+    {
+      "key": "mr_des_gehirnschädels:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(schaedel|gehirn|(^| )kopf( |$)|kranium|cranium|zerebr|cerebr|neurokran)"
+      ]
+    },
+    {
+      "key": "mr_des_kiefergelenkes:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "kiefergelenk"
+      ]
+    },
+    {
+      "key": "mr_der_mamma:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(mamma|(^| )brust( |$)|(^| )brueste( |$))"
+      ]
+    },
+    {
+      "key": "mr_des_thorax:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(thorax|torax)"
+      ]
+    },
+    {
+      "key": "mr_der_leber:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(leber|hepar)"
+      ]
+    },
+    {
+      "key": "mr_der_nebennieren:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "nebenniere"
+      ]
+    },
+    {
+      "key": "mr_der_hoden:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(hoden|skrotum|scrotum)"
+      ]
+    },
+    {
+      "key": "mr_des_schultergelenkes:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "schulter"
+      ]
+    },
+    {
+      "key": "mr_handgelenk:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(handgelenk|(^| )hand( |$))"
+      ]
+    },
+    {
+      "key": "mr_hüftgelenk:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(hueft|coxa)"
+      ]
+    },
+    {
+      "key": "mr_des_kniegelenkes:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "knie"
+      ]
+    },
+    {
+      "key": "mr_des_sprunggelenke:",
+      "alle": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*)( |$)",
+        "(sprunggelenk|(^| )osg( |$)|(^| )usg( |$))"
+      ]
+    },
+    {
+      "key": "ultraschall_gezielte_blockade",
+      "alle": [
+        "(blockade|infiltration|(ultraschall|sono\\w*) ?gezielt)"
+      ]
+    },
+    {
+      "key": "funktionsaufnahmen_der_halswirbelsäule",
+      "alle": [
+        "(funktionsaufnahme|funktionsroentgen|funktionsbild|^(hws|halswirbelsaeule) funktion|flexion|inklination|reklination)",
+        "(halswirbel|(^| )hws( |$))"
+      ]
+    },
+    {
+      "key": "funktionsaufnahmen_der_lendenwirbelsäule",
+      "alle": [
+        "(funktionsaufnahme|funktionsroentgen|funktionsbild|^(lws|lendenwirbelsaeule) funktion|flexion|inklination|reklination)",
+        "(lendenwirbel|(^| )lws( |$))"
+      ]
+    },
+    {
+      "key": "schrägaufnahme_der_halswirbelsäule",
+      "alle": [
+        "schraeg",
+        "(halswirbel|(^| )hws( |$))"
+      ]
+    },
+    {
+      "key": "ganzaufnahme_der_wirbelsäule_a-p",
+      "alle": [
+        "(ganzaufnahme|ganz ?wirbelsaeule|wirbelsaeulenganz|ganze wirbelsaeule a)"
+      ]
+    },
+    {
+      "key": "axialaufnahme_des_ellbogens",
+      "alle": [
+        "axial",
+        "ell(en)?bogen"
+      ]
+    },
+    {
+      "key": "schultergelenk_tangential_bizepssehnenkanal",
+      "alle": [
+        "schulter",
+        "(tangential|bizepssehnenkanal|bicepssehnenkanal|bizepsrinne|sulcus bicipital|sulkus bizipital)"
+      ]
+    },
+    {
+      "key": "schultergelenke_a-p_unter_belastung",
+      "alle": [
+        "schulter",
+        "(unter belastung|belastungsaufnahme|mit gewicht|unter zug)"
+      ],
+      "keins": [
+        "schmerz"
+      ]
+    },
+    {
+      "key": "defileeaufnahmen_der_patella_in_30°_60°_und_90°",
+      "alle": [
+        "(defile|patella\\w* (in )?30)"
+      ]
+    },
+    {
+      "key": "iliosakralgelenke_a-p",
+      "alle": [
+        "(iliosakral|ileosakral|sakroiliakal|(^| )isg( |$))"
+      ],
+      "keins": [
+        "(sono|ultraschall|(^| )ct( |$)|computertomo)"
+      ]
+    },
+    {
+      "key": "skaphoidaufnahme",
+      "alle": [
+        "(skafoid|scafoid|skaphoid|scaphoid) ?aufnahme"
+      ]
+    },
+    {
+      "key": "vorfuß_in_2_ebenen",
+      "alle": [
+        "^vorfuss"
+      ]
+    },
+    {
+      "key": "mittelfuß_in_2_ebenen",
+      "alle": [
+        "^(mittelfuss|metatarsus|metatarsalia)"
+      ]
+    },
+    {
+      "key": "oesophagus_magenduodenum_doppelkontrast",
+      "alle": [
+        "doppelkontrast"
+      ]
+    },
+    {
+      "key": "oesophagus_magenduodenum_doppelkontrast",
+      "alle": [
+        "(oesofagus|osofagus|speiseroehre) ?magen ?(duoden|zwoelffinger)"
+      ]
+    },
+    {
+      "key": "sonografie_abdomen_komplett",
+      "alle": [
+        "(abdomen|bauch)",
+        "komplett"
+      ],
+      "keins": [
+        "(^| )ct( |$)|computertomo|(^| )mrt?( |$)|magnetresonanz"
+      ]
+    },
+    {
+      "key": "beckenübersicht_mit_beidseitiger_hüftprothese",
+      "bereich": "text",
+      "alle": [
+        "becken",
+        "((beidseit|beiderseit|bds)\\w* (hueft|tep|prothes)|(hueft|tep|prothes)\\w* (beidseit|beiderseit|bds)|(hueft|tep|prothes)\\w* (rechts und links|links und rechts))"
+      ]
+    }
+  ]
+}

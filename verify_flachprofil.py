@@ -12,7 +12,7 @@ Call1 Gen (newDefaultPrompt aus App.tsx, per Node evaluiert) → Call2 Validieru
 import os, re, sys, json, pathlib, urllib.request, urllib.error, subprocess, time
 
 ROOT = pathlib.Path.home() / "dev" / "RaKScribe26"
-API_KEY = (ROOT / "web_app" / "public" / "vertex-key.txt").read_text().strip()
+API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
 # Bearer-Fallback: Hermes-SA (AQ.-Key in vertex-key.txt ist rotiert/401)
 from google.oauth2 import service_account
 import google.auth.transport.requests as _tr

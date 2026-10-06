@@ -18,6 +18,9 @@ Prüft:
 Exit-Code 0 = alle Gates PASS. Läuft ohne Netz.
 """
 import ast
+import sys as _sys0, pathlib as _pl0
+_sys0.path.insert(0, str(_pl0.Path(__file__).parent / "source_code"))  # v3.2.3: detect_template nutzt befund_regeln
+import befund_regeln as _br0
 import json
 import os
 import re
@@ -119,7 +122,7 @@ print("TEIL 2: DETECTOR-TESTS (echter detect_template aus RaKScribe.py)")
 print("=" * 70)
 tree = ast.parse((REPO / "source_code" / "RaKScribe.py").read_text())
 fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "detect_template")
-ns = {"re": re, "RADIOLOGY_TEMPLATES": TPL}
+ns = {"re": re, "RADIOLOGY_TEMPLATES": TPL, "br": _br0}
 exec(compile(ast.Module(body=[fn], type_ignores=[]), "<detect_template>", "exec"), ns)
 detect = ns["detect_template"]
 
@@ -147,7 +150,7 @@ DETECT_CASES = [
     ("Calcaneus rechts in 2 Ebenen unauffällig", "calcaneus_in_2_ebenen"),
     ("Calcaneus seitlich unauffällig", "calcaneus_seitlich"),
     ("Orbita p.a. beidseits unauffällig", "orbita_pa_aufnahme"),
-    ("Skaphoidaufnahme beidseits", "naviculareserie"),
+    ("Skaphoidaufnahme beidseits", "skaphoidaufnahme"),  # v3.2.3: beigebrachter Block hat eigene Vorlage
     ("Naviculareserie unauffällig", "naviculareserie"),
     ("Sprunggelenk mit Mortise View unauffällig", "sprunggelenk_mortise_view"),
     ("Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen unauffällig", "sprunggelenk_gehaltene_aufnahmen"),

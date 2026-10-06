@@ -174,6 +174,9 @@ if c:
           s.get("prompt_quelle") == "eingebaut" and bool(s.get("prompt_version")),
           f"{s.get('prompt_quelle')} / {s.get('prompt_version')}")
     check("C_entsperrt", "Mehrere Regionen → 2 Befunde", s.get("multi_region_segmente") == 2, str(s.get("multi_region_segmente")))
+    check("C_entsperrt", "Vorlagen-Vorrang gebündelt (Vorfuß)", s.get("vorlage_vorfuss") == "vorfuß_in_2_ebenen", str(s.get("vorlage_vorfuss")))
+    check("C_entsperrt", "Vorlagen-Vorrang gebündelt (MRT Knie)", s.get("vorlage_mrt_knie") == "mr_des_kniegelenkes:", str(s.get("vorlage_mrt_knie")))
+    check("C_entsperrt", "F10 während Verarbeitung wird ignoriert", s.get("f10_waehrend_verarbeitung") == "ignorieren", str(s.get("f10_waehrend_verarbeitung")))
     check("C_entsperrt", "Ergebnis wird nummeriert", s.get("ergebnis_nummeriert") is True, str(s.get("ergebnis_nummeriert")))
     sw_, sh_ = s["screen"]
     gw, gh_ = [int(x) for x in s["geometry"].split("+")[0].split("x")]
