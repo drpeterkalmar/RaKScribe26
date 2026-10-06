@@ -4,6 +4,7 @@
 import { fetchWithRetry, istAbbruch, fehlermeldung } from './net.ts';
 import { applyMisheard, type Compiled } from './misheard.ts';
 import { stripPromptMarker } from './befundRegeln.ts';
+import { diktatLog } from './protokoll.ts';
 
 // Vertex AI endpoint for Gemini 2.5 Flash
 // v2.11.0 (26.09.2026): gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz + EU-Verarbeitung).
@@ -149,7 +150,7 @@ Korrigierter Befund:`;
 export const correctTranscriptionWithGemini = async (rawTextIn: string, ctx: GenKontext): Promise<string> => {
   // v3.1: deterministische Fehlhör-Korrektur zuerst (misheard_words.json, mode 'auto')
   const rawText = ctx.misheard ? applyMisheard(rawTextIn, ctx.misheard.compiled) : rawTextIn;
-  if (rawText !== rawTextIn) console.log(`[MISHEARD] auto-korrigiert: "${rawTextIn.substring(0, 120)}" → "${rawText.substring(0, 120)}"`);
+  if (rawText !== rawTextIn) console.log(`[MISHEARD] auto-korrigiert: ${diktatLog(rawTextIn)} → ${diktatLog(rawText)}`);
   if (!ctx.apiKey) {
     return rawText; // No LLM available, return raw
   }
@@ -180,8 +181,8 @@ export const correctTranscriptionWithGemini = async (rawTextIn: string, ctx: Gen
     }
 
     const corrected = joinGeminiText(data).trim();
-    console.log(`[CORRECT] Raw: "${rawText.substring(0, 100)}..."`);
-    console.log(`[CORRECT] Corrected: "${corrected.substring(0, 100)}..."`);
+    console.log(`[CORRECT] Raw: ${diktatLog(rawText)}`);
+    console.log(`[CORRECT] Corrected: ${diktatLog(corrected)}`);
     // v2.11.1: abgeschnittene/verkürzte Korrektur NIE übernehmen (sonst fehlt der Diktat-Rest stillschweigend)
     if (!corrected || !geminiFinishedOk(data) || corrected.length < rawText.trim().length * 0.6) {
       console.warn('[CORRECT] Korrektur unvollständig/verkürzt — verwende Rohtext');

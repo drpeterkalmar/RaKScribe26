@@ -132,7 +132,7 @@ def stubs():
             "markdown": md, "sounddevice": sd, "openai": oa, "customtkinter": ctk}, mb
 
 
-def lade_rakscribe():
+def lade_rakscribe(ruhig=True):
     """Führt source_code/RaKScribe.py als Modul aus (BASE_DIR = Temp-Ordner, keine Schlüssel)."""
     mods, mb = stubs()
     sys.modules.update(mods)
@@ -155,7 +155,8 @@ def lade_rakscribe():
     finally:
         sys.__stdout__ = _out
     mod.messagebox = mb
-    mod.log = mod.print = lambda *a: None  # Testausgabe ruhig halten
+    if ruhig:
+        mod.log = mod.print = lambda *a: None  # Testausgabe ruhig halten
     mod.speech = type("speech", (), {"StreamingRecognizeRequest": staticmethod(lambda audio_content: audio_content)})
     mod.speech_client = FakeSpeechClient(streaming_stub())
     return mod

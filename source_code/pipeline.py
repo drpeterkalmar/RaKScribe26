@@ -15,6 +15,7 @@ import befund_regeln as br
 import detect
 import gemini
 import normalbypass as nb
+import protokoll
 
 FEHLTEXT = "Befund für Region {region} konnte nicht erstellt werden — bitte erneut diktieren."
 
@@ -111,7 +112,7 @@ def befund_fuer_segment(seg, ctx):
     template_key = detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.fallback or ctx.templates.get("allgemein")
     if ist_normalbefund(seg, template_key, ctx.display_names):
-        ctx.log(f"[BYPASS] Normalbefund erkannt: '{seg}'. Generiere direkt aus Template '{template_key}'.")
+        ctx.log(f"[BYPASS] Normalbefund erkannt: {protokoll.diktat(seg)}. Generiere direkt aus Template '{template_key}'.")
         roh = bypass_befund(seg, template_data)
     else:
         beispiele = ctx.beispiele(seg) if ctx.beispiele else ""

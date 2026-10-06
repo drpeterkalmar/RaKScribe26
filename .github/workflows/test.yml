@@ -64,6 +64,8 @@ jobs:
         run: python tests/offline/test_regionen.py
       - name: EXE-Import ohne Seiteneffekte (UI + main)
         run: python tests/offline/test_import.py
+      - name: Protokoll begrenzt, ohne Diktatinhalt
+        run: python tests/offline/test_logging.py
       - name: Deploy-Schutz gegen Schlüssel im Pages-Bundle
         run: python tests/offline/test_deploy_guard.py
       - name: Versionsnummer nur in VERSION, Build-Pakete fest

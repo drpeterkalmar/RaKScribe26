@@ -38,6 +38,7 @@ import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass 
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
 import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt von der Streaming-Live-Anzeige
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
+import protokoll as _prot  # Umbau Schritt 23: begrenztes Log, Diktatinhalt nur im Debug-Modus
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
 
 # =========================================================================
@@ -57,18 +58,17 @@ else:
 LOG_FILE_PATH = os.path.join(BASE_DIR, 'rakscribe.log')
 
 def log(*args):
+    # Umbau Schritt 23 (Gutachten P2-14): rakscribe.log begrenzt (5 × 1 MB, protokoll.py); Diktatinhalte nur mit
+    # RAKSCRIBE_DEBUG=1 (Aufrufer nutzen _prot.diktat(text)).
     try:
         msg = " ".join(str(arg) for arg in args)
-        ts = time.strftime("%Y-%m-%d %H:%M:%S")
-        line = f"[{ts}] {msg}"
         try:
-            sys.__stdout__.write(line + "\n")
+            sys.__stdout__.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
             sys.__stdout__.flush()
-        except:
+        except Exception:
             pass
-        with open(LOG_FILE_PATH, 'a', encoding='utf-8') as f:
-            f.write(line + "\n")
-    except:
+        _prot.datei_logger(LOG_FILE_PATH).info(msg)
+    except Exception:
         pass
 
 def log_exception(label):
@@ -281,7 +281,7 @@ def apply_misheard(text):
         return text
     fixed = _misheard.apply(text, MISHEARD_COMPILED)
     if fixed != text:
-        print(f"[MISHEARD] auto-korrigiert: {text[:120]!r} -> {fixed[:120]!r}")
+        print(f"[MISHEARD] auto-korrigiert: {_prot.diktat(text)} -> {_prot.diktat(fixed)}")
     return fixed
 
 def load_templates():

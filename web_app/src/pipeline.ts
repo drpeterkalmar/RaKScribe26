@@ -5,6 +5,7 @@ import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gem
 import { detectTemplate, deriveUntersuchungsTitel, type Template, type TemplatesMap } from './detect.ts';
 import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
+import { diktatLog } from './protokoll.ts';
 
 export type PipelineKontext = GenKontext & {
   templates: TemplatesMap;
@@ -48,7 +49,7 @@ export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Prom
 export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promise<string> => {
   const segmente = splitRegionen(text);
   if (segmente.length > 1) {
-    console.log(`[MULTI] ${segmente.length} Regionen: ${segmente.map(x => x.slice(0, 40)).join(' | ')}`);
+    console.log(`[MULTI] ${segmente.length} Regionen: ${segmente.map(diktatLog).join(' | ')}`);
     ctx.status(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
   }
   const teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));

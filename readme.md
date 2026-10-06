@@ -121,6 +121,8 @@ ausgewertet und dürfen gelöscht werden.
   Version aus `VERSION`.
 - **Versionsnummer nur in `VERSION`** (Repo-Root): EXE-Titel und -Badge, Web-Badge und Seitentitel lesen sie
   (`tests/offline/test_version_sync.py`).
+- **Protokoll** `rakscribe.log` neben der EXE: höchstens 5 Dateien à 1 MB, ohne Diktatinhalt. Zur Fehlersuche
+  mit Diktattext: Umgebungsvariable `RAKSCRIBE_DEBUG=1` (Web-Konsole: `localStorage.rakscribe_debug = '1'`).
 - **Tests** laufen bei jedem Push (`.github/workflows/test.yml`); der Web-Deploy startet erst, wenn sie grün sind.
 
 ---
