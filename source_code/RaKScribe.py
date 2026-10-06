@@ -32,7 +32,8 @@ from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
-import exe_zustand as _zs  # v3.2.3 (Gutachten P1-1/P1-2): Zwischenablage mit Gegenlesen, F10/F9-Zustandslogik
+import exe_zustand as _zs  # v3.2.3 (Gutachten P1-2): F10/F9-Zustandslogik
+import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -1088,6 +1089,10 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 }
 
 
+ZWISCHENABLAGE_GESPERRT = ("Die Zwischenablage ist durch ein anderes Programm gesperrt — Befund bitte mit "
+                           "„Befund kopieren“ erneut kopieren und selbst einfügen.")
+
+
 def keys_ready():
     """v3.0: App ist nur bedienbar, wenn Gemini- UND STT-Schlüssel vorhanden sind."""
     return bool(_load_vertex_key()) and (_SA_CREDENTIALS is not None or speech_client is not None)
@@ -1252,7 +1257,7 @@ class RaKScribeApp(ctk.CTk):
                      text_color=TEXT_FAINT).pack(side="left", padx=16)
         self.copy_btn = ctk.CTkButton(right_foot, text="⧉  Befund kopieren", height=40, width=170,
                                       font=(UI_FONT, 13, "bold"), fg_color=ACCENT_PURPLE, hover_color=ACCENT_HOVER,
-                                      corner_radius=10, command=self.copy_formatted_report)
+                                      corner_radius=10, command=lambda: self.copy_formatted_report(aus_knopf=True))
         self.copy_btn.pack(side="right", padx=14)
         # historischer Name: Prompt-Editor liegt jetzt im Menü
         self.prompt_toggle = self.menu_btn
@@ -1942,29 +1947,20 @@ class RaKScribeApp(ctk.CTk):
         # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
         return br.nachbearbeiten(report)
 
-    def copy_formatted_report(self):
+    def copy_formatted_report(self, aus_knopf=False):
         """Befund (Markdown + HTML für Word) in die Zwischenablage. v3.2.3 (Gutachten P1-1): gibt True/False zurück,
-        versucht es mehrmals (RIS/Teams halten die Zwischenablage oft kurz fest) und liest gegen."""
+        versucht es mehrmals (RIS/Teams halten die Zwischenablage oft kurz fest) und liest gegen (clipboard_win.py)."""
         md_text = self.result_text.get("1.0", "end-1c").strip()
         if not md_text:
             return False
-        try:
-            html = markdown.markdown(md_text)
-            frag = f"<html><head><meta charset='utf-8'></head><body>{html}</body></html>"
-            header = "Version:1.0\r\nStartHTML:{0:08d}\r\nEndHTML:{1:08d}\r\nStartFragment:{2:08d}\r\nEndFragment:{3:08d}\r\nSourceURL:none\r\n"
-            s_html = len(header.format(0, 0, 0, 0))
-            s_frag = s_html + frag.find("<body>") + 6
-            e_frag = s_html + frag.find("</body>")
-            e_html = s_html + len(frag)
-            final = (header.format(s_html, e_html, s_frag, e_frag) + frag).encode('utf-8')
-        except Exception:
-            log_exception("[COPY] HTML-Aufbereitung fehlgeschlagen — kopiere nur Text")
-            final = None
-        ok = _zs.zwischenablage_setzen(win32clipboard, final, md_text)
+        ok = _cb.clipboard_set(md_text, cb=win32clipboard, md_to_html=markdown.markdown, log=log)
         if ok:
             self.update_status("COPIED", "ready")
         else:
             log("[COPY] Zwischenablage nach mehreren Versuchen nicht gesetzt (von anderem Programm belegt?)")
+            if aus_knopf:  # Knopf „Befund kopieren“: Fehlschlag sichtbar machen, sonst fügt der Arzt den alten Inhalt ein
+                self.update_status("ERROR", "busy")
+                messagebox.showerror("Nicht kopiert", ZWISCHENABLAGE_GESPERRT)
         return ok
 
     def _fertig_kopieren_einfuegen(self, lauf_nr):
@@ -1978,11 +1974,8 @@ class RaKScribeApp(ctk.CTk):
             self.after(500, lambda: self._lauf.aktuell(lauf_nr) and keyboard.press_and_release('ctrl+v'))
         else:
             self.update_status("ERROR", "busy")
-            messagebox.showwarning(
-                "Nicht eingefügt",
-                "Der Befund ist fertig, konnte aber nicht in die Zwischenablage kopiert werden "
-                "(ein anderes Programm hält sie gerade fest).\n\nDer Befund wurde NICHT eingefügt. "
-                "Bitte im RaKScribe-Fenster auf „Kopieren“ klicken und selbst einfügen.")
+            messagebox.showerror("Nicht eingefügt", "Der Befund ist fertig, wurde aber NICHT eingefügt.\n\n"
+                                 + ZWISCHENABLAGE_GESPERRT)
 
     def register_hotkey(self):
         keyboard.add_hotkey('f10', lambda: self.after(0, self.toggle_recording), suppress=True)

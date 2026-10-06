@@ -7,45 +7,8 @@ P1-2: Aufnahme-Zustand. F10 während „Befund wird erstellt" startete eine neue
       Jetzt: F10 wird während der Verarbeitung ignoriert; F9 bricht die Verarbeitung ab (Ergebnis wird verworfen,
       nichts eingefügt). Jeder Lauf trägt eine Lauf-Nummer; ein veralteter Lauf schreibt nichts mehr.
 """
-import time
-
-VERSUCHE = 5
-PAUSE_S = 0.1
-
-
-def zwischenablage_setzen(cb, html_format_bytes, text, versuche=VERSUCHE, pause=PAUSE_S, sleep=time.sleep):
-    """Setzt HTML + Unicode-Text in die Windows-Zwischenablage. cb = win32clipboard-Modul (oder Mock).
-    Gibt True nur zurück, wenn der Text danach nachweislich drinsteht."""
-    for i in range(versuche):
-        offen = False
-        try:
-            cb.OpenClipboard()
-            offen = True
-            cb.EmptyClipboard()
-            if html_format_bytes is not None:
-                cb.SetClipboardData(cb.RegisterClipboardFormat("HTML Format"), html_format_bytes)
-            cb.SetClipboardData(cb.CF_UNICODETEXT, text)
-            cb.CloseClipboard()
-            offen = False
-            # Gegenlesen: steht wirklich unser Text drin?
-            cb.OpenClipboard()
-            offen = True
-            gelesen = cb.GetClipboardData(cb.CF_UNICODETEXT)
-            cb.CloseClipboard()
-            offen = False
-            if (gelesen or "").replace("\r\n", "\n").strip() == text.replace("\r\n", "\n").strip():
-                return True
-        except Exception:
-            pass
-        finally:
-            if offen:
-                try:
-                    cb.CloseClipboard()
-                except Exception:
-                    pass
-        if i < versuche - 1:
-            sleep(pause)
-    return False
+# Zwischenablage-Logik liegt seit dem Umbau (Schritt 3) in clipboard_win.py — hier nur weitergereicht.
+from clipboard_win import VERSUCHE, PAUSE_S, zwischenablage_setzen  # noqa: F401
 
 
 # ── Aufnahme-Zustand ────────────────────────────────────────────────────────────────────────────────────
