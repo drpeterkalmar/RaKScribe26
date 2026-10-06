@@ -1,7 +1,7 @@
 """befund_regeln.py — deterministische Befund-Regeln der EXE (v3.2).
 
 Gleiche Semantik wie web_app/src/befundRegeln.ts (Web). Beide Engines laufen in
-befund_regeln_test.py gegen dieselbe Tabelle befund_regeln_fixtures.json — Änderungen
+tests/offline/befund_regeln_test.py gegen dieselbe Tabelle befund_regeln_fixtures.json — Änderungen
 IMMER an beiden Stellen + Fixture.
 
   split_regionen(text)        Diktat mit ≥2 Regionen ("Schulter rechts … Ellbogen rechts …")

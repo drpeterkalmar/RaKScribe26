@@ -4,7 +4,7 @@ liefern denselben Report wie prod_pipeline.bypass_report, der Gen-Prompt ist zei
 Aufruf: /usr/bin/python3 tests/offline/test_pipeline_exe.py"""
 import json, pathlib, sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))  # prod_pipeline, call0_prompt (Umbau Schritt 24)
 sys.path.insert(0, str(ROOT / "source_code"))
 import befund_regeln as br  # noqa: E402
 import pipeline as pl  # noqa: E402

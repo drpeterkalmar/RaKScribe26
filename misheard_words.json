@@ -5,7 +5,7 @@
   "mode 'llm': kontextabhängig, nur als Hinweis an Gemini (Web: Call-0-Tabelle; EXE: <stt_hinweise> im Gen-Prompt).",
   "hear = gehörte Varianten (Literal, Leerzeichen tolerant, Groß/Klein egal, Wortgrenzen). regex=true: hear ist ein Regex, mean darf $1..$9 enthalten.",
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
-  "Kandidaten für neue Einträge: /usr/bin/python3 misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
+  "Kandidaten für neue Einträge: /usr/bin/python3 tools/misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 tests/offline/misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
  "version": "2026-10-05b",
  "rules": [

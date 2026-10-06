@@ -5,9 +5,11 @@ Regel, **wo** sie in RaKScribe umgesetzt ist und **welcher Test** sie absichert.
 
 ## Seit v3.2: weniger Sync-Punkte
 
+Ordner (Umbau 06.10.2026): Offline-Gates in `tests/offline/` (laufen in CI, `.github/workflows/test.yml`), Live-Harness mit Gemini/Google-Aufrufen (`verify_*`, `test_all_regions`, `diktat_suite`, `prod_pipeline` …) in `tools/`, Messergebnisse in `docs/benchmarks/`. Testnamen in den Tabellen unten beziehen sich auf diese Ordner.
+
 | Baustein | Datei | gilt für |
 |---|---|---|
-| **Befund-Prompt (eine Quelle)** | `radiology_prompt.txt` (Versionsmarker `<!-- RAKSCRIBE_PROMPT_VERSION: … -->`) | EXE (gebündelt + versionierte Wahl), Web (`?raw`-Import, `PROMPT_VERSION` = Marker), Harness/verify (`prod_pipeline.py`) |
+| **Befund-Prompt (eine Quelle)** | `radiology_prompt.txt` (Versionsmarker `<!-- RAKSCRIBE_PROMPT_VERSION: … -->`) | EXE (gebündelt + versionierte Wahl), Web (`?raw`-Import, `PROMPT_VERSION` = Marker), Harness/verify (`tools/prod_pipeline.py`) |
 | systemInstruction | `SYS_MSG` in `source_code/gemini.py` = `SYS_MSG` in `web_app/src/gemini.ts` (wortgleich, Test) | EXE + Web |
 | Validator (nur Web, Call 2) | `validationPrompt` in `web_app/src/gemini.ts` (Snapshot `tests/offline/snapshots/val_prompt.txt`) | Web; Harness liest ihn aus gemini.ts |
 | Deterministische Regeln | `source_code/befund_regeln.py` ≡ `web_app/src/befundRegeln.ts`, Fixtures `befund_regeln_fixtures.json` | EXE + Web |

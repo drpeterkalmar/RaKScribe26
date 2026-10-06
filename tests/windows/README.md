@@ -31,4 +31,4 @@ macht Screenshots.
 - Windows **Server** (GitHub-Runner), nicht Windows 11 — für Start/Oberfläche praktisch gleich.
 - **Kein Mikrofon, kein Praxis-Schlüssel, keine Google-Aufrufe**: Der Test-Schlüssel wird bei jedem Lauf frisch als
   wertloser Dummy erzeugt (Sicherheitsregel: echte Schlüssel nie auf GitHub). Spracherkennung und Befundung werden
-  separat getestet (`verify_*.py`, `diktat_suite.py`, `e2e_v3_web.py`) bzw. am Praxis-PC.
+  separat getestet (`tools/verify_*.py`, `tools/diktat_suite.py`, `tools/e2e_v3_web.py`) bzw. am Praxis-PC.

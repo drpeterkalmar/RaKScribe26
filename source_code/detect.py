@@ -1,7 +1,7 @@
 """Vorlagen-Erkennung und Befundtitel der EXE (Umbau Schritt 12) — reine Funktionen, ohne Tk/Windows importierbar.
 
 Sync: web_app/src/App.tsx detectTemplate / deriveUntersuchungsTitel (Parität: detect_fixtures.json,
-test_normalbefunde.py TEIL 2c; Titel: titel_fixtures.py). Die Tests und prod_pipeline.py importieren diese Datei
+tests/offline/test_normalbefunde.py TEIL 2c; Titel: tests/offline/titel_fixtures.py). Die Tests und tools/prod_pipeline.py importieren diese Datei
 direkt (vorher: AST-Extrakt aus RaKScribe.py).
 """
 import re

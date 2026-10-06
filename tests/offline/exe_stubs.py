@@ -1,6 +1,6 @@
 """Attrappen für die Windows-/UI-Module der EXE, damit RaKScribe.py auf dem Mac importiert und sein Ablauf
 (Aufnahme → chirp_3 → Befund → Kopieren → Strg+V) ohne Windows, Tk-Fenster, Mikrofon und Google getestet werden kann.
-Muster wie exe_ui_smoke.py. Nur für Tests."""
+Muster wie tools/exe_ui_smoke.py. Nur für Tests."""
 import importlib.util, os, pathlib, sys, tempfile, types, warnings
 
 warnings.filterwarnings("ignore")  # Python-3.9-Hinweise der Google-Bibliotheken (Mac)

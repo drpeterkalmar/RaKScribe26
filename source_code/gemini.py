@@ -4,7 +4,7 @@ Vertex AI REST (gemini-3.5-flash, EU-Multi-Region-Endpoint), Auth per x-goog-api
 v2.11.1: ALLE Text-parts zusammensetzen (Gemini 3.5 teilt Antworten, z. B. '## L' | 'endenwirbel…'), Thinking-parts
 weglassen; ein Befund gilt nur als fertig mit Befundtext + nicht-leerem '## Ergebnis' und finishReason STOP;
 bis zu 3 Versuche, bei HTTP 401 (Schlüssel ungültig) sofort Abbruch.
-Sync: web_app/src/App.tsx joinGeminiText / isCompleteReport / SYS_MSG (Tests: test_parts_join.py, befund_regeln_test.py).
+Sync: web_app/src/gemini.ts joinGeminiText / isCompleteReport / SYS_MSG (Tests: tests/offline/test_parts_join.py, tests/offline/befund_regeln_test.py).
 """
 import json
 import re
@@ -17,7 +17,7 @@ VERTEX_ENDPOINT = (
     "locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 )
 
-# v3.2: systemInstruction — WORTGLEICH zu SYS_MSG in web_app/src/App.tsx (befund_regeln_test.py prüft das)
+# v3.2: systemInstruction — WORTGLEICH zu SYS_MSG in web_app/src/gemini.ts (tests/offline/befund_regeln_test.py prüft das)
 SYS_MSG = (
     "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai' – Dr. P. Kalmar / Dr. G. Riegler. "
     "Strukturiere das Diktat nach den Regeln im Prompt mit dem Normalbefund-Template als vollständigem Gerüst. "

@@ -1,5 +1,5 @@
 {
- "_doc": "Gemeinsame Testfälle für source_code/befund_regeln.py (EXE) und web_app/src/befundRegeln.ts (Web). Prüfung: /usr/bin/python3 befund_regeln_test.py (Python + Node). 'split.out' = erwartete Segmente.",
+ "_doc": "Gemeinsame Testfälle für source_code/befund_regeln.py (EXE) und web_app/src/befundRegeln.ts (Web). Prüfung: /usr/bin/python3 tests/offline/befund_regeln_test.py (Python + Node). 'split.out' = erwartete Segmente.",
  "split": [
   {
    "name": "Georg 05.10. Schulter+Ellbogen",

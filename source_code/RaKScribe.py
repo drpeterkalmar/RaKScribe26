@@ -243,7 +243,7 @@ def load_prompt_template(filename="radiology_prompt.txt"):
 
 INITIAL_PROMPT_CONTENT = ""  # init_runtime(): load_prompt_template()
 
-SYS_MSG = _gem.SYS_MSG  # wortgleich zur Web-App (befund_regeln_test.py prüft das)
+SYS_MSG = _gem.SYS_MSG  # wortgleich zur Web-App (tests/offline/befund_regeln_test.py prüft das)
 # v3.2: RAG-Few-Shots aus practice_reports.db — Standard AUS (A/B 05.10.: alte Praxisbefunde ohne Nummerierung
 # verschlechtern Format/Standardtext, Telegram-Referenz arbeitet ohne Beispiele). config.ini RAG_BEISPIELE = 1 schaltet ein.
 RAG_BEISPIELE = 0  # init_runtime(): config.ini RAG_BEISPIELE

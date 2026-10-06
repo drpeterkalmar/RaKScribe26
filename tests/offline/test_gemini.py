@@ -1,6 +1,6 @@
 """Gate (Umbau Schritt 14): Gemini-Aufruf der EXE (gemini.generate) mit nachgebautem Netz — Request-Inhalt,
 Wiederholung bei unvollständigem Befund, Abbruch bei 401, 3 Versuche. Die 28 parts-Join-Fälle prüft
-test_parts_join.py (EXE = Web). Aufruf: /usr/bin/python3 tests/offline/test_gemini.py"""
+tests/offline/test_parts_join.py (EXE = Web). Aufruf: /usr/bin/python3 tests/offline/test_gemini.py"""
 import io, json, pathlib, sys, urllib.error
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "source_code"))

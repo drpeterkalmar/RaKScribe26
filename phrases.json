@@ -1,5 +1,5 @@
 {
-  "_doc": "Phrasenlisten der Spracherkennung — EINE Datei für EXE (source_code/stt.py) und Web (web_app/src/stt.ts), Umbau Schritt 20 (Gutachten P2-2). medical_exe = Streaming-Boost der EXE (latest_long, 292 Begriffe, unverändert); medical_web = 6-s-Chunk-Boost der Web-App (latest_long, Boost 15; 692 Einträge ohne die doppelten → gleiche Wirkung); chirp = kuratiertes chirp_3-PhraseSet beider Apps (68, Boost 10). Die beiden medical-Listen werden erst nach Peters Freigabe vereinigt (die EXE-Liste würde größer = anderer Boost). Prüfung: befund_regeln_test.py (Sync).",
+  "_doc": "Phrasenlisten der Spracherkennung — EINE Datei für EXE (source_code/stt.py) und Web (web_app/src/stt.ts), Umbau Schritt 20 (Gutachten P2-2). medical_exe = Streaming-Boost der EXE (latest_long, 292 Begriffe, unverändert); medical_web = 6-s-Chunk-Boost der Web-App (latest_long, Boost 15; 692 Einträge ohne die doppelten → gleiche Wirkung); chirp = kuratiertes chirp_3-PhraseSet beider Apps (68, Boost 10). Die beiden medical-Listen werden erst nach Peters Freigabe vereinigt (die EXE-Liste würde größer = anderer Boost). Prüfung: tests/offline/befund_regeln_test.py (Sync).",
   "chirp": [
     "flachbogig",
     "flachbogige Skoliose",

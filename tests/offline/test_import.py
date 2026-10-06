@@ -1,6 +1,6 @@
 """Gate (Umbau Schritt 16, Gutachten P2-1): RaKScribe.py ist ohne Windows/Tk-Fenster importierbar und der Import
 hat keine Seiteneffekte (keine config.ini, kein Log, kein Dialog, kein Google-Client); erst init_runtime() (= main)
-initialisiert. Windows-Module werden gestubbt (wie exe_ui_smoke.py). Aufruf: /usr/bin/python3 tests/offline/test_import.py"""
+initialisiert. Windows-Module werden gestubbt (wie tools/exe_ui_smoke.py). Aufruf: /usr/bin/python3 tests/offline/test_import.py"""
 import importlib, os, pathlib, shutil, sys, tempfile
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]

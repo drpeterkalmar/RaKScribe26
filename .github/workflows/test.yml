@@ -35,17 +35,17 @@ jobs:
         run: pip install numpy pyyaml
 
       - name: Regeln (PY + TS)
-        run: python befund_regeln_test.py
+        run: python tests/offline/befund_regeln_test.py
       - name: Fehlhör-Liste (PY + TS)
-        run: python misheard_test.py
+        run: python tests/offline/misheard_test.py
       - name: Normalbefund-Bypass (PY + TS)
-        run: python normal_bypass_test.py
+        run: python tests/offline/normal_bypass_test.py
       - name: Normalbefunde, Erkennung, Titel
-        run: python test_normalbefunde.py
+        run: python tests/offline/test_normalbefunde.py
       - name: Gemini-Antworten zusammensetzen
-        run: python test_parts_join.py
+        run: python tests/offline/test_parts_join.py
       - name: Vorlagen erreichbar (EXE = Web)
-        run: python vorlagen_erreichbar_test.py
+        run: python tests/offline/vorlagen_erreichbar_test.py
       - name: EXE-Zustandsmaschine (F10/F9, Generationsnummer)
         run: python tests/offline/test_jobstate.py
       - name: EXE-Aufnahme getrennt von der Live-Anzeige

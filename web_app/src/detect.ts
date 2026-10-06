@@ -1,5 +1,5 @@
 // Vorlagen-Erkennung und Befundtitel der Web-App (Umbau Schritt 17) — reine Funktionen, aus App.tsx herausgelöst.
-// Sync: source_code/detect.py (Parität: detect_fixtures.json → test_normalbefunde.py TEIL 2c; Titel: titel_fixtures.py).
+// Sync: source_code/detect.py (Parität: detect_fixtures.json → tests/offline/test_normalbefunde.py TEIL 2c; Titel: tests/offline/titel_fixtures.py).
 import { vorrangVorlage, type VorrangDaten } from './befundRegeln.ts';
 
 export type Template = {

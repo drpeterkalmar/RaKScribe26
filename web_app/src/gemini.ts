@@ -1,6 +1,6 @@
 // Gemini-Aufrufe der Web-App (Umbau Schritt 18): Call 0 (STT-Korrektur), Call 1 (Befund), Call 2 (Validierung),
 // Schlüsselprüfung. Aus App.tsx herausgelöst — Prompts und Requests unverändert (Snapshots: tests/offline/snapshots).
-// Sync: source_code/gemini.py (SYS_MSG, parts-Join, Vollständigkeit), prod_pipeline.py liest validationPrompt hier.
+// Sync: source_code/gemini.py (SYS_MSG, parts-Join, Vollständigkeit), tools/prod_pipeline.py liest validationPrompt hier.
 import { fetchWithRetry, istAbbruch, fehlermeldung } from './net.ts';
 import { applyMisheard, type Compiled } from './misheard.ts';
 import { stripPromptMarker } from './befundRegeln.ts';
@@ -41,7 +41,7 @@ export const isCompleteReport = (t: string): boolean =>
 
 export const VERTEX_ENDPOINT = 'https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent';
 
-// systemInstruction — WORTGLEICH zu SYS_MSG in source_code/gemini.py (befund_regeln_test.py prüft das)
+// systemInstruction — WORTGLEICH zu SYS_MSG in source_code/gemini.py (tests/offline/befund_regeln_test.py prüft das)
 export const SYS_MSG =
   "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai' – Dr. P. Kalmar / Dr. G. Riegler. " +
   "Strukturiere das Diktat nach den Regeln im Prompt mit dem Normalbefund-Template als vollständigem Gerüst. " +
@@ -80,7 +80,7 @@ export type GenKontext = {
   misheard?: { compiled: Compiled[]; block: string };
 };
 
-// Call 0 — STT-Korrektur. Text unverändert aus App.tsx (call0_prompt.py liest ihn hier per Regex).
+// Call 0 — STT-Korrektur. Text unverändert aus App.tsx (tools/call0_prompt.py liest ihn hier per Regex).
 export const correctionPrompt = (MISHEARD_PROMPT_BLOCK: string, rawText: string): string => `Du bist ein medizinischer Lektor für radiologische Diktate. Korrigiere Spracherkennungsfehler.
 
 ${MISHEARD_PROMPT_BLOCK}
@@ -107,7 +107,7 @@ Roh: ${rawText}
 
 Korrigiert:`;
 
-// Call 2 — Validierung. Text unverändert aus App.tsx (prod_pipeline.py liest ihn hier per Regex).
+// Call 2 — Validierung. Text unverändert aus App.tsx (tools/prod_pipeline.py liest ihn hier per Regex).
 export const validationPrompt = (rawDictation: string, generatedReport: string): string => `Du bist ein radiologischer Qualitätskontrolleur. Du erhältst das ursprüngliche Diktat und den daraus generierten Befund. Prüfe STRENG:
 
 1. VOLLSTÄNDIGKEIT: Jede Pathologie/Diagnose aus dem Diktat muss im Befund (## Befund) UND im Ergebnis (## Ergebnis) vorkommen. Liste fehlende Diagnosen auf.

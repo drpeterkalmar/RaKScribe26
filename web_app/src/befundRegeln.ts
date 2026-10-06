@@ -1,6 +1,6 @@
 // befundRegeln.ts — deterministische Befund-Regeln der Web-App (v3.2).
 // Gleiche Semantik wie source_code/befund_regeln.py (EXE). Beide Engines laufen in
-// befund_regeln_test.py gegen dieselbe Tabelle befund_regeln_fixtures.json — Änderungen
+// tests/offline/befund_regeln_test.py gegen dieselbe Tabelle befund_regeln_fixtures.json — Änderungen
 // IMMER an beiden Stellen + Fixture.
 //
 //   splitRegionen(text)        Diktat mit ≥2 Regionen → ein Segment je Region (je eigener Befund)

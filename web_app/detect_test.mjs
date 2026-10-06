@@ -1,6 +1,6 @@
 // detect_test.mjs — Web-Erkennung (src/detect.ts, Umbau Schritt 17: direkt importiert statt aus App.tsx herausgeschnitten).
-//   node detect_test.mjs <faelle.json>          → JSON {diktat: key}    (test_normalbefunde.py TEIL 2/2c, vorlagen_erreichbar_test.py)
-//   node detect_test.mjs --titel <faelle.json>  → JSON [titel, …] für [[raw, display_name], …]  (TEIL 4b, titel_fixtures.py)
+//   node detect_test.mjs <faelle.json>          → JSON {diktat: key}    (tests/offline/test_normalbefunde.py TEIL 2/2c, tests/offline/vorlagen_erreichbar_test.py)
+//   node detect_test.mjs --titel <faelle.json>  → JSON [titel, …] für [[raw, display_name], …]  (TEIL 4b, tests/offline/titel_fixtures.py)
 import fs from 'node:fs';
 import { detectTemplate, deriveUntersuchungsTitel } from './src/detect.ts';
 
