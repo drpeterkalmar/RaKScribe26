@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """test_parts_join.py — v2.11.1 Offline-Gate (deterministisch, ohne API):
-Die ECHTEN Helper aus App.tsx (per esbuild transpiliert) und RaKScribe.py (AST-extract)
+Die ECHTEN Helper aus App.tsx (per esbuild transpiliert) und source_code/gemini.py (direkt importiert)
 gegen synthetische Gemini-Antworten: Split '## L' | 'endenwirbelsäule…' (mit thoughtSignature),
 Thought-Part, abgeschnittene Antwort (MAX_TOKENS), fehlendes Ergebnis, Befund ohne '## Befund'-Zeile.
 Plus Rohantworten aus parts_stress_raw.json, falls vorhanden. Exit 1 bei Abweichung."""
-import ast, json, pathlib, re, subprocess, sys, tempfile
+import json, pathlib, re, subprocess, sys, tempfile
 ROOT = pathlib.Path(__file__).parent
+sys.path.insert(0, str(ROOT / "source_code"))
+import gemini  # noqa: E402  (Umbau Schritt 14: kein AST-/Regex-Extrakt aus RaKScribe.py mehr)
 FULL = ("## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nVerschmälerung des Intervertebralraums L4/L5 mit subchondraler Sklerosierung. "
         "Übrige Bandscheibenräume normal hoch.\n\n## Ergebnis\n1. Osteochondrose L4/L5.")
 def resp(parts, fr="STOP"):
@@ -43,22 +45,13 @@ with tempfile.TemporaryDirectory() as td:
     (pathlib.Path(td) / "t.js").write_text(js)
     ts_out = json.loads(subprocess.run(["node", str(pathlib.Path(td) / "t.js")], capture_output=True, text=True, check=True).stdout)
 
-# --- PY: echte EXE-Logik (AST) ---
-rak = (ROOT / "source_code/RaKScribe.py").read_text()
-ns = {}
-for node in ast.walk(ast.parse(rak)):
-    if isinstance(node, ast.FunctionDef) and node.name == "_report_complete":
-        exec(ast.get_source_segment(rak, node), ns)
-m = re.search(r'txt = ("".join\(p\.get\("text", ""\) for p in cand\.get\("content", \{\}\)\.get\("parts", \[\]\)\s*\n\s*if isinstance\(p\.get\("text"\), str\) and not p\.get\("thought"\)\))', rak)
-assert m, "EXE-Join-Ausdruck nicht gefunden"
-join_expr = re.sub(r"\s*\n\s*", " ", m.group(1))
-
+# --- PY: echte EXE-Logik (source_code/gemini.py) ---
 fails = 0
 for (name, d, exp, comp, fin), (tn, tt, tcomp, tfin) in zip(CASES, ts_out):
     cand = d["candidates"][0]
-    pt = eval(join_expr, {"cand": cand})
-    pcomp = ns["_report_complete"](pt.strip())
-    pfin = cand.get("finishReason", "STOP") == "STOP"
+    pt = gemini.join_text(cand)
+    pcomp = gemini.report_complete(pt.strip())
+    pfin = gemini.finish_ok(cand)
     ok = (tt == exp == pt) and (tcomp == comp == pcomp) and (tfin == fin == pfin)
     fails += not ok
     print(f"{'✅' if ok else '❌'} {name:22s} TS(voll={tcomp},stop={tfin}) PY(voll={pcomp},stop={pfin}) erwartet(voll={comp},stop={fin})")

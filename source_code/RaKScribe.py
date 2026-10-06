@@ -29,6 +29,7 @@ import urllib.request
 import urllib.error
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor
+import gemini as _gem  # Umbau Schritt 14: Gemini-Request, parts-Join, Vollständigkeit, Retry
 import stt as _stt  # Umbau Schritt 13: chirp_3, Segmentierung 50 s/4 s, Overlap-Stitch, Phrasenlisten
 import detect as _detect  # Umbau Schritt 12: Vorlagen-Erkennung + Befundtitel (reine Funktionen)
 import keys as _keys  # Umbau Schritt 11: Praxis-Schlüssel, STT-Credentials, Token-Cache
@@ -193,12 +194,7 @@ if not init_google_speech():
 
 # --- LLM Client Initialisierung ---
 openai_client = None
-# Vertex AI Endpoint für Gemini (REST API, Auth via x-goog-api-key Header)
-VERTEX_ENDPOINT = (
-    # v2.11.0: gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz), Web-Parität
-    "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/"
-    "locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
-)
+VERTEX_ENDPOINT = _gem.VERTEX_ENDPOINT  # Umbau Schritt 14: Gemini-Aufruf in gemini.py
 try:
     if LLM_PROVIDER == 'gemini':
         key = _load_vertex_key()
@@ -264,14 +260,7 @@ def load_prompt_template(filename="radiology_prompt.txt"):
 
 INITIAL_PROMPT_CONTENT = load_prompt_template()
 
-# v3.2: systemInstruction — WORTGLEICH zu SYS_MSG in web_app/src/App.tsx (befund_regeln_test.py prüft das)
-SYS_MSG = (
-    "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai' – Dr. P. Kalmar / Dr. G. Riegler. "
-    "Strukturiere das Diktat nach den Regeln im Prompt mit dem Normalbefund-Template als vollständigem Gerüst. "
-    "Ausgabe: zuerst '## ' + kanonische Untersuchungsbezeichnung mit diktierter Seite, dann '## Befund' als Fließtext "
-    "ohne Labels und '## Ergebnis' nummeriert (1. 2. 3.) mit den diktierten Begriffen 1:1 inklusive Grad und Messwerten. "
-    "Gib ausschließlich den fertigen Befundtext aus – keine Kommentare, keine Einleitung."
-)
+SYS_MSG = _gem.SYS_MSG  # wortgleich zur Web-App (befund_regeln_test.py prüft das)
 # v3.2: RAG-Few-Shots aus practice_reports.db — Standard AUS (A/B 05.10.: alte Praxisbefunde ohne Nummerierung
 # verschlechtern Format/Standardtext, Telegram-Referenz arbeitet ohne Beispiele). config.ini RAG_BEISPIELE = 1 schaltet ein.
 RAG_BEISPIELE = CFG.rag_beispiele
@@ -469,14 +458,7 @@ def transcribe_full_chirp3(pcm_int16, samplerate=16000, loc='eu'):
         log_exception("[CHIRP3] Fehler in transcribe_full_chirp3")
         return None
 
-def _report_complete(t):
-    """v2.11.1: vollständig = '## Befund' + nicht-leeres '## Ergebnis'."""
-    t = t or ""
-    if "## Ergebnis" not in t or len(t.split("## Ergebnis")[1].strip()) <= 5:
-        return False
-    pre = t.split("## Ergebnis")[0]
-    body = pre.split("## Befund")[1] if "## Befund" in pre else "\n".join(l for l in pre.splitlines() if not l.strip().startswith("#"))
-    return len(body.strip()) > 20
+_report_complete = _gem.report_complete
 
 
 def _get_stt_access_token():
@@ -1331,47 +1313,8 @@ class RaKScribeApp(ctk.CTk):
 
         report = ""
         if LLM_PROVIDER == 'gemini':
-            # Vertex AI REST API Call (Auth via x-goog-api-key Header)
-            key = _load_vertex_key()
-            headers = {
-                "Content-Type": "application/json",
-                "x-goog-api-key": key,
-            }
-            body = json.dumps({
-                "contents": [{"role": "user", "parts": [{"text": p_full}]}],
-                "systemInstruction": {"parts": [{"text": SYS_MSG}]},
-                # v2.10.15: thinkingBudget 0 (Web-Parität seit v2.10.1) — ohne denkt
-                # Gemini dynamisch mit: Befund 7 s → ~1,5 s, gleiche Qualität (90-Fall-A/B).
-                "generationConfig": {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}},
-            }).encode()
-            # v2.11.1 HOTFIX: ALLE Text-parts zusammensetzen (Gemini 3.5 splittet Antworten, z.B. '## L' | 'endenwirbel…')
-            # + Vollständigkeits-Check (## Befund + ## Ergebnis, finishReason STOP) + bis zu 3 Versuche bei Fehler/Unvollständigkeit.
-            last_err = None
-            for _attempt in range(3):
-                try:
-                    req = urllib.request.Request(VERTEX_ENDPOINT, data=body, headers=headers, method="POST")
-                    with urllib.request.urlopen(req, timeout=120) as resp:
-                        result = json.loads(resp.read())
-                    if "error" in result:
-                        raise Exception(result["error"].get("message", result["error"]))
-                    cand = result["candidates"][0]
-                    txt = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", [])
-                                  if isinstance(p.get("text"), str) and not p.get("thought")).strip()
-                    txt = re.sub(r'^```[a-zA-Z]*\s*\n?', '', txt)
-                    txt = re.sub(r'\n?```\s*$', '', txt).strip()
-                    if _report_complete(txt) and cand.get("finishReason", "STOP") == "STOP":
-                        report = txt
-                        break
-                    last_err = Exception("Befund unvollständig (## Ergebnis fehlt)")
-                    print(f"[GEN] Versuch {_attempt + 1}: Befund unvollständig — neuer Versuch")
-                except Exception as _e:
-                    last_err = _e
-                    if "401" in str(_e) or "Unauthorized" in str(_e):
-                        break
-                    print(f"[GEN] Versuch {_attempt + 1} fehlgeschlagen: {_e}")
-                    time.sleep(2 * (_attempt + 1))
-            if not report:
-                raise last_err or Exception("Gemini lieferte keinen Befund")
+            # gemini.py: alle Text-parts, Vollständigkeit + finishReason STOP, bis zu 3 Versuche, Abbruch bei 401
+            report = _gem.generate(p_full, SYS_MSG, _load_vertex_key(), log=print)
         else:
             kwargs = {
                 "model": LLM_MODEL,

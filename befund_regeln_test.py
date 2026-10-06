@@ -79,9 +79,9 @@ check("befund_regeln" in exe and "waehle_prompt" in exe and "split_regionen" in 
       "EXE nutzt befund_regeln (Prompt-Wahl, Trenner, Nummerierung)")
 wf = (ROOT / ".github/workflows/build-exe.yml").read_text()
 check("radiology_prompt.txt;." in wf and "befund_regeln" in wf, "EXE-Build bündelt Prompt + befund_regeln")
-m_exe = re.search(r'SYS_MSG = \(\s*((?:"[^"]*"\s*)+)\)', exe)
+import gemini  # noqa: E402  (Umbau Schritt 14: SYS_MSG der EXE liegt in gemini.py)
 m_web = re.search(r'const SYS_MSG =\s*((?:"[^"]*"\s*\+?\s*)+);', app)
-sys_exe = "".join(re.findall(r'"([^"]*)"', m_exe.group(1))) if m_exe else None
+sys_exe = gemini.SYS_MSG
 sys_web = "".join(re.findall(r'"([^"]*)"', m_web.group(1))) if m_web else None
 check(sys_exe is not None and sys_exe == sys_web, "systemInstruction EXE == Web", f"EXE={sys_exe!r}\n      WEB={sys_web!r}")
 

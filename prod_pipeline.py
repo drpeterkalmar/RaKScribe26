@@ -1,7 +1,7 @@
 """prod_pipeline.py — baut die ECHTEN Produktionsketten von EXE und Web für Harness/verify_* nach (v3.2).
 
 Keine Prompt-Kopien: Gen-Prompt = radiology_prompt.txt (eine Quelle für EXE + Web), systemInstruction =
-SYS_MSG aus RaKScribe.py, Validator (Web Call 2) und Call 0 aus App.tsx, Regionen-Trenner/Nummerierung/
+SYS_MSG aus source_code/gemini.py, Validator (Web Call 2) und Call 0 aus App.tsx, Regionen-Trenner/Nummerierung/
 Normalbefund-Bypass = source_code/befund_regeln.py, Template-Erkennung = source_code/detect.py (direkt importiert).
 
     import prod_pipeline as pp
@@ -20,6 +20,7 @@ import misheard  # noqa: E402
 import befund_regeln as br  # noqa: E402
 import normalbypass as nb  # noqa: E402
 import detect as _detect  # noqa: E402  (Umbau Schritt 12: kein AST-Extrakt mehr)
+import gemini as _gemini  # noqa: E402  (Umbau Schritt 14)
 
 TEMPLATES = json.loads((ROOT / "templates.json").read_text())
 DISPLAY_NAMES = [v["display_name"] for v in TEMPLATES.values()]
@@ -27,7 +28,6 @@ _MH = misheard.load(str(ROOT))
 _MH_COMPILED = misheard.compile_rules(_MH)
 MISHEARD_HINTS = misheard.prompt_block(_MH)
 
-_EXE_SRC = (ROOT / "source_code" / "RaKScribe.py").read_text()
 _APP_SRC = (ROOT / "web_app" / "src" / "App.tsx").read_text()
 
 
@@ -37,8 +37,7 @@ def detect_template(raw):
 
 derive_untersuchungs_titel = _detect.derive_untersuchungs_titel
 
-_m = re.search(r'SYS_MSG = \(\s*((?:"[^"]*"\s*)+)\)', _EXE_SRC)
-SYS_MSG = "".join(re.findall(r'"([^"]*)"', _m.group(1)))
+SYS_MSG = _gemini.SYS_MSG
 
 GEN_PROMPT_RAW = (ROOT / "radiology_prompt.txt").read_text()
 PROMPT_VERSION = br.prompt_version(GEN_PROMPT_RAW)
