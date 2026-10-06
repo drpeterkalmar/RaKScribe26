@@ -128,5 +128,26 @@ bis_fertig(app); S.pump(app, lambda: S.AUFZ.tasten)
 check("chirp_3 leer → Streaming-Text gerettet, Befund eingefügt", app.final_transcript == "Knie rechts unauffällig"
       and S.AUFZ.tasten == ["ctrl+v"], app.final_transcript)
 
+# 6. Mehr-Regionen-Diktat, eine Region scheitert (Gutachten P2-6) → fertige Region sichtbar, Hinweis, kein Strg+V
+app = neue_app()
+CHIRP["text"] = "Schulter rechts unauffällig. Ellbogen rechts Punkt Ellbogengelenksarthrose Punkt"
+echt = app._befund_fuer_segment
+
+
+def segment(seg):
+    if "Ellbogen" in seg:
+        raise RuntimeError("Gemini: HTTP 503")
+    return echt(seg)
+
+
+app._befund_fuer_segment = segment
+app.toggle_recording(); S.pump(app, lambda: app.stream_transcript); app.toggle_recording()
+bis_fertig(app); time.sleep(0.05); S.pump(app)
+check("Mehr-Regionen: fertige Region steht im Befund-Feld", app.result_text.text.startswith("## Schultergelenk"),
+      app.result_text.text[:60])
+check("… gescheiterte Region benannt", "Befund für Region Ellbogen rechts konnte nicht erstellt werden" in app.result_text.text)
+check("… Fehlerdialog, Status Fehler, kein Strg+V", S.AUFZ.tasten == [] and app._status_raw == "ERROR"
+      and any(d[0] == "showerror" and "Ellbogen rechts" in d[2] for d in S.AUFZ.dialoge), str(S.AUFZ.dialoge))
+
 print("\n" + ("✅ EXE-ABLAUF PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

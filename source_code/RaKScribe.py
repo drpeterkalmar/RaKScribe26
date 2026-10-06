@@ -33,6 +33,7 @@ from concurrent.futures import ThreadPoolExecutor
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
+import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
 
 # =========================================================================
@@ -1089,6 +1090,9 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 }
 
 
+GEMINI_401_TEXT = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
+                   "Bitte die aktuelle rakscribe-praxis-key.json aus dem Drive-Ordner RaKScribe\n"
+                   "über Menü → „Schlüssel-Datei laden…“ neu laden.")
 ZWISCHENABLAGE_GESPERRT = ("Die Zwischenablage ist durch ein anderes Programm gesperrt — Befund bitte mit "
                            "„Befund kopieren“ erneut kopieren und selbst einfügen.")
 
@@ -1821,11 +1825,20 @@ class RaKScribeApp(ctk.CTk):
             # v3.2: Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener
             # Befund (eigenes Template, eigenes Ergebnis), parallel erzeugt und untereinander ausgegeben.
             segmente = br.split_regionen(raw)
+            fehler, ausnahmen = [], []
             if len(segmente) > 1:
                 print(f"[MULTI] {len(segmente)} Regionen")
                 with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
-                    teile = list(ex.map(self._befund_fuer_segment, segmente))
-                report = br.befunde_zusammenfuegen(teile) if all(_report_complete(t) for t in teile) else ""
+                    futures = [ex.submit(self._befund_fuer_segment, seg) for seg in segmente]
+                teile = []
+                for fut in futures:
+                    try:
+                        teile.append(fut.result())
+                    except Exception as e_seg:  # eine Region scheitert → die anderen trotzdem zeigen (Gutachten P2-6)
+                        log_exception("Befund-Generierung (Region)")
+                        ausnahmen.append(e_seg)
+                        teile.append(e_seg)
+                report, fehler = _pl.assemble_regions(segmente, teile, _report_complete)
             else:
                 report = self._befund_fuer_segment(raw)
 
@@ -1837,6 +1850,16 @@ class RaKScribeApp(ctk.CTk):
                     self.result_text.delete("1.0", "end"),
                     self.result_text.insert("1.0", r)
                 ))
+            if fehler:  # Mehr-Regionen-Befund unvollständig: fertige Teile stehen in der Box, NICHT einfügen
+                msg = ("Befund für Region " + ", ".join(f"„{f}“" for f in fehler)
+                       + " konnte nicht erstellt werden — bitte erneut diktieren.\n\n"
+                       "Die übrigen Regionen stehen im Befund-Feld; es wurde nichts eingefügt.")
+                if any("401" in str(e) or "Unauthorized" in str(e) for e in ausnahmen):
+                    msg += "\n\n" + GEMINI_401_TEXT
+                elif ausnahmen:
+                    msg += f"\n\nFehler: {ausnahmen[0]}"
+                self.after(0, lambda m=msg: self._ende_fehler(gen, m))
+                return
             # v2.11.1 (Prüfbericht W4): leeren/unvollständigen Befund NIE ins Zielprogramm einfügen
             if not _report_complete(report):
                 self.after(0, lambda: self._ende_fehler(gen, None))
@@ -1845,9 +1868,7 @@ class RaKScribeApp(ctk.CTk):
         except Exception as e:
             log_exception("Befund-Generierung")
             if "401" in str(e) or "Unauthorized" in str(e):
-                msg = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
-                       "Bitte die aktuelle rakscribe-praxis-key.json aus dem Drive-Ordner RaKScribe\n"
-                       "über Menü → „Schlüssel-Datei laden…“ neu laden.")
+                msg = GEMINI_401_TEXT
             else:
                 msg = f"Fehler bei der Befund-Generierung:\n{e}"
             self.after(0, lambda m=msg: self._ende_fehler(gen, m))
