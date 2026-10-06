@@ -61,7 +61,7 @@ Schritt mit `/usr/bin/python3` (3.9) und Node 24. Ab Schritt 24 liegen sie in `t
 
 Zahlen: 23 Python-Testdateien in `tests/offline/` (plus Stub-Hilfe und Prompt-Snapshots) und 7 Node-Tests in
 `web_app/`. Der Lint läuft ohne Warnung. `RaKScribe.py` hat jetzt 1333 statt 1994 Zeilen (Logik in 13 Modulen),
-`App.tsx` 1016 statt 2365 (Logik in 10 Modulen).
+`App.tsx` 1016 statt 2365 (Logik in 12 Modulen unter `web_app/src/`).
 
 ## Abweichungen vom Auftrag (bewusst)
 
