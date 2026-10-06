@@ -1,0 +1,51 @@
+name: Tests
+
+# Offline-Gates (Gutachten 05.10.2026, P2-12e): laufen bei jedem Push und Pull-Request, ohne Netz-/Gemini-Aufrufe.
+# Der Pages-Deploy (deploy.yml) startet erst, wenn dieser Workflow auf main grün ist.
+# Node 24: die .mjs-Tests importieren TypeScript direkt (Type-Stripping) — Node 20 kann das nicht.
+on:
+  push:
+    paths-ignore: ['docs/**', '*.md']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: web_app/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Web-Abhängigkeiten
+        working-directory: web_app
+        run: npm ci
+
+      - name: Regeln (PY + TS)
+        run: python befund_regeln_test.py
+      - name: Fehlhör-Liste (PY + TS)
+        run: python misheard_test.py
+      - name: Normalbefund-Bypass (PY + TS)
+        run: python normal_bypass_test.py
+      - name: Normalbefunde, Erkennung, Titel
+        run: python test_normalbefunde.py
+      - name: Gemini-Antworten zusammensetzen
+        run: python test_parts_join.py
+      - name: Vorlagen erreichbar (EXE = Web)
+        run: python vorlagen_erreichbar_test.py
+      - name: EXE-Zustand (Zwischenablage, F10/F9)
+        run: python exe_zustand_test.py
+      - name: Typprüfung Web
+        working-directory: web_app
+        run: npx tsc -p tsconfig.app.json --noEmit

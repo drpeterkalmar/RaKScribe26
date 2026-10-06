@@ -1,10 +1,12 @@
 name: Deploy Web App to GitHub Pages
 
+# v3.2.3+ (Gutachten P2-12e): erst bauen, wenn die Offline-Gates (test.yml) auf main grün sind.
+# Reine Doku-Commits (docs/**, *.md) lösen test.yml nicht aus → kein Deploy.
 on:
-  push:
-    branches:
-      - main
-      - master
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 # Berechtigungen für GITHUB_TOKEN zur Bereitstellung auf GitHub Pages festlegen
@@ -24,9 +26,13 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          # workflow_run läuft im Kontext des Default-Branch — genau den getesteten Commit bauen
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
