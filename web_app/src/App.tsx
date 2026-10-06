@@ -17,6 +17,10 @@ import {
 import vorrangData from '../../vorlagen_vorrang.json';
 // v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: source_code/normalbypass.py, normal_bypass_tests.json)
 import { isPureNormalFinding } from './normalbypass';
+// Umbau Schritt 8 (Gutachten P2-7/P2-9/P2-10): Netz mit Abbruch, Spracherkennung, Lauf-Verwaltung
+import { fetchWithRetry, istAbbruch } from './net.ts';
+import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext } from './stt.ts';
+import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
 
 // Types
 type Template = {
@@ -67,189 +71,7 @@ const isCompleteReport = (t: string): boolean =>
 
 const VERTEX_ENDPOINT = 'https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent';
 
-// Speech-Context Phrasen für Google STT (medizinischer Jargon, boost 15.0)
-const MEDICAL_PHRASES = [
-  "Hochauflösender Nervenschall", "Thorax pa/seitlich", "MRT", "MR", "CT", "Computertomografie", "DXA", "Knochendichtemessung",
-  "Humerus", "Femur", "Tibia", "Fibula", "Patella", "Karpaltunnel", "Rotatorenmanschette",
-  "Achillessehne", "Kalkaneus", "Acromioclaviculargelenk", "Sacroiliacalgelenk", "Halswirbelsäule (HWS)",
-  "Brustwirbelsäule (BWS)", "Lendenwirbelsäule (LWS)", "Kreuzband", "Tarsus", "Metatarsus",
-  "Fraktur", "Spondylarthrose", "Spondylarthrosen", "Spondylodese", "Spondyolyse", "Spondylosis deformans", "Spondylose", "pontifizierend", "pontifizierende", "Arthrose", "Coxarthrose", "Gonarthrose", "Meniskus", "Hinterhorn-Läsion",
-  "Korbhenkelriss", "Bandscheibenprolaps", "Spinalkanalstenose", "Osteochondrose", "Osteochondrosen", "Nearthrosis interspinosa",
-  "Osteomyelitis", "Rheumatoide Arthritis", "Kapsel-Band-Läsion", "Osteoporose", "Bakerzyste",
-  "Knochenödem", "Einklemmungssyndrom", "Arthrographie", "Szintigraphie", "Vertebroplastie",
-  "Facetteninfiltration", "CT-gesteuerte Biopsie", "MR-Arthrographie", "Skelettaufnahme", "Ganzbeinaufnahme",
-  "Gelenkspaltverschmälerung", "Subluxation", "Wirbelkörperkompression", "Rotatorenmanschettenruptur",
-  "Labrumläsion", "Subchondrale Sklerosierung", "Nervus medianus", "Nervus radialis",
-  "Liquor", "Zerebrospinalflüssigkeit", "Kortex", "Großhirnrinde", "Weiße Substanz", "Basalganglien",
-  "Hypophyse", "Corpus callosum", "Sinus cavernosus", "Aorta", "Arteria carotis interna", "Arteria carotis externa",
-  "Pulmonalarterie", "Vena cava superior", "Vena cava inferior", "A. vertebralis",
-  "Aneurysma", "Intrakranielles Aneurysma", "Ischämie", "Ischämischer Infarkt", "Intracranielle Blutung",
-  "Subarachnoidalblutung (SAB)", "Subduralhämatom (SDH)", "Epiduralhämatom (EDH)", "Multiple Sklerose (MS)",
-  "Hypophysenadenom", "Hydrozephalus", "Normaldruckhydrozephalus", "Vaskulitis", "Stenose", "Carotisstenose",
-  "Koronarstenose", "Dissektion", "Aortendissektion", "Thrombus", "Thrombose", "Embolie", "PAE", "Plaqubildung", "Softplaque",
-  "gemischte Plaqueformation", "IMT-Komplex", "Intima-Media-Hyperplasie", "Intimahyperplasie",
-  "Varizen", "T1-gewichtete Sequenz", "T2-gewichtete Sequenz", "Flair-Sequenz", "Diffusion-weighted Imaging (DWI)",
-  "Time-of-Flight (TOF) Angio", "MRA", "CTA", "Kontrastmittel (KM)", "Plaque", "Atherosklerotische Plaque",
-  "Angioplastie", "Sakkuläres Aneurysma", "Gefäßokklusion",
-  "Lunge", "Oberlappen", "Unterlappen", "Trachea", "Bronchien", "Mediastinum", "Herz", "Ventrikel",
-  "Perikard", "Leber", "Gallenblase", "Pankreas", "Niere", "Milz", "Uterus", "Adnexe", "Appendix",
-  "Schilddrüse", "Infiltrat", "Pulmonales Infiltrat", "Pleuraerguss", "Pneumothorax", "Spannungspneumothorax",
-  "Kardiomegalie", "Aortenklappeninsuffizienz", "Leberzirrhose", "Cholezystitis", "Pankreatitis",
-  "Nierenstein", "Ureterstein", "Nephrolithiasis", "Adnexitis", "Ovarielle Zyste", "Lymphknoten",
-  "Lymphadenopathie", "Appendizitis", "Struma", "Verschattung", "Milzruptur", "Hernie", "Hiatushernie",
-  "Inguinalhernie", "Dilatation", "Aszites", "Zystische Läsion", "Liquidation", "Faszienverdickung",
-  "Hydronephrose", "Peritonealkarzinose", "Fokale Raumforderung (FRF)", "Hyperdens", "Hypodens", "Isodens",
-  "Echoarm", "Echogen",
-  "Malignität", "Benignität", "Tumor", "Karzinom", "Metastase", "Läsion", "Atypisch", "unspezifisch",
-  "Degenerativ", "entzündlich", "Chronisch", "akut", "Ödem", "Hämatom", "Abszess", "Kalzifizierung", "Fibroostose", "Fibroostosen", "Neoarthrosis interspinosa", "Neoarthrosen interspinosa", "Thorax p.a.", "Thorax p.a./seitlich",
-  "Sklerosierung", "Nekrose", "Atrophie", "Randscharf", "unscharf begrenzt", "Rückbildung", "Progression",
-  "V. a.", "Verdacht auf", "Differenzialdiagnose (DD)", "Interventionell", "Biopsie", "Drainage",
-  "Normalbefund", "kein Nachweis für", "Axial", "koronar", "sagittal", "Anamnese", "Indikation",
-  "Kontraindikation", "Artefakt", "Pixel", "Voxel", "Echoarmut", "Echogenität", "Hyperintens", "Hypointens",
-  "Dosis-Längen-Produkt (DLP)", "Field of View (FOV)", "Standard-Abweichung (SD)", "Flüssigkeitsspiegel",
-  "Röntgen-Thorax", "Projektionsaufnahme", "Z.n.", "Zustand nach", "Adenokarzinom", "Cholangiokarzinom",
-  "Fibrose", "Hämangiom", "Atelektase", "Bronchiektasen", "Emphysem", "Sarkom", "Neurofibrom", "Lipom",
-  "Aortenaneurysma", "Klaustrophobie", "Sequester", "Vollbild", "Partialruptur", "Tendinose", "Impingement",
-  "zerviko", "torako", "thoraco", "lumbal", "zervikothorakal", "zervikolumbal", "zervikotorakolumbal",
-  "zervikal", "thorakal", "Skoliose", "Retrolisthese", "Retrolisthesis", "Foramenstenose", "Foramenstenosen",
-  "Foraminalstenose", "Foraminalstenosen", "Ganzaufnahme", "Ganzaufnahmen", "L4 gegenüber L5", "L5/S1",
-  "Flachbogig", "S-förmige", "Discopathiezeichen", "Diskopathiezeichen",
-  // ── Schulter/Sonographie-spezifisch ──
-  "Tenosynovitis", "Tenosynovitis der langen Bizepssehne", "Bizepssehne", "Bizepssehnenscheide",
-  "Tendinopathie", "Tendinose", "Tendinosis", "Tendinosis calcarea",
-  "Supraspinatussehne", "Supraspinatus", "Infraspinatussehne", "Infraspinatus",
-  "Subscapularis", "Subscapularissehne", "Teres minor", "Teres-minor-Sehne",
-  "Rotatorenmanschette", "Rotatorenmanschettenruptur", "Rotatorenmanschetten-Tendinose",
-  "Bursitis", "Bursitis subacromialis", "Subacromialbursa", "Subakromialbursa",
-  "begleitende Bursitis", "Begleitbursitis", "begleitbursitis",
-  "Kalkschulter", "Kalkspick", "Kalkablagerung", "Verkalkung der Supraspinatussehne",
-  "Impingement", "Impingementsyndrom", "subacromiales Impingement",
-  "Akromion", "Akromioklavikulargelenk", "AC-Gelenk", "Klavikula",
-  "Coracoid", "Processus coracoideus", "Labrum glenoidale", "Labrumläsion",
-  "SLAP-Läsion", "Bankart-Läsion", "Hill-Sachs-Läsion",
-  "Glenohumeralgelenk", "Glenoid", "Bizepssehnenanker",
-  "Lange Bizepssehne", "Lange-Bizeps-Sehne", "Bizepslongussehne",
-  "Schultergelenksonographie", "Schultersonographie", "Schulterultraschall",
-  "Röntgen und Sonographie des Schultergelenkes",
-  "Röntgen und der Sonographie",
-  "Kalkeinlagerung", "Kalkdepot", "Kalkherd",
-  "Sehnenkalkeinlagerung", "Tendinosis calcarea der Supraspinatussehne",
-  "Partialruptur der Supraspinatussehne", "Full-Thickness-Ruptur",
-  "Gelenkerguss", "Gelenkspalt", "Gelenkkapsel",
-  // ── Allgemein radiologische Begriffe (ergänzt) ──
-  "unauffällig", "Unauffällig", "unauffälliger Befund",
-  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
-  "regelrecht", "Regelrecht", "regelrechte Darstellung",
-  "ohne pathologischen Befund", "kein pathologischer Befund",
-  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
-  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
-  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
-  "Röntgen und Sonographie", "Röntgen und der Sonographie",
-  "des linken Schultergelenkes", "des rechten Schultergelenkes",
-  "des linken Kniegelenkes", "des rechten Kniegelenkes",
-  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
-  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
-  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
-  "des linken Handgelenkes", "des rechten Handgelenkes",
-  // ── Praxis-Jargon / Shortcut-Phrasen ──
-  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
-  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
-  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
-  "Metatarsale", "Phalanx", "Basis",
-  // ── Mamma/Mammasonographie-spezifisch ──
-  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
-  "Mammographie", "Mammografie", "Mammographie beidseits",
-  "Drüsenparenchym", "Brustdrüse", "Mamma",
-  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
-  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
-  "Morbus Mondor", "Mondor", "Mondor-Disease",
-  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
-  "kutane Venenthrombose", "Venenthrombose",
-  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
-  "Axillen", "Axillen beidseits frei",
-  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
-  "Architekturstörung", "Architekturstörungen",
-  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
-  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
-  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
-  "Inspektion und Palpation", "Palpationsbefund",
-  "Durchmesser", "mm Durchmesser",
-  // ── Nervus-ulnaris / Neurosonographie-spezifisch ──
-  "Nervus ulnaris", "N. ulnaris", "Sulcus nervi ulnaris", "Sulcus ulnaris",
-  "Loge de Guyon", "Guyon-Loge", "Ramus dorsalis", "Ramus superficialis", "Ramus profundus",
-  "Querschnittsfläche", "Querschnittsflaeche", "Quadratmillimeter", "mm²",
-  "M. anconeus", "Musculus anconeus", "M. anconeus epitrochlearis", "anconeus epitrochlearis",
-  "hypertropher M. anconeus", "hypertrophe Musculus anconeus",
-  "Epicondylus medialis humeri", "Epicondylus medialis", "mediales Septum intermusculare",
-  "Osborne Ligament", "Osborne-Ligament", "Osborne Faszie", "Retinaculum",
-  "M. flexor carpi ulnaris", "Flexor carpi ulnaris", "FCU",
-  "Ellbogenflexion", "Ellbogenstreckung", "Ellbogengelenk",
-  "Aggravation", "Kompression des Nervs", "Nervenkompression",
-  "faszikulär", "faszikulaer", "nervale Auftreibung", "Denervation",
-  "Hypothenarmuskulatur", "Lumbricalmuskulatur", "M. adductor pollicis", "Muskel-Faszikulationen",
-  "Echogenitätssteigerung", "Atrophie", "seitensymmetrisch",
-  "Schnappen des Nervs", "Loge de Guyon unauffällig",
-  "N. radialis", "Nervus radialis", "Ramus profundus", "Ramus superficialis",
-  "Frohse-Arkade", "Frohse Arkade", "Supinator", "M. supinator", "Musculus supinator",
-  "Wartenberg-Syndrom", "Wartenberg", "Arteria radialis recurrens",
-  "Sulcus n. radialis", "Strecksehnenfach", "4. Strecksehnenfaches",
-  "N. cutaneus brachii lateralis inferior", "N. cutaneus antebrachii posterior",
-  "M. brachioradialis", "Handgelenksextensoren",
-  // ── BWS/Skoliose/Morbus Scheuermann-spezifisch ──
-  "flachbogig", "flachbogige", "flachbogige Skoliose", "S-förmige Skoliose", "rechtskonvex", "linkskonvex",
-  "HWS", "HWK",
-  "Kyphose", "kyphotische Fehlhaltung", "Fehlhaltung",
-  "Kellgren", "Lawrence", "Kellgren & Lawrence", "Kellgren-Lawrence",
-  "Skoliose", "Cobb-Winkel", "Cobb Winkel", "lateraler Kopfwinkel", "Copfwinkel",
-  "Oberkante", "Unterkante", "TH4", "TH8", "Th4", "Th8", "TH12", "Lendenwirbel",
-  "Schmorl'sche Impressionen", "Schmorlsche Impressionen", "Schmorl-Impressionen",
-  "multisegmentale", "Schmalsche Impressionen", "Deckplattenimpressionen",
-  "Edgren-Vaino-Zeichen", "Edgren Vaino Zeichen", "Edgren-Vaino Zeichen",
-  "Morbus Scheuermann", "Scheuermann", "Scheuermann-Krankheit",
-  "Kyphose", "hyperkyphotisch", "harmonische Kyphose",
-  "Bogenwurzeln", "Dornfortsätze", "Querfortsätze", "Processus articulares",
-  "Articulationes costotransversales", "Articulationes costovertebrales",
-  "Spatien intervertebralia", "Canalis spinalis", "Platae terminales",
-  "BWS-Röntgen", "BWS in 2 Ebenen", "Brustwirbelsäule", "BWS",
-  // ── Allgemein radiologische Begriffe (ergänzt) ──
-  "unauffällig", "Unauffällig", "unauffälliger Befund",
-  "analog zur Gegenseite", "seitengleich", "seitensymmetrisch",
-  "regelrecht", "Regelrecht", "regelrechte Darstellung",
-  "ohne pathologischen Befund", "kein pathologischer Befund",
-  "Echostruktur", "Echotextur", "echonormal", "echoreich", "echoarm", "echogen",
-  "Parenchym", "Binnenstruktur", "Homogen", "homogen",
-  "Weichteile", "Weichteilmantel", "Weichteilschwellung",
-  "Röntgen und Sonographie", "Röntgen und der Sonographie",
-  "des linken Schultergelenkes", "des rechten Schultergelenkes",
-  "des linken Kniegelenkes", "des rechten Kniegelenkes",
-  "des linken Hüftgelenkes", "des rechten Hüftgelenkes",
-  "des linken Sprunggelenkes", "des rechten Sprunggelenkes",
-  "des linken Ellbogengelenkes", "des rechten Ellbogengelenkes",
-  "des linken Handgelenkes", "des rechten Handgelenkes",
-  // ── Praxis-Jargon / Shortcut-Phrasen ──
-  "Baustein Gelenkschema", "Baustein Gelenkschirma", "Baustein Gelenk Schema",
-  "Frakturnachweis", "kein Frakturnachweis", "Fraktur", "Fissur",
-  "Zehe", "Zehen", "zweite Zehe", "dritte Zehe", "Großzehe",
-  "Metatarsale", "Phalanx", "Basis",
-  // ── Mamma/Mammasonographie-spezifisch ──
-  "Mammasonographie", "Mammasonografie", "Mammasonographie beidseits",
-  "Mammographie", "Mammografie", "Mammographie beidseits",
-  "Drüsenparenchym", "Brustdrüse", "Mamma",
-  "BI-RADS", "BI-RADS 0", "BI-RADS 1", "BI-RADS 2", "BI-RADS 3", "BI-RADS 4", "BI-RADS 5", "BI-RADS 6",
-  "BIRADS", "BIRADS 0", "BIRADS 1", "BIRADS 2", "BIRADS 3", "BIRADS 4", "BIRADS 5",
-  "Morbus Mondor", "Mondor", "Mondor-Disease",
-  "Hautvene", "Hautvenen", "thrombosierte Hautvene", "thrombosierte Hautvenen",
-  "kutane Venenthrombose", "Venenthrombose",
-  "axillär", "axillärer Quadrant", "axillären Quadranten", "Axilla",
-  "Axillen", "Axillen beidseits frei",
-  "Subcutis", "Cutis", "Mikrokalk", "Mikrokalkansammlungen",
-  "Architekturstörung", "Architekturstörungen",
-  "Herdbefund", "Herdbefunde", "suspekter Herdbefund",
-  "Zyste", "Zysten", "solide Läsion", "solide Läsionen",
-  "Lymphknoten", "Lymphknoten axillär", "pathologisch vergrößerte Lymphknoten",
-  "Inspektion und Palpation", "Palpationsbefund",
-  "Durchmesser", "mm Durchmesser",
-];
+// (Phrasenlisten MEDICAL_PHRASES/CHIRP_PHRASES: src/stt.ts)
 
 
 
@@ -285,52 +107,6 @@ function deriveUntersuchungsTitel(raw: string, displayName: string): string {
 }
 
 // (v3.2: Bypass-Entscheidung = isPureNormalFinding in normalbypass.ts — gleiche Semantik wie die EXE, gemeinsame Fixtures)
-
-// ─────────────────────────────────────────────────────────────────────────
-// fetchWithRetry — robust fetch with timeout + automatic retry
-// Prevents silent failures when Google Cloud APIs are slow or flaky.
-// The web app must handle this autonomously — no Hermes to the rescue.
-// ─────────────────────────────────────────────────────────────────────────
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
-  timeoutMs: number = 120_000,
-  maxRetries: number = 3
-): Promise<Response> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      // Retry on 429 (rate limit), 500, 502, 503, 504
-      if (response.status === 429 || response.status >= 500) {
-        const waitSec = Math.min(2 ** attempt, 8);
-        if (attempt < maxRetries) {
-          console.warn(`[FETCH] HTTP ${response.status}, retry ${attempt}/${maxRetries} in ${waitSec}s...`);
-          await new Promise(r => setTimeout(r, waitSec * 1000));
-          continue;
-        }
-      }
-      return response;
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError' && attempt < maxRetries) {
-        const waitSec = Math.min(2 ** attempt, 8);
-        console.warn(`[FETCH] Timeout (${timeoutMs}ms), retry ${attempt}/${maxRetries} in ${waitSec}s...`);
-        await new Promise(r => setTimeout(r, waitSec * 1000));
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error(`fetchWithRetry: Max retries (${maxRetries}) exceeded for ${url}`);
-}
 
 // Helper to encode AudioBuffer to WAV
 function audioBufferToWav(buffer: AudioBuffer): Blob {
@@ -501,6 +277,30 @@ async function loadPraxisKey(pw: string): Promise<boolean> {
   return false;
 }
 
+// Schlüsselprüfung (1-Token-Aufruf). Umbau Schritt 8 (Gutachten P2-9): einmal nach dem Laden des Schlüssels statt
+// vor jeder Aufnahme — das Mikrofon öffnet sofort, die ersten Silben gehen nicht mehr verloren.
+async function testGeminiAPI(apiKey: string): Promise<void> {
+  if (!apiKey) {
+    throw new Error("Es ist kein Vertex AI API-Key konfiguriert.");
+  }
+  const response = await fetchWithRetry(VERTEX_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: "Hi" }] }],
+      generationConfig: { maxOutputTokens: 1 }
+    })
+  }, 30_000, 2);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const errMsg = data.error?.message || `HTTP Fehler ${response.status}`;
+    throw new Error(`Gemini API Fehler: ${errMsg}`);
+  }
+}
+
+// Kontext eines Gemini-Aufrufs: Abbruch-Signal des Laufs + Statuszeile (nur solange der Lauf aktuell ist)
+type GenKontext = { signal?: AbortSignal; status: (text: string) => void };
+
 // v3.0: Befund formatiert anzeigen/kopieren. Bewusst minimal (nur ##, Listen, Absätze, **fett**), kein HTML aus dem Modell.
 const escapeHtml = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 function reportToHtml(md: string): string {
@@ -536,6 +336,19 @@ export default function App() {
   const [vertexApiKey, setVertexApiKey] = useState<string>('');
   const [sttKeyJson, setSttKeyJson] = useState<any>(null);
   const keysReady = !!vertexApiKey && !!(sttKeyJson && sttKeyJson.private_key);
+  // Umbau Schritt 8 (Gutachten P2-9): Ergebnis der einmaligen Schlüsselprüfung je geladenem Gemini-Schlüssel
+  const [keyPruefung, setKeyPruefung] = useState<{ key: string; stand: 'ok' | 'fehler'; meldung?: string }>({ key: '', stand: 'ok' });
+  useEffect(() => {
+    if (!vertexApiKey) return;
+    let aktiv = true;
+    testGeminiAPI(vertexApiKey)
+      .then(() => { if (aktiv) setKeyPruefung({ key: vertexApiKey, stand: 'ok' }); })
+      .catch((e: Error) => {
+        console.warn('[KEY] Schlüsselprüfung fehlgeschlagen:', e.message);
+        if (aktiv) setKeyPruefung({ key: vertexApiKey, stand: 'fehler', meldung: e.message });
+      });
+    return () => { aktiv = false; };
+  }, [vertexApiKey]);
   const keysReadyRef = useRef(keysReady);
   keysReadyRef.current = keysReady;
   const [systemPrompt, setSystemPrompt] = useState<string>('');
@@ -1078,297 +891,7 @@ export default function App() {
 
   // Run full-text search simulation in the local report list
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // GOOGLE CLOUD STT — Service-Account (rakscribe-stt@) → JWT → Bearer Token
-  // Primary STT (beste medizinische Erkennung, $10 GCP-Credit). Whisper = Fallback.
-  // ─────────────────────────────────────────────────────────────────────────
-  const sttTokensRef = useRef<{ [scope: string]: { token: string; expiry: number } }>({});
-
-  const toBase64Url = (buffer: ArrayBuffer): string =>
-    btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-  const signJwt = async (payload: object, privateKeyPem: string): Promise<string> => {
-    const header = { alg: 'RS256', typ: 'JWT' };
-    const pemBody = privateKeyPem
-      .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n|\r/g, '');
-    const derBinary = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
-    const cryptoKey = await crypto.subtle.importKey(
-      'pkcs8', derBinary.buffer as ArrayBuffer,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false, ['sign']
-    );
-    const enc = new TextEncoder();
-    const headerB64  = toBase64Url(enc.encode(JSON.stringify(header)).buffer as ArrayBuffer);
-    const payloadB64 = toBase64Url(enc.encode(JSON.stringify(payload)).buffer as ArrayBuffer);
-    const signingInput = `${headerB64}.${payloadB64}`;
-    const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, enc.encode(signingInput));
-    return `${signingInput}.${toBase64Url(sig)}`;
-  };
-
-  // Get a valid Bearer token for the STT service account (cached, auto-refresh)
-  const getGoogleBearerToken = async (keyJson: any, scope: string): Promise<string> => {
-    const now = Math.floor(Date.now() / 1000);
-    const cached = sttTokensRef.current[scope];
-    if (cached && cached.expiry > now + 60) {
-      return cached.token;
-    }
-    const jwt = await signJwt({
-      iss: keyJson.client_email,
-      scope: scope,
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600,
-    }, keyJson.private_key);
-    const resp = await fetchWithRetry('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
-    }, 30_000, 3);
-    const data = await resp.json();
-    if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
-    sttTokensRef.current[scope] = {
-      token: data.access_token,
-      expiry: now + (data.expires_in || 3600)
-    };
-    return data.access_token;
-  };
-
-  const buildSttAuth = async (): Promise<{ url: string; headers: Record<string, string> }> => {
-    if (!sttKeyJson) {
-      throw new Error('STT-Schluessel nicht geladen (stt-key.b64 / stt-key.txt fehlt).');
-    }
-    const token = await getGoogleBearerToken(sttKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-    return {
-      url: 'https://speech.googleapis.com/v1/speech:recognize',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-    };
-  };
-
-  const blobToBase64 = (wavBlob: Blob): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-      reader.onerror = () => reject(new Error('Fehler beim Lesen der Audiodatei.'));
-      reader.readAsDataURL(wavBlob);
-    });
-
-  // Chunk-Transkription (7s-Chunks, latest_long)
-  const transcribeWithGoogle = async (wavBlob: Blob): Promise<string> => {
-    const { url, headers } = await buildSttAuth();
-    setStatusText('Transkribiere (Google Cloud STT)...');
-    const base64Data = await blobToBase64(wavBlob);
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        config: {
-          encoding: 'LINEAR16', sampleRateHertz: 16000, languageCode: 'de-DE',
-          enableAutomaticPunctuation: true, model: 'latest_long', useEnhanced: true,  // WER-Test 03.09.: short verliert Material
-          speechContexts: [{ phrases: MEDICAL_PHRASES, boost: 15.0 }],
-        },
-        audio: { content: base64Data },
-      }),
-    }, 120_000, 3);
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || 'Google STT Fehler.');
-    const results = data.results || [];
-    return results.map((r: any) => r.alternatives[0].transcript).join(' ');
-  };
-
-  // FULL-AUDIO Transkription (v2.9.10): chirp_3 via STT v2 (Location eu).
-  // WER-Test 04.09.: chirp_3 = 2,4% (auch bei Echo/Daempfung) vs latest_long = 16,7%.
-  // Kein Phrasen-Boost in chirp_3, dafuer Dragon-Niveau. Segmentierung >60s:
-  // 50s-Segmente + 4s Rueckhoeren, Ueberlappung per Wortvergleich gestitched.
-  const chirpTokenCacheRef = useRef<{ token: string; exp: number } | null>(null);
-  const getSttAccessToken = async (): Promise<string> => {
-    const now = Date.now() / 1000;
-    if (chirpTokenCacheRef.current && chirpTokenCacheRef.current.exp > now + 120) {
-      return chirpTokenCacheRef.current.token;
-    }
-    if (!sttKeyJson) throw new Error('STT-Schluessel nicht geladen.');
-    const token = await getGoogleBearerToken(sttKeyJson, 'https://www.googleapis.com/auth/cloud-platform');
-    chirpTokenCacheRef.current = { token, exp: now + 3000 };
-    return token;
-  };
-
-  // v2.10.15: kuratiertes chirp_3-PhraseSet (Speech Adaptation). A/B echte + synthetische Diktate:
-// Termini 41/47 → 45/47 (flachbogig, Cobb-Winkel, Mammasonographie, Discopathiezeichen, Fibroostosen,
-// Rhizarthrose, Arthro-Broström). BEWUSST KURZ — die 692er-Liste verschlechterte chirp_3 (25/29 statt 26/29).
-const CHIRP_PHRASES: string[] = [
-  "flachbogig",
-  "flachbogige Skoliose",
-  "rechtskonvex",
-  "linkskonvex",
-  "Cobb-Winkel",
-  "Th1",
-  "Th2",
-  "Th3",
-  "Th4",
-  "Th5",
-  "Th6",
-  "Th7",
-  "Th8",
-  "Th9",
-  "Th10",
-  "Th11",
-  "Th12",
-  "Schmorlsche Impressionen",
-  "Edgren-Vaino-Zeichen",
-  "Morbus Scheuermann",
-  "Osteochondrose",
-  "Spondylosis deformans",
-  "Spondylarthrose",
-  "Unkovertebralgelenksarthrose",
-  "Facettengelenksarthrose",
-  "Discopathiezeichen",
-  "Diskopathie",
-  "Antelisthese",
-  "Retrolisthese",
-  "Neoarthrosis interspinosa",
-  "kyphotische Fehlhaltung",
-  "Streckhaltung",
-  "Fibroostosen",
-  "Kellgren und Lawrence",
-  "Gonarthrose",
-  "Coxarthrose",
-  "Omarthrose",
-  "Rhizarthrose",
-  "Retropatellararthrose",
-  "Femorotibialkompartiment",
-  "Scaphoidtaille",
-  "Kahnbeintaille",
-  "Collum chirurgicum",
-  "Radiusköpfchen",
-  "Humeruskopfhochstand",
-  "Garden",
-  "Supraspinatussehne",
-  "Infraspinatussehne",
-  "Subscapularissehne",
-  "lange Bizepssehne",
-  "Tenosynovitis",
-  "Tendinopathie",
-  "Tendinosis calcarea",
-  "Begleitbursitis",
-  "Enthesiopathie",
-  "Plantarfaszie",
-  "Arthro-Broström",
-  "Mammasonographie",
-  "BI-RADS",
-  "Morbus Mondor",
-  "Sulcus nervi ulnaris",
-  "Nervus ulnaris",
-  "Musculus anconeus epitrochlearis",
-  "Hoffmann-Tinel-Zeichen",
-  "Kiloh-Nevin",
-  "Hypothenarmuskulatur",
-  "faszikulär",
-  "Thorax p.a.",
-];
-
-const chirp3Recognize = async (token: string, wavB64: string): Promise<string> => {
-    const url = 'https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize';
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({
-        config: {
-          languageCodes: ['de-DE'],
-          model: 'chirp_3',
-          autoDecodingConfig: {},
-          features: { enableAutomaticPunctuation: true },
-          adaptation: { phraseSets: [{ inlinePhraseSet: { phrases: CHIRP_PHRASES.map(value => ({ value, boost: 10 })) } }] },
-        },
-        content: wavB64,
-      }),
-    }, 120_000, 3);
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || 'chirp_3 Fehler.');
-    const results = data.results || [];
-    return results.map((r: any) => r.alternatives[0].transcript).join(' ');
-  };
-
-  const stitchOverlaps = (a: string, b: string, window = 14): string => {
-    const aw: string[] = a.split(' ');
-    const bw: string[] = b.split(' ');
-    let best = 0;
-    for (let L = Math.min(window, aw.length, bw.length); L > 0; L--) {
-      const tail = aw.slice(-L).map(w => w.toLowerCase().replace(/[.,:;]/g, ''));
-      const head = bw.slice(0, L).map(w => w.toLowerCase().replace(/[.,:;]/g, ''));
-      if (tail.filter((w, i) => w === head[i]).length >= Math.floor(L * 0.8)) { best = L; break; }
-    }
-    return best ? a + ' ' + bw.slice(best).join(' ') : a + ' ' + b;
-  };
-
-  const transcribeFullAudioWithGoogle = async (wavBlob: Blob): Promise<string> => {
-    const token = await getSttAccessToken();
-    const base64Data = await blobToBase64(wavBlob);
-
-    // Duration: 16000 samples/s * 2 bytes/sample = 32000 bytes/s (base64 ~4/3)
-    const binarySize = Math.floor(base64Data.length * 3 / 4);
-    const estimatedDurationSec = binarySize / 32000;
-    console.log(`[FULL-AUDIO] ${binarySize} bytes, ~${estimatedDurationSec.toFixed(1)}s`);
-
-    // <=59s: EIN chirp_3-Request
-    if (estimatedDurationSec <= 59) {
-      setStatusText('Volltranskription läuft (chirp_3, komplettes Diktat)...');
-      return await chirp3Recognize(token, base64Data);
-    }
-
-    // >60s: Segmentierung 50s + 4s Rueckhoeren, dann Overlap-Stitch
-    console.log('[FULL-AUDIO] chirp_3 Segmentierung (>60s)');
-    setStatusText('Volltranskription läuft (langes Diktat, chirp_3, bitte warten)...');
-    // WAV decodieren → Float32 → s16le-PCM
-    const arrayBuffer = await wavBlob.arrayBuffer();
-    const ctxTemp = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-    const audioBuf = await ctxTemp.decodeAudioData(arrayBuffer);
-    ctxTemp.close();
-    const f32 = audioBuf.getChannelData(0);
-    const s16 = new Int16Array(f32.length);
-    for (let i = 0; i < f32.length; i++) {
-      const s = Math.max(-1, Math.min(1, f32[i]));
-      s16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-    }
-    const SR = 16000, SEG = 50 * SR, OV = 4 * SR;
-    const texts: string[] = [];
-    let start = 0;
-    while (start < s16.length) {
-      const end = Math.min(start + SEG, s16.length);
-      const seg = s16.slice(start, end);
-      // Int16 → WAV-Container
-      const wav = new ArrayBuffer(44 + seg.length * 2);
-      const view = new DataView(wav);
-      const ws = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-      ws(0, 'RIFF'); view.setUint32(4, 36 + seg.length * 2, true); ws(8, 'WAVE');
-      ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-      view.setUint16(22, 1, true); view.setUint32(24, SR, true);
-      view.setUint32(28, SR * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
-      ws(36, 'data'); view.setUint32(40, seg.length * 2, true);
-      new Int16Array(wav, 44).set(seg);
-      const b64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = () => reject(new Error('WAV-Encoding fehlgeschlagen.'));
-        reader.readAsDataURL(new Blob([wav], { type: 'audio/wav' }));
-      });
-      texts.push(await chirp3Recognize(token, b64));
-      if (end >= s16.length) break;
-      start = end - OV;
-    }
-    let full = texts[0];
-    for (let i = 1; i < texts.length; i++) full = stitchOverlaps(full, texts[i]);
-    return full;
-  };
-
-  // Wrapper: Google primary, Whisper fallback (lokaler Server auf Praxis-PC)
-  const transcribeAudio = async (wavBlob: Blob, isFull: boolean): Promise<string> => {
-    try {
-      return isFull ? await transcribeFullAudioWithGoogle(wavBlob) : await transcribeWithGoogle(wavBlob);
-    } catch (sttErr: any) {
-      console.warn('[STT] Google fehlgeschlagen, Whisper-Fallback:', sttErr.message);
-      return await transcribeWithWhisper(wavBlob);
-    }
-  };
+  // (Google STT / chirp_3 / Whisper: src/stt.ts — Umbau Schritt 8)
 
   // Beliebige Audiodatei (OGG/MP3/WAV) → mono 16kHz WAV (für Google STT)
   const decodeFileToWavBlob = async (file: File | Blob): Promise<Blob> => {
@@ -1402,29 +925,10 @@ const chirp3Recognize = async (token: string, wavB64: string): Promise<string> =
     return wavBlob;
   };
 
-  const transcribeWithWhisper = async (audioBlob: Blob): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'audio.ogg');
-
-    console.log('[WHISPER] Sende Audio an lokalen Whisper-Server...');
-    const response = await fetchWithRetry('http://localhost:8765/whisper', {
-      method: 'POST',
-      body: formData,
-    }, 120_000, 3);
-
-    const data = await response.json();
-    if (data.error) {
-      throw new Error('Whisper STT Fehler: ' + data.error);
-    }
-    const text = (data.text || '').trim();
-    console.log(`[WHISPER] Fertig in ${data.elapsed_seconds}s: "${text.substring(0, 100)}..."`);
-    return text;
-  };
-
   // ─────────────────────────────────────────────────────────────────────────
 
   // Correct STT errors using Gemini Flash (standalone, no external dependency)
-  const correctTranscriptionWithGemini = async (rawTextIn: string): Promise<string> => {
+  const correctTranscriptionWithGemini = async (rawTextIn: string, ctx: GenKontext): Promise<string> => {
     // v3.1: deterministische Fehlhör-Korrektur zuerst (misheard_words.json, mode 'auto')
     const rawText = applyMisheard(rawTextIn, MISHEARD_COMPILED);
     if (rawText !== rawTextIn) console.log(`[MISHEARD] auto-korrigiert: "${rawTextIn.substring(0, 120)}" → "${rawText.substring(0, 120)}"`);
@@ -1471,7 +975,8 @@ Korrigiert:`;
             parts: [{ text: correctionPrompt }]
           }],
           generationConfig: { temperature: 0.0, thinkingConfig: { thinkingBudget: 0 } }
-        })
+        }),
+        signal: ctx.signal,
       }, 120_000, 3);
 
       const data = await response.json();
@@ -1490,6 +995,7 @@ Korrigiert:`;
       }
       return corrected;
     } catch (e: any) {
+      if (istAbbruch(e)) throw e;  // Abbruch (Neu/F9) nicht als „Korrektur fehlgeschlagen“ weiterlaufen lassen
       console.warn('[CORRECT] Correction failed:', e.message);
       return rawText;
     }
@@ -1499,7 +1005,7 @@ Korrigiert:`;
   const stripCodeFences = (text: string): string =>
     text.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
 
-  const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string, normalErgebnis = 'Unauffälliger Befund.'): Promise<string> => {
+  const callGeminiLLM = async (rawText: string, templateBody: string, regionName: string, examples: string, normalErgebnis: string, ctx: GenKontext): Promise<string> => {
     if (!vertexApiKey) {
       throw new Error("Es ist kein Vertex AI API-Key konfiguriert. Bitte in den Einstellungen eintragen.");
     }
@@ -1507,7 +1013,7 @@ Korrigiert:`;
     const url = VERTEX_ENDPOINT;
     const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': vertexApiKey };
 
-    setStatusText("Strukturiere mit Gemini...");
+    ctx.status("Strukturiere mit Gemini...");
 
     // v2.10.13 (K3-Review Befund 2): Der LLM-Pfad bekommt die KANONISCHE Bezeichnung
     // (display_name, inkl. "(Allgemein)"), damit die "(Allgemein)"-Ausnahme im
@@ -1554,6 +1060,7 @@ Korrigiert:`;
       method: 'POST',
       headers: authHeaders,
       body: lastGenBody,
+      signal: ctx.signal,
     }, 120_000, 3);
 
     const data = await response.json();
@@ -1565,7 +1072,7 @@ Korrigiert:`;
     // v2.11.1: unvollständige Antwort (kein ## Ergebnis / abgebrochen) → EINMAL neu anfordern, sonst Fehler statt Halb-Befund
     if (!isCompleteReport(outputText) || !geminiFinishedOk(data)) {
       console.warn('[GEN] Befund unvollständig — zweiter Versuch');
-      const r2 = await fetchWithRetry(url, { method: 'POST', headers: authHeaders, body: lastGenBody }, 120_000, 2);
+      const r2 = await fetchWithRetry(url, { method: 'POST', headers: authHeaders, body: lastGenBody, signal: ctx.signal }, 120_000, 2);
       const d2 = await r2.json();
       const t2 = d2.error ? '' : stripCodeFences(joinGeminiText(d2));
       if (!isCompleteReport(t2)) {
@@ -1578,7 +1085,7 @@ Korrigiert:`;
 
   // ─────────────────────────────────────────────────────────────────────────
   // VALIDATION: 2nd Gemini Call — prüft Befund gegen Diktat auf Vollständigkeit & Widerspruchsfreiheit
-  const validateReportConsistency = async (rawDictation: string, generatedReport: string): Promise<string> => {
+  const validateReportConsistency = async (rawDictation: string, generatedReport: string, ctx: GenKontext): Promise<string> => {
     if (!vertexApiKey) {
       return generatedReport; // No LLM available, skip validation
     }
@@ -1632,7 +1139,8 @@ Korrigierter Befund:`;
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: validationPrompt }] }],
           generationConfig: { temperature: 0.0, thinkingConfig: { thinkingBudget: 0 } }
-        })
+        }),
+        signal: ctx.signal,
       }, 120_000, 3);
 
       const data = await response.json();
@@ -1683,6 +1191,7 @@ Korrigierter Befund:`;
       }
       return restored;
     } catch (e: any) {
+      if (istAbbruch(e)) throw e;
       console.warn('[VALIDATE] Validation failed:', e.message);
       return generatedReport;
     }
@@ -1691,12 +1200,12 @@ Korrigierter Befund:`;
   // v3.2: Befund aus dem (korrigierten) Diktat — dieselbe Kette wie die EXE (RaKScribe.py _befund_fuer_segment):
   // Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener Befund mit eigenem
   // Template und eigenem Ergebnis (parallel), danach Ergebnis deterministisch nummeriert.
-  const befundFuerSegment = async (seg: string): Promise<string> => {
+  const befundFuerSegment = async (seg: string, ctx: GenKontext): Promise<string> => {
     const detectedKey = detectTemplate(seg);
     const activeTemplate = templates[detectedKey] || templates['allgemein'] || ALLGEMEIN_FALLBACK;
     if (detectedKey === 'allgemein') {
       console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
-      setStatusText('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
+      ctx.status('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');
     }
 
     // RAG-Bypass-Shortcut für reine Normalbefunde (1:1 wie EXE)
@@ -1713,49 +1222,40 @@ Korrigierter Befund:`;
     if (!vertexApiKey) {
       throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
     }
-    const structuredText = await callGeminiLLM(seg, activeTemplate.body, activeTemplate.display_name, '', activeTemplate.ergebnis || 'Unauffälliger Befund.');
+    const structuredText = await callGeminiLLM(seg, activeTemplate.body, activeTemplate.display_name, '', activeTemplate.ergebnis || 'Unauffälliger Befund.', ctx);
     // Step 3: Konsistenz-Validierung gegen das Diktat
-    setStatusText('Validiere Befund-Konsistenz...');
-    const validatedReport = await validateReportConsistency(seg, structuredText);
+    ctx.status('Validiere Befund-Konsistenz...');
+    const validatedReport = await validateReportConsistency(seg, structuredText, ctx);
     return nachbearbeiten(validatedReport);
   };
 
-  const befundAusDiktat = async (text: string): Promise<string> => {
+  const befundAusDiktat = async (text: string, ctx: GenKontext): Promise<string> => {
     const segmente = splitRegionen(text);
     if (segmente.length > 1) {
       console.log(`[MULTI] ${segmente.length} Regionen: ${segmente.map(x => x.slice(0, 40)).join(' | ')}`);
-      setStatusText(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
+      ctx.status(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
     }
-    const teile = await Promise.all(segmente.map(befundFuerSegment));
+    const teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));
     return befundeZusammenfuegen(teile);
   };
 
-  const testGeminiAPI = async (): Promise<void> => {
-    if (!vertexApiKey) {
-      throw new Error("Es ist kein Vertex AI API-Key konfiguriert.");
-    }
+  // Umbau Schritt 8 (Gutachten P2-7): jede Aufnahme / jeder Upload = ein Lauf mit AbortController.
+  // „Neu“/F9 bricht ab; ein abgebrochener oder überholter Lauf schreibt nichts mehr und kopiert nichts.
+  const laeufeRef = useRef(new LaufVerwaltung());
+  const aufnahmeLaufRef = useRef<Lauf | null>(null);
+  const sttKontext = (lauf: Lauf): SttKontext => ({ sttKey: sttKeyJson, signal: lauf.signal, status: lauf.nurAktuell(setStatusText) });
+  const genKontext = (lauf: Lauf, signal: AbortSignal): GenKontext => ({ signal, status: lauf.nurAktuell(setStatusText) });
+  const befundUi = (): BefundUi => ({
+    transkript: setTranscript,
+    befund: setStructuredReport,
+    status: setStatusText,
+    fertig: () => { setStatus('ready'); setStatusText('Bereit'); },
+    fehler: (meldung: string) => { setStatus('ready'); setStatusText('Fehler bei der Verarbeitung.'); alert(meldung); },
+    kopieren: copyTextToClipboard,
+  });
 
-    const url = VERTEX_ENDPOINT;
-    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': vertexApiKey };
-
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: "Hi" }] }],
-        generationConfig: { maxOutputTokens: 1 }
-      })
-    }, 30_000, 2);
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      const errMsg = data.error?.message || `HTTP Fehler ${response.status}`;
-      throw new Error(`Gemini API Fehler: ${errMsg}`);
-    }
-  };
-
-  // Helper function to process the next chunk of recorded audio
-  const processNextAudioChunk = async () => {
+  // Helper function to process the next chunk of recorded audio (Live-Anzeige)
+  const processNextAudioChunk = (lauf: Lauf) => {
     const currentChunks = audioChunksRef.current;
     const lastProcessedIndex = lastProcessedIndexRef.current;
     
@@ -1781,15 +1281,17 @@ Korrigierter Befund:`;
       activeRequestsCountRef.current++;
       setIsTranscribingChunk(true);
       
-      const p = transcribeAudio(wavBlob, false).then(text => {
+      const p = transcribeAudio(wavBlob, false, sttKontext(lauf)).then(text => {
+        if (!lauf.aktuell()) return '';
         chunkTranscriptsRef.current[chunkIdx] = text.trim();
         const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
         setTranscript(fullText);
         return text.trim();
       }).catch(err => {
-        console.error("Fehler bei Chunk-Transkription:", err);
+        if (!istAbbruch(err)) console.error("Fehler bei Chunk-Transkription:", err);
         return '';
       }).finally(() => {
+        if (!lauf.aktuell()) return;
         activeRequestsCountRef.current--;
         if (activeRequestsCountRef.current <= 0) {
           setIsTranscribingChunk(false);
@@ -1797,6 +1299,22 @@ Korrigierter Befund:`;
       });
       
       pendingPromisesRef.current.push(p);
+    }
+  };
+
+  // Mikrofon, Audio-Graph und Stream schließen (Stopp und Neu/F9)
+  const audioStoppen = () => {
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
     }
   };
 
@@ -1810,19 +1328,25 @@ Korrigierter Befund:`;
         return;
       }
 
-      setStatusText("Verifiziere API-Key...");
-      setStatus('processing');
-
-      // Validate Vertex AI API key
-      try {
-        await testGeminiAPI();
-      } catch (verifyErr: any) {
-        setStatus('ready');
-        setStatusText('API-Key ungültig');
-        alert("Fehler bei der Key-Verifikation:\n\n" + verifyErr.message + "\n\nBitte überprüfen Sie Ihren API-Key in den Einstellungen.");
-        return;
+      // Umbau Schritt 8 (Gutachten P2-9): Schlüssel wird einmal nach dem Laden geprüft. Nur wenn diese Prüfung
+      // fehlschlug, vor dem Start erneut prüfen (Netzwackler beim Laden sperrt nicht dauerhaft).
+      if (keyPruefung.key === vertexApiKey && keyPruefung.stand === 'fehler') {
+        setStatusText("Verifiziere API-Key...");
+        setStatus('processing');
+        try {
+          await testGeminiAPI(vertexApiKey);
+          setKeyPruefung({ key: vertexApiKey, stand: 'ok' });
+        } catch (verifyErr: any) {
+          setKeyPruefung({ key: vertexApiKey, stand: 'fehler', meldung: verifyErr.message });
+          setStatus('ready');
+          setStatusText('API-Key ungültig');
+          alert("Fehler bei der Key-Verifikation:\n\n" + verifyErr.message + "\n\nBitte überprüfen Sie Ihren API-Key in den Einstellungen.");
+          return;
+        }
       }
 
+      const lauf = laeufeRef.current.neu();
+      aufnahmeLaufRef.current = lauf;
       setTranscript('');
       setStructuredReport('');
       setStatus('recording');
@@ -1874,9 +1398,7 @@ Korrigierter Befund:`;
       if (chunkIntervalRef.current) {
         clearInterval(chunkIntervalRef.current);
       }
-      chunkIntervalRef.current = setInterval(async () => {
-        await processNextAudioChunk();
-      }, 6000);
+      chunkIntervalRef.current = setInterval(() => processNextAudioChunk(lauf), 6000);
 
     } catch (err: any) {
       console.error(err);
@@ -1889,6 +1411,7 @@ Korrigierter Befund:`;
   // Stop Audio Recording & Process Result
   const stopRecording = async () => {
     if (status !== 'recording') return;
+    const lauf = aufnahmeLaufRef.current ?? laeufeRef.current.neu();
 
     setStatus('processing');
     setStatusText('Verarbeite Audio...');
@@ -1900,137 +1423,62 @@ Korrigierter Befund:`;
     }
 
     // Process any remaining audio since the last interval tick BEFORE closing context
-    const currentChunks = audioChunksRef.current;
-    const lastProcessedIndex = lastProcessedIndexRef.current;
-    
-    if (currentChunks.length > lastProcessedIndex) {
-      const segmentChunks = currentChunks.slice(lastProcessedIndex);
-      lastProcessedIndexRef.current = currentChunks.length;
-      
-      const merged = mergeFloat32Arrays(segmentChunks);
-      const currentSampleRate = actualSampleRateRef.current;
-      const resampled = downsampleBuffer(merged, currentSampleRate, 16000);
-      
-      if (resampled.length > 0) {
-        const ctxTemp = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-        const audioBuf = ctxTemp.createBuffer(1, resampled.length, 16000);
-        audioBuf.copyToChannel(resampled as any, 0);
-        const wavBlob = audioBufferToWav(audioBuf);
-        ctxTemp.close();
-        
-        const chunkIdx = chunkTranscriptsRef.current.length;
-        chunkTranscriptsRef.current.push(''); // placeholder
-        
-        activeRequestsCountRef.current++;
-        setIsTranscribingChunk(true);
-        
-        const p = transcribeAudio(wavBlob, false).then(text => {
-          chunkTranscriptsRef.current[chunkIdx] = text.trim();
-          const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
-          setTranscript(fullText);
-          return text.trim();
-        }).catch(err => {
-          console.error("Fehler bei verbleibender Chunk-Transkription:", err);
-          return '';
-        }).finally(() => {
-          activeRequestsCountRef.current--;
-          if (activeRequestsCountRef.current <= 0) {
-            setIsTranscribingChunk(false);
-          }
-        });
-        
-        pendingPromisesRef.current.push(p);
-      }
-    }
+    processNextAudioChunk(lauf);
+    audioStoppen();
 
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      mediaStreamRef.current = null;
-    }
-
-    try {
-      // Wait for any active/pending chunk requests to finish
-      if (pendingPromisesRef.current.length > 0) {
-        setStatusText('Warte auf ausstehende Chunk-Transkriptionen...');
-        await Promise.all(pendingPromisesRef.current);
-      }
-
-      // ─────────────────────────────────────────────────────────────────────
-      // FULL-AUDIO RE-TRANSCRIPTION (the key fix for medical term recognition)
-      // Re-transcribe the ENTIRE recording as one piece so Whisper has full
-      // context across the whole dictation.
-      // ─────────────────────────────────────────────────────────────────────
-      let finalRawText = '';
-
-      try {
-        // Merge ALL recorded audio chunks into one continuous buffer
-        const allChunks = audioChunksRef.current;
-        if (allChunks.length > 0) {
-          const mergedAll = mergeFloat32Arrays(allChunks);
-          const currentSampleRate = actualSampleRateRef.current;
-          const resampledAll = downsampleBuffer(mergedAll, currentSampleRate, 16000);
-
-          if (resampledAll.length > 0) {
-            const ctxFull = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-            const audioBufFull = ctxFull.createBuffer(1, resampledAll.length, 16000);
-            audioBufFull.copyToChannel(resampledAll as any, 0);
-            const fullWavBlob = audioBufferToWav(audioBufFull);
-            ctxFull.close();
-
-            console.log(`[FULL-AUDIO] Re-transcribing complete recording (${resampledAll.length} samples, ${(resampledAll.length / 16000).toFixed(1)}s)`);
-
-            // Run full-audio transcription via Whisper
-            setStatusText('Volltranskription läuft (komplettes Diktat)...');
-            const fullTranscript = await transcribeAudio(fullWavBlob, true);
-            finalRawText = fullTranscript.trim();
-          }
+    const chunkText = () => chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
+    await befundLauf(lauf, {
+      transkribieren: async () => {
+        const st = lauf.nurAktuell(setStatusText);
+        // Wait for any active/pending chunk requests to finish
+        if (pendingPromisesRef.current.length > 0) {
+          st('Warte auf ausstehende Chunk-Transkriptionen...');
+          await Promise.all(pendingPromisesRef.current);
         }
-      } catch (fullAudioErr: any) {
-        console.warn('[FULL-AUDIO] Re-transcription failed, falling back to chunk transcripts:', fullAudioErr.message);
-        // Fallback: use concatenated chunk transcripts
-        finalRawText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
-      }
 
-      // If full-audio transcription returned empty, also fall back
-      if (!finalRawText.trim()) {
-        console.warn('[FULL-AUDIO] Empty result, falling back to chunk transcripts.');
-        finalRawText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
-      }
+        // FULL-AUDIO RE-TRANSCRIPTION: das komplette Diktat noch einmal an chirp_3 (voller Kontext)
+        let finalRawText = '';
+        let sttFehler: unknown = null;
+        try {
+          // Merge ALL recorded audio chunks into one continuous buffer
+          const allChunks = audioChunksRef.current;
+          if (allChunks.length > 0) {
+            const mergedAll = mergeFloat32Arrays(allChunks);
+            const currentSampleRate = actualSampleRateRef.current;
+            const resampledAll = downsampleBuffer(mergedAll, currentSampleRate, 16000);
 
-      setTranscript(finalRawText);
+            if (resampledAll.length > 0) {
+              const ctxFull = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+              const audioBufFull = ctxFull.createBuffer(1, resampledAll.length, 16000);
+              audioBufFull.copyToChannel(resampledAll as any, 0);
+              const fullWavBlob = audioBufferToWav(audioBufFull);
+              ctxFull.close();
 
-      if (!finalRawText.trim()) {
-        throw new Error("Es wurde kein gesprochener Text erkannt.");
-      }
+              console.log(`[FULL-AUDIO] Re-transcribing complete recording (${resampledAll.length} samples, ${(resampledAll.length / 16000).toFixed(1)}s)`);
+              st('Volltranskription läuft (komplettes Diktat)...');
+              finalRawText = (await transcribeAudio(fullWavBlob, true, sttKontext(lauf))).trim();
+            }
+          }
+        } catch (fullAudioErr: any) {
+          if (istAbbruch(fullAudioErr)) throw fullAudioErr;
+          console.warn('[FULL-AUDIO] Re-transcription failed, falling back to chunk transcripts:', fullAudioErr.message);
+          sttFehler = fullAudioErr;
+          finalRawText = chunkText();
+        }
 
-      // LLM-Korrektur der STT-Ergebnisse
-      setStatusText('Korrigiere medizinische Fachbegriffe (Gemini Flash)...');
-      const correctedText = await correctTranscriptionWithGemini(finalRawText);
-      finalRawText = correctedText;
-      setTranscript(finalRawText);
-
+        // If full-audio transcription returned empty, also fall back
+        if (!finalRawText.trim()) {
+          console.warn('[FULL-AUDIO] Empty result, falling back to chunk transcripts.');
+          finalRawText = chunkText();
+        }
+        // Gutachten P2-10: ohne verwertbaren Text die echte Google-Meldung zeigen statt „kein Text erkannt“
+        if (!finalRawText.trim() && sttFehler) throw sttFehler;
+        return finalRawText;
+      },
+      korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
-      const report = await befundAusDiktat(finalRawText);
-      setStructuredReport(report);
-      setStatus('ready');
-      setStatusText('Bereit');
-
-      await copyTextToClipboard(report);
-
-    } catch (err: any) {
-      console.error(err);
-      setStatus('ready');
-      setStatusText('Fehler bei der Verarbeitung.');
-      alert("Fehler bei der Transkription oder KI-Strukturierung: " + err.message);
-    }
+      befundErstellen: (text, signal) => befundAusDiktat(text, genKontext(lauf, signal)),
+    }, befundUi(), { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
   };
 
   // Manual Copy Result
@@ -2041,58 +1489,43 @@ Korrigierter Befund:`;
 
   // Audio File Upload Handler — feeds uploaded audio through the same STT + Gemini pipeline
   const handleAudioUpload = async (file: File) => {
+    // Umbau Schritt 8 (Gutachten P2-7): keine zweite Kette parallel zu Aufnahme oder Verarbeitung
+    if (statusRef.current === 'processing' || statusRef.current === 'recording') {
+      setStatusText(statusRef.current === 'recording'
+        ? 'Bitte zuerst die Aufnahme beenden — Audio-Datei nicht übernommen.'
+        : 'Bitte warten — es wird gerade ein Befund erstellt. Audio-Datei nicht übernommen.');
+      return;
+    }
+    const lauf = laeufeRef.current.neu();
     setStatus('processing');
     setStatusText('Verarbeite hochgeladenes Audio...');
     setTranscript('');
     setStructuredReport('');
 
-    try {
-      // Step 1: Transkription via Google Cloud STT (Whisper nur als Fallback)
-      let finalRawText = '';
-      try {
-        setStatusText('Spracherkennung läuft (Google Cloud STT)...');
-        finalRawText = await transcribeFullAudioWithGoogle(await decodeFileToWavBlob(file));
-      } catch (sttErr: any) {
-        console.warn('[UPLOAD] Google STT fehlgeschlagen, Whisper-Fallback:', sttErr.message);
-        setStatusText('Spracherkennung läuft (Whisper, Fallback)...');
-        finalRawText = await transcribeWithWhisper(file);
-      }
-
-      finalRawText = finalRawText.trim();
-
-      if (!finalRawText) {
-        throw new Error('Es wurde kein gesprochener Text erkannt.');
-      }
-
+    await befundLauf(lauf, {
+      // Step 1: Transkription via Google Cloud STT (Whisper nur lokal als Fallback)
+      transkribieren: async () => {
+        lauf.nurAktuell(setStatusText)('Spracherkennung läuft (Google Cloud STT)...');
+        const ctx = sttKontext(lauf);
+        return mitFallback(async () => transcribeFullAudioWithGoogle(await decodeFileToWavBlob(file), ctx), file, ctx);
+      },
       // Step 1.5: LLM-Korrektur der STT-Ergebnisse
-      setStatusText('Korrigiere medizinische Fachbegriffe (Gemini Flash)...');
-      finalRawText = await correctTranscriptionWithGemini(finalRawText);
-
-      setTranscript(finalRawText);
-      console.log(`[UPLOAD] Transcription (corrected): ${finalRawText.substring(0, 200)}...`);
-
+      korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // Step 2: v3.2 — dieselbe Kette wie Aufnahme und EXE (Regionen trennen → Bypass/Gemini → Ergebnis nummerieren)
-      setStatusText('KI-Strukturierung läuft (Gemini Flash)...');
-      const report = await befundAusDiktat(finalRawText);
-      setStructuredReport(report);
-      setStatus('ready');
-      setStatusText('Bereit');
-      await copyTextToClipboard(report);
-
-    } catch (err: any) {
-      console.error('[UPLOAD] Error:', err?.message || err?.name || JSON.stringify(err), err?.stack?.substring(0, 200) || '');
-      setStatus('ready');
-      setStatusText('Fehler bei der Verarbeitung.');
-      alert("Fehler bei Audio-Upload-Verarbeitung: " + (err?.message || err?.name || 'Unbekannter Fehler'));
-    }
+      befundErstellen: (text, signal) => befundAusDiktat(text, genKontext(lauf, signal)),
+    }, befundUi(), { statusVorBefund: 'KI-Strukturierung läuft (Gemini Flash)...', fehlerPrefix: 'Fehler bei Audio-Upload-Verarbeitung: ' });
   };
 
-  // Reset fields
+  // Reset fields — Umbau Schritt 8: bricht laufende Aufnahme/Verarbeitung ab (nichts wird mehr eingefügt)
   const handleReset = () => {
+    laeufeRef.current.abbrechen();
+    aufnahmeLaufRef.current = null;
     if (chunkIntervalRef.current) {
       clearInterval(chunkIntervalRef.current);
       chunkIntervalRef.current = null;
     }
+    audioStoppen();
+    setMicLevel(0);
     lastProcessedIndexRef.current = 0;
     chunkTranscriptsRef.current = [];
     pendingPromisesRef.current = [];

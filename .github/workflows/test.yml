@@ -56,6 +56,9 @@ jobs:
         run: python tests/offline/test_exe_ablauf.py
       - name: EXE-Zwischenablage (Wiederholung, Gegenlesen)
         run: python tests/offline/test_clipboard.py
+      - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
+        working-directory: web_app
+        run: node --experimental-strip-types --no-warnings pipeline_test.mjs
       - name: Typprüfung Web
         working-directory: web_app
         run: npx tsc -p tsconfig.app.json --noEmit
