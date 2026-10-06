@@ -774,7 +774,12 @@ class RaKScribeApp(ctk.CTk):
                         self._job.simuliere_verarbeitung()
                         self.update_status("PROCESSING", "busy")
                         self.record_btn.configure(state="disabled", text=" Verarbeite... (Selbsttest) ")
-                    dump(phase)
+                    if phase in ("taste_f10", "taste_f9"):
+                        # gleicher Handler wie der F10/F9-Hotkey; Zustand erst nach dessen Ausführung festhalten
+                        self._hotkeys[phase[-3:].lstrip("_")]()
+                        self.after(800, lambda p=phase: dump(p))
+                    else:
+                        dump(phase)
                 except Exception:
                     pass
             self.after(300, poll_trigger)
@@ -1274,8 +1279,11 @@ class RaKScribeApp(ctk.CTk):
                                  + ZWISCHENABLAGE_GESPERRT)
 
     def register_hotkey(self):
-        keyboard.add_hotkey('f10', lambda: self.after(0, self.toggle_recording), suppress=True)
-        keyboard.add_hotkey('f9', lambda: self.after(0, self.reset_dictation), suppress=True)
+        # Selbsttest ruft dieselben Handler (auf GitHub-Windows erreichen künstliche Tasten den Hook nicht)
+        self._hotkeys = {'f10': lambda: self.after(0, self.toggle_recording),
+                         'f9': lambda: self.after(0, self.reset_dictation)}
+        keyboard.add_hotkey('f10', self._hotkeys['f10'], suppress=True)
+        keyboard.add_hotkey('f9', self._hotkeys['f9'], suppress=True)
 
 def init_runtime():
     """Start der EXE (Umbau Schritt 16): Log-Kopf, Google-Bibliotheken, config.ini, Schlüssel + Speech-Client,

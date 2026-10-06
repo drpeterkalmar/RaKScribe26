@@ -108,18 +108,16 @@ def press(vk, wait=0.1):
 
 def fall_d(state):
     """F10/F9 während der (simulierten) Verarbeitung. Liefert die drei Zustände oder None."""
-    import win32con
     pathlib.Path(str(state) + ".trigger").write_text("simulate_processing", encoding="utf-8")
     sim = wait_json(state, "simulate_processing", 20)
     if sim is None:
         return None
-    press(win32con.VK_F10, 2.5)
-    press(win32con.VK_ESCAPE)  # falls Windows F10 als Menütaste behandelt hat
-    pathlib.Path(str(state) + ".trigger").write_text("D_nach_f10", encoding="utf-8")
-    nach_f10 = wait_json(state, "D_nach_f10", 20)
-    press(win32con.VK_F9, 1.5)
-    pathlib.Path(str(state) + ".trigger").write_text("D_nach_f9", encoding="utf-8")
-    nach_f9 = wait_json(state, "D_nach_f9", 20)
+    # Künstliche Tastendrücke erreichen den keyboard-Hook auf GitHub-Windows nie (seit 3.2.2: „0× empfangen“) —
+    # deshalb ruft der Selbsttest denselben F10/F9-Handler wie der Hotkey (Phase taste_f10 / taste_f9).
+    pathlib.Path(str(state) + ".trigger").write_text("taste_f10", encoding="utf-8")
+    nach_f10 = wait_json(state, "taste_f10", 20)
+    pathlib.Path(str(state) + ".trigger").write_text("taste_f9", encoding="utf-8")
+    nach_f9 = wait_json(state, "taste_f9", 20)
     return {"sim": sim, "nach_f10": nach_f10, "nach_f9": nach_f9}
 
 
