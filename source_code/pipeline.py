@@ -52,7 +52,6 @@ class Kontext:
     misheard: Optional[Callable[[str], str]] = None   # deterministische Fehlhör-Korrektur (mode 'auto')
     hinweise: str = ""                           # <stt_hinweise> (Fehlhör-Liste, mode 'llm')
     beispiele: Optional[Callable[[str], str]] = None  # RAG-Beispiele je Segment (Standard aus)
-    fallback: Optional[dict] = None              # Vorlage, falls der Key fehlt
     log: Callable[..., Any] = print
     ausnahme_log: Optional[Callable[[str], Any]] = None  # wird IM except-Block gerufen (Traceback)
     protokoll: Optional[list] = None             # Mess-Harness: je Segment {segment, template, roh}
@@ -110,7 +109,7 @@ def gen_prompt(raw, template_data, prompt, hinweise="", beispiele=""):
 def befund_fuer_segment(seg, ctx):
     """Ein Befund (## Titel / ## Befund / ## Ergebnis) für EIN Diktat-Segment = eine Region."""
     template_key = detect.detect_template(seg, ctx.templates)
-    template_data = ctx.templates.get(template_key) or ctx.fallback or ctx.templates.get("allgemein")
+    template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     if ist_normalbefund(seg, template_key, ctx.display_names):
         ctx.log(f"[BYPASS] Normalbefund erkannt: {protokoll.diktat(seg)}. Generiere direkt aus Template '{template_key}'.")
         roh = bypass_befund(seg, template_data)

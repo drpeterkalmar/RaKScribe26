@@ -8,25 +8,16 @@ import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
 import sounddevice as sd
-import numpy as np
 import threading
 import os
 import sys
 import time
-import queue
-import io
-import wave
-import pyperclip
 import markdown
 import re
 import win32clipboard
 import json
 import sqlite3
-from difflib import get_close_matches
 import traceback
-import base64
-import urllib.request
-import urllib.error
 from openai import OpenAI
 import gemini as _gem  # Umbau Schritt 14: Gemini-Request, parts-Join, Vollständigkeit, Retry
 import stt as _stt  # Umbau Schritt 13: chirp_3, Segmentierung 50 s/4 s, Overlap-Stitch, Phrasenlisten
@@ -307,12 +298,8 @@ def load_templates():
 
 RADIOLOGY_TEMPLATES = {}  # init_runtime(): load_templates()
 DISPLAY_NAMES = []
-# v3.2 (Peter 05.10.): Region nicht erkannt → KEIN Skelett-Standardtext (Lungenröntgen wurde sonst als Skelett befundet)
-ALLGEMEIN_FALLBACK = {
-    "display_name": "Allgemeine Untersuchung",
-    "body": "Allgemeine Untersuchung\n\nKein Nachweis pathologischer Veränderungen.",
-    "ergebnis": "Unauffälliger Befund.",
-}
+# Region nicht erkannt → Vorlage „allgemein“ aus templates.json (v3.2 Peter 05.10.: kein Skelett-Standardtext).
+# Umbau Schritt 24 (Gutachten P3-1): die doppelt gepflegte Kopie ALLGEMEIN_FALLBACK entfällt.
 
 def detect_template(text):
     """Vorlagen-Erkennung (detect.py) mit den gebündelten Vorlagen."""
@@ -425,35 +412,6 @@ def get_few_shot_examples(dictation, category, db_path, limit=2):
         print(f"Error in RAG search: {e}")
         return ""
 
-def numpy_to_wav_bytes(audio_np, samplerate=16000):
-    buf = io.BytesIO()
-    with wave.open(buf, 'wb') as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(samplerate)
-        wf.writeframes(audio_np.tobytes())
-    buf.seek(0)
-    return buf
-
-# =========================================================================
-# === CHIRP 3 Volltranskription (v2.9.10, 04.09.26) ===
-# WER-Test 04.09.: chirp_3 (STT v2, Location eu) = 2,4% WER (auch bei Echo/
-# Daempfung), latest_long = 16,7%. Kein Phrasen-Boost moeglich, dafuer
-# Dragon-Niveau. Max 60s pro Request -> Segmentierung 50s + 4s Rueckhoeren,
-# Ueberlappung wird per Wortvergleich gestitched.
-# =========================================================================
-def transcribe_full_chirp3(pcm_int16, samplerate=16000, loc='eu'):
-    try:
-        token = _get_stt_access_token()
-        if not token:
-            return None
-        import urllib.request as _ur
-        total = len(pcm_int16) if False else len(pcm_int16)
-        return _chirp3_worker(pcm_int16, samplerate, loc, token)
-    except Exception as e:
-        log_exception("[CHIRP3] Fehler in transcribe_full_chirp3")
-        return None
-
 _report_complete = _gem.report_complete
 
 
@@ -508,7 +466,7 @@ def _pipeline_kontext():
     """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden)."""
     return _pl.Kontext(templates=RADIOLOGY_TEMPLATES, display_names=DISPLAY_NAMES, prompt=INITIAL_PROMPT_CONTENT,
                        llm=lambda p: _llm_aufruf(p), misheard=apply_misheard, hinweise=MISHEARD_HINTS,
-                       beispiele=_rag_beispiele, fallback=ALLGEMEIN_FALLBACK, log=print, ausnahme_log=log_exception)
+                       beispiele=_rag_beispiele, log=print, ausnahme_log=log_exception)
 
 
 # === v3.0 DESIGN-TOKENS (ruhig, kontrastreich, für abgedunkelte Befundräume) ===
@@ -619,7 +577,10 @@ class RaKScribeApp(ctk.CTk):
         self.register_hotkey()
         self.after(150, self.refresh_key_state)
         self.after(400, self._selftest_hook)
-        if PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST"):
+        # Umbau Schritt 24 (Gutachten P3-4): Hinweis auf die alte Prompt-Datei nur EINMAL je Datei/Version
+        # (Merker in %APPDATA%\\RaKScribe), nicht bei jedem Start
+        if (PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST")
+                and _cfg.einmalig(os.path.join(USER_KEY_DIR, "gezeigte_hinweise.json"), PROMPT_HINWEIS)):
             self.after(1200, lambda: messagebox.showinfo(
                 "Befund-Prompt aktualisiert",
                 PROMPT_HINWEIS + "\n\nDie alte Datei wird nicht mehr verwendet und kann gelöscht werden."))
@@ -661,8 +622,6 @@ class RaKScribeApp(ctk.CTk):
         self.device_dropdown.pack(side="right", padx=10)
         self.key_chip = ctk.CTkLabel(right, text="", font=(UI_FONT, 12, "bold"), corner_radius=12, height=26)
         self.key_chip.pack(side="right")
-        # Engine-Info (historischer Name, liegt jetzt im Menü/Tooltip-Text)
-        self.engine_label = ctk.CTkLabel(right, text="", width=0)
 
         self.status_badge = ctk.CTkLabel(header, text="", font=(UI_FONT, 13, "bold"), corner_radius=15,
                                          height=30, text_color=TEXT_PRIMARY)
@@ -724,8 +683,6 @@ class RaKScribeApp(ctk.CTk):
                                       font=(UI_FONT, 13, "bold"), fg_color=ACCENT_PURPLE, hover_color=ACCENT_HOVER,
                                       corner_radius=10, command=lambda: self.copy_formatted_report(aus_knopf=True))
         self.copy_btn.pack(side="right", padx=14)
-        # historischer Name: Prompt-Editor liegt jetzt im Menü
-        self.prompt_toggle = self.menu_btn
         self.prompt_window = None
         self.update_status("READY", "ready")
 

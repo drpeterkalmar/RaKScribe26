@@ -9,6 +9,8 @@
   GOOGLE_JSON_FILENAME. Schlüssel kommen seit v3.2.3 nur aus rakscribe-praxis-key.json.
 """
 import configparser
+import hashlib
+import json
 import os
 from dataclasses import dataclass, field
 from typing import List
@@ -77,3 +79,25 @@ def load_config(path):
     cfg.api_key = sek.get("API_KEY", "").strip().replace('"', '')
     cfg.rag_beispiele = _int(sek, "RAG_BEISPIELE", 0, cfg.warnungen)
     return cfg
+
+
+def einmalig(merker_pfad, text):
+    """Merker für einmalige Hinweise (Umbau Schritt 24, Gutachten P3-4): True genau beim ersten Mal je Hinweistext.
+    Der Merker liegt in %APPDATA%\\RaKScribe (überlebt EXE-Updates). Lesefehler → Hinweis zeigen;
+    Schreibfehler → trotzdem zeigen (lieber einmal zu oft als nie)."""
+    schluessel = hashlib.sha1((text or "").encode("utf-8")).hexdigest()
+    try:
+        with open(merker_pfad, encoding="utf-8") as f:
+            gesehen = set(json.load(f))
+    except (OSError, ValueError, TypeError):
+        gesehen = set()
+    if schluessel in gesehen:
+        return False
+    gesehen.add(schluessel)
+    try:
+        os.makedirs(os.path.dirname(merker_pfad) or ".", exist_ok=True)
+        with open(merker_pfad, "w", encoding="utf-8") as f:
+            json.dump(sorted(gesehen), f)
+    except OSError:
+        pass
+    return True

@@ -2,7 +2,7 @@
 // Nachbearbeitung, Regionen zusammenfügen. Aus App.tsx herausgelöst, Inhalt unverändert.
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
-import { detectTemplate, deriveUntersuchungsTitel, type Template, type TemplatesMap } from './detect.ts';
+import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
 import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
@@ -11,7 +11,6 @@ export type PipelineKontext = GenKontext & {
   templates: TemplatesMap;
   vorrang: VorrangDaten;
   displayNames: string[];
-  fallback: Template;
 };
 
 // v3.2: Befund aus dem (korrigierten) Diktat — dieselbe Kette wie die EXE (RaKScribe.py _befund_fuer_segment):
@@ -19,7 +18,7 @@ export type PipelineKontext = GenKontext & {
 // Template und eigenem Ergebnis (parallel), danach Ergebnis deterministisch nummeriert.
 export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Promise<string> => {
   const detectedKey = detectTemplate(seg, ctx.templates, ctx.vorrang);
-  const activeTemplate = ctx.templates[detectedKey] || ctx.templates['allgemein'] || ctx.fallback;
+  const activeTemplate = ctx.templates[detectedKey] || ctx.templates['allgemein'];  // templates.json enthält „allgemein“
   if (detectedKey === 'allgemein') {
     console.warn('[TEMPLATE] Region nicht erkannt — verwende Allgemein-Template');
     ctx.status('⚠️ Region nicht erkannt — Allgemein-Template wird verwendet');

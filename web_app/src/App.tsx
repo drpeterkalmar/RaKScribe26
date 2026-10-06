@@ -19,7 +19,7 @@ import appVersionRaw from '../../VERSION?raw';
 import { stripPromptMarker, type VorrangDaten } from './befundRegeln';
 import vorrangData from '../../vorlagen_vorrang.json';
 // Umbau Schritt 17: Vorlagen-Erkennung + Befundtitel (src/detect.ts); Bypass/Regeln nutzt src/pipeline.ts
-import { type Template, type TemplatesMap } from './detect.ts';
+import { type TemplatesMap } from './detect.ts';
 // Umbau Schritt 8 (Gutachten P2-7/P2-9/P2-10): Netz mit Abbruch, Spracherkennung, Lauf-Verwaltung
 import { istAbbruch, fehlermeldung } from './net.ts';
 // Umbau Schritt 18: Gemini-Aufrufe (Call 0/1/2, Schlüsselprüfung) und Befund-Kette als Module
@@ -34,12 +34,7 @@ import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav 
 
 const templates = templatesData as TemplatesMap;
 const DISPLAY_NAMES = Object.values(templates).map(t => t.display_name);
-// v3.2 (Peter 05.10.): Region nicht erkannt → KEIN Skelett-Standardtext (Lungenröntgen wurde sonst als Skelett befundet)
-const ALLGEMEIN_FALLBACK: Template = {
-  display_name: "Allgemeine Untersuchung",
-  body: "Allgemeine Untersuchung\n\nKein Nachweis pathologischer Veränderungen.",
-  ergebnis: "Unauffälliger Befund.",
-};
+// Region nicht erkannt → Vorlage „allgemein“ aus templates.json (Umbau Schritt 24: doppelte Kopie ALLGEMEIN_FALLBACK entfällt)
 
 // Phrasenlisten (phrases.json): 6-s-Chunks mit medical_web, chirp_3 mit chirp (wie bisher, ohne Doppelte)
 const PHRASEN: Phrasen = { medical: phrasesData.medical_web, chirp: phrasesData.chirp };
@@ -434,7 +429,7 @@ export default function App() {
   const genKontext = (lauf: Lauf, signal: AbortSignal): PipelineKontext => ({
     apiKey: vertexApiKey, prompt: GEN_PROMPT, signal, status: lauf.nurAktuell(setStatusText),
     misheard: { compiled: MISHEARD_COMPILED, block: MISHEARD_PROMPT_BLOCK },
-    templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES, fallback: ALLGEMEIN_FALLBACK,
+    templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES,
   });
   const befundUi = (): BefundUi => ({
     transkript: setTranscript,

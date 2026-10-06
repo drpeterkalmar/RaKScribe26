@@ -13,7 +13,7 @@ if (process.argv[2] === '--bypass') {
   const lies = (rel) => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
   const templates = lies('../templates.json');
   const ctx = { apiKey: '', prompt: '', status: () => {}, templates, vorrang: lies('../vorlagen_vorrang.json'),
-    displayNames: Object.values(templates).map(t => t.display_name), fallback: templates.allgemein };
+    displayNames: Object.values(templates).map(t => t.display_name) };
   const out = [];
   for (const d of JSON.parse(readFileSync(process.argv[3], 'utf8'))) {
     try { out.push(await befundAusDiktat(d, ctx)); } catch (e) { out.push('FEHLER: ' + e.message); }

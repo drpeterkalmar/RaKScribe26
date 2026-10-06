@@ -188,7 +188,7 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   const templates = lies('../templates.json');
   const ctxBasis = { apiKey: 'AQ.dummy', prompt: readFileSync(new URL('../radiology_prompt.txt', import.meta.url), 'utf8'),
     status: () => {}, templates, vorrang: lies('../vorlagen_vorrang.json'),
-    displayNames: Object.values(templates).map(t => t.display_name), fallback: templates.allgemein };
+    displayNames: Object.values(templates).map(t => t.display_name) };
   const C1 = '## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nVerschmälerung des medialen Gelenkspaltes mit Osteophyten.\n\n## Ergebnis\nMäßiggradige Gonarthrose rechts.';
   const C2 = C1.replace('Osteophyten.', 'Osteophyten und subchondraler Sklerosierung.');
   const bodies = [];
