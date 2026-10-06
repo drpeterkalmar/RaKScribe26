@@ -48,6 +48,8 @@ jobs:
         run: python vorlagen_erreichbar_test.py
       - name: EXE-Zustandsmaschine (F10/F9, Generationsnummer)
         run: python tests/offline/test_jobstate.py
+      - name: EXE-Aufnahme getrennt von der Live-Anzeige
+        run: python tests/offline/test_capture.py
       - name: EXE-Mehr-Regionen-Befund
         run: python tests/offline/test_regionen.py
       - name: EXE-Ablauf (Aufnahme → Befund → Einfügen, mit Attrappen)

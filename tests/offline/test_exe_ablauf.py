@@ -32,25 +32,19 @@ def check(name, ok, detail=""):
     fails += (not ok)
 
 
-def fake_record(app):
-    """Ersetzt record(gen): eine Sekunde Audio + Streaming-Anzeige, dann warten bis Stopp."""
-    def record(gen):
-        app.recorded_audio_chunks_all.append(np.zeros((16000, 1), dtype=np.int16))
-        app.recorded_audio_chunks_all.append(np.ones((8000, 1), dtype=np.int16))
-        app.after(0, app.update_interim_text, "Knie rechts", False, gen)
-        app.after(0, app.update_interim_text, "Knie rechts unauffällig", True, gen)
-        while app.is_recording:
-            time.sleep(0.005)
-    app.record = record
+def aufnehmen(app, bloecke=12):
+    """F10, warten bis Live-Text sichtbar und > 1 s Audio im Puffer, F10."""
+    app.toggle_recording()
+    S.pump(app, lambda: app.stream_transcript and len(app._aufnahme.puffer) >= bloecke)
+    app.toggle_recording()
 
 
 def neue_app():
     S.AUFZ.tasten.clear(); S.AUFZ.dialoge.clear()
     S.CLIPBOARD.gesperrt = False
     CHIRP.update(text="Kniegelenk rechts in 2 Ebenen unauffällig.", tor=None, aufrufe=0)
-    app = S.baue_app(mod)
-    fake_record(app)
-    return app
+    mod.speech_client = S.FakeSpeechClient(S.streaming_stub())
+    return S.baue_app(mod)
 
 
 def bis_fertig(app, timeout=8):
@@ -61,7 +55,7 @@ def bis_fertig(app, timeout=8):
 app = neue_app()
 app.toggle_recording()
 check("F10 startet Aufnahme", app.is_recording and app._job.zustand == "RECORDING" and app._status_raw == "RECORDING")
-S.pump(app, lambda: "unauffällig" in app.transcript_text.text)
+S.pump(app, lambda: "unauffällig" in app.transcript_text.text and len(app._aufnahme.puffer) >= 12)
 check("Streaming nur in der Anzeige (stream_transcript), final_transcript leer",
       app.stream_transcript.strip() == "Knie rechts unauffällig" and app.final_transcript == "")
 app.toggle_recording()
@@ -69,7 +63,8 @@ check("F10 stoppt → Verarbeitung", not app.is_recording and app._job.zustand =
 bis_fertig(app)
 S.pump(app, lambda: S.AUFZ.tasten)
 time.sleep(0.05); S.pump(app)
-check("chirp_3 bekommt die ganze Aufnahme", CHIRP["samples"] == 24000, str(CHIRP.get("samples")))
+check("chirp_3 bekommt die ganze Aufnahme", CHIRP["samples"] == 1600 * len(app._aufnahme.puffer) > 16000,
+      f"{CHIRP.get('samples')} vs {len(app._aufnahme.puffer)} Blöcke")
 check("Endtext = chirp_3", app.final_transcript == CHIRP["text"] and app.transcript_text.text == CHIRP["text"])
 check("Befund (Bypass) erstellt", app.result_text.text.startswith("## Kniegelenk") and "## Ergebnis" in app.result_text.text,
       app.result_text.text[:80])
@@ -84,7 +79,7 @@ check("verspätetes stream_final nach chirp_3 wird verworfen", app.final_transcr
 # 2. F10 während der Verarbeitung → ignoriert, Befund kommt trotzdem
 app = neue_app()
 CHIRP["tor"] = threading.Event()
-app.toggle_recording(); S.pump(app, lambda: app.stream_transcript); app.toggle_recording()
+aufnehmen(app)
 S.pump(app, lambda: CHIRP["aufrufe"] == 1)
 app.toggle_recording()
 check("F10 während Verarbeitung startet keine Aufnahme", not app.is_recording and app._job.zustand == "PROCESSING"
@@ -96,7 +91,7 @@ check("… und der Befund wird danach normal eingefügt", S.AUFZ.tasten == ["ctr
 # 3. F9 während der Verarbeitung → abgebrochen, nichts eingefügt
 app = neue_app()
 CHIRP["tor"] = threading.Event()
-app.toggle_recording(); S.pump(app, lambda: app.stream_transcript); app.toggle_recording()
+aufnehmen(app)
 S.pump(app, lambda: CHIRP["aufrufe"] == 1)
 app.reset_dictation()
 check("F9 während Verarbeitung → sofort bereit", app._job.zustand == "READY" and app._status_raw == "READY")
@@ -114,7 +109,7 @@ check("… kein chirp_3-Aufruf", CHIRP["aufrufe"] == 1, str(CHIRP["aufrufe"]))
 # 4. Zwischenablage gesperrt → kein Strg+V, Fehler sichtbar
 app = neue_app()
 S.CLIPBOARD.gesperrt = True
-app.toggle_recording(); S.pump(app, lambda: app.stream_transcript); app.toggle_recording()
+aufnehmen(app)
 bis_fertig(app); time.sleep(0.05); S.pump(app)
 check("gesperrte Zwischenablage → kein Strg+V", S.AUFZ.tasten == [])
 check("… Status Fehler + Fehlerdialog", app._status_raw == "ERROR" and any(d[0] == "showerror" for d in S.AUFZ.dialoge),
@@ -123,7 +118,7 @@ check("… Status Fehler + Fehlerdialog", app._status_raw == "ERROR" and any(d[0
 # 5. chirp_3 liefert nichts → Rettung aus der Streaming-Anzeige
 app = neue_app()
 CHIRP["text"] = ""
-app.toggle_recording(); S.pump(app, lambda: app.stream_transcript); app.toggle_recording()
+aufnehmen(app)
 bis_fertig(app); S.pump(app, lambda: S.AUFZ.tasten)
 check("chirp_3 leer → Streaming-Text gerettet, Befund eingefügt", app.final_transcript == "Knie rechts unauffällig"
       and S.AUFZ.tasten == ["ctrl+v"], app.final_transcript)
@@ -141,13 +136,28 @@ def segment(seg):
 
 
 app._befund_fuer_segment = segment
-app.toggle_recording(); S.pump(app, lambda: app.stream_transcript); app.toggle_recording()
+aufnehmen(app)
 bis_fertig(app); time.sleep(0.05); S.pump(app)
 check("Mehr-Regionen: fertige Region steht im Befund-Feld", app.result_text.text.startswith("## Schultergelenk"),
       app.result_text.text[:60])
 check("… gescheiterte Region benannt", "Befund für Region Ellbogen rechts konnte nicht erstellt werden" in app.result_text.text)
 check("… Fehlerdialog, Status Fehler, kein Strg+V", S.AUFZ.tasten == [] and app._status_raw == "ERROR"
       and any(d[0] == "showerror" and "Ellbogen rechts" in d[2] for d in S.AUFZ.dialoge), str(S.AUFZ.dialoge))
+
+# 7. Live-Anzeige bricht ab (Gutachten P1-4) → Aufnahme läuft weiter, chirp_3 bekommt alles, Befund wird eingefügt
+app = neue_app()
+mod.speech_client = S.FakeSpeechClient(S.streaming_stub(fehler_nach=2))
+app.toggle_recording()
+S.pump(app, lambda: app._live_aus)
+n0 = len(app._aufnahme.puffer)
+S.pump(app, lambda: len(app._aufnahme.puffer) >= n0 + 15)
+check("Streaming-Fehler: Aufnahme läuft weiter, Hinweis im Status", app.is_recording and app._job.zustand == "RECORDING"
+      and "Live-Anzeige ausgefallen" in app.status_badge.cfg.get("text", "") and not S.AUFZ.dialoge, str(S.AUFZ.dialoge))
+app.toggle_recording()
+bis_fertig(app); S.pump(app, lambda: S.AUFZ.tasten)
+check("… chirp_3 über den vollständigen Puffer, Befund eingefügt",
+      CHIRP["samples"] == 1600 * len(app._aufnahme.puffer) and len(app._aufnahme.puffer) > n0 and S.AUFZ.tasten == ["ctrl+v"],
+      f"{CHIRP.get('samples')} / {len(app._aufnahme.puffer)}")
 
 print("\n" + ("✅ EXE-ABLAUF PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

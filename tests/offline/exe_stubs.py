@@ -47,6 +47,60 @@ class MockCB:
 CLIPBOARD = MockCB()
 
 
+class FakeInputStream:
+    """sounddevice.InputStream-Ersatz: liefert im eigenen Thread Blöcke à 1600 Samples (Block i = Wert i)."""
+    geliefert = 0
+
+    def __init__(self, device=None, samplerate=16000, channels=1, dtype="int16", callback=None):
+        self.cb, self._run, self.t = callback, False, None
+
+    def __enter__(self):
+        import threading, time
+        import numpy as np
+        self._run = True
+
+        def loop():
+            i = 0
+            while self._run:
+                self.cb(np.full((1600, 1), i % 30000, dtype=np.int16), 1600, None, None)
+                i += 1
+                FakeInputStream.geliefert = i
+                time.sleep(0.002)
+        self.t = threading.Thread(target=loop, daemon=True)
+        self.t.start()
+        return self
+
+    def __exit__(self, *a):
+        self._run = False
+        self.t.join()
+
+
+class Antwort:
+    """Google-StreamingRecognizeResponse-Ersatz."""
+    def __init__(self, text, is_final):
+        alt = type("Alt", (), {"transcript": text})()
+        self.results = [type("Res", (), {"alternatives": [alt], "is_final": is_final})()]
+
+
+def streaming_stub(antworten=(("Knie rechts", False), ("Knie rechts unauffällig", True)), fehler_nach=None):
+    """streaming(requests): beantwortet die ersten Pakete mit `antworten`, wirft optional nach `fehler_nach` Paketen."""
+    def streaming(requests):
+        for n, _req in enumerate(requests, 1):
+            if fehler_nach is not None and n > fehler_nach:
+                raise RuntimeError("gRPC: Verbindung abgebrochen (Test)")
+            if n <= len(antworten):
+                yield Antwort(*antworten[n - 1])
+    return streaming
+
+
+class FakeSpeechClient:
+    def __init__(self, streaming):
+        self.streaming = streaming
+
+    def streaming_recognize(self, requests, config=None):
+        return self.streaming(requests)
+
+
 def stubs():
     kb = types.ModuleType("keyboard")
     kb.add_hotkey = lambda *a, **k: None
@@ -59,6 +113,7 @@ def stubs():
         device = [0, 0]
     sd.default = _D()
     sd.query_devices = lambda: [{"name": "Testmikrofon", "max_input_channels": 1}]
+    sd.InputStream = FakeInputStream
     oa = types.ModuleType("openai")
     oa.OpenAI = lambda **k: None
     ctk = types.ModuleType("customtkinter")
@@ -100,6 +155,8 @@ def lade_rakscribe():
         sys.__stdout__ = _out
     mod.messagebox = mb
     mod.log = mod.print = lambda *a: None  # Testausgabe ruhig halten
+    mod.speech = type("speech", (), {"StreamingRecognizeRequest": staticmethod(lambda audio_content: audio_content)})
+    mod.speech_client = FakeSpeechClient(streaming_stub())
     return mod
 
 
@@ -142,9 +199,8 @@ def baue_app(mod):
     app.samplerate = 16000
     app.is_recording = False
     app.final_transcript = app.stream_transcript = app.stream_interim = ""
-    app.stream = None
-    app.recorded_audio_chunks = []
-    app.recorded_audio_chunks_all = []
+    app._aufnahme = None
+    app._live_aus = False
     app.selected_device_index = 0
     app.transcript_text, app.result_text = FakeText(), FakeText()
     for n in ("record_btn", "level_indicator", "level_container", "status_badge", "key_chip"):

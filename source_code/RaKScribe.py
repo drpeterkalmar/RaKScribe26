@@ -33,6 +33,7 @@ from concurrent.futures import ThreadPoolExecutor
 import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Prompt-Versionswahl (Sync: befundRegeln.ts)
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
+import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt von der Streaming-Live-Anzeige
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
 
@@ -1127,10 +1128,8 @@ class RaKScribeApp(ctk.CTk):
         self.final_transcript = ""   # Endtext für den Befund — NUR der Stopp-Pfad setzt ihn (chirp_3 oder Rettung)
         self.stream_transcript = ""  # Live-Anzeige: finale Streaming-Abschnitte (Gutachten P2-5: nie in final_transcript)
         self.stream_interim = ""     # Live-Anzeige: letzter Zwischenstand
-        self.audio_queue = queue.Queue()
-        self.chunk_worker_thread = None
-        self.stream = None
-        self.recorded_audio_chunks = []
+        self._aufnahme = None        # aufnahme.Aufnahme der laufenden/letzten Aufnahme
+        self._live_aus = False       # Live-Anzeige ausgefallen (Aufnahme läuft weiter)
 
         # Audio-Eingabegeräte sammeln
         self.device_names = []
@@ -1538,6 +1537,8 @@ class RaKScribeApp(ctk.CTk):
         raw = (text or "").upper()
         self._status_raw = raw
         label, dot, bg = STATUS_STYLE.get(raw, (text, {"busy": WARN_AMBER, "recording": RECORDING_RED}.get(type, READY_GREEN), "#1B2030"))
+        if raw == "RECORDING" and getattr(self, "_live_aus", False):
+            label += " · Live-Anzeige ausgefallen"  # Umbau Schritt 6: Aufnahme läuft trotzdem weiter
         self.status_badge.configure(text=f"   ●  {label}   ", fg_color=bg, text_color=TEXT_PRIMARY)
         # farbiger Punkt: CTkLabel kann nur eine Textfarbe → Pill-Rand über Hintergrund, Punkt in Textfarbe des Status
         self.status_badge.configure(text_color=dot if raw in ("RECORDING", "ERROR", "PROCESSING", "LOCKED") else TEXT_PRIMARY)
@@ -1564,14 +1565,13 @@ class RaKScribeApp(ctk.CTk):
         aktion = self._job.ereignis("reset")
         if aktion == "stop_und_reset":
             self.is_recording = False
-            self._stream_schliessen()
+            self._aufnahme_stoppen()
         elif aktion == "abbrechen":
             log("[UI] Verarbeitung abgebrochen (F9) — Ergebnis wird verworfen.")
         log("[UI] Zurücksetzen angefordert. Lösche Transkription, Befund und Aufnahmedaten.")
         self.final_transcript = ""
         self.stream_transcript = ""
         self.stream_interim = ""
-        self.recorded_audio_chunks = []
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
         if self._job.zustand == _js.LOCKED:
@@ -1581,15 +1581,38 @@ class RaKScribeApp(ctk.CTk):
             self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(width=0)
 
-    def _stream_schliessen(self):
-        if self.stream:
-            try:
-                self.stream.stop()
-                self.stream.close()
-                log("[RECORD] sounddevice InputStream erfolgreich gestoppt und geschlossen.")
-            except Exception:
-                log_exception("[RECORD] Fehler beim Stoppen des Streams")
-            self.stream = None
+    def _aufnahme_stoppen(self):
+        if self._aufnahme is not None:
+            self._aufnahme.stop()  # der Capture-Thread schließt das Mikrofon
+
+    def _aufnahme_starten(self, gen):
+        """Mikrofon (Capture-Thread) und Live-Anzeige (Streaming-Thread) getrennt starten (Gutachten P1-4)."""
+        self._aufnahme = _af.Aufnahme(
+            sd, self.samplerate, self.selected_device_index,
+            streaming=lambda reqs: speech_client.streaming_recognize(requests=reqs, config=STREAMING_CONFIG),
+            request_bauen=lambda b: speech.StreamingRecognizeRequest(audio_content=b),
+            on_level=lambda rms: self.after(0, self.update_level_bar, rms),
+            on_text=lambda text, is_final: self.after(0, self.update_interim_text, text, is_final, gen),
+            on_stream_fehler=lambda e: self._live_anzeige_fehler(gen, e),
+            on_capture_fehler=lambda e: self._capture_fehler(gen, e),
+            log=log)
+        self._aufnahme.start()
+
+    def _live_anzeige_fehler(self, gen, e):
+        """Streaming-Thread: Fehler der Live-Anzeige — nur loggen und anzeigen, die Aufnahme läuft weiter (P1-4)."""
+        log_exception("[GOOGLE] Live-Anzeige ausgefallen — Aufnahme läuft weiter")
+
+        def zeigen():
+            self._live_aus = True
+            if self._status_raw == "RECORDING":
+                self.update_status("RECORDING", "recording")
+        self._ui(gen, zeigen)
+
+    def _capture_fehler(self, gen, e):
+        """Capture-Thread: Mikrofon nicht nutzbar → Aufnahme abbrechen (wie bisher)."""
+        log_exception("[RECORD] Fehler im Capture-Thread")
+        self._ui(gen, lambda: messagebox.showerror("Aufnahme-Fehler", f"Das Mikrofon konnte nicht genutzt werden:\n{e}"))
+        self.after(0, self.cancel_recording_due_to_error, gen)
 
     def _ui(self, gen, fn):
         """UI-Änderung aus einem Hintergrund-Thread — nur, wenn der Lauf gen noch aktuell ist."""
@@ -1621,12 +1644,10 @@ class RaKScribeApp(ctk.CTk):
             self.final_transcript = ""
             self.stream_transcript = ""
             self.stream_interim = ""
-            self.recorded_audio_chunks = []
-            self.recorded_audio_chunks_all = []
+            self._live_aus = False
             self.transcript_text.delete("1.0", "end")
             self.result_text.delete("1.0", "end")
             self.is_recording = True
-            self.first_callback_logged = False
             
             self.update_status("RECORDING", "recording")
             self.record_btn.configure(text=" Aufnahme Stoppen (F10) (0s) ", fg_color=RECORDING_RED)
@@ -1635,14 +1656,12 @@ class RaKScribeApp(ctk.CTk):
             self.recording_start_time = time.time()
             self.update_recording_timer()
 
-            # Store thread reference to join later
-            self.record_thread = threading.Thread(target=self.record, args=(gen,), daemon=True)
-            self.record_thread.start()
-            log("[RECORD] Aufnahme-Thread wurde gestartet.")
+            self._aufnahme_starten(gen)
+            log("[RECORD] Aufnahme- und Live-Anzeige-Thread gestartet.")
         else:
             log("[RECORD] Aufnahme wird beendet...")
             self.is_recording = False
-            self._stream_schliessen()
+            self._aufnahme_stoppen()
 
             self.update_status("PROCESSING", "busy")
             
@@ -1671,18 +1690,18 @@ class RaKScribeApp(ctk.CTk):
             threading.Thread(target=wait_and_process, daemon=True).start()
 
     def _warten_und_verarbeiten(self, gen):
-        log("[PROCESS] Warte auf Beendigung des Aufnahme-Threads...")
-        if hasattr(self, 'record_thread') and self.record_thread:
-            self.record_thread.join(timeout=6.0) # Wait for generator to finish yielding and responses to drain
-        log("[PROCESS] Aufnahme-Thread beendet oder Timeout erreicht.")
+        log("[PROCESS] Warte auf Mikrofon und Live-Anzeige...")
+        aufnahme = self._aufnahme
+        if aufnahme is not None:
+            aufnahme.warten(timeout_stream=6.0)  # letzte Streaming-Antworten dürfen noch eintreffen
+        log("[PROCESS] Aufnahme-Threads beendet oder Timeout erreicht.")
 
         # ═══ CHIRP 3 Volltranskription (v2.9.10) ═══
         # Das Streaming dient nur der Live-Anzeige. Für die finale Transkription wird die KOMPLETTE Aufnahme
         # noch einmal an chirp_3 (STT v2, WER 2,4% vs 16,7%) geschickt.
         chirp_text = None
         try:
-            all_pcm = np.concatenate(self.recorded_audio_chunks_all, axis=0) \
-                if getattr(self, 'recorded_audio_chunks_all', None) else None
+            all_pcm = aufnahme.samples() if aufnahme is not None else None  # vollständiger Puffer, auch nach Streaming-Fehler
             if all_pcm is not None and len(all_pcm) > 16000:
                 log(f"[CHIRP3] Volltranskription: {len(all_pcm)/16000:.0f}s Audio")
                 self._ui(gen, lambda: self.update_status("PROCESSING", "busy"))
@@ -1719,28 +1738,10 @@ class RaKScribeApp(ctk.CTk):
             return  # Fehler einer alten Aufnahme — die laufende nicht abwürgen
         log("[RECORD] Aufnahme aufgrund eines Fehlers abgebrochen.")
         self.is_recording = False
-        self._stream_schliessen()
+        self._aufnahme_stoppen()
         self.update_status("ERROR", "busy")
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
-
-    def google_streaming_generator(self):
-        log("[GOOGLE] google_streaming_generator gestartet.")
-        # Keep yielding as long as we are recording OR there are remaining chunks to send
-        yield_count = 0
-        while self.is_recording or self.recorded_audio_chunks:
-            if self.recorded_audio_chunks:
-                chunks_to_send = self.recorded_audio_chunks
-                self.recorded_audio_chunks = []
-                if chunks_to_send:
-                    chunk_bytes = np.concatenate(chunks_to_send, axis=0).tobytes()
-                    yield_count += 1
-                    if yield_count % 50 == 0:
-                        log(f"[GOOGLE] Yielded {yield_count} request chunks to Google STT.")
-                    yield speech.StreamingRecognizeRequest(audio_content=chunk_bytes)
-            else:
-                time.sleep(0.02)
-        log(f"[GOOGLE] google_streaming_generator beendet. Insgesamt {yield_count} Chunks gesendet.")
 
     def update_interim_text(self, transcript, is_final, gen):
         # Gutachten P2-5: Streaming-Text nur für die Anzeige (stream_transcript), nie in final_transcript; nach dem
@@ -1757,46 +1758,6 @@ class RaKScribeApp(ctk.CTk):
             self.stream_interim = ""
             self.transcript_text.delete("1.0", "end")
             self.transcript_text.insert("1.0", self.stream_transcript.strip())
-
-    def record(self, gen):
-        def callback(indata, frames, time_info, status):
-            if self.is_recording:
-                if not getattr(self, 'first_callback_logged', False):
-                    self.first_callback_logged = True
-                    rms = np.sqrt(np.mean(indata.astype(np.float64)**2))
-                    log(f"[AUDIO] Erster Audio-Callback empfangen. RMS-Pegel: {rms:.2f}")
-                self.recorded_audio_chunks.append(indata.copy())
-                if not hasattr(self, 'recorded_audio_chunks_all'):
-                    self.recorded_audio_chunks_all = []
-                self.recorded_audio_chunks_all.append(indata.copy())
-                rms = np.sqrt(np.mean(indata.astype(np.float64)**2))
-                self.after(0, self.update_level_bar, rms)
-
-        try:
-            log(f"[RECORD] Versuche sounddevice InputStream zu öffnen. Device Index: {self.selected_device_index}")
-            self.stream = sd.InputStream(device=self.selected_device_index, samplerate=self.samplerate, channels=1, dtype='int16', callback=callback)
-            log("[RECORD] sounddevice InputStream erfolgreich erzeugt. Starte Stream...")
-            with self.stream:
-                log("[RECORD] Stream ist aktiv. Google STT wird ausgeführt.")
-                requests = self.google_streaming_generator()
-                log("[GOOGLE] Rufe streaming_recognize auf...")
-                responses = speech_client.streaming_recognize(requests=requests, config=STREAMING_CONFIG)
-                log("[GOOGLE] streaming_recognize aufgerufen. Starte response-Schleife...")
-                for response in responses:
-                    if not response.results:
-                        continue
-                    result = response.results[0]
-                    if not result.alternatives:
-                        continue
-                    transcript = result.alternatives[0].transcript
-                    self.after(0, self.update_interim_text, transcript, result.is_final, gen)
-                log("[GOOGLE] response-Schleife regulär beendet.")
-            log("[RECORD] sounddevice InputStream block verlassen.")
-        except Exception as e:
-            log_exception("[RECORD] Fehler im record-Thread")
-            if self.is_recording and self._job.aktuell(gen):
-                self._ui(gen, lambda: messagebox.showerror("Streaming Fehler", f"Fehler bei der Google-Spracherkennung:\n{e}"))
-                self.after(0, self.cancel_recording_due_to_error, gen)
 
     def update_level_bar(self, rms):
         max_val = 10000  # Kalibriert auf typische Sprachlautstärke (vorher 1500)

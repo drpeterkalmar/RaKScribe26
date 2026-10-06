@@ -100,7 +100,7 @@ check("toggle_recording fragt die Zustandsmaschine", 'aktion = self._job.vorscha
 check("reset_dictation fragt die Zustandsmaschine", 'aktion = self._job.ereignis("reset")' in src)
 check("Streaming nur in stream_transcript, nie in final_transcript",
       "self.final_transcript +=" not in src and "self.stream_transcript += transcript" in src)
-check("Streaming-Callback trägt Generationsnummer", "self.update_interim_text, transcript, result.is_final, gen)" in src)
+check("Streaming-Callback trägt Generationsnummer", "self.update_interim_text, text, is_final, gen)" in src)
 check("Einfügen nur für aktuellen Lauf", 'self._job.ereignis("report_done", gen) is None' in src
       and "self._job.aktuell(gen) and keyboard.press_and_release('ctrl+v')" in src)
 check("Selbsttest kennt simulate_processing (Fall D)", '"simulate_processing"' in src)
