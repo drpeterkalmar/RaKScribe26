@@ -204,6 +204,47 @@ for diktat, expected in DETECT_CASES:
     if not ok:
         failures.append(f"detect_template({diktat!r}) → {got!r}, erwartet {expected!r}")
 
+# ── 2c. PARITÄT (Umbau 06.10., Gutachten P1-3/P2-3): detect_fixtures.json durch EXE UND Web ──────────
+print("\n" + "=" * 70)
+print("TEIL 2c PARITÄT: detect_fixtures.json — EXE detect_template UND Web detectTemplate = Erwartungswert")
+print("=" * 70)
+DF = _json.loads((REPO / "detect_fixtures.json").read_text(encoding="utf-8"))
+_namens = {}  # key → die drei Namens-Diktate (live aus templates.json, damit neue Vorlagen auffallen)
+for _k, _v in TPL.items():
+    _dn = _v["display_name"].strip()
+    _namens[_k] = [f"{_dn} unauffällig", f"{_dn} rechts unauffällig", _k.replace("_", " ") + " o.B."]
+_soll = {d: k for d, k in DF["faelle"]}
+_fehlt = [d for ds in _namens.values() for d in ds if d not in _soll]
+if _fehlt:
+    print(f"❌ FAIL  {len(_fehlt)} Namens-Diktate fehlen in detect_fixtures.json (neue Vorlage?): {_fehlt[:3]}")
+    failures.append(f"detect_fixtures.json unvollständig: {len(_fehlt)} Namens-Diktate fehlen")
+_alle = list(DF["faelle"]) + [[d, None] for d in _fehlt]
+with _tf.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as _f2:
+    _json.dump(_alle, _f2, ensure_ascii=False)
+_w2 = _sp.run(["node", "detect_test.mjs", _f2.name], cwd=REPO / "web_app", capture_output=True, text=True)
+WEB2 = _json.loads(_w2.stdout) if _w2.returncode == 0 and _w2.stdout else {}
+if not WEB2:
+    failures.append("Parität: Web-detectTemplate nicht ausführbar: " + _w2.stderr[-300:])
+_abw = 0
+for d, soll in DF["faelle"]:
+    e, w = detect(d), WEB2.get(d)
+    if e != soll or w != soll:
+        _abw += 1
+        print(f"❌ FAIL  {d!r}: soll {soll} | EXE {e} | Web {w}")
+        failures.append(f"Parität {d!r}: soll {soll}, EXE {e}, Web {w}")
+print(f"{'✅ PASS' if not _abw else '❌ FAIL'}  {len(DF['faelle']) - _abw}/{len(DF['faelle'])} Diktate: EXE = Web = Erwartungswert")
+_unerr = sorted(k for k, ds in _namens.items()
+                if not any(detect(d) == k and WEB2.get(d) == k for d in ds))
+_neu = sorted(set(_unerr) - set(DF["unerreichbar"]))
+_wieder = sorted(set(DF["unerreichbar"]) - set(_unerr))
+if _neu:
+    print(f"❌ FAIL  neu unerreichbare Vorlagen (über keinen Namens-Diktat erreichbar): {_neu}")
+    failures.append(f"Vorlagen neu unerreichbar: {_neu}")
+if _wieder:
+    print(f"ℹ️  HINWEIS  wieder erreichbar — bitte aus 'unerreichbar' in detect_fixtures.json streichen: {_wieder}")
+print(f"{'✅ PASS' if not _neu else '❌ FAIL'}  Erreichbarkeit: {len(TPL) - len(_unerr)}/{len(TPL)} Vorlagen über ihren Namen erreichbar"
+      f" (dokumentiert unerreichbar: {len(DF['unerreichbar'])})")
+
 # ── 3. BYPASS-SIMULATION (Headerformat v2.10.8) ──────────────────────────
 print("\n" + "=" * 70)
 print("TEIL 3: BYPASS-SIMULATION (## Titel vor ## Befund, v3.2: Ergebnis = Normal-Ergebnis, NIE das Diktat)")
