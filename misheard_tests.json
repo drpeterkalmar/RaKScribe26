@@ -179,6 +179,34 @@
   {
    "in": "progredient wie bisher",
    "out": "progredient wie bisher"
+  },
+  {
+   "in": "Ansonsten degeneratives Skelettphänomen.",
+   "out": "Ansonsten degenerative Skelettveränderungen."
+  },
+  {
+   "in": "Degeneratives Skelettphänomen der LWS",
+   "out": "degenerative Skelettveränderungen der LWS"
+  },
+  {
+   "in": "degenerative Skelettphänomene",
+   "out": "degenerative Skelettveränderungen"
+  },
+  {
+   "in": "mit degenerativen Skelettphänomenen",
+   "out": "mit degenerativen Skelettveränderungen"
+  },
+  {
+   "in": "Zeichen degenerativer Skelettphänomene",
+   "out": "Zeichen degenerativer Skelettveränderungen"
+  },
+  {
+   "in": "degeneratives Skelett-Phänomen",
+   "out": "degenerative Skelettveränderungen"
+  },
+  {
+   "in": "degenerative Skelettveränderungen",
+   "out": "degenerative Skelettveränderungen"
   }
  ]
 }
