@@ -155,6 +155,30 @@
   {
    "in": "wassersiptest negativ",
    "out": "Wasser-Siphon-Test negativ"
+  },
+  {
+   "in": "Raumforderung progradient",
+   "out": "Raumforderung progredient"
+  },
+  {
+   "in": "progradiente Größenzunahme",
+   "out": "progrediente Größenzunahme"
+  },
+  {
+   "in": "bei progradientem Verlauf",
+   "out": "bei progredientem Verlauf"
+  },
+  {
+   "in": "pro gradienter Befund",
+   "out": "progredienter Befund"
+  },
+  {
+   "in": "Dichtegradient unverändert",
+   "out": "Dichtegradient unverändert"
+  },
+  {
+   "in": "progredient wie bisher",
+   "out": "progredient wie bisher"
   }
  ]
 }

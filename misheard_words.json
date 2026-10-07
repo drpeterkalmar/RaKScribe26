@@ -7,7 +7,7 @@
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
   "Kandidaten für neue Einträge: /usr/bin/python3 tools/misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 tests/offline/misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
- "version": "2026-10-05b",
+ "version": "2026-10-07a",
  "rules": [
   {
    "hear": [
@@ -726,6 +726,19 @@
    "mean": "Wasser-Siphon-Test",
    "mode": "auto",
    "source": "Peter 05.10.2026"
+  },
+  {
+   "hear": [
+    "pro\\s?gradient(e[mnrs]?)?"
+   ],
+   "regex": true,
+   "show": [
+    "progradient",
+    "progradiente"
+   ],
+   "mean": "progredient$1",
+   "mode": "auto",
+   "source": "Peter 07.10.2026"
   }
  ]
 }
