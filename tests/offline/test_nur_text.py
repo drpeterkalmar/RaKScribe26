@@ -85,8 +85,8 @@ if satz:
     ctx.korrektur = None
     e = P.nur_text_aus_diktat("Knochendichte: Baustein A1", ctx)
     check("Satz-Bausteine werden auch im Nur-Text-Modus eingesetzt", "Baustein A1" not in e.report, e.report[:120])
-    snap_a1 = json.loads((HIER / "snapshots" / "nur_text_a1.json").read_text(encoding="utf-8"))
-    check("EXE = Web-Snapshot (pipeline_test.mjs prüft dieselbe Datei)", e.report == snap_a1["text"], e.report[:120])
+    snap_a1 = (HIER / "snapshots" / "nur_text_a1.txt").read_text(encoding="utf-8")  # .txt: *.json ist gitignored
+    check("EXE = Web-Snapshot (pipeline_test.mjs prüft dieselbe Datei)", e.report == snap_a1, e.report[:120])
 
 # 4. EXE-Ablauf: Schalter an → rechts der korrigierte Text, kopiert + eingefügt, Befund-KI nie gerufen
 import exe_stubs as S  # noqa: E402

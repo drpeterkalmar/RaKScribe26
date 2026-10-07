@@ -239,8 +239,8 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   const mitSatz = nurTextAusDiktat('Knochendichte: Baustein A1', {});
   check(!mitSatz.includes('Baustein A1') && !mitSatz.includes('## '), 'Nur Text: Satz-Baustein eingesetzt, kein Befund-Gerüst', mitSatz.slice(0, 120));
   // gleicher Text wie EXE (pipeline.py nur_text_aus_diktat ohne Korrektur)
-  const exe = JSON.parse(readFileSync('../tests/offline/snapshots/nur_text_a1.json', 'utf-8'));
-  check(mitSatz === exe.text, 'Nur Text: Web = EXE (Satz-Baustein A1)', `${mitSatz}\n≠ ${exe.text}`);
+  const exe = readFileSync('../tests/offline/snapshots/nur_text_a1.txt', 'utf-8');  // .txt: *.json ist gitignored
+  check(mitSatz === exe, 'Nur Text: Web = EXE (Satz-Baustein A1)', `${mitSatz}\n≠ ${exe}`);
 }
 
 console.log(`${n - fail}/${n} PASS (pipeline)`);
