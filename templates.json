@@ -614,7 +614,7 @@
   },
   "mammasonographie_beidseits": {
     "display_name": "Mammasonographie beidseits",
-    "body": "Mammasonographie beidseits\n\nInspektion und Palpation: Unauffälliger Inspektions- und Palpationsbefund. Axillen beidseits frei.\n\nMammasonographie: Beidseits regelrechte echographische Darstellung des Drüsenparenchyms ohne Nachweis solider oder zystischer Läsionen oder Architekturstörungen. Subcutis und Cutis beidseits unauffällig. Axillen beidseits frei, kein Nachweis pathologisch vergrößerter Lymphknoten.\n\nHautvenen: Beidseits unauffällige Darstellung der kutanen und subkutanen Venen. Kein Nachweis von Thrombosen oder pathologischen Erweiterungen.",
+    "body": "Mammasonographie beidseits\n\nInspektion und Palpation: Unauffälliger Inspektions- und Palpationsbefund. Axillen beidseits frei.\n\nMammasonographie: Beidseits regelrechte echographische Darstellung des Drüsenparenchyms ohne Nachweis solider oder zystischer Läsionen oder Architekturstörungen. Subcutis und Cutis beidseits unauffällig. Axillen beidseits frei, kein Nachweis pathologisch vergrößerter Lymphknoten.",
     "ergebnis": "Unauffälliger Befund. BI-RADS 1 beidseits."
   },
   "allgemein": {
