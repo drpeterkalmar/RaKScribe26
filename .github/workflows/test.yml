@@ -80,6 +80,8 @@ jobs:
         run: python tests/offline/test_clipboard.py
       - name: Nur-Text-Modus (Call 0 wie Web, kein Befund)
         run: python tests/offline/test_nur_text.py
+      - name: Diktat an der Cursor-Stelle in den Befund einfügen
+        run: python tests/offline/test_einfuegen.py
       - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings pipeline_test.mjs

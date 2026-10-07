@@ -27,6 +27,7 @@ import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Pro
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
 import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt von der Streaming-Live-Anzeige
+import einfuegen as _einf  # v3.5: Diktat an der Cursor-Stelle in den Befund einfügen
 import korrektur as _korr  # v3.4: Nur-Text-Modus (Call 0 wie Web-App)
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import protokoll as _prot  # Umbau Schritt 23: begrenztes Log, Diktatinhalt nur im Debug-Modus
@@ -588,6 +589,7 @@ class RaKScribeApp(ctk.CTk):
         self.stream_transcript = ""  # Live-Anzeige: finale Streaming-Abschnitte (Gutachten P2-5: nie in final_transcript)
         self.stream_interim = ""     # Live-Anzeige: letzter Zwischenstand
         self._aufnahme = None        # aufnahme.Aufnahme der laufenden/letzten Aufnahme
+        self._einfuegen_ziel = None  # v3.5: (start, ende) im Befund, wenn an der Cursor-Stelle diktiert wird
         self._live_aus = False       # Live-Anzeige ausgefallen (Aufnahme läuft weiter)
 
         # Audio-Eingabegeräte sammeln
@@ -1043,6 +1045,7 @@ class RaKScribeApp(ctk.CTk):
         self.final_transcript = ""
         self.stream_transcript = ""
         self.stream_interim = ""
+        self._einfuegen_ziel = None
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
         if self._job.zustand == _js.LOCKED:
@@ -1112,15 +1115,21 @@ class RaKScribeApp(ctk.CTk):
 
         if aktion == "start":
             log("[RECORD] Aufnahme wird gestartet...")
+            self._einfuegen_ziel = self._einfuege_ziel_ermitteln()
+            if self._einfuegen_ziel is not None:
+                log(f"[EINFÜGEN] Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt.")
             self.final_transcript = ""
             self.stream_transcript = ""
             self.stream_interim = ""
             self._live_aus = False
             self.transcript_text.delete("1.0", "end")
-            self.result_text.delete("1.0", "end")
+            if self._einfuegen_ziel is None:
+                self.result_text.delete("1.0", "end")
             self.is_recording = True
             
             self.update_status("RECORDING", "recording")
+            if self._einfuegen_ziel is not None:
+                self.status_badge.configure(text="   ●  Diktat wird an der Cursor-Stelle eingefügt   ")
             self.record_btn.configure(text=" Aufnahme Stoppen (F10) (0s) ", fg_color=RECORDING_RED)
             self.level_indicator.configure(fg_color=READY_GREEN, width=0)
 
@@ -1242,6 +1251,53 @@ class RaKScribeApp(ctk.CTk):
             color = "#F39C12"
         self.level_indicator.configure(fg_color=color)
 
+    def _einfuege_ziel_ermitteln(self):
+        """v3.5.0 (Peter 07.10.): Steht der Cursor im Befund-Feld (Fokus dort, RaKScribe vorne, Befund nicht leer),
+        wird das nächste Diktat als korrigierter Text an dieser Stelle eingefügt bzw. ersetzt die Markierung.
+        Rückgabe (start, ende) als Zeichen-Offsets im Befundtext oder None (= normales Diktat)."""
+        try:
+            tb = self.result_text._textbox
+            if not self.result_text.get("1.0", "end-1c").strip():
+                return None
+            if self.focus_get() is not tb or not _fokus_ist_eigenes_fenster():
+                return None
+            if tb.tag_ranges("sel"):
+                a, b = tb.index("sel.first"), tb.index("sel.last")
+            else:
+                a = b = tb.index("insert")
+            # Tk-Marken wandern mit, falls während der Aufnahme im Befund getippt wird
+            tb.mark_set("diktat_a", a)
+            tb.mark_gravity("diktat_a", "left")
+            tb.mark_set("diktat_b", b)
+            tb.mark_gravity("diktat_b", "right")
+            return self._offset(a), self._offset(b)
+        except Exception as e:
+            log(f"[EINFÜGEN] Cursor-Stelle nicht lesbar: {e}")
+            return None
+
+    def _offset(self, index):
+        r = self.result_text._textbox.count("1.0", index, "chars")
+        return int((r[0] if isinstance(r, tuple) else r) or 0)
+
+    def _einfuegen_an_ziel(self, gen, ziel, text):
+        """Läuft im UI-Thread: korrigierten Text an der gemerkten Stelle einsetzen, Cursor dahinter."""
+        if not self._job.aktuell(gen):
+            return
+        try:  # aktuelle Lage der Marken (falls inzwischen getippt wurde)
+            ziel = (self._offset("diktat_a"), self._offset("diktat_b"))
+        except Exception:
+            pass
+        neu, cursor = _einf.einfuegen(self.result_text.get("1.0", "end-1c"), ziel[0], ziel[1], text)
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", neu)
+        try:
+            tb = self.result_text._textbox
+            tb.mark_set("insert", f"1.0+{cursor}c")
+            tb.see("insert")
+            tb.focus_set()
+        except Exception:
+            pass
+
     def nur_text_aktiv(self):
         v = getattr(self, "nur_text_var", None)
         return bool(v.get()) if v is not None else False
@@ -1254,6 +1310,18 @@ class RaKScribeApp(ctk.CTk):
     def process_dictation(self, gen):
         try:
             # Umbau Schritt 15: die ganze Kette ohne Oberfläche in pipeline.py (dieselbe Funktion wie prod_pipeline)
+            ziel = getattr(self, "_einfuegen_ziel", None)
+            if ziel is not None:  # v3.5.0: Diktat an der Cursor-Stelle in den bestehenden Befund (korrigierter Text)
+                erg = _pl.nur_text_aus_diktat(self.final_transcript, _pipeline_kontext())
+                if erg.leer:
+                    self.after(0, lambda: self._ende_kein_text(gen))
+                    return
+                if not self._job.aktuell(gen):
+                    log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingefügt.")
+                    return
+                self.after(0, lambda t=erg.report: self._einfuegen_an_ziel(gen, ziel, t))
+                self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
+                return
             if self.nur_text_aktiv():  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
                 self._ui(gen, lambda: (self.result_text.delete("1.0", "end"),
                                        self.result_text.insert("1.0", "... Text wird korrigiert ...")))

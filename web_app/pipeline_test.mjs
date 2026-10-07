@@ -8,6 +8,7 @@ import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
 import { wavFromInt16 } from './src/audio.ts';
 import { befundAusDiktat, nurTextAusDiktat } from './src/pipeline.ts';
+import { einfuegen, markdownOffset } from './src/einfuegen.ts';
 import { correctTranscriptionWithGemini, validationPrompt, correctionPrompt, SYS_MSG, VERTEX_ENDPOINT } from './src/gemini.ts';
 import { nachbearbeiten } from './src/befundRegeln.ts';
 
@@ -241,6 +242,21 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   // gleicher Text wie EXE (pipeline.py nur_text_aus_diktat ohne Korrektur)
   const exe = readFileSync('../tests/offline/snapshots/nur_text_a1.txt', 'utf-8');  // .txt: *.json ist gitignored
   check(mitSatz === exe, 'Nur Text: Web = EXE (Satz-Baustein A1)', `${mitSatz}\n≠ ${exe}`);
+}
+
+{
+  // v3.5.0 Diktat an der Cursor-Stelle: dieselben Fälle wie die EXE (tests/offline/test_einfuegen.py)
+  for (const f of JSON.parse(readFileSync('../tests/offline/snapshots/einfuegen_faelle.txt', 'utf-8'))) {
+    const r = einfuegen(f.text, f.start, f.ende, f.neu);
+    check(r[0] === f.ergebnis && r[1] === f.cursor, `einfuegen = EXE: ${f.name}`, JSON.stringify(r));
+  }
+  // Klick in der formatierten Ansicht → Offset im Markdown (Text ohne „## “ / „1. “)
+  const md = '## Kniegelenk rechts\n\n## Befund\nKein Erguss. Bänder intakt.\n\n## Ergebnis\n1. Erguss\n2. Erguss';
+  check(markdownOffset(md, 'Kein Erguss. Bänder intakt.', 13) === md.indexOf('Bänder'), 'markdownOffset: Klick im Befundtext');
+  check(markdownOffset(md, 'Kniegelenk rechts', 0) === 3, 'markdownOffset: Titel ohne „## “');
+  // letzter Ergebnis-Punkt „Erguss“: davor stehen „Kein Erguss…“ und „1. Erguss“ → 2 Vorkommen
+  check(markdownOffset(md, 'Erguss', 2, 2) === md.lastIndexOf('Erguss') + 2, 'markdownOffset: gleiches Textstück, späteres Vorkommen');
+  check(markdownOffset(md, 'gibt es nicht', 0) === null, 'markdownOffset: nicht gefunden → null');
 }
 
 console.log(`${n - fail}/${n} PASS (pipeline)`);

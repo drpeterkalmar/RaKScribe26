@@ -1,0 +1,92 @@
+[
+ {
+  "name": "Cursor mitten im Satz",
+  "text": "## Befund\nKein Erguss. Bänder intakt.",
+  "start": 22,
+  "ende": 22,
+  "neu": "Menisken unauffällig.",
+  "ergebnis": "## Befund\nKein Erguss. Menisken unauffällig. Bänder intakt.",
+  "cursor": 44
+ },
+ {
+  "name": "Cursor am Satzende vor Punkt",
+  "text": "Kein Erguss.",
+  "start": 11,
+  "ende": 11,
+  "neu": "im oberen Rezessus.",
+  "ergebnis": "Kein Erguss im oberen Rezessus.",
+  "cursor": 30
+ },
+ {
+  "name": "Cursor nach Leerzeichen",
+  "text": "Kein Erguss. Bänder intakt.",
+  "start": 13,
+  "ende": 13,
+  "neu": "Knorpel glatt.",
+  "ergebnis": "Kein Erguss. Knorpel glatt. Bänder intakt.",
+  "cursor": 27
+ },
+ {
+  "name": "Cursor am Textende",
+  "text": "Kein Erguss.",
+  "start": 12,
+  "ende": 12,
+  "neu": "Bänder intakt.",
+  "ergebnis": "Kein Erguss. Bänder intakt.",
+  "cursor": 27
+ },
+ {
+  "name": "Cursor am Textanfang",
+  "text": "Kein Erguss.",
+  "start": 0,
+  "ende": 0,
+  "neu": "Gelenkerguss rechts",
+  "ergebnis": "Gelenkerguss rechts Kein Erguss.",
+  "cursor": 19
+ },
+ {
+  "name": "Markierung überschreiben",
+  "text": "Geringer Erguss im Rezessus.",
+  "start": 0,
+  "ende": 16,
+  "neu": "Deutlicher Erguss",
+  "ergebnis": "Deutlicher Erguss im Rezessus.",
+  "cursor": 17
+ },
+ {
+  "name": "Markierung inkl. Punkt",
+  "text": "Bänder intakt. Kein Erguss.",
+  "start": 15,
+  "ende": 27,
+  "neu": "Mäßiger Erguss.",
+  "ergebnis": "Bänder intakt. Mäßiger Erguss.",
+  "cursor": 30
+ },
+ {
+  "name": "leeres Diktat löscht Markierung",
+  "text": "Bänder intakt. Kein Erguss.",
+  "start": 14,
+  "ende": 27,
+  "neu": "",
+  "ergebnis": "Bänder intakt.",
+  "cursor": 14
+ },
+ {
+  "name": "Markierung über Zeilen",
+  "text": "## Ergebnis\n1. Arthrose\n2. Erguss",
+  "start": 15,
+  "ende": 33,
+  "neu": "Gonarthrose Grad 2 nach Kellgren & Lawrence",
+  "ergebnis": "## Ergebnis\n1. Gonarthrose Grad 2 nach Kellgren & Lawrence",
+  "cursor": 58
+ },
+ {
+  "name": "leerer Befund",
+  "text": "",
+  "start": 0,
+  "ende": 0,
+  "neu": "Kein Erguss.",
+  "ergebnis": "Kein Erguss.",
+  "cursor": 12
+ }
+]

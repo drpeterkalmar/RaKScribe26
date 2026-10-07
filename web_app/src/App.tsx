@@ -25,6 +25,7 @@ import { istAbbruch, fehlermeldung } from './net.ts';
 // Umbau Schritt 18: Gemini-Aufrufe (Call 0/1/2, Schlüsselprüfung) und Befund-Kette als Module
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
 import { befundAusDiktat, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
+import { einfuegen, markdownOffset } from './einfuegen.ts';
 import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
 import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
@@ -230,6 +231,11 @@ export default function App() {
   const [statusText, setStatusText] = useState<string>('Bereit');
   const [transcript, setTranscript] = useState<string>('');
   const [structuredReport, setStructuredReport] = useState<string>('');
+  // v3.5.0 (Peter 07.10.): Befund bearbeitbar; Diktat an der Cursor-Stelle einfügen bzw. Markierung überschreiben
+  const structuredReportRef = useLatest(structuredReport);
+  const reportEditorRef = useRef<HTMLTextAreaElement>(null);
+  const einfuegeZielRef = useRef<[number, number] | null>(null);    // beim Start der Aufnahme gemerkte Stelle
+  const [cursorSetzen, setCursorSetzen] = useState<[number, number] | null>(null);  // nach Render in den Editor
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [pendingCopyText, setPendingCopyText] = useState<string>('');
 
@@ -443,9 +449,60 @@ export default function App() {
     misheard: { compiled: MISHEARD_COMPILED, block: MISHEARD_PROMPT_BLOCK },
     templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES,
   });
+  // v3.5.0: Steht der Cursor im Befund-Editor (und ist ein Befund da), wird das nächste Diktat dort eingefügt.
+  // Aufruf VOR dem Fokuswechsel (F10-keydown bzw. mousedown auf dem Aufnahme-Knopf).
+  const einfuegeZielMerken = () => {
+    const ed = reportEditorRef.current;
+    einfuegeZielRef.current = ed && document.activeElement === ed && structuredReportRef.current.trim()
+      ? [ed.selectionStart, ed.selectionEnd] : null;
+  };
+
+  // Klick/Markierung in der formatierten Ansicht → Text-Ansicht (bearbeitbar) mit Cursor an derselben Stelle
+  const formatiertAngeklickt = (e: React.MouseEvent<HTMLDivElement>) => {
+    const md = structuredReportRef.current;
+    const sel = window.getSelection();
+    const knoten = (n: Node | null) => {
+      if (!n || n.nodeType !== Node.TEXT_NODE) return null;
+      const alle: Node[] = [];
+      const w = document.createTreeWalker(e.currentTarget, NodeFilter.SHOW_TEXT);
+      for (let t = w.nextNode(); t; t = w.nextNode()) alle.push(t);
+      const i = alle.indexOf(n);
+      if (i < 0) return null;
+      const txt = n.textContent ?? '';
+      // Vorkommen des gleichen Textstücks in den Textknoten davor (wie indexOf im Markdown weiterzählt)
+      const vorkommen = txt ? alle.slice(0, i).reduce((s, t) => s + ((t.textContent ?? '').split(txt).length - 1), 0) : 0;
+      return { txt, vorkommen };
+    };
+    let a = md.length, b = md.length;
+    if (sel && sel.rangeCount) {
+      const r = sel.getRangeAt(0);
+      const ka = knoten(r.startContainer), kb = knoten(r.endContainer);
+      const oa = ka ? markdownOffset(md, ka.txt, r.startOffset, ka.vorkommen) : null;
+      const ob = kb ? markdownOffset(md, kb.txt, r.endOffset, kb.vorkommen) : null;
+      if (oa !== null) { a = oa; b = ob !== null && ob >= oa ? ob : oa; }
+    }
+    setReportView('text');
+    setCursorSetzen([a, b]);
+  };
+  useEffect(() => {
+    const ed = reportEditorRef.current;
+    if (!cursorSetzen || !ed) return;
+    ed.focus();
+    ed.setSelectionRange(cursorSetzen[0], cursorSetzen[1]);
+    setCursorSetzen(null);
+  }, [cursorSetzen, reportView]);
+
   // Befund (Regionen → Bypass | Call 1 + 2) oder im Nur-Text-Modus nur der korrigierte Text (Call 0 lief schon)
-  const befundOderText = (text: string, ctx: PipelineKontext): Promise<string> =>
-    nurTextRef.current ? Promise.resolve(nurTextAusDiktat(text, ctx)) : befundAusDiktat(text, ctx);
+  // v3.5.0: mit gemerkter Cursor-Stelle → korrigierter Text in den bestehenden Befund (Ergebnis = ganzer Befund)
+  const befundOderText = (text: string, ctx: PipelineKontext, ziel: [number, number] | null = null): Promise<string> => {
+    if (ziel) {
+      const [neu, cursor] = einfuegen(structuredReportRef.current, ziel[0], ziel[1], nurTextAusDiktat(text, ctx));
+      setReportView('text');
+      setCursorSetzen([cursor, cursor]);
+      return Promise.resolve(neu);
+    }
+    return nurTextRef.current ? Promise.resolve(nurTextAusDiktat(text, ctx)) : befundAusDiktat(text, ctx);
+  };
   const befundUi = (): BefundUi => ({
     transkript: setTranscript,
     befund: setStructuredReport,
@@ -545,9 +602,9 @@ export default function App() {
       const lauf = laeufeRef.current.neu();
       aufnahmeLaufRef.current = lauf;
       setTranscript('');
-      setStructuredReport('');
+      if (!einfuegeZielRef.current) setStructuredReport('');  // v3.5.0: an der Cursor-Stelle → Befund bleibt
       setStatus('recording');
-      setStatusText('Aufnahme läuft...');
+      setStatusText(einfuegeZielRef.current ? 'Aufnahme läuft — wird an der Cursor-Stelle im Befund eingefügt' : 'Aufnahme läuft...');
       pufferRef.current = new Int16Puffer();
 
       // Reset chunk refs
@@ -640,6 +697,8 @@ export default function App() {
     audioStoppen();
 
     const chunkText = () => chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
+    const ziel = einfuegeZielRef.current;  // v3.5.0: gemerkte Cursor-Stelle (null = normaler Befund)
+    einfuegeZielRef.current = null;
     await befundLauf(lauf, {
       transkribieren: async () => {
         const st = lauf.nurAktuell(setStatusText);
@@ -679,7 +738,7 @@ export default function App() {
       },
       korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
-      befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal)),
+      befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal), ziel),
     }, befundUi(), { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
   };
 
@@ -721,6 +780,7 @@ export default function App() {
   // Reset fields — Umbau Schritt 8: bricht laufende Aufnahme/Verarbeitung ab (nichts wird mehr eingefügt)
   const handleReset = () => {
     laeufeRef.current.abbrechen();
+    einfuegeZielRef.current = null;
     aufnahmeLaufRef.current = null;
     if (chunkIntervalRef.current) {
       clearInterval(chunkIntervalRef.current);
@@ -744,6 +804,7 @@ export default function App() {
   const startRecordingRef = useLatest(startRecording);
   const stopRecordingRef = useLatest(stopRecording);
   const handleResetRef = useLatest(handleReset);
+  const einfuegeZielMerkenRef = useLatest(einfuegeZielMerken);
   const handleAudioUploadRef = useLatest(handleAudioUpload);
 
   // Drag & Drop irgendwo ins Fenster
@@ -784,6 +845,7 @@ export default function App() {
         if (statusRef.current === 'recording') {
           stopRecordingRef.current();
         } else if (statusRef.current === 'ready' && keysReadyRef.current) {
+          einfuegeZielMerkenRef.current();
           startRecordingRef.current();
         }
       } else if (e.key === 'F9') {
@@ -796,7 +858,7 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [statusRef, keysReadyRef, startRecordingRef, stopRecordingRef, handleResetRef]);
+  }, [statusRef, keysReadyRef, startRecordingRef, stopRecordingRef, handleResetRef, einfuegeZielMerkenRef]);
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -916,7 +978,7 @@ export default function App() {
                 <MicOff size={18} /> Aufnahme stoppen <kbd>F10</kbd>
               </button>
             ) : (
-              <button onClick={startRecording} disabled={status === 'processing' || !keysReady} className="btn btn-record">
+              <button onMouseDown={einfuegeZielMerken} onClick={startRecording} disabled={status === 'processing' || !keysReady} className="btn btn-record">
                 <Mic size={18} /> Aufnahme starten <kbd>F10</kbd>
               </button>
             )}
@@ -961,15 +1023,17 @@ export default function App() {
             </label>
             <div className="seg" role="tablist" aria-label="Ansicht">
               <button role="tab" aria-selected={reportView === 'formatiert'} className={reportView === 'formatiert' ? 'on' : ''} onClick={() => setReportView('formatiert')}>Formatiert</button>
-              <button role="tab" aria-selected={reportView === 'text'} className={reportView === 'text' ? 'on' : ''} onClick={() => setReportView('text')}>Text</button>
+              <button role="tab" aria-selected={reportView === 'text'} className={reportView === 'text' ? 'on' : ''} onClick={() => setReportView('text')} title="Befund mit der Tastatur bearbeiten">Bearbeiten</button>
             </div>
           </div>
           {reportView === 'formatiert' ? (
             structuredReport
-              ? <div className="report-view" dangerouslySetInnerHTML={{ __html: reportToHtml(structuredReport) }} />
+              ? <div className="report-view" title="Klicken zum Bearbeiten oder um an dieser Stelle zu diktieren" onMouseUp={formatiertAngeklickt} dangerouslySetInnerHTML={{ __html: reportToHtml(structuredReport) }} />
               : <div className="report-view report-empty">Der strukturierte Befund erscheint hier nach dem Diktat und wird automatisch kopiert.</div>
           ) : (
-            <textarea value={structuredReport} readOnly className="editor editor-report" placeholder="Noch kein Befund." />
+            <textarea ref={reportEditorRef} value={structuredReport} onChange={e => setStructuredReport(e.target.value)}
+              className="editor editor-report" placeholder="Noch kein Befund."
+              title="Befund bearbeiten. Cursor setzen oder Text markieren und F10: das Diktat wird an dieser Stelle eingefügt." />
           )}
           <div className="panel-foot">
             <span className="hint">Für RIS oder Word</span>

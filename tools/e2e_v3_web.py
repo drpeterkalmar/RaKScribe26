@@ -55,7 +55,7 @@ try:
         pg.set_input_files("input[accept^='audio']", str(AUDIO))
         pg.wait_for_function("() => (document.querySelector('.report-view')?.innerText || '').includes('Ergebnis') && document.querySelectorAll('.report-view h3').length >= 2", timeout=90000)
         check("5 Befund formatiert (Überschriften gerendert, kein '##')", '##' not in pg.inner_text('.report-view'))
-        pg.click(".seg button:has-text('Text')")
+        pg.click(".seg button:has-text('Bearbeiten')")
         rep = pg.input_value(".editor-report")
         pg.click(".seg button:has-text('Formatiert')")
         check("5 Audio → Befund mit ## Befund + ## Ergebnis", "## Befund" in rep and "## Ergebnis" in rep and len(rep.split("## Ergebnis")[1].strip()) > 5)
