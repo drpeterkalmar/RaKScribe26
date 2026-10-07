@@ -47,6 +47,11 @@ def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
     return t or re.sub(r"\s*\(Allgemein\)", "", display_name, flags=re.I).strip()
 
 
+
+# v3.3.3: Mammographie in jeder Schreibweise („Mammographie“, „Mammografie“, „Mammogramm“, „Mammo“, „Mammo-“),
+# aber NICHT „Mammasonographie“ (m-a-m-m-a). Sync: detect.ts MAMMOGRAPHIE_RE
+MAMMOGRAPHIE_RE = re.compile(r"(?<![a-zäöüß])mammo(?:gra(?:ph|f|mm)|(?![a-zäöüß]))")
+
 def detect_template(text, templates):
     """Bessere Erkennungslogik für den Untersuchungstyp. templates = Vorlagen (templates.json) — für die
     Vorrang-Regeln und den Fallback „Key steht im Diktat“."""
@@ -125,6 +130,13 @@ def detect_template(text, templates):
         else:
             return "hws_und_lws"
     
+    # v3.3.3 (Peter 07.10.): „Mammographie …, in der Sonographie …“ ist IMMER die Mammographie-Vorlage
+    # (Inspektion/Palpation + Mammographie + ein Absatz Sonographie). Vorher fing „sono“ das Diktat ab →
+    # sonografie_allgemein (Abdomen-Floskeln, keine Mammographie). „Mammographie“ ohne „sono“ landete in „allgemein“,
+    # weil der Kurzwort-Trigger nur „Mammo“ allein erkannte.
+    if MAMMOGRAPHIE_RE.search(text_lower):
+        return "mammographie_beidseits"
+
     # 0. Spezialregeln für Sonographie vorab prüfen (da sehr häufig)
     if any(x in text_lower for x in ["sono", "schall", "ultraschall", "duplex"]):
         # v3.2.2: Schulter-Sonographie (Web-Parität — die EXE fiel hier bisher auf sonografie_allgemein)
@@ -226,7 +238,7 @@ def detect_template(text, templates):
     if any(x in text_lower for x in ["dexa", "knochendichte", "densitometrie", "odm"]):
         return "knochendichtemessung_dexa"
         
-    # 3. Mammographie / Fernröntgen — v3.3 (Peter 06.10.): auch Kurzwort „Mammo“
+    # 3. Mammographie / Fernröntgen — v3.3 (Peter 06.10.): auch Kurzwort „Mammo“ (Mammographie selbst: oben)
     if "mamma" in text_lower or re.search(r"(?<![a-zäöüß])mammo(?![a-zäöüß])", text_lower):
         if any(x in text_lower for x in ["sono", "schall", "ultraschall", "mammasono"]):
             return "mammasonographie_beidseits"

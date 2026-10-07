@@ -39,6 +39,9 @@ export function deriveUntersuchungsTitel(raw: string, displayName: string): stri
 }
 
 // Detect modality template based on text keywords (1:1 from EXE Version)
+// v3.3.3: Mammographie in jeder Schreibweise, nicht „Mammasonographie“. Sync: detect.py MAMMOGRAPHIE_RE
+export const MAMMOGRAPHIE_RE = /(?<![a-zäöüß])mammo(?:gra(?:ph|f|mm)|(?![a-zäöüß]))/;
+
 export function detectTemplate(text: string, templates: TemplatesMap, vorrangDaten: VorrangDaten): string {
   // v3.2.3 (Peter 06.10.): Vorrang-Regeln + diktierter Vorlagenname aus vorlagen_vorrang.json zuerst (Sync: RaKScribe.py)
   const vorrang = vorrangVorlage(text, templates, vorrangDaten);
@@ -128,6 +131,9 @@ export function detectTemplate(text: string, templates: TemplatesMap, vorrangDat
     }
   }
   
+  // v3.3.3 (Peter 07.10.): „Mammographie …, in der Sonographie …“ ist IMMER die Mammographie-Vorlage (Sync: detect.py)
+  if (MAMMOGRAPHIE_RE.test(textLower)) return "mammographie_beidseits";
+
   if (textLower.includes("sono") || textLower.includes("schall") || textLower.includes("ultraschall") || textLower.includes("duplex")) {
     // ── Schulter-Sonographie (vor allem anderen prüfen!) ──
     if (textLower.includes("schulter") || textLower.includes("supraspinatus") || textLower.includes("infraspinatus") || textLower.includes("bizepssehne") || textLower.includes("rotatorenmanschette") || textLower.includes("subacromial") || textLower.includes("subakromial") || textLower.includes("bursitis subacromialis")) {

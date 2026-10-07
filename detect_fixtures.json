@@ -2,675 +2,2709 @@
   "_doc": "Paritäts-Fixture der Vorlagen-Erkennung (Umbau 06.10.2026, Gutachten P1-3/P2-3). Erwartungswert = Stand der EXE-Erkennung bei Anlage (v3.2.3: EXE = Web, alle Vorlagen erreichbar). Inhalt: je Vorlage '<display_name> unauffällig', '<display_name> rechts unauffällig', '<key ohne _> o.B.'; alle Diktate aus befund_regeln_fixtures.json (split/ergebnis_seite/titel_seite), normal_bypass_tests.json, misheard_tests.json (in + out), DETECT_CASES aus tests/offline/test_normalbefunde.py und vorlagen_vorrang_tests.json. Geprüft in tests/offline/test_normalbefunde.py TEIL 2c: EXE (detect_template) UND Web (detectTemplate) müssen den Erwartungswert liefern. Eine bewusste Erkennungsänderung heißt: Erwartungswert hier anpassen (Peter entscheidet). 'unerreichbar' = dokumentierte Vorlagen, die über keinen der drei Namens-Diktate erreichbar sind (Gutachten: 22, seit v3.2.3: 0). Umbau Schritt 7: 7 längere Diktate ergänzt, bei denen die alte Erkennung (hinter den Vorrang-Regeln) noch abwich — Blockade/Injektion im Sono-Zweig = EXE-Stand, Ganzaufnahme = Web-Stand.",
   "unerreichbar": [],
   "faelle": [
-    ["Schädel in 2 Ebenen unauffällig", "schädel_in_2_ebenen"],
-    ["Schädel in 2 Ebenen rechts unauffällig", "schädel_in_2_ebenen"],
-    ["schädel in 2 ebenen o.B.", "schädel_in_2_ebenen"],
-    ["Nasennebenhöhlen unauffällig", "nasennebenhöhlen"],
-    ["Nasennebenhöhlen rechts unauffällig", "nasennebenhöhlen"],
-    ["nasennebenhöhlen o.B.", "nasennebenhöhlen"],
-    ["Orthopantomogramm des Kiefer- und Gesichtsschädels unauffällig", "orthopantomogramm_des_kiefer-_und_gesichtsschädels"],
-    ["Orthopantomogramm des Kiefer- und Gesichtsschädels rechts unauffällig", "orthopantomogramm_des_kiefer-_und_gesichtsschädels"],
-    ["orthopantomogramm des kiefer- und gesichtsschädels o.B.", "orthopantomogramm_des_kiefer-_und_gesichtsschädels"],
-    ["Nasenbein unauffällig", "nasenbein"],
-    ["Nasenbein rechts unauffällig", "nasenbein"],
-    ["nasenbein o.B.", "nasenbein"],
-    ["Jochbogen unauffällig", "jochbogen"],
-    ["Jochbogen rechts unauffällig", "jochbogen"],
-    ["jochbogen o.B.", "jochbogen"],
-    ["Ganzaufnahme der Wirbelsäule a.-p. unauffällig", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["Ganzaufnahme der Wirbelsäule a.-p. rechts unauffällig", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["ganzaufnahme der wirbelsäule a-p o.B.", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["Halswirbelsäule in 2 Ebenen unauffällig", "halswirbelsäule_in_2_ebenen"],
-    ["Halswirbelsäule in 2 Ebenen rechts unauffällig", "halswirbelsäule_in_2_ebenen"],
-    ["halswirbelsäule in 2 ebenen o.B.", "halswirbelsäule_in_2_ebenen"],
-    ["Schrägaufnahme der Halswirbelsäule unauffällig", "schrägaufnahme_der_halswirbelsäule"],
-    ["Schrägaufnahme der Halswirbelsäule rechts unauffällig", "schrägaufnahme_der_halswirbelsäule"],
-    ["schrägaufnahme der halswirbelsäule o.B.", "schrägaufnahme_der_halswirbelsäule"],
-    ["Funktionsaufnahmen der Halswirbelsäule unauffällig", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["Funktionsaufnahmen der Halswirbelsäule rechts unauffällig", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["funktionsaufnahmen der halswirbelsäule o.B.", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["Brustwirbelsäule in 2 Ebenen unauffällig", "brustwirbelsäule_in_2_ebenen"],
-    ["Brustwirbelsäule in 2 Ebenen rechts unauffällig", "brustwirbelsäule_in_2_ebenen"],
-    ["brustwirbelsäule in 2 ebenen o.B.", "brustwirbelsäule_in_2_ebenen"],
-    ["Lendenwirbelsäule in 2 Ebenen unauffällig", "lendenwirbelsäule_in_2_ebenen"],
-    ["Lendenwirbelsäule in 2 Ebenen rechts unauffällig", "lendenwirbelsäule_in_2_ebenen"],
-    ["lendenwirbelsäule in 2 ebenen o.B.", "lendenwirbelsäule_in_2_ebenen"],
-    ["Funktionsaufnahmen der Lendenwirbelsäule unauffällig", "funktionsaufnahmen_der_lendenwirbelsäule"],
-    ["Funktionsaufnahmen der Lendenwirbelsäule rechts unauffällig", "funktionsaufnahmen_der_lendenwirbelsäule"],
-    ["funktionsaufnahmen der lendenwirbelsäule o.B.", "funktionsaufnahmen_der_lendenwirbelsäule"],
-    ["Beckenübersicht stehend unauffällig", "beckenübersicht_stehend"],
-    ["Beckenübersicht stehend rechts unauffällig", "beckenübersicht_stehend"],
-    ["beckenübersicht stehend o.B.", "beckenübersicht_stehend"],
-    ["Iliosakralgelenke a.-p. unauffällig", "iliosakralgelenke_a-p"],
-    ["Iliosakralgelenke a.-p. rechts unauffällig", "iliosakralgelenke_a-p"],
-    ["iliosakralgelenke a-p o.B.", "iliosakralgelenke_a-p"],
-    ["Kreuzbein und Steißbein in 2 Ebenen unauffällig", "kreuzbein_und_steißbein_in_2_ebenen"],
-    ["Kreuzbein und Steißbein in 2 Ebenen rechts unauffällig", "kreuzbein_und_steißbein_in_2_ebenen"],
-    ["kreuzbein und steißbein in 2 ebenen o.B.", "kreuzbein_und_steißbein_in_2_ebenen"],
-    ["Knöcherner Hemithorax unauffällig", "knöcherner_hemithorax"],
-    ["Knöcherner Hemithorax rechts unauffällig", "knöcherner_hemithorax"],
-    ["knöcherner hemithorax o.B.", "knöcherner_hemithorax"],
-    ["Sternum in 2 Ebenen unauffällig", "sternum_in_2_ebenen"],
-    ["Sternum in 2 Ebenen rechts unauffällig", "sternum_in_2_ebenen"],
-    ["sternum in 2 ebenen o.B.", "sternum_in_2_ebenen"],
-    ["Schultergelenke a.-p. unter Belastung unauffällig", "schultergelenke_a-p_unter_belastung"],
-    ["Schultergelenke a.-p. unter Belastung rechts unauffällig", "schultergelenke_a-p_unter_belastung"],
-    ["schultergelenke a-p unter belastung o.B.", "schultergelenke_a-p_unter_belastung"],
-    ["Clavicula unauffällig", "clavicula"],
-    ["Clavicula rechts unauffällig", "clavicula"],
-    ["clavicula o.B.", "clavicula"],
-    ["Akromioklavikulargelenk unauffällig", "akromioklavikulargelenk"],
-    ["Akromioklavikulargelenk rechts unauffällig", "akromioklavikulargelenk"],
-    ["akromioklavikulargelenk o.B.", "akromioklavikulargelenk"],
-    ["Scapula in 2 Ebenen unauffällig", "scapula_in_2_ebenen"],
-    ["Scapula in 2 Ebenen rechts unauffällig", "scapula_in_2_ebenen"],
-    ["scapula in 2 ebenen o.B.", "scapula_in_2_ebenen"],
-    ["Schultergelenk in 2 Ebenen unauffällig", "schultergelenk_in_2_ebenen"],
-    ["Schultergelenk in 2 Ebenen rechts unauffällig", "schultergelenk_in_2_ebenen"],
-    ["schultergelenk in 2 ebenen o.B.", "schultergelenk_in_2_ebenen"],
-    ["Schultergelenk tangential (Bizepssehnenkanal) unauffällig", "schultergelenk_tangential_bizepssehnenkanal"],
-    ["Schultergelenk tangential (Bizepssehnenkanal) rechts unauffällig", "schultergelenk_tangential_bizepssehnenkanal"],
-    ["schultergelenk tangential bizepssehnenkanal o.B.", "schultergelenk_tangential_bizepssehnenkanal"],
-    ["Oberarm in 2 Ebenen unauffällig", "oberarm_in_2_ebenen"],
-    ["Oberarm in 2 Ebenen rechts unauffällig", "oberarm_in_2_ebenen"],
-    ["oberarm in 2 ebenen o.B.", "oberarm_in_2_ebenen"],
-    ["Ellbogengelenk in 2 Ebenen unauffällig", "ellbogengelenk_in_2_ebenen"],
-    ["Ellbogengelenk in 2 Ebenen rechts unauffällig", "ellbogengelenk_in_2_ebenen"],
-    ["ellbogengelenk in 2 ebenen o.B.", "ellbogengelenk_in_2_ebenen"],
-    ["Axialaufnahme des Ellbogens unauffällig", "axialaufnahme_des_ellbogens"],
-    ["Axialaufnahme des Ellbogens rechts unauffällig", "axialaufnahme_des_ellbogens"],
-    ["axialaufnahme des ellbogens o.B.", "axialaufnahme_des_ellbogens"],
-    ["Unterarm in 2 Ebenen unauffällig", "unterarm_in_2_ebenen"],
-    ["Unterarm in 2 Ebenen rechts unauffällig", "unterarm_in_2_ebenen"],
-    ["unterarm in 2 ebenen o.B.", "unterarm_in_2_ebenen"],
-    ["Hand in 2 Ebenen unauffällig", "hand_in_2_ebenen"],
-    ["Hand in 2 Ebenen rechts unauffällig", "hand_in_2_ebenen"],
-    ["hand in 2 ebenen o.B.", "hand_in_2_ebenen"],
-    ["Handgelenk in 2 Ebenen unauffällig", "handgelenk_in_2_ebenen"],
-    ["Handgelenk in 2 Ebenen rechts unauffällig", "handgelenk_in_2_ebenen"],
-    ["handgelenk in 2 ebenen o.B.", "handgelenk_in_2_ebenen"],
-    ["Karpaltunnelaufnahme unauffällig", "karpaltunnelaufnahme"],
-    ["Karpaltunnelaufnahme rechts unauffällig", "karpaltunnelaufnahme"],
-    ["karpaltunnelaufnahme o.B.", "karpaltunnelaufnahme"],
-    ["Naviculareserie unauffällig", "naviculareserie"],
-    ["Naviculareserie rechts unauffällig", "naviculareserie"],
-    ["naviculareserie o.B.", "naviculareserie"],
-    ["Finger in 2 Ebenen unauffällig", "finger_in_2_ebenen"],
-    ["Finger in 2 Ebenen rechts unauffällig", "finger_in_2_ebenen"],
-    ["finger in 2 ebenen o.B.", "finger_in_2_ebenen"],
-    ["Ganzbeinaufnahme im Stand unauffällig", "ganzbeinaufnahme_im_stand"],
-    ["Ganzbeinaufnahme im Stand rechts unauffällig", "ganzbeinaufnahme_im_stand"],
-    ["ganzbeinaufnahme im stand o.B.", "ganzbeinaufnahme_im_stand"],
-    ["Hüftgelenk in 2 Ebenen unauffällig", "hüftgelenk_in_2_ebenen"],
-    ["Hüftgelenk in 2 Ebenen rechts unauffällig", "hüftgelenk_in_2_ebenen"],
-    ["hüftgelenk in 2 ebenen o.B.", "hüftgelenk_in_2_ebenen"],
-    ["Konturaufnahmen des Femurkopfes unauffällig", "konturaufnahmen_des_femurkopfes"],
-    ["Konturaufnahmen des Femurkopfes rechts unauffällig", "konturaufnahmen_des_femurkopfes"],
-    ["konturaufnahmen des femurkopfes o.B.", "konturaufnahmen_des_femurkopfes"],
-    ["Oberschenkel in 2 Ebenen unauffällig", "oberschenkel_in_2_ebenen"],
-    ["Oberschenkel in 2 Ebenen rechts unauffällig", "oberschenkel_in_2_ebenen"],
-    ["oberschenkel in 2 ebenen o.B.", "oberschenkel_in_2_ebenen"],
-    ["Kniegelenk in 2 Ebenen unauffällig", "kniegelenk_in_2_ebenen"],
-    ["Kniegelenk in 2 Ebenen rechts unauffällig", "kniegelenk_in_2_ebenen"],
-    ["kniegelenk in 2 ebenen o.B.", "kniegelenk_in_2_ebenen"],
-    ["Defileeaufnahmen der Patella in 30°, 60° und 90° unauffällig", "defileeaufnahmen_der_patella_in_30°_60°_und_90°"],
-    ["Defileeaufnahmen der Patella in 30°, 60° und 90° rechts unauffällig", "defileeaufnahmen_der_patella_in_30°_60°_und_90°"],
-    ["defileeaufnahmen der patella in 30° 60° und 90° o.B.", "defileeaufnahmen_der_patella_in_30°_60°_und_90°"],
-    ["Unterschenkel in 2 Ebenen unauffällig", "unterschenkel_in_2_ebenen"],
-    ["Unterschenkel in 2 Ebenen rechts unauffällig", "unterschenkel_in_2_ebenen"],
-    ["unterschenkel in 2 ebenen o.B.", "unterschenkel_in_2_ebenen"],
-    ["Sprunggelenk in 2 Ebenen unauffällig", "sprunggelenk_in_2_ebenen"],
-    ["Sprunggelenk in 2 Ebenen rechts unauffällig", "sprunggelenk_in_2_ebenen"],
-    ["sprunggelenk in 2 ebenen o.B.", "sprunggelenk_in_2_ebenen"],
-    ["Fuß in 2 Ebenen unauffällig", "fuß_in_2_ebenen"],
-    ["Fuß in 2 Ebenen rechts unauffällig", "fuß_in_2_ebenen"],
-    ["fuß in 2 ebenen o.B.", "fuß_in_2_ebenen"],
-    ["Mittelfuß in 2 Ebenen unauffällig", "mittelfuß_in_2_ebenen"],
-    ["Mittelfuß in 2 Ebenen rechts unauffällig", "mittelfuß_in_2_ebenen"],
-    ["mittelfuß in 2 ebenen o.B.", "mittelfuß_in_2_ebenen"],
-    ["Vorfuß in 2 Ebenen unauffällig", "vorfuß_in_2_ebenen"],
-    ["Vorfuß in 2 Ebenen rechts unauffällig", "vorfuß_in_2_ebenen"],
-    ["vorfuß in 2 ebenen o.B.", "vorfuß_in_2_ebenen"],
-    ["Zehe in 2 Ebenen unauffällig", "zehe_in_2_ebenen"],
-    ["Zehe in 2 Ebenen rechts unauffällig", "zehe_in_2_ebenen"],
-    ["zehe in 2 ebenen o.B.", "zehe_in_2_ebenen"],
-    ["Thorax in 2 Ebenen unauffällig", "thorax_in_2_ebenen"],
-    ["Thorax in 2 Ebenen rechts unauffällig", "thorax_in_2_ebenen"],
-    ["thorax in 2 ebenen o.B.", "thorax_in_2_ebenen"],
-    ["Abdomen im Stand unauffällig", "abdomen_im_stand"],
-    ["Abdomen im Stand rechts unauffällig", "abdomen_im_stand"],
-    ["abdomen im stand o.B.", "abdomen_im_stand"],
-    ["Abdomen im Liegen unauffällig", "abdomen_im_liegen"],
-    ["Abdomen im Liegen rechts unauffällig", "abdomen_im_liegen"],
-    ["abdomen im liegen o.B.", "abdomen_im_liegen"],
-    ["Intravenöses Urogramm unauffällig", "intravenöses_urogramm"],
-    ["Intravenöses Urogramm rechts unauffällig", "intravenöses_urogramm"],
-    ["intravenöses urogramm o.B.", "intravenöses_urogramm"],
-    ["Beinphlebographie unauffällig", "beinphlebographie"],
-    ["Beinphlebographie rechts unauffällig", "beinphlebographie"],
-    ["beinphlebographie o.B.", "beinphlebographie"],
-    ["Hysterosalpingographie unauffällig", "hysterosalpingographie"],
-    ["Hysterosalpingographie rechts unauffällig", "hysterosalpingographie"],
-    ["hysterosalpingographie o.B.", "hysterosalpingographie"],
-    ["MR des Gehirnschädels: unauffällig", "mr_des_gehirnschädels:"],
-    ["MR des Gehirnschädels: rechts unauffällig", "mr_des_gehirnschädels:"],
-    ["mr des gehirnschädels: o.B.", "mr_des_gehirnschädels:"],
-    ["MR der Hypophyse: unauffällig", "mr_der_hypophyse:"],
-    ["MR der Hypophyse: rechts unauffällig", "mr_der_hypophyse:"],
-    ["mr der hypophyse: o.B.", "mr_der_hypophyse:"],
-    ["MR der Inneren Gehörgänge, Felsenbeine: unauffällig", "mr_der_inneren_gehörgänge_felsenbeine:"],
-    ["MR der Inneren Gehörgänge, Felsenbeine: rechts unauffällig", "mr_der_inneren_gehörgänge_felsenbeine:"],
-    ["mr der inneren gehörgänge felsenbeine: o.B.", "mr_der_inneren_gehörgänge_felsenbeine:"],
-    ["MR der Nasennebenhöhlen: unauffällig", "mr_der_nasennebenhöhlen:"],
-    ["MR der Nasennebenhöhlen: rechts unauffällig", "mr_der_nasennebenhöhlen:"],
-    ["mr der nasennebenhöhlen: o.B.", "mr_der_nasennebenhöhlen:"],
-    ["MR der Halsweichteile: unauffällig", "mr_der_halsweichteile:"],
-    ["MR der Halsweichteile: rechts unauffällig", "mr_der_halsweichteile:"],
-    ["mr der halsweichteile: o.B.", "mr_der_halsweichteile:"],
-    ["MR des Thorax: unauffällig", "mr_des_thorax:"],
-    ["MR des Thorax: rechts unauffällig", "mr_des_thorax:"],
-    ["mr des thorax: o.B.", "mr_des_thorax:"],
-    ["MR der Mamma: unauffällig", "mr_der_mamma:"],
-    ["MR der Mamma: rechts unauffällig", "mr_der_mamma:"],
-    ["mr der mamma: o.B.", "mr_der_mamma:"],
-    ["MR der Leber: unauffällig", "mr_der_leber:"],
-    ["MR der Leber: rechts unauffällig", "mr_der_leber:"],
-    ["mr der leber: o.B.", "mr_der_leber:"],
-    ["MR der Nebennieren: unauffällig", "mr_der_nebennieren:"],
-    ["MR der Nebennieren: rechts unauffällig", "mr_der_nebennieren:"],
-    ["mr der nebennieren: o.B.", "mr_der_nebennieren:"],
-    ["MR der Hoden: unauffällig", "mr_der_hoden:"],
-    ["MR der Hoden: rechts unauffällig", "mr_der_hoden:"],
-    ["mr der hoden: o.B.", "mr_der_hoden:"],
-    ["MR der Halswirbelsäule: unauffällig", "mr_der_halswirbelsäule:"],
-    ["MR der Halswirbelsäule: rechts unauffällig", "mr_der_halswirbelsäule:"],
-    ["mr der halswirbelsäule: o.B.", "mr_der_halswirbelsäule:"],
-    ["MR der Brustwirbelsäule: unauffällig", "mr_der_brustwirbelsäule:"],
-    ["MR der Brustwirbelsäule: rechts unauffällig", "mr_der_brustwirbelsäule:"],
-    ["mr der brustwirbelsäule: o.B.", "mr_der_brustwirbelsäule:"],
-    ["MR der Lendenwirbelsäule: unauffällig", "mr_der_lendenwirbelsäule:"],
-    ["MR der Lendenwirbelsäule: rechts unauffällig", "mr_der_lendenwirbelsäule:"],
-    ["mr der lendenwirbelsäule: o.B.", "mr_der_lendenwirbelsäule:"],
-    ["MR der Iliosakralgelenke: unauffällig", "mr_der_iliosakralgelenke:"],
-    ["MR der Iliosakralgelenke: rechts unauffällig", "mr_der_iliosakralgelenke:"],
-    ["mr der iliosakralgelenke: o.B.", "mr_der_iliosakralgelenke:"],
-    ["MR des Kiefergelenkes: unauffällig", "mr_des_kiefergelenkes:"],
-    ["MR des Kiefergelenkes: rechts unauffällig", "mr_des_kiefergelenkes:"],
-    ["mr des kiefergelenkes: o.B.", "mr_des_kiefergelenkes:"],
-    ["MR des Schultergelenkes: unauffällig", "mr_des_schultergelenkes:"],
-    ["MR des Schultergelenkes: rechts unauffällig", "mr_des_schultergelenkes:"],
-    ["mr des schultergelenkes: o.B.", "mr_des_schultergelenkes:"],
-    ["MR Handgelenk: unauffällig", "mr_handgelenk:"],
-    ["MR Handgelenk: rechts unauffällig", "mr_handgelenk:"],
-    ["mr handgelenk: o.B.", "mr_handgelenk:"],
-    ["MR Hüftgelenk: unauffällig", "mr_hüftgelenk:"],
-    ["MR Hüftgelenk: rechts unauffällig", "mr_hüftgelenk:"],
-    ["mr hüftgelenk: o.B.", "mr_hüftgelenk:"],
-    ["MR des Kniegelenkes: unauffällig", "mr_des_kniegelenkes:"],
-    ["MR des Kniegelenkes: rechts unauffällig", "mr_des_kniegelenkes:"],
-    ["mr des kniegelenkes: o.B.", "mr_des_kniegelenkes:"],
-    ["MR des Sprunggelenke: unauffällig", "mr_des_sprunggelenke:"],
-    ["MR des Sprunggelenke: rechts unauffällig", "mr_des_sprunggelenke:"],
-    ["mr des sprunggelenke: o.B.", "mr_des_sprunggelenke:"],
-    ["MR der craniellen Gefäße: unauffällig", "mr_der_craniellen_gefäße:"],
-    ["MR der craniellen Gefäße: rechts unauffällig", "mr_der_craniellen_gefäße:"],
-    ["mr der craniellen gefäße: o.B.", "mr_der_craniellen_gefäße:"],
-    ["MR der Nierenarterien: unauffällig", "mr_der_nierenarterien:"],
-    ["MR der Nierenarterien: rechts unauffällig", "mr_der_nierenarterien:"],
-    ["mr der nierenarterien: o.B.", "mr_der_nierenarterien:"],
-    ["MR der Becken- und Beingefäße: unauffällig", "mr_der_becken-_und_beingefäße:"],
-    ["MR der Becken- und Beingefäße: rechts unauffällig", "mr_der_becken-_und_beingefäße:"],
-    ["mr der becken- und beingefäße: o.B.", "mr_der_becken-_und_beingefäße:"],
-    ["MR-Cholangiopankreatografie (MRCP): unauffällig", "mr-cholangiopankreatografie_mrcp:"],
-    ["MR-Cholangiopankreatografie (MRCP): rechts unauffällig", "mr-cholangiopankreatografie_mrcp:"],
-    ["mr-cholangiopankreatografie mrcp: o.B.", "mr-cholangiopankreatografie_mrcp:"],
-    ["MR der Halsarterien: unauffällig", "mr_der_halsarterien:"],
-    ["MR der Halsarterien: rechts unauffällig", "mr_der_halsarterien:"],
-    ["mr der halsarterien: o.B.", "mr_der_halsarterien:"],
-    ["CCT: unauffällig", "cct:"],
-    ["CCT: rechts unauffällig", "cct:"],
-    ["cct: o.B.", "cct:"],
-    ["CT Thorax: unauffällig", "ct_thorax:"],
-    ["CT Thorax: rechts unauffällig", "ct_thorax:"],
-    ["ct thorax: o.B.", "ct_thorax:"],
-    ["CT Abdomen: unauffällig", "ct_abdomen:"],
-    ["CT Abdomen: rechts unauffällig", "ct_abdomen:"],
-    ["ct abdomen: o.B.", "ct_abdomen:"],
-    ["CT der Wirbelsäule: unauffällig", "ct_der_wirbelsäule:"],
-    ["CT der Wirbelsäule: rechts unauffällig", "ct_der_wirbelsäule:"],
-    ["ct der wirbelsäule: o.B.", "ct_der_wirbelsäule:"],
-    ["CT Angiographie: unauffällig", "ct_angiographie:"],
-    ["CT Angiographie: rechts unauffällig", "ct_angiographie:"],
-    ["ct angiographie: o.B.", "ct_angiographie:"],
-    ["Polytrauma CT: unauffällig", "polytrauma_ct:"],
-    ["Polytrauma CT: rechts unauffällig", "polytrauma_ct:"],
-    ["polytrauma ct: o.B.", "polytrauma_ct:"],
-    ["Sonografie Abdomen (Komplett) unauffällig", "sonografie_abdomen_komplett"],
-    ["Sonografie Abdomen (Komplett) rechts unauffällig", "sonografie_abdomen_komplett"],
-    ["sonografie abdomen komplett o.B.", "sonografie_abdomen_komplett"],
-    ["Sonografie Schilddrüse unauffällig", "sonografie_schilddrüse"],
-    ["Sonografie Schilddrüse rechts unauffällig", "sonografie_schilddrüse"],
-    ["sonografie schilddrüse o.B.", "sonografie_schilddrüse"],
-    ["Durchleuchtung: Ösophagus-Breischluck unauffällig", "durchleuchtung:_ösophagus-breischluck"],
-    ["Durchleuchtung: Ösophagus-Breischluck rechts unauffällig", "durchleuchtung:_ösophagus-breischluck"],
-    ["durchleuchtung: ösophagus-breischluck o.B.", "durchleuchtung:_ösophagus-breischluck"],
-    ["Durchleuchtung: Magen-Darm-Passage (MDP) unauffällig", "durchleuchtung:_magen-darm-passage_mdp"],
-    ["Durchleuchtung: Magen-Darm-Passage (MDP) rechts unauffällig", "durchleuchtung:_magen-darm-passage_mdp"],
-    ["durchleuchtung: magen-darm-passage mdp o.B.", "durchleuchtung:_magen-darm-passage_mdp"],
-    ["Hochauflösende Nervensonographie unauffällig", "sonografie_nerven"],
-    ["Hochauflösende Nervensonographie rechts unauffällig", "sonografie_nerven"],
-    ["sonografie nerven o.B.", "sonografie_nerv_allgemein"],
-    ["Sonographie (Allgemein) unauffällig", "sonografie_allgemein"],
-    ["Sonographie (Allgemein) rechts unauffällig", "sonografie_allgemein"],
-    ["sonografie allgemein o.B.", "sonografie_allgemein"],
-    ["Sonografie Abdomen (weiblich) unauffällig", "sonografie_abdomen_weiblich"],
-    ["Sonografie Abdomen (weiblich) rechts unauffällig", "sonografie_abdomen_weiblich"],
-    ["sonografie abdomen weiblich o.B.", "sonografie_abdomen_weiblich"],
-    ["Sonografie Abdomen (männlich) unauffällig", "sonografie_abdomen_maennlich"],
-    ["Sonografie Abdomen (männlich) rechts unauffällig", "sonografie_abdomen_maennlich"],
-    ["sonografie abdomen maennlich o.B.", "sonografie_abdomen_maennlich"],
-    ["Farbcodierte Duplexsonographie der Halsgefäße unauffällig", "sonografie_halsgefaesse"],
-    ["Farbcodierte Duplexsonographie der Halsgefäße rechts unauffällig", "sonografie_halsgefaesse"],
-    ["sonografie halsgefaesse o.B.", "sonografie_halsgefaesse"],
-    ["Farbcodierte Duplexsonographie der Beinvenen unauffällig", "sonografie_beinvenen"],
-    ["Farbcodierte Duplexsonographie der Beinvenen rechts unauffällig", "sonografie_beinvenen"],
-    ["sonografie beinvenen o.B.", "sonografie_beinvenen"],
-    ["Hochauflösende Sonographie des N. medianus unauffällig", "sonografie_nerv_medianus"],
-    ["Hochauflösende Sonographie des N. medianus rechts unauffällig", "sonografie_nerv_medianus"],
-    ["sonografie nerv medianus o.B.", "sonografie_nerv_medianus"],
-    ["Hochauflösende Sonographie des N. ulnaris unauffällig", "sonografie_nerv_ulnaris"],
-    ["Hochauflösende Sonographie des N. ulnaris rechts unauffällig", "sonografie_nerv_ulnaris"],
-    ["sonografie nerv ulnaris o.B.", "sonografie_nerv_ulnaris"],
-    ["Hochauflösende Sonographie des N. radialis unauffällig", "sonografie_nerv_radialis"],
-    ["Hochauflösende Sonographie des N. radialis rechts unauffällig", "sonografie_nerv_radialis"],
-    ["sonografie nerv radialis o.B.", "sonografie_nerv_radialis"],
-    ["Hochauflösende Sonographie des Plexus brachialis unauffällig", "sonografie_plexus_brachialis"],
-    ["Hochauflösende Sonographie des Plexus brachialis rechts unauffällig", "sonografie_plexus_brachialis"],
-    ["sonografie plexus brachialis o.B.", "sonografie_plexus_brachialis"],
-    ["Hochauflösende Nervensonographie (Allgemein) unauffällig", "sonografie_nerven"],
-    ["Hochauflösende Nervensonographie (Allgemein) rechts unauffällig", "sonografie_nerven"],
-    ["sonografie nerv allgemein o.B.", "sonografie_nerv_allgemein"],
-    ["Hochauflösende Sonographie des N. ischiadicus unauffällig", "sonografie_nerv_ischiadicus"],
-    ["Hochauflösende Sonographie des N. ischiadicus rechts unauffällig", "sonografie_nerv_ischiadicus"],
-    ["sonografie nerv ischiadicus o.B.", "sonografie_nerv_ischiadicus"],
-    ["Hochauflösende Sonographie des N. peroneus unauffällig", "sonografie_nerv_peroneus"],
-    ["Hochauflösende Sonographie des N. peroneus rechts unauffällig", "sonografie_nerv_peroneus"],
-    ["sonografie nerv peroneus o.B.", "sonografie_nerv_peroneus"],
-    ["Hochauflösende Sonographie des N. tibialis unauffällig", "sonografie_nerv_tibialis"],
-    ["Hochauflösende Sonographie des N. tibialis rechts unauffällig", "sonografie_nerv_tibialis"],
-    ["sonografie nerv tibialis o.B.", "sonografie_nerv_tibialis"],
-    ["Hochauflösende Sonographie des Nervus femoralis unauffällig", "sonografie_nerv_femoralis"],
-    ["Hochauflösende Sonographie des Nervus femoralis rechts unauffällig", "sonografie_nerv_femoralis"],
-    ["sonografie nerv femoralis o.B.", "sonografie_nerv_femoralis"],
-    ["Hochauflösende Sonographie des Nervus femoris cutaneus lateralis unauffällig", "sonografie_nerv_femoralis_cutaneus_lateralis"],
-    ["Hochauflösende Sonographie des Nervus femoris cutaneus lateralis rechts unauffällig", "sonografie_nerv_femoralis_cutaneus_lateralis"],
-    ["sonografie nerv femoralis cutaneus lateralis o.B.", "sonografie_nerv_femoralis_cutaneus_lateralis"],
-    ["Hochauflösende Sonographie des Plexus cervicalis unauffällig", "sonografie_plexus_cervicalis"],
-    ["Hochauflösende Sonographie des Plexus cervicalis rechts unauffällig", "sonografie_plexus_cervicalis"],
-    ["sonografie plexus cervicalis o.B.", "sonografie_plexus_cervicalis"],
-    ["Hochauflösende Sonographie des Nervus pudendus unauffällig", "sonografie_nervus_pudendus"],
-    ["Hochauflösende Sonographie des Nervus pudendus rechts unauffällig", "sonografie_nervus_pudendus"],
-    ["sonografie nervus pudendus o.B.", "sonografie_nervus_pudendus"],
-    ["Hochauflösende Sonographie des Nervus iliohypogastricus und Nervus ilioinguinalis unauffällig", "sonografie_nervus_iliohypogastricus_ilioinguinalis"],
-    ["Hochauflösende Sonographie des Nervus iliohypogastricus und Nervus ilioinguinalis rechts unauffällig", "sonografie_nervus_iliohypogastricus_ilioinguinalis"],
-    ["sonografie nervus iliohypogastricus ilioinguinalis o.B.", "sonografie_nervus_iliohypogastricus_ilioinguinalis"],
-    ["Ultraschall-gezielte Blockade unauffällig", "ultraschall_gezielte_blockade"],
-    ["Ultraschall-gezielte Blockade rechts unauffällig", "ultraschall_gezielte_blockade"],
-    ["ultraschall gezielte blockade o.B.", "ultraschall_gezielte_blockade"],
-    ["Sonographie der Weichteile unauffällig", "sonografie_weichteile"],
-    ["Sonographie der Weichteile rechts unauffällig", "sonografie_weichteile"],
-    ["sonografie weichteile o.B.", "sonografie_weichteile"],
-    ["Sonographie der Halsweichteile unauffällig", "sonografie_halsweichteile"],
-    ["Sonographie der Halsweichteile rechts unauffällig", "sonografie_halsweichteile"],
-    ["sonografie halsweichteile o.B.", "sonografie_halsweichteile"],
-    ["Mammographie beidseits unauffällig", "mammographie_beidseits"],
-    ["Mammographie beidseits rechts unauffällig", "mammographie_beidseits"],
-    ["mammographie beidseits o.B.", "mammographie_beidseits"],
-    ["Knochendichtemessung (DEXA) unauffällig", "knochendichtemessung_dexa"],
-    ["Knochendichtemessung (DEXA) rechts unauffällig", "knochendichtemessung_dexa"],
-    ["knochendichtemessung dexa o.B.", "knochendichtemessung_dexa"],
-    ["Digitale Volumentomographie des Oberkiefers unauffällig", "dvt_oberkiefer"],
-    ["Digitale Volumentomographie des Oberkiefers rechts unauffällig", "dvt_oberkiefer"],
-    ["dvt oberkiefer o.B.", "dvt_oberkiefer"],
-    ["Digitale Volumentomographie des Unterkiefers unauffällig", "dvt_unterkiefer"],
-    ["Digitale Volumentomographie des Unterkiefers rechts unauffällig", "dvt_unterkiefer"],
-    ["dvt unterkiefer o.B.", "dvt_unterkiefer"],
-    ["Schädelfernröntgen unauffällig", "schädelfernröntgen"],
-    ["Schädelfernröntgen rechts unauffällig", "schädelfernröntgen"],
-    ["schädelfernröntgen o.B.", "schädelfernröntgen"],
-    ["Varizensonografie unauffällig", "varizensonografie"],
-    ["Varizensonografie rechts unauffällig", "varizensonografie"],
-    ["varizensonografie o.B.", "varizensonografie"],
-    ["Schulterprothese unauffällig", "schulterprothese"],
-    ["Schulterprothese rechts unauffällig", "schulterprothese"],
-    ["schulterprothese o.B.", "schulterprothese"],
-    ["Daumensattelprothese unauffällig", "daumensattelprothese"],
-    ["Daumensattelprothese rechts unauffällig", "daumensattelprothese"],
-    ["daumensattelprothese o.B.", "daumensattelprothese"],
-    ["Knieprothese unauffällig", "knieprothese"],
-    ["Knieprothese rechts unauffällig", "knieprothese"],
-    ["knieprothese o.B.", "knieprothese"],
-    ["Hüftprothese unauffällig", "hüftprothese"],
-    ["Hüftprothese rechts unauffällig", "hüftprothese"],
-    ["hüftprothese o.B.", "hüftprothese"],
-    ["Beckenübersicht und Hüfte unauffällig", "beckenübersicht_und_hüfte"],
-    ["Beckenübersicht und Hüfte rechts unauffällig", "beckenübersicht_und_hüfte"],
-    ["beckenübersicht und hüfte o.B.", "beckenübersicht_und_hüfte"],
-    ["Beckenübersicht mit einseitiger Hüftprothese unauffällig", "beckenübersicht_mit_einseitiger_hüftprothese"],
-    ["Beckenübersicht mit einseitiger Hüftprothese rechts unauffällig", "beckenübersicht_mit_einseitiger_hüftprothese"],
-    ["beckenübersicht mit einseitiger hüftprothese o.B.", "beckenübersicht_mit_einseitiger_hüftprothese"],
-    ["Beckenübersicht mit beidseitiger Hüftprothese unauffällig", "beckenübersicht_mit_beidseitiger_hüftprothese"],
-    ["Beckenübersicht mit beidseitiger Hüftprothese rechts unauffällig", "beckenübersicht_mit_beidseitiger_hüftprothese"],
-    ["beckenübersicht mit beidseitiger hüftprothese o.B.", "beckenübersicht_mit_beidseitiger_hüftprothese"],
-    ["Gesamte Wirbelsäule unauffällig", "wirbelsäule_gesamt"],
-    ["Gesamte Wirbelsäule rechts unauffällig", "wirbelsäule_gesamt"],
-    ["wirbelsäule gesamt o.B.", "wirbelsäule_gesamt"],
-    ["HWS und LWS unauffällig", "hws_und_lws"],
-    ["HWS und LWS rechts unauffällig", "hws_und_lws"],
-    ["hws und lws o.B.", "hws_und_lws"],
-    ["Sonographie des Schultergelenkes unauffällig", "sonografie_schultergelenk"],
-    ["Sonographie des Schultergelenkes rechts unauffällig", "sonografie_schultergelenk"],
-    ["sonografie schultergelenk o.B.", "sonografie_schultergelenk"],
-    ["Mammasonographie beidseits unauffällig", "mammasonographie_beidseits"],
-    ["Mammasonographie beidseits rechts unauffällig", "mammasonographie_beidseits"],
-    ["mammasonographie beidseits o.B.", "mammasonographie_beidseits"],
-    ["Allgemeine Untersuchung unauffällig", "allgemein"],
-    ["Allgemeine Untersuchung rechts unauffällig", "allgemein"],
-    ["allgemein o.B.", "allgemein"],
-    ["Orbita p.-a.-Aufnahme unauffällig", "orbita_pa_aufnahme"],
-    ["Orbita p.-a.-Aufnahme rechts unauffällig", "orbita_pa_aufnahme"],
-    ["orbita pa aufnahme o.B.", "orbita_pa_aufnahme"],
-    ["Steißbein in 2 Ebenen unauffällig", "steißbein_in_2_ebenen"],
-    ["Steißbein in 2 Ebenen rechts unauffällig", "steißbein_in_2_ebenen"],
-    ["steißbein in 2 ebenen o.B.", "steißbein_in_2_ebenen"],
-    ["Sprunggelenk mit Mortise View in 2 Ebenen unauffällig", "sprunggelenk_mortise_view"],
-    ["Sprunggelenk mit Mortise View in 2 Ebenen rechts unauffällig", "sprunggelenk_mortise_view"],
-    ["sprunggelenk mortise view o.B.", "sprunggelenk_mortise_view"],
-    ["Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen unauffällig", "sprunggelenk_gehaltene_aufnahmen"],
-    ["Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen rechts unauffällig", "sprunggelenk_gehaltene_aufnahmen"],
-    ["sprunggelenk gehaltene aufnahmen o.B.", "sprunggelenk_gehaltene_aufnahmen"],
-    ["Sprunggelenk in 2 Ebenen mit Fuß unauffällig", "sprunggelenk_mit_fuss"],
-    ["Sprunggelenk in 2 Ebenen mit Fuß rechts unauffällig", "sprunggelenk_mit_fuss"],
-    ["sprunggelenk mit fuss o.B.", "sprunggelenk_mit_fuss"],
-    ["Calcaneus in 2 Ebenen unauffällig", "calcaneus_in_2_ebenen"],
-    ["Calcaneus in 2 Ebenen rechts unauffällig", "calcaneus_in_2_ebenen"],
-    ["calcaneus in 2 ebenen o.B.", "calcaneus_in_2_ebenen"],
-    ["Calcaneus seitlich unauffällig", "calcaneus_seitlich"],
-    ["Calcaneus seitlich rechts unauffällig", "calcaneus_seitlich"],
-    ["calcaneus seitlich o.B.", "calcaneus_seitlich"],
-    ["Skaphoidaufnahme unauffällig", "skaphoidaufnahme"],
-    ["Skaphoidaufnahme rechts unauffällig", "skaphoidaufnahme"],
-    ["skaphoidaufnahme o.B.", "skaphoidaufnahme"],
-    ["Oesophagus-Magenduodenum in Doppelkontrast unauffällig", "oesophagus_magenduodenum_doppelkontrast"],
-    ["Oesophagus-Magenduodenum in Doppelkontrast rechts unauffällig", "oesophagus_magenduodenum_doppelkontrast"],
-    ["oesophagus magenduodenum doppelkontrast o.B.", "oesophagus_magenduodenum_doppelkontrast"],
-    ["Videokinematographie des Schluckaktes unauffällig", "videokinematographie_schluckakt"],
-    ["Videokinematographie des Schluckaktes rechts unauffällig", "videokinematographie_schluckakt"],
-    ["videokinematographie schluckakt o.B.", "videokinematographie_schluckakt"],
-    ["Aszendierende Pressphlebographie des rechten Beins unauffällig", "aszendierende_pressphlebographie"],
-    ["Aszendierende Pressphlebographie des rechten Beins rechts unauffällig", "aszendierende_pressphlebographie"],
-    ["aszendierende pressphlebographie o.B.", "aszendierende_pressphlebographie"],
-    ["Sonographie der Bauchdecke unauffällig", "sonografie_bauchdecke"],
-    ["Sonographie der Bauchdecke rechts unauffällig", "sonografie_bauchdecke"],
-    ["sonografie bauchdecke o.B.", "sonografie_bauchdecke"],
-    ["Sonographie der dorsalen Oberschenkelmuskulatur unauffällig", "sonografie_dorsaler_oberschenkel"],
-    ["Sonographie der dorsalen Oberschenkelmuskulatur rechts unauffällig", "sonografie_dorsaler_oberschenkel"],
-    ["sonografie dorsaler oberschenkel o.B.", "sonografie_allgemein"],
-    ["Sonographie des M. gastrocnemius medialis unauffällig", "sonografie_gastrocnemius_medialis"],
-    ["Sonographie des M. gastrocnemius medialis rechts unauffällig", "sonografie_gastrocnemius_medialis"],
-    ["sonografie gastrocnemius medialis o.B.", "sonografie_gastrocnemius_medialis"],
-    ["Sonographie der dorsalen Unterschenkelmuskulatur unauffällig", "sonografie_dorsaler_unterschenkel"],
-    ["Sonographie der dorsalen Unterschenkelmuskulatur rechts unauffällig", "sonografie_dorsaler_unterschenkel"],
-    ["sonografie dorsaler unterschenkel o.B.", "sonografie_unterschenkel"],
-    ["Sonographie der anterioren Oberschenkelmuskulatur unauffällig", "sonografie_anteriorer_oberschenkel"],
-    ["Sonographie der anterioren Oberschenkelmuskulatur rechts unauffällig", "sonografie_anteriorer_oberschenkel"],
-    ["sonografie anteriorer oberschenkel o.B.", "sonografie_allgemein"],
-    ["Sonographie des Unterschenkels unauffällig", "sonografie_unterschenkel"],
-    ["Sonographie des Unterschenkels rechts unauffällig", "sonografie_unterschenkel"],
-    ["sonografie unterschenkel o.B.", "sonografie_unterschenkel"],
-    ["Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt", "ellbogengelenk_in_2_ebenen"],
-    ["Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt", "schultergelenk_in_2_ebenen"],
-    ["Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt", "ellbogengelenk_in_2_ebenen"],
-    ["Schulter rechts, Röntgen, Omarthrose, Kalzifikation Supraspinatussehne, Humeruskopfhochstand. Ansonsten unauffällig.", "oberarm_in_2_ebenen"],
-    ["Ellbogen rechts, Epicondylitis, Schmerzen ausstrahlend bis in die Schulter rechts", "ellbogengelenk_in_2_ebenen"],
-    ["Ellbogen rechts Punkt Epicondylitis Punkt Schulter rechts unauffällig", "ellbogengelenk_in_2_ebenen"],
-    ["Ellbogen rechts Punkt Epicondylitis Punkt", "ellbogengelenk_in_2_ebenen"],
-    ["Schulter rechts unauffällig", "schultergelenk_in_2_ebenen"],
-    ["Hand rechts. Rhizarthrose. Daumen rechts mit Arthrose des Sattelgelenkes.", "daumensattelprothese"],
-    ["HWS: Osteochondrose C5/C6. LWS: Spondylosis deformans L3 bis L5.", "hws_und_lws"],
-    ["Kniegelenk rechts: Gonarthrose. Kniegelenk links: unauffällig.", "kniegelenk_in_2_ebenen"],
-    ["Kniegelenk rechts: Gonarthrose.", "kniegelenk_in_2_ebenen"],
-    ["Kniegelenk links: unauffällig.", "kniegelenk_in_2_ebenen"],
-    ["Röntgen der rechten Schulter: Omarthrose. Röntgen der linken Schulter: unauffällig.", "schultergelenk_in_2_ebenen"],
-    ["Röntgen der rechten Schulter: Omarthrose.", "schultergelenk_in_2_ebenen"],
-    ["Röntgen der linken Schulter: unauffällig.", "schultergelenk_in_2_ebenen"],
-    ["Schulter rechts: Omarthrose. Schulter rechts zusätzlich Kalkdepot.", "schultergelenk_in_2_ebenen"],
-    ["Ellbogen rechts. Ellbogengelenksarthrose rechts. Schulterhochstand rechts.", "ellbogengelenk_in_2_ebenen"],
-    ["Hüfte links, Röntgen, Coxarthrose links, Gelenkspaltverschmälerung, subchondrale Sklerosierung. Ansonsten unauffällig.", "hüftgelenk_in_2_ebenen"],
-    ["Schulter links Punkt unauffällig Punkt Knie links Punkt Gonarthrose Punkt Sprunggelenk links Punkt unauffällig", "schultergelenk_in_2_ebenen"],
-    ["Schulter links Punkt unauffällig Punkt", "schultergelenk_in_2_ebenen"],
-    ["Knie links Punkt Gonarthrose Punkt", "kniegelenk_in_2_ebenen"],
-    ["Sprunggelenk links Punkt unauffällig", "sprunggelenk_in_2_ebenen"],
-    ["Mammasonographie beidseits, Mamma rechts unauffällig, Mamma links Zyste 8 mm", "mammasonographie_beidseits"],
-    ["Schulter in 2 Ebenen rechts: Omarthrose. Ellbogen in 2 Ebenen rechts: unauffällig.", "ellbogengelenk_in_2_ebenen"],
-    ["Schulter in 2 Ebenen rechts: Omarthrose.", "schultergelenk_in_2_ebenen"],
-    ["Ellbogen in 2 Ebenen rechts: unauffällig.", "ellbogengelenk_in_2_ebenen"],
-    ["Knie rechts, Gonarthrose, Hüfte rechts, unauffällig", "kniegelenk_in_2_ebenen"],
-    ["Knie rechts, Gonarthrose", "kniegelenk_in_2_ebenen"],
-    ["Hüfte rechts, unauffällig", "hüftgelenk_in_2_ebenen"],
-    ["Sonographie Schulter rechts: Bursitis. Röntgen Knie rechts: unauffällig.", "sonografie_schultergelenk"],
-    ["Sonographie Schulter rechts: Bursitis.", "sonografie_schultergelenk"],
-    ["Röntgen Knie rechts: unauffällig.", "kniegelenk_in_2_ebenen"],
-    ["Fuß links: Hallux valgus. Sprunggelenk links: unauffällig.", "sprunggelenk_mit_fuss"],
-    ["Fuß links: Hallux valgus.", "fuß_in_2_ebenen"],
-    ["Sprunggelenk links: unauffällig.", "sprunggelenk_in_2_ebenen"],
-    ["Knie rechts unauffällig", "kniegelenk_in_2_ebenen"],
-    ["Sprunggelenk links gehalten unauffällig", "sprunggelenk_in_2_ebenen"],
-    ["Lungenröntgen unauffällig.", "thorax_in_2_ebenen"],
-    ["HWS unauffällig", "halswirbelsäule_in_2_ebenen"],
-    ["Schultergelenke beidseits unter Belastung unauffällig", "schultergelenke_a-p_unter_belastung"],
-    ["Knie links unauffällig", "kniegelenk_in_2_ebenen"],
-    ["Hände beidseits regelrecht", "allgemein"],
-    ["Sprunggelenk rechts gehalten unauffällig", "sprunggelenk_in_2_ebenen"],
-    ["Mamma rechts und links unauffällig", "mammographie_beidseits"],
-    ["Nervus ulnaris rechts unauffällig", "sonografie_nerv_ulnaris"],
-    ["Unterschenkel-Sonographie rechts unauffällig", "sonografie_unterschenkel"],
-    ["Lungenröntgen p.a. und seitlich unauffällig", "thorax_in_2_ebenen"],
-    ["Lungenröntgen p.a. und seitlich, unauffälliger Befund.", "thorax_in_2_ebenen"],
-    ["Lungenröntgen o.B.", "thorax_in_2_ebenen"],
-    ["Lungen-Röntgen unauffällig", "thorax_in_2_ebenen"],
-    ["Thorax p.a./seitlich: Unauffälliger Befund.", "thorax_in_2_ebenen"],
-    ["Röntgen Thorax p.a./seitlich normal", "thorax_in_2_ebenen"],
-    ["Thoraxröntgen unauffällig", "thorax_in_2_ebenen"],
-    ["Lungenröntgen. Herz und Lunge unauffällig.", "thorax_in_2_ebenen"],
-    ["HW ist unauffällig", "halswirbelsäule_in_2_ebenen"],
-    ["Kniegelenk links in 2 Ebenen, Normalbefund.", "kniegelenk_in_2_ebenen"],
-    ["Knie rechts regelrecht", "kniegelenk_in_2_ebenen"],
-    ["Orbita p.a. unauffällig", "orbita_pa_aufnahme"],
-    ["Sonographie der Schulter beidseits unauffällig", "sonografie_schultergelenk"],
-    ["Unterschenkel-Sonographie rechts unauffällig.", "sonografie_unterschenkel"],
-    ["Sprunggelenk links in zwei Ebenen unauffällig", "sprunggelenk_in_2_ebenen"],
-    ["Thorax: Kardiomegalie, sonst unauffällig.", "thorax_in_2_ebenen"],
-    ["Lungenröntgen: Pneumonie rechts basal, sonst unauffällig", "thorax_in_2_ebenen"],
-    ["Thorax: Atelektase links basal, sonst normal", "thorax_in_2_ebenen"],
-    ["Knie rechts: Baker-Zyste, ansonsten unauffällig", "kniegelenk_in_2_ebenen"],
-    ["HWS: Streckhaltung, sonst unauffällig", "halswirbelsäule_in_2_ebenen"],
-    ["Schulter: Hochstand des Humeruskopfes, sonst unauffällig", "oberarm_in_2_ebenen"],
-    ["LWS: Spina bifida occulta, sonst unauffällig", "lendenwirbelsäule_in_2_ebenen"],
-    ["Knie nicht unauffällig", "kniegelenk_in_2_ebenen"],
-    ["Thorax p.a. und seitlich. Herz normal groß, Lunge frei, kein Infiltrat, kein Erguss, Sinus frei. Unauffällig.", "thorax_in_2_ebenen"],
-    ["HWS mit Osteochondrose C5/C6", "halswirbelsäule_in_2_ebenen"],
-    ["Thorax unauffällig bis auf eine Aortensklerose", "thorax_in_2_ebenen"],
-    ["Lungenröntgen", "thorax_in_2_ebenen"],
-    ["Tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig", "allgemein"],
-    ["Mammasonographie beidseits unauffällig, Pirates 2", "mammasonographie_beidseits"],
-    ["Pirats 4 links", "allgemein"],
-    ["Kompression des Nervs am Sulcus bei Edelbogenflexion. 15 Quadratmillimeter", "allgemein"],
-    ["Hypertropha Musculus Anconeus Epidrochearis als Variante", "allgemein"],
-    ["Sulcus Nervi mit 12 mm²", "allgemein"],
-    ["Sulcus Nervi ulnaris unauffällig", "sonografie_nerv_ulnaris"],
-    ["flachprofile nach links komplexes Coyote Fehlhaltung", "allgemein"],
-    ["Flachbau linkskonvex, Cobbs Winkel 12 Grad, Scheitel DH 7", "allgemein"],
-    ["TH12 und Th4 regelrecht", "allgemein"],
-    ["Fibrosedosen am Calcaneus, Rizarthrose rechts", "calcaneus_in_2_ebenen"],
-    ["Näoarthrosen interspinosa L4/L5", "allgemein"],
-    ["Thorax b.a. seitlich: unauffällig", "thorax_in_2_ebenen"],
-    ["Thorax ba unauffällig", "thorax_in_2_ebenen"],
-    ["HW ist unauffällig, HWS-Sono nicht", "halswirbelsäule_in_2_ebenen"],
-    ["Diskozeichen L5/S1, Disco Zeichen L4", "allgemein"],
-    ["Handgelenk rechts nicht dislozierte Frachtur der Cafés Taille", "handgelenk_in_2_ebenen"],
-    ["Baustein Gelenkschirma 1", "allgemein"],
-    ["Hüfte beidseits im Übrigen Baustein", "hüftgelenk_in_2_ebenen"],
-    ["Baustein", "allgemein"],
-    ["18 mm Durchmesser, axillär, 1,8 mm", "allgemein"],
-    ["Gelenksarthrose, Diskopathie, Kopfwinkel 130 Grad", "allgemein"],
-    ["Kompressionsfaktoren Th11 und Th12, Okzipitalappen unauffällig", "allgemein"],
-    ["Edgren-Venu Zeichen", "allgemein"],
-    ["messiggradige Spinalkanalstenose", "allgemein"],
-    ["perinorale Fibrose, Rhamus profundus", "allgemein"],
-    ["Partie der Supraspinatussehne", "allgemein"],
-    ["Ruptur des pinnatus, Epitrochlearis-Variante", "allgemein"],
-    ["Schulter rechts Punkt neue Zeile mäßig gradige Ommatrose Punkt mäßig gradige Tenenosis kakaria mit 17 mm Messing am Kack Depot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendenose der Extensorensehnen Punkt", "ellbogengelenk_in_2_ebenen"],
-    ["Messig-gradige Omatrose links, hoch gradige Coxarthrose, Kack-Depot 8 mm", "hüftgelenk_in_2_ebenen"],
-    ["Mäßiggradige Omarthrose, Tendinosis calcarea, Tendinose der Extensoren, geringgradige Arthrose", "schultergelenk_in_2_ebenen"],
-    ["Tenenosis calcarea der Supraspinatussehne, Tendenosen der Flexoren", "allgemein"],
-    ["Torax p.a. und seitlich unauffällig. Toraxaufnahme", "thorax_in_2_ebenen"],
-    ["BWS thorakal unauffällig, Thorax o.B.", "brustwirbelsäule_in_2_ebenen"],
-    ["Wasser-Sip-Test: kein Reflux nachweisbar.", "allgemein"],
-    ["Im Wasser Sip Test geringer gastroösophagealer Reflux", "allgemein"],
-    ["wassersiptest negativ", "allgemein"],
-    ["Tendinopathie und den Supraspinatussehne mit begleitet ist, ansonsten unauffällig", "allgemein"],
-    ["Mammasonographie beidseits unauffällig, BI-RADS 2", "mammasonographie_beidseits"],
-    ["BI-RADS 4 links", "allgemein"],
-    ["Kompression des Nervs am Sulcus bei Ellbogenflexion. 15 mm²", "ellbogengelenk_in_2_ebenen"],
-    ["hypertropher M. anconeus epitrochlearis als Variante", "allgemein"],
-    ["Sulcus nervi ulnaris mit 12 mm²", "sonografie_nerv_ulnaris"],
-    ["flachbogige Skoliose nach links komplexes kyphotische Fehlhaltung", "allgemein"],
-    ["flachbogig linkskonvex, Cobb-Winkel 12 Grad, Scheitel Th7", "allgemein"],
-    ["Th12 und Th4 regelrecht", "allgemein"],
-    ["Fibroostosen am Calcaneus, Rhizarthrose rechts", "calcaneus_in_2_ebenen"],
-    ["Neoarthrosis interspinosa L4/L5", "allgemein"],
-    ["Thorax p.a./seitlich: unauffällig", "thorax_in_2_ebenen"],
-    ["Thorax p.a. unauffällig", "thorax_in_2_ebenen"],
-    ["HWS ist unauffällig, HWS-Sono nicht", "sonografie_allgemein"],
-    ["Discopathiezeichen L5/S1, Discopathiezeichen L4", "allgemein"],
-    ["Handgelenk rechts nicht dislozierte Fraktur der Scaphoidtaille", "naviculareserie"],
-    ["unauffällig", "allgemein"],
-    ["Hüfte beidseits im Übrigen unauffällig", "hüftgelenk_in_2_ebenen"],
-    ["Kompressionsfrakturen Th11 und Th12, Okzipitallappen unauffällig", "allgemein"],
-    ["Edgren-Vaino Zeichen", "allgemein"],
-    ["mäßiggradige Spinalkanalstenose", "allgemein"],
-    ["perineurale Fibrose, Ramus profundus", "allgemein"],
-    ["Ruptur des Supraspinatus, epitrochlearis-Variante", "allgemein"],
-    ["Mäßiggradige Omarthrose links, hochgradige Coxarthrose, Kalkdepot 8 mm", "schultergelenk_in_2_ebenen"],
-    ["Tendinosis calcarea der Supraspinatussehne, Tendinosen der Flexoren", "allgemein"],
-    ["Thorax p.a. und seitlich unauffällig. Thoraxaufnahme", "thorax_in_2_ebenen"],
-    ["Wasser-Siphon-Test: kein Reflux nachweisbar.", "allgemein"],
-    ["Im Wasser-Siphon-Test geringer gastroösophagealer Reflux", "allgemein"],
-    ["Wasser-Siphon-Test negativ", "allgemein"],
-    ["N. medianus links unauffällig", "sonografie_nerv_medianus"],
-    ["Nervus radialis rechts unauffällig", "sonografie_nerv_radialis"],
-    ["Plexus brachialis rechts unauffällig", "sonografie_plexus_brachialis"],
-    ["Plexus cervicalis links unauffällig", "sonografie_plexus_cervicalis"],
-    ["Nervus ischiadicus rechts unauffällig", "sonografie_nerv_ischiadicus"],
-    ["Nervus fibularis links unauffällig", "sonografie_nerv_peroneus"],
-    ["Nervus tibialis rechts unauffällig", "sonografie_nerv_tibialis"],
-    ["Tarsaltunnel rechts unauffällig", "sonografie_nerv_tibialis"],
-    ["Nervus femoralis rechts unauffällig", "sonografie_nerv_femoralis"],
-    ["Nervus cutaneus femoris lateralis links unauffällig", "sonografie_nerv_femoralis_cutaneus_lateralis"],
-    ["Nervus pudendus unauffällig", "sonografie_nervus_pudendus"],
-    ["Nervus ilioinguinalis rechts unauffällig", "sonografie_nervus_iliohypogastricus_ilioinguinalis"],
-    ["Ultraschallgezielte Blockade des Nervus medianus rechts", "ultraschall_gezielte_blockade"],
-    ["Sono Schulter rechts unauffällig", "sonografie_schultergelenk"],
-    ["Unterarm rechts unauffällig", "unterarm_in_2_ebenen"],
-    ["Calcaneus rechts in 2 Ebenen unauffällig", "calcaneus_in_2_ebenen"],
-    ["Orbita p.a. beidseits unauffällig", "orbita_pa_aufnahme"],
-    ["Skaphoidaufnahme beidseits", "skaphoidaufnahme"],
-    ["Sprunggelenk mit Mortise View unauffällig", "sprunggelenk_mortise_view"],
-    ["Sonographie der Bauchdecke, keine Hernie", "sonografie_bauchdecke"],
-    ["Sonographie Muskulatur Oberschenkel dorsal unauffällig", "sonografie_dorsaler_oberschenkel"],
-    ["Sonographie M. gastrocnemius medialis unauffällig", "sonografie_gastrocnemius_medialis"],
-    ["Sonographie dorsale Unterschenkelmuskulatur unauffällig", "sonografie_dorsaler_unterschenkel"],
-    ["Sonographie anteriorer Oberschenkelmuskulatur unauffällig", "sonografie_anteriorer_oberschenkel"],
-    ["Visa beidseits unauffällig", "videokinematographie_schluckakt"],
-    ["Ösophagus-Magenduodenum in Doppelkontrast unauffällig", "oesophagus_magenduodenum_doppelkontrast"],
-    ["Ösophagus-Breischluck unauffällig", "durchleuchtung:_ösophagus-breischluck"],
-    ["Aszendierende Pressphlebographie unauffällig", "aszendierende_pressphlebographie"],
-    ["Thorax p.a. und seitlich unauffällig", "thorax_in_2_ebenen"],
-    ["Lungenröntgen unauffällig", "thorax_in_2_ebenen"],
-    ["Torax unauffällig", "thorax_in_2_ebenen"],
-    ["Brustkorb Röntgen unauffällig", "thorax_in_2_ebenen"],
-    ["Thorax p.a./seitlich unauffällig", "thorax_in_2_ebenen"],
-    ["Thoraxaufnahme p.a. ohne Befund", "thorax_in_2_ebenen"],
-    ["Röntgen der Lunge unauffällig", "thorax_in_2_ebenen"],
-    ["Pulmo frei, Cor normal groß", "thorax_in_2_ebenen"],
-    ["BWS thorakal unauffällig", "brustwirbelsäule_in_2_ebenen"],
-    ["Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt", "schultergelenk_in_2_ebenen"],
-    ["Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt", "ellbogengelenk_in_2_ebenen"],
-    ["Vorfuß rechts in 2 Ebenen unauffällig", "vorfuß_in_2_ebenen"],
-    ["Vorfuß links: Hallux valgus", "vorfuß_in_2_ebenen"],
-    ["Mittelfuß links unauffällig", "mittelfuß_in_2_ebenen"],
-    ["Mittelfuß rechts: Fraktur MT5", "mittelfuß_in_2_ebenen"],
-    ["Fuß rechts in 2 Ebenen: Fraktur im Mittelfuß", "fuß_in_2_ebenen"],
-    ["Fuß links unauffällig", "fuß_in_2_ebenen"],
-    ["Scaphoid Aufnahme links unauffällig", "skaphoidaufnahme"],
-    ["Funktionsaufnahmen der HWS unauffällig", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["HWS Funktionsaufnahmen: keine Instabilität", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["LWS Funktion unauffällig", "funktionsaufnahmen_der_lendenwirbelsäule"],
-    ["HWS in 2 Ebenen unauffällig", "halswirbelsäule_in_2_ebenen"],
-    ["HWS: Osteochondrose C5/C6, Funktion eingeschränkt", "halswirbelsäule_in_2_ebenen"],
-    ["Schrägaufnahme der HWS unauffällig", "schrägaufnahme_der_halswirbelsäule"],
-    ["Ganzaufnahme der Wirbelsäule unauffällig", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["Axialaufnahme Ellbogen rechts unauffällig", "axialaufnahme_des_ellbogens"],
-    ["Ellbogen rechts in 2 Ebenen unauffällig", "ellbogengelenk_in_2_ebenen"],
-    ["Schulter rechts tangential unauffällig", "schultergelenk_tangential_bizepssehnenkanal"],
-    ["Schulter rechts: Schmerzen unter Belastung, Omarthrose", "schultergelenk_in_2_ebenen"],
-    ["Defilee Patella beidseits unauffällig", "defileeaufnahmen_der_patella_in_30°_60°_und_90°"],
-    ["Knie rechts in 2 Ebenen unauffällig", "kniegelenk_in_2_ebenen"],
-    ["ISG unauffällig", "iliosakralgelenke_a-p"],
-    ["Iliosakralgelenke: Sakroiliitis beidseits", "iliosakralgelenke_a-p"],
-    ["MRT ISG unauffällig", "mr_der_iliosakralgelenke:"],
-    ["Beckenübersicht mit Hüft-TEP beidseits unauffällig", "beckenübersicht_mit_beidseitiger_hüftprothese"],
-    ["Becken: Hüftprothese rechts regelrecht", "beckenübersicht_mit_einseitiger_hüftprothese"],
-    ["Beckenübersicht unauffällig", "beckenübersicht_stehend"],
-    ["Doppelkontrast Magen unauffällig", "oesophagus_magenduodenum_doppelkontrast"],
-    ["Magen-Darm-Passage unauffällig", "durchleuchtung:_magen-darm-passage_mdp"],
-    ["Sono Abdomen komplett unauffällig", "sonografie_abdomen_komplett"],
-    ["Nervensonographie N. medianus rechts unauffällig", "sonografie_nerv_medianus"],
-    ["Ultraschall-gezielte Blockade rechts", "ultraschall_gezielte_blockade"],
-    ["Sonographisch gezielte Infiltration Schulter rechts", "ultraschall_gezielte_blockade"],
-    ["MRT Knie rechts: Meniskusriss Innenmeniskus", "mr_des_kniegelenkes:"],
-    ["MR des Kniegelenkes links unauffällig", "mr_des_kniegelenkes:"],
-    ["MRT der LWS: Bandscheibenvorfall L4/L5", "mr_der_lendenwirbelsäule:"],
-    ["MRT HWS unauffällig", "mr_der_halswirbelsäule:"],
-    ["MRT BWS unauffällig", "mr_der_brustwirbelsäule:"],
-    ["MRT Schulter rechts: Supraspinatusruptur", "mr_des_schultergelenkes:"],
-    ["MRT Schädel unauffällig", "mr_des_gehirnschädels:"],
-    ["MR Angiographie der Hirngefäße unauffällig", "mr_der_craniellen_gefäße:"],
-    ["MRT Hypophyse unauffällig", "mr_der_hypophyse:"],
-    ["MRT der Mamma beidseits unauffällig", "mr_der_mamma:"],
-    ["MRCP unauffällig", "mr-cholangiopankreatografie_mrcp:"],
-    ["MRT Sprunggelenk rechts unauffällig", "mr_des_sprunggelenke:"],
-    ["MRT Thorax unauffällig", "mr_des_thorax:"],
-    ["MRT der Nasennebenhöhlen unauffällig", "mr_der_nasennebenhöhlen:"],
-    ["MR der Becken- und Beingefäße unauffällig", "mr_der_becken-_und_beingefäße:"],
-    ["MRT der inneren Gehörgänge unauffällig", "mr_der_inneren_gehörgänge_felsenbeine:"],
-    ["N. medianus rechts unauffällig", "sonografie_nerv_medianus"],
-    ["Knie rechts: Gonarthrose, MRT empfohlen", "kniegelenk_in_2_ebenen"],
-    ["Thorax: kein Hinweis auf Infiltrat, ggf. CT", "thorax_in_2_ebenen"],
-    ["Sprunggelenk rechts in 2 Ebenen mit Fuß unauffällig", "sprunggelenk_mit_fuss"],
-    ["Nervensonographie N. suralis rechts unauffällig", "sonografie_nerv_allgemein"],
-    ["Hochauflösende Nervensonographie N. suralis links unauffällig", "sonografie_nerv_allgemein"],
-    ["Sono Leiste rechts unauffällig", "sonografie_allgemein"],
-    ["Irgendwas unauffällig", "allgemein"],
-    ["HWS Funktionsaufnahmen in Flexion und Extension unauffällig", "funktionsaufnahmen_der_halswirbelsäule"],
-    ["Knie rechts in 2 Ebenen, Vergleich mit MRT vom Vorjahr: Gonarthrose", "kniegelenk_in_2_ebenen"],
-    ["Aufnahme der gesamten Wirbelsäule im Stehen als Ganzaufnahme unauffällig", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["Röntgen der Wirbelsäule im Stehen als Ganzaufnahme, flachbogige Skoliose", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["Röntgen im Stehen Ganzaufnahme der HWS bis LWS", "ganzaufnahme_der_wirbelsäule_a-p"],
-    ["Sonographie der rechten Leiste mit anschließender Injektion", "ultraschall_gezielte_blockade"],
-    ["Sonographie der rechten Leiste mit anschließender Blockade", "ultraschall_gezielte_blockade"],
-    ["Sonographie rechte Hüfte mit Injektion", "ultraschall_gezielte_blockade"],
-    ["Sonographie Ellbogen rechts, anschließend Blockade", "ultraschall_gezielte_blockade"]
+    [
+      "Schädel in 2 Ebenen unauffällig",
+      "schädel_in_2_ebenen"
+    ],
+    [
+      "Schädel in 2 Ebenen rechts unauffällig",
+      "schädel_in_2_ebenen"
+    ],
+    [
+      "schädel in 2 ebenen o.B.",
+      "schädel_in_2_ebenen"
+    ],
+    [
+      "Nasennebenhöhlen unauffällig",
+      "nasennebenhöhlen"
+    ],
+    [
+      "Nasennebenhöhlen rechts unauffällig",
+      "nasennebenhöhlen"
+    ],
+    [
+      "nasennebenhöhlen o.B.",
+      "nasennebenhöhlen"
+    ],
+    [
+      "Orthopantomogramm des Kiefer- und Gesichtsschädels unauffällig",
+      "orthopantomogramm_des_kiefer-_und_gesichtsschädels"
+    ],
+    [
+      "Orthopantomogramm des Kiefer- und Gesichtsschädels rechts unauffällig",
+      "orthopantomogramm_des_kiefer-_und_gesichtsschädels"
+    ],
+    [
+      "orthopantomogramm des kiefer- und gesichtsschädels o.B.",
+      "orthopantomogramm_des_kiefer-_und_gesichtsschädels"
+    ],
+    [
+      "Nasenbein unauffällig",
+      "nasenbein"
+    ],
+    [
+      "Nasenbein rechts unauffällig",
+      "nasenbein"
+    ],
+    [
+      "nasenbein o.B.",
+      "nasenbein"
+    ],
+    [
+      "Jochbogen unauffällig",
+      "jochbogen"
+    ],
+    [
+      "Jochbogen rechts unauffällig",
+      "jochbogen"
+    ],
+    [
+      "jochbogen o.B.",
+      "jochbogen"
+    ],
+    [
+      "Ganzaufnahme der Wirbelsäule a.-p. unauffällig",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "Ganzaufnahme der Wirbelsäule a.-p. rechts unauffällig",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "ganzaufnahme der wirbelsäule a-p o.B.",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "Halswirbelsäule in 2 Ebenen unauffällig",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Halswirbelsäule in 2 Ebenen rechts unauffällig",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "halswirbelsäule in 2 ebenen o.B.",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Schrägaufnahme der Halswirbelsäule unauffällig",
+      "schrägaufnahme_der_halswirbelsäule"
+    ],
+    [
+      "Schrägaufnahme der Halswirbelsäule rechts unauffällig",
+      "schrägaufnahme_der_halswirbelsäule"
+    ],
+    [
+      "schrägaufnahme der halswirbelsäule o.B.",
+      "schrägaufnahme_der_halswirbelsäule"
+    ],
+    [
+      "Funktionsaufnahmen der Halswirbelsäule unauffällig",
+      "funktionsaufnahmen_der_halswirbelsäule"
+    ],
+    [
+      "Funktionsaufnahmen der Halswirbelsäule rechts unauffällig",
+      "funktionsaufnahmen_der_halswirbelsäule"
+    ],
+    [
+      "funktionsaufnahmen der halswirbelsäule o.B.",
+      "funktionsaufnahmen_der_halswirbelsäule"
+    ],
+    [
+      "Brustwirbelsäule in 2 Ebenen unauffällig",
+      "brustwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Brustwirbelsäule in 2 Ebenen rechts unauffällig",
+      "brustwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "brustwirbelsäule in 2 ebenen o.B.",
+      "brustwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Lendenwirbelsäule in 2 Ebenen unauffällig",
+      "lendenwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Lendenwirbelsäule in 2 Ebenen rechts unauffällig",
+      "lendenwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "lendenwirbelsäule in 2 ebenen o.B.",
+      "lendenwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Funktionsaufnahmen der Lendenwirbelsäule unauffällig",
+      "funktionsaufnahmen_der_lendenwirbelsäule"
+    ],
+    [
+      "Funktionsaufnahmen der Lendenwirbelsäule rechts unauffällig",
+      "funktionsaufnahmen_der_lendenwirbelsäule"
+    ],
+    [
+      "funktionsaufnahmen der lendenwirbelsäule o.B.",
+      "funktionsaufnahmen_der_lendenwirbelsäule"
+    ],
+    [
+      "Beckenübersicht stehend unauffällig",
+      "beckenübersicht_stehend"
+    ],
+    [
+      "Beckenübersicht stehend rechts unauffällig",
+      "beckenübersicht_stehend"
+    ],
+    [
+      "beckenübersicht stehend o.B.",
+      "beckenübersicht_stehend"
+    ],
+    [
+      "Iliosakralgelenke a.-p. unauffällig",
+      "iliosakralgelenke_a-p"
+    ],
+    [
+      "Iliosakralgelenke a.-p. rechts unauffällig",
+      "iliosakralgelenke_a-p"
+    ],
+    [
+      "iliosakralgelenke a-p o.B.",
+      "iliosakralgelenke_a-p"
+    ],
+    [
+      "Kreuzbein und Steißbein in 2 Ebenen unauffällig",
+      "kreuzbein_und_steißbein_in_2_ebenen"
+    ],
+    [
+      "Kreuzbein und Steißbein in 2 Ebenen rechts unauffällig",
+      "kreuzbein_und_steißbein_in_2_ebenen"
+    ],
+    [
+      "kreuzbein und steißbein in 2 ebenen o.B.",
+      "kreuzbein_und_steißbein_in_2_ebenen"
+    ],
+    [
+      "Knöcherner Hemithorax unauffällig",
+      "knöcherner_hemithorax"
+    ],
+    [
+      "Knöcherner Hemithorax rechts unauffällig",
+      "knöcherner_hemithorax"
+    ],
+    [
+      "knöcherner hemithorax o.B.",
+      "knöcherner_hemithorax"
+    ],
+    [
+      "Sternum in 2 Ebenen unauffällig",
+      "sternum_in_2_ebenen"
+    ],
+    [
+      "Sternum in 2 Ebenen rechts unauffällig",
+      "sternum_in_2_ebenen"
+    ],
+    [
+      "sternum in 2 ebenen o.B.",
+      "sternum_in_2_ebenen"
+    ],
+    [
+      "Schultergelenke a.-p. unter Belastung unauffällig",
+      "schultergelenke_a-p_unter_belastung"
+    ],
+    [
+      "Schultergelenke a.-p. unter Belastung rechts unauffällig",
+      "schultergelenke_a-p_unter_belastung"
+    ],
+    [
+      "schultergelenke a-p unter belastung o.B.",
+      "schultergelenke_a-p_unter_belastung"
+    ],
+    [
+      "Clavicula unauffällig",
+      "clavicula"
+    ],
+    [
+      "Clavicula rechts unauffällig",
+      "clavicula"
+    ],
+    [
+      "clavicula o.B.",
+      "clavicula"
+    ],
+    [
+      "Akromioklavikulargelenk unauffällig",
+      "akromioklavikulargelenk"
+    ],
+    [
+      "Akromioklavikulargelenk rechts unauffällig",
+      "akromioklavikulargelenk"
+    ],
+    [
+      "akromioklavikulargelenk o.B.",
+      "akromioklavikulargelenk"
+    ],
+    [
+      "Scapula in 2 Ebenen unauffällig",
+      "scapula_in_2_ebenen"
+    ],
+    [
+      "Scapula in 2 Ebenen rechts unauffällig",
+      "scapula_in_2_ebenen"
+    ],
+    [
+      "scapula in 2 ebenen o.B.",
+      "scapula_in_2_ebenen"
+    ],
+    [
+      "Schultergelenk in 2 Ebenen unauffällig",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Schultergelenk in 2 Ebenen rechts unauffällig",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "schultergelenk in 2 ebenen o.B.",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Schultergelenk tangential (Bizepssehnenkanal) unauffällig",
+      "schultergelenk_tangential_bizepssehnenkanal"
+    ],
+    [
+      "Schultergelenk tangential (Bizepssehnenkanal) rechts unauffällig",
+      "schultergelenk_tangential_bizepssehnenkanal"
+    ],
+    [
+      "schultergelenk tangential bizepssehnenkanal o.B.",
+      "schultergelenk_tangential_bizepssehnenkanal"
+    ],
+    [
+      "Oberarm in 2 Ebenen unauffällig",
+      "oberarm_in_2_ebenen"
+    ],
+    [
+      "Oberarm in 2 Ebenen rechts unauffällig",
+      "oberarm_in_2_ebenen"
+    ],
+    [
+      "oberarm in 2 ebenen o.B.",
+      "oberarm_in_2_ebenen"
+    ],
+    [
+      "Ellbogengelenk in 2 Ebenen unauffällig",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogengelenk in 2 Ebenen rechts unauffällig",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "ellbogengelenk in 2 ebenen o.B.",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Axialaufnahme des Ellbogens unauffällig",
+      "axialaufnahme_des_ellbogens"
+    ],
+    [
+      "Axialaufnahme des Ellbogens rechts unauffällig",
+      "axialaufnahme_des_ellbogens"
+    ],
+    [
+      "axialaufnahme des ellbogens o.B.",
+      "axialaufnahme_des_ellbogens"
+    ],
+    [
+      "Unterarm in 2 Ebenen unauffällig",
+      "unterarm_in_2_ebenen"
+    ],
+    [
+      "Unterarm in 2 Ebenen rechts unauffällig",
+      "unterarm_in_2_ebenen"
+    ],
+    [
+      "unterarm in 2 ebenen o.B.",
+      "unterarm_in_2_ebenen"
+    ],
+    [
+      "Hand in 2 Ebenen unauffällig",
+      "hand_in_2_ebenen"
+    ],
+    [
+      "Hand in 2 Ebenen rechts unauffällig",
+      "hand_in_2_ebenen"
+    ],
+    [
+      "hand in 2 ebenen o.B.",
+      "hand_in_2_ebenen"
+    ],
+    [
+      "Handgelenk in 2 Ebenen unauffällig",
+      "handgelenk_in_2_ebenen"
+    ],
+    [
+      "Handgelenk in 2 Ebenen rechts unauffällig",
+      "handgelenk_in_2_ebenen"
+    ],
+    [
+      "handgelenk in 2 ebenen o.B.",
+      "handgelenk_in_2_ebenen"
+    ],
+    [
+      "Karpaltunnelaufnahme unauffällig",
+      "karpaltunnelaufnahme"
+    ],
+    [
+      "Karpaltunnelaufnahme rechts unauffällig",
+      "karpaltunnelaufnahme"
+    ],
+    [
+      "karpaltunnelaufnahme o.B.",
+      "karpaltunnelaufnahme"
+    ],
+    [
+      "Naviculareserie unauffällig",
+      "naviculareserie"
+    ],
+    [
+      "Naviculareserie rechts unauffällig",
+      "naviculareserie"
+    ],
+    [
+      "naviculareserie o.B.",
+      "naviculareserie"
+    ],
+    [
+      "Finger in 2 Ebenen unauffällig",
+      "finger_in_2_ebenen"
+    ],
+    [
+      "Finger in 2 Ebenen rechts unauffällig",
+      "finger_in_2_ebenen"
+    ],
+    [
+      "finger in 2 ebenen o.B.",
+      "finger_in_2_ebenen"
+    ],
+    [
+      "Ganzbeinaufnahme im Stand unauffällig",
+      "ganzbeinaufnahme_im_stand"
+    ],
+    [
+      "Ganzbeinaufnahme im Stand rechts unauffällig",
+      "ganzbeinaufnahme_im_stand"
+    ],
+    [
+      "ganzbeinaufnahme im stand o.B.",
+      "ganzbeinaufnahme_im_stand"
+    ],
+    [
+      "Hüftgelenk in 2 Ebenen unauffällig",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Hüftgelenk in 2 Ebenen rechts unauffällig",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "hüftgelenk in 2 ebenen o.B.",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Konturaufnahmen des Femurkopfes unauffällig",
+      "konturaufnahmen_des_femurkopfes"
+    ],
+    [
+      "Konturaufnahmen des Femurkopfes rechts unauffällig",
+      "konturaufnahmen_des_femurkopfes"
+    ],
+    [
+      "konturaufnahmen des femurkopfes o.B.",
+      "konturaufnahmen_des_femurkopfes"
+    ],
+    [
+      "Oberschenkel in 2 Ebenen unauffällig",
+      "oberschenkel_in_2_ebenen"
+    ],
+    [
+      "Oberschenkel in 2 Ebenen rechts unauffällig",
+      "oberschenkel_in_2_ebenen"
+    ],
+    [
+      "oberschenkel in 2 ebenen o.B.",
+      "oberschenkel_in_2_ebenen"
+    ],
+    [
+      "Kniegelenk in 2 Ebenen unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Kniegelenk in 2 Ebenen rechts unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "kniegelenk in 2 ebenen o.B.",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Defileeaufnahmen der Patella in 30°, 60° und 90° unauffällig",
+      "defileeaufnahmen_der_patella_in_30°_60°_und_90°"
+    ],
+    [
+      "Defileeaufnahmen der Patella in 30°, 60° und 90° rechts unauffällig",
+      "defileeaufnahmen_der_patella_in_30°_60°_und_90°"
+    ],
+    [
+      "defileeaufnahmen der patella in 30° 60° und 90° o.B.",
+      "defileeaufnahmen_der_patella_in_30°_60°_und_90°"
+    ],
+    [
+      "Unterschenkel in 2 Ebenen unauffällig",
+      "unterschenkel_in_2_ebenen"
+    ],
+    [
+      "Unterschenkel in 2 Ebenen rechts unauffällig",
+      "unterschenkel_in_2_ebenen"
+    ],
+    [
+      "unterschenkel in 2 ebenen o.B.",
+      "unterschenkel_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk in 2 Ebenen unauffällig",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk in 2 Ebenen rechts unauffällig",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "sprunggelenk in 2 ebenen o.B.",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Fuß in 2 Ebenen unauffällig",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "Fuß in 2 Ebenen rechts unauffällig",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "fuß in 2 ebenen o.B.",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "Mittelfuß in 2 Ebenen unauffällig",
+      "mittelfuß_in_2_ebenen"
+    ],
+    [
+      "Mittelfuß in 2 Ebenen rechts unauffällig",
+      "mittelfuß_in_2_ebenen"
+    ],
+    [
+      "mittelfuß in 2 ebenen o.B.",
+      "mittelfuß_in_2_ebenen"
+    ],
+    [
+      "Vorfuß in 2 Ebenen unauffällig",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "Vorfuß in 2 Ebenen rechts unauffällig",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "vorfuß in 2 ebenen o.B.",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "Zehe in 2 Ebenen unauffällig",
+      "zehe_in_2_ebenen"
+    ],
+    [
+      "Zehe in 2 Ebenen rechts unauffällig",
+      "zehe_in_2_ebenen"
+    ],
+    [
+      "zehe in 2 ebenen o.B.",
+      "zehe_in_2_ebenen"
+    ],
+    [
+      "Thorax in 2 Ebenen unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thorax in 2 Ebenen rechts unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "thorax in 2 ebenen o.B.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Abdomen im Stand unauffällig",
+      "abdomen_im_stand"
+    ],
+    [
+      "Abdomen im Stand rechts unauffällig",
+      "abdomen_im_stand"
+    ],
+    [
+      "abdomen im stand o.B.",
+      "abdomen_im_stand"
+    ],
+    [
+      "Abdomen im Liegen unauffällig",
+      "abdomen_im_liegen"
+    ],
+    [
+      "Abdomen im Liegen rechts unauffällig",
+      "abdomen_im_liegen"
+    ],
+    [
+      "abdomen im liegen o.B.",
+      "abdomen_im_liegen"
+    ],
+    [
+      "Intravenöses Urogramm unauffällig",
+      "intravenöses_urogramm"
+    ],
+    [
+      "Intravenöses Urogramm rechts unauffällig",
+      "intravenöses_urogramm"
+    ],
+    [
+      "intravenöses urogramm o.B.",
+      "intravenöses_urogramm"
+    ],
+    [
+      "Beinphlebographie unauffällig",
+      "beinphlebographie"
+    ],
+    [
+      "Beinphlebographie rechts unauffällig",
+      "beinphlebographie"
+    ],
+    [
+      "beinphlebographie o.B.",
+      "beinphlebographie"
+    ],
+    [
+      "Hysterosalpingographie unauffällig",
+      "hysterosalpingographie"
+    ],
+    [
+      "Hysterosalpingographie rechts unauffällig",
+      "hysterosalpingographie"
+    ],
+    [
+      "hysterosalpingographie o.B.",
+      "hysterosalpingographie"
+    ],
+    [
+      "MR des Gehirnschädels: unauffällig",
+      "mr_des_gehirnschädels:"
+    ],
+    [
+      "MR des Gehirnschädels: rechts unauffällig",
+      "mr_des_gehirnschädels:"
+    ],
+    [
+      "mr des gehirnschädels: o.B.",
+      "mr_des_gehirnschädels:"
+    ],
+    [
+      "MR der Hypophyse: unauffällig",
+      "mr_der_hypophyse:"
+    ],
+    [
+      "MR der Hypophyse: rechts unauffällig",
+      "mr_der_hypophyse:"
+    ],
+    [
+      "mr der hypophyse: o.B.",
+      "mr_der_hypophyse:"
+    ],
+    [
+      "MR der Inneren Gehörgänge, Felsenbeine: unauffällig",
+      "mr_der_inneren_gehörgänge_felsenbeine:"
+    ],
+    [
+      "MR der Inneren Gehörgänge, Felsenbeine: rechts unauffällig",
+      "mr_der_inneren_gehörgänge_felsenbeine:"
+    ],
+    [
+      "mr der inneren gehörgänge felsenbeine: o.B.",
+      "mr_der_inneren_gehörgänge_felsenbeine:"
+    ],
+    [
+      "MR der Nasennebenhöhlen: unauffällig",
+      "mr_der_nasennebenhöhlen:"
+    ],
+    [
+      "MR der Nasennebenhöhlen: rechts unauffällig",
+      "mr_der_nasennebenhöhlen:"
+    ],
+    [
+      "mr der nasennebenhöhlen: o.B.",
+      "mr_der_nasennebenhöhlen:"
+    ],
+    [
+      "MR der Halsweichteile: unauffällig",
+      "mr_der_halsweichteile:"
+    ],
+    [
+      "MR der Halsweichteile: rechts unauffällig",
+      "mr_der_halsweichteile:"
+    ],
+    [
+      "mr der halsweichteile: o.B.",
+      "mr_der_halsweichteile:"
+    ],
+    [
+      "MR des Thorax: unauffällig",
+      "mr_des_thorax:"
+    ],
+    [
+      "MR des Thorax: rechts unauffällig",
+      "mr_des_thorax:"
+    ],
+    [
+      "mr des thorax: o.B.",
+      "mr_des_thorax:"
+    ],
+    [
+      "MR der Mamma: unauffällig",
+      "mr_der_mamma:"
+    ],
+    [
+      "MR der Mamma: rechts unauffällig",
+      "mr_der_mamma:"
+    ],
+    [
+      "mr der mamma: o.B.",
+      "mr_der_mamma:"
+    ],
+    [
+      "MR der Leber: unauffällig",
+      "mr_der_leber:"
+    ],
+    [
+      "MR der Leber: rechts unauffällig",
+      "mr_der_leber:"
+    ],
+    [
+      "mr der leber: o.B.",
+      "mr_der_leber:"
+    ],
+    [
+      "MR der Nebennieren: unauffällig",
+      "mr_der_nebennieren:"
+    ],
+    [
+      "MR der Nebennieren: rechts unauffällig",
+      "mr_der_nebennieren:"
+    ],
+    [
+      "mr der nebennieren: o.B.",
+      "mr_der_nebennieren:"
+    ],
+    [
+      "MR der Hoden: unauffällig",
+      "mr_der_hoden:"
+    ],
+    [
+      "MR der Hoden: rechts unauffällig",
+      "mr_der_hoden:"
+    ],
+    [
+      "mr der hoden: o.B.",
+      "mr_der_hoden:"
+    ],
+    [
+      "MR der Halswirbelsäule: unauffällig",
+      "mr_der_halswirbelsäule:"
+    ],
+    [
+      "MR der Halswirbelsäule: rechts unauffällig",
+      "mr_der_halswirbelsäule:"
+    ],
+    [
+      "mr der halswirbelsäule: o.B.",
+      "mr_der_halswirbelsäule:"
+    ],
+    [
+      "MR der Brustwirbelsäule: unauffällig",
+      "mr_der_brustwirbelsäule:"
+    ],
+    [
+      "MR der Brustwirbelsäule: rechts unauffällig",
+      "mr_der_brustwirbelsäule:"
+    ],
+    [
+      "mr der brustwirbelsäule: o.B.",
+      "mr_der_brustwirbelsäule:"
+    ],
+    [
+      "MR der Lendenwirbelsäule: unauffällig",
+      "mr_der_lendenwirbelsäule:"
+    ],
+    [
+      "MR der Lendenwirbelsäule: rechts unauffällig",
+      "mr_der_lendenwirbelsäule:"
+    ],
+    [
+      "mr der lendenwirbelsäule: o.B.",
+      "mr_der_lendenwirbelsäule:"
+    ],
+    [
+      "MR der Iliosakralgelenke: unauffällig",
+      "mr_der_iliosakralgelenke:"
+    ],
+    [
+      "MR der Iliosakralgelenke: rechts unauffällig",
+      "mr_der_iliosakralgelenke:"
+    ],
+    [
+      "mr der iliosakralgelenke: o.B.",
+      "mr_der_iliosakralgelenke:"
+    ],
+    [
+      "MR des Kiefergelenkes: unauffällig",
+      "mr_des_kiefergelenkes:"
+    ],
+    [
+      "MR des Kiefergelenkes: rechts unauffällig",
+      "mr_des_kiefergelenkes:"
+    ],
+    [
+      "mr des kiefergelenkes: o.B.",
+      "mr_des_kiefergelenkes:"
+    ],
+    [
+      "MR des Schultergelenkes: unauffällig",
+      "mr_des_schultergelenkes:"
+    ],
+    [
+      "MR des Schultergelenkes: rechts unauffällig",
+      "mr_des_schultergelenkes:"
+    ],
+    [
+      "mr des schultergelenkes: o.B.",
+      "mr_des_schultergelenkes:"
+    ],
+    [
+      "MR Handgelenk: unauffällig",
+      "mr_handgelenk:"
+    ],
+    [
+      "MR Handgelenk: rechts unauffällig",
+      "mr_handgelenk:"
+    ],
+    [
+      "mr handgelenk: o.B.",
+      "mr_handgelenk:"
+    ],
+    [
+      "MR Hüftgelenk: unauffällig",
+      "mr_hüftgelenk:"
+    ],
+    [
+      "MR Hüftgelenk: rechts unauffällig",
+      "mr_hüftgelenk:"
+    ],
+    [
+      "mr hüftgelenk: o.B.",
+      "mr_hüftgelenk:"
+    ],
+    [
+      "MR des Kniegelenkes: unauffällig",
+      "mr_des_kniegelenkes:"
+    ],
+    [
+      "MR des Kniegelenkes: rechts unauffällig",
+      "mr_des_kniegelenkes:"
+    ],
+    [
+      "mr des kniegelenkes: o.B.",
+      "mr_des_kniegelenkes:"
+    ],
+    [
+      "MR des Sprunggelenke: unauffällig",
+      "mr_des_sprunggelenke:"
+    ],
+    [
+      "MR des Sprunggelenke: rechts unauffällig",
+      "mr_des_sprunggelenke:"
+    ],
+    [
+      "mr des sprunggelenke: o.B.",
+      "mr_des_sprunggelenke:"
+    ],
+    [
+      "MR der craniellen Gefäße: unauffällig",
+      "mr_der_craniellen_gefäße:"
+    ],
+    [
+      "MR der craniellen Gefäße: rechts unauffällig",
+      "mr_der_craniellen_gefäße:"
+    ],
+    [
+      "mr der craniellen gefäße: o.B.",
+      "mr_der_craniellen_gefäße:"
+    ],
+    [
+      "MR der Nierenarterien: unauffällig",
+      "mr_der_nierenarterien:"
+    ],
+    [
+      "MR der Nierenarterien: rechts unauffällig",
+      "mr_der_nierenarterien:"
+    ],
+    [
+      "mr der nierenarterien: o.B.",
+      "mr_der_nierenarterien:"
+    ],
+    [
+      "MR der Becken- und Beingefäße: unauffällig",
+      "mr_der_becken-_und_beingefäße:"
+    ],
+    [
+      "MR der Becken- und Beingefäße: rechts unauffällig",
+      "mr_der_becken-_und_beingefäße:"
+    ],
+    [
+      "mr der becken- und beingefäße: o.B.",
+      "mr_der_becken-_und_beingefäße:"
+    ],
+    [
+      "MR-Cholangiopankreatografie (MRCP): unauffällig",
+      "mr-cholangiopankreatografie_mrcp:"
+    ],
+    [
+      "MR-Cholangiopankreatografie (MRCP): rechts unauffällig",
+      "mr-cholangiopankreatografie_mrcp:"
+    ],
+    [
+      "mr-cholangiopankreatografie mrcp: o.B.",
+      "mr-cholangiopankreatografie_mrcp:"
+    ],
+    [
+      "MR der Halsarterien: unauffällig",
+      "mr_der_halsarterien:"
+    ],
+    [
+      "MR der Halsarterien: rechts unauffällig",
+      "mr_der_halsarterien:"
+    ],
+    [
+      "mr der halsarterien: o.B.",
+      "mr_der_halsarterien:"
+    ],
+    [
+      "CCT: unauffällig",
+      "cct:"
+    ],
+    [
+      "CCT: rechts unauffällig",
+      "cct:"
+    ],
+    [
+      "cct: o.B.",
+      "cct:"
+    ],
+    [
+      "CT Thorax: unauffällig",
+      "ct_thorax:"
+    ],
+    [
+      "CT Thorax: rechts unauffällig",
+      "ct_thorax:"
+    ],
+    [
+      "ct thorax: o.B.",
+      "ct_thorax:"
+    ],
+    [
+      "CT Abdomen: unauffällig",
+      "ct_abdomen:"
+    ],
+    [
+      "CT Abdomen: rechts unauffällig",
+      "ct_abdomen:"
+    ],
+    [
+      "ct abdomen: o.B.",
+      "ct_abdomen:"
+    ],
+    [
+      "CT der Wirbelsäule: unauffällig",
+      "ct_der_wirbelsäule:"
+    ],
+    [
+      "CT der Wirbelsäule: rechts unauffällig",
+      "ct_der_wirbelsäule:"
+    ],
+    [
+      "ct der wirbelsäule: o.B.",
+      "ct_der_wirbelsäule:"
+    ],
+    [
+      "CT Angiographie: unauffällig",
+      "ct_angiographie:"
+    ],
+    [
+      "CT Angiographie: rechts unauffällig",
+      "ct_angiographie:"
+    ],
+    [
+      "ct angiographie: o.B.",
+      "ct_angiographie:"
+    ],
+    [
+      "Polytrauma CT: unauffällig",
+      "polytrauma_ct:"
+    ],
+    [
+      "Polytrauma CT: rechts unauffällig",
+      "polytrauma_ct:"
+    ],
+    [
+      "polytrauma ct: o.B.",
+      "polytrauma_ct:"
+    ],
+    [
+      "Sonografie Abdomen (Komplett) unauffällig",
+      "sonografie_abdomen_komplett"
+    ],
+    [
+      "Sonografie Abdomen (Komplett) rechts unauffällig",
+      "sonografie_abdomen_komplett"
+    ],
+    [
+      "sonografie abdomen komplett o.B.",
+      "sonografie_abdomen_komplett"
+    ],
+    [
+      "Sonografie Schilddrüse unauffällig",
+      "sonografie_schilddrüse"
+    ],
+    [
+      "Sonografie Schilddrüse rechts unauffällig",
+      "sonografie_schilddrüse"
+    ],
+    [
+      "sonografie schilddrüse o.B.",
+      "sonografie_schilddrüse"
+    ],
+    [
+      "Durchleuchtung: Ösophagus-Breischluck unauffällig",
+      "durchleuchtung:_ösophagus-breischluck"
+    ],
+    [
+      "Durchleuchtung: Ösophagus-Breischluck rechts unauffällig",
+      "durchleuchtung:_ösophagus-breischluck"
+    ],
+    [
+      "durchleuchtung: ösophagus-breischluck o.B.",
+      "durchleuchtung:_ösophagus-breischluck"
+    ],
+    [
+      "Durchleuchtung: Magen-Darm-Passage (MDP) unauffällig",
+      "durchleuchtung:_magen-darm-passage_mdp"
+    ],
+    [
+      "Durchleuchtung: Magen-Darm-Passage (MDP) rechts unauffällig",
+      "durchleuchtung:_magen-darm-passage_mdp"
+    ],
+    [
+      "durchleuchtung: magen-darm-passage mdp o.B.",
+      "durchleuchtung:_magen-darm-passage_mdp"
+    ],
+    [
+      "Hochauflösende Nervensonographie unauffällig",
+      "sonografie_nerven"
+    ],
+    [
+      "Hochauflösende Nervensonographie rechts unauffällig",
+      "sonografie_nerven"
+    ],
+    [
+      "sonografie nerven o.B.",
+      "sonografie_nerv_allgemein"
+    ],
+    [
+      "Sonographie (Allgemein) unauffällig",
+      "sonografie_allgemein"
+    ],
+    [
+      "Sonographie (Allgemein) rechts unauffällig",
+      "sonografie_allgemein"
+    ],
+    [
+      "sonografie allgemein o.B.",
+      "sonografie_allgemein"
+    ],
+    [
+      "Sonografie Abdomen (weiblich) unauffällig",
+      "sonografie_abdomen_weiblich"
+    ],
+    [
+      "Sonografie Abdomen (weiblich) rechts unauffällig",
+      "sonografie_abdomen_weiblich"
+    ],
+    [
+      "sonografie abdomen weiblich o.B.",
+      "sonografie_abdomen_weiblich"
+    ],
+    [
+      "Sonografie Abdomen (männlich) unauffällig",
+      "sonografie_abdomen_maennlich"
+    ],
+    [
+      "Sonografie Abdomen (männlich) rechts unauffällig",
+      "sonografie_abdomen_maennlich"
+    ],
+    [
+      "sonografie abdomen maennlich o.B.",
+      "sonografie_abdomen_maennlich"
+    ],
+    [
+      "Farbcodierte Duplexsonographie der Halsgefäße unauffällig",
+      "sonografie_halsgefaesse"
+    ],
+    [
+      "Farbcodierte Duplexsonographie der Halsgefäße rechts unauffällig",
+      "sonografie_halsgefaesse"
+    ],
+    [
+      "sonografie halsgefaesse o.B.",
+      "sonografie_halsgefaesse"
+    ],
+    [
+      "Farbcodierte Duplexsonographie der Beinvenen unauffällig",
+      "sonografie_beinvenen"
+    ],
+    [
+      "Farbcodierte Duplexsonographie der Beinvenen rechts unauffällig",
+      "sonografie_beinvenen"
+    ],
+    [
+      "sonografie beinvenen o.B.",
+      "sonografie_beinvenen"
+    ],
+    [
+      "Hochauflösende Sonographie des N. medianus unauffällig",
+      "sonografie_nerv_medianus"
+    ],
+    [
+      "Hochauflösende Sonographie des N. medianus rechts unauffällig",
+      "sonografie_nerv_medianus"
+    ],
+    [
+      "sonografie nerv medianus o.B.",
+      "sonografie_nerv_medianus"
+    ],
+    [
+      "Hochauflösende Sonographie des N. ulnaris unauffällig",
+      "sonografie_nerv_ulnaris"
+    ],
+    [
+      "Hochauflösende Sonographie des N. ulnaris rechts unauffällig",
+      "sonografie_nerv_ulnaris"
+    ],
+    [
+      "sonografie nerv ulnaris o.B.",
+      "sonografie_nerv_ulnaris"
+    ],
+    [
+      "Hochauflösende Sonographie des N. radialis unauffällig",
+      "sonografie_nerv_radialis"
+    ],
+    [
+      "Hochauflösende Sonographie des N. radialis rechts unauffällig",
+      "sonografie_nerv_radialis"
+    ],
+    [
+      "sonografie nerv radialis o.B.",
+      "sonografie_nerv_radialis"
+    ],
+    [
+      "Hochauflösende Sonographie des Plexus brachialis unauffällig",
+      "sonografie_plexus_brachialis"
+    ],
+    [
+      "Hochauflösende Sonographie des Plexus brachialis rechts unauffällig",
+      "sonografie_plexus_brachialis"
+    ],
+    [
+      "sonografie plexus brachialis o.B.",
+      "sonografie_plexus_brachialis"
+    ],
+    [
+      "Hochauflösende Nervensonographie (Allgemein) unauffällig",
+      "sonografie_nerven"
+    ],
+    [
+      "Hochauflösende Nervensonographie (Allgemein) rechts unauffällig",
+      "sonografie_nerven"
+    ],
+    [
+      "sonografie nerv allgemein o.B.",
+      "sonografie_nerv_allgemein"
+    ],
+    [
+      "Hochauflösende Sonographie des N. ischiadicus unauffällig",
+      "sonografie_nerv_ischiadicus"
+    ],
+    [
+      "Hochauflösende Sonographie des N. ischiadicus rechts unauffällig",
+      "sonografie_nerv_ischiadicus"
+    ],
+    [
+      "sonografie nerv ischiadicus o.B.",
+      "sonografie_nerv_ischiadicus"
+    ],
+    [
+      "Hochauflösende Sonographie des N. peroneus unauffällig",
+      "sonografie_nerv_peroneus"
+    ],
+    [
+      "Hochauflösende Sonographie des N. peroneus rechts unauffällig",
+      "sonografie_nerv_peroneus"
+    ],
+    [
+      "sonografie nerv peroneus o.B.",
+      "sonografie_nerv_peroneus"
+    ],
+    [
+      "Hochauflösende Sonographie des N. tibialis unauffällig",
+      "sonografie_nerv_tibialis"
+    ],
+    [
+      "Hochauflösende Sonographie des N. tibialis rechts unauffällig",
+      "sonografie_nerv_tibialis"
+    ],
+    [
+      "sonografie nerv tibialis o.B.",
+      "sonografie_nerv_tibialis"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus femoralis unauffällig",
+      "sonografie_nerv_femoralis"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus femoralis rechts unauffällig",
+      "sonografie_nerv_femoralis"
+    ],
+    [
+      "sonografie nerv femoralis o.B.",
+      "sonografie_nerv_femoralis"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus femoris cutaneus lateralis unauffällig",
+      "sonografie_nerv_femoralis_cutaneus_lateralis"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus femoris cutaneus lateralis rechts unauffällig",
+      "sonografie_nerv_femoralis_cutaneus_lateralis"
+    ],
+    [
+      "sonografie nerv femoralis cutaneus lateralis o.B.",
+      "sonografie_nerv_femoralis_cutaneus_lateralis"
+    ],
+    [
+      "Hochauflösende Sonographie des Plexus cervicalis unauffällig",
+      "sonografie_plexus_cervicalis"
+    ],
+    [
+      "Hochauflösende Sonographie des Plexus cervicalis rechts unauffällig",
+      "sonografie_plexus_cervicalis"
+    ],
+    [
+      "sonografie plexus cervicalis o.B.",
+      "sonografie_plexus_cervicalis"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus pudendus unauffällig",
+      "sonografie_nervus_pudendus"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus pudendus rechts unauffällig",
+      "sonografie_nervus_pudendus"
+    ],
+    [
+      "sonografie nervus pudendus o.B.",
+      "sonografie_nervus_pudendus"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus iliohypogastricus und Nervus ilioinguinalis unauffällig",
+      "sonografie_nervus_iliohypogastricus_ilioinguinalis"
+    ],
+    [
+      "Hochauflösende Sonographie des Nervus iliohypogastricus und Nervus ilioinguinalis rechts unauffällig",
+      "sonografie_nervus_iliohypogastricus_ilioinguinalis"
+    ],
+    [
+      "sonografie nervus iliohypogastricus ilioinguinalis o.B.",
+      "sonografie_nervus_iliohypogastricus_ilioinguinalis"
+    ],
+    [
+      "Ultraschall-gezielte Blockade unauffällig",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Ultraschall-gezielte Blockade rechts unauffällig",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "ultraschall gezielte blockade o.B.",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Sonographie der Weichteile unauffällig",
+      "sonografie_weichteile"
+    ],
+    [
+      "Sonographie der Weichteile rechts unauffällig",
+      "sonografie_weichteile"
+    ],
+    [
+      "sonografie weichteile o.B.",
+      "sonografie_weichteile"
+    ],
+    [
+      "Sonographie der Halsweichteile unauffällig",
+      "sonografie_halsweichteile"
+    ],
+    [
+      "Sonographie der Halsweichteile rechts unauffällig",
+      "sonografie_halsweichteile"
+    ],
+    [
+      "sonografie halsweichteile o.B.",
+      "sonografie_halsweichteile"
+    ],
+    [
+      "Mammographie beidseits unauffällig",
+      "mammographie_beidseits"
+    ],
+    [
+      "Mammographie beidseits rechts unauffällig",
+      "mammographie_beidseits"
+    ],
+    [
+      "mammographie beidseits o.B.",
+      "mammographie_beidseits"
+    ],
+    [
+      "Knochendichtemessung (DEXA) unauffällig",
+      "knochendichtemessung_dexa"
+    ],
+    [
+      "Knochendichtemessung (DEXA) rechts unauffällig",
+      "knochendichtemessung_dexa"
+    ],
+    [
+      "knochendichtemessung dexa o.B.",
+      "knochendichtemessung_dexa"
+    ],
+    [
+      "Digitale Volumentomographie des Oberkiefers unauffällig",
+      "dvt_oberkiefer"
+    ],
+    [
+      "Digitale Volumentomographie des Oberkiefers rechts unauffällig",
+      "dvt_oberkiefer"
+    ],
+    [
+      "dvt oberkiefer o.B.",
+      "dvt_oberkiefer"
+    ],
+    [
+      "Digitale Volumentomographie des Unterkiefers unauffällig",
+      "dvt_unterkiefer"
+    ],
+    [
+      "Digitale Volumentomographie des Unterkiefers rechts unauffällig",
+      "dvt_unterkiefer"
+    ],
+    [
+      "dvt unterkiefer o.B.",
+      "dvt_unterkiefer"
+    ],
+    [
+      "Schädelfernröntgen unauffällig",
+      "schädelfernröntgen"
+    ],
+    [
+      "Schädelfernröntgen rechts unauffällig",
+      "schädelfernröntgen"
+    ],
+    [
+      "schädelfernröntgen o.B.",
+      "schädelfernröntgen"
+    ],
+    [
+      "Varizensonografie unauffällig",
+      "varizensonografie"
+    ],
+    [
+      "Varizensonografie rechts unauffällig",
+      "varizensonografie"
+    ],
+    [
+      "varizensonografie o.B.",
+      "varizensonografie"
+    ],
+    [
+      "Schulterprothese unauffällig",
+      "schulterprothese"
+    ],
+    [
+      "Schulterprothese rechts unauffällig",
+      "schulterprothese"
+    ],
+    [
+      "schulterprothese o.B.",
+      "schulterprothese"
+    ],
+    [
+      "Daumensattelprothese unauffällig",
+      "daumensattelprothese"
+    ],
+    [
+      "Daumensattelprothese rechts unauffällig",
+      "daumensattelprothese"
+    ],
+    [
+      "daumensattelprothese o.B.",
+      "daumensattelprothese"
+    ],
+    [
+      "Knieprothese unauffällig",
+      "knieprothese"
+    ],
+    [
+      "Knieprothese rechts unauffällig",
+      "knieprothese"
+    ],
+    [
+      "knieprothese o.B.",
+      "knieprothese"
+    ],
+    [
+      "Hüftprothese unauffällig",
+      "hüftprothese"
+    ],
+    [
+      "Hüftprothese rechts unauffällig",
+      "hüftprothese"
+    ],
+    [
+      "hüftprothese o.B.",
+      "hüftprothese"
+    ],
+    [
+      "Beckenübersicht und Hüfte unauffällig",
+      "beckenübersicht_und_hüfte"
+    ],
+    [
+      "Beckenübersicht und Hüfte rechts unauffällig",
+      "beckenübersicht_und_hüfte"
+    ],
+    [
+      "beckenübersicht und hüfte o.B.",
+      "beckenübersicht_und_hüfte"
+    ],
+    [
+      "Beckenübersicht mit einseitiger Hüftprothese unauffällig",
+      "beckenübersicht_mit_einseitiger_hüftprothese"
+    ],
+    [
+      "Beckenübersicht mit einseitiger Hüftprothese rechts unauffällig",
+      "beckenübersicht_mit_einseitiger_hüftprothese"
+    ],
+    [
+      "beckenübersicht mit einseitiger hüftprothese o.B.",
+      "beckenübersicht_mit_einseitiger_hüftprothese"
+    ],
+    [
+      "Beckenübersicht mit beidseitiger Hüftprothese unauffällig",
+      "beckenübersicht_mit_beidseitiger_hüftprothese"
+    ],
+    [
+      "Beckenübersicht mit beidseitiger Hüftprothese rechts unauffällig",
+      "beckenübersicht_mit_beidseitiger_hüftprothese"
+    ],
+    [
+      "beckenübersicht mit beidseitiger hüftprothese o.B.",
+      "beckenübersicht_mit_beidseitiger_hüftprothese"
+    ],
+    [
+      "Gesamte Wirbelsäule unauffällig",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "Gesamte Wirbelsäule rechts unauffällig",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "wirbelsäule gesamt o.B.",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "HWS und LWS unauffällig",
+      "hws_und_lws"
+    ],
+    [
+      "HWS und LWS rechts unauffällig",
+      "hws_und_lws"
+    ],
+    [
+      "hws und lws o.B.",
+      "hws_und_lws"
+    ],
+    [
+      "Sonographie des Schultergelenkes unauffällig",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Sonographie des Schultergelenkes rechts unauffällig",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "sonografie schultergelenk o.B.",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Mammasonographie beidseits unauffällig",
+      "mammasonographie_beidseits"
+    ],
+    [
+      "Mammasonographie beidseits rechts unauffällig",
+      "mammasonographie_beidseits"
+    ],
+    [
+      "mammasonographie beidseits o.B.",
+      "mammasonographie_beidseits"
+    ],
+    [
+      "Allgemeine Untersuchung unauffällig",
+      "allgemein"
+    ],
+    [
+      "Allgemeine Untersuchung rechts unauffällig",
+      "allgemein"
+    ],
+    [
+      "allgemein o.B.",
+      "allgemein"
+    ],
+    [
+      "Orbita p.-a.-Aufnahme unauffällig",
+      "orbita_pa_aufnahme"
+    ],
+    [
+      "Orbita p.-a.-Aufnahme rechts unauffällig",
+      "orbita_pa_aufnahme"
+    ],
+    [
+      "orbita pa aufnahme o.B.",
+      "orbita_pa_aufnahme"
+    ],
+    [
+      "Steißbein in 2 Ebenen unauffällig",
+      "steißbein_in_2_ebenen"
+    ],
+    [
+      "Steißbein in 2 Ebenen rechts unauffällig",
+      "steißbein_in_2_ebenen"
+    ],
+    [
+      "steißbein in 2 ebenen o.B.",
+      "steißbein_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk mit Mortise View in 2 Ebenen unauffällig",
+      "sprunggelenk_mortise_view"
+    ],
+    [
+      "Sprunggelenk mit Mortise View in 2 Ebenen rechts unauffällig",
+      "sprunggelenk_mortise_view"
+    ],
+    [
+      "sprunggelenk mortise view o.B.",
+      "sprunggelenk_mortise_view"
+    ],
+    [
+      "Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen unauffällig",
+      "sprunggelenk_gehaltene_aufnahmen"
+    ],
+    [
+      "Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen rechts unauffällig",
+      "sprunggelenk_gehaltene_aufnahmen"
+    ],
+    [
+      "sprunggelenk gehaltene aufnahmen o.B.",
+      "sprunggelenk_gehaltene_aufnahmen"
+    ],
+    [
+      "Sprunggelenk in 2 Ebenen mit Fuß unauffällig",
+      "sprunggelenk_mit_fuss"
+    ],
+    [
+      "Sprunggelenk in 2 Ebenen mit Fuß rechts unauffällig",
+      "sprunggelenk_mit_fuss"
+    ],
+    [
+      "sprunggelenk mit fuss o.B.",
+      "sprunggelenk_mit_fuss"
+    ],
+    [
+      "Calcaneus in 2 Ebenen unauffällig",
+      "calcaneus_in_2_ebenen"
+    ],
+    [
+      "Calcaneus in 2 Ebenen rechts unauffällig",
+      "calcaneus_in_2_ebenen"
+    ],
+    [
+      "calcaneus in 2 ebenen o.B.",
+      "calcaneus_in_2_ebenen"
+    ],
+    [
+      "Calcaneus seitlich unauffällig",
+      "calcaneus_seitlich"
+    ],
+    [
+      "Calcaneus seitlich rechts unauffällig",
+      "calcaneus_seitlich"
+    ],
+    [
+      "calcaneus seitlich o.B.",
+      "calcaneus_seitlich"
+    ],
+    [
+      "Skaphoidaufnahme unauffällig",
+      "skaphoidaufnahme"
+    ],
+    [
+      "Skaphoidaufnahme rechts unauffällig",
+      "skaphoidaufnahme"
+    ],
+    [
+      "skaphoidaufnahme o.B.",
+      "skaphoidaufnahme"
+    ],
+    [
+      "Oesophagus-Magenduodenum in Doppelkontrast unauffällig",
+      "oesophagus_magenduodenum_doppelkontrast"
+    ],
+    [
+      "Oesophagus-Magenduodenum in Doppelkontrast rechts unauffällig",
+      "oesophagus_magenduodenum_doppelkontrast"
+    ],
+    [
+      "oesophagus magenduodenum doppelkontrast o.B.",
+      "oesophagus_magenduodenum_doppelkontrast"
+    ],
+    [
+      "Videokinematographie des Schluckaktes unauffällig",
+      "videokinematographie_schluckakt"
+    ],
+    [
+      "Videokinematographie des Schluckaktes rechts unauffällig",
+      "videokinematographie_schluckakt"
+    ],
+    [
+      "videokinematographie schluckakt o.B.",
+      "videokinematographie_schluckakt"
+    ],
+    [
+      "Aszendierende Pressphlebographie des rechten Beins unauffällig",
+      "aszendierende_pressphlebographie"
+    ],
+    [
+      "Aszendierende Pressphlebographie des rechten Beins rechts unauffällig",
+      "aszendierende_pressphlebographie"
+    ],
+    [
+      "aszendierende pressphlebographie o.B.",
+      "aszendierende_pressphlebographie"
+    ],
+    [
+      "Sonographie der Bauchdecke unauffällig",
+      "sonografie_bauchdecke"
+    ],
+    [
+      "Sonographie der Bauchdecke rechts unauffällig",
+      "sonografie_bauchdecke"
+    ],
+    [
+      "sonografie bauchdecke o.B.",
+      "sonografie_bauchdecke"
+    ],
+    [
+      "Sonographie der dorsalen Oberschenkelmuskulatur unauffällig",
+      "sonografie_dorsaler_oberschenkel"
+    ],
+    [
+      "Sonographie der dorsalen Oberschenkelmuskulatur rechts unauffällig",
+      "sonografie_dorsaler_oberschenkel"
+    ],
+    [
+      "sonografie dorsaler oberschenkel o.B.",
+      "sonografie_allgemein"
+    ],
+    [
+      "Sonographie des M. gastrocnemius medialis unauffällig",
+      "sonografie_gastrocnemius_medialis"
+    ],
+    [
+      "Sonographie des M. gastrocnemius medialis rechts unauffällig",
+      "sonografie_gastrocnemius_medialis"
+    ],
+    [
+      "sonografie gastrocnemius medialis o.B.",
+      "sonografie_gastrocnemius_medialis"
+    ],
+    [
+      "Sonographie der dorsalen Unterschenkelmuskulatur unauffällig",
+      "sonografie_dorsaler_unterschenkel"
+    ],
+    [
+      "Sonographie der dorsalen Unterschenkelmuskulatur rechts unauffällig",
+      "sonografie_dorsaler_unterschenkel"
+    ],
+    [
+      "sonografie dorsaler unterschenkel o.B.",
+      "sonografie_unterschenkel"
+    ],
+    [
+      "Sonographie der anterioren Oberschenkelmuskulatur unauffällig",
+      "sonografie_anteriorer_oberschenkel"
+    ],
+    [
+      "Sonographie der anterioren Oberschenkelmuskulatur rechts unauffällig",
+      "sonografie_anteriorer_oberschenkel"
+    ],
+    [
+      "sonografie anteriorer oberschenkel o.B.",
+      "sonografie_allgemein"
+    ],
+    [
+      "Sonographie des Unterschenkels unauffällig",
+      "sonografie_unterschenkel"
+    ],
+    [
+      "Sonographie des Unterschenkels rechts unauffällig",
+      "sonografie_unterschenkel"
+    ],
+    [
+      "sonografie unterschenkel o.B.",
+      "sonografie_unterschenkel"
+    ],
+    [
+      "Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt mäßiggradige Tendinosis calcarea mit 17 mm messendem Kalkdepot Punkt",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendinose der Extensorensehnen Punkt",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter rechts, Röntgen, Omarthrose, Kalzifikation Supraspinatussehne, Humeruskopfhochstand. Ansonsten unauffällig.",
+      "oberarm_in_2_ebenen"
+    ],
+    [
+      "Ellbogen rechts, Epicondylitis, Schmerzen ausstrahlend bis in die Schulter rechts",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogen rechts Punkt Epicondylitis Punkt Schulter rechts unauffällig",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogen rechts Punkt Epicondylitis Punkt",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter rechts unauffällig",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Hand rechts. Rhizarthrose. Daumen rechts mit Arthrose des Sattelgelenkes.",
+      "daumensattelprothese"
+    ],
+    [
+      "HWS: Osteochondrose C5/C6. LWS: Spondylosis deformans L3 bis L5.",
+      "hws_und_lws"
+    ],
+    [
+      "Kniegelenk rechts: Gonarthrose. Kniegelenk links: unauffällig.",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Kniegelenk rechts: Gonarthrose.",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Kniegelenk links: unauffällig.",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Röntgen der rechten Schulter: Omarthrose. Röntgen der linken Schulter: unauffällig.",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Röntgen der rechten Schulter: Omarthrose.",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Röntgen der linken Schulter: unauffällig.",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter rechts: Omarthrose. Schulter rechts zusätzlich Kalkdepot.",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogen rechts. Ellbogengelenksarthrose rechts. Schulterhochstand rechts.",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Hüfte links, Röntgen, Coxarthrose links, Gelenkspaltverschmälerung, subchondrale Sklerosierung. Ansonsten unauffällig.",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter links Punkt unauffällig Punkt Knie links Punkt Gonarthrose Punkt Sprunggelenk links Punkt unauffällig",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter links Punkt unauffällig Punkt",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Knie links Punkt Gonarthrose Punkt",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk links Punkt unauffällig",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Mammasonographie beidseits, Mamma rechts unauffällig, Mamma links Zyste 8 mm",
+      "mammasonographie_beidseits"
+    ],
+    [
+      "Schulter in 2 Ebenen rechts: Omarthrose. Ellbogen in 2 Ebenen rechts: unauffällig.",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter in 2 Ebenen rechts: Omarthrose.",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogen in 2 Ebenen rechts: unauffällig.",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Knie rechts, Gonarthrose, Hüfte rechts, unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Knie rechts, Gonarthrose",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Hüfte rechts, unauffällig",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Sonographie Schulter rechts: Bursitis. Röntgen Knie rechts: unauffällig.",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Sonographie Schulter rechts: Bursitis.",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Röntgen Knie rechts: unauffällig.",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Fuß links: Hallux valgus. Sprunggelenk links: unauffällig.",
+      "sprunggelenk_mit_fuss"
+    ],
+    [
+      "Fuß links: Hallux valgus.",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk links: unauffällig.",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Knie rechts unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk links gehalten unauffällig",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen unauffällig.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "HWS unauffällig",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Schultergelenke beidseits unter Belastung unauffällig",
+      "schultergelenke_a-p_unter_belastung"
+    ],
+    [
+      "Knie links unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Hände beidseits regelrecht",
+      "allgemein"
+    ],
+    [
+      "Sprunggelenk rechts gehalten unauffällig",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Mamma rechts und links unauffällig",
+      "mammographie_beidseits"
+    ],
+    [
+      "Nervus ulnaris rechts unauffällig",
+      "sonografie_nerv_ulnaris"
+    ],
+    [
+      "Unterschenkel-Sonographie rechts unauffällig",
+      "sonografie_unterschenkel"
+    ],
+    [
+      "Lungenröntgen p.a. und seitlich unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen p.a. und seitlich, unauffälliger Befund.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen o.B.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungen-Röntgen unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thorax p.a./seitlich: Unauffälliger Befund.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Röntgen Thorax p.a./seitlich normal",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thoraxröntgen unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen. Herz und Lunge unauffällig.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "HW ist unauffällig",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Kniegelenk links in 2 Ebenen, Normalbefund.",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Knie rechts regelrecht",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Orbita p.a. unauffällig",
+      "orbita_pa_aufnahme"
+    ],
+    [
+      "Sonographie der Schulter beidseits unauffällig",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Unterschenkel-Sonographie rechts unauffällig.",
+      "sonografie_unterschenkel"
+    ],
+    [
+      "Sprunggelenk links in zwei Ebenen unauffällig",
+      "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "Thorax: Kardiomegalie, sonst unauffällig.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen: Pneumonie rechts basal, sonst unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thorax: Atelektase links basal, sonst normal",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Knie rechts: Baker-Zyste, ansonsten unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "HWS: Streckhaltung, sonst unauffällig",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Schulter: Hochstand des Humeruskopfes, sonst unauffällig",
+      "oberarm_in_2_ebenen"
+    ],
+    [
+      "LWS: Spina bifida occulta, sonst unauffällig",
+      "lendenwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Knie nicht unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Thorax p.a. und seitlich. Herz normal groß, Lunge frei, kein Infiltrat, kein Erguss, Sinus frei. Unauffällig.",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "HWS mit Osteochondrose C5/C6",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Thorax unauffällig bis auf eine Aortensklerose",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Tendinopathie und den Genusses pinnatus Sehne mit begleitet ist, ansonsten nur noch völlig",
+      "allgemein"
+    ],
+    [
+      "Mammasonographie beidseits unauffällig, Pirates 2",
+      "mammasonographie_beidseits"
+    ],
+    [
+      "Pirats 4 links",
+      "allgemein"
+    ],
+    [
+      "Kompression des Nervs am Sulcus bei Edelbogenflexion. 15 Quadratmillimeter",
+      "allgemein"
+    ],
+    [
+      "Hypertropha Musculus Anconeus Epidrochearis als Variante",
+      "allgemein"
+    ],
+    [
+      "Sulcus Nervi mit 12 mm²",
+      "allgemein"
+    ],
+    [
+      "Sulcus Nervi ulnaris unauffällig",
+      "sonografie_nerv_ulnaris"
+    ],
+    [
+      "flachprofile nach links komplexes Coyote Fehlhaltung",
+      "allgemein"
+    ],
+    [
+      "Flachbau linkskonvex, Cobbs Winkel 12 Grad, Scheitel DH 7",
+      "allgemein"
+    ],
+    [
+      "TH12 und Th4 regelrecht",
+      "allgemein"
+    ],
+    [
+      "Fibrosedosen am Calcaneus, Rizarthrose rechts",
+      "calcaneus_in_2_ebenen"
+    ],
+    [
+      "Näoarthrosen interspinosa L4/L5",
+      "allgemein"
+    ],
+    [
+      "Thorax b.a. seitlich: unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thorax ba unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "HW ist unauffällig, HWS-Sono nicht",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Diskozeichen L5/S1, Disco Zeichen L4",
+      "allgemein"
+    ],
+    [
+      "Handgelenk rechts nicht dislozierte Frachtur der Cafés Taille",
+      "handgelenk_in_2_ebenen"
+    ],
+    [
+      "Baustein Gelenkschirma 1",
+      "allgemein"
+    ],
+    [
+      "Hüfte beidseits im Übrigen Baustein",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Baustein",
+      "allgemein"
+    ],
+    [
+      "18 mm Durchmesser, axillär, 1,8 mm",
+      "allgemein"
+    ],
+    [
+      "Gelenksarthrose, Diskopathie, Kopfwinkel 130 Grad",
+      "allgemein"
+    ],
+    [
+      "Kompressionsfaktoren Th11 und Th12, Okzipitalappen unauffällig",
+      "allgemein"
+    ],
+    [
+      "Edgren-Venu Zeichen",
+      "allgemein"
+    ],
+    [
+      "messiggradige Spinalkanalstenose",
+      "allgemein"
+    ],
+    [
+      "perinorale Fibrose, Rhamus profundus",
+      "allgemein"
+    ],
+    [
+      "Partie der Supraspinatussehne",
+      "allgemein"
+    ],
+    [
+      "Ruptur des pinnatus, Epitrochlearis-Variante",
+      "allgemein"
+    ],
+    [
+      "Schulter rechts Punkt neue Zeile mäßig gradige Ommatrose Punkt mäßig gradige Tenenosis kakaria mit 17 mm Messing am Kack Depot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte rechts das ist indirekter Hinweis für Tendenose der Extensorensehnen Punkt",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Messig-gradige Omatrose links, hoch gradige Coxarthrose, Kack-Depot 8 mm",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Mäßiggradige Omarthrose, Tendinosis calcarea, Tendinose der Extensoren, geringgradige Arthrose",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Tenenosis calcarea der Supraspinatussehne, Tendenosen der Flexoren",
+      "allgemein"
+    ],
+    [
+      "Torax p.a. und seitlich unauffällig. Toraxaufnahme",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "BWS thorakal unauffällig, Thorax o.B.",
+      "brustwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Wasser-Sip-Test: kein Reflux nachweisbar.",
+      "allgemein"
+    ],
+    [
+      "Im Wasser Sip Test geringer gastroösophagealer Reflux",
+      "allgemein"
+    ],
+    [
+      "wassersiptest negativ",
+      "allgemein"
+    ],
+    [
+      "Tendinopathie und den Supraspinatussehne mit begleitet ist, ansonsten unauffällig",
+      "allgemein"
+    ],
+    [
+      "Mammasonographie beidseits unauffällig, BI-RADS 2",
+      "mammasonographie_beidseits"
+    ],
+    [
+      "BI-RADS 4 links",
+      "allgemein"
+    ],
+    [
+      "Kompression des Nervs am Sulcus bei Ellbogenflexion. 15 mm²",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "hypertropher M. anconeus epitrochlearis als Variante",
+      "allgemein"
+    ],
+    [
+      "Sulcus nervi ulnaris mit 12 mm²",
+      "sonografie_nerv_ulnaris"
+    ],
+    [
+      "flachbogige Skoliose nach links komplexes kyphotische Fehlhaltung",
+      "allgemein"
+    ],
+    [
+      "flachbogig linkskonvex, Cobb-Winkel 12 Grad, Scheitel Th7",
+      "allgemein"
+    ],
+    [
+      "Th12 und Th4 regelrecht",
+      "allgemein"
+    ],
+    [
+      "Fibroostosen am Calcaneus, Rhizarthrose rechts",
+      "calcaneus_in_2_ebenen"
+    ],
+    [
+      "Neoarthrosis interspinosa L4/L5",
+      "allgemein"
+    ],
+    [
+      "Thorax p.a./seitlich: unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thorax p.a. unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "HWS ist unauffällig, HWS-Sono nicht",
+      "sonografie_allgemein"
+    ],
+    [
+      "Discopathiezeichen L5/S1, Discopathiezeichen L4",
+      "allgemein"
+    ],
+    [
+      "Handgelenk rechts nicht dislozierte Fraktur der Scaphoidtaille",
+      "naviculareserie"
+    ],
+    [
+      "unauffällig",
+      "allgemein"
+    ],
+    [
+      "Hüfte beidseits im Übrigen unauffällig",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Kompressionsfrakturen Th11 und Th12, Okzipitallappen unauffällig",
+      "allgemein"
+    ],
+    [
+      "Edgren-Vaino Zeichen",
+      "allgemein"
+    ],
+    [
+      "mäßiggradige Spinalkanalstenose",
+      "allgemein"
+    ],
+    [
+      "perineurale Fibrose, Ramus profundus",
+      "allgemein"
+    ],
+    [
+      "Ruptur des Supraspinatus, epitrochlearis-Variante",
+      "allgemein"
+    ],
+    [
+      "Mäßiggradige Omarthrose links, hochgradige Coxarthrose, Kalkdepot 8 mm",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Tendinosis calcarea der Supraspinatussehne, Tendinosen der Flexoren",
+      "allgemein"
+    ],
+    [
+      "Thorax p.a. und seitlich unauffällig. Thoraxaufnahme",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Wasser-Siphon-Test: kein Reflux nachweisbar.",
+      "allgemein"
+    ],
+    [
+      "Im Wasser-Siphon-Test geringer gastroösophagealer Reflux",
+      "allgemein"
+    ],
+    [
+      "Wasser-Siphon-Test negativ",
+      "allgemein"
+    ],
+    [
+      "N. medianus links unauffällig",
+      "sonografie_nerv_medianus"
+    ],
+    [
+      "Nervus radialis rechts unauffällig",
+      "sonografie_nerv_radialis"
+    ],
+    [
+      "Plexus brachialis rechts unauffällig",
+      "sonografie_plexus_brachialis"
+    ],
+    [
+      "Plexus cervicalis links unauffällig",
+      "sonografie_plexus_cervicalis"
+    ],
+    [
+      "Nervus ischiadicus rechts unauffällig",
+      "sonografie_nerv_ischiadicus"
+    ],
+    [
+      "Nervus fibularis links unauffällig",
+      "sonografie_nerv_peroneus"
+    ],
+    [
+      "Nervus tibialis rechts unauffällig",
+      "sonografie_nerv_tibialis"
+    ],
+    [
+      "Tarsaltunnel rechts unauffällig",
+      "sonografie_nerv_tibialis"
+    ],
+    [
+      "Nervus femoralis rechts unauffällig",
+      "sonografie_nerv_femoralis"
+    ],
+    [
+      "Nervus cutaneus femoris lateralis links unauffällig",
+      "sonografie_nerv_femoralis_cutaneus_lateralis"
+    ],
+    [
+      "Nervus pudendus unauffällig",
+      "sonografie_nervus_pudendus"
+    ],
+    [
+      "Nervus ilioinguinalis rechts unauffällig",
+      "sonografie_nervus_iliohypogastricus_ilioinguinalis"
+    ],
+    [
+      "Ultraschallgezielte Blockade des Nervus medianus rechts",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Sono Schulter rechts unauffällig",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Unterarm rechts unauffällig",
+      "unterarm_in_2_ebenen"
+    ],
+    [
+      "Calcaneus rechts in 2 Ebenen unauffällig",
+      "calcaneus_in_2_ebenen"
+    ],
+    [
+      "Orbita p.a. beidseits unauffällig",
+      "orbita_pa_aufnahme"
+    ],
+    [
+      "Skaphoidaufnahme beidseits",
+      "skaphoidaufnahme"
+    ],
+    [
+      "Sprunggelenk mit Mortise View unauffällig",
+      "sprunggelenk_mortise_view"
+    ],
+    [
+      "Sonographie der Bauchdecke, keine Hernie",
+      "sonografie_bauchdecke"
+    ],
+    [
+      "Sonographie Muskulatur Oberschenkel dorsal unauffällig",
+      "sonografie_dorsaler_oberschenkel"
+    ],
+    [
+      "Sonographie M. gastrocnemius medialis unauffällig",
+      "sonografie_gastrocnemius_medialis"
+    ],
+    [
+      "Sonographie dorsale Unterschenkelmuskulatur unauffällig",
+      "sonografie_dorsaler_unterschenkel"
+    ],
+    [
+      "Sonographie anteriorer Oberschenkelmuskulatur unauffällig",
+      "sonografie_anteriorer_oberschenkel"
+    ],
+    [
+      "Visa beidseits unauffällig",
+      "videokinematographie_schluckakt"
+    ],
+    [
+      "Ösophagus-Magenduodenum in Doppelkontrast unauffällig",
+      "oesophagus_magenduodenum_doppelkontrast"
+    ],
+    [
+      "Ösophagus-Breischluck unauffällig",
+      "durchleuchtung:_ösophagus-breischluck"
+    ],
+    [
+      "Aszendierende Pressphlebographie unauffällig",
+      "aszendierende_pressphlebographie"
+    ],
+    [
+      "Thorax p.a. und seitlich unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Lungenröntgen unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Torax unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Brustkorb Röntgen unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thorax p.a./seitlich unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Thoraxaufnahme p.a. ohne Befund",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Röntgen der Lunge unauffällig",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Pulmo frei, Cor normal groß",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "BWS thorakal unauffällig",
+      "brustwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Schulter rechts Punkt neue Zeile mäßiggradige Omarthrose Punkt",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Ellbogen rechts Punkt neue Zeile geringgradige Ellbogengelenksarthrose Punkt",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Vorfuß rechts in 2 Ebenen unauffällig",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "Vorfuß links: Hallux valgus",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "Mittelfuß links unauffällig",
+      "mittelfuß_in_2_ebenen"
+    ],
+    [
+      "Mittelfuß rechts: Fraktur MT5",
+      "mittelfuß_in_2_ebenen"
+    ],
+    [
+      "Fuß rechts in 2 Ebenen: Fraktur im Mittelfuß",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "Fuß links unauffällig",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "Scaphoid Aufnahme links unauffällig",
+      "skaphoidaufnahme"
+    ],
+    [
+      "Funktionsaufnahmen der HWS unauffällig",
+      "funktionsaufnahmen_der_halswirbelsäule"
+    ],
+    [
+      "HWS Funktionsaufnahmen: keine Instabilität",
+      "funktionsaufnahmen_der_halswirbelsäule"
+    ],
+    [
+      "LWS Funktion unauffällig",
+      "funktionsaufnahmen_der_lendenwirbelsäule"
+    ],
+    [
+      "HWS in 2 Ebenen unauffällig",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "HWS: Osteochondrose C5/C6, Funktion eingeschränkt",
+      "halswirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Schrägaufnahme der HWS unauffällig",
+      "schrägaufnahme_der_halswirbelsäule"
+    ],
+    [
+      "Ganzaufnahme der Wirbelsäule unauffällig",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "Axialaufnahme Ellbogen rechts unauffällig",
+      "axialaufnahme_des_ellbogens"
+    ],
+    [
+      "Ellbogen rechts in 2 Ebenen unauffällig",
+      "ellbogengelenk_in_2_ebenen"
+    ],
+    [
+      "Schulter rechts tangential unauffällig",
+      "schultergelenk_tangential_bizepssehnenkanal"
+    ],
+    [
+      "Schulter rechts: Schmerzen unter Belastung, Omarthrose",
+      "schultergelenk_in_2_ebenen"
+    ],
+    [
+      "Defilee Patella beidseits unauffällig",
+      "defileeaufnahmen_der_patella_in_30°_60°_und_90°"
+    ],
+    [
+      "Knie rechts in 2 Ebenen unauffällig",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "ISG unauffällig",
+      "iliosakralgelenke_a-p"
+    ],
+    [
+      "Iliosakralgelenke: Sakroiliitis beidseits",
+      "iliosakralgelenke_a-p"
+    ],
+    [
+      "MRT ISG unauffällig",
+      "mr_der_iliosakralgelenke:"
+    ],
+    [
+      "Beckenübersicht mit Hüft-TEP beidseits unauffällig",
+      "beckenübersicht_mit_beidseitiger_hüftprothese"
+    ],
+    [
+      "Becken: Hüftprothese rechts regelrecht",
+      "beckenübersicht_mit_einseitiger_hüftprothese"
+    ],
+    [
+      "Beckenübersicht unauffällig",
+      "beckenübersicht_stehend"
+    ],
+    [
+      "Doppelkontrast Magen unauffällig",
+      "oesophagus_magenduodenum_doppelkontrast"
+    ],
+    [
+      "Magen-Darm-Passage unauffällig",
+      "durchleuchtung:_magen-darm-passage_mdp"
+    ],
+    [
+      "Sono Abdomen komplett unauffällig",
+      "sonografie_abdomen_komplett"
+    ],
+    [
+      "Nervensonographie N. medianus rechts unauffällig",
+      "sonografie_nerv_medianus"
+    ],
+    [
+      "Ultraschall-gezielte Blockade rechts",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Sonographisch gezielte Infiltration Schulter rechts",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "MRT Knie rechts: Meniskusriss Innenmeniskus",
+      "mr_des_kniegelenkes:"
+    ],
+    [
+      "MR des Kniegelenkes links unauffällig",
+      "mr_des_kniegelenkes:"
+    ],
+    [
+      "MRT der LWS: Bandscheibenvorfall L4/L5",
+      "mr_der_lendenwirbelsäule:"
+    ],
+    [
+      "MRT HWS unauffällig",
+      "mr_der_halswirbelsäule:"
+    ],
+    [
+      "MRT BWS unauffällig",
+      "mr_der_brustwirbelsäule:"
+    ],
+    [
+      "MRT Schulter rechts: Supraspinatusruptur",
+      "mr_des_schultergelenkes:"
+    ],
+    [
+      "MRT Schädel unauffällig",
+      "mr_des_gehirnschädels:"
+    ],
+    [
+      "MR Angiographie der Hirngefäße unauffällig",
+      "mr_der_craniellen_gefäße:"
+    ],
+    [
+      "MRT Hypophyse unauffällig",
+      "mr_der_hypophyse:"
+    ],
+    [
+      "MRT der Mamma beidseits unauffällig",
+      "mr_der_mamma:"
+    ],
+    [
+      "MRCP unauffällig",
+      "mr-cholangiopankreatografie_mrcp:"
+    ],
+    [
+      "MRT Sprunggelenk rechts unauffällig",
+      "mr_des_sprunggelenke:"
+    ],
+    [
+      "MRT Thorax unauffällig",
+      "mr_des_thorax:"
+    ],
+    [
+      "MRT der Nasennebenhöhlen unauffällig",
+      "mr_der_nasennebenhöhlen:"
+    ],
+    [
+      "MR der Becken- und Beingefäße unauffällig",
+      "mr_der_becken-_und_beingefäße:"
+    ],
+    [
+      "MRT der inneren Gehörgänge unauffällig",
+      "mr_der_inneren_gehörgänge_felsenbeine:"
+    ],
+    [
+      "N. medianus rechts unauffällig",
+      "sonografie_nerv_medianus"
+    ],
+    [
+      "Knie rechts: Gonarthrose, MRT empfohlen",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Thorax: kein Hinweis auf Infiltrat, ggf. CT",
+      "thorax_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk rechts in 2 Ebenen mit Fuß unauffällig",
+      "sprunggelenk_mit_fuss"
+    ],
+    [
+      "Nervensonographie N. suralis rechts unauffällig",
+      "sonografie_nerv_allgemein"
+    ],
+    [
+      "Hochauflösende Nervensonographie N. suralis links unauffällig",
+      "sonografie_nerv_allgemein"
+    ],
+    [
+      "Sono Leiste rechts unauffällig",
+      "sonografie_allgemein"
+    ],
+    [
+      "Irgendwas unauffällig",
+      "allgemein"
+    ],
+    [
+      "HWS Funktionsaufnahmen in Flexion und Extension unauffällig",
+      "funktionsaufnahmen_der_halswirbelsäule"
+    ],
+    [
+      "Knie rechts in 2 Ebenen, Vergleich mit MRT vom Vorjahr: Gonarthrose",
+      "kniegelenk_in_2_ebenen"
+    ],
+    [
+      "Aufnahme der gesamten Wirbelsäule im Stehen als Ganzaufnahme unauffällig",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "Röntgen der Wirbelsäule im Stehen als Ganzaufnahme, flachbogige Skoliose",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "Röntgen im Stehen Ganzaufnahme der HWS bis LWS",
+      "ganzaufnahme_der_wirbelsäule_a-p"
+    ],
+    [
+      "Sonographie der rechten Leiste mit anschließender Injektion",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Sonographie der rechten Leiste mit anschließender Blockade",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Sonographie rechte Hüfte mit Injektion",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Sonographie Ellbogen rechts, anschließend Blockade",
+      "ultraschall_gezielte_blockade"
+    ],
+    [
+      "Mammographie: 15 mm große Raumforderung rechts kraniolateral, in der Sonographie echoarm, suspekt, BI-RADS 5. Weitere Abklärung erfolgt mittels Stanzbiopsie im Krankenhaus der Barmherzigen Brüder Graz.",
+      "mammographie_beidseits"
+    ],
+    [
+      "Mammographie und Sonographie beidseits unauffällig",
+      "mammographie_beidseits"
+    ],
+    [
+      "Mammografie rechts Raumforderung 15 mm",
+      "mammographie_beidseits"
+    ],
+    [
+      "Mammo beidseits unauffällig",
+      "mammographie_beidseits"
+    ],
+    [
+      "Mammographie rechts unauffällig, links Zyste in der Sonographie",
+      "mammographie_beidseits"
+    ],
+    [
+      "Mammasonographie rechts Zyste 8 mm",
+      "mammasonographie_beidseits"
+    ]
   ]
 }
