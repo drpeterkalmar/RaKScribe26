@@ -104,6 +104,21 @@ check("Streaming-Callback trägt Generationsnummer", "self.update_interim_text, 
 check("Einfügen nur für aktuellen Lauf", 'self._job.ereignis("report_done", gen) is None' in src
       and "self._job.aktuell(gen) and self._einfuegen()" in src)
 check("Selbsttest kennt simulate_processing (Fall D)", '"simulate_processing"' in src)
+# v3.6.0: Befund aus getipptem Text
+j = js.JobState()
+check("Text→Befund aus Bereit: neuer Lauf, Verarbeitung, Endtext fix",
+      j.ereignis("text") == "text_start" and j.zustand == js.PROCESSING and j.gen == 1 and j.text_fix)
+check("Text→Befund während Verarbeitung ignoriert", j.ereignis("text") is None and j.gen == 1)
+check("F10 während Text-Verarbeitung ignoriert", j.ereignis("toggle") is None)
+check("Text-Lauf fertig → Bereit", j.ereignis("report_done", 1) == "einfuegen" and j.zustand == js.READY)
+j.ereignis("toggle")
+check("Text→Befund während Aufnahme ignoriert", j.ereignis("text") is None and j.zustand == js.RECORDING)
+j = js.JobState(); j.sperren()
+check("Text→Befund gesperrt (kein Schlüssel) ignoriert", j.ereignis("text") is None)
+j = js.JobState(); j.ereignis("text"); j.ereignis("report_failed", 1)
+check("Text→Befund nach Fehler wieder möglich", j.ereignis("text") == "text_start" and j.gen == 2)
+j = js.JobState(); j.ereignis("text"); j.ereignis("reset")
+check("F9 bricht Text-Lauf ab (neue Generation, Bereit)", j.zustand == js.READY and j.gen == 2)
 wt = (ROOT / "tests" / "windows" / "exe_ui_test.py").read_text(encoding="utf-8")
 check("Windows-UI-Test hat Fall D (F10 während Verarbeitung)", "simulate_processing" in wt and '"D_verarbeitung"' in wt)
 

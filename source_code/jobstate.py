@@ -9,6 +9,7 @@ Regeln (v3.2.3, Peter 06.10.):
 - F10 (toggle) während „Befund wird erstellt" (PROCESSING) → ignorieren.
 - F9 (reset) während der Verarbeitung → Lauf abbrechen (Ergebnis wird verworfen), sofort wieder bereit.
 - Streaming-Text (Live-Anzeige) wird nur angenommen, solange der chirp_3-Endtext noch nicht feststeht.
+- v3.6.0: „Befund aus Text“ (getippter/eingefügter Diktattext) startet nur aus READY/ERROR einen neuen Lauf.
 """
 
 READY = "READY"
@@ -18,7 +19,7 @@ ERROR = "ERROR"
 LOCKED = "LOCKED"
 
 # Ereignisse aus der Oberfläche (ohne Generationsnummer)
-UI_EREIGNISSE = ("toggle", "reset")
+UI_EREIGNISSE = ("toggle", "reset", "text")  # v3.6: "text" = Befund aus getipptem/eingefügtem Text (ohne Aufnahme)
 # Ereignisse aus Hintergrund-Threads (immer mit Generationsnummer)
 LAUF_EREIGNISSE = ("stream_interim", "stream_final", "chirp_done", "report_done", "report_failed", "kein_text",
                    "capture_failed")
@@ -43,6 +44,8 @@ class JobState:
             return "stop" if z == RECORDING else "start"
         if name == "reset":
             return {RECORDING: "stop_und_reset", PROCESSING: "abbrechen"}.get(z, "reset")
+        if name == "text":  # v3.6.0: nur aus der Ruhe (nicht während Aufnahme/Verarbeitung, nicht gesperrt)
+            return "text_start" if z in (READY, ERROR) else None
         if name not in LAUF_EREIGNISSE:
             raise ValueError(f"unbekanntes Ereignis {name!r}")
         if gen is None or gen != self.gen:
@@ -70,6 +73,9 @@ class JobState:
             self.zustand, self.text_fix = RECORDING, False
         elif aktion == "stop":
             self.zustand = PROCESSING
+        elif aktion == "text_start":  # neuer Lauf direkt in der Verarbeitung, Endtext steht schon fest
+            self.gen += 1
+            self.zustand, self.text_fix = PROCESSING, True
         elif name == "reset":
             self.gen += 1  # laufende Aufnahme/Verarbeitung wird ungültig
             self.text_fix = False

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLatest } from './useLatest.ts';
 import {
   Mic, MicOff, Copy, Check, Upload, Download, Sparkles, X, KeyRound, Menu, Trash2,
-  RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines
+  RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines, WandSparkles
 } from 'lucide-react';
 // Umbau Schritt 20 (Gutachten P2-13): Vorlagen nur noch EINMAL im Repo-Root (wie misheard_words.json)
 import templatesData from '../../templates.json';
@@ -10,7 +10,7 @@ import templatesData from '../../templates.json';
 import phrasesData from '../../phrases.json';
 // v3.1: Fehlhör-Liste — EINE Quelle für Web + EXE (Repo-Root /misheard_words.json, kein Spiegel)
 import misheardData from '../../misheard_words.json';
-import { compileMisheard, misheardPromptBlock, type MisheardFile } from './misheard';
+import { compileMisheard, misheardPromptBlock, applyMisheard, type MisheardFile } from './misheard';
 // v3.2: EIN Befund-Prompt für Web + EXE (Repo-Root /radiology_prompt.txt, versioniert) + gemeinsame
 // deterministische Regeln (Sync: source_code/befund_regeln.py, Fixtures: befund_regeln_fixtures.json)
 import genPromptRaw from '../../radiology_prompt.txt?raw';
@@ -777,6 +777,24 @@ export default function App() {
     }, befundUi(), { statusVorBefund: 'KI-Strukturierung läuft (Gemini Flash)...', fehlerPrefix: 'Fehler bei Audio-Upload-Verarbeitung: ' });
   };
 
+  // v3.6.0 (Peter 07.10.): getippten/eingefügten Text im Diktat-Feld ohne Aufnahme strukturieren (Knopf bzw.
+  // Strg+Enter). Gleiche Kette wie die EXE (befund_aus_text): Fehlhör-Liste → Befund; kein Call 0 (getippter Text hat
+  // keine Spracherkennungsfehler), immer strukturiert — auch bei „Nur Text“.
+  const befundAusText = async () => {
+    if (statusRef.current === 'processing' || statusRef.current === 'recording' || !keysReadyRef.current) return;
+    const text = transcript.trim();
+    if (!text) { setStatusText('Bitte zuerst den Diktattext links eintippen oder einfügen.'); return; }
+    const lauf = laeufeRef.current.neu();
+    einfuegeZielRef.current = null;
+    setStatus('processing');
+    setStructuredReport('');
+    await befundLauf(lauf, {
+      transkribieren: async () => text,
+      korrigieren: async t => applyMisheard(t, MISHEARD_COMPILED),
+      befundErstellen: (t, signal) => befundAusDiktat(t, genKontext(lauf, signal)),
+    }, befundUi(), { statusVorBefund: 'KI-Strukturierung läuft (Gemini Flash)...', fehlerPrefix: 'Fehler bei der KI-Strukturierung: ' });
+  };
+
   // Reset fields — Umbau Schritt 8: bricht laufende Aufnahme/Verarbeitung ab (nichts wird mehr eingefügt)
   const handleReset = () => {
     laeufeRef.current.abbrechen();
@@ -968,7 +986,10 @@ export default function App() {
               const v = e.target.value.endsWith(' [..]') ? e.target.value.slice(0, -5) : e.target.value;
               setTranscript(v);
             }}
-            placeholder="Das Diktat erscheint hier live und kann bearbeitet werden."
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); befundAusText(); }
+            }}
+            placeholder="Das Diktat erscheint hier live. Du kannst auch Text eintippen oder einfügen und mit „Befund aus Text“ (Strg+Enter) strukturieren lassen."
             className="editor"
             disabled={!keysReady}
           />
@@ -982,6 +1003,14 @@ export default function App() {
                 <Mic size={18} /> Aufnahme starten <kbd>F10</kbd>
               </button>
             )}
+            <button
+              onClick={befundAusText}
+              disabled={status === 'processing' || status === 'recording' || !keysReady || !transcript.trim()}
+              className="btn btn-ghost"
+              title="Getippten oder eingefügten Text zu einem strukturierten Befund machen (Strg+Enter)"
+            >
+              <WandSparkles size={16} /> Befund aus Text
+            </button>
             <button
               onClick={() => audioUploadRef.current?.click()}
               disabled={status === 'processing' || status === 'recording' || !keysReady}

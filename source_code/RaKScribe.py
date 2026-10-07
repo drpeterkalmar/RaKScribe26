@@ -732,6 +732,10 @@ class RaKScribeApp(ctk.CTk):
                      border_width=1, border_color=BORDER_STRONG, text_color=TEXT_PRIMARY, corner_radius=10)
         self.reset_btn = ctk.CTkButton(left_foot, text="↺  Neu (F9)", width=110, command=self.reset_dictation, **ghost)
         self.reset_btn.pack(side="right", padx=14)
+        # v3.6.0 (Peter 07.10.): getippten/eingefügten Text strukturieren lassen (auch Strg+Enter im Diktat-Feld)
+        self.text_btn = ctk.CTkButton(left_foot, text="✎  Befund aus Text", width=160, command=self.befund_aus_text, **ghost)
+        self.text_btn.pack(side="right")
+        self.transcript_text._textbox.bind("<Control-Return>", self.befund_aus_text)
 
         # Befund-Fußzeile
         ctk.CTkLabel(right_foot, text="Wird automatisch kopiert und eingefügt", font=(UI_FONT, 11),
@@ -1307,10 +1311,33 @@ class RaKScribeApp(ctk.CTk):
         einstellung_schreiben("nur_text", an)
         log(f"[MODUS] Nur Text {'an' if an else 'aus'}")
 
-    def process_dictation(self, gen):
+    def befund_aus_text(self, _evt=None):
+        """v3.6.0 (Peter 07.10.): getippten/eingefügten Text im Diktat-Feld ohne Aufnahme zu einem strukturierten
+        Befund machen (Knopf „Befund aus Text“ bzw. Strg+Enter im Diktat-Feld). Gleiche Kette wie nach einer Aufnahme
+        (Fehlhör-Liste → Bausteine → Regionen → Bypass/Gemini), immer strukturiert — auch wenn „Nur Text“ an ist."""
+        text = self.transcript_text.get("1.0", "end-1c").strip()
+        if not text:
+            messagebox.showinfo("Befund aus Text", "Bitte zuerst den Diktattext links eintippen oder einfügen.")
+            return "break"
+        if not keys_ready():
+            self.refresh_key_state()
+            return "break"
+        if self._job.ereignis("text") is None:  # Aufnahme oder Verarbeitung läuft
+            return "break"
+        gen = self._job.gen
+        log(f"[TEXT] Befund aus getipptem Text ({len(text)} Zeichen).")
+        self.final_transcript = text
+        self._einfuegen_ziel = None
+        self.result_text.delete("1.0", "end")
+        self.update_status("PROCESSING", "busy")
+        self.record_btn.configure(state="disabled", text=" Verarbeite... ")
+        threading.Thread(target=lambda: self.process_dictation(gen, nur_befund=True), daemon=True).start()
+        return "break"
+
+    def process_dictation(self, gen, nur_befund=False):
         try:
             # Umbau Schritt 15: die ganze Kette ohne Oberfläche in pipeline.py (dieselbe Funktion wie prod_pipeline)
-            ziel = getattr(self, "_einfuegen_ziel", None)
+            ziel = None if nur_befund else getattr(self, "_einfuegen_ziel", None)
             if ziel is not None:  # v3.5.0: Diktat an der Cursor-Stelle in den bestehenden Befund (korrigierter Text)
                 erg = _pl.nur_text_aus_diktat(self.final_transcript, _pipeline_kontext())
                 if erg.leer:
@@ -1322,7 +1349,7 @@ class RaKScribeApp(ctk.CTk):
                 self.after(0, lambda t=erg.report: self._einfuegen_an_ziel(gen, ziel, t))
                 self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
                 return
-            if self.nur_text_aktiv():  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
+            if self.nur_text_aktiv() and not nur_befund:  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
                 self._ui(gen, lambda: (self.result_text.delete("1.0", "end"),
                                        self.result_text.insert("1.0", "... Text wird korrigiert ...")))
                 erg = _pl.nur_text_aus_diktat(self.final_transcript, _pipeline_kontext())
