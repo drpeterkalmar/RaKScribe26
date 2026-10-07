@@ -200,6 +200,9 @@ export default function App() {
   // v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — rechts nur die korrigierte Spracherkennung, kein Befund
   const [nurText, setNurText] = useState<boolean>(() => localStorage.getItem('nur_text') === '1');
   const nurTextRef = useLatest(nurText);
+  // v3.7.0 (Peter 07.10.): Option „Satzanfang groß“ beim Diktat in den Befund (Standard an)
+  const [grossSatzanfang, setGrossSatzanfang] = useState<boolean>(() => localStorage.getItem('gross_satzanfang') !== '0');
+  const grossSatzanfangRef = useLatest(grossSatzanfang);
 
   // Configuration States
   const [vertexApiKey, setVertexApiKey] = useState<string>(gespeicherterVertexKey);
@@ -496,7 +499,7 @@ export default function App() {
   // v3.5.0: mit gemerkter Cursor-Stelle → korrigierter Text in den bestehenden Befund (Ergebnis = ganzer Befund)
   const befundOderText = (text: string, ctx: PipelineKontext, ziel: [number, number] | null = null): Promise<string> => {
     if (ziel) {
-      const [neu, cursor] = einfuegen(structuredReportRef.current, ziel[0], ziel[1], nurTextAusDiktat(text, ctx));
+      const [neu, cursor] = einfuegen(structuredReportRef.current, ziel[0], ziel[1], nurTextAusDiktat(text, ctx), grossSatzanfangRef.current);
       setReportView('text');
       setCursorSetzen([cursor, cursor]);
       return Promise.resolve(neu);
@@ -953,6 +956,15 @@ export default function App() {
                     <Trash2 size={16} /> Schlüssel entfernen
                   </button>
                 )}
+                <div className="menu-sep" />
+                <label className="menu-item" role="menuitemcheckbox" aria-checked={grossSatzanfang}
+                  title="Beim Diktieren in den Befund: in einer neuen Zeile oder nach einem Satzende groß beginnen">
+                  <input type="checkbox" checked={grossSatzanfang} onChange={e => {
+                    setGrossSatzanfang(e.target.checked);
+                    localStorage.setItem('gross_satzanfang', e.target.checked ? '1' : '0');
+                  }} />
+                  Diktat in den Befund: Satzanfang groß
+                </label>
                 <div className="menu-sep" />
                 <a className="menu-item" role="menuitem" href="https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe" target="_blank" rel="noopener noreferrer">
                   <Download size={16} /> Windows-App herunterladen

@@ -708,6 +708,8 @@ class RaKScribeApp(ctk.CTk):
                                              command=self._nur_text_umgeschaltet, font=(UI_FONT, 12),
                                              text_color=TEXT_MUTED, progress_color=ACCENT_PURPLE)
         self.nur_text_switch.pack(side="right", pady=10)
+        # v3.7.0 (Peter 07.10.): Option im Menü — beim Diktat in den Befund am Satzanfang groß beginnen
+        self.gross_satzanfang_var = tk.BooleanVar(value=bool(einstellung_lesen("gross_satzanfang", True)))
 
         # Pegel im Diktat-Kopf
         self.level_container = ctk.CTkFrame(left_head, width=200, height=6, fg_color=BGC_INPUT, corner_radius=3)
@@ -888,6 +890,9 @@ class RaKScribeApp(ctk.CTk):
         m.add_command(label="Schlüssel-Datei laden…", command=self.load_key_dialog)
         if _praxis_key_path() == USER_KEY_PATH:
             m.add_command(label="Gespeicherten Schlüssel entfernen", command=self.remove_user_key)
+        m.add_separator()
+        m.add_checkbutton(label="Diktat in den Befund: Satzanfang groß", variable=self.gross_satzanfang_var,
+                          command=lambda: einstellung_schreiben("gross_satzanfang", bool(self.gross_satzanfang_var.get())))
         m.add_separator()
         m.add_command(label="Prompt bearbeiten…", command=self.toggle_prompt_view)
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
@@ -1291,7 +1296,9 @@ class RaKScribeApp(ctk.CTk):
             ziel = (self._offset("diktat_a"), self._offset("diktat_b"))
         except Exception:
             pass
-        neu, cursor = _einf.einfuegen(self.result_text.get("1.0", "end-1c"), ziel[0], ziel[1], text)
+        v = getattr(self, "gross_satzanfang_var", None)
+        gross = bool(v.get()) if v is not None else True
+        neu, cursor = _einf.einfuegen(self.result_text.get("1.0", "end-1c"), ziel[0], ziel[1], text, gross=gross)
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", neu)
         try:

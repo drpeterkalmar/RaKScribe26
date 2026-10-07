@@ -88,5 +88,115 @@
   "neu": "Kein Erguss.",
   "ergebnis": "Kein Erguss.",
   "cursor": 12
+ },
+ {
+  "name": "groß: nach Satzende",
+  "text": "Kein Erguss. Bänder intakt.",
+  "start": 13,
+  "ende": 13,
+  "neu": "zusätzlich Bakerzyste.",
+  "gross": true,
+  "ergebnis": "Kein Erguss. Zusätzlich Bakerzyste. Bänder intakt.",
+  "cursor": 35
+ },
+ {
+  "name": "groß: neue Zeile",
+  "text": "## Befund\nKein Erguss.",
+  "start": 10,
+  "ende": 10,
+  "neu": "knorpel glatt.",
+  "gross": true,
+  "ergebnis": "## Befund\nKnorpel glatt. Kein Erguss.",
+  "cursor": 24
+ },
+ {
+  "name": "groß: Textanfang",
+  "text": "Kein Erguss.",
+  "start": 0,
+  "ende": 0,
+  "neu": "zusätzlich Bakerzyste.",
+  "gross": true,
+  "ergebnis": "Zusätzlich Bakerzyste. Kein Erguss.",
+  "cursor": 22
+ },
+ {
+  "name": "groß: Markierung am Satzanfang",
+  "text": "Kein Erguss. Bänder intakt.",
+  "start": 13,
+  "ende": 27,
+  "neu": "menisken unauffällig.",
+  "gross": true,
+  "ergebnis": "Kein Erguss. Menisken unauffällig.",
+  "cursor": 34
+ },
+ {
+  "name": "groß: mitten im Satz bleibt klein",
+  "text": "Kein Erguss.",
+  "start": 11,
+  "ende": 11,
+  "neu": "im oberen Rezessus.",
+  "gross": true,
+  "ergebnis": "Kein Erguss im oberen Rezessus.",
+  "cursor": 30
+ },
+ {
+  "name": "groß: nach „ca.“ bleibt klein",
+  "text": "Erguss ca. 5 mm.",
+  "start": 11,
+  "ende": 11,
+  "neu": "etwa",
+  "gross": true,
+  "ergebnis": "Erguss ca. etwa 5 mm.",
+  "cursor": 15
+ },
+ {
+  "name": "groß: nach „z. B.“ bleibt klein",
+  "text": "Ursache z. B. Trauma.",
+  "start": 14,
+  "ende": 14,
+  "neu": "posttraumatisch",
+  "gross": true,
+  "ergebnis": "Ursache z. B. posttraumatisch Trauma.",
+  "cursor": 29
+ },
+ {
+  "name": "groß: nach Fragezeichen",
+  "text": "Erguss? Nein.",
+  "start": 8,
+  "ende": 8,
+  "neu": "unklar.",
+  "gross": true,
+  "ergebnis": "Erguss? Unklar. Nein.",
+  "cursor": 15
+ },
+ {
+  "name": "groß: Option aus bleibt klein",
+  "text": "Kein Erguss. Bänder intakt.",
+  "start": 13,
+  "ende": 13,
+  "neu": "zusätzlich Bakerzyste.",
+  "gross": false,
+  "ergebnis": "Kein Erguss. zusätzlich Bakerzyste. Bänder intakt.",
+  "cursor": 35
+ },
+ {
+  "name": "groß: Zahl am Anfang unverändert",
+  "text": "Kein Erguss.",
+  "start": 12,
+  "ende": 12,
+  "neu": "17 mm Zyste.",
+  "gross": true,
+  "ergebnis": "Kein Erguss. 17 mm Zyste.",
+  "cursor": 25
+ },
+ {
+  "name": "groß: Umlaut",
+  "text": "Kein Erguss.\n",
+  "start": 13,
+  "ende": 13,
+  "neu": "übrige Strukturen regelrecht.",
+  "gross": true,
+  "ergebnis": "Kein Erguss.\nÜbrige Strukturen regelrecht.",
+  "cursor": 42
  }
 ]

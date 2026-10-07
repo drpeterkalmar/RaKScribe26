@@ -247,7 +247,7 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
 {
   // v3.5.0 Diktat an der Cursor-Stelle: dieselben Fälle wie die EXE (tests/offline/test_einfuegen.py)
   for (const f of JSON.parse(readFileSync('../tests/offline/snapshots/einfuegen_faelle.txt', 'utf-8'))) {
-    const r = einfuegen(f.text, f.start, f.ende, f.neu);
+    const r = einfuegen(f.text, f.start, f.ende, f.neu, f.gross ?? false);
     check(r[0] === f.ergebnis && r[1] === f.cursor, `einfuegen = EXE: ${f.name}`, JSON.stringify(r));
   }
   // Klick in der formatierten Ansicht → Offset im Markdown (Text ohne „## “ / „1. “)

@@ -19,7 +19,7 @@ def check(name, ok, detail=""):
 
 # 1. Gemeinsame Fälle (Web prüft dieselbe Datei in pipeline_test.mjs)
 for f in json.loads((HIER / "snapshots" / "einfuegen_faelle.txt").read_text(encoding="utf-8")):
-    r = E.einfuegen(f["text"], f["start"], f["ende"], f["neu"])
+    r = E.einfuegen(f["text"], f["start"], f["ende"], f["neu"], gross=f.get("gross", False))
     check(f"einfuegen: {f['name']}", list(r) == [f["ergebnis"], f["cursor"]], repr(r))
 
 
@@ -75,7 +75,7 @@ mod._llm_aufruf = lambda p: (_ for _ in ()).throw(AssertionError("Befund-KI beim
 BEFUND = "## Kniegelenk rechts\n\n## Befund\nKein Erguss. Bänder intakt.\n\n## Ergebnis\nUnauffälliger Befund."
 
 
-def lauf(insert=0, sel=None, chirp="zusätzlich kleiner Gelenkerguss", fokus=True):
+def lauf(insert=0, sel=None, chirp="zusätzlich kleiner Gelenkerguss", fokus=True, gross=None):
     S.AUFZ.tasten.clear()
     mod._chirp3_worker = lambda pcm, sr, loc, token: chirp
     mod.speech_client = S.FakeSpeechClient(S.streaming_stub())
@@ -85,6 +85,8 @@ def lauf(insert=0, sel=None, chirp="zusätzlich kleiner Gelenkerguss", fokus=Tru
     app.result_text._textbox = tb
     app.focus_get = (lambda: tb) if fokus else (lambda: None)
     app.status_badge = S.FakeWidget()
+    if gross is not None:
+        app.gross_satzanfang_var = type("V", (), {"get": lambda self: gross})()
     app.toggle_recording()
     S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
     app.toggle_recording()
@@ -108,6 +110,19 @@ a = BEFUND.index("Kein Erguss.")
 app, tb = lauf(sel=(a, a + len("Kein Erguss.")))
 check("EXE Markierung: wird durch das Diktat ersetzt",
       app.result_text.text == BEFUND.replace("Kein Erguss.", "Zusätzlich kleiner Gelenkerguss."), repr(app.result_text.text))
+
+# v3.7.0: Option „Satzanfang groß“ (Standard an) — Diktat kommt klein, Cursor nach Satzende
+mod._korr.korrigieren = lambda t, key, block="", log=None: "zusätzlich kleiner Gelenkerguss."
+app, tb = lauf(insert=pos)
+check("EXE Satzanfang groß (Standard an): nach Satzende groß eingefügt",
+      "Kein Erguss. Zusätzlich kleiner Gelenkerguss. Bänder" in app.result_text.text, repr(app.result_text.text))
+app, tb = lauf(insert=pos, gross=False)
+check("EXE Option aus: bleibt klein", "Kein Erguss. zusätzlich kleiner Gelenkerguss. Bänder" in app.result_text.text,
+      repr(app.result_text.text))
+src = (HIER.parents[1] / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
+check("EXE Menü-Option „Satzanfang groß“ wird gespeichert", 'add_checkbutton(label="Diktat in den Befund: Satzanfang groß"' in src
+      and 'einstellung_schreiben("gross_satzanfang"' in src)
+mod._korr.korrigieren = lambda t, key, block="", log=None: "Zusätzlich kleiner Gelenkerguss."
 
 NEU = "## Schultergelenk links\n\n## Befund\nRegelrecht.\n\n## Ergebnis\nUnauffälliger Befund."
 mod._llm_aufruf = lambda p: NEU
