@@ -117,7 +117,8 @@ def befund_fuer_segment(seg, ctx):
     b_key, b_rest = bs.befund_baustein(seg, bausteine)
     if b_key:  # v3.3 (Peter 06.10.): „Baustein Mammo 1“ → Ordi-Textbaustein statt Vorlage
         template_key = "baustein:" + b_key
-        if bs.nur_baustein(b_rest):
+        woertlich = bs.nur_baustein(b_rest)
+        if woertlich:
             ctx.log(f"[BAUSTEIN] '{b_key}' wörtlich (ohne KI).")
             roh = bs.bericht(b_key, bausteine, seg)
         else:
@@ -127,7 +128,7 @@ def befund_fuer_segment(seg, ctx):
             roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, hinweise, beispiele))
         if ctx.protokoll is not None:
             ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
-        return br.nachbearbeiten(roh)
+        return br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
     template_key = detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     if ist_normalbefund(seg, template_key, ctx.display_names):

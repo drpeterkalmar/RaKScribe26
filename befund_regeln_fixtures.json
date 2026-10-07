@@ -349,5 +349,31 @@
    "in": "## Befund\nUnauffällige Darstellung des Karpaltunnels. Die Querschnittsfläche (CSA) des N. medianus an seiner dicksten Stelle misst [CSA_Karpaltunnel] mm² (Normwert < 12 mm²). Der Nervus medianus wird nicht eingeengt.\n\n## Ergebnis\nX.",
    "out": "## Befund\nUnauffällige Darstellung des Karpaltunnels. Der Nervus medianus wird nicht eingeengt.\n\n## Ergebnis\nX."
   }
+ ],
+ "mammasono_beidseits": [
+  {
+   "in": "## Mammasonographie rechts\n\n## Befund\nRechts bei 10 Uhr Fibroadenom.",
+   "out": "## Mammasonographie beidseits\n\n## Befund\nRechts bei 10 Uhr Fibroadenom."
+  },
+  {
+   "in": "## Mamma-Sonographie links\n\n## Befund\nx",
+   "out": "## Mammasonographie beidseits\n\n## Befund\nx"
+  },
+  {
+   "in": "## Mammasonografie\n\n## Befund\nx",
+   "out": "## Mammasonographie beidseits\n\n## Befund\nx"
+  },
+  {
+   "in": "## Mammasonographie beidseits\n\n## Befund\nx",
+   "out": "## Mammasonographie beidseits\n\n## Befund\nx"
+  },
+  {
+   "in": "## Mammographie rechts\n\n## Befund\nSonographie: Mammasonographie rechts unauffällig.",
+   "out": "## Mammographie rechts\n\n## Befund\nSonographie: Mammasonographie rechts unauffällig."
+  },
+  {
+   "in": "## Schultergelenk rechts\n\n## Befund\nx",
+   "out": "## Schultergelenk rechts\n\n## Befund\nx"
+  }
  ]
 }

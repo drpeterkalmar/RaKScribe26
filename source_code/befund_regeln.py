@@ -323,10 +323,20 @@ def csa_bereinigen(report):
     return r
 
 
-def nachbearbeiten(report):
+_MAMMASONO_TITEL = re.compile(r"(?m)^##[ \t]+Mamma[- ]?sono(?:graph|graf)ie\b[^\n]*$", re.I)
+
+
+def mammasono_beidseits(report):
+    """v3.7.2 (Peter 07.10.: „Mammasono ist eigentlich immer beidseits“): Überschrift immer
+    'Mammasonographie beidseits', auch wenn nur die Seite des Befunds diktiert wurde."""
+    return _MAMMASONO_TITEL.sub("## Mammasonographie beidseits", report or "")
+
+
+def nachbearbeiten(report, nummerieren=True):
     """Deterministische Nachbearbeitung jedes Befundes (EXE + Web gleich): CSA-Regel, '## Befund' sichern,
-    Ergebnis nummerieren."""
-    return ergebnis_nummerieren(befund_ueberschrift_sichern(csa_bereinigen(report)))
+    Ergebnis nummerieren. v3.7.2 (Peter 07.10.): wörtliche Ordi-Bausteine bleiben unnummeriert (nummerieren=False)."""
+    r = mammasono_beidseits(befund_ueberschrift_sichern(csa_bereinigen(report)))
+    return ergebnis_nummerieren(r) if nummerieren else r
 
 
 def befunde_zusammenfuegen(reports):

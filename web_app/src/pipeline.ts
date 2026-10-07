@@ -25,7 +25,7 @@ export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Prom
   if (bKey) {
     if (nurBaustein(bRest)) {
       console.log(`[BAUSTEIN] '${bKey}' wörtlich (ohne KI).`);
-      return nachbearbeiten(bausteinBericht(bKey, bausteine, seg));
+      return nachbearbeiten(bausteinBericht(bKey, bausteine, seg), false);  // v3.7.2: wörtlich = Layout der Ordi unverändert
     }
     if (!ctx.apiKey) throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
     const v = bausteinVorlage(bKey, bausteine, seg);

@@ -226,7 +226,15 @@ export function csaBereinigen(report: string): string {
   return r;
 }
 
-export const nachbearbeiten = (report: string): string => ergebnisNummerieren(befundUeberschriftSichern(csaBereinigen(report)));
+// v3.7.2 (Peter 07.10.: „Mammasono ist eigentlich immer beidseits“) — Sync: befund_regeln.py mammasono_beidseits
+const MAMMASONO_TITEL = /^##[ \t]+Mamma[- ]?sono(?:graph|graf)ie\b[^\n]*$/gim;
+export const mammasonoBeidseits = (report: string): string => (report || '').replace(MAMMASONO_TITEL, '## Mammasonographie beidseits');
+
+// v3.7.2 (Peter 07.10.): wörtliche Ordi-Bausteine bleiben unnummeriert (nummerieren = false). Sync: befund_regeln.py
+export const nachbearbeiten = (report: string, nummerieren = true): string => {
+  const r = mammasonoBeidseits(befundUeberschriftSichern(csaBereinigen(report)));
+  return nummerieren ? ergebnisNummerieren(r) : r;
+};
 
 export const befundeZusammenfuegen = (reports: string[]): string =>
   reports.map(r => (r || '').trim()).filter(Boolean).join('\n\n\n');

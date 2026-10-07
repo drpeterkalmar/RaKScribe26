@@ -50,6 +50,9 @@ for c in F["titel_seite"]:
     got = br.titel_mit_seite(c["titel"], c["raw"])
     check(got == c["out"], f"{c['titel']} + '{c['raw']}'", f"got {got!r}")
 print("── PY: Prompt-Versionsmarker")
+for c in F["mammasono_beidseits"]:  # v3.7.2 Peter: Mammasono immer beidseits
+    g = br.mammasono_beidseits(c["in"])
+    check(g == c["out"], f"mammasono: {c['in'][:40]!r}", g)
 for c in F["prompt_version"]:
     check(br.prompt_version(c["in"]) == c["version"] and br.strip_prompt_marker(c["in"]) == c["stripped"], c["in"][:50])
 

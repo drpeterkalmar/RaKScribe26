@@ -372,15 +372,16 @@
    "gruppe": "Mammographie",
    "art": "befund",
    "titel": "Mammographie beidseits",
-   "befund": "Inspektion und Palpation: Unauffälliger Befund.\nMammographie: Es zeigt sich ein seitengleich symmetrischer Befund bei einem regulär strukturierten Drüsenparenchym. Suspekte Mikrokalzifikationen gelangen nicht zur Ansicht. Subcutis und Cutis unauffällig.",
-   "ergebnis": "Unauffälliger Befund. Direkte oder indirekte Malignomzeichen nicht nachweisbar. Eine Kontrolle in einem Jahr wurde mit der Patientin vereinbart.\nBI-RADS",
+   "befund": "Inspektion und Palpation:\n\nMammographie: Verglichen mit .......... unverändert kleinfleckig strukturierter Drüsenkörper. Keine suspekten Verkalkungen.\nSubcutis und Cutis unauffällig.\n\nSonographie:",
+   "ergebnis": "ACR\nBIRADS",
    "sprich": [
     "mam 1",
     "mamma 1",
     "mammo 1",
     "mammographie 1",
     "mamo 1"
-   ]
+   ],
+   "quelle": "Peter 07.10.2026 (Foto Praxis-PC)"
   },
   "mam2": {
    "gruppe": "Mammographie",

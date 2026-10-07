@@ -79,8 +79,12 @@ ctx = pl.Kontext(templates=T, display_names=[v["display_name"] for v in T.values
                  log=lambda *a, **k: None)
 e = pl.befund_aus_diktat("Baustein Mammo 1", ctx)
 check("Mammo 1: ohne KI", not aufrufe, aufrufe[:1])
-check("Mammo 1: Wortlaut", "## Mammographie beidseits" in e.report and "seitengleich symmetrischer Befund" in e.report
-      and "Malignomzeichen nicht nachweisbar" in e.report, e.report)
+check("Mammo 1: Wortlaut (Peter 07.10., Foto Praxis-PC)", "## Mammographie beidseits" in e.report
+      and "Verglichen mit .......... unverändert kleinfleckig strukturierter Drüsenkörper. Keine suspekten Verkalkungen." in e.report
+      and "\n\nSonographie:" in e.report, e.report)
+check("Mammo 1: Ergebnis unnummeriert wie in der Ordi (ACR / BIRADS)", e.report.rstrip().endswith("## Ergebnis\nACR\nBIRADS"), e.report[-60:])
+e2 = pl.befund_aus_diktat("Baustein Mammo 2", ctx)
+check("wörtliche Bausteine generell unnummeriert", "## Ergebnis\nInvolutionsmamma beidseits.\nKontrolle" in e2.report, e2.report[-120:])
 e = pl.befund_aus_diktat("Baustein Ösophagus 2, zusätzlich kleine Hiatushernie", ctx)
 check("Ösophagus 2 + Zusatz: KI mit Baustein", len(aufrufe) == 1 and "Wasser-Siphon-Tests" in aufrufe[0]
       and "<ordi_baustein>" in aufrufe[0], aufrufe[-1:] and aufrufe[-1][:300])
