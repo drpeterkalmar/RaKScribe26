@@ -59,6 +59,7 @@ class Kontext:
     ausnahme_log: Optional[Callable[[str], Any]] = None  # wird IM except-Block gerufen (Traceback)
     protokoll: Optional[list] = None             # Mess-Harness: je Segment {segment, template, roh}
     bausteine: Optional[dict] = None             # v3.3: Ordi-Textbausteine (Standard: gebündelte ordi_bausteine.json)
+    korrektur: Optional[Callable[[str], str]] = None  # v3.4: Call 0 (korrektur.py) — nur im Nur-Text-Modus
 
 
 @dataclass
@@ -172,3 +173,17 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             teile.append(e)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
     return Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente)
+
+
+def nur_text_aus_diktat(diktat, ctx):
+    """v3.4.0 (Peter 07.10., „manchmal ist weniger mehr“): nur die korrigierte Spracherkennung, kein Befund.
+    Fehlhör-Liste → Call-0-Korrektur (wie Web) → Satz-Bausteine. Sync: pipeline.ts nurTextAusDiktat."""
+    raw = (diktat or "").strip()
+    if ctx.misheard:
+        raw = ctx.misheard(raw)
+    if not raw:
+        return Ergebnis(leer=True)
+    if ctx.korrektur:
+        raw = (ctx.korrektur(raw) or raw).strip()
+    raw = bs.saetze_einsetzen(raw, ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine)
+    return Ergebnis(raw=raw, report=raw, segmente=[raw])

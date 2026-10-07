@@ -27,6 +27,7 @@ import befund_regeln as br  # v3.2: Regionen-Trenner, Ergebnis-Nummerierung, Pro
 import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass (Sync: normalbypass.ts)
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
 import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt von der Streaming-Live-Anzeige
+import korrektur as _korr  # v3.4: Nur-Text-Modus (Call 0 wie Web-App)
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import protokoll as _prot  # Umbau Schritt 23: begrenztes Log, Diktatinhalt nur im Debug-Modus
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
@@ -252,14 +253,16 @@ RAG_BEISPIELE = 0  # init_runtime(): config.ini RAG_BEISPIELE
 # gleiche Semantik wie die Web-App (web_app/src/misheard.ts). auto-Regeln ersetzen deterministisch
 # im chirp_3-Volltranskript, llm-Regeln gehen als <stt_hinweise> in den Gen-Prompt.
 _misheard, MISHEARD_COMPILED, MISHEARD_HINTS = None, [], ""
+MISHEARD_WEB_BLOCK = ""  # v3.4: Fehlhör-Block für Call 0 (Nur-Text-Modus), wortgleich zur Web-App
 
 
 def _init_misheard():
-    global _misheard, MISHEARD_COMPILED, MISHEARD_HINTS
+    global _misheard, MISHEARD_COMPILED, MISHEARD_HINTS, MISHEARD_WEB_BLOCK
     try:
         import misheard as _mh
         daten = _mh.load(BASE_DIR)
         _misheard, MISHEARD_COMPILED, MISHEARD_HINTS = _mh, _mh.compile_rules(daten), _mh.prompt_block(daten)
+        MISHEARD_WEB_BLOCK = _mh.prompt_block_web(daten)
         print(f"[INIT] Fehlhör-Liste {daten.get('version')}: {len(MISHEARD_COMPILED)} auto-Regeln aus {daten.get('_path')}")
     except Exception as _e_mh:
         print(f"[INIT] Fehlhör-Liste nicht geladen: {_e_mh}")
@@ -466,7 +469,38 @@ def _pipeline_kontext():
     """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden)."""
     return _pl.Kontext(templates=RADIOLOGY_TEMPLATES, display_names=DISPLAY_NAMES, prompt=INITIAL_PROMPT_CONTENT,
                        llm=lambda p: _llm_aufruf(p), misheard=apply_misheard, hinweise=MISHEARD_HINTS,
-                       beispiele=_rag_beispiele, log=print, ausnahme_log=log_exception)
+                       beispiele=_rag_beispiele, log=print, ausnahme_log=log_exception,
+                       korrektur=lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print))
+
+
+# v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — Einstellung überlebt Neustart und Update (%APPDATA%\\RaKScribe)
+def _einstellungen_pfad():
+    return os.path.join(USER_KEY_DIR, "einstellungen.json")
+
+
+def einstellung_lesen(name, standard=None):
+    try:
+        with open(_einstellungen_pfad(), encoding="utf-8") as f:
+            return json.load(f).get(name, standard)
+    except (OSError, ValueError, AttributeError):
+        return standard
+
+
+def einstellung_schreiben(name, wert):
+    try:
+        try:
+            with open(_einstellungen_pfad(), encoding="utf-8") as f:
+                daten = json.load(f)
+            if not isinstance(daten, dict):
+                daten = {}
+        except (OSError, ValueError):
+            daten = {}
+        daten[name] = wert
+        os.makedirs(USER_KEY_DIR, exist_ok=True)
+        with open(_einstellungen_pfad(), "w", encoding="utf-8") as f:
+            json.dump(daten, f)
+    except OSError as e:
+        print(f"[EINSTELLUNG] {name} nicht gespeichert: {e}")
 
 
 # === v3.0 DESIGN-TOKENS (ruhig, kontrastreich, für abgedunkelte Befundräume) ===
@@ -665,6 +699,13 @@ class RaKScribeApp(ctk.CTk):
 
         left_card, left_head, left_foot = card(0, "DIKTAT")
         right_card, right_head, right_foot = card(1, "BEFUND")
+
+        # v3.4.0 (Peter 07.10.): „Nur Text“ — rechts nur die korrigierte Spracherkennung, kein strukturierter Befund
+        self.nur_text_var = tk.BooleanVar(value=bool(einstellung_lesen("nur_text", False)))
+        self.nur_text_switch = ctk.CTkSwitch(right_head, text="Nur Text", variable=self.nur_text_var,
+                                             command=self._nur_text_umgeschaltet, font=(UI_FONT, 12),
+                                             text_color=TEXT_MUTED, progress_color=ACCENT_PURPLE)
+        self.nur_text_switch.pack(side="right", pady=10)
 
         # Pegel im Diktat-Kopf
         self.level_container = ctk.CTkFrame(left_head, width=200, height=6, fg_color=BGC_INPUT, corner_radius=3)
@@ -1201,9 +1242,32 @@ class RaKScribeApp(ctk.CTk):
             color = "#F39C12"
         self.level_indicator.configure(fg_color=color)
 
+    def nur_text_aktiv(self):
+        v = getattr(self, "nur_text_var", None)
+        return bool(v.get()) if v is not None else False
+
+    def _nur_text_umgeschaltet(self):
+        an = self.nur_text_aktiv()
+        einstellung_schreiben("nur_text", an)
+        log(f"[MODUS] Nur Text {'an' if an else 'aus'}")
+
     def process_dictation(self, gen):
         try:
             # Umbau Schritt 15: die ganze Kette ohne Oberfläche in pipeline.py (dieselbe Funktion wie prod_pipeline)
+            if self.nur_text_aktiv():  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
+                self._ui(gen, lambda: (self.result_text.delete("1.0", "end"),
+                                       self.result_text.insert("1.0", "... Text wird korrigiert ...")))
+                erg = _pl.nur_text_aus_diktat(self.final_transcript, _pipeline_kontext())
+                if erg.leer:
+                    self.after(0, lambda: self._ende_kein_text(gen))
+                    return
+                if not self._job.aktuell(gen):
+                    log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingefügt.")
+                    return
+                self._ui(gen, lambda r=erg.report: (self.result_text.delete("1.0", "end"),
+                                                    self.result_text.insert("1.0", r)))
+                self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
+                return
             erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(), beim_start=lambda: self._ui(gen, lambda: (
                 self.result_text.delete("1.0", "end"),
                 self.result_text.insert("1.0", "... Befund wird geladen ...")

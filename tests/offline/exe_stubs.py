@@ -121,7 +121,7 @@ def stubs():
     class _W:
         def __init__(self, *a, **k):
             pass
-    for n in ["CTk", "CTkFrame", "CTkLabel", "CTkButton", "CTkTextbox", "CTkComboBox", "CTkToplevel"]:
+    for n in ["CTk", "CTkFrame", "CTkLabel", "CTkButton", "CTkTextbox", "CTkComboBox", "CTkToplevel", "CTkSwitch"]:
         setattr(ctk, n, type(n, (_W,), {}))
     ctk.set_appearance_mode = lambda *a: None
     mb = types.ModuleType("tkinter.messagebox")

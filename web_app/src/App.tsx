@@ -24,7 +24,7 @@ import { type TemplatesMap } from './detect.ts';
 import { istAbbruch, fehlermeldung } from './net.ts';
 // Umbau Schritt 18: Gemini-Aufrufe (Call 0/1/2, Schlüsselprüfung) und Befund-Kette als Module
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
-import { befundAusDiktat, type PipelineKontext } from './pipeline.ts';
+import { befundAusDiktat, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
 import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
 import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
@@ -196,6 +196,9 @@ export default function App() {
   const [pasteOpen, setPasteOpen] = useState<boolean>(false);
   const [pasteValue, setPasteValue] = useState<string>('');
   const [reportView, setReportView] = useState<'formatiert' | 'text'>('formatiert');
+  // v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — rechts nur die korrigierte Spracherkennung, kein Befund
+  const [nurText, setNurText] = useState<boolean>(() => localStorage.getItem('nur_text') === '1');
+  const nurTextRef = useLatest(nurText);
 
   // Configuration States
   const [vertexApiKey, setVertexApiKey] = useState<string>(gespeicherterVertexKey);
@@ -440,6 +443,9 @@ export default function App() {
     misheard: { compiled: MISHEARD_COMPILED, block: MISHEARD_PROMPT_BLOCK },
     templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES,
   });
+  // Befund (Regionen → Bypass | Call 1 + 2) oder im Nur-Text-Modus nur der korrigierte Text (Call 0 lief schon)
+  const befundOderText = (text: string, ctx: PipelineKontext): Promise<string> =>
+    nurTextRef.current ? Promise.resolve(nurTextAusDiktat(text, ctx)) : befundAusDiktat(text, ctx);
   const befundUi = (): BefundUi => ({
     transkript: setTranscript,
     befund: setStructuredReport,
@@ -673,7 +679,7 @@ export default function App() {
       },
       korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
-      befundErstellen: (text, signal) => befundAusDiktat(text, genKontext(lauf, signal)),
+      befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal)),
     }, befundUi(), { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
   };
 
@@ -708,7 +714,7 @@ export default function App() {
       // Step 1.5: LLM-Korrektur der STT-Ergebnisse
       korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // Step 2: v3.2 — dieselbe Kette wie Aufnahme und EXE (Regionen trennen → Bypass/Gemini → Ergebnis nummerieren)
-      befundErstellen: (text, signal) => befundAusDiktat(text, genKontext(lauf, signal)),
+      befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal)),
     }, befundUi(), { statusVorBefund: 'KI-Strukturierung läuft (Gemini Flash)...', fehlerPrefix: 'Fehler bei Audio-Upload-Verarbeitung: ' });
   };
 
@@ -945,6 +951,14 @@ export default function App() {
             <h2><Sparkles size={16} /> Befund</h2>
             {isCopied && <span className="copied"><Check size={13} /> Kopiert</span>}
             {status === 'processing' && <LoaderCircle size={16} className="spin muted" />}
+            <label className="switch" title="Nur die korrigierte Spracherkennung übernehmen, ohne strukturierten Befund">
+              <input type="checkbox" checked={nurText} onChange={e => {
+                setNurText(e.target.checked);
+                localStorage.setItem('nur_text', e.target.checked ? '1' : '0');
+              }} />
+              <span className="switch-track" aria-hidden="true"><span className="switch-thumb" /></span>
+              Nur Text
+            </label>
             <div className="seg" role="tablist" aria-label="Ansicht">
               <button role="tab" aria-selected={reportView === 'formatiert'} className={reportView === 'formatiert' ? 'on' : ''} onClick={() => setReportView('formatiert')}>Formatiert</button>
               <button role="tab" aria-selected={reportView === 'text'} className={reportView === 'text' ? 'on' : ''} onClick={() => setReportView('text')}>Text</button>

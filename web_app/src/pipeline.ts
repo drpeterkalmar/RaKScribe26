@@ -71,3 +71,9 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
   const teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));
   return befundeZusammenfuegen(teile);
 };
+
+// v3.4.0 (Peter 07.10., „manchmal ist weniger mehr“): Nur-Text-Modus — rechts nur die korrigierte Spracherkennung
+// (Fehlhör-Liste + Call 0 sind schon gelaufen), kein Befund. Satz-Bausteine werden trotzdem eingesetzt.
+// Sync: source_code/pipeline.py nur_text_aus_diktat.
+export const nurTextAusDiktat = (text: string, ctx: Pick<PipelineKontext, 'bausteine'>): string =>
+  saetzeEinsetzen(text.trim(), ctx.bausteine ?? ORDI_BAUSTEINE);

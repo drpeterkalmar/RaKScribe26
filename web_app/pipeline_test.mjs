@@ -7,7 +7,7 @@ import { LaufVerwaltung, befundLauf } from './src/lauf.ts';
 import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
 import { wavFromInt16 } from './src/audio.ts';
-import { befundAusDiktat } from './src/pipeline.ts';
+import { befundAusDiktat, nurTextAusDiktat } from './src/pipeline.ts';
 import { correctTranscriptionWithGemini, validationPrompt, correctionPrompt, SYS_MSG, VERTEX_ENDPOINT } from './src/gemini.ts';
 import { nachbearbeiten } from './src/befundRegeln.ts';
 
@@ -230,6 +230,17 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 2654435761) >>> 24;
   check(base64AusBytes(bytes) === Buffer.from(bytes).toString('base64'), 'base64AusBytes = Buffer.toString(base64) (150001 Bytes)');
   check(base64AusBytes(new Uint8Array(0)) === '', 'leere Daten → leerer String');
+}
+
+{
+  // v3.4.0 Nur-Text-Modus: korrigierter Text unverändert (getrimmt), Satz-Bausteine eingesetzt, kein ## Befund
+  check(nurTextAusDiktat('  Knie rechts: Gelenkspalt medial verschmälert  ', {}) === 'Knie rechts: Gelenkspalt medial verschmälert',
+    'Nur Text: korrigierter Text wird 1:1 übernommen');
+  const mitSatz = nurTextAusDiktat('Knochendichte: Baustein A1', {});
+  check(!mitSatz.includes('Baustein A1') && !mitSatz.includes('## '), 'Nur Text: Satz-Baustein eingesetzt, kein Befund-Gerüst', mitSatz.slice(0, 120));
+  // gleicher Text wie EXE (pipeline.py nur_text_aus_diktat ohne Korrektur)
+  const exe = JSON.parse(readFileSync('../tests/offline/snapshots/nur_text_a1.json', 'utf-8'));
+  check(mitSatz === exe.text, 'Nur Text: Web = EXE (Satz-Baustein A1)', `${mitSatz}\n≠ ${exe.text}`);
 }
 
 console.log(`${n - fail}/${n} PASS (pipeline)`);
