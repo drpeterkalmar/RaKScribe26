@@ -229,6 +229,25 @@ def _ist_normalsatz(s):
     return bool(_NORMALSATZ_RE.search(s)) and not has_pathology(s)
 
 
+_SATZENDE = (".", "!", "?", ":", ";")
+
+
+def satzform(s):
+    """v3.7.4 (Georg 09.10.): Ergebnis-Punkt beginnt groß und endet mit Punkt. Sync: befundRegeln.ts satzform."""
+    t = s.rstrip()
+    if not t:
+        return s
+    if t[0].isalpha() and t[0].islower():
+        t = t[0].upper() + t[1:]
+    if not t.endswith(_SATZENDE) and not (t.endswith("**") and t[:-2].rstrip().endswith(_SATZENDE)):
+        t += "."
+    return t
+
+
+def _satzanfang_gross(s):
+    return s[0].upper() + s[1:] if s and s[0].isalpha() and s[0].islower() else s
+
+
 def _nummeriere_block(lines):
     items = []  # (index_in_lines, text)
     for i, ln in enumerate(lines):
@@ -239,20 +258,25 @@ def _nummeriere_block(lines):
         items.append(i)
     if not items:
         return lines
-    texte = {i: _BULLET_RE.sub("", _NUM_RE.sub("", lines[i])).strip() for i in items}
+    texte = {i: _satzanfang_gross(_BULLET_RE.sub("", _NUM_RE.sub("", lines[i])).strip()) for i in items}
     zaehlbar = [i for i in items if not _UNNUM_RE.match(texte[i])]
-    if len(zaehlbar) == 1 and _ist_normalsatz(texte[zaehlbar[0]]):
-        out = list(lines)
-        out[zaehlbar[0]] = texte[zaehlbar[0]]
-        return out
     out = list(lines)
-    n = 0
-    for i in items:
-        if i in zaehlbar:
-            n += 1
-            out[i] = f"{n}. {texte[i]}"
-        else:
-            out[i] = texte[i]
+    if len(zaehlbar) == 1 and _ist_normalsatz(texte[zaehlbar[0]]):
+        out[zaehlbar[0]] = texte[zaehlbar[0]]
+    else:
+        n = 0
+        for i in items:
+            if i in zaehlbar:
+                n += 1
+                out[i] = f"{n}. {texte[i]}"
+            else:
+                out[i] = texte[i]
+    # v3.7.4: Punkt ans Ende jedes Ergebnis-Punkts (bei eingerückter Fortsetzung an deren letzte Zeile)
+    for k, i in enumerate(items):
+        ende = items[k + 1] if k + 1 < len(items) else len(lines)
+        letzte = max(j for j in range(i, ende) if out[j].strip())
+        einzug = out[letzte][:len(out[letzte]) - len(out[letzte].lstrip())]
+        out[letzte] = einzug + satzform(out[letzte].lstrip())
     return out
 
 

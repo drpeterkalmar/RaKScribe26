@@ -144,6 +144,17 @@ const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor/i;
 const NORMALSATZ_RE = /(regelrecht|unauffällig|normal|altersentsprechend|ohne pathologisch|kein pathologisch)/i;
 const istNormalsatz = (s: string): boolean => NORMALSATZ_RE.test(s) && !hasPathology(s);
 
+// v3.7.4 (Georg 09.10.): Ergebnis-Punkt beginnt groß und endet mit Punkt. Sync: befund_regeln.py satzform
+const SATZENDE = /[.!?:;]$/;
+const satzanfangGross = (s: string): string => (s && /\p{Ll}/u.test(s[0]) ? s[0].toUpperCase() + s.slice(1) : s);
+export const satzform = (s: string): string => {
+  let t = s.trimEnd();
+  if (!t) return s;
+  t = satzanfangGross(t);
+  if (!SATZENDE.test(t) && !(t.endsWith('**') && SATZENDE.test(t.slice(0, -2).trimEnd()))) t += '.';
+  return t;
+};
+
 function nummeriereBlock(lines: string[]): string[] {
   const items: number[] = [];
   lines.forEach((ln, i) => {
@@ -153,18 +164,26 @@ function nummeriereBlock(lines: string[]): string[] {
   });
   if (!items.length) return lines;
   const texte = new Map<number, string>();
-  for (const i of items) texte.set(i, lines[i].replace(NUM_RE, '').replace(BULLET_RE, '').trim());
+  for (const i of items) texte.set(i, satzanfangGross(lines[i].replace(NUM_RE, '').replace(BULLET_RE, '').trim()));
   const zaehlbar = items.filter(i => !UNNUM_RE.test(texte.get(i)!));
   const out = [...lines];
   if (zaehlbar.length === 1 && istNormalsatz(texte.get(zaehlbar[0])!)) {
     out[zaehlbar[0]] = texte.get(zaehlbar[0])!;
-    return out;
+  } else {
+    let n = 0;
+    for (const i of items) {
+      if (zaehlbar.includes(i)) out[i] = `${++n}. ${texte.get(i)}`;
+      else out[i] = texte.get(i)!;
+    }
   }
-  let n = 0;
-  for (const i of items) {
-    if (zaehlbar.includes(i)) out[i] = `${++n}. ${texte.get(i)}`;
-    else out[i] = texte.get(i)!;
-  }
+  // v3.7.4: Punkt ans Ende jedes Ergebnis-Punkts (bei eingerückter Fortsetzung an deren letzte Zeile)
+  items.forEach((i, k) => {
+    const ende = k + 1 < items.length ? items[k + 1] : lines.length;
+    let letzte = i;
+    for (let j = i; j < ende; j++) if (out[j].trim()) letzte = j;
+    const einzug = out[letzte].slice(0, out[letzte].length - out[letzte].trimStart().length);
+    out[letzte] = einzug + satzform(out[letzte].trimStart());
+  });
   return out;
 }
 

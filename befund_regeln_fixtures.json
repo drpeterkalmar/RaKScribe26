@@ -203,6 +203,36 @@
    "name": "eingerückte Fortsetzung",
    "in": "## Ergebnis\n1. Omarthrose rechts\n   (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Kalkdepot.",
    "out": "## Ergebnis\n1. Omarthrose rechts\n   (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Kalkdepot."
+  },
+  {
+   "name": "Georg 09.10.: klein + ohne Punkt → groß + Punkt",
+   "in": "## Ergebnis\nosteochondrose C2/C3\n- unkovertebralgelenksarthrose C4/C5",
+   "out": "## Ergebnis\n1. Osteochondrose C2/C3.\n2. Unkovertebralgelenksarthrose C4/C5."
+  },
+  {
+   "name": "Klammer am Ende → Punkt dahinter",
+   "in": "## Ergebnis\n1. Omarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence)\n2. Kalkdepot",
+   "out": "## Ergebnis\n1. Omarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Kalkdepot."
+  },
+  {
+   "name": "einzelner Normalbefund klein ohne Punkt",
+   "in": "## Ergebnis\nregelrechte Darstellung des Kniegelenkes",
+   "out": "## Ergebnis\nRegelrechte Darstellung des Kniegelenkes."
+  },
+  {
+   "name": "Fortsetzung ohne Punkt → Punkt an letzter Zeile",
+   "in": "## Ergebnis\n1. omarthrose rechts\n   (Arthrose Grad 3 nach Kellgren & Lawrence)\n2. Kalkdepot.",
+   "out": "## Ergebnis\n1. Omarthrose rechts\n   (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Kalkdepot."
+  },
+  {
+   "name": "Vergleich-Zeile mit Doppelpunkt bleibt, Fragezeichen bleibt",
+   "in": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026:\nV. a. Fraktur?",
+   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026:\n1. V. a. Fraktur?"
+  },
+  {
+   "name": "Zahl/Großbuchstabe am Anfang bleibt",
+   "in": "## Ergebnis\nAC-Gelenksarthrose rechts\nTEP-Lockerung",
+   "out": "## Ergebnis\n1. AC-Gelenksarthrose rechts.\n2. TEP-Lockerung."
   }
  ],
  "titel_seite": [

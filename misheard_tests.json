@@ -207,6 +207,15 @@
   {
    "in": "degenerative Skelettveränderungen",
    "out": "degenerative Skelettveränderungen"
+  },
+  {
+   "in": "Kongrement im Nierenbecken links, multiple Kongremente rechts",
+   "out": "Konkrement im Nierenbecken links, multiple Konkremente rechts"
+  },
+  {
+   "in": "kein Konkrement nachweisbar",
+   "out": "kein Konkrement nachweisbar",
+   "keep": true
   }
  ]
 }
