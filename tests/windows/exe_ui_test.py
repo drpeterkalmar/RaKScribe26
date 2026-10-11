@@ -9,6 +9,11 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
                              Kopiertext bleibt Markdown
   D  F10 während „Befund wird erstellt" (Selbsttest simuliert die Verarbeitung) → startet KEINE Aufnahme;
      F9 bricht die Verarbeitung ab → Bereit (Umbau Schritt 4, Gutachten P1-2)
+  E  v3.8.0 SpeechMike (ohne Gerät): hidapi im Bündel, Lese-Thread läuft ohne Gerät; Tastenberichte gehen über DENSELBEN
+     Weg wie vom Gerät (Selbsttest-Phase sm_<Taste> → Dekodierer → Handler); Mikrofon/Google/chirp_3 als Attrappen
+     (RAKSCRIBE_SELFTEST_FAKEAUDIO): Record → Pause (repariert, kein Befund) → EOL (nichts) → Weiter → INS (Befund zur
+     Kontrolle, nichts eingefügt) → von Hand ändern → EOL (genau dieser Text in der Windows-Zwischenablage, alles leer);
+     F2/Nur Text, F1 = Neu, Play = nichts; gesperrt: Record startet nichts
 Die EXE schreibt ihren UI-Zustand per Selbsttest-Modus (RAKSCRIBE_SELFTEST) als JSON; dazu je ein Screenshot.
 Ergebnis: <out>/report.md, <out>/results.json, <out>/*.png  — Exit 1 bei FAIL.
 
@@ -121,7 +126,34 @@ def fall_d(state):
     return {"sim": sim, "nach_f10": nach_f10, "nach_f9": nach_f9}
 
 
-def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False):
+def fall_e(state):
+    """v3.8.0 SpeechMike-Ablauf über die Selbsttest-Phasen sm_<Taste>#n (gleicher Handler-Weg wie das Gerät)."""
+    def ph(name, warten=0.0):
+        if warten:
+            time.sleep(warten)
+        pathlib.Path(str(state) + ".trigger").write_text(name, encoding="utf-8")
+        return wait_json(state, name, 30)
+    e = {}
+    e["record1"] = ph("sm_RECORD#1")
+    e["pause"] = ph("sm_RECORD#2", 2.0)
+    e["eol_pause"] = ph("sm_EOL#1")
+    e["weiter"] = ph("sm_RECORD#3")
+    e["ins"] = ph("sm_INS#1", 1.5)
+    e["geaendert"] = ph("befund_aendern")
+    e["eol"] = ph("sm_EOL#2")
+    e["f2_an"] = ph("sm_F2#1")
+    ph("sm_RECORD#4")
+    e["ins_nurtext"] = ph("sm_INS#2", 1.5)
+    e["eol_nurtext"] = ph("sm_EOL#3")
+    e["f2_aus"] = ph("sm_F2#2")
+    ph("sm_RECORD#5")
+    e["f1"] = ph("sm_F1#1")
+    e["play"] = ph("sm_PLAY#1")
+    return e
+
+
+def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False, fake_audio=False, mit_fall_e=False,
+             sm_gesperrt=False):
     work = pathlib.Path(tempfile.mkdtemp(prefix=f"rks_{case}_"))
     shutil.copy(EXE, work / EXE.name)
     if old_prompt:
@@ -133,7 +165,8 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False)
         (appdata / "RaKScribe" / "rakscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
     state = work / "selftest.json"
     env = dict(os.environ, APPDATA=str(appdata), RAKSCRIBE_SELFTEST=str(state),
-               RAKSCRIBE_SELFTEST_GEOMETRY="zoomed", RAKSCRIBE_SELFTEST_DEMO="1" if demo else "0")
+               RAKSCRIBE_SELFTEST_GEOMETRY="zoomed", RAKSCRIBE_SELFTEST_DEMO="1" if demo else "0",
+               RAKSCRIBE_SELFTEST_FAKEAUDIO="1" if fake_audio else "0")
     p = subprocess.Popen([str(work / EXE.name)], cwd=work, env=env)
     try:
         hwnd, t_start = find_window("RaKScribe", 90)
@@ -160,8 +193,18 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False)
             pathlib.Path(str(state) + ".trigger").write_text("after_f10", encoding="utf-8")
             after = wait_json(state, "after_f10", 20)
         d = fall_d(state) if mit_fall_d else None
-        return {"state": st, "after_f10": after, "fall_d": d, "screenshot": f"{case}.png", "size": size,
-                "t_start": round(t_start, 1)}
+        sm = None
+        if sm_gesperrt:  # v3.8.0: SpeechMike-Record ohne Schlüssel
+            pathlib.Path(str(state) + ".trigger").write_text("sm_RECORD#0", encoding="utf-8")
+            sm = wait_json(state, "sm_RECORD#0", 20)
+        e = fall_e(state) if mit_fall_e else None
+        if e:
+            try:
+                screenshot(hwnd, OUT / f"{case}_ende.png")
+            except Exception:
+                pass
+        return {"state": st, "after_f10": after, "fall_d": d, "sm_gesperrt": sm, "fall_e": e, "screenshot": f"{case}.png",
+                "size": size, "t_start": round(t_start, 1)}
     finally:
         kill_all(p)
 
@@ -169,7 +212,7 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False)
 print(f"RaKScribe EXE-UI-Test {TAG} — Bildschirm {screen_size()}", flush=True)
 
 # A + B: ohne Schlüssel
-a = run_case("A_gesperrt", with_key=False, demo=False, send_f10=True)
+a = run_case("A_gesperrt", with_key=False, demo=False, send_f10=True, sm_gesperrt=True)
 if a:
     s = a["state"]
     # Titel muss den Release-Tag tragen (TAG kommt vom Workflow, z. B. "3.1.0"); Test-Build (test-<Lauf>) oder ohne
@@ -188,6 +231,13 @@ if a:
     check("B_F10", "F10 ohne Schlüssel startet keine Aufnahme", af is not None and af["status"] == "LOCKED",
           (f"Status {af['status']}, F10-Hotkey {af['toggle_calls']}× empfangen") if af else "kein Zustand nach F10")
     check("A_gesperrt", "Mikrofon-Auswahl nicht leer", bool(s.get("mic_dropdown")), s.get("mic_dropdown", ""))
+    # v3.8.0 SpeechMike: hidapi im Bündel, Lese-Thread läuft ohne Gerät ohne Fehler, Record ohne Schlüssel startet nichts
+    check("A_gesperrt", "hidapi im EXE-Bündel (import hid)", str(s.get("hid", "")).startswith("hidapi"), str(s.get("hid")))
+    check("A_gesperrt", "SpeechMike-Leser läuft ohne Gerät (sucht weiter)", s.get("speechmike_thread") is True
+          and s.get("speechmike_verbunden") is None, f"{s.get('speechmike_thread')} / {s.get('speechmike_verbunden')}")
+    smg = a.get("sm_gesperrt")
+    check("A_gesperrt", "SpeechMike-Record ohne Schlüssel startet keine Aufnahme", bool(smg) and smg["status"] == "LOCKED"
+          and not smg.get("is_recording"), str(smg and smg["status"]))
 
 # C: mit Test-Schlüssel + Demo-Befund
 c = run_case("C_entsperrt", with_key=True, demo=True, send_f10=False, old_prompt=True, mit_fall_d=True)
@@ -226,8 +276,52 @@ if c:
     check("D_verarbeitung", "F9 bricht die Verarbeitung ab → Bereit", bool(f9) and f9["status"] == "READY"
           and f9.get("job_zustand") == "READY", str(f9 and (f9["status"], f9.get("job_zustand"))))
 
-ok = all(r["ok"] for r in results) and a and c
-(OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c},
+# E (v3.8.0): SpeechMike-Ablauf mit Attrappen für Mikrofon/Google/chirp_3 (Tasten über denselben Handler-Weg)
+e_lauf = run_case("E_speechmike", with_key=True, demo=False, send_f10=False, fake_audio=True, mit_fall_e=True)
+E = (e_lauf or {}).get("fall_e") or {}
+NORMAL = "Kniegelenk rechts in 2 Ebenen unauffällig."
+
+
+def ce(name, ok, detail=""):
+    check("E_speechmike", name, ok, detail)
+
+
+def g(k, f, default=None):
+    return (E.get(k) or {}).get(f, default)
+
+
+ce("Record → Aufnahme, LED rot", g("record1", "job_zustand") == "RECORDING" and g("record1", "led") == "aufnahme",
+   f"{g('record1', 'job_zustand')} / {g('record1', 'led')}")
+ce("Record → Pause (LED rot blinkend), Abschnitt sofort repariert, kein Befund",
+   g("pause", "job_zustand") == "PAUSED" and g("pause", "led") == "pause" and g("pause", "transcript") == NORMAL
+   and "repariert" in str(g("pause", "repariert", "")) and g("pause", "result") == "",
+   f"{g('pause', 'job_zustand')} / {g('pause', 'transcript')!r} / {g('pause', 'repariert')!r}")
+ce("EOL in der Pause → nichts gesendet, Hinweis", g("eol_pause", "job_zustand") == "PAUSED"
+   and "Erst INS" in str(g("eol_pause", "hinweis", "")) and g("eol_pause", "einfuegungen") == 0, str(g("eol_pause", "hinweis")))
+ce("Record → weiter", g("weiter", "job_zustand") == "RECORDING")
+ce("INS → Befund rechts zur Kontrolle, nichts eingefügt/kopiert, LED grün",
+   g("ins", "status") == "KONTROLLE" and str(g("ins", "result", "")).startswith("## Kniegelenk") and g("ins", "led") == "befund_bereit"
+   and g("ins", "einfuegungen") == 0 and not str(g("ins", "zwischenablage", "")).startswith("## "),
+   f"{g('ins', 'status')} / {str(g('ins', 'result', ''))[:30]!r} / {g('ins', 'led')} / {str(g('ins', 'zwischenablage', ''))[:30]!r}")
+geaendert = str(g("geaendert", "result", ""))
+ce("Befund von Hand geändert", geaendert.endswith("Von Hand ergänzt."), geaendert[-30:])
+ce("EOL → genau der geänderte Befund in der Windows-Zwischenablage, alles leer, LED aus",
+   g("eol", "zwischenablage") == geaendert.strip() and g("eol", "result") == "" and g("eol", "transcript") == ""
+   and g("eol", "led") == "aus", f"{str(g('eol', 'zwischenablage', ''))[-30:]!r} / {g('eol', 'hinweis')}")
+ce("… Einfügen nur ins sicher aktivierte Fremdfenster, sonst nur kopiert (Hinweis)",
+   "eingefügt in" in str(g("eol", "hinweis", "")) or "Befund kopiert" in str(g("eol", "hinweis", "")), str(g("eol", "hinweis")))
+ce("F2 → Nur Text an", g("f2_an", "nur_text") is True)
+ce("Nur Text: INS → korrigierter Text ohne Überschriften, nichts eingefügt", g("ins_nurtext", "result") == NORMAL
+   and g("ins_nurtext", "status") == "KONTROLLE", repr(g("ins_nurtext", "result")))
+ce("Nur Text: EOL → genau dieser Text weitergeschickt, leer", g("eol_nurtext", "zwischenablage") == NORMAL
+   and g("eol_nurtext", "result") == "")
+ce("F2 → Nur Text aus", g("f2_aus", "nur_text") is False)
+ce("F1 → Neu: Aufnahme verworfen, bereit, LED aus", g("f1", "job_zustand") == "READY" and g("f1", "transcript") == ""
+   and g("f1", "led") == "aus")
+ce("Play → nichts (nur Protokoll)", g("play", "job_zustand") == "READY")
+
+ok = all(r["ok"] for r in results) and a and c and e_lauf
+(OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf},
                                              ensure_ascii=False, indent=1), encoding="utf-8")
 lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
          f"Echtes Windows (GitHub Actions, `{os.environ.get('ImageOS', 'windows')}`), Bildschirm {screen_size()[0]}×{screen_size()[1]}, "
@@ -237,7 +331,8 @@ lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
          f"({sum(r['ok'] for r in results)}/{len(results)})", "",
          "| Fall | Prüfung | Ergebnis | Detail |", "|---|---|---|---|"]
 lines += [f"| {r['case']} | {r['check']} | {'✅' if r['ok'] else '❌'} | {r['detail']} |" for r in results]
-lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund)."]
+lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund), "
+          "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen)."]
 (OUT / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("\n".join(lines))
 sys.exit(0 if ok else 1)

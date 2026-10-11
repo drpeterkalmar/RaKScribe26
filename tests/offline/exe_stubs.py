@@ -203,6 +203,9 @@ def baue_app(mod):
     app.final_transcript = app.stream_transcript = app.stream_interim = ""
     app._aufnahme = None
     app._live_aus = False
+    # v3.8.0 SpeechMike (wie RaKScribeApp.__init__)
+    app._basis, app._abschnitte, app._live = "", [], {}
+    app._kontroll_gen, app._befund_wartet, app._gesendet, app._einfuege_zaehler = None, False, False, 0
     app.selected_device_index = 0
     app.transcript_text, app.result_text = FakeText(), FakeText()
     for n in ("record_btn", "level_indicator", "level_container", "status_badge", "key_chip"):

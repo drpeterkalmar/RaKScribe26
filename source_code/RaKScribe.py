@@ -32,6 +32,9 @@ import korrektur as _korr  # v3.4: Nur-Text-Modus (Call 0 wie Web-App)
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import protokoll as _prot  # Umbau Schritt 23: begrenztes Log, Diktatinhalt nur im Debug-Modus
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
+import speechmike as _sm  # v3.8.0: SpeechMike-Tasten + LEDs direkt (hidapi), ohne Konfiguration in SpeechControl
+import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten nach SpeechMike-Pausen
+import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -527,7 +530,12 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
     "COPIED": ("Kopiert & eingefügt", READY_GREEN, "#15261F"),
     "ERROR": ("Fehler", RECORDING_RED, "#2E1618"),
     "LOCKED": ("Gesperrt – Schlüssel fehlt", TEXT_FAINT, "#1B2030"),
+    "PAUSED": ("Pause – Record: weiter · INS: Befund", RECORDING_RED, "#2A1A1D"),       # v3.8.0 SpeechMike
+    "KONTROLLE": ("Befund prüfen – EOL schickt ihn weiter", READY_GREEN, "#15261F"),   # v3.8.0 nach INS
 }
+# v3.8.0 (Peter 11.10., Nachtrag 3/4): Hilfe-Zeilen im Menü — gleicher Text in der Web-App (App.tsx)
+HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig & weiter",
+                    "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)")
 
 
 GEMINI_401_TEXT = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
@@ -565,6 +573,76 @@ def _js_vorschau_processing():
     return js.vorschau("toggle")
 
 
+def _hid_version():
+    """Selbsttest: ist hidapi (Modul hid) im EXE-Bündel?"""
+    try:
+        import hid
+        return "hidapi " + str(hid.version_str())
+    except Exception as e:
+        return f"FEHLT: {e}"
+
+
+def _zwischenablage_lesen():
+    """Selbsttest: Text in der Zwischenablage (für die EOL-Prüfung auf echtem Windows)."""
+    try:
+        win32clipboard.OpenClipboard()
+        try:
+            return win32clipboard.GetClipboardData(win32clipboard.CF_UNICODETEXT) or ""
+        finally:
+            win32clipboard.CloseClipboard()
+    except Exception as e:
+        return f"(nicht lesbar: {e})"
+
+
+def _selbsttest_attrappen():
+    """NUR Windows-UI-Test (RAKSCRIBE_SELFTEST + RAKSCRIBE_SELFTEST_FAKEAUDIO=1, Fall E): Mikrofon, Google-Streaming,
+    chirp_3 und Gemini-Korrektur durch Attrappen ersetzen, damit Record → Pause → Weiter → INS → EOL auf dem
+    GitHub-Windows-Rechner (ohne Mikrofon, mit Dummy-Schlüssel) durch DIESELBEN Handler läuft. Im Praxisbetrieb nie aktiv."""
+    global sd, speech, speech_client, _chirp3_worker, _get_stt_access_token
+    import types
+    import numpy as np
+
+    class Strom:
+        def __init__(self, device=None, samplerate=16000, channels=1, dtype="int16", callback=None):
+            self.cb, self.an = callback, False
+
+        def __enter__(self):
+            self.an = True
+
+            def lauf():
+                n = 0
+                while self.an:
+                    t = (np.arange(1600) + n) / 16000.0
+                    self.cb((3000 * np.sin(2 * np.pi * 220 * t)).astype(np.int16).reshape(-1, 1), 1600, None, None)
+                    n += 1600
+                    time.sleep(0.1)
+            threading.Thread(target=lauf, daemon=True).start()
+            return self
+
+        def __exit__(self, *a):
+            self.an = False
+
+    def antwort(text, final):
+        alt = types.SimpleNamespace(transcript=text)
+        return types.SimpleNamespace(results=[types.SimpleNamespace(alternatives=[alt], is_final=final)])
+
+    class Client:
+        def streaming_recognize(self, requests, config=None):
+            for n, _ in enumerate(requests, 1):
+                if n == 3:
+                    yield antwort("Kniegelenk rechts", False)
+                elif n == 6:
+                    yield antwort("Kniegelenk rechts in 2 Ebenen", True)
+
+    sd = types.SimpleNamespace(InputStream=Strom, default=getattr(sd, "default", None))
+    speech = types.SimpleNamespace(StreamingRecognizeRequest=lambda audio_content: audio_content)
+    speech_client = Client()
+    _chirp3_worker = lambda pcm, sr, loc, token: "Kniegelenk rechts in 2 Ebenen unauffällig."  # noqa: E731
+    _get_stt_access_token = lambda: "selbsttest"  # noqa: E731
+    _korr.korrigieren = lambda text, key, block="", log=None: text
+    log("[SELBSTTEST] Mikrofon, Google-Streaming, chirp_3 und Korrektur durch Attrappen ersetzt (FAKEAUDIO).")
+
+
 def keys_ready():
     """v3.0: App ist nur bedienbar, wenn Gemini- UND STT-Schlüssel vorhanden sind."""
     return bool(_load_vertex_key()) and (_SA_CREDENTIALS is not None or speech_client is not None)
@@ -591,6 +669,14 @@ class RaKScribeApp(ctk.CTk):
         self._aufnahme = None        # aufnahme.Aufnahme der laufenden/letzten Aufnahme
         self._einfuegen_ziel = None  # v3.5: (start, ende) im Befund, wenn an der Cursor-Stelle diktiert wird
         self._live_aus = False       # Live-Anzeige ausgefallen (Aufnahme läuft weiter)
+        # v3.8.0 SpeechMike: Nachdiktat, reparierte Abschnitte, Kontrollschritt (INS → prüfen → EOL)
+        self._basis = ""             # bisheriges Diktat, an das eine SpeechMike-Aufnahme anschließt
+        self._abschnitte = []        # reparierter Text je geschlossenem Abschnitt (None = offen/gescheitert)
+        self._live = {}              # Abschnitt → [finale Streaming-Texte, Zwischenstand]
+        self._kontroll_gen = None    # Lauf, dessen Ergebnis NICHT eingefügt wird (INS)
+        self._befund_wartet = False  # Befund aus INS steht rechts und wartet auf EOL (LED grün)
+        self._gesendet = False       # sichtbarer Befund wurde schon per Strg+V eingefügt
+        self._einfuege_zaehler = 0   # Strg+V gesendet (Selbsttest)
 
         # Audio-Eingabegeräte sammeln
         self.device_names = []
@@ -625,6 +711,10 @@ class RaKScribeApp(ctk.CTk):
 
         self.create_widgets()
         self.register_hotkey()
+        self._fensterziel = _fz.Fensterziel(_fz.win32_oder_none())
+        self.after(500, self._fenster_merken)
+        self._speechmike_starten()
+        self.protocol("WM_DELETE_WINDOW", self._schliessen)
         self.after(150, self.refresh_key_state)
         self.after(400, self._selftest_hook)
         # Umbau Schritt 24 (Gutachten P3-4): Hinweis auf die alte Prompt-Datei nur EINMAL je Datei/Version
@@ -672,6 +762,10 @@ class RaKScribeApp(ctk.CTk):
         self.device_dropdown.pack(side="right", padx=10)
         self.key_chip = ctk.CTkLabel(right, text="", font=(UI_FONT, 12, "bold"), corner_radius=12, height=26)
         self.key_chip.pack(side="right")
+        # v3.8.0: kleine Anzeige, solange ein SpeechMike verbunden ist
+        self.sm_chip = ctk.CTkLabel(right, text="", font=(UI_FONT, 12, "bold"), corner_radius=12, height=26,
+                                    text_color=ACCENT_PURPLE)
+        self.sm_chip.pack(side="right", padx=(0, 8))
 
         self.status_badge = ctk.CTkLabel(header, text="", font=(UI_FONT, 13, "bold"), corner_radius=15,
                                          height=30, text_color=TEXT_PRIMARY)
@@ -716,6 +810,9 @@ class RaKScribeApp(ctk.CTk):
         self.level_container.pack(side="right", pady=19)
         self.level_indicator = ctk.CTkFrame(self.level_container, width=0, height=6, fg_color=READY_GREEN, corner_radius=3)
         self.level_indicator.place(x=0, y=0)
+        # v3.8.0: nach einer SpeechMike-Pause ist das bisher Diktierte repariert (chirp_3 + Fehlhör-Liste)
+        self.repariert_label = ctk.CTkLabel(left_head, text="", font=(UI_FONT, 11, "bold"), text_color=READY_GREEN)
+        self.repariert_label.pack(side="right", padx=(0, 12))
 
         box_kw = dict(font=(UI_FONT, 15), fg_color="transparent", text_color=TEXT_PRIMARY, wrap="word",
                       border_width=0, scrollbar_button_color=BORDER_STRONG)
@@ -764,6 +861,8 @@ class RaKScribeApp(ctk.CTk):
         self.lift()
         self.attributes("-topmost", True)
         self.focus_force()
+        if os.environ.get("RAKSCRIBE_SELFTEST_FAKEAUDIO") == "1":
+            _selbsttest_attrappen()  # v3.8.0 Fall E: SpeechMike-Ablauf ohne Mikrofon/Google
 
         def dump(phase):
             try:
@@ -800,6 +899,21 @@ class RaKScribeApp(ctk.CTk):
                     "phrasen": _selbsttest_phrasen(),
                     "is_recording": bool(self.is_recording),
                     "job_zustand": self._job.zustand,
+                    # v3.8.0 SpeechMike: hidapi im Bündel, Lese-Thread läuft ohne Gerät, LED-Soll, Kontrollschritt, EOL
+                    "hid": _hid_version(),
+                    "speechmike_thread": bool(getattr(self, "_speechmike", None) and self._speechmike._thread
+                                              and self._speechmike._thread.is_alive()),
+                    "speechmike_verbunden": getattr(getattr(self, "_speechmike", None), "verbunden", None),
+                    "led": getattr(getattr(self, "_speechmike", None), "led_soll", None),
+                    "transcript": self.transcript_text.get("1.0", "end-1c")[:400],
+                    "result": self.result_text.get("1.0", "end-1c")[:600],
+                    "befund_wartet": bool(getattr(self, "_befund_wartet", False)),
+                    "nur_text": bool(self.nur_text_aktiv()),
+                    "einfuegungen": getattr(self, "_einfuege_zaehler", 0),
+                    "hinweis": getattr(self, "_letzter_hinweis", ""),
+                    "repariert": str(self.repariert_label.cget("text")),
+                    "zwischenablage": _zwischenablage_lesen()[:600],
+                    "status_text": str(self.status_badge.cget("text")).strip(),
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -841,12 +955,29 @@ class RaKScribeApp(ctk.CTk):
                         # gleicher Handler wie der F10/F9-Hotkey; Zustand erst nach dessen Ausführung festhalten
                         self._hotkeys[phase[-3:].lstrip("_")]()
                         self.after(800, lambda p=phase: dump(p))
+                    elif phase.startswith("sm_"):
+                        # v3.8.0: SpeechMike-Taste wie vom Gerät (Bericht → Dekodierer → derselbe Handler), z. B. sm_RECORD#1
+                        self._selbsttest_taste(phase[3:].split("#")[0])
+                        self.after(1500, lambda p=phase: dump(p))
+                    elif phase == "befund_aendern":
+                        self.result_text.insert("end", "\nVon Hand ergänzt.")
+                        dump(phase)
                     else:
                         dump(phase)
                 except Exception:
                     pass
             self.after(300, poll_trigger)
         self.after(1500, poll_trigger)
+
+    def _selbsttest_taste(self, taste):
+        """Selbsttest: Druck- und Loslass-Bericht einer SpeechMike-Taste durch den echten Dekodierer schicken."""
+        smk = getattr(self, "_speechmike", None)
+        if smk is None:
+            return
+        bit = dict(_sm.TASTEN)[taste]
+        self._st_zeit = getattr(self, "_st_zeit", 1000.0) + 1.0
+        smk.einspeisen([0x80, 0, 0, 0, 0, 0, 0, bit & 0xFF, bit >> 8], self._st_zeit)
+        smk.einspeisen([0x80, 0, 0, 0, 0, 0, 0, 0, 0], self._st_zeit + 0.1)
 
     # ── v3.0: Befund-Formatierung (## versteckt, Überschriften fett) — Text bleibt Markdown für Kopieren ──
     def _setup_report_formatting(self):
@@ -898,8 +1029,14 @@ class RaKScribeApp(ctk.CTk):
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
             "https://drpeterkalmar.github.io/RaKScribe26/"))
         m.add_separator()
+        smk = getattr(self, "_speechmike", None)
+        m.add_command(label="SpeechMike-Diagnose…" + (f"  ({smk.verbunden})" if smk is not None and smk.verbunden
+                                                      else "  (nicht verbunden)"), command=self.speechmike_diagnose)
+        m.add_separator()
         m.add_command(label=f"STT: Google chirp_3 · LLM: Gemini 3.5 Flash (EU)", state="disabled")
         m.add_command(label="F10 Aufnahme · F9 Neu", state="disabled")
+        for zeile in HILFE_SPEECHMIKE:
+            m.add_command(label=zeile, state="disabled")
         x = self.menu_btn.winfo_rootx()
         y = self.menu_btn.winfo_rooty() + self.menu_btn.winfo_height() + 4
         try:
@@ -1023,12 +1160,16 @@ class RaKScribeApp(ctk.CTk):
             label += " · Live-Anzeige ausgefallen"  # Umbau Schritt 6: Aufnahme läuft trotzdem weiter
         self.status_badge.configure(text=f"   ●  {label}   ", fg_color=bg, text_color=TEXT_PRIMARY)
         # farbiger Punkt: CTkLabel kann nur eine Textfarbe → Pill-Rand über Hintergrund, Punkt in Textfarbe des Status
-        self.status_badge.configure(text_color=dot if raw in ("RECORDING", "ERROR", "PROCESSING", "LOCKED") else TEXT_PRIMARY)
+        self.status_badge.configure(text_color=dot if raw in ("RECORDING", "PAUSED", "ERROR", "PROCESSING", "LOCKED")
+                                    else TEXT_PRIMARY)
+        self._led_aktualisieren()  # v3.8.0: SpeechMike-LED folgt dem Zustand
 
     def update_recording_timer(self):
         if self.is_recording:
             elapsed = int(time.time() - self.recording_start_time)
-            self.record_btn.configure(text=f" Aufnahme Stoppen (F10) ({elapsed}s) ")
+            pause = self._job.zustand == _js.PAUSED  # v3.8.0
+            self.record_btn.configure(text=" Aufnahme Stoppen (F10) · Pause " if pause
+                                      else f" Aufnahme Stoppen (F10) ({elapsed}s) ")
             self.after(1000, self.update_recording_timer)
 
     def update_processing_timer(self):
@@ -1055,6 +1196,7 @@ class RaKScribeApp(ctk.CTk):
         self.stream_transcript = ""
         self.stream_interim = ""
         self._einfuegen_ziel = None
+        self._sm_sitzung_leeren()  # v3.8.0: Nachdiktat/Abschnitte/Kontrollschritt verwerfen
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
         if self._job.zustand == _js.LOCKED:
@@ -1070,16 +1212,18 @@ class RaKScribeApp(ctk.CTk):
 
     def _aufnahme_starten(self, gen):
         """Mikrofon (Capture-Thread) und Live-Anzeige (Streaming-Thread) getrennt starten (Gutachten P1-4)."""
-        self._aufnahme = _af.Aufnahme(
+        a = _af.Aufnahme(
             sd, self.samplerate, self.selected_device_index,
             streaming=lambda reqs: speech_client.streaming_recognize(requests=reqs, config=STREAMING_CONFIG),
             request_bauen=lambda b: speech.StreamingRecognizeRequest(audio_content=b),
             on_level=lambda rms: self.after(0, self.update_level_bar, rms),
-            on_text=lambda text, is_final: self.after(0, self.update_interim_text, text, is_final, gen),
             on_stream_fehler=lambda e: self._live_anzeige_fehler(gen, e),
             on_capture_fehler=lambda e: self._capture_fehler(gen, e),
             log=log)
-        self._aufnahme.start()
+        # Streaming-Text mit der Abschnittsnummer seiner Sitzung (v3.8.0: Anzeige nach SpeechMike-Pausen)
+        a.on_text = lambda text, is_final: self.after(0, self.update_interim_text, text, is_final, gen, a.stream_abschnitt)
+        self._aufnahme = a
+        a.start()
 
     def _live_anzeige_fehler(self, gen, e):
         """Streaming-Thread: Fehler der Live-Anzeige — nur loggen und anzeigen, die Aufnahme läuft weiter (P1-4)."""
@@ -1112,6 +1256,12 @@ class RaKScribeApp(ctk.CTk):
             else:
                 self.refresh_key_state()  # gesperrt: Schlüssel fehlt
             return
+        self._aufnahme_umschalten("toggle", aktion)
+
+    def _aufnahme_umschalten(self, ereignis, aktion, basis="", kontrolle=False):
+        """Aufnahme starten bzw. beenden — F10 (ereignis "toggle") und SpeechMike (record/ins) über DENSELBEN Weg.
+        v3.8.0: basis = bisheriges Diktat (SpeechMike-Nachdiktat, F10: immer leer), kontrolle = Ergebnis nur anzeigen
+        und NICHT einfügen (SpeechMike-INS; F10: False = wie bisher kopieren + einfügen)."""
         if aktion == "start" and not keys_ready():
             self.refresh_key_state()
             return
@@ -1119,7 +1269,7 @@ class RaKScribeApp(ctk.CTk):
             if not init_google_speech():
                 messagebox.showerror("Fehler", "Google Cloud Speech-to-Text konnte nicht initialisiert werden. Bitte prüfen Sie Ihre Credentials (JSON-Datei) und die Internetverbindung.")
                 return
-        self._job.ereignis("toggle")
+        self._job.ereignis(ereignis)
         gen = self._job.gen
 
         if aktion == "start":
@@ -1131,8 +1281,12 @@ class RaKScribeApp(ctk.CTk):
             self.stream_transcript = ""
             self.stream_interim = ""
             self._live_aus = False
+            self._basis, self._abschnitte, self._live = basis, [], {}
+            self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
             self.transcript_text.delete("1.0", "end")
-            if self._einfuegen_ziel is None:
+            if basis:
+                self.transcript_text.insert("1.0", basis)  # Nachdiktat: bisheriges Diktat bleibt stehen
+            if self._einfuegen_ziel is None and not basis:  # Nachdiktat: alter Befund bleibt bis zum nächsten INS
                 self.result_text.delete("1.0", "end")
             self.is_recording = True
             
@@ -1148,9 +1302,12 @@ class RaKScribeApp(ctk.CTk):
             self._aufnahme_starten(gen)
             log("[RECORD] Aufnahme- und Live-Anzeige-Thread gestartet.")
         else:
+            if kontrolle:
+                self._kontroll_gen = gen  # v3.8.0 INS: Befund nur anzeigen, EOL schickt ihn weiter
             log("[RECORD] Aufnahme wird beendet...")
             self.is_recording = False
             self._aufnahme_stoppen()
+            self._repariert_anzeigen()
 
             self.update_status("PROCESSING", "busy")
             
@@ -1204,8 +1361,11 @@ class RaKScribeApp(ctk.CTk):
 
         # Endtext festlegen: ab hier keine Streaming-Antworten mehr übernehmen (Gutachten P2-5)
         self._job.ereignis("chirp_done", gen)
+        basis = getattr(self, "_basis", "")
+        self._neuer_text = ""  # v3.8.0: nur das in DIESER Aufnahme Diktierte (Einfügen an der Cursor-Stelle)
         if chirp_text and chirp_text.strip():
-            self.final_transcript = chirp_text.strip()
+            self._neuer_text = chirp_text.strip()
+            self.final_transcript = (basis + " " + self._neuer_text).strip()  # v3.8.0: Nachdiktat hängt an
             log(f"[CHIRP3] OK: {len(self.final_transcript)} Zeichen")
             text = self.final_transcript
             self._ui(gen, lambda: (
@@ -1215,7 +1375,12 @@ class RaKScribeApp(ctk.CTk):
         else:
             log("[CHIRP3] Kein Ergebnis — nutze Streaming-Transkript weiter.")
             # Rettung: finale Streaming-Abschnitte, sonst der letzte Zwischenstand (wie bisher aus der Anzeige)
-            salvaged = self.stream_transcript.strip() or self.stream_interim.strip()
+            if basis or getattr(self, "_abschnitte", []):  # v3.8.0: Nachdiktat / reparierte Abschnitte nach Pausen
+                self._neuer_text = _seg.rettung("", self._abschnitte, getattr(self, "_live", {}))
+                salvaged = (basis + " " + self._neuer_text).strip()
+            else:
+                salvaged = self.stream_transcript.strip() or self.stream_interim.strip()
+                self._neuer_text = salvaged
             if salvaged:
                 self.final_transcript = salvaged
                 log(f"[GOOGLE] Text gerettet: {len(salvaged)} Zeichen")
@@ -1232,21 +1397,23 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
 
-    def update_interim_text(self, transcript, is_final, gen):
+    def update_interim_text(self, transcript, is_final, gen, abschnitt=0):
         # Gutachten P2-5: Streaming-Text nur für die Anzeige (stream_transcript), nie in final_transcript; nach dem
         # Endtext (chirp_3) oder aus einem alten Lauf verwirft die Zustandsmaschine verspätete Antworten.
+        # v3.8.0: je Abschnitt (SpeechMike-Pausen) — ein reparierter Abschnitt ersetzt seinen Live-Text (segmente.py).
         if self._job.ereignis("stream_final" if is_final else "stream_interim", gen) is None:
             return
+        live = self._live.setdefault(abschnitt, ["", ""])
         if not is_final:
             self.stream_interim = transcript
-            self.transcript_text.delete("1.0", "end")
-            self.transcript_text.insert("1.0", self.stream_transcript + " [.. " + transcript + " ..]")
+            live[1] = transcript
         else:
             log(f"[GOOGLE] Finaler Zwischenabschnitt erkannt: {len(transcript)} Zeichen")
             self.stream_transcript += transcript + " "
             self.stream_interim = ""
-            self.transcript_text.delete("1.0", "end")
-            self.transcript_text.insert("1.0", self.stream_transcript.strip())
+            live[0] += transcript + " "
+            live[1] = ""
+        self._diktat_anzeigen()
 
     def update_level_bar(self, rms):
         max_val = 10000  # Kalibriert auf typische Sprachlautstärke (vorher 1500)
@@ -1318,27 +1485,34 @@ class RaKScribeApp(ctk.CTk):
         einstellung_schreiben("nur_text", an)
         log(f"[MODUS] Nur Text {'an' if an else 'aus'}")
 
-    def befund_aus_text(self, _evt=None):
+    def befund_aus_text(self, _evt=None, kontrolle=False):
         """v3.6.0 (Peter 07.10.): getippten/eingefügten Text im Diktat-Feld ohne Aufnahme zu einem strukturierten
         Befund machen (Knopf „Befund aus Text“ bzw. Strg+Enter im Diktat-Feld). Gleiche Kette wie nach einer Aufnahme
         (Fehlhör-Liste → Bausteine → Regionen → Bypass/Gemini), immer strukturiert — auch wenn „Nur Text“ an ist."""
         text = self.transcript_text.get("1.0", "end-1c").strip()
         if not text:
+            if kontrolle:  # v3.8.0 SpeechMike-INS ohne Diktat: Hinweis statt Dialog
+                self._kurzhinweis("Kein Diktat – erst Record drücken")
+                return "break"
             messagebox.showinfo("Befund aus Text", "Bitte zuerst den Diktattext links eintippen oder einfügen.")
             return "break"
         if not keys_ready():
             self.refresh_key_state()
             return "break"
-        if self._job.ereignis("text") is None:  # Aufnahme oder Verarbeitung läuft
+        if self._job.ereignis("ins" if kontrolle else "text") is None:  # Aufnahme oder Verarbeitung läuft
             return "break"
         gen = self._job.gen
+        # v3.8.0 SpeechMike-INS: Ergebnis nur anzeigen (EOL schickt weiter); bei „Nur Text“ der korrigierte Text
+        self._kontroll_gen = gen if kontrolle else None
+        self._befund_wartet = self._gesendet = False
+        nur_befund = not (kontrolle and self.nur_text_aktiv())
         log(f"[TEXT] Befund aus getipptem Text ({len(text)} Zeichen).")
         self.final_transcript = text
         self._einfuegen_ziel = None
         self.result_text.delete("1.0", "end")
         self.update_status("PROCESSING", "busy")
         self.record_btn.configure(state="disabled", text=" Verarbeite... ")
-        threading.Thread(target=lambda: self.process_dictation(gen, nur_befund=True), daemon=True).start()
+        threading.Thread(target=lambda: self.process_dictation(gen, nur_befund=nur_befund), daemon=True).start()
         return "break"
 
     def process_dictation(self, gen, nur_befund=False):
@@ -1346,7 +1520,8 @@ class RaKScribeApp(ctk.CTk):
             # Umbau Schritt 15: die ganze Kette ohne Oberfläche in pipeline.py (dieselbe Funktion wie prod_pipeline)
             ziel = None if nur_befund else getattr(self, "_einfuegen_ziel", None)
             if ziel is not None:  # v3.5.0: Diktat an der Cursor-Stelle in den bestehenden Befund (korrigierter Text)
-                erg = _pl.nur_text_aus_diktat(self.final_transcript, _pipeline_kontext())
+                # v3.8.0: nur das NEU Diktierte einfügen — beim SpeechMike-Nachdiktat steht links das Gesamtdiktat
+                erg = _pl.nur_text_aus_diktat(getattr(self, "_neuer_text", "") or self.final_transcript, _pipeline_kontext())
                 if erg.leer:
                     self.after(0, lambda: self._ende_kein_text(gen))
                     return
@@ -1354,7 +1529,7 @@ class RaKScribeApp(ctk.CTk):
                     log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingefügt.")
                     return
                 self.after(0, lambda t=erg.report: self._einfuegen_an_ziel(gen, ziel, t))
-                self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
+                self.after(0, lambda: self._lauf_fertig(gen))
                 return
             if self.nur_text_aktiv() and not nur_befund:  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
                 self._ui(gen, lambda: (self.result_text.delete("1.0", "end"),
@@ -1368,7 +1543,7 @@ class RaKScribeApp(ctk.CTk):
                     return
                 self._ui(gen, lambda r=erg.report: (self.result_text.delete("1.0", "end"),
                                                     self.result_text.insert("1.0", r)))
-                self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
+                self.after(0, lambda: self._lauf_fertig(gen))
                 return
             erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(), beim_start=lambda: self._ui(gen, lambda: (
                 self.result_text.delete("1.0", "end"),
@@ -1401,7 +1576,7 @@ class RaKScribeApp(ctk.CTk):
             if not erg.vollstaendig:
                 self.after(0, lambda: self._ende_fehler(gen, None))
                 return
-            self.after(0, lambda: self._fertig_kopieren_einfuegen(gen))
+            self.after(0, lambda: self._lauf_fertig(gen))
         except Exception as e:
             log_exception("Befund-Generierung")
             if "401" in str(e) or "Unauthorized" in str(e):
@@ -1444,6 +1619,23 @@ class RaKScribeApp(ctk.CTk):
                 messagebox.showerror("Nicht kopiert", ZWISCHENABLAGE_GESPERRT)
         return ok
 
+    def _lauf_fertig(self, gen):
+        """v3.8.0: Ende eines Laufs. F10 und „Befund aus Text“: kopieren + einfügen (wie bisher). SpeechMike-INS: nur
+        anzeigen — der Befund wartet auf EOL (Peter 11.10.: nie etwas Ungesehenes weiterschicken)."""
+        if gen == getattr(self, "_kontroll_gen", None):
+            self._fertig_zur_kontrolle(gen)
+        else:
+            self._fertig_kopieren_einfuegen(gen)
+
+    def _fertig_zur_kontrolle(self, gen):
+        if self._job.ereignis("report_done", gen) is None:
+            return
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self.level_indicator.configure(fg_color=READY_GREEN, width=0)
+        self._befund_wartet, self._gesendet = True, False
+        self.update_status("KONTROLLE", "ready")
+        log("[SPEECHMIKE] Ergebnis steht rechts zur Kontrolle — nichts eingefügt, EOL schickt es weiter.")
+
     def _fertig_kopieren_einfuegen(self, gen):
         """Läuft im UI-Thread. Nur einfügen, wenn der Lauf noch aktuell ist UND das Kopieren nachweislich klappte —
         sonst würde Strg+V den vorigen Zwischenablage-Inhalt (= letzten Befund) ins RIS schreiben."""
@@ -1464,7 +1656,258 @@ class RaKScribeApp(ctk.CTk):
             log("[PASTE] RaKScribe selbst im Vordergrund — kein Strg+V, Befund liegt in der Zwischenablage.")
             self.status_badge.configure(text="   ●  Befund kopiert — im RIS mit Strg+V einfügen   ", text_color=TEXT_PRIMARY)
             return
+        self._strg_v()
+        self._gesendet = True  # v3.8.0: dieser Befund ist eingefügt — SpeechMike-EOL schickt ihn nicht noch einmal
+
+    def _strg_v(self):
+        """Die EINZIGE Stelle, die Strg+V sendet — Aufrufer haben vorher nachweislich erfolgreich kopiert."""
         keyboard.press_and_release('ctrl+v')
+        self._einfuege_zaehler = getattr(self, "_einfuege_zaehler", 0) + 1
+
+    # ── v3.8.0: SpeechMike (Peter 11.10., Nachtrag 1–4) ────────────────────────────────────────────────────────────
+    # Record = Aufnahme / Pause / Weiter (Pause repariert das bisher Diktierte nur für die Anzeige), Stop = Pause,
+    # INS = Befund rechts erstellen (nichts einfügen), EOL = sichtbaren Befund weiterschicken + alles leeren,
+    # F1 = Neu, F2 = Nur Text. F10/F9 bleiben exakt wie bisher (register_hotkey).
+    def _speechmike_starten(self):
+        """Lese-Thread fürs SpeechMike (ohne Gerät/ohne hidapi: eine Protokollzeile, F10/F9 unberührt)."""
+        try:
+            self._speechmike = _sm.SpeechMikeLeser(
+                on_taste=lambda t, gedrueckt, roh: self.after(0, self.speechmike_taste, t, gedrueckt, roh),
+                log=log, on_verbindung=lambda b: self.after(0, self._speechmike_status, b))
+            self._speechmike.starten()
+        except Exception:
+            log_exception("[SPEECHMIKE] Start fehlgeschlagen")
+            self._speechmike = None
+
+    def _speechmike_status(self, beschreibung):
+        chip = getattr(self, "sm_chip", None)
+        if chip is not None:
+            chip.configure(text="  SpeechMike verbunden  " if beschreibung else "",
+                           fg_color="#1A2640" if beschreibung else "transparent")
+        self._led_aktualisieren()
+
+    def speechmike_taste(self, taste, gedrueckt, roh=""):
+        """SpeechMike-Taste (aus dem Lese-Thread per after(0)). Belegung speechmike.BELEGUNG — Loslassen und unbelegte
+        Tasten (Play, Spulen, INSTR, F3, F4, Command) stehen nur im Protokoll ([SPEECHMIKE]-Zeile mit Rohdaten)."""
+        ereignis = _sm.BELEGUNG.get(taste) if gedrueckt else None
+        if ereignis is None:
+            return
+        {"record": self.sm_record, "stop": self.sm_stop, "ins": self.sm_ins, "eol": self.befund_fertig,
+         "reset": self.reset_dictation, "nur_text": self.nur_text_umschalten}[ereignis]()
+
+    def sm_record(self):
+        """Record = Aufnahme starten / pausieren / weiter. Ein neuer Start hängt an das Diktat-Feld an (Nachdiktat:
+        INS erstellt den Befund dann aus dem Gesamtdiktat) — außer der Befund wurde schon eingefügt."""
+        aktion = self._job.vorschau("record")
+        if aktion is None:
+            if self._job.zustand == _js.PROCESSING:
+                self._kurzhinweis("Befund wird erstellt – bitte kurz warten")
+            elif self._job.zustand == _js.LOCKED:
+                self.refresh_key_state()
+            return
+        if aktion == "pause":
+            self._pausieren("record")
+        elif aktion == "weiter":
+            self._fortsetzen()
+        else:
+            bisher = self.transcript_text.get("1.0", "end-1c").strip()
+            self._aufnahme_umschalten("record", "start", basis="" if self._gesendet else bisher)
+
+    def sm_stop(self):
+        """Stop-Taste bzw. Schieber auf STOP = Pause (nur während der Aufnahme)."""
+        if self._job.vorschau("stop") == "pause":
+            self._pausieren("stop")
+
+    def sm_ins(self):
+        """INS = „ins rechte Fenster“: Aufnahme beenden bzw. aus dem Diktat-Feld → Befund (bei „Nur Text“: korrigierter
+        Text) erscheint rechts zur Kontrolle, editierbar. Es wird NICHTS eingefügt. Steht der Cursor beim Start im
+        Befund, wird wie bei F10 (v3.5.0) an der Cursor-Stelle eingefügt."""
+        aktion = self._job.vorschau("ins")
+        if aktion is None:
+            if self._job.zustand == _js.PROCESSING:
+                self._kurzhinweis("Befund wird schon erstellt")
+            elif self._job.zustand == _js.LOCKED:
+                self.refresh_key_state()
+            return
+        if aktion == "stop":
+            self._aufnahme_umschalten("ins", "stop", kontrolle=True)
+        else:
+            self.befund_aus_text(kontrolle=True)
+
+    def befund_fertig(self):
+        """SpeechMike-EOL = „alles fertig“ (Peter 11.10., Nachtrag 3): den SICHTBAREN, ggf. von Hand geänderten Befund
+        (bzw. Nur-Text-Inhalt) weiterschicken und danach alles leeren — bereit für den nächsten Patienten. Nur mit
+        fertigem Befund und ohne laufende Aufnahme/Verarbeitung; nie etwas Ungesehenes, kein Doppeldruck.
+        ZENTRALE STELLE für den nächsten Schritt: hier kommt später „Formatierung → Vidierliste“ hinein (heute: kopieren
+        + Strg+V ins SpeechMagic-/RIS-Fenster, das vor RaKScribe vorne war)."""
+        text = self.result_text.get("1.0", "end-1c").strip()
+        if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
+            self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+            return
+        if self._gesendet:  # F10 hat genau diesen Befund schon eingefügt → nicht doppelt
+            self._job.ereignis("eol")
+            self._felder_leeren()
+            self._kurzhinweis("Befund war schon eingefügt – Felder geleert, bereit")
+            return
+        if not self.copy_formatted_report():
+            self.update_status("ERROR", "busy")
+            messagebox.showerror("Nicht weitergeschickt", "Der Befund wurde NICHT weitergeschickt.\n\n"
+                                 + ZWISCHENABLAGE_GESPERRT)
+            return
+        fz = getattr(self, "_fensterziel", None)
+        hwnd, titel, aktivieren = fz.ziel() if fz is not None else (None, "kein Fensterziel", False)
+        log(f"[SPEECHMIKE] EOL: Befund ({len(text)} Zeichen) weiterschicken → "
+            + (f"Fenster „{titel}“" if hwnd else f"nur kopiert ({titel})"))
+        self._job.ereignis("eol")
+        self._felder_leeren()
+        if hwnd:
+            self.after(150, lambda: self._eol_einfuegen(hwnd, titel, aktivieren))
+        else:
+            self._kurzhinweis("Befund kopiert – im RIS mit Strg+V einfügen", 8000)
+
+    def _eol_einfuegen(self, hwnd, titel, aktivieren):
+        """Strg+V nur, wenn das Zielfenster nachweislich vorne ist — sonst bleibt es beim Kopieren (+ Hinweis)."""
+        fz = self._fensterziel
+        if (aktivieren and not fz.aktivieren_und_pruefen(hwnd)) or not fz.ist_vorne(hwnd):
+            log(f"[SPEECHMIKE] Zielfenster „{titel}“ nicht sicher vorne — nur kopiert.")
+            self._kurzhinweis("Befund kopiert – im RIS mit Strg+V einfügen", 8000)
+            return
+        self._strg_v()
+        self.update_status("COPIED", "ready")
+        self._kurzhinweis(f"Befund eingefügt in „{titel[:40]}“ – bereit", 6000)
+
+    def nur_text_umschalten(self):
+        """F2 = „Nur Text“ an/aus. Ein schon erstellter Befund bleibt unverändert — der Wechsel wirkt beim nächsten INS
+        (Peter 11.10., Nachtrag 4: nichts still über Änderungen hinweg neu erzeugen)."""
+        v = getattr(self, "nur_text_var", None)
+        if v is None:
+            return
+        v.set(not bool(v.get()))
+        self._nur_text_umgeschaltet()
+        self._kurzhinweis("Nur Text: an" if v.get() else "Nur Text: aus (strukturierter Befund)")
+
+    def _pausieren(self, ereignis):
+        """Pause: das Mikrofon nimmt nichts mehr auf, das Diktat bleibt. Das bisher Diktierte (Abschnitt seit Start/
+        Weiter) wird sofort repariert — chirp_3 + Fehlhör-Liste, NUR für die Anzeige; der Endtext kommt beim Beenden wie
+        bisher aus der ganzen Aufnahme (Messung 11.10., docs/benchmarks/pause_segmente_2026-10-11.txt)."""
+        if self._job.ereignis(ereignis) != "pause":
+            return
+        gen, a = self._job.gen, self._aufnahme
+        k, start, ende = a.pausieren() if a is not None else (len(self._abschnitte), 0, 0)
+        while len(self._abschnitte) <= k:
+            self._abschnitte.append(None)
+        log(f"[SPEECHMIKE] Pause nach Abschnitt {k + 1} ({(ende - start) / self.samplerate:.1f} s).")
+        self.update_status("PAUSED", "recording")
+        self.level_indicator.configure(width=0)
+        self._diktat_anzeigen()
+        if a is not None and ende - start >= _seg.MIN_SAMPLES:
+            self._repariert_anzeigen(laeuft=True)
+            threading.Thread(target=self._abschnitt_reparieren, args=(gen, a, k, start, ende), daemon=True).start()
+
+    def _abschnitt_reparieren(self, gen, a, k, start, ende):
+        """Hintergrund-Thread: Abschnitt k mit chirp_3 (gleiche Engine und Phrasen wie der Endtext) + Fehlhör-Liste."""
+        text = None
+        try:
+            pcm = a.samples()
+            token = _get_stt_access_token()
+            roh = _chirp3_worker(pcm[start:ende], self.samplerate, 'eu', token) if (pcm is not None and token) else None
+            text = apply_misheard(roh.strip()) if roh and roh.strip() else None
+        except Exception:
+            log_exception("[SPEECHMIKE] Reparatur des Abschnitts fehlgeschlagen — Live-Text bleibt stehen")
+        self._ui(gen, lambda: self._abschnitt_fertig(gen, k, text))
+
+    def _abschnitt_fertig(self, gen, k, text):
+        if self._job.ereignis("segment_fertig", gen) is None:
+            return  # Endtext steht schon oder alter Lauf
+        if text:
+            self._abschnitte[k] = text
+            log(f"[SPEECHMIKE] Abschnitt {k + 1} repariert ({len(text)} Zeichen).")
+        self._diktat_anzeigen()
+        self._repariert_anzeigen()
+
+    def _fortsetzen(self):
+        if self._job.ereignis("record") != "weiter":
+            return
+        if self._aufnahme is not None:
+            self._aufnahme.fortsetzen()
+        log("[SPEECHMIKE] Weiter diktieren (gleiche Aufnahme).")
+        self.update_status("RECORDING", "recording")
+        if self._einfuegen_ziel is not None:
+            self.status_badge.configure(text="   ●  Diktat wird an der Cursor-Stelle eingefügt   ")
+        self._repariert_anzeigen()
+
+    def _diktat_anzeigen(self):
+        text = _seg.anzeige(self._basis, self._abschnitte, self._live)
+        self.transcript_text.delete("1.0", "end")
+        self.transcript_text.insert("1.0", text)
+
+    def _repariert_anzeigen(self, laeuft=False):
+        lbl = getattr(self, "repariert_label", None)
+        if lbl is None:
+            return
+        if laeuft:
+            lbl.configure(text="Repariere bisheriges Diktat …", text_color=TEXT_MUTED)
+        elif any(self._abschnitte) and self._job.zustand in (_js.RECORDING, _js.PAUSED):
+            lbl.configure(text="✓ bis zur Pause repariert", text_color=READY_GREEN)
+        else:
+            lbl.configure(text="")
+
+    def _sm_sitzung_leeren(self):
+        self._basis, self._abschnitte, self._live = "", [], {}
+        self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
+        self._repariert_anzeigen()
+
+    def _felder_leeren(self):
+        """Nach EOL: alles leeren — bereit für den nächsten Patienten."""
+        self.final_transcript = self.stream_transcript = self.stream_interim = ""
+        self._einfuegen_ziel = None
+        self._sm_sitzung_leeren()
+        self.transcript_text.delete("1.0", "end")
+        self.result_text.delete("1.0", "end")
+        self.update_status("READY", "ready")
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self.level_indicator.configure(width=0)
+
+    def _kurzhinweis(self, text, ms=4000):
+        """Kurzer Hinweis in der Statuszeile (SpeechMike), danach wieder der normale Status."""
+        self._hinweis_nr = getattr(self, "_hinweis_nr", 0) + 1
+        nr, raw = self._hinweis_nr, self._status_raw
+        self._letzter_hinweis = text
+        log(f"[HINWEIS] {text}")
+        self.status_badge.configure(text=f"   ●  {text}   ")
+        self.after(ms, lambda: self._hinweis_nr == nr and self._status_raw == raw and self.update_status(raw, "ready"))
+
+    def _led_aktualisieren(self):
+        smk = getattr(self, "_speechmike", None)
+        if smk is not None:
+            smk.led(_sm.led_fuer(self._job.zustand, getattr(self, "_befund_wartet", False)))
+
+    def _fenster_merken(self):
+        try:
+            self._fensterziel.merken()
+        except Exception:
+            pass
+        self.after(500, self._fenster_merken)
+
+    def _schliessen(self):
+        """Fenster schließen: SpeechMike-LED aus, Lese-Thread beenden."""
+        try:
+            if getattr(self, "_speechmike", None) is not None:
+                self._speechmike.beenden()
+        except Exception:
+            pass
+        self.destroy()
+
+    def speechmike_diagnose(self):
+        smk = getattr(self, "_speechmike", None)
+        if smk is None:
+            info = "SpeechMike-Unterstützung ist nicht gestartet — Details in rakscribe.log."
+        else:
+            zeilen = list(smk.verlauf)[-15:]
+            info = (f"Gerät: {smk.verbunden or 'nicht verbunden (Anstecken genügt)'}\nLED: {smk.led_soll}\n\n"
+                    "Letzte Tasten:\n" + ("\n".join(zeilen) or "(noch keine)") + "\n\n" + "\n".join(HILFE_SPEECHMIKE)
+                    + f"\n\nAlle Tasten mit Rohdaten: {LOG_FILE_PATH} (Zeilen [SPEECHMIKE]).")
+        messagebox.showinfo("SpeechMike-Diagnose", info)
 
     def register_hotkey(self):
         # Selbsttest ruft dieselben Handler (auf GitHub-Windows erreichen künstliche Tasten den Hook nicht)

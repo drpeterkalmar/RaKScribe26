@@ -97,6 +97,43 @@ a.start(); a.warten()
 check("Mikrofon-Fehler → on_capture_fehler, Aufnahme beendet", len(ev2["capture"]) == 1 and not a.laeuft)
 check("… keine Samples", a.samples() is None)
 
+# 5. v3.8.0 SpeechMike-Pause: Mikrofon offen, Audio in der Pause verworfen, Live-Anzeige je Abschnitt eigene Sitzung
+a, ev = baue(S.streaming_stub(antworten=[("Knie", False)] * 400))
+a.start()
+warte(lambda: len(a.puffer) >= 20)
+k, s0, e0 = a.pausieren()
+n_pause = len(a.puffer)
+check("pausieren() → Abschnitt 0, Grenzen in Samples", (k, s0) == (0, 0) and e0 == 1600 * n_pause, f"{(k, s0, e0)} / {n_pause}")
+time.sleep(0.15)
+check("in der Pause kommt nichts in den Puffer (Mikrofon offen, Audio verworfen)", len(a.puffer) == n_pause and a.laeuft
+      and a.capture_thread.is_alive(), f"{len(a.puffer)} vs {n_pause}")
+check("Streaming-Sitzung des Abschnitts endet, in der Pause keine neue", warte(lambda: a._queue == [] and a.stream_sessions == 1)
+      and (time.sleep(0.2) or a.stream_sessions == 1), str(a.stream_sessions))
+a.fortsetzen()
+check("fortsetzen() → Abschnitt 1, neue Streaming-Sitzung für Abschnitt 1",
+      warte(lambda: a.stream_sessions == 2 and a.stream_abschnitt == 1) and a.abschnitt == 1, f"{a.stream_sessions}/{a.stream_abschnitt}")
+warte(lambda: len(a.puffer) >= n_pause + 20)
+k1, s1, e1 = a.pausieren()
+check("zweite Pause → Abschnitt 1 beginnt am Ende von Abschnitt 0", (k1, s1) == (1, e0) and e1 == 1600 * len(a.puffer),
+      f"{(k1, s1, e1)}")
+a.fortsetzen()
+time.sleep(0.1)
+a.stop(); a.warten()
+check("jedes aufgenommene Sample genau einmal an die Live-Anzeige", sum(ev["pakete"]) == 1600 * len(a.puffer),
+      f"{sum(ev['pakete'])} vs {1600 * len(a.puffer)}")
+pcm = a.samples()
+check("samples() = nur die aufgenommenen Abschnitte, lückenlos (für chirp_3 über die ganze Aufnahme)",
+      pcm is not None and len(pcm) == 1600 * len(a.puffer) and len(a.puffer) < ev["angenommen"], f"{len(a.puffer)} / {ev['angenommen']}")
+check("Streaming-Thread beendet sich nach Pause/Weiter/Stopp", not a.stream_thread.is_alive() and a.stream_sessions == 3,
+      str(a.stream_sessions))
+a, ev = baue(S.streaming_stub())
+a.start()
+warte(lambda: len(a.puffer) >= 5)
+a.pausieren()
+a.stop(); a.warten()
+check("Stopp während der Pause: Threads enden, Puffer bleibt", not a.stream_thread.is_alive() and not a.capture_thread.is_alive()
+      and len(a.puffer) >= 5)
+
 src = (HERE.parents[1] / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 check("EXE nutzt aufnahme.Aufnahme, kein gemeinsamer with-Block mehr",
       "_af.Aufnahme(" in src and "def record(" not in src and "with self.stream:" not in src)

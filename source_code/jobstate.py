@@ -10,19 +10,27 @@ Regeln (v3.2.3, Peter 06.10.):
 - F9 (reset) während der Verarbeitung → Lauf abbrechen (Ergebnis wird verworfen), sofort wieder bereit.
 - Streaming-Text (Live-Anzeige) wird nur angenommen, solange der chirp_3-Endtext noch nicht feststeht.
 - v3.6.0: „Befund aus Text“ (getippter/eingefügter Diktattext) startet nur aus READY/ERROR einen neuen Lauf.
+- v3.8.0 (SpeechMike, Peter 11.10. Nachtrag 3): neuer Zustand PAUSED (Mikrofon nimmt nichts auf, Diktat bleibt).
+  record = Start/Pause/Weiter, stop = Pause, ins = Aufnahme beenden bzw. Befund aus dem Diktat-Feld (ohne Einfügen),
+  eol = sichtbaren Befund weiterschicken (nur in Ruhe). F10 im Pause-Zustand = Stopp wie bei laufender Aufnahme.
+  Dieselbe Tabelle prüft die Web-App (lauf.ts uiAktion) über tests/offline/speechmike_faelle.txt.
 """
 
 READY = "READY"
 RECORDING = "RECORDING"
+PAUSED = "PAUSED"            # v3.8.0: SpeechMike-Pause (Record/Stop), gleiche Generation wie die Aufnahme
 PROCESSING = "PROCESSING"
 ERROR = "ERROR"
 LOCKED = "LOCKED"
 
 # Ereignisse aus der Oberfläche (ohne Generationsnummer)
-UI_EREIGNISSE = ("toggle", "reset", "text")  # v3.6: "text" = Befund aus getipptem/eingefügtem Text (ohne Aufnahme)
+UI_EREIGNISSE = ("toggle", "reset", "text",  # v3.6: "text" = Befund aus getipptem/eingefügtem Text (ohne Aufnahme)
+                 "record", "stop", "ins", "eol")  # v3.8.0: SpeechMike-Tasten
 # Ereignisse aus Hintergrund-Threads (immer mit Generationsnummer)
 LAUF_EREIGNISSE = ("stream_interim", "stream_final", "chirp_done", "report_done", "report_failed", "kein_text",
-                   "capture_failed")
+                   "capture_failed", "segment_fertig")  # v3.8.0: reparierter Abschnitt nach einer Pause (nur Anzeige)
+_AUFNAHME = (RECORDING, PAUSED)
+_RUHE = (READY, ERROR)
 
 
 class JobState:
@@ -41,19 +49,27 @@ class JobState:
         if name == "toggle":
             if z in (PROCESSING, LOCKED):
                 return None
-            return "stop" if z == RECORDING else "start"
+            return "stop" if z in _AUFNAHME else "start"
         if name == "reset":
-            return {RECORDING: "stop_und_reset", PROCESSING: "abbrechen"}.get(z, "reset")
+            return {RECORDING: "stop_und_reset", PAUSED: "stop_und_reset", PROCESSING: "abbrechen"}.get(z, "reset")
         if name == "text":  # v3.6.0: nur aus der Ruhe (nicht während Aufnahme/Verarbeitung, nicht gesperrt)
-            return "text_start" if z in (READY, ERROR) else None
+            return "text_start" if z in _RUHE else None
+        if name == "record":  # v3.8.0: SpeechMike Record = Start / Pause / Weiter
+            return {READY: "start", ERROR: "start", RECORDING: "pause", PAUSED: "weiter"}.get(z)
+        if name == "stop":  # Stop-Taste/Schieber = Pause
+            return "pause" if z == RECORDING else None
+        if name == "ins":  # INS = Befund rechts erstellen: Aufnahme beenden bzw. aus dem Diktat-Feld (Ruhe)
+            return "stop" if z in _AUFNAHME else ("text_start" if z in _RUHE else None)
+        if name == "eol":  # EOL = weiterschicken, nur in Ruhe (ob ein fertiger Befund dasteht, prüft die Oberfläche)
+            return "senden" if z in _RUHE else None
         if name not in LAUF_EREIGNISSE:
             raise ValueError(f"unbekanntes Ereignis {name!r}")
         if gen is None or gen != self.gen:
             return None
-        if name in ("stream_interim", "stream_final"):
-            return "anzeigen" if z in (RECORDING, PROCESSING) and not self.text_fix else None
+        if name in ("stream_interim", "stream_final", "segment_fertig"):
+            return "anzeigen" if z in (RECORDING, PAUSED, PROCESSING) and not self.text_fix else None
         if name == "capture_failed":
-            return "fehler" if z == RECORDING else None
+            return "fehler" if z in _AUFNAHME else None
         if z != PROCESSING:
             return None
         return {"chirp_done": "uebernehmen", "report_done": "einfuegen", "report_failed": "fehler",
@@ -71,12 +87,16 @@ class JobState:
         if aktion == "start":
             self.gen += 1
             self.zustand, self.text_fix = RECORDING, False
+        elif aktion == "pause":
+            self.zustand = PAUSED
+        elif aktion == "weiter":
+            self.zustand = RECORDING
         elif aktion == "stop":
             self.zustand = PROCESSING
         elif aktion == "text_start":  # neuer Lauf direkt in der Verarbeitung, Endtext steht schon fest
             self.gen += 1
             self.zustand, self.text_fix = PROCESSING, True
-        elif name == "reset":
+        elif name == "reset" or aktion == "senden":  # senden: Befund ist weg, Felder werden geleert
             self.gen += 1  # laufende Aufnahme/Verarbeitung wird ungültig
             self.text_fix = False
             if self.zustand != LOCKED:

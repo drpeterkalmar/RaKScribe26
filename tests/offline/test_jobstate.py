@@ -96,11 +96,14 @@ check("Selbsttest-Simulation: PROCESSING, F10 ignoriert, F9 bricht ab",
 
 # Verdrahtung in RaKScribe.py (die EXE selbst läuft nur unter Windows)
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("toggle_recording fragt die Zustandsmaschine", 'aktion = self._job.vorschau("toggle")' in src and 'self._job.ereignis("toggle")' in src)
+check("toggle_recording fragt die Zustandsmaschine (v3.8.0: gemeinsamer Start/Stopp-Weg mit dem SpeechMike)",
+      'aktion = self._job.vorschau("toggle")' in src and 'self._aufnahme_umschalten("toggle", aktion)' in src
+      and "self._job.ereignis(ereignis)" in src)
 check("reset_dictation fragt die Zustandsmaschine", 'aktion = self._job.ereignis("reset")' in src)
 check("Streaming nur in stream_transcript, nie in final_transcript",
       "self.final_transcript +=" not in src and "self.stream_transcript += transcript" in src)
-check("Streaming-Callback trägt Generationsnummer", "self.update_interim_text, text, is_final, gen)" in src)
+check("Streaming-Callback trägt Generationsnummer (+ Abschnitt der Sitzung, v3.8.0)",
+      "self.update_interim_text, text, is_final, gen, a.stream_abschnitt)" in src)
 check("Einfügen nur für aktuellen Lauf", 'self._job.ereignis("report_done", gen) is None' in src
       and "self._job.aktuell(gen) and self._einfuegen()" in src)
 check("Selbsttest kennt simulate_processing (Fall D)", '"simulate_processing"' in src)
@@ -119,6 +122,13 @@ j = js.JobState(); j.ereignis("text"); j.ereignis("report_failed", 1)
 check("Text→Befund nach Fehler wieder möglich", j.ereignis("text") == "text_start" and j.gen == 2)
 j = js.JobState(); j.ereignis("text"); j.ereignis("reset")
 check("F9 bricht Text-Lauf ab (neue Generation, Bereit)", j.zustand == js.READY and j.gen == 2)
+# v3.8.0: SpeechMike-Pause — Streaming-Nachzügler und reparierte Abschnitte nur bis zum Endtext
+j = js.JobState(); j.ereignis("record"); j.ereignis("record")
+check("Pause: Streaming-Nachzügler + reparierter Abschnitt werden angezeigt", j.zustand == js.PAUSED
+      and j.ereignis("stream_final", j.gen) == "anzeigen" and j.ereignis("segment_fertig", j.gen) == "anzeigen")
+j.ereignis("ins"); j.ereignis("chirp_done", j.gen)
+check("reparierter Abschnitt NACH dem Endtext → verworfen", j.ereignis("segment_fertig", j.gen) is None)
+check("reparierter Abschnitt aus altem Lauf → verworfen", j.ereignis("segment_fertig", j.gen - 1) is None)
 wt = (ROOT / "tests" / "windows" / "exe_ui_test.py").read_text(encoding="utf-8")
 check("Windows-UI-Test hat Fall D (F10 während Verarbeitung)", "simulate_processing" in wt and '"D_verarbeitung"' in wt)
 

@@ -3,6 +3,27 @@
 // oder überholter Lauf schreibt weder Transkript noch Befund und kopiert nichts in die Zwischenablage.
 import { istAbbruch } from './net.ts';
 
+// v3.8.0 (SpeechMike): Zustände und Bedien-Ereignisse wie die EXE-Zustandsmaschine (source_code/jobstate.py vorschau,
+// gemeinsame Tabelle tests/offline/speechmike_faelle.txt). toggle = F10, reset = F9/F1, text = „Befund aus Text“,
+// record/stop/ins/eol = SpeechMike-Tasten. Rückgabe = Aktion oder null (ignorieren).
+export type AppZustand = 'READY' | 'RECORDING' | 'PAUSED' | 'PROCESSING' | 'ERROR' | 'LOCKED';
+export type UiEreignis = 'toggle' | 'reset' | 'text' | 'record' | 'stop' | 'ins' | 'eol';
+export type UiAktion = 'start' | 'stop' | 'pause' | 'weiter' | 'reset' | 'stop_und_reset' | 'abbrechen' | 'text_start' | 'senden';
+
+export function uiAktion(z: AppZustand, ereignis: UiEreignis): UiAktion | null {
+  const ruhe = z === 'READY' || z === 'ERROR';
+  const aufnahme = z === 'RECORDING' || z === 'PAUSED';
+  switch (ereignis) {
+    case 'toggle': return z === 'PROCESSING' || z === 'LOCKED' ? null : aufnahme ? 'stop' : 'start';
+    case 'reset': return aufnahme ? 'stop_und_reset' : z === 'PROCESSING' ? 'abbrechen' : 'reset';
+    case 'text': return ruhe ? 'text_start' : null;
+    case 'record': return ruhe ? 'start' : z === 'RECORDING' ? 'pause' : z === 'PAUSED' ? 'weiter' : null;
+    case 'stop': return z === 'RECORDING' ? 'pause' : null;
+    case 'ins': return aufnahme ? 'stop' : ruhe ? 'text_start' : null;
+    case 'eol': return ruhe ? 'senden' : null;
+  }
+}
+
 export class LaufVerwaltung {
   aktuelleId = 0;
   private laufend: Lauf | null = null;

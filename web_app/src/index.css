@@ -90,6 +90,9 @@ kbd {
 .state-processing .state-dot { background: var(--warn); animation: blink 1.2s ease-in-out infinite; }
 .state-locked { color: var(--text-muted); }
 .state-locked .state-dot { background: var(--text-faint); }
+/* v3.8.0 SpeechMike-Pause: rot, langsam blinkend (wie die Record-LED) */
+.state-paused { border-color: rgba(239, 68, 68, 0.35); background: var(--rec-soft); }
+.state-paused .state-dot { background: var(--rec); animation: blink 2s steps(2, start) infinite; }
 
 .topbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
 .key-chip {
@@ -98,6 +101,7 @@ kbd {
 }
 .key-chip.ok { background: var(--ok-soft); color: var(--ok); }
 .key-chip.missing { background: var(--warn-soft); color: var(--warn); }
+.key-chip.sm-chip { background: var(--accent-soft); color: var(--accent); }  /* v3.8.0: SpeechMike verbunden */
 .mic-select {
   max-width: 230px; min-width: 0; height: 34px; padding: 0 10px;
   background: var(--bg-input); border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -126,6 +130,8 @@ kbd {
 .menu-item.danger { color: #ff7b7b; }
 .menu-sep { height: 1px; background: var(--line); margin: 6px 4px; }
 .menu-foot { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px 6px; font-size: 12px; color: var(--text-faint); }
+.menu-item.menu-static { cursor: default; color: var(--ok); }
+.menu-item.menu-static:hover { background: none; }
 
 /* ── Workspace ────────────────────────────────────────────── */
 .workspace {
@@ -284,3 +290,7 @@ kbd {
 .gate-drop span { color: var(--text); font-size: 14px; }
 .gate-drop small { color: var(--text-faint); font-size: 12px; }
 @media (max-width: 900px) { .report-view { min-height: 260px; font-size: 16px; } .gate-drop { display: none; } }
+
+/* v3.8.0: nach einer SpeechMike-Pause ist das bisher Diktierte repariert (chirp_3 + Fehlhör-Liste) */
+.repaired { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ok); white-space: nowrap; }
+.repaired.muted { color: var(--text-muted); font-weight: 400; }

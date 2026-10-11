@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLatest } from './useLatest.ts';
 import {
   Mic, MicOff, Copy, Check, Upload, Download, Sparkles, X, KeyRound, Menu, Trash2,
-  RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines, WandSparkles
+  RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines, WandSparkles, Headset, CirclePause
 } from 'lucide-react';
 // Umbau Schritt 20 (Gutachten P2-13): Vorlagen nur noch EINMAL im Repo-Root (wie misheard_words.json)
 import templatesData from '../../templates.json';
@@ -27,7 +27,10 @@ import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
 import { befundAusDiktat, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
 import { einfuegen, markdownOffset } from './einfuegen.ts';
 import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
-import { LaufVerwaltung, befundLauf, type Lauf, type BefundUi } from './lauf.ts';
+import { LaufVerwaltung, befundLauf, uiAktion, type Lauf, type BefundUi, type AppZustand } from './lauf.ts';
+// v3.8.0 (Peter 11.10.): SpeechMike-Tasten + LEDs direkt über WebHID (Sync: source_code/speechmike.py)
+import { SpeechMikeVerbindung, webHid, BELEGUNG, ledFuer, sendefaehig } from './speechmike.ts';
+import { diktatAnzeige, type Abschnitt } from './segmente.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
 
@@ -229,7 +232,7 @@ export default function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>(() => localStorage.getItem('selected_audio_device_id') || '');
 
   // Application States
-  const [status, setStatus] = useState<'ready' | 'recording' | 'processing' | 'copied'>('ready');
+  const [status, setStatus] = useState<'ready' | 'recording' | 'paused' | 'processing' | 'copied'>('ready');  // v3.8.0: paused = SpeechMike-Pause
   const statusRef = useLatest(status);
   const [statusText, setStatusText] = useState<string>('Bereit');
   const [transcript, setTranscript] = useState<string>('');
@@ -243,7 +246,7 @@ export default function App() {
   const [pendingCopyText, setPendingCopyText] = useState<string>('');
 
   // Auto-copy helper with fallback
-  const copyTextToClipboard = async (text: string): Promise<boolean> => {
+  const copyTextToClipboard = async (text: string, nachholen = true): Promise<boolean> => {
     if (!text) return false;
     try {
       if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
@@ -261,7 +264,7 @@ export default function App() {
       return true;
     } catch (err) {
       console.warn("Auto-copy failed, saving for when tab is focused:", err);
-      setPendingCopyText(text); // Save for later when window is focused
+      if (nachholen) setPendingCopyText(text); // Save for later when window is focused (EOL: nicht nachholen, Hinweis)
       return false;
     }
   };
@@ -302,6 +305,19 @@ export default function App() {
   const pendingPromisesRef = useRef<Promise<string>[]>([]);
   const activeRequestsCountRef = useRef<number>(0);
   const actualSampleRateRef = useRef<number>(16000);
+  // v3.8.0 SpeechMike: Pause (Audio verwerfen, Mikrofon bleibt offen), reparierte Abschnitte, Nachdiktat, Kontrollschritt
+  const pausiertRef = useRef<boolean>(false);
+  const aufnahmeOffenRef = useRef<boolean>(false);     // Aufnahme läuft oder pausiert (Reparatur darf noch anzeigen)
+  const abschnitteRef = useRef<Abschnitt[]>([]);
+  const laufendVonRef = useRef<number>(0);              // erster Live-Chunk des laufenden Abschnitts
+  const segStartRef = useRef<number>(0);                // erstes Sample des laufenden Abschnitts
+  const basisRef = useRef<string>('');                  // bisheriges Diktat (Nachdiktat)
+  const gesendetRef = useRef<boolean>(false);           // sichtbarer Befund wurde schon automatisch kopiert (F10)
+  const [befundWartet, setBefundWartet] = useState<boolean>(false);  // INS-Ergebnis wartet auf EOL (LED grün)
+  const [repariert, setRepariert] = useState<'' | 'laeuft' | 'fertig'>('');
+  const [smVerbunden, setSmVerbunden] = useState<string | null>(null);
+  const [hidVerfuegbar] = useState<boolean>(() => webHid() !== null);
+  const smRef = useRef<SpeechMikeVerbindung | null>(null);
 
 
   // Schlüssel aus Datei/Drag & Drop/Einfügen übernehmen (loadPraxisKey meldet per Event) — Umbau Schritt 19:
@@ -506,14 +522,24 @@ export default function App() {
     }
     return nurTextRef.current ? Promise.resolve(nurTextAusDiktat(text, ctx)) : befundAusDiktat(text, ctx);
   };
-  const befundUi = (): BefundUi => ({
+  // v3.8.0: kontrolle = SpeechMike-INS → Ergebnis nur anzeigen, NICHT kopieren (EOL schickt es weiter)
+  const befundUi = (kontrolle = false): BefundUi => ({
     transkript: setTranscript,
     befund: setStructuredReport,
     status: setStatusText,
-    fertig: () => { setStatus('ready'); setStatusText('Bereit'); },
+    fertig: kontrolle
+      ? () => { setStatus('ready'); setStatusText('Befund prüfen – EOL schickt ihn weiter'); setBefundWartet(true); }
+      : () => { setStatus('ready'); setStatusText('Bereit'); },
     fehler: (meldung: string) => { setStatus('ready'); setStatusText('Fehler bei der Verarbeitung.'); alert(meldung); },
-    kopieren: copyTextToClipboard,
+    kopieren: kontrolle ? () => undefined : async (report: string) => {
+      const ok = await copyTextToClipboard(report);
+      if (ok) gesendetRef.current = true;
+      return ok;
+    },
   });
+  // Diktat-Feld während der Aufnahme: bisheriges Diktat + reparierte Abschnitte + Live-Chunks (src/segmente.ts)
+  const anzeigeAktualisieren = () =>
+    setTranscript(diktatAnzeige(basisRef.current, abschnitteRef.current, chunkTranscriptsRef.current, laufendVonRef.current));
 
   // Helper function to process the next chunk of recorded audio (Live-Anzeige)
   const processNextAudioChunk = (lauf: Lauf) => {
@@ -534,8 +560,8 @@ export default function App() {
       const p = transcribeAudio(wavBlob, false, sttKontext(lauf)).then(text => {
         if (!lauf.aktuell()) return '';
         chunkTranscriptsRef.current[chunkIdx] = text.trim();
-        const fullText = chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
-        setTranscript(fullText);
+        if (aufnahmeOffenRef.current) anzeigeAktualisieren();  // v3.8.0: ohne Pause = alle Chunks wie bisher
+        else setTranscript(chunkTranscriptsRef.current.filter(t => t.trim()).join(' '));
         return text.trim();
       }).catch(err => {
         if (!istAbbruch(err)) console.error("Fehler bei Chunk-Transkription:", err);
@@ -575,8 +601,8 @@ export default function App() {
     }
   };
 
-  // Start Audio Recording
-  const startRecording = async () => {
+  // Start Audio Recording — v3.8.0: basis = bisheriges Diktat (SpeechMike-Nachdiktat; F10/Knopf: leer wie bisher)
+  const startRecording = async (basis = '') => {
     try {
       if (!vertexApiKey) {
         alert("Fehler: Bitte tragen Sie Ihren Vertex AI API-Key in den Einstellungen ein!");
@@ -604,8 +630,18 @@ export default function App() {
 
       const lauf = laeufeRef.current.neu();
       aufnahmeLaufRef.current = lauf;
-      setTranscript('');
-      if (!einfuegeZielRef.current) setStructuredReport('');  // v3.5.0: an der Cursor-Stelle → Befund bleibt
+      basisRef.current = basis;
+      abschnitteRef.current = [];
+      laufendVonRef.current = 0;
+      segStartRef.current = 0;
+      pausiertRef.current = false;
+      aufnahmeOffenRef.current = true;
+      gesendetRef.current = false;
+      setBefundWartet(false);
+      setRepariert('');
+      setTranscript(basis);
+      // v3.5.0: an der Cursor-Stelle → Befund bleibt; v3.8.0: Nachdiktat → alter Befund bleibt bis zum nächsten INS
+      if (!einfuegeZielRef.current && !basis) setStructuredReport('');
       setStatus('recording');
       setStatusText(einfuegeZielRef.current ? 'Aufnahme läuft — wird an der Cursor-Stelle im Befund eingefügt' : 'Aufnahme läuft...');
       pufferRef.current = new Int16Puffer();
@@ -649,6 +685,7 @@ export default function App() {
       processor.connect(audioContext.destination);
 
       processor.onaudioprocess = (e) => {
+        if (pausiertRef.current) { micLevelRef.current = 0; return; }  // v3.8.0: Pause — Mikrofon offen, Audio verwerfen
         const inputData = e.inputBuffer.getChannelData(0);
         // Umbau Schritt 9: sofort auf 16 kHz Int16 — nur das landet im Puffer
         if (resamplerRef.current) pufferRef.current.anhaengen(resamplerRef.current.push(inputData));
@@ -680,10 +717,13 @@ export default function App() {
     }
   };
 
-  // Stop Audio Recording & Process Result
-  const stopRecording = async () => {
-    if (status !== 'recording') return;
+  // Stop Audio Recording & Process Result — v3.8.0: auch aus der Pause; kontrolle = SpeechMike-INS (nicht kopieren)
+  const stopRecording = async (kontrolle = false) => {
+    if (status !== 'recording' && status !== 'paused') return;
     const lauf = aufnahmeLaufRef.current ?? laeufeRef.current.neu();
+    aufnahmeOffenRef.current = false;
+    pausiertRef.current = false;
+    setRepariert('');
 
     setStatus('processing');
     setStatusText('Verarbeite Audio...');
@@ -699,7 +739,11 @@ export default function App() {
     processNextAudioChunk(lauf);
     audioStoppen();
 
-    const chunkText = () => chunkTranscriptsRef.current.filter(t => t.trim()).join(' ');
+    // Rettung ohne Volltranskription: Live-Chunks bzw. reparierte Abschnitte (ohne Pause = alle Chunks wie bisher)
+    const chunkText = () => diktatAnzeige('', abschnitteRef.current, chunkTranscriptsRef.current, laufendVonRef.current);
+    // v3.8.0 Nachdiktat: links steht das Gesamtdiktat (bisher + neu); mit Cursor im Befund wird nur das NEUE eingefügt
+    const basis = basisRef.current;
+    const mitBasis = (t: string) => [basis, t].map(x => x.trim()).filter(Boolean).join(' ');
     const ziel = einfuegeZielRef.current;  // v3.5.0: gemerkte Cursor-Stelle (null = normaler Befund)
     einfuegeZielRef.current = null;
     await befundLauf(lauf, {
@@ -737,12 +781,54 @@ export default function App() {
         }
         // Gutachten P2-10: ohne verwertbaren Text die echte Google-Meldung zeigen statt „kein Text erkannt“
         if (!finalRawText.trim() && sttFehler) throw sttFehler;
-        return finalRawText;
+        return ziel ? finalRawText : mitBasis(finalRawText);  // v3.8.0: Nachdiktat hängt an (Cursor-Einfügen: nur neu)
       },
       korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
       befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal), ziel),
-    }, befundUi(), { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
+    }, { ...befundUi(kontrolle), transkript: (t: string) => setTranscript(ziel ? mitBasis(t) : t) },
+    { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
+  };
+
+  // v3.8.0 SpeechMike-Pause: Audio ab jetzt verwerfen (Mikrofon bleibt offen → „Weiter“ ohne Anlaufzeit) und den
+  // Abschnitt seit Start/Weiter sofort reparieren (chirp_3 + Fehlhör-Liste) — NUR für die Anzeige; der Endtext kommt
+  // beim Beenden wie bisher aus der ganzen Aufnahme (Messung 11.10., docs/benchmarks/pause_segmente_2026-10-11.txt).
+  const pausieren = () => {
+    const lauf = aufnahmeLaufRef.current;
+    if (!lauf || statusRef.current !== 'recording') return;
+    pausiertRef.current = true;
+    if (resamplerRef.current) {
+      pufferRef.current.anhaengen(resamplerRef.current.flush());
+      resamplerRef.current = new Resampler16k(actualSampleRateRef.current);
+    }
+    processNextAudioChunk(lauf);  // letzter Live-Chunk dieses Abschnitts
+    const start = segStartRef.current, ende = pufferRef.current.laenge;
+    const abschnitt: Abschnitt = { chunkVon: laufendVonRef.current, chunkBis: chunkTranscriptsRef.current.length, text: null };
+    abschnitteRef.current = [...abschnitteRef.current, abschnitt];
+    laufendVonRef.current = chunkTranscriptsRef.current.length;
+    setStatus('paused');
+    setStatusText('Pause – Record: weiter · INS: Befund erstellen');
+    anzeigeAktualisieren();
+    if (ende - start < 8000) return;  // unter 0,5 s: nichts zu reparieren
+    setRepariert('laeuft');
+    transcribeAudio(sliceWav(pufferRef.current.ansicht(), start, ende), true, sttKontext(lauf)).then(t => {
+      if (!lauf.aktuell() || !aufnahmeOffenRef.current) return;  // Endtext läuft schon oder neuer Lauf
+      const text = applyMisheard(t.trim(), MISHEARD_COMPILED);
+      if (text) abschnitt.text = text;
+      anzeigeAktualisieren();
+      setRepariert(text ? 'fertig' : '');
+    }).catch((err: unknown) => {
+      if (!istAbbruch(err)) console.warn('[SPEECHMIKE] Reparatur des Abschnitts fehlgeschlagen — Live-Text bleibt:', fehlermeldung(err));
+      if (lauf.aktuell() && aufnahmeOffenRef.current) setRepariert('');
+    });
+  };
+
+  const fortsetzen = () => {
+    if (statusRef.current !== 'paused') return;
+    segStartRef.current = pufferRef.current.laenge;
+    pausiertRef.current = false;
+    setStatus('recording');
+    setStatusText(einfuegeZielRef.current ? 'Aufnahme läuft — wird an der Cursor-Stelle im Befund eingefügt' : 'Aufnahme läuft...');
   };
 
   // Manual Copy Result
@@ -754,13 +840,15 @@ export default function App() {
   // Audio File Upload Handler — feeds uploaded audio through the same STT + Gemini pipeline
   const handleAudioUpload = async (file: File) => {
     // Umbau Schritt 8 (Gutachten P2-7): keine zweite Kette parallel zu Aufnahme oder Verarbeitung
-    if (statusRef.current === 'processing' || statusRef.current === 'recording') {
-      setStatusText(statusRef.current === 'recording'
+    if (statusRef.current === 'processing' || statusRef.current === 'recording' || statusRef.current === 'paused') {
+      setStatusText(statusRef.current !== 'processing'
         ? 'Bitte zuerst die Aufnahme beenden — Audio-Datei nicht übernommen.'
         : 'Bitte warten — es wird gerade ein Befund erstellt. Audio-Datei nicht übernommen.');
       return;
     }
     const lauf = laeufeRef.current.neu();
+    gesendetRef.current = false;
+    setBefundWartet(false);
     setStatus('processing');
     setStatusText('Verarbeite hochgeladenes Audio...');
     setTranscript('');
@@ -783,19 +871,32 @@ export default function App() {
   // v3.6.0 (Peter 07.10.): getippten/eingefügten Text im Diktat-Feld ohne Aufnahme strukturieren (Knopf bzw.
   // Strg+Enter). Gleiche Kette wie die EXE (befund_aus_text): Fehlhör-Liste → Befund; kein Call 0 (getippter Text hat
   // keine Spracherkennungsfehler), immer strukturiert — auch bei „Nur Text“.
-  const befundAusText = async () => {
-    if (statusRef.current === 'processing' || statusRef.current === 'recording' || !keysReadyRef.current) return;
+  // v3.8.0: kontrolle = SpeechMike-INS ohne Aufnahme → Ergebnis nur anzeigen (EOL schickt weiter); bei „Nur Text“ die
+  // Nur-Text-Kette (Fehlhör-Liste → Call 0 → Satz-Bausteine, Peter 11.10. Nachtrag 4). Knopf/Strg+Enter wie bisher.
+  const befundAusText = async (kontrolle = false) => {
+    if (statusRef.current === 'processing' || statusRef.current === 'recording' || statusRef.current === 'paused'
+      || !keysReadyRef.current) return;
     const text = transcript.trim();
-    if (!text) { setStatusText('Bitte zuerst den Diktattext links eintippen oder einfügen.'); return; }
+    if (!text) {
+      setStatusText(kontrolle ? 'Kein Diktat – erst Record drücken' : 'Bitte zuerst den Diktattext links eintippen oder einfügen.');
+      return;
+    }
     const lauf = laeufeRef.current.neu();
     einfuegeZielRef.current = null;
+    gesendetRef.current = false;
+    setBefundWartet(false);
     setStatus('processing');
     setStructuredReport('');
+    const nurTextKette = kontrolle && nurTextRef.current;
     await befundLauf(lauf, {
       transkribieren: async () => text,
-      korrigieren: async t => applyMisheard(t, MISHEARD_COMPILED),
-      befundErstellen: (t, signal) => befundAusDiktat(t, genKontext(lauf, signal)),
-    }, befundUi(), { statusVorBefund: 'KI-Strukturierung läuft (Gemini Flash)...', fehlerPrefix: 'Fehler bei der KI-Strukturierung: ' });
+      korrigieren: nurTextKette
+        ? (t, signal) => correctTranscriptionWithGemini(t, genKontext(lauf, signal))
+        : async t => applyMisheard(t, MISHEARD_COMPILED),
+      befundErstellen: nurTextKette
+        ? async t => nurTextAusDiktat(t, genKontext(lauf, lauf.signal))
+        : (t, signal) => befundAusDiktat(t, genKontext(lauf, signal)),
+    }, befundUi(kontrolle), { statusVorBefund: 'KI-Strukturierung läuft (Gemini Flash)...', fehlerPrefix: 'Fehler bei der KI-Strukturierung: ' });
   };
 
   // Reset fields — Umbau Schritt 8: bricht laufende Aufnahme/Verarbeitung ab (nichts wird mehr eingefügt)
@@ -814,6 +915,16 @@ export default function App() {
     pendingPromisesRef.current = [];
     activeRequestsCountRef.current = 0;
     setIsTranscribingChunk(false);
+    // v3.8.0 SpeechMike: Pause, Abschnitte, Nachdiktat, Kontrollschritt verwerfen
+    pausiertRef.current = false;
+    aufnahmeOffenRef.current = false;
+    abschnitteRef.current = [];
+    laufendVonRef.current = 0;
+    segStartRef.current = 0;
+    basisRef.current = '';
+    gesendetRef.current = false;
+    setBefundWartet(false);
+    setRepariert('');
 
     setTranscript('');
     setStructuredReport('');
@@ -827,6 +938,62 @@ export default function App() {
   const handleResetRef = useLatest(handleReset);
   const einfuegeZielMerkenRef = useLatest(einfuegeZielMerken);
   const handleAudioUploadRef = useLatest(handleAudioUpload);
+
+  // ── v3.8.0 SpeechMike (Peter 11.10., Nachtrag 1–4) — gleiche Belegung wie die EXE (speechmike.ts BELEGUNG):
+  // Record = Aufnahme/Pause/Weiter, INS = Befund rechts (nichts kopieren), EOL = sichtbaren Befund weiterschicken +
+  // leeren, Stop = Pause, F1 = Neu, F2 = Nur Text. F10/F9 bleiben unverändert.
+  const appZustand: AppZustand = !keysReady ? 'LOCKED' : status === 'recording' ? 'RECORDING' : status === 'paused' ? 'PAUSED'
+    : status === 'processing' ? 'PROCESSING' : 'READY';
+  // EOL = „alles fertig“. ZENTRALE STELLE (Sync: RaKScribe.py befund_fertig): hier kommt später „Formatierung →
+  // Vidierliste“ hinein. Heute: den SICHTBAREN (ggf. geänderten) Befund kopieren und alles leeren — in fremde Fenster
+  // einfügen kann der Browser nicht. Ohne fertigen Befund (Aufnahme/Pause/Verarbeitung/leer) wird nichts geschickt.
+  const befundFertig = async () => {
+    const text = structuredReportRef.current.trim();
+    if (!uiAktion(appZustand, 'eol') || !sendefaehig(text)) { setStatusText('Erst INS, Befund prüfen, dann EOL'); return; }
+    if (!await copyTextToClipboard(text, false)) {
+      setStatusText('Nicht kopiert – Browserfenster anklicken, dann EOL erneut');
+      return;
+    }
+    handleReset();
+    setStatusText('Befund kopiert – im RIS mit Strg+V einfügen');
+  };
+  const smTaste = (taste: string, gedrueckt: boolean) => {
+    const e = gedrueckt ? BELEGUNG[taste] : undefined;
+    if (!e) return;  // Loslassen und unbelegte Tasten: nur Protokoll (speechmike.ts schreibt die Rohdaten)
+    if (e === 'nur_text') {  // F2 — ein fertiges Ergebnis bleibt stehen, der Wechsel wirkt beim nächsten INS
+      const an = !nurTextRef.current;
+      setNurText(an);
+      localStorage.setItem('nur_text', an ? '1' : '0');
+      setStatusText(an ? 'Nur Text: an' : 'Nur Text: aus (strukturierter Befund)');
+      return;
+    }
+    if (e === 'eol') { void befundFertig(); return; }
+    const aktion = uiAktion(appZustand, e);
+    if (!aktion) {
+      if (appZustand === 'PROCESSING') setStatusText(e === 'ins' ? 'Befund wird schon erstellt' : 'Befund wird erstellt – bitte kurz warten');
+      return;
+    }
+    if (e === 'reset') handleReset();
+    else if (aktion === 'pause') pausieren();
+    else if (aktion === 'weiter') fortsetzen();
+    else if (e === 'record' && aktion === 'start') {
+      einfuegeZielMerken();
+      void startRecording(gesendetRef.current ? '' : transcript.trim());  // Nachdiktat, außer schon kopiert (F10)
+    } else if (e === 'ins' && aktion === 'stop') void stopRecording(true);
+    else if (e === 'ins' && aktion === 'text_start') void befundAusText(true);
+  };
+  const smTasteRef = useLatest(smTaste);
+  useEffect(() => {
+    const hid = webHid();
+    if (!hid) return;  // Safari/iPhone/Firefox: kein WebHID → kein Menüpunkt, nichts bricht
+    const v = new SpeechMikeVerbindung(hid, { taste: (t, g) => smTasteRef.current(t, g), status: setSmVerbunden });
+    smRef.current = v;
+    void v.start();
+    return () => { v.stop(); smRef.current = null; };
+  }, [smTasteRef]);
+  useEffect(() => {
+    smRef.current?.led(ledFuer(appZustand, befundWartet));  // Fehler beim LED-Setzen sind nie fatal
+  }, [appZustand, befundWartet, smVerbunden]);
 
   // Drag & Drop irgendwo ins Fenster
   useEffect(() => {
@@ -863,7 +1030,7 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F10') {
         e.preventDefault();
-        if (statusRef.current === 'recording') {
+        if (statusRef.current === 'recording' || statusRef.current === 'paused') {
           stopRecordingRef.current();
         } else if (statusRef.current === 'ready' && keysReadyRef.current) {
           einfuegeZielMerkenRef.current();
@@ -892,7 +1059,7 @@ export default function App() {
 
 
   // ── v3.0 Render ────────────────────────────────────────────────────────────
-  const stateLabel = !keysReady ? 'Gesperrt' : status === 'recording' ? 'Aufnahme' : status === 'processing' ? 'Verarbeitung' : status === 'copied' ? 'Kopiert' : 'Bereit';
+  const stateLabel = !keysReady ? 'Gesperrt' : status === 'recording' ? 'Aufnahme' : status === 'paused' ? 'Pause' : status === 'processing' ? 'Verarbeitung' : status === 'copied' ? 'Kopiert' : 'Bereit';
   const partialKey = !keysReady && (!!vertexApiKey || !!sttKeyJson);
 
   return (
@@ -915,6 +1082,7 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
+          {smVerbunden && <span className="key-chip sm-chip" title={smVerbunden}><Headset size={14} /> SpeechMike verbunden</span>}
           <span className={`key-chip ${keysReady ? 'ok' : 'missing'}`}>
             {keysReady ? <ShieldCheck size={14} /> : <KeyRound size={14} />}
             {keysReady ? 'Schlüssel aktiv' : 'Kein Schlüssel'}
@@ -956,6 +1124,11 @@ export default function App() {
                     <Trash2 size={16} /> Schlüssel entfernen
                   </button>
                 )}
+                {hidVerfuegbar && (smVerbunden
+                  ? <div className="menu-item menu-static" title={smVerbunden}><Headset size={16} /> SpeechMike verbunden</div>
+                  : <button className="menu-item" role="menuitem" onClick={() => { setMenuOpen(false); void smRef.current?.verbinden(); }}>
+                    <Headset size={16} /> SpeechMike verbinden
+                  </button>)}
                 <div className="menu-sep" />
                 <label className="menu-item" role="menuitemcheckbox" aria-checked={grossSatzanfang}
                   title="Beim Diktieren in den Befund: in einer neuen Zeile oder nach einem Satzende groß beginnen">
@@ -972,7 +1145,9 @@ export default function App() {
                 <div className="menu-foot">
                   <span>STT: {sttKeyJson ? 'Google chirp_3' : '—'}</span>
                   <span>LLM: {vertexApiKey ? 'Gemini 3.5 Flash (EU)' : '—'}</span>
-                  <span><kbd>F10</kbd> Aufnahme · <kbd>F9</kbd> Zurücksetzen</span>
+                  <span><kbd>F10</kbd> Aufnahme · <kbd>F9</kbd> Neu</span>
+                  <span>SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig &amp; weiter</span>
+                  <span>F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)</span>
                 </div>
               </div>
             )}
@@ -985,12 +1160,14 @@ export default function App() {
         <section className="panel">
           <div className="panel-head">
             <h2><Mic size={16} /> Diktat</h2>
-            {status === 'recording' && (
+            {(status === 'recording' || status === 'paused') && (
               <div className="level" aria-label="Pegel">
                 <div className="level-track"><div className="level-bar" ref={levelBarRef} style={{ width: '0%' }} /></div>
               </div>
             )}
             {isTranscribingChunk && <LoaderCircle size={16} className="spin muted" />}
+            {repariert === 'laeuft' && <span className="repaired muted"><LoaderCircle size={13} className="spin" /> repariere …</span>}
+            {repariert === 'fertig' && (status === 'recording' || status === 'paused') && <span className="repaired"><Check size={13} /> bis zur Pause repariert</span>}
           </div>
           <textarea
             value={transcript + (isTranscribingChunk ? ' [..]' : '')}
@@ -1006,18 +1183,18 @@ export default function App() {
             disabled={!keysReady}
           />
           <div className="panel-foot">
-            {status === 'recording' ? (
-              <button onClick={stopRecording} className="btn btn-record is-recording">
-                <MicOff size={18} /> Aufnahme stoppen <kbd>F10</kbd>
+            {status === 'recording' || status === 'paused' ? (
+              <button onClick={() => stopRecording()} className="btn btn-record is-recording">
+                {status === 'paused' ? <CirclePause size={18} /> : <MicOff size={18} />} Aufnahme stoppen <kbd>F10</kbd>
               </button>
             ) : (
-              <button onMouseDown={einfuegeZielMerken} onClick={startRecording} disabled={status === 'processing' || !keysReady} className="btn btn-record">
+              <button onMouseDown={einfuegeZielMerken} onClick={() => startRecording()} disabled={status === 'processing' || !keysReady} className="btn btn-record">
                 <Mic size={18} /> Aufnahme starten <kbd>F10</kbd>
               </button>
             )}
             <button
-              onClick={befundAusText}
-              disabled={status === 'processing' || status === 'recording' || !keysReady || !transcript.trim()}
+              onClick={() => befundAusText()}
+              disabled={status === 'processing' || status === 'recording' || status === 'paused' || !keysReady || !transcript.trim()}
               className="btn btn-ghost"
               title="Getippten oder eingefügten Text zu einem strukturierten Befund machen (Strg+Enter)"
             >
@@ -1025,7 +1202,7 @@ export default function App() {
             </button>
             <button
               onClick={() => audioUploadRef.current?.click()}
-              disabled={status === 'processing' || status === 'recording' || !keysReady}
+              disabled={status === 'processing' || status === 'recording' || status === 'paused' || !keysReady}
               className="btn btn-ghost"
               title="Sprachnachricht oder Audio-Datei hochladen (auch per Drag & Drop)"
             >

@@ -1,0 +1,59 @@
+
+=== mamma_diktat.ogg  18.1 s, Schnitte bei 3.02, 12.63 s
+  ganz #1 (2.0 s): Mammasonographie beidseits thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig, BI-RADS 2.
+  ganz #2 (1.6 s): Mammasonographie beidseits thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig, BI-RADS 2.
+  ganz↔ganz Abweichungen: 0 weg, 0 dazu, 0 ersetzt
+  teile #1 (1.0 + 1.2 + 1.0 s): Mammasonographie beidseits ‖ Thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser. ‖ im Sinne eines Morbus Mondor ansonsten beidseits unauffällig BI-RADS 2
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 0
+  teile #2 (1.0 + 1.1 + 1.1 s): Mammasonographie beidseits ‖ Thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser. ‖ im Sinne eines Morbus Mondor ansonsten beidseits unauffällig BI-RADS 2
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 0
+
+=== schulter_diktat.ogg  18.8 s, Schnitte bei 5.44, 11.04 s
+  ganz #1 (1.6 s): Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig.
+  ganz #2 (1.7 s): Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig.
+  ganz↔ganz Abweichungen: 0 weg, 0 dazu, 0 ersetzt
+  teile #1 (1.1 + 1.0 + 1.2 s): Röntgen und Sonographie des linken Schultergelenkes ‖ Tenosynovitis der langen Bizepssehne ‖ Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig.
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 0
+  teile #2 (1.5 + 1.0 + 1.2 s): Röntgen und Sonographie des linken Schultergelenkes ‖ Tenosynovitis der langen Bizepssehne ‖ Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis, ansonsten unauffällig.
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 0
+
+=== test-audio-bws.ogg  29.8 s, Schnitte bei 15.12, 18.90, 22.99 s
+  ganz #1 (1.8 s): BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante DH4 gegenüber Oberkante DH8, multisegmentale Schmorlsche Impressionen mit Edgren-Vaino-Zeichen als Zeichen für Zustand nach Morbus Scheuermann. Ansonsten unauffällig.
+  ganz #2 (2.0 s): BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante DH4 gegenüber Oberkante DH8, multisegmentale Schmorlsche Impressionen mit Edgren-Vaino-Zeichen als Zeichen für Zustand nach Morbus Scheuermann. Ansonsten unauffällig.
+  ganz↔ganz Abweichungen: 0 weg, 0 dazu, 0 ersetzt
+  teile #1 (1.4 + 0.9 + 0.9 + 1.0 s): BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante Th4 gegenüber Oberkante Th8, multisegmentale ‖ Schmorlsche Impressionen ‖ mit Edgren-Vaino-Zeichen ‖ Also Zeichen für Zustand nach Morbus Scheuermann, ansonsten unauffällig.
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 3
+      replace innen  ganz='dh4' teile='th4'
+      replace GRENZE ganz='dh8' teile='th8'
+      replace GRENZE ganz='als' teile='also'
+  teile #2 (1.5 + 0.9 + 0.9 + 1.1 s): BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante Th4 gegenüber Oberkante Th8, multisegmentale ‖ Schmorlsche Impressionen ‖ mit Edgren-Vaino-Zeichen ‖ Also Zeichen für Zustand nach Morbus Scheuermann, ansonsten unauffällig.
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 3
+      replace innen  ganz='dh4' teile='th4'
+      replace GRENZE ganz='dh8' teile='th8'
+      replace GRENZE ganz='als' teile='also'
+
+=== test-audio.ogg  36.4 s, Schnitte bei 4.25, 14.87, 26.77 s
+  ganz #1 (2.2 s): Befund Nervus ulnaris. Deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} bei Ellbogen Flexion. Aggravation der Kompression {Punkt}
+  ganz #2 (2.1 s): Befund Nervus ulnaris. Deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} bei Ellbogen Flexion. Aggravation der Kompression {Punkt}
+  ganz↔ganz Abweichungen: 0 weg, 0 dazu, 0 ersetzt
+  teile #1 (0.9 + 1.2 + 1.2 + 1.1 s): Power Stange Busulnaris ‖ deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} ‖ Zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} ‖ bei Ellbogen Flexion Aggravation der Kompression {Punkt}
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 3
+      replace GRENZE ganz='befund nervus ulnaris' teile='power stange busulnaris'
+  teile #2 (0.9 + 1.3 + 1.3 + 1.1 s): Power Stange Busulnaris ‖ deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} ‖ Zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} ‖ bei Ellbogen Flexion Aggravation der Kompression {Punkt}
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 3
+      replace GRENZE ganz='befund nervus ulnaris' teile='power stange busulnaris'
+
+=== test_diktat.ogg  8.4 s, Schnitte bei 5.62 s
+  ganz #1 (1.1 s): Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ansonsten unauffälliger Befund
+  ganz #2 (1.1 s): Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ansonsten unauffälliger Befund
+  ganz↔ganz Abweichungen: 0 weg, 0 dazu, 0 ersetzt
+  teile #1 (1.1 + 0.9 s): Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ‖ Ansonsten unauffälliger Befund.
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 0
+  teile #2 (1.0 + 0.8 s): Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ‖ Ansonsten unauffälliger Befund.
+    → an Grenze verloren 0, sonst verloren 0, ergänzt 0, ersetzt 0
+
+=== test_diktat2.ogg: Duplikat, übersprungen
+
+=== Summe
+{"grenze": 0, "sonst": 0, "ergaenzt": 0, "ersetzt": 12, "ganz_ganz": 0, "woerter": 258, "t_ganz": 17.14255690574646, "t_letzter": 10.560884714126587, "dateien": 5, "schnitte": 11}
+Grenz-Verluste: 0 Wörter bei 11 Schnitten × 2 Läufe (258 Wörter verglichen). GATE BESTANDEN

@@ -84,9 +84,16 @@ jobs:
         run: python tests/offline/test_einfuegen.py
       - name: Befund aus getipptem/eingefügtem Text
         run: python tests/offline/test_befund_aus_text.py
+      - name: SpeechMike (Tasten, LEDs, Zustände — PY + TS, gleiche Fälle)
+        run: python tests/offline/test_speechmike.py
+      - name: SpeechMike-Ablauf EXE (Pause, INS, EOL, Nur Text, Fensterziel)
+        run: python tests/offline/test_speechmike_ablauf.py
       - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings pipeline_test.mjs
+      - name: Web-SpeechMike (WebHID-Verbindung, Dekodierung = EXE)
+        working-directory: web_app
+        run: node --experimental-strip-types --no-warnings speechmike_test.mjs
       - name: Web-Audio (16 kHz im Callback = alter Weg, Byte für Byte)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings audio_test.mjs
