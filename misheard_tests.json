@@ -216,6 +216,23 @@
    "in": "kein Konkrement nachweisbar",
    "out": "kein Konkrement nachweisbar",
    "keep": true
+  },
+  {
+   "in": "Dreiecks Röntgen in 2 Ebenen",
+   "out": "Thoraxröntgen in 2 Ebenen"
+  },
+  {
+   "in": "dreiecksröntgen pa unauffällig",
+   "out": "Thoraxröntgen pa unauffällig"
+  },
+  {
+   "in": "Befund des Dreiecks-Röntgens vom Vorjahr",
+   "out": "Befund des Thoraxröntgens vom Vorjahr"
+  },
+  {
+   "in": "Thoraxröntgen unauffällig",
+   "out": "Thoraxröntgen unauffällig",
+   "keep": true
   }
  ]
 }
