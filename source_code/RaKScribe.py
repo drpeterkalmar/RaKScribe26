@@ -713,7 +713,13 @@ class RaKScribeApp(ctk.CTk):
         self.register_hotkey()
         self._fensterziel = _fz.Fensterziel(_fz.win32_oder_none())
         self.after(500, self._fenster_merken)
-        self._speechmike_starten()
+        # v3.8.2 (Peter 12.10.): SpeechMike-Steuerung im Menü abschaltbar (z. B. wenn SpeechMagic die Tasten braucht)
+        self.speechmike_var = tk.BooleanVar(value=bool(einstellung_lesen("speechmike", True)))
+        if self.speechmike_var.get():
+            self._speechmike_starten()
+        else:
+            self._speechmike = None
+            log("[SPEECHMIKE] Steuerung im Menü ausgeschaltet — Gerät wird nicht geöffnet.")
         self.protocol("WM_DELETE_WINDOW", self._schliessen)
         self.after(150, self.refresh_key_state)
         self.after(400, self._selftest_hook)
@@ -1029,6 +1035,8 @@ class RaKScribeApp(ctk.CTk):
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
             "https://drpeterkalmar.github.io/RaKScribe26/"))
         m.add_separator()
+        m.add_checkbutton(label="SpeechMike-Steuerung (Tasten + Lämpchen)", variable=self.speechmike_var,
+                          command=self._speechmike_umschalten)
         smk = getattr(self, "_speechmike", None)
         m.add_command(label="SpeechMike-Diagnose…" + (f"  ({smk.verbunden})" if smk is not None and smk.verbunden
                                                       else "  (nicht verbunden)"), command=self.speechmike_diagnose)
@@ -1679,6 +1687,24 @@ class RaKScribeApp(ctk.CTk):
             log_exception("[SPEECHMIKE] Start fehlgeschlagen")
             self._speechmike = None
 
+    def _speechmike_umschalten(self):
+        """v3.8.2: Menü-Schalter SpeechMike-Steuerung. Aus = Lese-Thread beenden (Lämpchen aus, Gerät geschlossen),
+        RaKScribe reagiert auf keine SpeechMike-Taste mehr; F10/F9 bleiben. Die Wahl bleibt gespeichert."""
+        an = bool(self.speechmike_var.get())
+        einstellung_schreiben("speechmike", an)
+        smk = getattr(self, "_speechmike", None)
+        if an and smk is None:
+            log("[SPEECHMIKE] Steuerung eingeschaltet.")
+            self._speechmike_starten()
+        elif not an and smk is not None:
+            try:
+                smk.beenden()
+            except Exception:
+                log_exception("[SPEECHMIKE] Beenden fehlgeschlagen")
+            self._speechmike = None
+            log("[SPEECHMIKE] Steuerung ausgeschaltet — Gerät freigegeben.")
+            self._speechmike_status(None)
+
     def _speechmike_status(self, beschreibung):
         chip = getattr(self, "sm_chip", None)
         if chip is not None:
@@ -1901,7 +1927,8 @@ class RaKScribeApp(ctk.CTk):
     def speechmike_diagnose(self):
         smk = getattr(self, "_speechmike", None)
         if smk is None:
-            info = "SpeechMike-Unterstützung ist nicht gestartet — Details in rakscribe.log."
+            info = ("SpeechMike-Steuerung ist im Menü ausgeschaltet." if not self.speechmike_var.get()
+                    else "SpeechMike-Unterstützung ist nicht gestartet — Details in rakscribe.log.")
         else:
             zeilen = list(smk.verlauf)[-15:]
             info = (f"Gerät: {smk.verbunden or 'nicht verbunden (Anstecken genügt)'}\nLED: {smk.led_soll}\n\n"

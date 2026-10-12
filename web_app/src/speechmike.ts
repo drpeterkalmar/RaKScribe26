@@ -201,7 +201,7 @@ export class SpeechMikeVerbindung {
     const g = this.geraet;
     if (g) {
       g.removeEventListener('inputreport', this.onBericht);
-      g.sendReport(0, new Uint8Array(LED.aus)).catch(() => {});
+      g.sendReport(0, new Uint8Array(LED.aus)).catch(() => {}).finally(() => { g.close().catch(() => {}); });
     }
     this.geraet = null;
   }

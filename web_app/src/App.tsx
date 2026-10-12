@@ -317,6 +317,8 @@ export default function App() {
   const [repariert, setRepariert] = useState<'' | 'laeuft' | 'fertig'>('');
   const [smVerbunden, setSmVerbunden] = useState<string | null>(null);
   const [hidVerfuegbar] = useState<boolean>(() => webHid() !== null);
+  // v3.8.2 (Peter 12.10.): SpeechMike-Steuerung abschaltbar — aus = Gerät nicht öffnen, keine Tasten, kein Lämpchen
+  const [smAn, setSmAn] = useState<boolean>(() => localStorage.getItem('speechmike') !== '0');
   const smRef = useRef<SpeechMikeVerbindung | null>(null);
 
 
@@ -985,12 +987,12 @@ export default function App() {
   const smTasteRef = useLatest(smTaste);
   useEffect(() => {
     const hid = webHid();
-    if (!hid) return;  // Safari/iPhone/Firefox: kein WebHID → kein Menüpunkt, nichts bricht
+    if (!hid || !smAn) return;  // kein WebHID (Safari/iPhone/Firefox) oder im Menü ausgeschaltet → nichts öffnen
     const v = new SpeechMikeVerbindung(hid, { taste: (t, g) => smTasteRef.current(t, g), status: setSmVerbunden });
     smRef.current = v;
     void v.start();
-    return () => { v.stop(); smRef.current = null; };
-  }, [smTasteRef]);
+    return () => { v.stop(); smRef.current = null; setSmVerbunden(null); };
+  }, [smTasteRef, smAn]);
   useEffect(() => {
     smRef.current?.led(ledFuer(appZustand, befundWartet));  // Fehler beim LED-Setzen sind nie fatal
   }, [appZustand, befundWartet, smVerbunden]);
@@ -1124,7 +1126,16 @@ export default function App() {
                     <Trash2 size={16} /> Schlüssel entfernen
                   </button>
                 )}
-                {hidVerfuegbar && (smVerbunden
+                {hidVerfuegbar && (
+                  <label className="menu-item" role="menuitemcheckbox" aria-checked={smAn}
+                    title="Aus: RaKScribe öffnet das SpeechMike nicht und reagiert auf keine SpeechMike-Taste (F10/F9 bleiben)">
+                    <input type="checkbox" checked={smAn} onChange={e => {
+                      setSmAn(e.target.checked);
+                      localStorage.setItem('speechmike', e.target.checked ? '1' : '0');
+                    }} />
+                    SpeechMike-Steuerung
+                  </label>)}
+                {hidVerfuegbar && smAn && (smVerbunden
                   ? <div className="menu-item menu-static" title={smVerbunden}><Headset size={16} /> SpeechMike verbunden</div>
                   : <button className="menu-item" role="menuitem" onClick={() => { setMenuOpen(false); void smRef.current?.verbinden(); }}>
                     <Headset size={16} /> SpeechMike verbinden
