@@ -706,5 +706,10 @@
     "display_name": "Sonographie des Unterschenkels",
     "body": "Sonographie des Unterschenkels\n\nHaut und Subkutis: Sonographisch unauffällige Darstellung der Haut und der Subkutis des Unterschenkels. Kein Nachweis einer Schwellung, eines Hämatoms oder einer Flüssigkeitsansammlung.\nMuskulatur: Die dargestellte Muskulatur des Unterschenkels mit homogenem, echonormalem Parenchym und erhaltener Fibrillenstruktur. Keine fokalen Läsionen, keine Fibrose oder Kalkablagerungen.\nSehnen: Regelrechte Darstellung der einsehbaren Sehnen mit glatter, kontinuierlicher Fibrillenstruktur ohne Verdickung oder Rupturzeichen.\nGefäße: Keine raumfordernden Strukturen, kein Nachweis einer pathologischen Flüssigkeitsansammlung im untersuchten Bereich.",
     "ergebnis": "Regelrechte Darstellung des Unterschenkels."
+  },
+  "sonografie_achillessehne": {
+    "display_name": "Sonographie der Achillessehne",
+    "body": "Sonographie der Achillessehne\n\nEs zeigt sich eine normale Breite der Achillessehne ohne Nachweis einer Sehnenverdickung in sämtlichen Abschnitten. Die Sehnenfasern sind parallel angeordnet ohne Nachweis einer Ruptur. Kein Nachweis echoarmer Sehnenanteile. Kein Nachweis einer Neoangiogenese.\nNormbreite Plantaris-medialis-Sehne. Keine wesentliche Sehnenverdickung oder vermehrte Flüssigkeitsansammlung an der Sehne oder zwischen Plantarissehne und Achillessehne fassbar. An der Enthese der Achillessehne kein Nachweis einer Sehnenauftreibung. Kein Nachweis intratendinöser Verkalkungen oder einer Spornbildung.\nDie Bursa subachillea/retrocalcanea und die subkutane Bursa unauffällig. Kein Nachweis einer Haglund-Deformität.\nKein Nachweis einer Ergussbildung im oberen dorsalen Sprunggelenk.",
+    "ergebnis": "Regelrechte Darstellung der Achillessehne."
   }
 }

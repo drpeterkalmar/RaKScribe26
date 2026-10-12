@@ -22,6 +22,18 @@
   },
   "regeln": [
     {
+      "key": "sonografie_achillessehne",
+      "alle": [
+        "achill"
+      ],
+      "keins": [
+        "^(mrt?|magnetresonanz\\w*|kernspin\\w*|ct|computertomo\\w*)( |$)",
+        "unterschenkelmusk",
+        "sprunggelenk und fu",
+        "waden"
+      ]
+    },
+    {
       "key": "mr-cholangiopankreatografie_mrcp:",
       "alle": [
         "(^| )mrcp( |$)|(^| )mr ?t? ?cholangio|magnetresonanz\\w* ?cholangio"

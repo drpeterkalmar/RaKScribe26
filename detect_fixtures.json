@@ -2705,6 +2705,34 @@
     [
       "Mammasonographie rechts Zyste 8 mm",
       "mammasonographie_beidseits"
+    ],
+    [
+      "Sonographie der Achillessehne unauffällig",
+      "sonografie_achillessehne"
+    ],
+    [
+      "Sonographie der Achillessehne rechts unauffällig",
+      "sonografie_achillessehne"
+    ],
+    [
+      "sonografie achillessehne o.B.",
+      "sonografie_achillessehne"
+    ],
+    [
+      "Achillessehne rechts unauffällig",
+      "sonografie_achillessehne"
+    ],
+    [
+      "Ultraschall Achillessehne links, Tendinose mit 9 mm Dicke",
+      "sonografie_achillessehne"
+    ],
+    [
+      "Sonographie Sprunggelenk und Fuß rechts, Achillessehne verdickt",
+      "sonografie_allgemein"
+    ],
+    [
+      "MRT Sprunggelenk, Achillessehne intakt",
+      "mr_des_sprunggelenke:"
     ]
   ]
 }
