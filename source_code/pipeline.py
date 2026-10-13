@@ -112,6 +112,15 @@ def gen_prompt(raw, template_data, prompt, hinweise="", beispiele=""):
 
 
 def befund_fuer_segment(seg, ctx):
+    """Ein Befund für EIN Segment; v3.9.0 (Georg 13.10.): Rho-Auslöser raus aus dem Diktat, Rho-Baustein danach rein."""
+    seg_ohne, score, rho = br.rho_erkennen(seg)
+    if not rho:
+        return _befund_fuer_segment(seg, ctx)
+    ctx.log(f"[RHO] Textbaustein (Score {score or '–'})")
+    return br.rho_einfuegen(_befund_fuer_segment(seg_ohne, ctx), score)
+
+
+def _befund_fuer_segment(seg, ctx):
     """Ein Befund (## Titel / ## Befund / ## Ergebnis) für EIN Diktat-Segment = eine Region."""
     bausteine = ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine
     b_key, b_rest = bs.befund_baustein(seg, bausteine)

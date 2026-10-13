@@ -405,5 +405,119 @@
    "in": "## Schultergelenk rechts\n\n## Befund\nx",
    "out": "## Schultergelenk rechts\n\n## Befund\nx"
   }
- ]
+ ],
+ "rho": {
+  "erkennen": [
+   {
+    "in": "LWS unauffällig. Rho 8.",
+    "out": [
+     "LWS unauffällig.",
+     "8",
+     true
+    ]
+   },
+   {
+    "in": "LWS unauffällig Punkt Ro 8 Punkt",
+    "out": [
+     "LWS unauffällig Punkt",
+     "8",
+     true
+    ]
+   },
+   {
+    "in": "Thorax p.a. unauffällig, Rho-Score 7",
+    "out": [
+     "Thorax p.a. unauffällig",
+     "7",
+     true
+    ]
+   },
+   {
+    "in": "BWS: Spondylosis deformans. Roh Score von 9.",
+    "out": [
+     "BWS: Spondylosis deformans.",
+     "9",
+     true
+    ]
+   },
+   {
+    "in": "Beckenübersicht unauffällig. Zusätzliche DEXA.",
+    "out": [
+     "Beckenübersicht unauffällig.",
+     "",
+     true
+    ]
+   },
+   {
+    "in": "Beckenübersicht unauffällig. Zusätzliche Dexa empfohlen.",
+    "out": [
+     "Beckenübersicht unauffällig.",
+     "",
+     true
+    ]
+   },
+   {
+    "in": "LWS unauffällig. Opportunistisches Knochenscreening.",
+    "out": [
+     "LWS unauffällig.",
+     "",
+     true
+    ]
+   },
+   {
+    "in": "LWS unauffällig, opportunistisches Knochendichtescreening auffällig, Rho 8",
+    "out": [
+     "LWS unauffällig",
+     "8",
+     true
+    ]
+   },
+   {
+    "in": "Hüfte rechts unauffällig. Rho.",
+    "out": [
+     "Hüfte rechts unauffällig.",
+     "",
+     true
+    ]
+   },
+   {
+    "in": "Rohdaten unauffällig, Robert, Fraktur 8 mm",
+    "out": [
+     "Rohdaten unauffällig, Robert, Fraktur 8 mm",
+     "",
+     false
+    ]
+   },
+   {
+    "in": "Knochendichtemessung empfohlen",
+    "out": [
+     "Knochendichtemessung empfohlen",
+     "",
+     false
+    ]
+   }
+  ],
+  "einfuegen": [
+   {
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose.\n\nDie paravertebralen Weichteile unauffällig.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "score": "8",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose.\n\nDie paravertebralen Weichteile unauffällig.\n\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\n1. Regelrechte Darstellung der LWS.\n2. Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
+   },
+   {
+    "report": "## X\n\n## Befund\nA.\n\n## Ergebnis\n1. Osteochondrose L4/L5.\n2. Spondylose.",
+    "score": "",
+    "out": "## X\n\n## Befund\nA.\n\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von ≥7 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\n1. Osteochondrose L4/L5.\n2. Spondylose.\n3. Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
+   },
+   {
+    "report": "## B\n\n## Befund\nWörtlich.\n\n## Ergebnis\nZeile eins.\nZeile zwei.",
+    "score": "7",
+    "out": "## B\n\n## Befund\nWörtlich.\n\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 7 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nZeile eins.\nZeile zwei.\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
+   },
+   {
+    "report": "x Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "score": "7",
+    "out": "x Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
+   }
+  ]
+ }
 }

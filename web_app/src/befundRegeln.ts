@@ -255,6 +255,49 @@ export const nachbearbeiten = (report: string, nummerieren = true): string => {
   return nummerieren ? ergebnisNummerieren(r) : r;
 };
 
+// ── v3.9.0 (Georg 13.10.): Rho-Textbaustein (opportunistisches Knochendichtescreening, KI-Software Rho) ──────
+// Sync: source_code/befund_regeln.py rho_erkennen/rho_einfuegen (gleiche Regexe, gleiche Fixtures „rho“).
+export const RHO_BEFUND = 'Opportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software ' +
+  '(Rho): {score} eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert ' +
+  'in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den ' +
+  'letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.';
+export const RHO_ERGEBNIS = 'Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.';
+const RHO_NUM = String.raw`(?:[\s:,-]*(?:score|skor|stufe|wert)?[\s:,-]*(?:von\s+)?(\d{1,2})(?!\s*(?:mm|cm|%|grad|°)))?`;
+const RHO_SRC = String.raw`(?<![\p{L}\p{N}_-])(?:` +
+  String.raw`(?:rho|ro|roh|row)(?:[\s-]*(?:score|skor|stufe))?` + RHO_NUM +
+  String.raw`|zus[äa]tzlich(?:e[nrsm]?)?\s+(?:dexa|dxa|dexa-?messung|knochendichtemessung)(?:[\s-]*empfehlung)?(?:\s+empfohlen)?` + RHO_NUM +
+  String.raw`|opportunistische[sn]?\s+knochen(?:dichte)?[\s-]*screening(?:[\s-]*(?:auff[äa]llig|positiv))?` + RHO_NUM +
+  String.raw`)(?![\p{L}\p{N}_-])(?:\s*(?:punkt|\.))?`;
+
+export function rhoErkennen(seg: string): [string, string, boolean] {
+  if (!seg) return [seg, '', false];
+  let score = '', gefunden = false;
+  for (const m of seg.matchAll(new RegExp(RHO_SRC, 'giu'))) {
+    gefunden = true;
+    const z = m.slice(1).find(g => g) || '';
+    if (z && !score) score = z;
+  }
+  if (!gefunden) return [seg, '', false];
+  let rest = seg.replace(new RegExp(RHO_SRC, 'giu'), ' ');
+  rest = rest.replace(/[ \t]{2,}/g, ' ').replace(/\s+([.,;:])/g, '$1');
+  rest = rest.replace(/(?:^|(?<=[.,;:]))\s*[.,;:](?=\s|$)/g, '').replace(/^[ ,;:]+|[ ,;:]+$/g, '');
+  return [rest || seg, score, true];
+}
+
+export function rhoEinfuegen(report: string, score: string): string {
+  if (!report || report.includes(RHO_ERGEBNIS)) return report;
+  const befund = RHO_BEFUND.replace('{score}', score ? `Der Score von ${score} (Skala 1–10) zeigt` : 'Der Score von ≥7 (Skala 1–10) zeigt');  // Georg 13.10.: ohne diktierten Score immer ≥7
+  if (!report.includes('## Ergebnis')) return report.trimEnd() + '\n\n' + befund + '\n\n## Ergebnis\n' + RHO_ERGEBNIS;
+  const i = report.lastIndexOf('## Ergebnis');
+  const kopf = report.slice(0, i).trimEnd();
+  let erg = report.slice(i + '## Ergebnis'.length);
+  const zeilen = erg.split('\n').filter(z => z.trim());
+  const nummeriert = zeilen.some(z => NUM_RE.test(z));
+  erg = erg.trimEnd() + '\n' + RHO_ERGEBNIS;
+  const neu = kopf + '\n\n' + befund + '\n\n## Ergebnis' + erg;
+  return (nummeriert || zeilen.length <= 1) ? ergebnisNummerieren(neu) : neu;
+}
+
 export const befundeZusammenfuegen = (reports: string[]): string =>
   reports.map(r => (r || '').trim()).filter(Boolean).join('\n\n\n');
 

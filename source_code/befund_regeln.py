@@ -363,6 +363,62 @@ def nachbearbeiten(report, nummerieren=True):
     return ergebnis_nummerieren(r) if nummerieren else r
 
 
+# ── v3.9.0 (Georg 13.10.): Rho-Textbaustein (opportunistisches Knochendichtescreening, KI-Software Rho) ──────
+# Auslöser im Diktat: „Rho“ (gesprochen „ro“, STT auch „Ro“/„Roh“/„Row“) mit optionalem Score, „zusätzliche DEXA/DXA“,
+# „opportunistisches Knochen(dichte)screening“. Der Auslöser wird aus dem Diktat genommen (die KI sieht ihn nicht),
+# danach Variante C ans Ende des Befundtexts und Variante 2 als letzter Ergebnis-Punkt (Georg: „C und 2“).
+# Sync: web_app/src/befundRegeln.ts rhoErkennen/rhoEinfuegen (gleiche Regexe, gleiche Fixtures „rho“).
+RHO_BEFUND = ("Opportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software "
+              "(Rho): {score} eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert "
+              "in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den "
+              "letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.")
+RHO_ERGEBNIS = "Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
+_RHO_NUM = r"(?:[\s:,-]*(?:score|skor|stufe|wert)?[\s:,-]*(?:von\s+)?(\d{1,2})(?!\s*(?:mm|cm|%|grad|°)))?"
+_RHO_RE = re.compile(
+    r"(?<![\w-])(?:"
+    r"(?:rho|ro|roh|row)(?:[\s-]*(?:score|skor|stufe))?" + _RHO_NUM +
+    r"|zus[äa]tzlich(?:e[nrsm]?)?\s+(?:dexa|dxa|dexa-?messung|knochendichtemessung)(?:[\s-]*empfehlung)?(?:\s+empfohlen)?" + _RHO_NUM +
+    r"|opportunistische[sn]?\s+knochen(?:dichte)?[\s-]*screening(?:[\s-]*(?:auff[äa]llig|positiv))?" + _RHO_NUM +
+    r")(?![\w-])(?:\s*(?:punkt|\.))?", re.I)
+
+
+def rho_erkennen(seg):
+    """→ (Diktat ohne Auslöser, Score-Text oder '' , aktiv)."""
+    if not seg:
+        return seg, "", False
+    score, gefunden = "", False
+    for m in _RHO_RE.finditer(seg):
+        gefunden = True
+        z = next((g for g in m.groups() if g), "")
+        if z and not score:
+            score = z
+    if not gefunden:
+        return seg, "", False
+    rest = _RHO_RE.sub(" ", seg)
+    rest = re.sub(r"\s+([.,;:])", r"\1", re.sub(r"[ \t]{2,}", " ", rest))
+    rest = re.sub(r"(?:^|(?<=[.,;:]))\s*[.,;:](?=\s|$)", "", rest).strip(" ,;:")
+    return (rest or seg), score, True
+
+
+def rho_einfuegen(report, score):
+    """Variante C ans Ende des (letzten) Befundtexts, Variante 2 als letzter Ergebnis-Punkt."""
+    if not report or RHO_ERGEBNIS in report:
+        return report
+    s = f"Der Score von {score} (Skala 1–10) zeigt" if score else "Der Score von ≥7 (Skala 1–10) zeigt"  # Georg 13.10.: ohne diktierten Score immer ≥7
+    befund = RHO_BEFUND.format(score=s)
+    if "## Ergebnis" not in report:
+        return report.rstrip() + "\n\n" + befund + "\n\n## Ergebnis\n" + RHO_ERGEBNIS
+    i = report.rfind("## Ergebnis")
+    kopf, erg = report[:i].rstrip(), report[i + len("## Ergebnis"):]
+    zeilen = [z for z in erg.split("\n") if z.strip()]
+    nummeriert = any(_NUM_RE.match(z) for z in zeilen)
+    erg = erg.rstrip() + "\n" + RHO_ERGEBNIS
+    neu = kopf + "\n\n" + befund + "\n\n## Ergebnis" + erg
+    # nummerierte Ergebnisse oder ein einzelner Punkt → neu durchzählen; mehrere unnummerierte (wörtlicher
+    # Ordi-Baustein) bleiben unnummeriert
+    return ergebnis_nummerieren(neu) if (nummeriert or len(zeilen) <= 1) else neu
+
+
 def befunde_zusammenfuegen(reports):
     """Mehrere Einzelbefunde (je ## Titel/## Befund/## Ergebnis) untereinander."""
     return "\n\n\n".join(r.strip() for r in reports if r and r.strip())

@@ -233,6 +233,19 @@
    "in": "Thoraxröntgen unauffällig",
    "out": "Thoraxröntgen unauffällig",
    "keep": true
+  },
+  {
+   "in": "LWS unauffällig, Ro 8",
+   "out": "LWS unauffällig, Rho 8"
+  },
+  {
+   "in": "Roh-Score 9",
+   "out": "Rho-Score 9"
+  },
+  {
+   "in": "Rohdaten und Ro unklar",
+   "out": "Rohdaten und Ro unklar",
+   "keep": true
   }
  ]
 }

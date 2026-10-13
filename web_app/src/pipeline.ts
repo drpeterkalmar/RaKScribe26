@@ -3,7 +3,7 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, type VorrangDaten } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { ORDI_BAUSTEINE, befundBaustein, nurBaustein, bericht as bausteinBericht, vorlage as bausteinVorlage, kiHinweis, saetzeEinsetzen, type Bausteine } from './bausteine.ts';
@@ -18,7 +18,15 @@ export type PipelineKontext = GenKontext & {
 // v3.2: Befund aus dem (korrigierten) Diktat — dieselbe Kette wie die EXE (RaKScribe.py _befund_fuer_segment):
 // Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener Befund mit eigenem
 // Template und eigenem Ergebnis (parallel), danach Ergebnis deterministisch nummeriert.
+// v3.9.0 (Georg 13.10.): Rho-Auslöser raus aus dem Diktat, Rho-Baustein danach rein. Sync: pipeline.py
 export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Promise<string> => {
+  const [segOhne, score, rho] = rhoErkennen(seg);
+  if (!rho) return befundFuerSegmentKern(seg, ctx);
+  console.log(`[RHO] Textbaustein (Score ${score || '–'})`);
+  return rhoEinfuegen(await befundFuerSegmentKern(segOhne, ctx), score);
+};
+
+const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise<string> => {
   // v3.3 (Peter 06.10.): „Baustein Mammo 1“ → Ordi-Textbaustein statt Vorlage (1:1 wie EXE pipeline.py)
   const bausteine = ctx.bausteine ?? ORDI_BAUSTEINE;
   const [bKey, bRest] = befundBaustein(seg, bausteine);
