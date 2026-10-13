@@ -153,5 +153,27 @@ ausgewertet und dürfen gelöscht werden.
   `tests/offline/test_cas_leistungen.py`, live `tools/test_all_regions.py --cas`. Die Zuordnung Leistungskürzel → Vorlage
   liegt in der Praxis (privat), nicht in diesem Repo.
 
+## 📐 IB-Lab-Messwerte im CAS-Diktat (EXE, ab v3.13.0)
+
+- Die RaKScribe-Brücke (ab 1.2.0) reicht zum CAS-Diktat die vorhandenen IB-Lab-Vorbefund-Bausteine nach
+  (`cas_ibl_<id>.json`, beim Start oder später, eine neue Fassung ersetzt die alte). Das blaue Band zeigt eine eigene Zeile,
+  z. B. „IB Lab: FROG rechts ✓“. Kommt etwas nach, wird die Zeile kurz grün hervorgehoben. Ohne Datei bleibt alles wie in
+  3.12.0.
+- **Messwerte 1:1, nie von der KI umformuliert:** Die KI erfährt nur, welche Messgrößen ergänzt werden (keine Zahlen) und
+  welche widersprechenden Vorlagensätze sie weglassen soll. Nach der KI setzt `source_code/ibl_bausteine.py` die
+  Befundzeilen ans Ende des Befundtexts der passenden Untersuchung und die Ergebnispunkte an deren Ergebnisliste.
+  Zugeordnet wird über die Leistung im CAS-Eintrag, sonst über Modul und Region (FROG → Fuß, LAMA → Ganzbein, HIPPO →
+  Becken/Hüfte, …), bei zwei Füßen über die Seite. Ist das nicht eindeutig, kommen die Werte als eigener Absatz ans Ende,
+  mit Hinweis. Ein Messwert-Gate prüft, dass jede eingesetzte Zeile wörtlich im Befund steht.
+- **Nichts doppelt, nichts still geändert:** Nennt das Diktat die Messgröße mit demselben Wert oder dieselbe Diagnose
+  schon, wird sie nicht doppelt angefügt. Bei einem Widerspruch (andere Zahl, „kein Plattfuß“, unauffälliges Ergebnis,
+  Vorlagensatz „Fußgewölbe regulär“) erscheint ein gelber Hinweis in der IB-Lab-Zeile, am Text ändert sich nichts. Die
+  Hinweise des Bausteins (Bildqualität, Fraktur-Verdacht, Entwürfe) erscheinen nur dort, nie im Befund. Ein Klick auf die
+  Zeile zeigt alle Werte und Hinweise.
+- **Werte nach dem Befund:** RaKScribe ändert einen schon erstellten Befund nicht still. Stattdessen erscheint der Knopf
+  „＋ IB Lab einfügen“, eine ältere Fassung wird dabei wörtlich ersetzt.
+- Menü ☰ **„IB-Lab-Bausteine übernehmen“** (Standard an). Ohne Bausteine bzw. bei „aus“ sind Prompt und Befund bit-gleich
+  mit 3.12.0 (726 Diktate). Tests: `tests/offline/test_ibl_bausteine.py`, live `tools/test_all_regions.py --ibl`.
+
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

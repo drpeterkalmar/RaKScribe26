@@ -15,7 +15,13 @@ Dateien (gleiche Namen/Felder wie ris-mods bruecke/auftrag.py — Änderungen im
                               vorlage|null, ohne_vorlage, bekannt}], quelle, katalog, ms, zeit} — optional: ohne Datei
                               (ältere Brücke, Abfrage gescheitert) arbeitet RaKScribe wie bisher. Vorrang-Hinweis für die
                               Vorlagenwahl: cas_vorlagen.py.
-Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel (und am Ende der Befund selbst, lokal).
+  cas_ibl_<id>.json           v3.13.0 (Brücke 1.2.0): IB-Lab-Vorbefund-Bausteine des Eintrags, beim Start oder später,
+                              bei jeder neuen/aktualisierten Fassung neu geschrieben {protokoll, auftrag_id, nr, quelle,
+                              bausteine:[{accno, ziffer, modul, name, modul_name, version, aktualisiert, seiten,
+                              befundteil, ergebnis, hinweise, nicht_zugeordnet}], zeit} — optional; Einsetzen nach der KI:
+                              ibl_bausteine.py.
+Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel, KI-Messwerte der Untersuchung (und am Ende
+der Befund selbst, lokal).
 """
 import io
 import json
@@ -105,6 +111,8 @@ class Auftrag:
         self.zeit = d.get("zeit") or 0
         self.testbefund = bool(d.get("testbefund"))
         self.leistungen = None   # v3.12.0: Liste aus cas_leistungen_<id>.json; None = (noch) keine Datei
+        self.ibl = None          # v3.13.0: Bausteine aus cas_ibl_<id>.json (Liste von dicts); None = (noch) keine Datei
+        self.ibl_signatur = None  # Größe + Änderungszeit der zuletzt gelesenen Datei (nur bei Änderung neu lesen)
 
     def labels(self):
         """Kurznamen der Leistungen fürs Band (ohne Abrechnungsposten), z. B. ['HWS', 'Schulter re. (Sono)']."""
@@ -190,6 +198,28 @@ class Kanal:
         if not isinstance(liste, list):
             return []
         return [l for l in liste if isinstance(l, dict) and (l.get("kurz") or l.get("text"))]
+
+    def ibl_lesen(self, a):
+        """v3.13.0: IB-Lab-Bausteine zum Auftrag a, nur wenn sich die Datei der Brücke seit dem letzten Lesen geändert hat.
+        → Liste (darf leer sein) oder None (keine Datei, unverändert, halb geschrieben, gehört nicht zu diesem Auftrag).
+        Die Brücke schreibt die Datei bei jeder neuen Fassung neu und räumt sie selbst auf."""
+        pfad = os.path.join(self.ordner, f"cas_ibl_{a.auftrag_id}.json")
+        try:
+            st = os.stat(pfad)
+        except OSError:
+            return None
+        signatur = (st.st_size, st.st_mtime_ns)
+        if signatur == a.ibl_signatur:
+            return None
+        d = _json_lesen(pfad)
+        if d is None:
+            return None                       # halb geschrieben → nächster Takt (Signatur bleibt alt)
+        a.ibl_signatur = signatur
+        if str(d.get("auftrag_id") or "") != a.auftrag_id or str(d.get("nr") or "") != a.nr:
+            self.log(f"[CAS] IB-Lab-Bausteine verworfen (gehören nicht zu Auftrag {a.nr})")
+            return None
+        liste = d.get("bausteine")
+        return [b for b in liste if isinstance(b, dict)] if isinstance(liste, list) else []
 
     def ergebnis_schreiben(self, a, text, pcm_bytes=None, rate=16000, test=False):
         """EOL: Befund (+ Aufnahme) ablegen, DANACH „fertig“ melden — die Brücke liest nie eine halbe Datei."""

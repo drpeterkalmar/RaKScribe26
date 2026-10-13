@@ -420,9 +420,104 @@ def main_cas():
     return 0 if all(r["status"] != "❌ FAIL" and r["status"] != "ERROR" for r in results) else 1
 
 
+# ─── v3.13.0: Fälle mit IB-Lab-Bausteinen (Brücke 1.2.0 reicht cas_ibl_<id>.json nach) ───
+# Echte EXE-Kette mit ctx.cas + ctx.ibl, live mit Gemini: die KI bekommt nur <ibl_messwerte> (Namen, keine Zahlen),
+# die Werte setzt ibl_bausteine.py danach wörtlich ein. Geprüft: Abschnitte, IB-Lab-Zeilen im richtigen Abschnitt und
+# 1:1 (Gate), keine eigenen Zahlen der KI zu IB-Lab-Messgrößen, keine Hinweise im Befundtext; Vorlagensätze wie
+# „Fußgewölbe regulär“ (Prompt: weglassen) nur als Warnung. Texte wie ris-mods/ibl/vorbefund.py sie bildet (synthetisch).
+# Aufruf: tools/test_all_regions.py --ibl
+_IBL_FROG_LI = {"accno": "T-0101", "ziffer": 1, "modul": "frog", "name": "FROG", "modul_name": "IB Lab FROG",
+                "version": 1, "seiten": ["links"],
+                "befundteil": ["Hallux-valgus-Winkel links 18,2° (IB Lab FROG).",
+                               "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)."],
+                "ergebnis": ["Pes planus links (Calcaneusneigungswinkel 12,4°).",
+                             "Geringgradiger Hallux valgus links (Hallux-valgus-Winkel 18,2°)."],
+                "hinweise": [], "nicht_zugeordnet": []}
+_IBL_LAMA = {"accno": "T-0111", "ziffer": 1, "modul": "lama", "name": "LAMA", "modul_name": "IB Lab LAMA",
+             "version": 1, "seiten": ["rechts", "links"],
+             "befundteil": ["HKA-Winkel rechts 174,2° (IB Lab LAMA).", "HKA-Winkel links 179,1° (IB Lab LAMA).",
+                            "Beinlängendifferenz 15 mm (IB Lab LAMA)."],
+             "ergebnis": ["Genu varum rechts (HKA-Winkel 174,2°).", "Beinlängendifferenz von 15 mm."],
+             "hinweise": ["LAMA: HKA-Konvention (< 180° = Varus) noch nicht an echtem SR bestätigt – Varus/Valgus bitte "
+                          "am Bild prüfen."], "nicht_zugeordnet": []}
+_IBL_HIPPO = {"accno": "T-0112", "ziffer": 2, "modul": "hippo", "name": "HIPPO", "modul_name": "IB Lab HIPPO",
+              "version": 1, "seiten": ["rechts", "links"],
+              "befundteil": ["LCE-Winkel nach Wiberg rechts 18° (IB Lab HIPPO).", "CCD-Winkel rechts 128° (IB Lab HIPPO).",
+                             "LCE-Winkel nach Wiberg links 31° (IB Lab HIPPO).", "CCD-Winkel links 131° (IB Lab HIPPO)."],
+              "ergebnis": ["Verminderte laterale Überdachung des Hüftkopfes im Sinne einer Hüftdysplasie rechts "
+                           "(LCE-Winkel nach Wiberg 18°)."], "hinweise": [], "nicht_zugeordnet": []}
+IBL_FAELLE = [
+    # (name, CAS-Leistungen, Bausteine, Diktat, [(Titel-Wort, Modul oder None)])
+    ("FROG Fuß links (Hallux valgus diktiert, Pes planus von IB Lab)",
+     [_cas_l("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")], [_IBL_FROG_LI],
+     "Fuß links: Hallux valgus mit Arthrose im Großzehengrundgelenk, sonst unauffällig.", [("Fuß", "FROG")]),
+    ("LAMA Ganzbein + HIPPO Becken (zwei Leistungen, zwei Module)",
+     [_cas_l("x-ganzbein", "Ganzbeinaufnahme", "Röntgen", "ganzbeinaufnahme_im_stand"),
+      _cas_l("x-becken", "Becken", "Röntgen", "beckenübersicht_stehend")], [_IBL_LAMA, _IBL_HIPPO],
+     "Ganzbeinaufnahme im Stand: varische Beinachse rechts, sonst unauffällig. Becken: beginnende Coxarthrose rechts.",
+     [("Ganzbein", "LAMA"), ("Becken", "HIPPO")]),
+]
+
+
+def run_ibl_fall(name, leistungen, bausteine, diktat, erwartet):
+    import cas_vorlagen as cv
+    import ibl_bausteine as ib
+    print(f"\n{'─'*60}\nIB-LAB-FALL: {name}\n{'─'*60}")
+    ctx = _pp.exe_kontext()
+    ctx.cas = cv.CasHinweis(leistungen, TEMPLATES)
+    bs = ib.aus_liste(bausteine)
+    ctx.ibl = ib.IblKontext(bs, cas_leistungen=leistungen)
+    t0 = time.time()
+    erg = _pp._pipeline.befund_aus_diktat(diktat, ctx)
+    if erg.ausnahmen:
+        return {"name": "IB Lab: " + name, "status": "ERROR", "issues": [f"Gemini: {erg.ausnahmen[0]}"]}
+    issues, e = [], erg.ibl
+    teile = [t for t in erg.report.split("\n\n\n") if t.strip()]
+    if len(teile) != len(erwartet):
+        issues.append(f"❌ {len(teile)} Abschnitte statt {len(erwartet)}")
+    for teil, (wort, modul) in zip(teile, erwartet):
+        titel = teil.split("\n", 1)[0]
+        if wort.lower() not in titel.lower():
+            issues.append(f"❌ Titel „{titel}“ ohne „{wort}“")
+        for b in bs:
+            drin = f"(IB Lab {b.name})" in teil
+            if (b.name == modul) != drin:
+                issues.append(f"❌ {b.name}-Zeilen {'fehlen in' if b.name == modul else 'stehen in'} „{titel}“")
+    if e is None or ib.gate(erg.report, e.zeilen):
+        issues.append(f"❌ Gate: {ib.gate(erg.report, e.zeilen) if e else 'nichts eingesetzt'}")
+    ohne = erg.report
+    for z in (e.zeilen if e else []):
+        ohne = ohne.replace(z, "")
+    for b in bs:                                  # eigene Zahlen der KI zu IB-Lab-Messgrößen?
+        for m in filter(None, map(ib.messwert, b.befundteil)):
+            art, gef = ib.im_text(m, ohne)
+            if art in ("gleich", "anders"):
+                issues.append(f"❌ KI nennt selbst {m.name} ({gef})")
+    if any(w in erg.report for w in ("bitte prüfen", "ibl_messwerte", "HKA-Konvention", "nicht doppelt", "IB-Lab-Wert")):
+        issues.append("❌ Hinweise/Prompt-Text sind in den Befund geraten")
+    for h in (e.hinweise if e else []):
+        if "widerspricht IB Lab" in h:
+            issues.append(f"⚠️ {h}")
+    status = "❌ FAIL" if any("❌" in i for i in issues) else ("⚠️ WARN" if issues else "✅ PASS")
+    print(f"  {time.time() - t0:.1f}s | Zuordnung {e.zuordnung if e else {}} | Hinweise {e.hinweise if e else []} | {status}")
+    for i in issues:
+        print(f"  {i}")
+    print(erg.report)
+    return {"name": "IB Lab: " + name, "status": status, "issues": issues, "report": erg.report,
+            "hinweise": e.hinweise if e else []}
+
+
+def main_ibl():
+    results = [run_ibl_fall(*f) for f in IBL_FAELLE]
+    print(f"\n{'='*70}\nIB-LAB-FÄLLE: " + " | ".join(f"{r['status']} {r['name']}" for r in results))
+    return 0 if all(r["status"] not in ("❌ FAIL", "ERROR") for r in results) else 1
+
+
 def main():
     if "--cas" in sys.argv:
         sys.exit(main_cas())
+    if "--ibl" in sys.argv:
+        sys.exit(main_ibl())
     print("=" * 70)
     print("VOLLSTÄNDIGER WIDERSPRUCHSTEST — Alle Regionen")
     print("=" * 70)

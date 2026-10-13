@@ -20,6 +20,9 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
      v3.12.0: CAS-Leistungen (cas_leistungen_<id>.json) → Band „… · HWS · Schulter re. (Sono)“, Diktat widerspricht →
      Hinweise, gemischtes Diktat Fuß + LWS → zwei Befunde (ohne KI), „Unauffällig.“ + HWS → HWS-Normalbefund, grüne
      Bestätigung nach EOL, Kopfzeile bei 1240/900 px ohne Überdeckung
+     v3.13.0: IB-Lab-Bausteine (cas_ibl_<id>.json der Brücke 1.2.0) → Band-Zeile „IB Lab: FROG links ✓“ (hervorgehoben),
+     INS „Fuß links unauffällig.“ → Messwerte wörtlich im Befund, Diagnose nicht ins unauffällige Ergebnis (Hinweis),
+     neue Fassung nach dem Befund → „neu, nicht im Befund“ + Knopf → Knopf ersetzt die alte Fassung
   G  v3.11.0 Bereitschaft: Start mit --minimiert → nur Taskleisten-Symbol, nicht vorne; Leerlauf (CPU/Speicher, psutil);
      zweiter Start → keine zweite Instanz, laufende nach vorne (mit --minimiert: still); CAS-Auftrag → vorne, Annahme
      < 1 s → EOL → wieder minimiert; Menü-Haken Autostart → Verknüpfung im echten Autostart-Ordner → wscript → Starter;
@@ -180,6 +183,16 @@ L_LWS = _l("x-lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
 L_FUSSL = _l("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
 L_SOSUR = _l("x-sono-schulter-re", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
 L_KOORD = _l("x-zuschlag", "Zuschlag", "sonstige", None, ohne=True)
+# v3.13.0: IB-Lab-Bausteine wie von der Brücke 1.2.0 (bruecke/ibl_bausteine.py Beobachter.datei_inhalt), synthetisch
+IBL_FROG_LI = {"accno": "T-0101", "ziffer": 1, "modul": "frog", "name": "FROG", "modul_name": "IB Lab FROG",
+               "version": 1, "aktualisiert": "2026-10-13T18:00:00", "seiten": ["links"],
+               "befundteil": ["Calcaneusneigungswinkel links 12,4° (IB Lab FROG)."],
+               "ergebnis": ["Pes planus links (Calcaneusneigungswinkel 12,4°)."], "hinweise": [], "nicht_zugeordnet": []}
+IBL_FROG_LI_V2 = dict(IBL_FROG_LI, version=2, aktualisiert="2026-10-13T18:05:00",
+                      befundteil=["Calcaneusneigungswinkel links 12,4° (IB Lab FROG).",
+                                  "Hallux-valgus-Winkel links 18,2° (IB Lab FROG)."],
+                      ergebnis=["Pes planus links (Calcaneusneigungswinkel 12,4°).",
+                                "Geringgradiger Hallux valgus links (Hallux-valgus-Winkel 18,2°)."])
 
 
 def fall_f(state, work, hwnd=None):
@@ -194,6 +207,13 @@ def fall_f(state, work, hwnd=None):
             {"protokoll": 1, "auftrag_id": aid, "nr": nr, "roh": "Untersuchung: …", "leistungen": liste,
              "quelle": "CASSpeechMagic.DBModule.GetExaminationsText", "katalog": "UI-Test", "ms": 2700,
              "zeit": time.time()}, ensure_ascii=False), encoding="utf-8")
+
+    def ibl(aid, nr, liste):
+        p = ordner / f"cas_ibl_{aid}.json"
+        tmp = ordner / f"cas_ibl_{aid}.json.tmp"
+        tmp.write_text(json.dumps({"protokoll": 1, "auftrag_id": aid, "nr": nr, "quelle": "ibl-abholer/1",
+                                   "bausteine": liste, "zeit": time.time()}, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, p)
 
     def bild(name):
         try:
@@ -256,6 +276,20 @@ def fall_f(state, work, hwnd=None):
     ph("cas_status#5", 1.0)
     f["nur_unauffaellig"] = ph("text_ins#2|Unauffällig.")
     ph("cas_abbrechen#5")
+    # v3.13.0: IB-Lab-Bausteine — kommen nach dem Auftrag, INS ohne KI (Normalbefund-Weg), neue Fassung → Knopf
+    auftrag("20261013010", "uitest6")
+    leistungen("uitest6", "20261013010", [L_FUSSL])
+    f["ibl_ohne"] = ph("cas_status#6", 1.0)
+    ibl("uitest6", "20261013010", [IBL_FROG_LI])
+    f["ibl_band"] = ph("cas_status#6b", 1.5)
+    bild("F_ibl_band.png")
+    f["ibl_ins"] = ph("text_ins#3|Fuß links unauffällig.")
+    bild("F_ibl_befund.png")
+    ibl("uitest6", "20261013010", [IBL_FROG_LI_V2])
+    f["ibl_neu"] = ph("cas_status#6c", 1.5)
+    bild("F_ibl_knopf.png")
+    f["ibl_eingefuegt"] = ph("cas_ibl_einfuegen#6")
+    ph("cas_abbrechen#6")
     auftrag("20261013007", "uitest3")
     ph("cas_status#3")
     f["abbrechen"] = ph("cas_abbrechen")
@@ -752,6 +786,29 @@ cf("v3.12.0 gemischtes Diktat Fuß links + LWS → zwei Befunde in Diktat-Reihen
 cf("v3.12.0 „Unauffällig.“ + CAS HWS → HWS-Normalbefund aus der Vorlage",
    str(gf("nur_unauffaellig", "result", "")).startswith("## Halswirbelsäule in 2 Ebenen"),
    repr(str(gf("nur_unauffaellig", "result", ""))[:60]))
+# v3.13.0: IB-Lab-Bausteine
+cf("v3.13.0 ohne IB-Lab-Datei: keine IB-Lab-Zeile, Menü „IB-Lab-Bausteine übernehmen“ an (Standard)",
+   gf("ibl_ohne", "ibl_band") == "" and gf("ibl_ohne", "ibl_band_sichtbar") is False
+   and gf("ibl_ohne", "ibl_uebernehmen") is True, f"{gf('ibl_ohne', 'ibl_band')!r} / {gf('ibl_ohne', 'ibl_uebernehmen')}")
+cf("v3.13.0 Baustein kommt nach: Band-Zeile „IB Lab: FROG links ✓“ sichtbar, hervorgehoben",
+   gf("ibl_band", "ibl_band") == "IB Lab: FROG links ✓" and gf("ibl_band", "ibl_band_sichtbar") is True
+   and (gf("ibl_band", "ibl_hervorgehoben") or 0) >= 1 and gf("ibl_band", "ibl_knopf_sichtbar") is False,
+   f"{gf('ibl_band', 'ibl_band')!r} / sichtbar {gf('ibl_band', 'ibl_band_sichtbar')} / {gf('ibl_band', 'ibl_hervorgehoben')}")
+cf("v3.13.0 INS „Fuß links unauffällig.“: Messwert wörtlich im Befund, Diagnose nicht ins unauffällige Ergebnis + Hinweis",
+   str(gf("ibl_ins", "result", "")).startswith("## Fuß links in 2 Ebenen")
+   and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in str(gf("ibl_ins", "result", ""))
+   and "Pes planus" not in str(gf("ibl_ins", "result", ""))
+   and any("nicht ins Ergebnis übernommen" in h for h in gf("ibl_ins", "ibl_hinweise", []) or [])
+   and str(gf("ibl_ins", "ibl_hinweis_label", "")).startswith("⚠") and gf("ibl_ins", "ibl_im_befund") == {"frog": 1},
+   f"{str(gf('ibl_ins', 'result', ''))[-160:]!r} / {gf('ibl_ins', 'ibl_hinweise')}")
+cf("v3.13.0 neue Fassung nach dem Befund: nichts still geändert, „neu, nicht im Befund“ + Knopf „＋ IB Lab einfügen“",
+   gf("ibl_neu", "ibl_knopf_sichtbar") is True and "neu, nicht im Befund" in str(gf("ibl_neu", "ibl_band", ""))
+   and "18,2°" not in str(gf("ibl_neu", "result", "")), f"{gf('ibl_neu', 'ibl_band')!r} / {gf('ibl_neu', 'ibl_knopf_sichtbar')}")
+cf("v3.13.0 Knopf: neue Fassung im Befund (alte Zeilen ersetzt, nichts doppelt), Knopf wieder weg",
+   "Hallux-valgus-Winkel links 18,2° (IB Lab FROG)." in str(gf("ibl_eingefuegt", "result", ""))
+   and str(gf("ibl_eingefuegt", "result", "")).count("Calcaneusneigungswinkel links 12,4° (IB Lab FROG).") == 1
+   and gf("ibl_eingefuegt", "ibl_knopf_sichtbar") is False and gf("ibl_eingefuegt", "ibl_im_befund") == {"frog": 2},
+   f"{str(gf('ibl_eingefuegt', 'result', ''))[-200:]!r} / {gf('ibl_eingefuegt', 'ibl_im_befund')}")
 
 
 def _ueberlappt(a, b):
@@ -860,7 +917,8 @@ if L.get("prozesse"):
               f"{q['private_bytes_mb']} MB | {q['threads']} |" for q in L["prozesse"]]
 lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund), "
           "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen, danach Fall F CAS-Auftrag), "
-          "`G_minimiert.png` / `G_taskleiste.png` (RaKScribe nur als Taskleisten-Symbol), `G_cas_vorne.png` (nach CAS-Auftrag)."]
+          "`G_minimiert.png` / `G_taskleiste.png` (RaKScribe nur als Taskleisten-Symbol), `G_cas_vorne.png` (nach CAS-Auftrag), "
+          "`F_ibl_band.png` / `F_ibl_befund.png` / `F_ibl_knopf.png` (v3.13.0 IB-Lab-Zeile, Werte im Befund, Knopf)."]
 (OUT / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("\n".join(lines))
 sys.exit(0 if ok else 1)

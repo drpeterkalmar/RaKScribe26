@@ -37,6 +37,7 @@ import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten na
 import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
 import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
 import cas_vorlagen as _cv  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis für die Vorlagenwahl
+import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke — nach der KI wörtlich einsetzen
 import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
 
 # =========================================================================
@@ -472,14 +473,15 @@ def _rag_beispiele(seg):
     return ""
 
 
-def _pipeline_kontext(cas=None):
+def _pipeline_kontext(cas=None, ibl=None):
     """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden).
-    v3.12.0: cas = CAS-Leistungen des offenen Auftrags (cas_vorlagen.CasHinweis) oder None (= wie bisher)."""
+    v3.12.0: cas = CAS-Leistungen des offenen Auftrags (cas_vorlagen.CasHinweis) oder None (= wie bisher).
+    v3.13.0: ibl = IB-Lab-Bausteine des offenen Auftrags (ibl_bausteine.IblKontext) oder None (= wie bisher)."""
     return _pl.Kontext(templates=RADIOLOGY_TEMPLATES, display_names=DISPLAY_NAMES, prompt=INITIAL_PROMPT_CONTENT,
                        llm=lambda p: _llm_aufruf(p), misheard=apply_misheard, hinweise=MISHEARD_HINTS,
                        beispiele=_rag_beispiele, log=print, ausnahme_log=log_exception,
                        korrektur=lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print),
-                       cas=cas)
+                       cas=cas, ibl=ibl)
 
 
 # v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — Einstellung überlebt Neustart und Update (%APPDATA%\\RaKScribe)
@@ -755,6 +757,8 @@ class RaKScribeApp(ctk.CTk):
         self._autostart = _bs.Autostart(USER_KEY_DIR, log=log)
         self.autostart_var = tk.BooleanVar(value=False)  # beim Öffnen des Menüs aus der Verknüpfung gelesen
         self.nach_cas_minimieren_var = tk.BooleanVar(value=bool(einstellung_lesen("cas_minimieren", True)))
+        # v3.13.0 (Peter 13.10.): IB-Lab-Bausteine der Brücke in den Befund übernehmen (Menü, Standard an)
+        self.ibl_var = tk.BooleanVar(value=bool(einstellung_lesen("ibl_uebernehmen", True)))
         threading.Thread(target=self._autostart_nachziehen, daemon=True).start()
         # v3.8.2 (Peter 12.10.): SpeechMike-Steuerung im Menü abschaltbar (z. B. wenn SpeechMagic die Tasten braucht)
         self.speechmike_var = tk.BooleanVar(value=bool(einstellung_lesen("speechmike", True)))
@@ -933,6 +937,17 @@ class RaKScribeApp(ctk.CTk):
         self.cas_hinweis_label = ctk.CTkLabel(cas_text, text="", font=(UI_FONT, 12, "bold"), text_color=WARN_AMBER,
                                               height=18, anchor="w")
         self.cas_hinweis_label.pack(side="top", anchor="w")
+        # v3.13.0: IB-Lab-Bausteine („IB Lab: FROG rechts ✓“, grün; kommt etwas nach → kurz hervorgehoben) + Hinweise
+        # (amber, nur Anzeige). Eigene Zeile, nur sichtbar, solange der Auftrag Bausteine hat; Klick zeigt alles.
+        self.ibl_zeile = ctk.CTkFrame(cas_text, fg_color="transparent")
+        self.ibl_label = ctk.CTkLabel(self.ibl_zeile, text="", font=(UI_FONT, 12, "bold"), text_color=READY_GREEN,
+                                      height=18, anchor="w", corner_radius=6)
+        self.ibl_label.pack(side="left")
+        self.ibl_hinweis_label = ctk.CTkLabel(self.ibl_zeile, text="", font=(UI_FONT, 12), text_color=WARN_AMBER,
+                                              height=18, anchor="w")
+        self.ibl_hinweis_label.pack(side="left", padx=(12, 0))
+        for w in (self.ibl_label, self.ibl_hinweis_label):
+            w.bind("<Button-1>", lambda e: self._ibl_details())
         # v3.12.0 (Peter 13.10.): nach EOL im CAS-Modus eine Bestätigung, die man nicht übersieht — grünes Band,
         # erst danach geht RaKScribe in die Taskleiste
         self.bestaetigung_band = ctk.CTkFrame(self, fg_color=CAS_GRUEN, corner_radius=0, height=56)
@@ -951,6 +966,10 @@ class RaKScribeApp(ctk.CTk):
                       hover_color=ACCENT_HOVER, **band_kw).pack(side="right", padx=6)
         ctk.CTkButton(self.cas_band, text="Testbefund", width=110, command=self.cas_testbefund, **rand_kw,
                       **band_kw).pack(side="right", padx=6)
+        # v3.13.0: IB-Lab-Werte, die erst nach dem Befund kamen, auf Knopfdruck einsetzen (nie still in einen
+        # schon geprüften Befund — Peter 11.10.: nie etwas Ungesehenes weiterschicken)
+        self.ibl_knopf = ctk.CTkButton(self.cas_band, text="＋ IB Lab einfügen", width=150, command=self.ibl_einfuegen,
+                                       fg_color="#1E6B43", hover_color="#27A862", **band_kw)
         self.bind_all("<F11>", lambda e: self._cas_taste("ins"))
         self.bind_all("<F12>", lambda e: self._cas_taste("eol"))
 
@@ -1037,6 +1056,16 @@ class RaKScribeApp(ctk.CTk):
                     "bestaetigung_sichtbar": bool(getattr(self, "bestaetigung_band", None)
                                                   and self.bestaetigung_band.winfo_ismapped()),
                     "kopf": self._kopf_geometrie(),
+                    # v3.13.0: IB-Lab-Bausteine (Band-Zeile, Hinweise, Knopf, Stand im Befund, Menü-Schalter)
+                    "ibl_band": str(self.ibl_label.cget("text")).strip() if getattr(self, "ibl_label", None) else "",
+                    "ibl_band_sichtbar": bool(getattr(self, "ibl_zeile", None) and self.ibl_zeile.winfo_ismapped()),
+                    "ibl_hinweise": list(getattr(self, "_ibl_hinweise", []) or []),
+                    "ibl_hinweis_label": str(self.ibl_hinweis_label.cget("text")).strip()
+                    if getattr(self, "ibl_hinweis_label", None) else "",
+                    "ibl_knopf_sichtbar": bool(getattr(self, "ibl_knopf", None) and self.ibl_knopf.winfo_ismapped()),
+                    "ibl_im_befund": {f"{k[1]}": v for k, v in (getattr(self, "_ibl_im_befund", {}) or {}).items()},
+                    "ibl_hervorgehoben": int(getattr(self, "_ibl_hervorgehoben", 0)),
+                    "ibl_uebernehmen": bool(self._ibl_an()),
                     "befund_titel": befund_titel(self.result_text.get("1.0", "end-1c"), 400),
                     # v3.11.0: Bereitschaft (Fensterzustand, Zweitstarts, Autostart, Minimieren nach CAS-EOL)
                     "fenster": self.state(),
@@ -1102,7 +1131,8 @@ class RaKScribeApp(ctk.CTk):
                     elif phase.startswith("cas_"):
                         # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
                         aktion = {"cas_testbefund": self.cas_testbefund, "cas_eol": self.befund_fertig,
-                                  "cas_ins": self.sm_ins, "cas_abbrechen": self.cas_abbrechen}.get(phase.split("#")[0])
+                                  "cas_ins": self.sm_ins, "cas_abbrechen": self.cas_abbrechen,
+                                  "cas_ibl_einfuegen": self.ibl_einfuegen}.get(phase.split("#")[0])  # v3.13.0 Knopf
                         if aktion:
                             aktion()
                         self.after(1500, lambda p=phase: dump(p))
@@ -1203,6 +1233,8 @@ class RaKScribeApp(ctk.CTk):
                 m.add_command(label="   → auf diese EXE umstellen", command=self._autostart_umstellen)
         m.add_checkbutton(label="Nach CAS-Befund minimieren", variable=self.nach_cas_minimieren_var,
                           command=lambda: einstellung_schreiben("cas_minimieren", bool(self.nach_cas_minimieren_var.get())))
+        m.add_checkbutton(label="IB-Lab-Bausteine übernehmen", variable=self.ibl_var,  # v3.13.0
+                          command=self._ibl_umgeschaltet)
         m.add_separator()
         m.add_command(label="Prompt bearbeiten…", command=self.toggle_prompt_view)
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
@@ -1382,8 +1414,11 @@ class RaKScribeApp(ctk.CTk):
         if getattr(self, "_cas", None) is not None:  # v3.10.0: F9 leert nur das Diktat, der CAS-Auftrag bleibt offen
             self._cas_aufnahmen, self._cas_test = [], False
             self._cas_hinweise_zeigen([])
+            self._ibl_befund_leeren()  # v3.13.0: die Bausteine bleiben beim Auftrag, nur ihr Stand im Befund geht
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
+        if getattr(self, "_cas", None) is not None:
+            self._ibl_band_zeigen()
         if self._job.zustand == _js.LOCKED:
             self.refresh_key_state()
         else:
@@ -1474,6 +1509,7 @@ class RaKScribeApp(ctk.CTk):
             self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
             if getattr(self, "_cas", None) is not None:
                 self._cas_hinweise_zeigen([])  # v3.12.0: Hinweise gehören zum vorigen Befund
+                self._ibl_befund_leeren()      # v3.13.0: ebenso der Stand der IB-Lab-Werte im Befund
             self.transcript_text.delete("1.0", "end")
             if basis:
                 self.transcript_text.insert("1.0", basis)  # Nachdiktat: bisheriges Diktat bleibt stehen
@@ -1737,7 +1773,8 @@ class RaKScribeApp(ctk.CTk):
                 self.after(0, lambda: self._lauf_fertig(gen))
                 return
             cas = self._cas_hinweis_fuer_lauf()  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis (None = wie bisher)
-            erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(cas), beim_start=lambda: self._ui(gen, lambda: (
+            ibl = self._ibl_fuer_lauf()  # v3.13.0: IB-Lab-Bausteine, nach der KI wörtlich eingesetzt (None = wie bisher)
+            erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(cas, ibl), beim_start=lambda: self._ui(gen, lambda: (
                 self.result_text.delete("1.0", "end"),
                 self.result_text.insert("1.0", "... Befund wird geladen ...")
             )))
@@ -1747,6 +1784,8 @@ class RaKScribeApp(ctk.CTk):
             report, fehler, ausnahmen = erg.report, erg.fehler, erg.ausnahmen
             if cas is not None:
                 self._ui(gen, lambda h=erg.cas_hinweise: self._cas_hinweise_zeigen(h))
+            if getattr(self, "_cas", None) is not None:  # v3.13.0: Stand der IB-Lab-Werte gehört zu diesem Befund
+                self._ui(gen, lambda e=erg: self._ibl_nach_lauf(e))
 
             if not self._job.aktuell(gen):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
@@ -2160,8 +2199,10 @@ class RaKScribeApp(ctk.CTk):
                 nr = self._cas.nr
                 self._cas_beenden()
                 self._kurzhinweis(f"CAS-Auftrag {nr} beendet ({grund}) – der Text bleibt stehen", 10000)
-            elif self._cas.leistungen is None:
-                self._cas_leistungen_holen()
+            else:
+                if self._cas.leistungen is None:
+                    self._cas_leistungen_holen()
+                self._ibl_holen()  # v3.13.0: Bausteine kommen beim Start oder später, neue Fassungen ersetzen alte
         neu = k.abholen()
         if neu is not None:
             self._cas_neu(neu)
@@ -2197,6 +2238,176 @@ class RaKScribeApp(ctk.CTk):
         if self._cas_hinweise:
             log("[CAS] Hinweis: " + " | ".join(self._cas_hinweise))
 
+    # ── v3.13.0: IB-Lab-Vorbefund-Bausteine (Peter 13.10.: „… gleich eventuell vorhandene Bausteine von IBL holt“) ─────────
+    # Die Brücke 1.2.0 legt cas_ibl_<id>.json neben den Auftrag (beim Start oder später, neue Fassung = neue Datei).
+    # Band-Zeile „IB Lab: FROG rechts ✓“; beim INS setzt pipeline.ibl_anwenden die Messwerte NACH der KI wörtlich ein.
+    # Kommen Werte erst nach dem Befund: Knopf „＋ IB Lab einfügen“ (nie still in einen schon geprüften Befund).
+    def _ibl_an(self):
+        v = getattr(self, "ibl_var", None)
+        return True if v is None else bool(v.get())
+
+    def _ibl_bausteine(self):
+        a = getattr(self, "_cas", None)
+        return _ibl.aus_liste(a.ibl) if (a is not None and a.ibl) else []
+
+    def _ibl_holen(self):
+        """CAS-Takt: hat die Brücke eine neue Fassung der Bausteine geschrieben? → übernehmen, Band kurz hervorheben."""
+        a = getattr(self, "_cas", None)
+        if a is None:
+            return
+        liste = self._cas_kanal.ibl_lesen(a)
+        if liste is None:
+            return
+        alt = {b.schluessel: b.version for b in self._ibl_bausteine()}
+        a.ibl = liste
+        neu = self._ibl_bausteine()
+        log(f"[IBL] Bausteine {a.nr}: " + (", ".join(f"{b.name} v{b.version} (Ziffer {b.ziffer})" for b in neu) or "keine"))
+        self._ibl_band_zeigen(hervorheben=any(alt.get(b.schluessel) != b.version for b in neu))
+
+    def _ibl_fuer_lauf(self):
+        """Für pipeline.befund_aus_diktat: nur mit offenem Auftrag, Bausteinen mit Inhalt und Menü-Schalter an."""
+        a = getattr(self, "_cas", None)
+        if a is None or not a.ibl or not self._ibl_an():
+            return None
+        k = _ibl.IblKontext(self._ibl_bausteine(), cas_leistungen=list(a.leistungen or []))
+        return k if k else None
+
+    def _ibl_nach_lauf(self, erg):
+        """UI-Thread nach jedem Befund mit offenem Auftrag: Stand der eingesetzten Werte merken (ohne Bausteine bzw.
+        Übernahme aus: nichts im Befund), Hinweise zeigen (nur Anzeige), Band/Knopf nachziehen."""
+        e = getattr(erg, "ibl", None)
+        self._ibl_im_befund = dict(e.behandelt) if e is not None else {}
+        self._ibl_zeilen = {k: list(v) for k, v in e.eingesetzt.items()} if e is not None else {}
+        hinweise = list(e.hinweise) if e is not None else []
+        if self._ibl_an():
+            hinweise += _ibl.anzeige_hinweise(self._ibl_bausteine())
+        self._ibl_hinweise_zeigen(hinweise)
+        self._ibl_band_zeigen()
+        # läuft noch im Zustand „Verarbeitung“: Knopf erst danach prüfen (Fassung, die während der KI kam)
+        self.after(800, self._ibl_band_zeigen)
+
+    def _ibl_befund_leeren(self):
+        """F9, neue Aufnahme, neuer/beendeter Auftrag: der Stand im (alten) Befund und seine Hinweise gelten nicht mehr."""
+        self._ibl_im_befund, self._ibl_zeilen = {}, {}
+        self._ibl_hinweise_zeigen([])
+
+    def _ibl_offen(self):
+        """Bausteine (mit Inhalt), die im sichtbaren Befund noch fehlen bzw. dort in einer älteren Fassung stehen."""
+        if not self.result_text.get("1.0", "end-1c").strip() or self._job.zustand in (
+                _js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            return []
+        im = getattr(self, "_ibl_im_befund", {}) or {}
+        return [b for b in self._ibl_bausteine() if (b.befundteil or b.ergebnis) and im.get(b.schluessel) != b.version]
+
+    def _ibl_band_zeigen(self, hervorheben=False):
+        zeile, lbl = getattr(self, "ibl_zeile", None), getattr(self, "ibl_label", None)
+        if lbl is None:
+            return
+        try:
+            bausteine = self._ibl_bausteine()
+            an = self._ibl_an()
+            offen = self._ibl_offen() if (bausteine and an) else []
+            text = _ibl.band_text(bausteine, an)
+            if offen:
+                text += "  ·  neu, nicht im Befund"
+            lbl.configure(text=text, text_color=READY_GREEN if an else TEXT_FAINT)
+            knopf = getattr(self, "ibl_knopf", None)
+            if knopf is not None:
+                if offen and an:
+                    knopf.pack(side="right", padx=6)
+                else:
+                    knopf.pack_forget()
+            if zeile is not None:
+                if bausteine:
+                    zeile.pack(side="top", anchor="w")
+                else:
+                    zeile.pack_forget()
+            band = getattr(self, "cas_band", None)
+            if band is not None and hasattr(band, "configure"):
+                band.configure(height=76 if bausteine else 56)
+            if hervorheben and bausteine and an:
+                self._ibl_hervorheben()
+        except Exception:
+            log_exception("[IBL] Band")
+
+    def _ibl_hervorheben(self):
+        """Kommt etwas nach: Band-Zeile 2,5 s grün hinterlegt (Peter: „kurz hervorheben“)."""
+        self._ibl_hervorgehoben = getattr(self, "_ibl_hervorgehoben", 0) + 1
+        nr = self._ibl_hervorgehoben
+        lbl = self.ibl_label
+        lbl.configure(fg_color=READY_GREEN, text_color="#08130D")
+        self.after(2500, lambda: self._ibl_hervorgehoben == nr and lbl.configure(
+            fg_color="transparent", text_color=READY_GREEN if self._ibl_an() else TEXT_FAINT))
+
+    def _ibl_hinweise_zeigen(self, hinweise):
+        self._ibl_hinweise = list(dict.fromkeys(hinweise or []))
+        lbl = getattr(self, "ibl_hinweis_label", None)
+        if lbl is not None:
+            t = "⚠  " + "  ·  ".join(self._ibl_hinweise) if self._ibl_hinweise else ""
+            lbl.configure(text=t if len(t) <= 140 else t[:126].rstrip() + "…  (Klick: alle)")
+        if self._ibl_hinweise:  # Protokoll ohne Befundinhalt (Umbau Schritt 23): nur Zahl und Module
+            module = sorted({h.split(":", 1)[0] for h in self._ibl_hinweise if ":" in h[:24]})
+            log(f"[IBL] Hinweise: {len(self._ibl_hinweise)}" + (f" ({', '.join(module)})" if module else ""))
+
+    def _ibl_umgeschaltet(self):
+        einstellung_schreiben("ibl_uebernehmen", self._ibl_an())
+        log(f"[IBL] IB-Lab-Bausteine übernehmen: {'an' if self._ibl_an() else 'aus'}")
+        self._ibl_band_zeigen()
+
+    def ibl_einfuegen(self):
+        """Knopf „＋ IB Lab einfügen“: Werte, die nach dem Befund kamen (bzw. eine neue Fassung), in den SICHTBAREN Befund
+        einsetzen — dieselben Regeln wie beim INS; eine ältere Fassung wird wörtlich ersetzt."""
+        offen = self._ibl_offen()
+        if not offen or not self._ibl_an():
+            self._ibl_band_zeigen()
+            return
+        zeilen = getattr(self, "_ibl_zeilen", {}) or {}
+        alte = [z for b in offen for z in zeilen.get(b.schluessel, [])]
+        a = self._cas
+        e = _ibl.einsetzen(self.result_text.get("1.0", "end-1c"), offen,
+                           diktat=self.final_transcript or self.transcript_text.get("1.0", "end-1c"),
+                           cas_leistungen=list(a.leistungen or []), templates=RADIOLOGY_TEMPLATES, entfernen=alte)
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", e.report)
+        self._ibl_im_befund = {**(getattr(self, "_ibl_im_befund", {}) or {}), **e.behandelt}
+        self._ibl_zeilen = {**zeilen, **e.eingesetzt}
+        hinweise = list(e.hinweise)
+        if e.nicht_entfernt:
+            hinweise.insert(0, f"ältere IB-Lab-Werte ({len(e.nicht_entfernt)} Zeile(n)) nicht mehr wörtlich im Befund – "
+                               "bitte prüfen")
+        self._ibl_hinweise_zeigen(hinweise + _ibl.anzeige_hinweise(self._ibl_bausteine()))
+        self._befund_wartet, self._gesendet = True, False
+        log("[IBL] von Hand eingesetzt: " + ", ".join(f"{b.name} v{b.version}" for b in offen)
+            + f" · {len(e.zeilen)} Zeile(n)")
+        self._ibl_band_zeigen()
+
+    def _ibl_details(self):
+        """Klick auf die IB-Lab-Zeile: alle Bausteine, Werte und Hinweise (nur lesen)."""
+        bausteine = self._ibl_bausteine()
+        if not bausteine:
+            return
+        zeilen = []
+        for b in bausteine:
+            zeilen.append(f"{b.label} – Version {b.version}" + ("" if (getattr(self, "_ibl_im_befund", {}) or {}).get(
+                b.schluessel) != b.version else " (im Befund)"))
+            zeilen += [f"   {z}" for z in b.befundteil + b.ergebnis]
+            zeilen += [f"   Nicht zugeordnet: {z}" for z in b.nicht_zugeordnet]
+        h = getattr(self, "_ibl_hinweise", []) or []
+        if h:
+            zeilen += ["", "Hinweise (nicht im Befund):"] + [f" • {x}" for x in h]
+        if not self._ibl_an():
+            zeilen += ["", "Übernahme ist aus (Menü ☰ „IB-Lab-Bausteine übernehmen“)."]
+        messagebox.showinfo("IB Lab", "\n".join(zeilen))
+
+    def _ibl_eol_pruefen(self, text):
+        """EOL: stehen die eingesetzten IB-Lab-Zeilen noch wörtlich im Befund? Nur fürs Protokoll (von Hand Geändertes
+        ist die Entscheidung des Arztes)."""
+        zeilen = [z for zs in (getattr(self, "_ibl_zeilen", {}) or {}).values() for z in zs]
+        if zeilen:
+            fehlt = _ibl.gate(text, zeilen)
+            log(f"[IBL] EOL: {len(zeilen) - len(fehlt)}/{len(zeilen)} IB-Lab-Zeilen wörtlich im Befund"
+                + (" (übrige von Hand geändert)" if fehlt else ""))
+
     def _cas_hat_inhalt(self):
         if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
             return True
@@ -2219,12 +2430,14 @@ class RaKScribeApp(ctk.CTk):
         inhalt = laeuft or self._cas_hat_inhalt()
         self._bestaetigung_weg()
         self._cas_hinweise_zeigen([])
+        self._ibl_befund_leeren()
         self._cas, self._cas_test = a, False
         self._cas_aufnahmen = [self._aufnahme] if (inhalt and self._aufnahme is not None) else []
         k.antworten(a, "angenommen")
         log(f"[CAS] Auftrag {a.nr} ({a.benutzer or '-'}) angenommen" + (" – Diktat läuft bzw. Text steht schon da"
                                                                          if inhalt else ""))
         self._cas_band_zeigen()
+        self._ibl_band_zeigen()
         self._cas_nach_vorne()
         if not keys_ready():  # v3.11.0: minimiert ohne Schlüssel gewartet → Sperre + Hinweis erst jetzt zeigen
             self.refresh_key_state()
@@ -2233,6 +2446,8 @@ class RaKScribeApp(ctk.CTk):
     def _cas_beenden(self):
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
         self._cas_hinweise_zeigen([])
+        self._ibl_befund_leeren()
+        self._ibl_band_zeigen()
         band = getattr(self, "cas_band", None)
         if band is not None:
             try:
@@ -2319,6 +2534,7 @@ class RaKScribeApp(ctk.CTk):
             return
         a = self._cas
         pcm = self._cas_pcm()
+        self._ibl_eol_pruefen(text)
         try:
             self._cas_kanal.ergebnis_schreiben(a, text, pcm, self.samplerate,
                                                test=self._cas_test or text == _cas.TESTBEFUND)

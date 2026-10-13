@@ -5,6 +5,7 @@ befund_aus_diktat(diktat, ctx): Fehlhör-Liste → Regionen-Trenner → je Regio
 → Regionen zusammenfügen. Die Oberfläche (RaKScribe.py) und die Test-/Messkette (prod_pipeline.exe_kette)
 rufen DIESELBE Funktion; nur der LLM-Aufruf wird übergeben (ctx.llm).
 Tests: tests/offline/test_pipeline_exe.py, tests/offline/test_regionen.py.
+v3.13.0: mit IB-Lab-Bausteinen (ctx.ibl) danach ibl_anwenden() — Messwerte wörtlich, ohne KI (ibl_bausteine.py).
 """
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -16,6 +17,7 @@ import befund_regeln as br
 import cas_vorlagen as cv
 import detect
 import gemini
+import ibl_bausteine as iblb
 import normalbypass as nb
 import protokoll
 
@@ -62,6 +64,7 @@ class Kontext:
     bausteine: Optional[dict] = None             # v3.3: Ordi-Textbausteine (Standard: gebündelte ordi_bausteine.json)
     korrektur: Optional[Callable[[str], str]] = None  # v3.4: Call 0 (korrektur.py) — nur im Nur-Text-Modus
     cas: Optional[cv.CasHinweis] = None          # v3.12.0: CAS-Leistungen des Auftrags (Vorrang-Hinweis); None = wie bisher
+    ibl: Optional[iblb.IblKontext] = None         # v3.13.0: IB-Lab-Bausteine des Auftrags (nach der KI einsetzen); None = wie bisher
 
 
 @dataclass
@@ -74,6 +77,7 @@ class Ergebnis:
     leer: bool = False                           # kein Text diktiert
     cas_hinweise: List[str] = field(default_factory=list)  # v3.12.0: „LWS laut CAS, nicht diktiert“ usw. (nur Anzeige)
     vorlagen: List[str] = field(default_factory=list)      # v3.12.0: gewählte Vorlage je Abschnitt (nur mit CAS)
+    ibl: Optional[iblb.Einsatz] = None            # v3.13.0: eingesetzte IB-Lab-Zeilen + Hinweise (nur mit Bausteinen)
 
     @property
     def vollstaendig(self):
@@ -98,9 +102,10 @@ def bypass_befund(raw, template_data, seite=None):
     return f"## {tpl_title}\n\n## Befund\n{tpl_body}\n\n## Ergebnis\n{ergebnis}"
 
 
-def gen_prompt(raw, template_data, prompt, hinweise="", beispiele="", cas_block=""):
+def gen_prompt(raw, template_data, prompt, hinweise="", beispiele="", cas_block="", ibl_block=""):
     """Gen-Prompt für EIN Segment (wie bisher in RaKScribe.py _befund_fuer_segment). v3.12.0: cas_block =
-    <cas_untersuchungen> (nur mit CAS-Leistungen; leer = Prompt bit-gleich wie bisher)."""
+    <cas_untersuchungen> (nur mit CAS-Leistungen; leer = Prompt bit-gleich wie bisher). v3.13.0: ibl_block =
+    <ibl_messwerte> (nur mit IB-Lab-Bausteinen zur Region des Abschnitts; leer = bit-gleich)."""
     p_full = br.strip_prompt_marker(prompt)
     p_full = p_full.replace('{roh_text}', raw)
     p_full = p_full.replace('{template_body}', template_data['body'])
@@ -113,6 +118,8 @@ def gen_prompt(raw, template_data, prompt, hinweise="", beispiele="", cas_block=
     p_full = p_full + "<normal_ergebnis>" + (template_data.get('ergebnis') or "Unauffälliger Befund.") + "</normal_ergebnis>\n"
     if cas_block:
         p_full = p_full + cas_block + "\n"
+    if ibl_block:
+        p_full = p_full + ibl_block + "\n"
     if hinweise:  # v3.1: kontextabhängige Verhörer (mode 'llm') als Hinweis für Gemini
         p_full = p_full + hinweise + "\n"
     if "{examples}" in p_full:
@@ -156,7 +163,8 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         roh = bypass_befund(seg, template_data, seite)
     else:
         beispiele = ctx.beispiele(seg) if ctx.beispiele else ""
-        roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, ctx.hinweise, beispiele, _cas_block(ctx)))
+        roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, ctx.hinweise, beispiele, _cas_block(ctx),
+                                 _ibl_block(seg, template_key, ctx)))
     if ctx.protokoll is not None:
         ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
     # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
@@ -165,6 +173,28 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
 
 def _cas_block(ctx):
     return cv.prompt_block(ctx.cas, ctx.templates) if ctx.cas else ""
+
+
+def _ibl_block(seg, template_key, ctx):
+    """v3.13.0: <ibl_messwerte> nur mit Bausteinen, deren Modul zur Region dieses Abschnitts passt."""
+    if not ctx.ibl:
+        return ""
+    reg = cv.regionen(cv.vorlagen_text(template_key, ctx.templates) + " " + region_name(seg))
+    return iblb.prompt_block(iblb.fuer_abschnitt(ctx.ibl.bausteine, reg),
+                             (ctx.templates.get(template_key) or {}).get("body"))
+
+
+def ibl_anwenden(erg, ctx):
+    """v3.13.0 (Peter 13.10.): IB-Lab-Bausteine NACH der KI deterministisch einsetzen (Messwerte 1:1) — nur mit
+    Bausteinen und vollständigem Befund; Hinweise stehen in erg.ibl.hinweise (nur Anzeige)."""
+    if not ctx.ibl or erg.fehler or not erg.report:
+        return erg
+    erg.ibl = iblb.einsetzen(erg.report, ctx.ibl.bausteine, segmente=erg.segmente, diktat=erg.raw,
+                            cas_leistungen=ctx.ibl.cas_leistungen, templates=ctx.templates)
+    erg.report = erg.ibl.report
+    ctx.log("[IBL] eingesetzt: " + (", ".join(f"{m} → {t}" for m, t in erg.ibl.zuordnung.items()) or "nichts")
+            + f" · {len(erg.ibl.zeilen)} Zeile(n) · {len(erg.ibl.hinweise)} Hinweis(e)")
+    return erg
 
 
 def cas_wahlen(segmente, ctx):
@@ -208,8 +238,9 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
         wahlen = [None if w.art == "baustein" else w for w in wahlen]
     vorlagen = [w.vorlage for w in wahlen if w is not None]
     if len(segmente) <= 1:
-        return Ergebnis(raw=raw, report=befund_fuer_segment(segmente[0] if segmente else raw, ctx, wahlen[0] if wahlen else None),
-                        segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen)
+        return ibl_anwenden(Ergebnis(raw=raw, report=befund_fuer_segment(segmente[0] if segmente else raw, ctx,
+                                                                         wahlen[0] if wahlen else None),
+                                     segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx)
     ctx.log(f"[MULTI] {len(segmente)} Regionen")
     with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
         futures = [ex.submit(befund_fuer_segment, seg, ctx, w) for seg, w in zip(segmente, wahlen)]
@@ -223,8 +254,8 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             ausnahmen.append(e)
             teile.append(e)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
-    return Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
-                    cas_hinweise=cas_hinweise, vorlagen=vorlagen)
+    return ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
+                                 cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx)
 
 
 def nur_text_aus_diktat(diktat, ctx):
