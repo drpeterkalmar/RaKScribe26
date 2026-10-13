@@ -35,6 +35,7 @@ import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiede
 import speechmike as _sm  # v3.8.0: SpeechMike-Tasten + LEDs direkt (hidapi), ohne Konfiguration in SpeechControl
 import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten nach SpeechMike-Pausen
 import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
+import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -713,6 +714,11 @@ class RaKScribeApp(ctk.CTk):
         self.register_hotkey()
         self._fensterziel = _fz.Fensterziel(_fz.win32_oder_none())
         self.after(500, self._fenster_merken)
+        # v3.10.0 (Peter 12.10.): CAS-Auftrag der RaKScribe-Brücke („Digitales Diktat“ ohne SpeechMagic). Mit offenem
+        # Auftrag schickt EOL den Befund als Datei an die Brücke statt per Strg+V; ohne Auftrag bleibt alles wie bisher.
+        self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
+        self._cas_kanal = _cas.Kanal(version=app_version(), log=log, prozess_lebt=_cas.prozess_lebt)
+        self.after(700, self._cas_takt)
         # v3.8.2 (Peter 12.10.): SpeechMike-Steuerung im Menü abschaltbar (z. B. wenn SpeechMagic die Tasten braucht)
         self.speechmike_var = tk.BooleanVar(value=bool(einstellung_lesen("speechmike", True)))
         if self.speechmike_var.get():
@@ -852,6 +858,26 @@ class RaKScribeApp(ctk.CTk):
         self.prompt_window = None
         self.update_status("READY", "ready")
 
+        # v3.10.0: Band für einen CAS-Auftrag der RaKScribe-Brücke — nur sichtbar, solange ein Auftrag offen ist.
+        # Knöpfe + F11/F12 für den Fern-Test per Remotedesktop (kein SpeechMike); F11/F12 wirken nur mit Auftrag.
+        self.cas_band = ctk.CTkFrame(self, fg_color="#1A2640", corner_radius=0, height=50)
+        self.cas_band.pack_propagate(False)
+        self.cas_label = ctk.CTkLabel(self.cas_band, text="", font=(UI_FONT, 14, "bold"), text_color="#FFFFFF")
+        self.cas_label.pack(side="left", padx=18)
+        band_kw = dict(height=34, corner_radius=9, font=(UI_FONT, 12, "bold"))
+        rand_kw = dict(fg_color="transparent", border_width=1, border_color=BORDER_STRONG, hover_color=BGC_CARD,
+                       text_color=TEXT_PRIMARY)
+        ctk.CTkButton(self.cas_band, text="✕ Abbrechen", width=110, command=self.cas_abbrechen, **rand_kw,
+                      **band_kw).pack(side="right", padx=(6, 14))
+        ctk.CTkButton(self.cas_band, text="EOL: an CAS (F12)", width=150, command=self.befund_fertig,
+                      fg_color=READY_GREEN, hover_color="#27A862", text_color="#08130D", **band_kw).pack(side="right", padx=6)
+        ctk.CTkButton(self.cas_band, text="INS: Befund (F11)", width=145, command=self.sm_ins, fg_color=ACCENT_PURPLE,
+                      hover_color=ACCENT_HOVER, **band_kw).pack(side="right", padx=6)
+        ctk.CTkButton(self.cas_band, text="Testbefund", width=110, command=self.cas_testbefund, **rand_kw,
+                      **band_kw).pack(side="right", padx=6)
+        self.bind_all("<F11>", lambda e: self._cas_taste("ins"))
+        self.bind_all("<F12>", lambda e: self._cas_taste("eol"))
+
     # ── v3.0: Selbsttest-Modus für den automatischen Windows-UI-Test (tests/windows/exe_ui_test.py).
     # NUR aktiv, wenn die Umgebungsvariable RAKSCRIBE_SELFTEST gesetzt ist — im Praxisbetrieb wirkungslos.
     # Schreibt den UI-Zustand als JSON (Sperre, Aufnahme-Button, Status, Schlüssel) und füllt optional Demo-Text.
@@ -920,6 +946,10 @@ class RaKScribeApp(ctk.CTk):
                     "repariert": str(self.repariert_label.cget("text")),
                     "zwischenablage": _zwischenablage_lesen()[:600],
                     "status_text": str(self.status_badge.cget("text")).strip(),
+                    # v3.10.0: CAS-Auftrag der Brücke (Nummer, Bandtext, Band sichtbar)
+                    "cas": self._cas.nr if getattr(self, "_cas", None) is not None else None,
+                    "cas_band": str(self.cas_label.cget("text")).strip() if getattr(self, "cas_label", None) else "",
+                    "cas_band_sichtbar": bool(getattr(self, "cas_band", None) and self.cas_band.winfo_ismapped()),
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -968,6 +998,13 @@ class RaKScribeApp(ctk.CTk):
                     elif phase == "befund_aendern":
                         self.result_text.insert("end", "\nVon Hand ergänzt.")
                         dump(phase)
+                    elif phase.startswith("cas_"):
+                        # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
+                        aktion = {"cas_testbefund": self.cas_testbefund, "cas_eol": self.befund_fertig,
+                                  "cas_ins": self.sm_ins, "cas_abbrechen": self.cas_abbrechen}.get(phase.split("#")[0])
+                        if aktion:
+                            aktion()
+                        self.after(1500, lambda p=phase: dump(p))
                     else:
                         dump(phase)
                 except Exception:
@@ -1045,6 +1082,7 @@ class RaKScribeApp(ctk.CTk):
         m.add_command(label="F10 Aufnahme · F9 Neu", state="disabled")
         for zeile in HILFE_SPEECHMIKE:
             m.add_command(label=zeile, state="disabled")
+        m.add_command(label="CAS-Diktat (blaues Band): F11 = INS · F12 = EOL → an CAS", state="disabled")  # v3.10.0
         x = self.menu_btn.winfo_rootx()
         y = self.menu_btn.winfo_rooty() + self.menu_btn.winfo_height() + 4
         try:
@@ -1205,6 +1243,8 @@ class RaKScribeApp(ctk.CTk):
         self.stream_interim = ""
         self._einfuegen_ziel = None
         self._sm_sitzung_leeren()  # v3.8.0: Nachdiktat/Abschnitte/Kontrollschritt verwerfen
+        if getattr(self, "_cas", None) is not None:  # v3.10.0: F9 leert nur das Diktat, der CAS-Auftrag bleibt offen
+            self._cas_aufnahmen, self._cas_test = [], False
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
         if self._job.zustand == _js.LOCKED:
@@ -1231,6 +1271,10 @@ class RaKScribeApp(ctk.CTk):
         # Streaming-Text mit der Abschnittsnummer seiner Sitzung (v3.8.0: Anzeige nach SpeechMike-Pausen)
         a.on_text = lambda text, is_final: self.after(0, self.update_interim_text, text, is_final, gen, a.stream_abschnitt)
         self._aufnahme = a
+        if getattr(self, "_cas", None) is not None:  # v3.10.0: Aufnahmen dieses CAS-Diktats sammeln (→ <Nr>.wav)
+            if not self._basis:
+                self._cas_aufnahmen = []  # neues Diktat statt Nachdiktat: frühere Aufnahmen gehören nicht dazu
+            self._cas_aufnahmen.append(a)
         a.start()
 
     def _live_anzeige_fehler(self, gen, e):
@@ -1629,8 +1673,9 @@ class RaKScribeApp(ctk.CTk):
 
     def _lauf_fertig(self, gen):
         """v3.8.0: Ende eines Laufs. F10 und „Befund aus Text“: kopieren + einfügen (wie bisher). SpeechMike-INS: nur
-        anzeigen — der Befund wartet auf EOL (Peter 11.10.: nie etwas Ungesehenes weiterschicken)."""
-        if gen == getattr(self, "_kontroll_gen", None):
+        anzeigen — der Befund wartet auf EOL (Peter 11.10.: nie etwas Ungesehenes weiterschicken).
+        v3.10.0: Mit offenem CAS-Auftrag nie Strg+V (auch nicht nach F10) — EOL schickt den Befund an die Brücke."""
+        if gen == getattr(self, "_kontroll_gen", None) or getattr(self, "_cas", None) is not None:
             self._fertig_zur_kontrolle(gen)
         else:
             self._fertig_kopieren_einfuegen(gen)
@@ -1765,7 +1810,10 @@ class RaKScribeApp(ctk.CTk):
         (bzw. Nur-Text-Inhalt) weiterschicken und danach alles leeren — bereit für den nächsten Patienten. Nur mit
         fertigem Befund und ohne laufende Aufnahme/Verarbeitung; nie etwas Ungesehenes, kein Doppeldruck.
         ZENTRALE STELLE für den nächsten Schritt: hier kommt später „Formatierung → Vidierliste“ hinein (heute: kopieren
-        + Strg+V ins SpeechMagic-/RIS-Fenster, das vor RaKScribe vorne war)."""
+        + Strg+V ins SpeechMagic-/RIS-Fenster, das vor RaKScribe vorne war).
+        v3.10.0: Mit offenem CAS-Auftrag geht der Befund als Datei an die RaKScribe-Brücke (kein Strg+V)."""
+        if getattr(self, "_cas", None) is not None:
+            return self._cas_senden()
         text = self.result_text.get("1.0", "end-1c").strip()
         if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
             self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
@@ -1916,13 +1964,174 @@ class RaKScribeApp(ctk.CTk):
         self.after(500, self._fenster_merken)
 
     def _schliessen(self):
-        """Fenster schließen: SpeechMike-LED aus, Lese-Thread beenden."""
+        """Fenster schließen: SpeechMike-LED aus, Lese-Thread beenden. v3.10.0: offener CAS-Auftrag → „abgebrochen“
+        (die Brücke startet dann das normale Diktatprogramm)."""
+        try:
+            if getattr(self, "_cas", None) is not None:
+                self._cas_kanal.antworten(self._cas, "abgebrochen", grund="fenster_zu")
+        except Exception:
+            log_exception("[CAS] Abbruch beim Schließen nicht gemeldet")
         try:
             if getattr(self, "_speechmike", None) is not None:
                 self._speechmike.beenden()
         except Exception:
             pass
         self.destroy()
+
+    # ── v3.10.0: CAS-Auftrag der RaKScribe-Brücke (Peter 12.10.: „Digitales Diktat“ ohne SpeechMagic) ────────────────
+    # Die Brücke legt cas_auftrag.json ab (cas_auftrag.py). RaKScribe nimmt ihn an, zeigt das Band und holt sich den
+    # Fokus; Diktat wie gewohnt (Record/INS/EOL bzw. F10, F11/F12); EOL schreibt den sichtbaren Befund + Aufnahme als
+    # Datei und meldet „fertig“. Ein Diktat für Patient A landet nie still bei Patient B (cas_auftrag.entscheidung).
+    def _cas_takt(self):
+        try:
+            self._cas_einmal()
+        except Exception:
+            log_exception("[CAS] Auftragsprüfung")
+        self.after(500, self._cas_takt)
+
+    def _cas_einmal(self):
+        k = getattr(self, "_cas_kanal", None)
+        if k is None:
+            return
+        if self._cas is not None:
+            grund = k.zurueckgezogen(self._cas)
+            if grund:
+                nr = self._cas.nr
+                self._cas_beenden()
+                self._kurzhinweis(f"CAS-Auftrag {nr} beendet ({grund}) – der Text bleibt stehen", 10000)
+        neu = k.abholen()
+        if neu is not None:
+            self._cas_neu(neu)
+
+    def _cas_hat_inhalt(self):
+        if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            return True
+        return bool(self.transcript_text.get("1.0", "end-1c").strip() or self.result_text.get("1.0", "end-1c").strip())
+
+    def _cas_neu(self, a):
+        k = self._cas_kanal
+        e = _cas.entscheidung(self._cas, self._cas_hat_inhalt())
+        if e == "ablehnen":
+            k.antworten(a, "abgelehnt", grund="anderes CAS-Diktat offen", offen_nr=self._cas.nr)
+            self._cas_nach_vorne()
+            self._kurzhinweis(f"Neues CAS-Diktat {a.nr} abgelehnt – erst {self._cas.nr} mit EOL abschließen "
+                              "oder im Band abbrechen", 10000)
+            return
+        if e == "ersetzen":
+            k.antworten(self._cas, "ersetzt", grund=f"neuer Auftrag {a.nr}")
+        laeuft = self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)
+        if self._gesendet and not laeuft:
+            self._felder_leeren()  # schon eingefügter Befund gehört zum vorigen Patienten → frisch beginnen
+        inhalt = laeuft or self._cas_hat_inhalt()
+        self._cas, self._cas_test = a, False
+        self._cas_aufnahmen = [self._aufnahme] if (inhalt and self._aufnahme is not None) else []
+        k.antworten(a, "angenommen")
+        log(f"[CAS] Auftrag {a.nr} ({a.benutzer or '-'}) angenommen" + (" – Diktat läuft bzw. Text steht schon da"
+                                                                         if inhalt else ""))
+        self._cas_band_zeigen()
+        self._cas_nach_vorne()
+
+    def _cas_beenden(self):
+        self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
+        band = getattr(self, "cas_band", None)
+        if band is not None:
+            try:
+                band.pack_forget()
+            except Exception:
+                pass
+
+    def _cas_band_zeigen(self):
+        band = getattr(self, "cas_band", None)
+        if band is None or self._cas is None:
+            return
+        try:
+            self.cas_label.configure(text="●  " + self._cas.band_text() + "   ·   EOL schickt den Befund an CAS")
+            band.pack(fill="x", before=self.main_container)
+        except Exception:
+            log_exception("[CAS] Band")
+
+    def _cas_nach_vorne(self):
+        """RaKScribe nach vorne holen (die Brücke hat das Recht dazu per AllowSetForegroundWindow weitergegeben)."""
+        try:
+            self.deiconify()
+            self.lift()
+            self.attributes("-topmost", True)
+            self.after(500, lambda: self.attributes("-topmost", False))
+            self.focus_force()
+            import ctypes
+            ctypes.windll.user32.SetForegroundWindow(ctypes.windll.user32.GetParent(self.winfo_id()))
+        except Exception:
+            pass
+
+    def _cas_taste(self, was):
+        """F11 = INS, F12 = EOL — nur mit offenem CAS-Auftrag (ohne Auftrag bleibt alles wie bisher)."""
+        if getattr(self, "_cas", None) is None:
+            return None
+        (self.sm_ins if was == "ins" else self.befund_fertig)()
+        return "break"
+
+    def cas_testbefund(self):
+        """Knopf „Testbefund“ im Band (Fern-Test ohne Mikrofon): fester, als TEST markierter Text rechts; EOL schickt ihn."""
+        if getattr(self, "_cas", None) is None:
+            return
+        if self._job.zustand not in (_js.READY, _js.ERROR):
+            self._kurzhinweis("Testbefund: erst Aufnahme bzw. Verarbeitung abwarten")
+            return
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", _cas.TESTBEFUND)
+        self._cas_test, self._cas_aufnahmen = True, []
+        self._befund_wartet, self._gesendet = True, False
+        self.update_status("KONTROLLE", "ready")
+        log("[CAS] Testbefund eingesetzt.")
+
+    def cas_abbrechen(self):
+        """Knopf „Abbrechen“ im Band: Auftrag zurückgeben — die Brücke startet das normale Diktatprogramm."""
+        if getattr(self, "_cas", None) is None:
+            return
+        nr = self._cas.nr
+        try:
+            self._cas_kanal.antworten(self._cas, "abgebrochen", grund="knopf")
+        except OSError:
+            log_exception("[CAS] Abbruch nicht gemeldet")
+        self._cas_beenden()
+        self._kurzhinweis(f"CAS-Diktat {nr} abgebrochen – CAS startet das normale Diktat", 8000)
+
+    def _cas_pcm(self):
+        teile = []
+        for a in getattr(self, "_cas_aufnahmen", []) or []:
+            try:
+                s = a.samples()
+            except Exception:
+                s = None
+            if s is not None and len(s):
+                teile.append(s.astype("<i2").tobytes())
+        return b"".join(teile) or None
+
+    def _cas_senden(self):
+        """EOL mit CAS-Auftrag: sichtbaren Befund (+ Aufnahme) als Datei an die Brücke, „fertig“ melden, alles leeren.
+        Die Zwischenablage bekommt den Text zusätzlich (Sicherheitsnetz), es wird NICHT eingefügt."""
+        text = self.result_text.get("1.0", "end-1c").strip()
+        if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
+            self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+            return
+        a = self._cas
+        pcm = self._cas_pcm()
+        try:
+            self._cas_kanal.ergebnis_schreiben(a, text, pcm, self.samplerate,
+                                               test=self._cas_test or text == _cas.TESTBEFUND)
+        except OSError as e:
+            log_exception("[CAS] Ergebnis nicht geschrieben")
+            kopiert = self.copy_formatted_report()
+            messagebox.showerror("Nicht an CAS übergeben", f"Der Befund konnte nicht an die Brücke übergeben werden:\n{e}"
+                                 "\n\n" + ("Er liegt in der Zwischenablage." if kopiert else ZWISCHENABLAGE_GESPERRT))
+            return
+        log(f"[CAS] EOL: Befund ({len(text)} Zeichen) an CAS-Diktat {a.nr} übergeben"
+            + (f", Aufnahme {len(pcm) / 2 / self.samplerate:.1f} s" if pcm else ", ohne Aufnahme"))
+        self.copy_formatted_report()
+        self._job.ereignis("eol")
+        self._cas_beenden()
+        self._felder_leeren()
+        self._kurzhinweis(f"An CAS übergeben: Diktat {a.nr} – bereit", 6000)
 
     def speechmike_diagnose(self):
         smk = getattr(self, "_speechmike", None)

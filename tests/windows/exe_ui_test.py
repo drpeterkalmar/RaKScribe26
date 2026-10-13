@@ -14,6 +14,9 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
      (RAKSCRIBE_SELFTEST_FAKEAUDIO): Record → Pause (repariert, kein Befund) → EOL (nichts) → Weiter → INS (Befund zur
      Kontrolle, nichts eingefügt) → von Hand ändern → EOL (genau dieser Text in der Windows-Zwischenablage, alles leer);
      F2/Nur Text, F1 = Neu, Play = nichts; gesperrt: Record startet nichts
+  F  v3.10.0 CAS-Auftrag der RaKScribe-Brücke: Auftrag (cas_auftrag.json) → Band „CAS-Diktat <Nr> (kp)“ → Testbefund
+     → EOL schreibt die Ergebnis-Datei statt Strg+V (Antwort „fertig“, test=true); echtes Attrappen-Diktat Record → INS
+     → EOL liefert Text + WAV; Abbrechen-Knopf → „abgebrochen“
 Die EXE schreibt ihren UI-Zustand per Selbsttest-Modus (RAKSCRIBE_SELFTEST) als JSON; dazu je ein Screenshot.
 Ergebnis: <out>/report.md, <out>/results.json, <out>/*.png  — Exit 1 bei FAIL.
 
@@ -152,8 +155,54 @@ def fall_e(state):
     return e
 
 
+def fall_f(state, work):
+    """v3.10.0 CAS-Auftrag der Brücke über die Datei-Schnittstelle (wie bruecke/auftrag.py) + Selbsttest-Phasen cas_*."""
+    ordner = work / "localappdata" / "RaKScribe"
+    ordner.mkdir(parents=True, exist_ok=True)
+
+    def auftrag(nr, aid):
+        (ordner / "cas_auftrag.json").write_text(json.dumps(
+            {"protokoll": 1, "auftrag_id": aid, "nr": nr, "benutzer": "kp", "bruecke_pid": os.getpid(),
+             "zeit": time.time(), "zeit_text": "", "testbefund": False}), encoding="utf-8")
+        time.sleep(2.0)
+
+    def antwort(aid):
+        try:
+            return json.loads((ordner / f"cas_antwort_{aid}.json").read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def ph(name, warten=0.0):
+        if warten:
+            time.sleep(warten)
+        pathlib.Path(str(state) + ".trigger").write_text(name, encoding="utf-8")
+        return wait_json(state, name, 30)
+    f = {}
+    auftrag("20261013005", "uitest1")
+    f["angenommen"] = ph("cas_status#1")
+    f["antwort1"] = antwort("uitest1")
+    f["testbefund"] = ph("cas_testbefund")
+    f["eol_test"] = ph("cas_eol#1")
+    f["antwort1_ende"] = antwort("uitest1")
+    txt = ordner / "cas_ergebnis_20261013005.txt"
+    f["ergebnis_test"] = txt.read_text(encoding="utf-8") if txt.exists() else None
+    auftrag("20261013006", "uitest2")
+    f["angenommen2"] = ph("cas_status#2")
+    ph("sm_RECORD#9")
+    f["ins2"] = ph("sm_INS#9", 2.0)
+    f["eol2"] = ph("cas_eol#2")
+    f["antwort2"] = antwort("uitest2")
+    wav = f["antwort2"].get("wav_datei")
+    f["wav2_bytes"] = os.path.getsize(wav) if wav and os.path.exists(wav) else 0
+    auftrag("20261013007", "uitest3")
+    ph("cas_status#3")
+    f["abbrechen"] = ph("cas_abbrechen")
+    f["antwort3"] = antwort("uitest3")
+    return f
+
+
 def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False, fake_audio=False, mit_fall_e=False,
-             sm_gesperrt=False):
+             sm_gesperrt=False, mit_fall_f=False):
     work = pathlib.Path(tempfile.mkdtemp(prefix=f"rks_{case}_"))
     shutil.copy(EXE, work / EXE.name)
     if old_prompt:
@@ -164,7 +213,7 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
         (appdata / "RaKScribe").mkdir()
         (appdata / "RaKScribe" / "rakscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
     state = work / "selftest.json"
-    env = dict(os.environ, APPDATA=str(appdata), RAKSCRIBE_SELFTEST=str(state),
+    env = dict(os.environ, APPDATA=str(appdata), LOCALAPPDATA=str(work / "localappdata"), RAKSCRIBE_SELFTEST=str(state),
                RAKSCRIBE_SELFTEST_GEOMETRY="zoomed", RAKSCRIBE_SELFTEST_DEMO="1" if demo else "0",
                RAKSCRIBE_SELFTEST_FAKEAUDIO="1" if fake_audio else "0")
     p = subprocess.Popen([str(work / EXE.name)], cwd=work, env=env)
@@ -198,12 +247,14 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
             pathlib.Path(str(state) + ".trigger").write_text("sm_RECORD#0", encoding="utf-8")
             sm = wait_json(state, "sm_RECORD#0", 20)
         e = fall_e(state) if mit_fall_e else None
+        f = fall_f(state, work) if mit_fall_f else None
         if e:
             try:
                 screenshot(hwnd, OUT / f"{case}_ende.png")
             except Exception:
                 pass
-        return {"state": st, "after_f10": after, "fall_d": d, "sm_gesperrt": sm, "fall_e": e, "screenshot": f"{case}.png",
+        return {"state": st, "after_f10": after, "fall_d": d, "sm_gesperrt": sm, "fall_e": e, "fall_f": f,
+                "screenshot": f"{case}.png",
                 "size": size, "t_start": round(t_start, 1)}
     finally:
         kill_all(p)
@@ -277,7 +328,8 @@ if c:
           and f9.get("job_zustand") == "READY", str(f9 and (f9["status"], f9.get("job_zustand"))))
 
 # E (v3.8.0): SpeechMike-Ablauf mit Attrappen für Mikrofon/Google/chirp_3 (Tasten über denselben Handler-Weg)
-e_lauf = run_case("E_speechmike", with_key=True, demo=False, send_f10=False, fake_audio=True, mit_fall_e=True)
+e_lauf = run_case("E_speechmike", with_key=True, demo=False, send_f10=False, fake_audio=True, mit_fall_e=True,
+                  mit_fall_f=True)
 E = (e_lauf or {}).get("fall_e") or {}
 NORMAL = "Kniegelenk rechts in 2 Ebenen unauffällig."
 
@@ -320,6 +372,41 @@ ce("F1 → Neu: Aufnahme verworfen, bereit, LED aus", g("f1", "job_zustand") == 
    and g("f1", "led") == "aus")
 ce("Play → nichts (nur Protokoll)", g("play", "job_zustand") == "READY")
 
+# F (v3.10.0): CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "source_code"))
+import cas_auftrag  # noqa: E402  (ohne Windows-/UI-Abhängigkeiten)
+F = (e_lauf or {}).get("fall_f") or {}
+
+
+def cf(name, ok, detail=""):
+    check("F_cas", name, ok, detail)
+
+
+def gf(k, feld, default=None):
+    return (F.get(k) or {}).get(feld, default)
+
+
+cf("Auftrag angenommen, Band „CAS-Diktat 20261013005 (kp)“ sichtbar",
+   gf("angenommen", "cas") == "20261013005" and "CAS-Diktat 20261013005 (kp)" in str(gf("angenommen", "cas_band", ""))
+   and gf("angenommen", "cas_band_sichtbar") is True and (F.get("antwort1") or {}).get("status") == "angenommen",
+   f"{gf('angenommen', 'cas')} / {gf('angenommen', 'cas_band')!r} / {gf('angenommen', 'cas_band_sichtbar')}")
+cf("Testbefund-Knopf → TEST-Text rechts, „Befund prüfen“",
+   gf("testbefund", "result") == cas_auftrag.TESTBEFUND and gf("testbefund", "status") == "KONTROLLE",
+   f"{str(gf('testbefund', 'result', ''))[:40]!r} / {gf('testbefund', 'status')}")
+cf("EOL → Ergebnis-Datei = Testbefund, Antwort fertig (test), kein Strg+V, Band weg, alles leer",
+   F.get("ergebnis_test") == cas_auftrag.TESTBEFUND and (F.get("antwort1_ende") or {}).get("status") == "fertig"
+   and (F.get("antwort1_ende") or {}).get("test") is True and gf("eol_test", "einfuegungen") == gf("testbefund", "einfuegungen")
+   and gf("eol_test", "cas") is None and gf("eol_test", "cas_band_sichtbar") is False and gf("eol_test", "result") == "",
+   f"{F.get('antwort1_ende')} / Strg+V {gf('testbefund', 'einfuegungen')}→{gf('eol_test', 'einfuegungen')}")
+cf("Attrappen-Diktat: Record → INS → Befund zur Kontrolle (nichts eingefügt)",
+   gf("ins2", "status") == "KONTROLLE" and str(gf("ins2", "result", "")).startswith("## Kniegelenk")
+   and gf("ins2", "einfuegungen") == gf("eol_test", "einfuegungen"), f"{gf('ins2', 'status')} / {str(gf('ins2', 'result', ''))[:30]!r}")
+cf("EOL → Text + WAV an die Brücke (Antwort fertig)", (F.get("antwort2") or {}).get("status") == "fertig"
+   and F.get("wav2_bytes", 0) > 44 and gf("eol2", "einfuegungen") == gf("ins2", "einfuegungen"),
+   f"{F.get('antwort2')} / WAV {F.get('wav2_bytes')} Byte")
+cf("Abbrechen-Knopf → „abgebrochen“, Band weg", (F.get("antwort3") or {}).get("status") == "abgebrochen"
+   and gf("abbrechen", "cas") is None, str(F.get("antwort3")))
+
 ok = all(r["ok"] for r in results) and a and c and e_lauf
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf},
                                              ensure_ascii=False, indent=1), encoding="utf-8")
@@ -332,7 +419,7 @@ lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
          "| Fall | Prüfung | Ergebnis | Detail |", "|---|---|---|---|"]
 lines += [f"| {r['case']} | {r['check']} | {'✅' if r['ok'] else '❌'} | {r['detail']} |" for r in results]
 lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund), "
-          "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen)."]
+          "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen, danach Fall F CAS-Auftrag)."]
 (OUT / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("\n".join(lines))
 sys.exit(0 if ok else 1)

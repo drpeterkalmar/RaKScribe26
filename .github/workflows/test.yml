@@ -88,6 +88,8 @@ jobs:
         run: python tests/offline/test_speechmike.py
       - name: SpeechMike-Ablauf EXE (Pause, INS, EOL, Nur Text, Fensterziel)
         run: python tests/offline/test_speechmike_ablauf.py
+      - name: CAS-Auftrag der RaKScribe-Brücke (EOL als Datei, Testbefund, zweiter Auftrag, Widerruf)
+        run: python tests/offline/test_cas_auftrag.py
       - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings pipeline_test.mjs
