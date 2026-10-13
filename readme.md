@@ -134,5 +134,24 @@ ausgewertet und dürfen gelöscht werden.
 - **Nur eine RaKScribe**: Ein zweiter Start holt die laufende nach vorne. Schließen (X) beendet RaKScribe wie bisher.
 - Bericht: [`BEREITSCHAFT_BERICHT.md`](BEREITSCHAFT_BERICHT.md).
 
+## 🧭 CAS-Leistungen als Vorrang-Hinweis (EXE, ab v3.12.0)
+
+- Die RaKScribe-Brücke (ab 1.1.0) reicht zum CAS-Diktat die Leistungen des Eintrags nach
+  (`cas_leistungen_<id>.json`, Sekunden nach dem Auftrag). Das blaue Band zeigt sie: „CAS-Diktat <Nr> (<Kürzel>) · HWS ·
+  Schulter re. (Sono)“. Ohne diese Datei arbeitet RaKScribe wie bisher.
+- **Vorlagenwahl:** Die Erkennung aus dem Diktat läuft immer, die CAS-Liste ist ein Vorrang-Hinweis, kein Zwang
+  (`source_code/cas_vorlagen.py`). Bestätigt das Diktat eine CAS-Region, gilt deren Vorlage. Nennt es nur die Region,
+  während CAS eine andere Modalität kennt („Knie“ und „Sono Knie“), gilt die CAS-Vorlage. „Unauffällig.“ bekommt die
+  einzige CAS-Vorlage. Nennt das Diktat eine Region außerhalb der CAS-Liste, gewinnt das Diktat, mit einem Hinweis.
+- **Gemischte Diktate:** Bei mehreren CAS-Untersuchungen wird zusätzlich an Satzanfängen geteilt, die eine andere
+  CAS-Untersuchung nennen („Fuß links: … LWS: …“). So entsteht je Untersuchung ein eigener Befund in Diktat-Reihenfolge.
+- **Hinweise im Band:** „LWS laut CAS, nicht diktiert“, „… nicht in den CAS-Leistungen“ und „Seite: diktiert rechts,
+  laut CAS links“. Ergänzt wird dabei nichts.
+- **Nach EOL im CAS-Modus** steht 4,5 s ein grünes Band „✓ An CAS übergeben: <Nr> · <Titel>“, erst danach geht RaKScribe
+  in die Taskleiste. In der Kopfzeile überdeckt „Bereit“ den Hinweis „SpeechMike verbunden“ nicht mehr.
+- Ohne CAS-Leistungen bleiben Einzelbefunde bit-gleich (`tools/cas_bitgleich.py`, 726 Diktate). Tests:
+  `tests/offline/test_cas_leistungen.py`, live `tools/test_all_regions.py --cas`. Die Zuordnung Leistungskürzel → Vorlage
+  liegt in der Praxis (privat), nicht in diesem Repo.
+
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

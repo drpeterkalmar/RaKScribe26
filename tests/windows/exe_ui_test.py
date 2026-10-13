@@ -746,11 +746,9 @@ cf("v3.12.0 Bestätigung mit Titel, nach ~5 s wieder weg (dann Taskleiste)",
    "An CAS übergeben: 20261013006  ·  Kniegelenk rechts in 2 Ebenen" in str(gf("eol2", "bestaetigung", ""))
    and gf("nach_bestaetigung2", "bestaetigung_sichtbar") is False,
    f"{gf('eol2', 'bestaetigung')!r} / danach {gf('nach_bestaetigung2', 'bestaetigung_sichtbar')}")
-gem = str(gf("gemischt", "result", ""))
 cf("v3.12.0 gemischtes Diktat Fuß links + LWS → zwei Befunde in Diktat-Reihenfolge (Normalbefund-Weg, ohne KI)",
-   gem.startswith("## Fuß links in 2 Ebenen") and "## Lendenwirbelsäule in 2 Ebenen" in gem
-   and gem.index("## Fuß") < gem.index("## Lendenwirbelsäule") and gf("gemischt", "cas_hinweise") == [],
-   f"{gem[:160]!r} / {gf('gemischt', 'cas_hinweise')}")
+   gf("gemischt", "befund_titel") == "Fuß links in 2 Ebenen · Lendenwirbelsäule in 2 Ebenen"
+   and gf("gemischt", "cas_hinweise") == [], f"{gf('gemischt', 'befund_titel')!r} / {gf('gemischt', 'cas_hinweise')}")
 cf("v3.12.0 „Unauffällig.“ + CAS HWS → HWS-Normalbefund aus der Vorlage",
    str(gf("nur_unauffaellig", "result", "")).startswith("## Halswirbelsäule in 2 Ebenen"),
    repr(str(gf("nur_unauffaellig", "result", ""))[:60]))
@@ -760,12 +758,12 @@ def _ueberlappt(a, b):
     return a and b and a[1] > 1 and b[1] > 1 and a[0] < b[0] + b[1] and b[0] < a[0] + a[1]
 
 
-for breite in (1240, 900):
+for breite, sm_text in ((1240, "SpeechMike verbunden"), (900, "SpeechMike ✓")):
     kopf = gf(f"kopf{breite}", "kopf") or {}
     st = kopf.get("status_badge")
     andere = {k: v for k, v in kopf.items() if k in ("sm_chip", "key_chip", "device_dropdown", "menu_btn")}
-    cf(f"v3.12.0 Kopfzeile {breite} px: Status überdeckt „SpeechMike verbunden“ und die rechten Elemente nicht",
-       bool(st) and (kopf.get("sm_chip") or [0, 0, ""])[2] == "SpeechMike verbunden"
+    cf(f"v3.12.0 Kopfzeile {breite} px: Status lesbar (≥ 120 px) und überdeckt „{sm_text}“ und die rechten Elemente nicht",
+       bool(st) and st[1] >= 120 and (kopf.get("sm_chip") or [0, 0, ""])[2] == sm_text
        and not any(_ueberlappt(st, v) for v in andere.values()), json.dumps(kopf, ensure_ascii=False))
 
 # G (v3.11.0): Bereitschaft — minimiert warten, Einzelinstanz, nach CAS-EOL minimieren, Autostart über den Starter

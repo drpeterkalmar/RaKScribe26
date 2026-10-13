@@ -544,6 +544,7 @@ HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstell
 BESTAETIGUNG_MS = 4500  # v3.12.0 (Peter 13.10.): grünes Band „An CAS übergeben“ nach EOL, nicht zu übersehen
 MINIMIEREN_NACH_EOL_MS = BESTAETIGUNG_MS + 100  # v3.11.0: danach wieder als Symbol in die Taskleiste (erst nach dem Band)
 CAS_GRUEN = "#1E6B43"
+KOPF_BREIT_AB = 1150   # v3.12.0: darunter schmale Kopfzeile (Mikrofon-Auswahl + SpeechMike-Hinweis kürzer)
 
 
 def befund_titel(text, n=70):
@@ -842,6 +843,7 @@ class RaKScribeApp(ctk.CTk):
         # v3.12.0 (Peter 13.10.: „Bereit“ überdeckte „SpeechMike verbunden“): nicht mehr mittig über die ganze Kopfzeile
         # gelegt, sondern in den freien Platz zwischen Marke und rechter Gruppe gepackt — überdeckt nie etwas
         self.status_badge.pack(side="left", expand=True, padx=12)
+        header.bind("<Configure>", self._kopf_anpassen)
 
         # ── Arbeitsbereich: Diktat | Befund ─────────────────────────
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -1035,6 +1037,7 @@ class RaKScribeApp(ctk.CTk):
                     "bestaetigung_sichtbar": bool(getattr(self, "bestaetigung_band", None)
                                                   and self.bestaetigung_band.winfo_ismapped()),
                     "kopf": self._kopf_geometrie(),
+                    "befund_titel": befund_titel(self.result_text.get("1.0", "end-1c"), 400),
                     # v3.11.0: Bereitschaft (Fensterzustand, Zweitstarts, Autostart, Minimieren nach CAS-EOL)
                     "fenster": self.state(),
                     "minimiert_gestartet": bool(getattr(self, "_minimiert_gestartet", False)),
@@ -1890,11 +1893,30 @@ class RaKScribeApp(ctk.CTk):
             self._speechmike_status(None)
 
     def _speechmike_status(self, beschreibung):
+        self._sm_beschreibung = beschreibung
         chip = getattr(self, "sm_chip", None)
         if chip is not None:
-            chip.configure(text="  SpeechMike verbunden  " if beschreibung else "",
+            kurz = getattr(self, "_kopf_breit", True) is False   # v3.12.0: schmales Fenster → kurzer Hinweis
+            chip.configure(text=("  SpeechMike ✓  " if kurz else "  SpeechMike verbunden  ") if beschreibung else "",
                            fg_color="#1A2640" if beschreibung else "transparent")
         self._led_aktualisieren()
+
+    def _kopf_anpassen(self, event=None):
+        """v3.12.0 (Peter 13.10.: „Bereit“ und „SpeechMike verbunden“ beide lesbar): in einem schmalen Fenster werden
+        Mikrofon-Auswahl und SpeechMike-Hinweis kürzer, damit der Status in der Mitte Platz behält."""
+        try:
+            breit = (event.width if event is not None else self.winfo_width()) >= KOPF_BREIT_AB
+        except Exception:
+            return
+        if breit == getattr(self, "_kopf_breit", None):
+            return
+        self._kopf_breit = breit
+        try:
+            self.device_dropdown.configure(width=250 if breit else 130)
+        except Exception:
+            pass
+        if getattr(self, "_sm_beschreibung", None):
+            self._speechmike_status(self._sm_beschreibung)
 
     def speechmike_taste(self, taste, gedrueckt, roh=""):
         """SpeechMike-Taste (aus dem Lese-Thread per after(0)). Belegung speechmike.BELEGUNG — Loslassen und unbelegte
