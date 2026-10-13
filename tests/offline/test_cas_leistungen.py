@@ -35,14 +35,14 @@ def L(kurz, text, mod, vorlage, seite=None, ohne=False):
 
 
 # Beispiel-Leistungen wie aus der Brücke (Kurztexte und Vorlagen der Praxis-Zuordnung, ohne Patientendaten)
-HWS = L("hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
-LWS = L("lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
-FUSSL = L("fussl", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
-SOSUR = L("sosur", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
-USKNIE = L("usknie", "Sono Knie", "Sono", "sonografie_allgemein")
-KOORD = L("koord", "Koordinationszuschlag", "sonstige", None, ohne=True)
-ABD = L("abd", "Abdomen-Leeraufnahme", "Röntgen", None)            # „?“ in der Zuordnung
-CSU = L("csu", "CT Schulter", "CT", "allgemein")
+HWS = L("x-hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
+LWS = L("x-lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
+FUSSL = L("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
+SOSUR = L("x-sono-schulter-re", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
+USKNIE = L("x-sono-knie", "Sono Knie", "Sono", "sonografie_allgemein")
+KOORD = L("x-zuschlag", "Zuschlag", "sonstige", None, ohne=True)
+ABD = L("x-abd", "Abdomen-Leeraufnahme", "Röntgen", None)            # „?“ in der Zuordnung
+CSU = L("x-ct-schulter", "CT Schulter", "CT", "allgemein")
 erkennen = lambda t: detect.detect_template(t, T)  # noqa: E731
 
 
@@ -55,8 +55,8 @@ def wahlen(leistungen, diktat):
 
 # ───────────────────────────── Teil 1: cas_vorlagen ─────────────────────────────
 cas = cv.CasHinweis([KOORD, HWS, ABD, L("neu", "Neu", "Röntgen", "gibt_es_nicht")], T)
-check("Abrechnungsposten ignoriert, unbekannter Key → keine Vorlage", [l.kurz for l in cas.alle] == ["hws", "abd", "neu"]
-      and [l.kurz for l in cas.mit_vorlage] == ["hws"] and cas.alle[2].vorlage is None)
+check("Abrechnungsposten ignoriert, unbekannter Key → keine Vorlage", [l.kurz for l in cas.alle] == ["x-hws", "x-abd", "neu"]
+      and [l.kurz for l in cas.mit_vorlage] == ["x-hws"] and cas.alle[2].vorlage is None)
 check("Labels fürs Band", [cv.label(x["text"], x["kurz"], x["modalitaet"]) for x in (HWS, SOSUR, USKNIE, CSU, FUSSL)]
       == ["HWS", "Schulter re. (Sono)", "Knie (Sono)", "CT Schulter", "Fuß links"])
 check("Regionen: Kombi-Vorlagen gehören zu mehreren", cv.regionen(cv.vorlagen_text("hws_und_lws", T)) == {"hws", "lws"}
@@ -339,7 +339,12 @@ if (BR / "leistungen.py").exists():
     import leistungen as br_l  # noqa: E402
     katalog = br_l.katalog_laden([str(BR.parent / "katalog" / "leistungskatalog_kuerzel.tsv")])
     zuordnung = br_l.zuordnung_lesen(str(BR.parent / "katalog" / "kuerzel_vorlage.tsv"))
-    roh = "Untersuchung: hws, sosur, koord"
+    # echte Praxis-Kürzel nur zur Laufzeit aus dem privaten Repo (nie hier im öffentlichen Code)
+    zeilen = [z.rstrip("\n").split("\t") for z in open(BR.parent / "katalog" / "kuerzel_vorlage.tsv", encoding="utf-8")][1:]
+    k_hws = next(z[0] for z in zeilen if z[3] == "halswirbelsäule_in_2_ebenen" and z[1] == "HWS")
+    k_schulter = next(z[0] for z in zeilen if z[3] == "sonografie_schultergelenk" and z[1].endswith("re."))
+    k_ohne = next(z[0] for z in zeilen if z[3] == "-" and z[1] and not z[1][0].isdigit())
+    roh = f"Untersuchung: {k_hws}, {k_schulter}, {k_ohne}"
     liste = br_l.aufloesen(br_l.zerlegen(roh, katalog), katalog, zuordnung)
     kanal = br_auftrag.Kanal(ORDNER, pid=4242)
     kanal.leistungen_senden("y1", br_l.datei_inhalt("y1", "20261014007", roh, liste, 2712, katalog.quelle))

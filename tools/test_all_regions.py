@@ -339,11 +339,11 @@ def _cas_l(kurz, text, mod, vorlage, seite=None):
             "ohne_vorlage": False, "bekannt": True}
 
 
-_CAS_HWS = _cas_l("hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
-_CAS_LWS = _cas_l("lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
-_CAS_FUSSL = _cas_l("fussl", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
-_CAS_SOSUR = _cas_l("sosur", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
-_CAS_USKNIE = _cas_l("usknie", "Sono Knie", "Sono", "sonografie_allgemein")
+_CAS_HWS = _cas_l("x-hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
+_CAS_LWS = _cas_l("x-lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
+_CAS_FUSSL = _cas_l("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
+_CAS_SOSUR = _cas_l("x-sono-schulter-re", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
+_CAS_USKNIE = _cas_l("x-sono-knie", "Sono Knie", "Sono", "sonografie_allgemein")
 CAS_FAELLE = [
     # (name, CAS-Leistungen, Diktat, [(Titel-Wort, [Pathologien im Ergebnis])], erwartete Hinweise)
     ("gemischt: HWS Röntgen + Schulter Sono", [_CAS_HWS, _CAS_SOSUR],

@@ -175,11 +175,11 @@ def _l(kurz, text, mod, vorlage, seite=None, ohne=False):
             "ohne_vorlage": ohne, "bekannt": True}
 
 
-L_HWS = _l("hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
-L_LWS = _l("lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
-L_FUSSL = _l("fussl", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
-L_SOSUR = _l("sosur", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
-L_KOORD = _l("koord", "Koordinationszuschlag", "sonstige", None, ohne=True)
+L_HWS = _l("x-hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
+L_LWS = _l("x-lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
+L_FUSSL = _l("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
+L_SOSUR = _l("x-sono-schulter-re", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
+L_KOORD = _l("x-zuschlag", "Zuschlag", "sonstige", None, ohne=True)
 
 
 def fall_f(state, work, hwnd=None):
