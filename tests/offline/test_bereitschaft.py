@@ -2,7 +2,7 @@
 werden soll“; Nachtrag 1: X: gibt es erst nach dem CAS-Login → lokaler Starter).
 Teil 1: source_code/bereitschaft.py — Starter-Skript (wartet auf die EXE, startet --minimiert, Frist), Verknüpfung
 anlegen/entfernen/nachziehen mit Attrappe statt Windows Script Host, Signal „nach vorne“, Argumente.
-Teil 2: echter Ablauf aus RaKScribe.py mit Attrappen (exe_stubs): nach EOL im CAS-Modus nach 1,5 s minimieren (nur wenn
+Teil 2: echter Ablauf aus RaKScribe.py mit Attrappen (exe_stubs): nach EOL im CAS-Modus (v3.12.0: nach der Bestätigung) minimieren (nur wenn
 nichts Neues begonnen hat, Menü-Option), ohne CAS-Auftrag nichts; zweiter Start → nach vorne; ohne Schlüssel gewartet →
 Hinweis beim Auftrag; Menü-Haken Autostart; main(): Einzelinstanz, --minimiert → Taskleisten-Symbol; Prompt-Hinweis
 nicht aus dem minimierten Fenster. Den echten Starter auf Windows prüft tests/windows/exe_ui_test.py (Fall G).
@@ -281,7 +281,7 @@ def bis_ruhe(app, timeout=8):
     return S.pump(app, lambda: app._job.zustand in ("READY", "ERROR") and app._status_raw != "PROCESSING", timeout)
 
 
-# 1. CAS-Auftrag → Testbefund → EOL → nach 1,5 s minimiert
+# 1. CAS-Auftrag → Testbefund → EOL → Bestätigung → danach minimiert
 app = neue_app()
 ablegen("20261013101", "m1")
 app._cas_einmal()
@@ -290,9 +290,11 @@ check("Auftrag angenommen, Fenster nach vorne geholt", app._cas is not None and 
 app.cas_testbefund()
 app.verzoegert.clear()
 app.befund_fertig()
-check("EOL im CAS-Modus: Befund an CAS, Minimieren in 1,5 s vorgemerkt (noch nicht minimiert)",
-      antwort("m1").get("status") == "fertig" and (1500, "_minimieren_wenn_ruhig") in app.verzoegert
-      and "iconify" not in app.fenster, str(app.verzoegert))
+check("EOL im CAS-Modus: Befund an CAS, grüne Bestätigung, Minimieren erst danach vorgemerkt (v3.12.0: 4,6 s)",
+      antwort("m1").get("status") == "fertig" and (mod.MINIMIEREN_NACH_EOL_MS, "_minimieren_wenn_ruhig") in app.verzoegert
+      and mod.MINIMIEREN_NACH_EOL_MS > mod.BESTAETIGUNG_MS >= 4000 and (mod.BESTAETIGUNG_MS, "<lambda>") in app.verzoegert
+      and "An CAS übergeben: 20261013101" in getattr(app, "_bestaetigung_text", "") and "iconify" not in app.fenster,
+      str(app.verzoegert))
 S.pump(app, lambda: False, 0.3)
 check("… danach als Symbol in der Taskleiste (iconify), Felder leer", app.fenster.count("iconify") == 1
       and app.zustand_fenster == "iconic" and app.result_text.text == "", str(app.fenster))
@@ -319,7 +321,7 @@ for name, dazwischen in (
     app.befund_fertig()
     dazwischen(app)
     S.pump(app, lambda: False, 0.3)
-    check(f"EOL, dann {name} vor Ablauf der 1,5 s → nicht minimieren", "iconify" not in app.fenster, str(app.fenster))
+    check(f"EOL, dann {name} vor dem Minimieren → nicht minimieren", "iconify" not in app.fenster, str(app.fenster))
     if app.is_recording:
         app.reset_dictation()
         S.pump(app, lambda: False, 0.3)

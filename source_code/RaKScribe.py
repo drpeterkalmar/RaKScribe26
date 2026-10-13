@@ -36,6 +36,7 @@ import speechmike as _sm  # v3.8.0: SpeechMike-Tasten + LEDs direkt (hidapi), oh
 import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten nach SpeechMike-Pausen
 import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
 import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
+import cas_vorlagen as _cv  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis für die Vorlagenwahl
 import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
 
 # =========================================================================
@@ -471,12 +472,14 @@ def _rag_beispiele(seg):
     return ""
 
 
-def _pipeline_kontext():
-    """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden)."""
+def _pipeline_kontext(cas=None):
+    """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden).
+    v3.12.0: cas = CAS-Leistungen des offenen Auftrags (cas_vorlagen.CasHinweis) oder None (= wie bisher)."""
     return _pl.Kontext(templates=RADIOLOGY_TEMPLATES, display_names=DISPLAY_NAMES, prompt=INITIAL_PROMPT_CONTENT,
                        llm=lambda p: _llm_aufruf(p), misheard=apply_misheard, hinweise=MISHEARD_HINTS,
                        beispiele=_rag_beispiele, log=print, ausnahme_log=log_exception,
-                       korrektur=lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print))
+                       korrektur=lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print),
+                       cas=cas)
 
 
 # v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — Einstellung überlebt Neustart und Update (%APPDATA%\\RaKScribe)
@@ -538,7 +541,18 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 # v3.8.0 (Peter 11.10., Nachtrag 3/4): Hilfe-Zeilen im Menü — gleicher Text in der Web-App (App.tsx)
 HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig & weiter",
                     "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)")
-MINIMIEREN_NACH_EOL_MS = 1500  # v3.11.0: nach EOL im CAS-Modus wieder als Symbol in die Taskleiste
+BESTAETIGUNG_MS = 4500  # v3.12.0 (Peter 13.10.): grünes Band „An CAS übergeben“ nach EOL, nicht zu übersehen
+MINIMIEREN_NACH_EOL_MS = BESTAETIGUNG_MS + 100  # v3.11.0: danach wieder als Symbol in die Taskleiste (erst nach dem Band)
+CAS_GRUEN = "#1E6B43"
+
+
+def befund_titel(text, n=70):
+    """v3.12.0: Untersuchungs-Überschriften eines Befunds („## Halswirbelsäule …“, ohne Befund/Ergebnis) für die
+    Bestätigung nach EOL, z. B. „Halswirbelsäule in 2 Ebenen · Sonographie des Schultergelenkes rechts“."""
+    titel = [z.strip()[3:].strip() for z in (text or "").splitlines()
+             if z.strip().startswith("## ") and z.strip()[3:].strip().rstrip(":").lower() not in ("befund", "ergebnis")]
+    t = " · ".join(t for t in titel if t)
+    return t if len(t) <= n else t[:n - 1].rstrip() + "…"
 
 
 def _kurzpfad(pfad, n=64):
@@ -756,6 +770,21 @@ class RaKScribeApp(ctk.CTk):
         if PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST"):
             self.after(1200, self._prompt_hinweis)
 
+    def _kopf_geometrie(self):
+        """Selbsttest v3.12.0: [x, Breite] der Kopfzeilen-Elemente (Status-Pill darf nichts überdecken)."""
+        out = {}
+        for name in ("status_badge", "sm_chip", "key_chip", "device_dropdown", "menu_btn"):
+            w = getattr(self, name, None)
+            try:
+                out[name] = [w.winfo_rootx(), w.winfo_width(), str(w.cget("text")).strip() if name.endswith(("badge", "chip")) else ""]
+            except Exception:
+                out[name] = None
+        try:
+            out["fenster"] = [self.winfo_rootx(), self.winfo_width()]
+        except Exception:
+            pass
+        return out
+
     def _prompt_hinweis(self):
         """v3.11.0: erst zeigen, wenn das Fenster zu sehen ist und kein CAS-Diktat offen ist — minimiert wartend kein
         Dialog aus dem Nichts (z. B. mitten in die CAS-Anmeldung oder ins Diktat)."""
@@ -810,7 +839,9 @@ class RaKScribeApp(ctk.CTk):
 
         self.status_badge = ctk.CTkLabel(header, text="", font=(UI_FONT, 13, "bold"), corner_radius=15,
                                          height=30, text_color=TEXT_PRIMARY)
-        self.status_badge.place(relx=0.5, rely=0.5, anchor="center")
+        # v3.12.0 (Peter 13.10.: „Bereit“ überdeckte „SpeechMike verbunden“): nicht mehr mittig über die ganze Kopfzeile
+        # gelegt, sondern in den freien Platz zwischen Marke und rechter Gruppe gepackt — überdeckt nie etwas
+        self.status_badge.pack(side="left", expand=True, padx=12)
 
         # ── Arbeitsbereich: Diktat | Befund ─────────────────────────
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -889,10 +920,24 @@ class RaKScribeApp(ctk.CTk):
 
         # v3.10.0: Band für einen CAS-Auftrag der RaKScribe-Brücke — nur sichtbar, solange ein Auftrag offen ist.
         # Knöpfe + F11/F12 für den Fern-Test per Remotedesktop (kein SpeechMike); F11/F12 wirken nur mit Auftrag.
-        self.cas_band = ctk.CTkFrame(self, fg_color="#1A2640", corner_radius=0, height=50)
+        self.cas_band = ctk.CTkFrame(self, fg_color="#1A2640", corner_radius=0, height=56)
         self.cas_band.pack_propagate(False)
-        self.cas_label = ctk.CTkLabel(self.cas_band, text="", font=(UI_FONT, 14, "bold"), text_color="#FFFFFF")
-        self.cas_label.pack(side="left", padx=18)
+        cas_text = ctk.CTkFrame(self.cas_band, fg_color="transparent")
+        cas_text.pack(side="left", padx=18, fill="y")
+        self.cas_label = ctk.CTkLabel(cas_text, text="", font=(UI_FONT, 14, "bold"), text_color="#FFFFFF", height=22,
+                                      anchor="w")
+        self.cas_label.pack(side="top", anchor="w", pady=(6, 0))
+        # v3.12.0: Hinweise zur Vorlagenwahl mit CAS-Leistungen („LWS laut CAS, nicht diktiert“) — nur Anzeige
+        self.cas_hinweis_label = ctk.CTkLabel(cas_text, text="", font=(UI_FONT, 12, "bold"), text_color=WARN_AMBER,
+                                              height=18, anchor="w")
+        self.cas_hinweis_label.pack(side="top", anchor="w")
+        # v3.12.0 (Peter 13.10.): nach EOL im CAS-Modus eine Bestätigung, die man nicht übersieht — grünes Band,
+        # erst danach geht RaKScribe in die Taskleiste
+        self.bestaetigung_band = ctk.CTkFrame(self, fg_color=CAS_GRUEN, corner_radius=0, height=56)
+        self.bestaetigung_band.pack_propagate(False)
+        self.bestaetigung_label = ctk.CTkLabel(self.bestaetigung_band, text="", font=(UI_FONT, 16, "bold"),
+                                               text_color="#FFFFFF")
+        self.bestaetigung_label.pack(side="left", padx=18)
         band_kw = dict(height=34, corner_radius=9, font=(UI_FONT, 12, "bold"))
         rand_kw = dict(fg_color="transparent", border_width=1, border_color=BORDER_STRONG, hover_color=BGC_CARD,
                        text_color=TEXT_PRIMARY)
@@ -980,6 +1025,16 @@ class RaKScribeApp(ctk.CTk):
                     "cas": self._cas.nr if getattr(self, "_cas", None) is not None else None,
                     "cas_band": str(self.cas_label.cget("text")).strip() if getattr(self, "cas_label", None) else "",
                     "cas_band_sichtbar": bool(getattr(self, "cas_band", None) and self.cas_band.winfo_ismapped()),
+                    # v3.12.0: CAS-Leistungen, Hinweise zur Vorlagenwahl, Bestätigung nach EOL, Kopfzeile
+                    "cas_leistungen": (self._cas.labels() if getattr(self, "_cas", None) is not None else None),
+                    "cas_hinweise": list(getattr(self, "_cas_hinweise", []) or []),
+                    "cas_hinweis_label": str(self.cas_hinweis_label.cget("text")).strip()
+                    if getattr(self, "cas_hinweis_label", None) else "",
+                    "bestaetigung": str(self.bestaetigung_label.cget("text")).strip()
+                    if getattr(self, "bestaetigung_label", None) else "",
+                    "bestaetigung_sichtbar": bool(getattr(self, "bestaetigung_band", None)
+                                                  and self.bestaetigung_band.winfo_ismapped()),
+                    "kopf": self._kopf_geometrie(),
                     # v3.11.0: Bereitschaft (Fensterzustand, Zweitstarts, Autostart, Minimieren nach CAS-EOL)
                     "fenster": self.state(),
                     "minimiert_gestartet": bool(getattr(self, "_minimiert_gestartet", False)),
@@ -1048,6 +1103,21 @@ class RaKScribeApp(ctk.CTk):
                         if aktion:
                             aktion()
                         self.after(1500, lambda p=phase: dump(p))
+                    elif phase.startswith("kopfzeile#"):
+                        # v3.12.0: Kopfzeile bei Fensterbreite <n> mit „SpeechMike verbunden“ und langem Status
+                        breite = int(phase.split("#", 1)[1])
+                        self.state("normal")
+                        self.geometry(f"{breite}x760")
+                        self._speechmike_status("Selbsttest")
+                        self.update_status("KONTROLLE", "ready")
+                        self.after(1200, lambda p=phase: dump(p))
+                    elif phase.startswith("text_ins#"):
+                        # v3.12.0: getippter Text → INS (wie SpeechMike-INS aus dem Diktat-Feld), z. B. mit CAS-Leistungen
+                        text = phase.partition("|")[2]
+                        self.transcript_text.delete("1.0", "end")
+                        self.transcript_text.insert("1.0", text)
+                        self.befund_aus_text(kontrolle=True)
+                        self.after(2500, lambda p=phase: dump(p))
                     elif phase.startswith(("autostart_an", "autostart_aus")):
                         # v3.11.0: derselbe Handler wie der Menü-Haken „Mit Windows starten (wartet minimiert)“
                         self.autostart_var.set(phase.startswith("autostart_an"))
@@ -1308,6 +1378,7 @@ class RaKScribeApp(ctk.CTk):
         self._sm_sitzung_leeren()  # v3.8.0: Nachdiktat/Abschnitte/Kontrollschritt verwerfen
         if getattr(self, "_cas", None) is not None:  # v3.10.0: F9 leert nur das Diktat, der CAS-Auftrag bleibt offen
             self._cas_aufnahmen, self._cas_test = [], False
+            self._cas_hinweise_zeigen([])
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
         if self._job.zustand == _js.LOCKED:
@@ -1398,6 +1469,8 @@ class RaKScribeApp(ctk.CTk):
             self._live_aus = False
             self._basis, self._abschnitte, self._live = basis, [], {}
             self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
+            if getattr(self, "_cas", None) is not None:
+                self._cas_hinweise_zeigen([])  # v3.12.0: Hinweise gehören zum vorigen Befund
             self.transcript_text.delete("1.0", "end")
             if basis:
                 self.transcript_text.insert("1.0", basis)  # Nachdiktat: bisheriges Diktat bleibt stehen
@@ -1660,7 +1733,8 @@ class RaKScribeApp(ctk.CTk):
                                                     self.result_text.insert("1.0", r)))
                 self.after(0, lambda: self._lauf_fertig(gen))
                 return
-            erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(), beim_start=lambda: self._ui(gen, lambda: (
+            cas = self._cas_hinweis_fuer_lauf()  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis (None = wie bisher)
+            erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(cas), beim_start=lambda: self._ui(gen, lambda: (
                 self.result_text.delete("1.0", "end"),
                 self.result_text.insert("1.0", "... Befund wird geladen ...")
             )))
@@ -1668,6 +1742,8 @@ class RaKScribeApp(ctk.CTk):
                 self.after(0, lambda: self._ende_kein_text(gen))
                 return
             report, fehler, ausnahmen = erg.report, erg.fehler, erg.ausnahmen
+            if cas is not None:
+                self._ui(gen, lambda h=erg.cas_hinweise: self._cas_hinweise_zeigen(h))
 
             if not self._job.aktuell(gen):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
@@ -2062,12 +2138,42 @@ class RaKScribeApp(ctk.CTk):
                 nr = self._cas.nr
                 self._cas_beenden()
                 self._kurzhinweis(f"CAS-Auftrag {nr} beendet ({grund}) – der Text bleibt stehen", 10000)
+            elif self._cas.leistungen is None:
+                self._cas_leistungen_holen()
         neu = k.abholen()
         if neu is not None:
             self._cas_neu(neu)
         bitte = _bs.nach_vorne_abholen(k.ordner)  # v3.11.0: RaKScribe wurde ein zweites Mal gestartet
         if bitte is not None:
             self._zweiter_start(bitte)
+
+    def _cas_leistungen_holen(self):
+        """v3.12.0 (Brücke 1.1.0): CAS-Leistungen kommen Sekunden nach dem Auftrag — im CAS-Takt abholen, Band ergänzen.
+        Ohne Datei (ältere Brücke, Abfrage gescheitert) bleibt alles wie bisher."""
+        liste = self._cas_kanal.leistungen_lesen(self._cas)
+        if liste is None:
+            return
+        self._cas.leistungen = liste
+        log(f"[CAS] Leistungen {self._cas.nr}: " + (", ".join(
+            f"{l.get('kurz')}({'-' if l.get('ohne_vorlage') else (l.get('vorlage') or '?')})" for l in liste) or "keine"))
+        self._cas_band_zeigen()
+
+    def _cas_hinweis_fuer_lauf(self):
+        """Vorrang-Hinweis für pipeline.befund_aus_diktat: nur mit offenem Auftrag UND Leistungen, sonst None."""
+        a = getattr(self, "_cas", None)
+        if a is None or not a.leistungen:
+            return None
+        h = _cv.CasHinweis(a.leistungen, RADIOLOGY_TEMPLATES)
+        return h if h else None
+
+    def _cas_hinweise_zeigen(self, hinweise):
+        lbl = getattr(self, "cas_hinweis_label", None)
+        self._cas_hinweise = list(hinweise or [])
+        if lbl is not None:
+            text = "⚠  " + "  ·  ".join(self._cas_hinweise) if self._cas_hinweise else ""
+            lbl.configure(text=text if len(text) <= 150 else text[:149] + "…")
+        if self._cas_hinweise:
+            log("[CAS] Hinweis: " + " | ".join(self._cas_hinweise))
 
     def _cas_hat_inhalt(self):
         if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
@@ -2089,6 +2195,8 @@ class RaKScribeApp(ctk.CTk):
         if self._gesendet and not laeuft:
             self._felder_leeren()  # schon eingefügter Befund gehört zum vorigen Patienten → frisch beginnen
         inhalt = laeuft or self._cas_hat_inhalt()
+        self._bestaetigung_weg()
+        self._cas_hinweise_zeigen([])
         self._cas, self._cas_test = a, False
         self._cas_aufnahmen = [self._aufnahme] if (inhalt and self._aufnahme is not None) else []
         k.antworten(a, "angenommen")
@@ -2102,6 +2210,7 @@ class RaKScribeApp(ctk.CTk):
 
     def _cas_beenden(self):
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
+        self._cas_hinweise_zeigen([])
         band = getattr(self, "cas_band", None)
         if band is not None:
             try:
@@ -2114,7 +2223,10 @@ class RaKScribeApp(ctk.CTk):
         if band is None or self._cas is None:
             return
         try:
-            self.cas_label.configure(text="●  " + self._cas.band_text() + "   ·   EOL schickt den Befund an CAS")
+            text = "●  " + self._cas.band_text()
+            if not self._cas.labels():   # ohne Leistungen wie bisher; mit Leistungen sagt es der EOL-Knopf
+                text += "   ·   EOL schickt den Befund an CAS"
+            self.cas_label.configure(text=text)
             band.pack(fill="x", before=self.main_container)
         except Exception:
             log_exception("[CAS] Band")
@@ -2201,13 +2313,39 @@ class RaKScribeApp(ctk.CTk):
         self._cas_beenden()
         self._felder_leeren()
         self._kurzhinweis(f"An CAS übergeben: Diktat {a.nr} – bereit", 6000)
+        titel = befund_titel(text)
+        self._bestaetigung_zeigen(f"✓  An CAS übergeben: {a.nr}" + (f"  ·  {titel}" if titel else ""))
         self._nach_cas_minimieren()
+
+    def _bestaetigung_zeigen(self, text):
+        """v3.12.0 (Peter 13.10.): grünes Band nach EOL im CAS-Modus, BESTAETIGUNG_MS lang — erst danach minimieren."""
+        self._bestaetigung_nr = getattr(self, "_bestaetigung_nr", 0) + 1
+        nr = self._bestaetigung_nr
+        self._bestaetigung_text = text
+        band = getattr(self, "bestaetigung_band", None)
+        if band is not None:
+            try:
+                self.bestaetigung_label.configure(text=text)
+                band.pack(fill="x", before=self.main_container)
+            except Exception:
+                log_exception("[CAS] Bestätigung")
+        self.after(BESTAETIGUNG_MS, lambda: self._bestaetigung_nr == nr and self._bestaetigung_weg())
+
+    def _bestaetigung_weg(self):
+        self._bestaetigung_text = ""
+        band = getattr(self, "bestaetigung_band", None)
+        if band is not None:
+            try:
+                band.pack_forget()
+            except Exception:
+                pass
 
     # ── v3.11.0: Bereitschaft (Peter 13.10.: „als Symbol in der Taskleiste warten, bis der nächste Befund diktiert
     # werden soll“). Autostart über den lokalen Starter (bereitschaft.py), Einzelinstanz in main(), nach CAS-EOL minimieren.
     def _nach_cas_minimieren(self):
         """Nach EOL im CAS-Modus wieder als Symbol in die Taskleiste (Menü „Nach CAS-Befund minimieren“, Standard an) —
-        nach ~1,5 s und nur, wenn bis dahin nichts Neues begonnen hat. Ohne CAS-Auftrag ändert sich nichts."""
+        v3.12.0: erst nach dem grünen Bestätigungsband (~4,6 s) und nur, wenn bis dahin nichts Neues begonnen hat.
+        Ohne CAS-Auftrag ändert sich nichts."""
         v = getattr(self, "nach_cas_minimieren_var", None)
         if v is not None and v.get():
             self.after(MINIMIEREN_NACH_EOL_MS, self._minimieren_wenn_ruhig)
@@ -2217,6 +2355,7 @@ class RaKScribeApp(ctk.CTk):
                 or self.transcript_text.get("1.0", "end-1c").strip() or self.result_text.get("1.0", "end-1c").strip()):
             return  # neuer Auftrag, Aufnahme oder Text seit dem EOL → Fenster bleibt
         log("[BEREITSCHAFT] Nach dem CAS-Befund minimiert – wartet auf das nächste Diktat.")
+        self._bestaetigung_weg()
         self.iconify()
 
     def _zweiter_start(self, bitte):

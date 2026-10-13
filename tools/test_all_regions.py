@@ -331,7 +331,98 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
     return {"name": name, "status": status, "issues": issues, "report": final}
 
 
+# ─── v3.12.0: Fälle mit CAS-Hinweis (RaKScribe-Brücke 1.1.0 reicht die CAS-Leistungen nach) ───
+# Echte EXE-Kette (pipeline.befund_aus_diktat) mit ctx.cas — je Fall: erwartete Abschnitte (Titel-Wörter in Diktat-
+# Reihenfolge), je Abschnitt erwartete Pathologien im Ergebnis, erwartete Hinweise. Aufruf: tools/test_all_regions.py --cas
+def _cas_l(kurz, text, mod, vorlage, seite=None):
+    return {"kurz": kurz, "text": text, "appc": "", "modalitaet": mod, "seite": seite, "vorlage": vorlage,
+            "ohne_vorlage": False, "bekannt": True}
+
+
+_CAS_HWS = _cas_l("hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
+_CAS_LWS = _cas_l("lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
+_CAS_FUSSL = _cas_l("fussl", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
+_CAS_SOSUR = _cas_l("sosur", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
+_CAS_USKNIE = _cas_l("usknie", "Sono Knie", "Sono", "sonografie_allgemein")
+CAS_FAELLE = [
+    # (name, CAS-Leistungen, Diktat, [(Titel-Wort, [Pathologien im Ergebnis])], erwartete Hinweise)
+    ("gemischt: HWS Röntgen + Schulter Sono", [_CAS_HWS, _CAS_SOSUR],
+     "HWS: Steilstellung, Osteochondrose C5/6 mit Unkovertebralarthrose. Schulter rechts: Bursitis subacromialis, "
+     "Tendinosis calcarea der Supraspinatussehne.",
+     [("Halswirbelsäule", ["Osteochondrose", "Unkovertebral"]), ("Sonographie", ["Bursitis", "Tendinosis calcarea"])], []),
+    ("gemischt: Fuß links + LWS", [_CAS_FUSSL, _CAS_LWS],
+     "Fuß links: Hallux valgus, Arthrose im Großzehengrundgelenk. LWS: Osteochondrose L4/5, Spondylarthrose L5/S1.",
+     [("Fuß", ["Hallux valgus", "Arthrose"]), ("Lendenwirbelsäule", ["Osteochondrose", "Spondylarthrose"])], []),
+    ("CAS Fuß + LWS, nur LWS diktiert (kein erfundener Fuß-Befund)", [_CAS_FUSSL, _CAS_LWS],
+     "LWS: Osteochondrose L4/5, sonst unauffällig.",
+     [("Lendenwirbelsäule", ["Osteochondrose"])], ["Fuß links laut CAS, nicht diktiert"]),
+    ("CAS Sono Knie, Diktat nennt nur Knie (Sono statt Röntgen-Vorlage)", [_CAS_USKNIE],
+     "Knie rechts: Baker-Zyste von 3 cm, kein Gelenkerguss.",
+     [("Sono", ["Baker"])], []),
+]
+
+
+def _abschnitte(report):
+    """[(Titel, Ergebnistext)] je ## Untersuchung."""
+    out, titel, erg, im_erg = [], None, [], False
+    for z in (report or "").splitlines():
+        if z.startswith("## "):
+            kopf = z[3:].strip().rstrip(":")
+            if kopf.lower() == "befund":
+                continue
+            if kopf.lower() == "ergebnis":
+                im_erg = True
+                continue
+            if titel is not None:
+                out.append((titel, "\n".join(erg)))
+            titel, erg, im_erg = kopf, [], False
+        elif im_erg:
+            erg.append(z)
+    if titel is not None:
+        out.append((titel, "\n".join(erg)))
+    return out
+
+
+def run_cas_fall(name, leistungen, diktat, erwartet, hinweise_soll):
+    import cas_vorlagen as cv
+    print(f"\n{'─'*60}\nCAS-FALL: {name}\n{'─'*60}")
+    ctx = _pp.exe_kontext()
+    ctx.cas = cv.CasHinweis(leistungen, TEMPLATES)
+    t0 = time.time()
+    erg = _pp._pipeline.befund_aus_diktat(diktat, ctx)
+    issues = []
+    if erg.ausnahmen:
+        return {"name": name, "status": "ERROR", "issues": [f"Gemini: {erg.ausnahmen[0]}"]}
+    abschnitte = _abschnitte(erg.report)
+    if len(abschnitte) != len(erwartet):
+        issues.append(f"❌ {len(abschnitte)} Abschnitte statt {len(erwartet)}: {[t for t, _ in abschnitte]}")
+    for (titel, ergebnis), (wort, patho) in zip(abschnitte, erwartet):
+        if wort.lower() not in titel.lower():
+            issues.append(f"❌ Titel „{titel}“ ohne „{wort}“")
+        for p in patho:
+            if p.lower() not in ergebnis.lower():
+                issues.append(f"⚠️ '{p}' fehlt im Ergebnis von „{titel}“")
+    if erg.cas_hinweise != hinweise_soll:
+        issues.append(f"❌ Hinweise {erg.cas_hinweise} statt {hinweise_soll}")
+    if "cas_untersuchungen" in erg.report or "CAS" in erg.report:
+        issues.append("❌ CAS-Liste ist in den Befundtext geraten")
+    status = "❌ FAIL" if any("❌" in i for i in issues) else ("⚠️ WARN" if issues else "✅ PASS")
+    print(f"  {time.time() - t0:.1f}s | Vorlagen {erg.vorlagen} | Hinweise {erg.cas_hinweise} | {status}")
+    for i in issues:
+        print(f"  {i}")
+    print(erg.report[:900])
+    return {"name": "CAS: " + name, "status": status, "issues": issues, "report": erg.report}
+
+
+def main_cas():
+    results = [run_cas_fall(*f) for f in CAS_FAELLE]
+    print(f"\n{'='*70}\nCAS-FÄLLE: " + " | ".join(f"{r['status']} {r['name']}" for r in results))
+    return 0 if all(r["status"] != "❌ FAIL" and r["status"] != "ERROR" for r in results) else 1
+
+
 def main():
+    if "--cas" in sys.argv:
+        sys.exit(main_cas())
     print("=" * 70)
     print("VOLLSTÄNDIGER WIDERSPRUCHSTEST — Alle Regionen")
     print("=" * 70)

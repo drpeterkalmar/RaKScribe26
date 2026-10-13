@@ -10,7 +10,12 @@ Dateien (gleiche Namen/Felder wie ris-mods bruecke/auftrag.py — Änderungen im
   cas_antwort_<id>.json       RaKScribe → Brücke {status: angenommen|fertig|abgebrochen|abgelehnt|ersetzt, …}
   cas_ergebnis_<nr>.txt/.wav  Befund-Markdown (UTF-8) und Aufnahme (PCM 16 bit mono), vor „fertig“ geschrieben
   cas_widerruf_<id>.json      Brücke → RaKScribe: Auftrag zurückgezogen (Zeitgrenze) → Band weg
-Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel (und am Ende der Befund selbst, lokal auf diesem PC).
+  cas_leistungen_<id>.json    v3.12.0 (Brücke 1.1.0): CAS-Leistungen des Eintrags, Sekunden NACH dem Auftrag
+                              {protokoll, auftrag_id, nr, roh, leistungen:[{kurz, text, appc, modalitaet, seite,
+                              vorlage|null, ohne_vorlage, bekannt}], quelle, katalog, ms, zeit} — optional: ohne Datei
+                              (ältere Brücke, Abfrage gescheitert) arbeitet RaKScribe wie bisher. Vorrang-Hinweis für die
+                              Vorlagenwahl: cas_vorlagen.py.
+Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel (und am Ende der Befund selbst, lokal).
 """
 import io
 import json
@@ -99,9 +104,20 @@ class Auftrag:
         self.bruecke_pid = d.get("bruecke_pid")
         self.zeit = d.get("zeit") or 0
         self.testbefund = bool(d.get("testbefund"))
+        self.leistungen = None   # v3.12.0: Liste aus cas_leistungen_<id>.json; None = (noch) keine Datei
+
+    def labels(self):
+        """Kurznamen der Leistungen fürs Band (ohne Abrechnungsposten), z. B. ['HWS', 'Schulter re. (Sono)']."""
+        import cas_vorlagen as cv
+        return [cv.label(l.get("text"), l.get("kurz"), l.get("modalitaet")) for l in (self.leistungen or [])
+                if not l.get("ohne_vorlage")]
 
     def band_text(self):
-        return f"CAS-Diktat {self.nr}" + (f" ({self.benutzer})" if self.benutzer else "")
+        t = f"CAS-Diktat {self.nr}" + (f" ({self.benutzer})" if self.benutzer else "")
+        labels = self.labels()
+        if labels:   # v3.12.0: „CAS-Diktat <Nr> (<Benutzer>) · HWS · Schulter re. (Sono)“
+            t += " · " + " · ".join(labels[:4]) + (" · …" if len(labels) > 4 else "")
+        return t
 
 
 def entscheidung(aktiv, hat_inhalt):
@@ -160,6 +176,20 @@ class Kanal:
         if self.prozess_lebt is not None and a.bruecke_pid and not self.prozess_lebt(a.bruecke_pid):
             return "bruecke_beendet"
         return None
+
+    def leistungen_lesen(self, a):
+        """v3.12.0: CAS-Leistungen zum Auftrag a (Datei der Brücke). None = (noch) nicht da, halb geschrieben oder
+        nicht zu diesem Auftrag; sonst die Liste (darf leer sein). Die Brücke räumt die Datei selbst auf."""
+        d = _json_lesen(os.path.join(self.ordner, f"cas_leistungen_{a.auftrag_id}.json"))
+        if d is None:
+            return None
+        if str(d.get("auftrag_id") or "") != a.auftrag_id or str(d.get("nr") or "") != a.nr:
+            self.log(f"[CAS] Leistungen verworfen (gehören nicht zu Auftrag {a.nr})")
+            return []
+        liste = d.get("leistungen")
+        if not isinstance(liste, list):
+            return []
+        return [l for l in liste if isinstance(l, dict) and (l.get("kurz") or l.get("text"))]
 
     def ergebnis_schreiben(self, a, text, pcm_bytes=None, rate=16000, test=False):
         """EOL: Befund (+ Aufnahme) ablegen, DANACH „fertig“ melden — die Brücke liest nie eine halbe Datei."""

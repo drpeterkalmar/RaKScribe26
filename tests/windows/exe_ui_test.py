@@ -17,6 +17,9 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
   F  v3.10.0 CAS-Auftrag der RaKScribe-Brücke: Auftrag (cas_auftrag.json) → Band „CAS-Diktat <Nr> (kp)“ → Testbefund
      → EOL schreibt die Ergebnis-Datei statt Strg+V (Antwort „fertig“, test=true); echtes Attrappen-Diktat Record → INS
      → EOL liefert Text + WAV; Abbrechen-Knopf → „abgebrochen“
+     v3.12.0: CAS-Leistungen (cas_leistungen_<id>.json) → Band „… · HWS · Schulter re. (Sono)“, Diktat widerspricht →
+     Hinweise, gemischtes Diktat Fuß + LWS → zwei Befunde (ohne KI), „Unauffällig.“ + HWS → HWS-Normalbefund, grüne
+     Bestätigung nach EOL, Kopfzeile bei 1240/900 px ohne Überdeckung
   G  v3.11.0 Bereitschaft: Start mit --minimiert → nur Taskleisten-Symbol, nicht vorne; Leerlauf (CPU/Speicher, psutil);
      zweiter Start → keine zweite Instanz, laufende nach vorne (mit --minimiert: still); CAS-Auftrag → vorne, Annahme
      < 1 s → EOL → wieder minimiert; Menü-Haken Autostart → Verknüpfung im echten Autostart-Ordner → wscript → Starter;
@@ -166,10 +169,38 @@ def fall_e(state):
     return e
 
 
-def fall_f(state, work):
-    """v3.10.0 CAS-Auftrag der Brücke über die Datei-Schnittstelle (wie bruecke/auftrag.py) + Selbsttest-Phasen cas_*."""
+# v3.12.0: CAS-Leistungen wie von der Brücke 1.1.0 (bruecke/leistungen.py datei_inhalt) — Kurztexte/Vorlagen der Zuordnung
+def _l(kurz, text, mod, vorlage, seite=None, ohne=False):
+    return {"kurz": kurz, "text": text, "appc": "", "modalitaet": mod, "seite": seite, "vorlage": vorlage,
+            "ohne_vorlage": ohne, "bekannt": True}
+
+
+L_HWS = _l("hws", "HWS", "Röntgen", "halswirbelsäule_in_2_ebenen")
+L_LWS = _l("lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")
+L_FUSSL = _l("fussl", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")
+L_SOSUR = _l("sosur", "Sonographie der Schulter re.", "Sono", "sonografie_schultergelenk", "rechts")
+L_KOORD = _l("koord", "Koordinationszuschlag", "sonstige", None, ohne=True)
+
+
+def fall_f(state, work, hwnd=None):
+    """v3.10.0 CAS-Auftrag der Brücke über die Datei-Schnittstelle (wie bruecke/auftrag.py) + Selbsttest-Phasen cas_*.
+    v3.12.0: CAS-Leistungen (cas_leistungen_<id>.json) → Band, Vorlagenwahl (auch gemischt, ohne KI über den
+    Normalbefund-Weg), Hinweise, grüne Bestätigung nach EOL, Kopfzeile bei zwei Fensterbreiten."""
     ordner = work / "localappdata" / "RaKScribe"
     ordner.mkdir(parents=True, exist_ok=True)
+
+    def leistungen(aid, nr, liste):
+        (ordner / f"cas_leistungen_{aid}.json").write_text(json.dumps(
+            {"protokoll": 1, "auftrag_id": aid, "nr": nr, "roh": "Untersuchung: …", "leistungen": liste,
+             "quelle": "CASSpeechMagic.DBModule.GetExaminationsText", "katalog": "UI-Test", "ms": 2700,
+             "zeit": time.time()}, ensure_ascii=False), encoding="utf-8")
+
+    def bild(name):
+        try:
+            if hwnd:
+                screenshot(hwnd, OUT / name)
+        except Exception:
+            pass
 
     def auftrag(nr, aid):
         (ordner / "cas_auftrag.json").write_text(json.dumps(
@@ -192,23 +223,48 @@ def fall_f(state, work):
     auftrag("20261013005", "uitest1")
     f["angenommen"] = ph("cas_status#1")
     f["antwort1"] = antwort("uitest1")
+    leistungen("uitest1", "20261013005", [L_HWS, L_SOSUR, L_KOORD])      # kommt Sekunden nach dem Auftrag
+    f["leistungen1"] = ph("cas_status#1b", 1.5)
+    bild("F_cas_leistungen.png")
     f["testbefund"] = ph("cas_testbefund")
     f["eol_test"] = ph("cas_eol#1")
+    bild("F_bestaetigung.png")
     f["antwort1_ende"] = antwort("uitest1")
     txt = ordner / "cas_ergebnis_20261013005.txt"
     f["ergebnis_test"] = txt.read_text(encoding="utf-8") if txt.exists() else None
     auftrag("20261013006", "uitest2")
-    f["angenommen2"] = ph("cas_status#2")
+    leistungen("uitest2", "20261013006", [L_HWS])
+    f["angenommen2"] = ph("cas_status#2", 1.0)
     ph("sm_RECORD#9")
-    f["ins2"] = ph("sm_INS#9", 2.0)
+    f["ins2"] = ph("sm_INS#9", 2.0)        # Attrappe diktiert „Kniegelenk rechts in 2 Ebenen unauffällig.“
+    bild("F_cas_hinweise.png")
     f["eol2"] = ph("cas_eol#2")
     f["antwort2"] = antwort("uitest2")
     wav = f["antwort2"].get("wav_datei")
     f["wav2_bytes"] = os.path.getsize(wav) if wav and os.path.exists(wav) else 0
+    f["nach_bestaetigung2"] = ph("cas_status#2b", 5.0)
+    # gemischtes Diktat ohne KI (Normalbefund je Abschnitt): Fuß links + LWS
+    auftrag("20261013008", "uitest4")
+    leistungen("uitest4", "20261013008", [L_FUSSL, L_LWS])
+    ph("cas_status#4", 1.0)
+    f["gemischt"] = ph("text_ins#1|Fuß links unauffällig. LWS unauffällig.")
+    bild("F_cas_gemischt.png")
+    ph("cas_abbrechen#4")
+    # „Unauffällig.“ allein + CAS HWS → HWS-Normalbefund aus der Vorlage
+    auftrag("20261013009", "uitest5")
+    leistungen("uitest5", "20261013009", [L_HWS])
+    ph("cas_status#5", 1.0)
+    f["nur_unauffaellig"] = ph("text_ins#2|Unauffällig.")
+    ph("cas_abbrechen#5")
     auftrag("20261013007", "uitest3")
     ph("cas_status#3")
     f["abbrechen"] = ph("cas_abbrechen")
     f["antwort3"] = antwort("uitest3")
+    # Kopfzeile (Peter 13.10.: „Bereit“ überdeckte „SpeechMike verbunden“) bei zwei Fensterbreiten
+    f["kopf1240"] = ph("kopfzeile#1240")
+    bild("F_kopfzeile_1240.png")
+    f["kopf900"] = ph("kopfzeile#900")
+    bild("F_kopfzeile_900.png")
     return f
 
 
@@ -385,7 +441,7 @@ def fall_g():
             G["cas_antwort"] = json.loads(ant.read_text(encoding="utf-8"))
         except Exception:
             G["cas_antwort"] = {}
-        time.sleep(2.5)
+        time.sleep(5.0)   # v3.12.0: erst grünes Band (4,5 s), dann Taskleiste
         G["nach_eol"] = ph(state, "g_nach_eol")
         G["nach_eol_iconic"] = bool(win32gui.IsIconic(hwnd))
         # G6: Menü-Haken „Mit Windows starten (wartet minimiert)“
@@ -512,7 +568,7 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
             pathlib.Path(str(state) + ".trigger").write_text("sm_RECORD#0", encoding="utf-8")
             sm = wait_json(state, "sm_RECORD#0", 20)
         e = fall_e(state) if mit_fall_e else None
-        f = fall_f(state, work) if mit_fall_f else None
+        f = fall_f(state, work, hwnd) if mit_fall_f else None
         if e:
             try:
                 screenshot(hwnd, OUT / f"{case}_ende.png")
@@ -671,6 +727,46 @@ cf("EOL → Text + WAV an die Brücke (Antwort fertig)", (F.get("antwort2") or {
    f"{F.get('antwort2')} / WAV {F.get('wav2_bytes')} Byte")
 cf("Abbrechen-Knopf → „abgebrochen“, Band weg", (F.get("antwort3") or {}).get("status") == "abgebrochen"
    and gf("abbrechen", "cas") is None, str(F.get("antwort3")))
+# v3.12.0: CAS-Leistungen
+cf("v3.12.0 Leistungen kommen nach: Band „CAS-Diktat 20261013005 (kp) · HWS · Schulter re. (Sono)“ (ohne Abrechnungsposten)",
+   "CAS-Diktat 20261013005 (kp) · HWS · Schulter re. (Sono)" in str(gf("leistungen1", "cas_band", ""))
+   and gf("leistungen1", "cas_leistungen") == ["HWS", "Schulter re. (Sono)"],
+   f"{gf('leistungen1', 'cas_band')!r} / {gf('leistungen1', 'cas_leistungen')}")
+cf("v3.12.0 EOL → grünes Band „An CAS übergeben: <Nr> · <Titel>“ sichtbar, blaues Band weg",
+   gf("eol_test", "bestaetigung_sichtbar") is True
+   and str(gf("eol_test", "bestaetigung", "")).startswith("✓  An CAS übergeben: 20261013005")
+   and "TEST RaKScribe-Brücke" in str(gf("eol_test", "bestaetigung", "")) and gf("eol_test", "cas_band_sichtbar") is False,
+   f"{gf('eol_test', 'bestaetigung_sichtbar')} / {gf('eol_test', 'bestaetigung')!r}")
+cf("v3.12.0 Diktat (Knie) widerspricht CAS (HWS) → Diktat gewinnt, Hinweise im Band",
+   str(gf("ins2", "result", "")).startswith("## Kniegelenk rechts in 2 Ebenen")
+   and gf("ins2", "cas_hinweise") == ["Kniegelenk in 2 Ebenen: nicht in den CAS-Leistungen", "HWS laut CAS, nicht diktiert"]
+   and "HWS laut CAS, nicht diktiert" in str(gf("ins2", "cas_hinweis_label", "")),
+   f"{str(gf('ins2', 'result', ''))[:40]!r} / {gf('ins2', 'cas_hinweise')}")
+cf("v3.12.0 Bestätigung mit Titel, nach ~5 s wieder weg (dann Taskleiste)",
+   "An CAS übergeben: 20261013006  ·  Kniegelenk rechts in 2 Ebenen" in str(gf("eol2", "bestaetigung", ""))
+   and gf("nach_bestaetigung2", "bestaetigung_sichtbar") is False,
+   f"{gf('eol2', 'bestaetigung')!r} / danach {gf('nach_bestaetigung2', 'bestaetigung_sichtbar')}")
+gem = str(gf("gemischt", "result", ""))
+cf("v3.12.0 gemischtes Diktat Fuß links + LWS → zwei Befunde in Diktat-Reihenfolge (Normalbefund-Weg, ohne KI)",
+   gem.startswith("## Fuß links in 2 Ebenen") and "## Lendenwirbelsäule in 2 Ebenen" in gem
+   and gem.index("## Fuß") < gem.index("## Lendenwirbelsäule") and gf("gemischt", "cas_hinweise") == [],
+   f"{gem[:160]!r} / {gf('gemischt', 'cas_hinweise')}")
+cf("v3.12.0 „Unauffällig.“ + CAS HWS → HWS-Normalbefund aus der Vorlage",
+   str(gf("nur_unauffaellig", "result", "")).startswith("## Halswirbelsäule in 2 Ebenen"),
+   repr(str(gf("nur_unauffaellig", "result", ""))[:60]))
+
+
+def _ueberlappt(a, b):
+    return a and b and a[1] > 1 and b[1] > 1 and a[0] < b[0] + b[1] and b[0] < a[0] + a[1]
+
+
+for breite in (1240, 900):
+    kopf = gf(f"kopf{breite}", "kopf") or {}
+    st = kopf.get("status_badge")
+    andere = {k: v for k, v in kopf.items() if k in ("sm_chip", "key_chip", "device_dropdown", "menu_btn")}
+    cf(f"v3.12.0 Kopfzeile {breite} px: Status überdeckt „SpeechMike verbunden“ und die rechten Elemente nicht",
+       bool(st) and (kopf.get("sm_chip") or [0, 0, ""])[2] == "SpeechMike verbunden"
+       and not any(_ueberlappt(st, v) for v in andere.values()), json.dumps(kopf, ensure_ascii=False))
 
 # G (v3.11.0): Bereitschaft — minimiert warten, Einzelinstanz, nach CAS-EOL minimieren, Autostart über den Starter
 try:
@@ -717,10 +813,12 @@ cg("CAS-Auftrag: Annahme unter 1 s, Fenster vorne (nicht mehr minimiert), Band s
    (G.get("annahme_s") or 99) < 1.0 and G.get("cas_iconic") is False and gg("cas_vorne", "fenster") == "normal"
    and gg("cas_vorne", "cas_band_sichtbar") is True,
    f"Annahme {G.get('annahme_s')} s, Vordergrund {G.get('cas_vordergrund')}, Band {gg('cas_vorne', 'cas_band')!r}")
-cg("EOL im CAS-Modus: Befund an CAS („fertig“), nach ~1,5 s wieder minimiert",
-   (G.get("cas_antwort") or {}).get("status") == "fertig" and G.get("nach_eol_iconic") is True
+cg("EOL im CAS-Modus: Befund an CAS („fertig“), grünes Band zu sehen (noch nicht minimiert), danach minimiert",
+   (G.get("cas_antwort") or {}).get("status") == "fertig" and gg("cas_eol", "bestaetigung_sichtbar") is True
+   and gg("cas_eol", "fenster") == "normal" and G.get("nach_eol_iconic") is True
    and gg("nach_eol", "fenster") == "iconic" and gg("nach_eol", "cas") is None,
-   f"{(G.get('cas_antwort') or {}).get('status')} / {gg('nach_eol', 'fenster')}")
+   f"{(G.get('cas_antwort') or {}).get('status')} / Band {gg('cas_eol', 'bestaetigung_sichtbar')} "
+   f"{gg('cas_eol', 'fenster')} → {gg('nach_eol', 'fenster')}")
 cg("Menü „Mit Windows starten“: Verknüpfung im Autostart → wscript.exe → lokaler Starter, der auf diese EXE wartet",
    G.get("lnk_da") is True and str(G.get("lnk_ziel", "")).lower().endswith("wscript.exe")
    and "warte_auf_x.vbs" in str(G.get("lnk_args", "")) and G.get("vbs_exe_ist_diese") is True
