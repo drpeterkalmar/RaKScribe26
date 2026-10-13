@@ -729,6 +729,14 @@ class RaKScribeApp(ctk.CTk):
         # Starter, der auf X: wartet), nach EOL im CAS-Modus wieder minimieren; ein zweiter Start holt dieses Fenster vor.
         self._minimiert_gestartet, self._zweitstarts = bool(minimiert), 0
         self._exe_pfad = _bs.exe_pfad()
+        self._symbol_gesetzt = False
+        if self._exe_pfad:  # wartet als Symbol in der Taskleiste → dort das RaKScribe-Symbol der EXE statt des CTk-Symbols
+            try:
+                self.iconbitmap(self._exe_pfad)
+                self._symbol_gesetzt = True
+            except Exception:
+                self._iconbitmap_method_called = False  # CTk setzt dann wie bisher sein eigenes Symbol
+                log_exception("[START] Fenstersymbol aus der EXE")
         self._autostart = _bs.Autostart(USER_KEY_DIR, log=log)
         self.autostart_var = tk.BooleanVar(value=False)  # beim Öffnen des Menüs aus der Verknüpfung gelesen
         self.nach_cas_minimieren_var = tk.BooleanVar(value=bool(einstellung_lesen("cas_minimieren", True)))
@@ -981,6 +989,7 @@ class RaKScribeApp(ctk.CTk):
                     "autostart_lnk": self._autostart.lnk,
                     "autostart_meldung": getattr(self, "_autostart_meldung", ""),
                     "exe": self._exe_pfad,
+                    "symbol": bool(getattr(self, "_symbol_gesetzt", False)),
                     "cas_minimieren": bool(self.nach_cas_minimieren_var.get()),
                     "aufnahme_offen": getattr(self, "_aufnahme", None) is not None,
                     "pid": os.getpid(),

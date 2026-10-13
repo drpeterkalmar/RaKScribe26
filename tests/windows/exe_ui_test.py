@@ -336,7 +336,9 @@ def fall_g():
         G["ready_vorne"] = bool(hwnd) and win32gui.GetForegroundWindow() == hwnd
         try:
             from PIL import ImageGrab
-            ImageGrab.grab(all_screens=True).save(OUT / "G_minimiert.png")
+            bild = ImageGrab.grab(all_screens=True)
+            bild.save(OUT / "G_minimiert.png")
+            bild.crop((0, max(bild.height - 64, 0), bild.width, bild.height)).save(OUT / "G_taskleiste.png")
         except Exception:
             pass
         if not hwnd or G["ready"] is None:
@@ -696,6 +698,8 @@ cg("Start mit --minimiert: nur Symbol in der Taskleiste (minimiert), nicht im Vo
    G.get("start_iconic") is True and G.get("ready_iconic") is True and G.get("ready_vorne") is False
    and gg("ready", "fenster") == "iconic" and gg("ready", "minimiert_gestartet") is True,
    f"{G.get('start_s')} s bis zum Symbol, Zustand {gg('ready', 'fenster')}, vorne {G.get('ready_vorne')}")
+cg("Taskleisten-Symbol = RaKScribe-Symbol der EXE (nicht das CustomTkinter-Symbol)", gg("ready", "symbol") is True,
+   str(gg("ready", "symbol")))
 cg("… lädt wie sonst (Schlüssel aktiv, bereit), kein Mikrofon offen", gg("ready", "status") == "READY"
    and gg("leerlauf_zustand", "aufnahme_offen") is False and gg("leerlauf_zustand", "is_recording") is False,
    f"{gg('ready', 'status')} / Aufnahme offen {gg('leerlauf_zustand', 'aufnahme_offen')}")
@@ -760,7 +764,7 @@ if L.get("prozesse"):
               f"{q['private_bytes_mb']} MB | {q['threads']} |" for q in L["prozesse"]]
 lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund), "
           "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen, danach Fall F CAS-Auftrag), "
-          "`G_minimiert.png` (ganzer Bildschirm: RaKScribe nur als Taskleisten-Symbol), `G_cas_vorne.png` (nach CAS-Auftrag)."]
+          "`G_minimiert.png` / `G_taskleiste.png` (RaKScribe nur als Taskleisten-Symbol), `G_cas_vorne.png` (nach CAS-Auftrag)."]
 (OUT / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("\n".join(lines))
 sys.exit(0 if ok else 1)
