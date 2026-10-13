@@ -60,7 +60,9 @@ check("init_runtime(): gebündelte phrases.json ladbar (292 / 68)", rks._selbstt
 check("Vorlagen-Erkennung nach init_runtime", rks.detect_template("Vorfuß rechts in 2 Ebenen unauffällig") == "vorfuß_in_2_ebenen")
 
 code = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("main() ruft init_runtime() vor dem Fenster", "def main():\n    init_runtime()" in code
+haupt = code[code.index("def main():"):]
+check("main(): erst Einzelinstanz (v3.11.0), dann init_runtime(), dann das Fenster",
+      -1 < haupt.find("_bs.einzelinstanz_sichern()") < haupt.find("init_runtime()") < haupt.find("RaKScribeApp(")
       and 'if __name__ == "__main__":\n    main()' in code)
 
 wf = (ROOT / ".github" / "workflows" / "build-exe.yml").read_text(encoding="utf-8")

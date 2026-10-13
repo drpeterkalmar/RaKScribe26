@@ -36,6 +36,7 @@ import speechmike as _sm  # v3.8.0: SpeechMike-Tasten + LEDs direkt (hidapi), oh
 import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten nach SpeechMike-Pausen
 import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
 import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
+import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -537,6 +538,11 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 # v3.8.0 (Peter 11.10., Nachtrag 3/4): Hilfe-Zeilen im Menü — gleicher Text in der Web-App (App.tsx)
 HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig & weiter",
                     "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)")
+MINIMIEREN_NACH_EOL_MS = 1500  # v3.11.0: nach EOL im CAS-Modus wieder als Symbol in die Taskleiste
+
+
+def _kurzpfad(pfad, n=64):
+    return pfad if len(pfad) <= n else "…" + pfad[-(n - 1):]
 
 
 GEMINI_401_TEXT = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
@@ -650,7 +656,7 @@ def keys_ready():
 
 
 class RaKScribeApp(ctk.CTk):
-    def __init__(self):
+    def __init__(self, minimiert=False):
         super().__init__()
 
         self.title(f"RaKScribe {app_version()} – Röntgen am Kai")
@@ -719,6 +725,14 @@ class RaKScribeApp(ctk.CTk):
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
         self._cas_kanal = _cas.Kanal(version=app_version(), log=log, prozess_lebt=_cas.prozess_lebt)
         self.after(700, self._cas_takt)
+        # v3.11.0 (Peter 13.10.): Bereitschaft — ab der Windows-Anmeldung minimiert warten (Autostart über einen lokalen
+        # Starter, der auf X: wartet), nach EOL im CAS-Modus wieder minimieren; ein zweiter Start holt dieses Fenster vor.
+        self._minimiert_gestartet, self._zweitstarts = bool(minimiert), 0
+        self._exe_pfad = _bs.exe_pfad()
+        self._autostart = _bs.Autostart(USER_KEY_DIR, log=log)
+        self.autostart_var = tk.BooleanVar(value=False)  # beim Öffnen des Menüs aus der Verknüpfung gelesen
+        self.nach_cas_minimieren_var = tk.BooleanVar(value=bool(einstellung_lesen("cas_minimieren", True)))
+        threading.Thread(target=self._autostart_nachziehen, daemon=True).start()
         # v3.8.2 (Peter 12.10.): SpeechMike-Steuerung im Menü abschaltbar (z. B. wenn SpeechMagic die Tasten braucht)
         self.speechmike_var = tk.BooleanVar(value=bool(einstellung_lesen("speechmike", True)))
         if self.speechmike_var.get():
@@ -731,11 +745,18 @@ class RaKScribeApp(ctk.CTk):
         self.after(400, self._selftest_hook)
         # Umbau Schritt 24 (Gutachten P3-4): Hinweis auf die alte Prompt-Datei nur EINMAL je Datei/Version
         # (Merker in %APPDATA%\\RaKScribe), nicht bei jedem Start
-        if (PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST")
-                and _cfg.einmalig(os.path.join(USER_KEY_DIR, "gezeigte_hinweise.json"), PROMPT_HINWEIS)):
-            self.after(1200, lambda: messagebox.showinfo(
-                "Befund-Prompt aktualisiert",
-                PROMPT_HINWEIS + "\n\nDie alte Datei wird nicht mehr verwendet und kann gelöscht werden."))
+        if PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST"):
+            self.after(1200, self._prompt_hinweis)
+
+    def _prompt_hinweis(self):
+        """v3.11.0: erst zeigen, wenn das Fenster zu sehen ist und kein CAS-Diktat offen ist — minimiert wartend kein
+        Dialog aus dem Nichts (z. B. mitten in die CAS-Anmeldung oder ins Diktat)."""
+        if self.state() in ("iconic", "withdrawn") or getattr(self, "_cas", None) is not None:
+            self.after(3000, self._prompt_hinweis)
+            return
+        if _cfg.einmalig(os.path.join(USER_KEY_DIR, "gezeigte_hinweise.json"), PROMPT_HINWEIS):
+            messagebox.showinfo("Befund-Prompt aktualisiert",
+                                PROMPT_HINWEIS + "\n\nDie alte Datei wird nicht mehr verwendet und kann gelöscht werden.")
 
     def create_widgets(self):
         # ── Kopfzeile ───────────────────────────────────────────────
@@ -885,14 +906,15 @@ class RaKScribeApp(ctk.CTk):
         path = os.environ.get("RAKSCRIBE_SELFTEST")
         if not path:
             return
-        geo = os.environ.get("RAKSCRIBE_SELFTEST_GEOMETRY")
-        if geo == "zoomed":
-            self.state("zoomed")
-        elif geo:
-            self.geometry(geo)
-        self.lift()
-        self.attributes("-topmost", True)
-        self.focus_force()
+        if not getattr(self, "_minimiert_gestartet", False):  # v3.11.0 Fall G: --minimiert bleibt Taskleisten-Symbol
+            geo = os.environ.get("RAKSCRIBE_SELFTEST_GEOMETRY")
+            if geo == "zoomed":
+                self.state("zoomed")
+            elif geo:
+                self.geometry(geo)
+            self.lift()
+            self.attributes("-topmost", True)
+            self.focus_force()
         if os.environ.get("RAKSCRIBE_SELFTEST_FAKEAUDIO") == "1":
             _selbsttest_attrappen()  # v3.8.0 Fall E: SpeechMike-Ablauf ohne Mikrofon/Google
 
@@ -950,6 +972,18 @@ class RaKScribeApp(ctk.CTk):
                     "cas": self._cas.nr if getattr(self, "_cas", None) is not None else None,
                     "cas_band": str(self.cas_label.cget("text")).strip() if getattr(self, "cas_label", None) else "",
                     "cas_band_sichtbar": bool(getattr(self, "cas_band", None) and self.cas_band.winfo_ismapped()),
+                    # v3.11.0: Bereitschaft (Fensterzustand, Zweitstarts, Autostart, Minimieren nach CAS-EOL)
+                    "fenster": self.state(),
+                    "minimiert_gestartet": bool(getattr(self, "_minimiert_gestartet", False)),
+                    "zweitstarts": getattr(self, "_zweitstarts", 0),
+                    "autostart": bool(self._autostart.an()),
+                    "autostart_ziel": self._autostart.ziel(),
+                    "autostart_lnk": self._autostart.lnk,
+                    "autostart_meldung": getattr(self, "_autostart_meldung", ""),
+                    "exe": self._exe_pfad,
+                    "cas_minimieren": bool(self.nach_cas_minimieren_var.get()),
+                    "aufnahme_offen": getattr(self, "_aufnahme", None) is not None,
+                    "pid": os.getpid(),
                     "time": time.strftime("%H:%M:%S"),
                 }
                 with open(path, "w", encoding="utf-8") as f:
@@ -1005,6 +1039,14 @@ class RaKScribeApp(ctk.CTk):
                         if aktion:
                             aktion()
                         self.after(1500, lambda p=phase: dump(p))
+                    elif phase.startswith(("autostart_an", "autostart_aus")):
+                        # v3.11.0: derselbe Handler wie der Menü-Haken „Mit Windows starten (wartet minimiert)“
+                        self.autostart_var.set(phase.startswith("autostart_an"))
+                        self._autostart_umschalten()
+                        self.after(800, lambda p=phase: dump(p))
+                    elif phase.startswith("minimieren"):
+                        self.iconify()
+                        self.after(800, lambda p=phase: dump(p))
                     else:
                         dump(phase)
                 except Exception:
@@ -1067,6 +1109,18 @@ class RaKScribeApp(ctk.CTk):
         m.add_separator()
         m.add_checkbutton(label="Diktat in den Befund: Satzanfang groß", variable=self.gross_satzanfang_var,
                           command=lambda: einstellung_schreiben("gross_satzanfang", bool(self.gross_satzanfang_var.get())))
+        m.add_separator()
+        # v3.11.0 (Peter 13.10.): Bereitschaft. „An“ heißt: die Verknüpfung liegt im Benutzer-Autostart.
+        self.autostart_var.set(self._autostart.an())
+        m.add_checkbutton(label="Mit Windows starten (wartet minimiert)", variable=self.autostart_var,
+                          command=self._autostart_umschalten, state="normal" if self._exe_pfad else "disabled")
+        if self.autostart_var.get():
+            ziel = self._autostart.ziel()
+            m.add_command(label="   wartet auf: " + _kurzpfad(ziel or "? (Starter fehlt)"), state="disabled")
+            if self._exe_pfad and not _bs.gleicher_pfad(ziel, self._exe_pfad):
+                m.add_command(label="   → auf diese EXE umstellen", command=self._autostart_umstellen)
+        m.add_checkbutton(label="Nach CAS-Befund minimieren", variable=self.nach_cas_minimieren_var,
+                          command=lambda: einstellung_schreiben("cas_minimieren", bool(self.nach_cas_minimieren_var.get())))
         m.add_separator()
         m.add_command(label="Prompt bearbeiten…", command=self.toggle_prompt_view)
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
@@ -2002,6 +2056,9 @@ class RaKScribeApp(ctk.CTk):
         neu = k.abholen()
         if neu is not None:
             self._cas_neu(neu)
+        bitte = _bs.nach_vorne_abholen(k.ordner)  # v3.11.0: RaKScribe wurde ein zweites Mal gestartet
+        if bitte is not None:
+            self._zweiter_start(bitte)
 
     def _cas_hat_inhalt(self):
         if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
@@ -2030,6 +2087,9 @@ class RaKScribeApp(ctk.CTk):
                                                                          if inhalt else ""))
         self._cas_band_zeigen()
         self._cas_nach_vorne()
+        if not keys_ready():  # v3.11.0: minimiert ohne Schlüssel gewartet → Sperre + Hinweis erst jetzt zeigen
+            self.refresh_key_state()
+            self._kurzhinweis(f"CAS-Diktat {a.nr}: erst den Praxis-Schlüssel laden, dann diktieren", 10000)
 
     def _cas_beenden(self):
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
@@ -2132,6 +2192,66 @@ class RaKScribeApp(ctk.CTk):
         self._cas_beenden()
         self._felder_leeren()
         self._kurzhinweis(f"An CAS übergeben: Diktat {a.nr} – bereit", 6000)
+        self._nach_cas_minimieren()
+
+    # ── v3.11.0: Bereitschaft (Peter 13.10.: „als Symbol in der Taskleiste warten, bis der nächste Befund diktiert
+    # werden soll“). Autostart über den lokalen Starter (bereitschaft.py), Einzelinstanz in main(), nach CAS-EOL minimieren.
+    def _nach_cas_minimieren(self):
+        """Nach EOL im CAS-Modus wieder als Symbol in die Taskleiste (Menü „Nach CAS-Befund minimieren“, Standard an) —
+        nach ~1,5 s und nur, wenn bis dahin nichts Neues begonnen hat. Ohne CAS-Auftrag ändert sich nichts."""
+        v = getattr(self, "nach_cas_minimieren_var", None)
+        if v is not None and v.get():
+            self.after(MINIMIEREN_NACH_EOL_MS, self._minimieren_wenn_ruhig)
+
+    def _minimieren_wenn_ruhig(self):
+        if (getattr(self, "_cas", None) is not None or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)
+                or self.transcript_text.get("1.0", "end-1c").strip() or self.result_text.get("1.0", "end-1c").strip()):
+            return  # neuer Auftrag, Aufnahme oder Text seit dem EOL → Fenster bleibt
+        log("[BEREITSCHAFT] Nach dem CAS-Befund minimiert – wartet auf das nächste Diktat.")
+        self.iconify()
+
+    def _zweiter_start(self, bitte):
+        """RaKScribe wurde noch einmal gestartet (Doppelklick, Brücke): keine zweite Instanz — zwei würden um denselben
+        CAS-Auftrag konkurrieren —, sondern dieses Fenster nach vorne. War es eine andere EXE: Hinweis zum Wechseln."""
+        self._zweitstarts = getattr(self, "_zweitstarts", 0) + 1
+        exe = bitte.get("exe") or ""
+        log(f"[START] Zweiter Start ({exe or '?'}, v{bitte.get('version') or '?'}) – dieses Fenster nach vorne.")
+        self._cas_nach_vorne()
+        if exe and getattr(self, "_exe_pfad", None) and not _bs.gleicher_pfad(exe, self._exe_pfad):
+            self._kurzhinweis(f"RaKScribe {app_version()} läuft schon – für die andere EXE erst dieses Fenster schließen",
+                              10000)
+
+    def _autostart_nachziehen(self):
+        """Hintergrund-Thread beim Start (Autostart an): Starter auf Stand halten — prüft ggf. X:, darum nicht im UI-Thread."""
+        try:
+            meldung = self._autostart.nachziehen(self._exe_pfad)
+            if meldung:
+                log(meldung)
+        except Exception:
+            log_exception("[AUTOSTART] Nachziehen")
+
+    def _autostart_umschalten(self):
+        """Menü-Haken „Mit Windows starten (wartet minimiert)“: an = Verknüpfung im Benutzer-Autostart auf den lokalen
+        Starter, der auf DIESE EXE wartet (X: gibt es erst nach dem CAS-Login); aus = Verknüpfung und Starter weg."""
+        if self.autostart_var.get():
+            self._autostart_ergebnis(*self._autostart.einrichten(self._exe_pfad))
+        else:
+            self._autostart_ergebnis(*self._autostart.entfernen())
+
+    def _autostart_umstellen(self):
+        """Menü „→ auf diese EXE umstellen“: der Starter wartet bisher auf eine andere Datei (z. B. eine alte Kopie)."""
+        self._autostart_ergebnis(*self._autostart.einrichten(self._exe_pfad))
+
+    def _autostart_ergebnis(self, ok, text):
+        self._autostart_meldung = text
+        an = self._autostart.an()
+        self.autostart_var.set(an)
+        einstellung_schreiben("autostart", an)
+        if ok:
+            self._kurzhinweis(text, 8000)
+        else:
+            log(f"[AUTOSTART] {text}")
+            messagebox.showerror("Mit Windows starten", text)
 
     def speechmike_diagnose(self):
         smk = getattr(self, "_speechmike", None)
@@ -2198,9 +2318,29 @@ def init_runtime():
 
 
 def main():
+    # v3.11.0: nur EINE RaKScribe je Windows-Sitzung (zwei würden um denselben CAS-Auftrag konkurrieren). Ein zweiter
+    # Start holt die laufende nach vorne; der Autostart-Starter (--minimiert) endet dann still.
+    minimiert = _bs.minimiert_gewuenscht(sys.argv[1:])
+    if not _bs.einzelinstanz_sichern():
+        try:
+            if not minimiert:
+                _bs.nach_vorne_bitten(_cas.ordner_standard(), exe=_bs.exe_pfad(), version=app_version())
+            log("[START] RaKScribe läuft schon – " + ("Autostart: nichts zu tun." if minimiert
+                                                       else "das laufende Fenster wird nach vorne geholt."))
+        except Exception:
+            log_exception("[START] Zweiter Start")
+        return
     init_runtime()
     ctk.set_appearance_mode("dark")
-    app = RaKScribeApp()
+    app = RaKScribeApp(minimiert=minimiert)
+    if minimiert:
+        # Nur als Symbol in die Taskleiste, ohne Fenster im Vordergrund (kein Fokus-Klau, z. B. bei der CAS-Anmeldung).
+        # CTk 6.0.0 versteckt das Fenster in mainloop() (withdraw für die dunkle Titelleiste) und zeigt es nur ohne
+        # vorheriges iconify() wieder: das erste iconify() verhindert das Aufblitzen, das zweite legt danach das Symbol
+        # in die Taskleiste (Windows-UI-Test Fall G prüft: Fenster minimiert, nicht vorne).
+        app.iconify()
+        app.after(0, app.iconify)
+        log("[START] --minimiert: wartet als Symbol in der Taskleiste.")
     app.mainloop()
 
 

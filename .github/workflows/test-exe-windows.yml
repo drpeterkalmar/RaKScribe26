@@ -35,7 +35,7 @@ jobs:
           python-version: '3.12'
 
       - name: Testwerkzeuge installieren
-        run: pip install pillow pywin32 cryptography
+        run: pip install pillow pywin32 cryptography psutil
 
       - name: Bildschirmauflösung auf 1920x1080 (falls möglich)
         continue-on-error: true

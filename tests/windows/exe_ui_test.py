@@ -17,6 +17,11 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
   F  v3.10.0 CAS-Auftrag der RaKScribe-Brücke: Auftrag (cas_auftrag.json) → Band „CAS-Diktat <Nr> (kp)“ → Testbefund
      → EOL schreibt die Ergebnis-Datei statt Strg+V (Antwort „fertig“, test=true); echtes Attrappen-Diktat Record → INS
      → EOL liefert Text + WAV; Abbrechen-Knopf → „abgebrochen“
+  G  v3.11.0 Bereitschaft: Start mit --minimiert → nur Taskleisten-Symbol, nicht vorne; Leerlauf (CPU/Speicher, psutil);
+     zweiter Start → keine zweite Instanz, laufende nach vorne (mit --minimiert: still); CAS-Auftrag → vorne, Annahme
+     < 1 s → EOL → wieder minimiert; Menü-Haken Autostart → Verknüpfung im echten Autostart-Ordner → wscript → Starter;
+     „Anmeldung“ (Verknüpfung öffnen) ohne EXE (X: fehlt) → Starter wartet; EXE erscheint nach 30 s → Start minimiert;
+     Starter bei laufender RaKScribe → endet still; Haken aus → alles weg; Starter-Frist (12 s statt 4 h) → endet still
 Die EXE schreibt ihren UI-Zustand per Selbsttest-Modus (RAKSCRIBE_SELFTEST) als JSON; dazu je ein Screenshot.
 Ergebnis: <out>/report.md, <out>/results.json, <out>/*.png  — Exit 1 bei FAIL.
 
@@ -61,11 +66,17 @@ def find_window(title_part, timeout=60):
 
 def kill_all(p):
     # PyInstaller-onefile: Bootloader + Kindprozess → ganzen Baum beenden, dann warten bis alle Fenster weg sind
-    subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True)
+    if p is not None:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True)
     subprocess.run(["taskkill", "/F", "/IM", "rakscribe26.exe"], capture_output=True)
     t0 = time.time()
     while rks_windows() and time.time() - t0 < 20:
         time.sleep(0.5)
+    try:  # v3.11.0: auch die Prozesse müssen weg sein (Einzelinstanz-Mutex frei, EXE-Datei nicht mehr gesperrt)
+        while rks_prozesse() and time.time() - t0 < 30:
+            time.sleep(0.5)
+    except ImportError:
+        pass
 
 
 def screenshot(hwnd, path):
@@ -199,6 +210,258 @@ def fall_f(state, work):
     f["abbrechen"] = ph("cas_abbrechen")
     f["antwort3"] = antwort("uitest3")
     return f
+
+
+REPO = pathlib.Path(__file__).resolve().parents[2]
+
+
+def rks_prozesse():
+    import psutil
+    return [p for p in psutil.process_iter(["name"]) if (p.info["name"] or "").lower().startswith("rakscribe26")]
+
+
+def starter_prozesse(skript):
+    """Laufende wscript.exe mit diesem Starter-Skript."""
+    import psutil
+    out = []
+    for p in psutil.process_iter(["name", "cmdline"]):
+        try:
+            if (p.info["name"] or "").lower() == "wscript.exe" and any(skript in (a or "") for a in p.info["cmdline"] or []):
+                out.append(p.pid)
+        except Exception:
+            pass
+    return out
+
+
+def leerlauf_messen(dauer=30):
+    """CPU-Zeit aller rakscribe26-Prozesse über `dauer` s (in % EINES Kerns) und Speicher wie im Task-Manager:
+    Arbeitssatz, privater Arbeitssatz (Spalte „Arbeitsspeicher“), zugesicherte private Bytes; dazu Threads."""
+    import psutil
+    procs = rks_prozesse()
+    vorher = {p.pid: sum(p.cpu_times()[:2]) for p in procs}
+    time.sleep(dauer)
+    erg, cpu = {"dauer_s": dauer, "prozesse": []}, 0.0
+    for p in procs:
+        try:
+            ct = sum(p.cpu_times()[:2]) - vorher[p.pid]
+            mi = p.memory_full_info()
+            erg["prozesse"].append({"pid": p.pid, "cpu_s": round(ct, 3), "arbeitssatz_mb": round(mi.rss / 2 ** 20, 1),
+                                    "privater_arbeitssatz_mb": round(mi.uss / 2 ** 20, 1),
+                                    "private_bytes_mb": round(mi.private / 2 ** 20, 1), "threads": p.num_threads()})
+            cpu += ct
+        except psutil.Error:
+            pass
+    erg["cpu_prozent_eines_kerns"] = round(cpu / dauer * 100, 2)
+    return erg
+
+
+def verschieben(von, nach, versuche=40):
+    """EXE weg-/zurücklegen („X: fehlt“ / „X: ist da“) — kurz gesperrt (Virenscanner, eben beendeter Prozess) → erneut."""
+    for i in range(versuche):
+        try:
+            shutil.move(str(von), str(nach))
+            return
+        except OSError:
+            if i == versuche - 1:
+                raise
+            time.sleep(0.5)
+
+
+def mit_umgebung(werte, fn):
+    """fn() mit gesetzten Umgebungsvariablen — os.startfile vererbt sie an wscript und von dort an die EXE."""
+    alt = {k: os.environ.get(k) for k in werte}
+    os.environ.update(werte)
+    try:
+        return fn()
+    finally:
+        for k, v in alt.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def fall_g():
+    """v3.11.0 Bereitschaft (eigener Ablauf: Start mit --minimiert, Zweitstarts, Autostart-Starter, Frist)."""
+    import win32gui
+    import win32com.client
+    sys.path.insert(0, str(REPO / "source_code"))
+    import bereitschaft  # noqa: E402  (ohne Windows-/UI-Abhängigkeiten; gleiche Vorlage wie in der EXE)
+    work = pathlib.Path(tempfile.mkdtemp(prefix="rks_G_"))
+    exe = work / EXE.name
+    shutil.copy(EXE, exe)
+    appdata = work / "appdata"
+    (appdata / "RaKScribe").mkdir(parents=True)
+    (appdata / "RaKScribe" / "rakscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
+    ordner = work / "localappdata" / "RaKScribe"
+    ordner.mkdir(parents=True)
+    umg = {"APPDATA": str(appdata), "LOCALAPPDATA": str(work / "localappdata")}
+    basis = {k: v for k, v in os.environ.items() if not k.startswith("RAKSCRIBE_")}
+    vbs = appdata / "RaKScribe" / bereitschaft.STARTER
+    starter_log = appdata / "RaKScribe" / bereitschaft.STARTER_LOG
+    G = {"exe": str(exe)}
+
+    def ph(state, name, warten=0.0, timeout=30):
+        if warten:
+            time.sleep(warten)
+        pathlib.Path(str(state) + ".trigger").write_text(name, encoding="utf-8")
+        return wait_json(state, name, timeout)
+
+    def lies_log(p):
+        try:
+            return p.read_text(encoding="utf-16")
+        except Exception:
+            return ""
+
+    def zweiter_start(args):
+        t = time.time()
+        p2 = subprocess.Popen([str(exe)] + args, cwd=work, env=env1)
+        try:
+            rc = p2.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            rc = "läuft noch"
+        return rc, round(time.time() - t, 1)
+
+    # G1: Start mit --minimiert (wie der Starter nach der Anmeldung)
+    state = work / "g1.json"
+    env1 = dict(basis, **umg, RAKSCRIBE_SELFTEST=str(state))
+    p = subprocess.Popen([str(exe), bereitschaft.MINIMIERT], cwd=work, env=env1)
+    lnk = None
+    try:
+        hwnd, t_fenster = find_window("RaKScribe", 90)
+        G["start_s"] = round(t_fenster, 1)
+        G["start_iconic"] = bool(hwnd and win32gui.IsIconic(hwnd))
+        G["ready"] = wait_json(state, "ready", 60)
+        G["ready_iconic"] = bool(hwnd and win32gui.IsIconic(hwnd))
+        G["ready_vorne"] = bool(hwnd) and win32gui.GetForegroundWindow() == hwnd
+        try:
+            from PIL import ImageGrab
+            ImageGrab.grab(all_screens=True).save(OUT / "G_minimiert.png")
+        except Exception:
+            pass
+        if not hwnd or G["ready"] is None:
+            return G
+        # G2: Leerlauf minimiert
+        time.sleep(5)
+        G["leerlauf"] = leerlauf_messen(30)
+        G["leerlauf_zustand"] = ph(state, "g_leerlauf")
+        # G3: zweiter Start (Doppelklick) → keine zweite Instanz, die laufende kommt nach vorne
+        n_vor = len(rks_prozesse())
+        G["zweit_rc"], G["zweit_s"] = zweiter_start([])
+        time.sleep(1.5)
+        G["zweit"] = ph(state, "g_zweit")
+        G["zweit_fenster"], G["zweit_iconic"] = len(rks_windows()), bool(win32gui.IsIconic(hwnd))
+        G["zweit_prozesse"] = [n_vor, len(rks_prozesse())]
+        # G4: zweiter Start mit --minimiert (Autostart, während RaKScribe läuft) → still
+        ph(state, "minimieren#1")
+        G["zweit_min_rc"], G["zweit_min_s"] = zweiter_start([bereitschaft.MINIMIERT])
+        time.sleep(1.5)
+        G["zweit_min"] = ph(state, "g_zweit_min")
+        G["zweit_min_fenster"], G["zweit_min_iconic"] = len(rks_windows()), bool(win32gui.IsIconic(hwnd))
+        # G5: CAS-Auftrag wie die Brücke (Vordergrund-Recht weitergeben, Datei ablegen) → vorne → EOL → minimiert
+        ctypes.windll.user32.AllowSetForegroundWindow(0xFFFFFFFF)
+        aid = "uitestG1"
+        ant = ordner / f"cas_antwort_{aid}.json"
+        t = time.time()
+        (ordner / "cas_auftrag.json").write_text(json.dumps(
+            {"protokoll": 1, "auftrag_id": aid, "nr": "20261013201", "benutzer": "kp", "bruecke_pid": os.getpid(),
+             "zeit": time.time(), "zeit_text": "", "testbefund": False}), encoding="utf-8")
+        while time.time() - t < 10 and not ant.exists():
+            time.sleep(0.02)
+        G["annahme_s"] = round(time.time() - t, 2) if ant.exists() else None
+        time.sleep(1.0)
+        G["cas_iconic"] = bool(win32gui.IsIconic(hwnd))
+        G["cas_vordergrund"] = win32gui.GetForegroundWindow() == hwnd
+        G["cas_vorne"] = ph(state, "cas_status#G")
+        try:
+            screenshot(hwnd, OUT / "G_cas_vorne.png")
+        except Exception:
+            pass
+        ph(state, "cas_testbefund")
+        G["cas_eol"] = ph(state, "cas_eol#G")
+        try:
+            G["cas_antwort"] = json.loads(ant.read_text(encoding="utf-8"))
+        except Exception:
+            G["cas_antwort"] = {}
+        time.sleep(2.5)
+        G["nach_eol"] = ph(state, "g_nach_eol")
+        G["nach_eol_iconic"] = bool(win32gui.IsIconic(hwnd))
+        # G6: Menü-Haken „Mit Windows starten (wartet minimiert)“
+        G["autostart_an"] = ph(state, "autostart_an")
+        lnk = pathlib.Path((G["autostart_an"] or {}).get("autostart_lnk")
+                           or os.path.join(bereitschaft.autostart_ordner(), bereitschaft.VERKNUEPFUNG))
+        G["lnk"], G["lnk_da"] = str(lnk), lnk.exists()
+        if lnk.exists():
+            sc = win32com.client.Dispatch("WScript.Shell").CreateShortcut(str(lnk))
+            G["lnk_ziel"], G["lnk_args"] = sc.TargetPath, sc.Arguments
+        G["vbs_exe"] = bereitschaft.starter_exe_lesen(bereitschaft.vbs_lesen(str(vbs))) if vbs.exists() else None
+        try:  # sys.executable der EXE kann eine andere Schreibweise haben (8.3-Kurzname im Temp-Pfad)
+            G["vbs_exe_ist_diese"] = bool(G["vbs_exe"]) and os.path.samefile(G["vbs_exe"], str(exe))
+        except OSError:
+            G["vbs_exe_ist_diese"] = False
+    finally:
+        kill_all(p)
+    if not G.get("lnk_da"):
+        return G
+    try:
+        # G7: abmelden/anmelden, X: noch nicht verbunden (EXE weg) → Starter wartet; nach 30 s ist sie da → Start minimiert
+        weg = work / "x_fehlt"
+        weg.mkdir()
+        verschieben(exe, weg / exe.name)
+        state2 = work / "g2.json"
+        mit_umgebung(dict(umg, RAKSCRIBE_SELFTEST=str(state2)), lambda: os.startfile(str(lnk)))  # wie bei der Anmeldung
+        time.sleep(3)
+        G["starter_laeuft"] = len(starter_prozesse(bereitschaft.STARTER))
+        time.sleep(27)
+        G["ohne_exe_fenster"] = len(rks_windows())
+        t = time.time()
+        verschieben(weg / exe.name, exe)
+        hwnd2, _ = find_window("RaKScribe", 120)
+        G["x_da_bis_fenster_s"] = round(time.time() - t, 1)
+        G["autostart_iconic"] = bool(hwnd2 and win32gui.IsIconic(hwnd2))
+        G["autostart_ready"] = wait_json(state2, "ready", 60)
+        G["autostart_vorne"] = bool(hwnd2) and win32gui.GetForegroundWindow() == hwnd2
+        time.sleep(2)
+        G["starter_nach_start"] = len(starter_prozesse(bereitschaft.STARTER))
+        G["starter_log"] = lies_log(starter_log)
+        # G8: Starter, während RaKScribe läuft → endet still, keine zweite Instanz
+        mit_umgebung(dict(umg, RAKSCRIBE_SELFTEST=str(work / "g2b.json")), lambda: os.startfile(str(lnk)))
+        t = time.time()
+        time.sleep(2)
+        while starter_prozesse(bereitschaft.STARTER) and time.time() - t < 30:
+            time.sleep(0.5)
+        G["starter_bei_laufendem_s"] = round(time.time() - t, 1)
+        G["starter_bei_laufendem_rest"] = len(starter_prozesse(bereitschaft.STARTER))
+        G["starter_bei_laufendem_fenster"] = len(rks_windows())
+        G["starter_log2"] = lies_log(starter_log)
+    finally:
+        kill_all(None)
+    # G9: Haken aus (frisch gestartete RaKScribe) → Verknüpfung und Starter weg
+    state3 = work / "g3.json"
+    p4 = subprocess.Popen([str(exe)], cwd=work, env=dict(basis, **umg, RAKSCRIBE_SELFTEST=str(state3)))
+    try:
+        find_window("RaKScribe", 90)
+        if wait_json(state3, "ready", 60) is not None:
+            G["autostart_aus"] = ph(state3, "autostart_aus")
+        G["aus_lnk_da"], G["aus_vbs_da"] = lnk.exists(), vbs.exists()
+    finally:
+        kill_all(p4)
+    # G10: Frist — Starter für eine nie erreichbare EXE (Takt 2 s, Frist 12 s statt 10 s/4 h) endet still
+    kurz = work / "frist" / "kurz.vbs"
+    bereitschaft.vbs_schreiben(str(kurz), bereitschaft.starter_vbs(str(work / "nie_da" / EXE.name), takt_s=2, frist_s=12))
+    t = time.time()
+    pk = subprocess.Popen([bereitschaft.wscript_pfad(), "//B", "//Nologo", str(kurz)])
+    try:
+        G["frist_rc"] = pk.wait(timeout=90)
+    except subprocess.TimeoutExpired:
+        pk.kill()
+        G["frist_rc"] = "hängt"
+    G["frist_s"] = round(time.time() - t, 1)
+    G["frist_log"] = lies_log(kurz.parent / bereitschaft.STARTER_LOG)
+    G["frist_fenster"] = len(rks_windows())
+    if lnk.exists():  # Aufräumen (echter Autostart-Ordner des Testrechners)
+        lnk.unlink()
+    return G
 
 
 def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False, fake_audio=False, mit_fall_e=False,
@@ -407,9 +670,79 @@ cf("EOL → Text + WAV an die Brücke (Antwort fertig)", (F.get("antwort2") or {
 cf("Abbrechen-Knopf → „abgebrochen“, Band weg", (F.get("antwort3") or {}).get("status") == "abgebrochen"
    and gf("abbrechen", "cas") is None, str(F.get("antwort3")))
 
+# G (v3.11.0): Bereitschaft — minimiert warten, Einzelinstanz, nach CAS-EOL minimieren, Autostart über den Starter
+try:
+    G = fall_g()
+except Exception as e:  # Abbruch im Ablauf → als Fehler in den Bericht, die übrigen Fälle bleiben stehen
+    import traceback
+    traceback.print_exc()
+    G = {"abbruch": f"{type(e).__name__}: {e}"}
+
+
+def cg(name, ok, detail=""):
+    check("G_bereitschaft", name, ok, detail)
+
+
+def gg(k, feld, default=None):
+    return (G.get(k) or {}).get(feld, default)
+
+
+L = G.get("leerlauf") or {}
+speicher = "; ".join(f"PID {q['pid']}: Arbeitssatz {q['arbeitssatz_mb']} MB, privat {q['privater_arbeitssatz_mb']} MB, "
+                     f"zugesichert {q['private_bytes_mb']} MB, {q['threads']} Threads, CPU {q['cpu_s']} s"
+                     for q in L.get("prozesse", []))
+cg("Ablauf vollständig", "abbruch" not in G, G.get("abbruch", ""))
+cg("Start mit --minimiert: nur Symbol in der Taskleiste (minimiert), nicht im Vordergrund",
+   G.get("start_iconic") is True and G.get("ready_iconic") is True and G.get("ready_vorne") is False
+   and gg("ready", "fenster") == "iconic" and gg("ready", "minimiert_gestartet") is True,
+   f"{G.get('start_s')} s bis zum Symbol, Zustand {gg('ready', 'fenster')}, vorne {G.get('ready_vorne')}")
+cg("… lädt wie sonst (Schlüssel aktiv, bereit), kein Mikrofon offen", gg("ready", "status") == "READY"
+   and gg("leerlauf_zustand", "aufnahme_offen") is False and gg("leerlauf_zustand", "is_recording") is False,
+   f"{gg('ready', 'status')} / Aufnahme offen {gg('leerlauf_zustand', 'aufnahme_offen')}")
+cg("Leerlauf minimiert: unter 2 % eines CPU-Kerns", L.get("cpu_prozent_eines_kerns", 99) < 2.0,
+   f"{L.get('cpu_prozent_eines_kerns')} % über {L.get('dauer_s')} s — {speicher}")
+cg("Zweiter Start (Doppelklick): keine zweite Instanz, das laufende Fenster kommt nach vorne",
+   G.get("zweit_rc") == 0 and G.get("zweit_fenster") == 1 and G.get("zweit_iconic") is False
+   and gg("zweit", "zweitstarts") == 1 and gg("zweit", "fenster") == "normal",
+   f"Rückgabe {G.get('zweit_rc')} nach {G.get('zweit_s')} s, Fenster {G.get('zweit_fenster')}, "
+   f"Prozesse {G.get('zweit_prozesse')}, Zustand {gg('zweit', 'fenster')}")
+cg("Zweiter Start mit --minimiert (Autostart bei laufender RaKScribe): endet still, Fenster bleibt minimiert",
+   G.get("zweit_min_rc") == 0 and G.get("zweit_min_iconic") is True and G.get("zweit_min_fenster") == 1
+   and gg("zweit_min", "zweitstarts") == 1, f"Rückgabe {G.get('zweit_min_rc')} nach {G.get('zweit_min_s')} s")
+cg("CAS-Auftrag: Annahme unter 1 s, Fenster vorne (nicht mehr minimiert), Band sichtbar",
+   (G.get("annahme_s") or 99) < 1.0 and G.get("cas_iconic") is False and gg("cas_vorne", "fenster") == "normal"
+   and gg("cas_vorne", "cas_band_sichtbar") is True,
+   f"Annahme {G.get('annahme_s')} s, Vordergrund {G.get('cas_vordergrund')}, Band {gg('cas_vorne', 'cas_band')!r}")
+cg("EOL im CAS-Modus: Befund an CAS („fertig“), nach ~1,5 s wieder minimiert",
+   (G.get("cas_antwort") or {}).get("status") == "fertig" and G.get("nach_eol_iconic") is True
+   and gg("nach_eol", "fenster") == "iconic" and gg("nach_eol", "cas") is None,
+   f"{(G.get('cas_antwort') or {}).get('status')} / {gg('nach_eol', 'fenster')}")
+cg("Menü „Mit Windows starten“: Verknüpfung im Autostart → wscript.exe → lokaler Starter, der auf diese EXE wartet",
+   G.get("lnk_da") is True and str(G.get("lnk_ziel", "")).lower().endswith("wscript.exe")
+   and "warte_auf_x.vbs" in str(G.get("lnk_args", "")) and G.get("vbs_exe_ist_diese") is True
+   and gg("autostart_an", "autostart") is True,
+   f"{G.get('lnk')} → {G.get('lnk_ziel')} {G.get('lnk_args')}; Starter wartet auf {G.get('vbs_exe')}")
+cg("Anmeldung ohne erreichbare EXE (X: fehlt): Starter wartet unsichtbar, startet nichts",
+   G.get("starter_laeuft", 0) >= 1 and G.get("ohne_exe_fenster") == 0,
+   f"Starter-Prozesse {G.get('starter_laeuft')}, Fenster {G.get('ohne_exe_fenster')}")
+cg("EXE nach 30 s erreichbar → Starter startet sie minimiert, nicht im Vordergrund, und endet",
+   G.get("autostart_iconic") is True and G.get("autostart_vorne") is False and G.get("starter_nach_start") == 0
+   and "gestartet (minimiert)" in G.get("starter_log", "") and gg("autostart_ready", "minimiert_gestartet") is True,
+   f"{G.get('x_da_bis_fenster_s')} s vom Erscheinen der EXE bis zum Symbol; Protokoll: "
+   f"{G.get('starter_log', '').strip().splitlines()[-1:] }")
+cg("Starter bei laufender RaKScribe: endet still, keine zweite Instanz",
+   G.get("starter_bei_laufendem_rest") == 0 and G.get("starter_bei_laufendem_fenster") == 1
+   and "läuft schon" in G.get("starter_log2", ""), f"{G.get('starter_bei_laufendem_s')} s")
+cg("Haken aus: Verknüpfung und Starter entfernt", gg("autostart_aus", "autostart") is False
+   and G.get("aus_lnk_da") is False and G.get("aus_vbs_da") is False,
+   f"Verknüpfung {G.get('aus_lnk_da')}, Starter {G.get('aus_vbs_da')}")
+cg("Starter-Frist: EXE nie erreichbar → endet still nach der Frist (Test 12 s statt 4 h)",
+   G.get("frist_rc") == 0 and 11 <= (G.get("frist_s") or 0) <= 40 and "aufgegeben" in G.get("frist_log", "")
+   and G.get("frist_fenster") == 0, f"{G.get('frist_s')} s, Rückgabe {G.get('frist_rc')}")
+
 ok = all(r["ok"] for r in results) and a and c and e_lauf
-(OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf},
-                                             ensure_ascii=False, indent=1), encoding="utf-8")
+(OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf,
+                                              "G": G}, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
 lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
          f"Echtes Windows (GitHub Actions, `{os.environ.get('ImageOS', 'windows')}`), Bildschirm {screen_size()[0]}×{screen_size()[1]}, "
          f"getestet {time.strftime('%d.%m.%Y %H:%M')} UTC. Test-Schlüssel ist ein selbst erzeugter Dummy — kein Praxis-Schlüssel, "
@@ -418,8 +751,16 @@ lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
          f"({sum(r['ok'] for r in results)}/{len(results)})", "",
          "| Fall | Prüfung | Ergebnis | Detail |", "|---|---|---|---|"]
 lines += [f"| {r['case']} | {r['check']} | {'✅' if r['ok'] else '❌'} | {r['detail']} |" for r in results]
+if L.get("prozesse"):
+    lines += ["", f"**Leerlauf minimiert (Fall G, {L.get('dauer_s')} s gemessen):** "
+                  f"{L.get('cpu_prozent_eines_kerns')} % eines CPU-Kerns", "",
+              "| PID | CPU-Zeit | Arbeitssatz | privater Arbeitssatz (Task-Manager) | zugesichert | Threads |",
+              "|---|---|---|---|---|---|"]
+    lines += [f"| {q['pid']} | {q['cpu_s']} s | {q['arbeitssatz_mb']} MB | {q['privater_arbeitssatz_mb']} MB | "
+              f"{q['private_bytes_mb']} MB | {q['threads']} |" for q in L["prozesse"]]
 lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund), "
-          "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen, danach Fall F CAS-Auftrag)."]
+          "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen, danach Fall F CAS-Auftrag), "
+          "`G_minimiert.png` (ganzer Bildschirm: RaKScribe nur als Taskleisten-Symbol), `G_cas_vorne.png` (nach CAS-Auftrag)."]
 (OUT / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("\n".join(lines))
 sys.exit(0 if ok else 1)
