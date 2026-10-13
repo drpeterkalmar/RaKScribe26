@@ -125,5 +125,14 @@ ausgewertet und dürfen gelöscht werden.
   mit Diktattext: Umgebungsvariable `RAKSCRIBE_DEBUG=1` (Web-Konsole: `localStorage.rakscribe_debug = '1'`).
 - **Tests** laufen bei jedem Push (`.github/workflows/test.yml`); der Web-Deploy startet erst, wenn sie grün sind.
 
+## ⏱️ Bereitschaft: RaKScribe wartet minimiert (EXE, ab v3.11.0)
+
+- **Menü ☰ „Mit Windows starten (wartet minimiert)“**: Nach der Windows-Anmeldung wartet ein kleiner, unsichtbarer
+  Starter (`%APPDATA%\RaKScribe\warte_auf_x.vbs`), bis die EXE erreichbar ist (X: kommt erst mit dem CAS-Login, höchstens
+  4 h), und startet sie dann nur als Symbol in der Taskleiste. Keine lokale Kopie — Updates bleiben „eine Datei tauschen“.
+- **Nach EOL im CAS-Modus** geht RaKScribe nach ~1,5 s wieder in die Taskleiste (Menü „Nach CAS-Befund minimieren“).
+- **Nur eine RaKScribe**: Ein zweiter Start holt die laufende nach vorne. Schließen (X) beendet RaKScribe wie bisher.
+- Bericht: [`BEREITSCHAFT_BERICHT.md`](BEREITSCHAFT_BERICHT.md).
+
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*
