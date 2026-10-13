@@ -797,19 +797,19 @@ cf("v3.13.0 Baustein kommt nach: Band-Zeile „IB Lab: FROG links ✓“ sichtba
    f"{gf('ibl_band', 'ibl_band')!r} / sichtbar {gf('ibl_band', 'ibl_band_sichtbar')} / {gf('ibl_band', 'ibl_hervorgehoben')}")
 cf("v3.13.0 INS „Fuß links unauffällig.“: Messwert wörtlich im Befund, Diagnose nicht ins unauffällige Ergebnis + Hinweis",
    str(gf("ibl_ins", "result", "")).startswith("## Fuß links in 2 Ebenen")
-   and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in str(gf("ibl_ins", "result", ""))
-   and "Pes planus" not in str(gf("ibl_ins", "result", ""))
+   and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in str(gf("ibl_ins", "result_ende", ""))
+   and "Pes planus" not in str(gf("ibl_ins", "result_ende", ""))
    and any("nicht ins Ergebnis übernommen" in h for h in gf("ibl_ins", "ibl_hinweise", []) or [])
    and str(gf("ibl_ins", "ibl_hinweis_label", "")).startswith("⚠") and gf("ibl_ins", "ibl_im_befund") == {"frog": 1},
-   f"{str(gf('ibl_ins', 'result', ''))[-160:]!r} / {gf('ibl_ins', 'ibl_hinweise')}")
+   f"{str(gf('ibl_ins', 'result_ende', ''))[-220:]!r} / {gf('ibl_ins', 'ibl_hinweise')}")
 cf("v3.13.0 neue Fassung nach dem Befund: nichts still geändert, „neu, nicht im Befund“ + Knopf „＋ IB Lab einfügen“",
    gf("ibl_neu", "ibl_knopf_sichtbar") is True and "neu, nicht im Befund" in str(gf("ibl_neu", "ibl_band", ""))
-   and "18,2°" not in str(gf("ibl_neu", "result", "")), f"{gf('ibl_neu', 'ibl_band')!r} / {gf('ibl_neu', 'ibl_knopf_sichtbar')}")
+   and "18,2°" not in str(gf("ibl_neu", "result_ende", "")), f"{gf('ibl_neu', 'ibl_band')!r} / {gf('ibl_neu', 'ibl_knopf_sichtbar')}")
 cf("v3.13.0 Knopf: neue Fassung im Befund (alte Zeilen ersetzt, nichts doppelt), Knopf wieder weg",
-   "Hallux-valgus-Winkel links 18,2° (IB Lab FROG)." in str(gf("ibl_eingefuegt", "result", ""))
-   and str(gf("ibl_eingefuegt", "result", "")).count("Calcaneusneigungswinkel links 12,4° (IB Lab FROG).") == 1
+   "Hallux-valgus-Winkel links 18,2° (IB Lab FROG)." in str(gf("ibl_eingefuegt", "result_ende", ""))
+   and str(gf("ibl_eingefuegt", "result_ende", "")).count("Calcaneusneigungswinkel links 12,4° (IB Lab FROG).") == 1
    and gf("ibl_eingefuegt", "ibl_knopf_sichtbar") is False and gf("ibl_eingefuegt", "ibl_im_befund") == {"frog": 2},
-   f"{str(gf('ibl_eingefuegt', 'result', ''))[-200:]!r} / {gf('ibl_eingefuegt', 'ibl_im_befund')}")
+   f"{str(gf('ibl_eingefuegt', 'result_ende', ''))[-260:]!r} / {gf('ibl_eingefuegt', 'ibl_im_befund')}")
 
 
 def _ueberlappt(a, b):

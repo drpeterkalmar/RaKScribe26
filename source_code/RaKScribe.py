@@ -1035,6 +1035,7 @@ class RaKScribeApp(ctk.CTk):
                     "led": getattr(getattr(self, "_speechmike", None), "led_soll", None),
                     "transcript": self.transcript_text.get("1.0", "end-1c")[:400],
                     "result": self.result_text.get("1.0", "end-1c")[:600],
+                    "result_ende": self.result_text.get("1.0", "end-1c")[-600:],  # v3.13.0: IB-Lab-Zeilen stehen hinten
                     "befund_wartet": bool(getattr(self, "_befund_wartet", False)),
                     "nur_text": bool(self.nur_text_aktiv()),
                     "einfuegungen": getattr(self, "_einfuege_zaehler", 0),
@@ -2288,6 +2289,8 @@ class RaKScribeApp(ctk.CTk):
         """UI-Thread nach jedem Befund mit offenem Auftrag: Stand der eingesetzten Werte merken (ohne Bausteine bzw.
         Übernahme aus: nichts im Befund), Hinweise zeigen (nur Anzeige), Band/Knopf nachziehen."""
         e = getattr(erg, "ibl", None)
+        a = getattr(self, "_cas", None)
+        self._ibl_lauf_auftrag = a.auftrag_id if a is not None else None   # dieser Befund gehört zu diesem Auftrag
         self._ibl_im_befund = dict(e.behandelt) if e is not None else {}
         self._ibl_zeilen = {k: list(v) for k, v in e.eingesetzt.items()} if e is not None else {}
         hinweise = list(e.hinweise) if e is not None else []
@@ -2300,13 +2303,17 @@ class RaKScribeApp(ctk.CTk):
 
     def _ibl_befund_leeren(self):
         """F9, neue Aufnahme, neuer/beendeter Auftrag: der Stand im (alten) Befund und seine Hinweise gelten nicht mehr."""
-        self._ibl_im_befund, self._ibl_zeilen = {}, {}
+        self._ibl_im_befund, self._ibl_zeilen, self._ibl_lauf_auftrag = {}, {}, None
         self._ibl_hinweise_zeigen([])
 
     def _ibl_offen(self):
-        """Bausteine (mit Inhalt), die im sichtbaren Befund noch fehlen bzw. dort in einer älteren Fassung stehen."""
-        if not self.result_text.get("1.0", "end-1c").strip() or self._job.zustand in (
-                _js.RECORDING, _js.PAUSED, _js.PROCESSING):
+        """Bausteine (mit Inhalt), die im sichtbaren Befund noch fehlen bzw. dort in einer älteren Fassung stehen — nur für
+        einen Befund, der in DIESEM Auftrag entstanden ist (Text von vorher, z. B. nach „Abbrechen“ stehen geblieben,
+        bekommt die Werte erst beim nächsten INS, nie per Knopf)."""
+        a = getattr(self, "_cas", None)
+        if (a is None or getattr(self, "_ibl_lauf_auftrag", None) != a.auftrag_id
+                or not self.result_text.get("1.0", "end-1c").strip()
+                or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)):
             return []
         im = getattr(self, "_ibl_im_befund", {}) or {}
         return [b for b in self._ibl_bausteine() if (b.befundteil or b.ergebnis) and im.get(b.schluessel) != b.version]

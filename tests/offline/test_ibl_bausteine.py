@@ -474,6 +474,15 @@ check("F9: Befund + Hinweise weg, Knopf weg, Bausteine bleiben beim Auftrag", ap
       and not app.ibl_knopf.sichtbar and app.ibl_zeile.sichtbar and app._ibl_im_befund == {})
 app.cas_abbrechen()
 check("Abbrechen: IB-Lab-Zeile weg", not app.ibl_zeile.sichtbar)
+app.result_text.text = "## Fuß rechts in 2 Ebenen\n\n## Befund\nText vom vorigen, abgebrochenen Auftrag.\n\n## Ergebnis\nX."
+ablegen("20261013004", "z3")
+app._cas_einmal()
+ibl_ablegen("z3", "20261013004", [FROG_D])
+app._cas_einmal()
+check("Text vom vorigen Auftrag (nach „Abbrechen“ stehen geblieben): kein Knopf – Werte erst beim nächsten INS",
+      app.ibl_zeile.sichtbar and not app.ibl_knopf.sichtbar and app.ibl_label.cget("text") == "IB Lab: FROG rechts ✓"
+      and app._ibl_offen() == [], app.ibl_label.cget("text"))
+app.cas_abbrechen()
 
 # ───────────────────────────── Teil 4: gegen die echte Brückenseite (nur Mac) ─────────────────────────────
 BR = pathlib.Path.home() / "dev" / "ris-mods" / "bruecke"
