@@ -1159,12 +1159,24 @@ class RaKScribeApp(ctk.CTk):
                     elif phase.startswith("minimieren"):
                         self.iconify()
                         self.after(800, lambda p=phase: dump(p))
+                    elif phase == "ende":  # v3.13.0: Selbsttest beendet sich selbst (wie Fenster schließen)
+                        dump(phase)
+                        self._schliessen()
+                        return
                     else:
                         dump(phase)
                 except Exception:
                     pass
             self.after(300, poll_trigger)
         self.after(1500, poll_trigger)
+        # v3.13.0 (Ordi-Probelauf am Büro-PC: nur Läufe, die von selbst enden): RAKSCRIBE_SELFTEST_ENDE=<Sekunden> →
+        # Zustand „ende“ festhalten und RaKScribe schließen wie mit X (offener CAS-Auftrag → „abgebrochen“)
+        try:
+            ende_ms = int(float(os.environ.get("RAKSCRIBE_SELFTEST_ENDE") or 0) * 1000)
+        except ValueError:
+            ende_ms = 0
+        if ende_ms > 0:
+            self.after(ende_ms, lambda: (dump("ende"), self._schliessen()))
 
     def _selbsttest_taste(self, taste):
         """Selbsttest: Druck- und Loslass-Bericht einer SpeechMike-Taste durch den echten Dekodierer schicken."""

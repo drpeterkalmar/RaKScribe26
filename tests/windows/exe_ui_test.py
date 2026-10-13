@@ -23,6 +23,7 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
      v3.13.0: IB-Lab-Bausteine (cas_ibl_<id>.json der Brücke 1.2.0) → Band-Zeile „IB Lab: FROG links ✓“ (hervorgehoben),
      INS „Fuß links unauffällig.“ → Messwerte wörtlich im Befund, Diagnose nicht ins unauffällige Ergebnis (Hinweis),
      neue Fassung nach dem Befund → „neu, nicht im Befund“ + Knopf → Knopf ersetzt die alte Fassung
+  H  v3.13.0: Selbsttest mit RAKSCRIBE_SELFTEST_ENDE endet von selbst (für den Ordi-Probelauf am Büro-PC)
   G  v3.11.0 Bereitschaft: Start mit --minimiert → nur Taskleisten-Symbol, nicht vorne; Leerlauf (CPU/Speicher, psutil);
      zweiter Start → keine zweite Instanz, laufende nach vorne (mit --minimiert: still); CAS-Auftrag → vorne, Annahme
      < 1 s → EOL → wieder minimiert; Menü-Haken Autostart → Verknüpfung im echten Autostart-Ordner → wscript → Starter;
@@ -896,6 +897,33 @@ cg("Haken aus: Verknüpfung und Starter entfernt", gg("autostart_aus", "autostar
 cg("Starter-Frist: EXE nie erreichbar → endet still nach der Frist (Test 12 s statt 4 h)",
    G.get("frist_rc") == 0 and 11 <= (G.get("frist_s") or 0) <= 40 and "aufgegeben" in G.get("frist_log", "")
    and G.get("frist_fenster") == 0, f"{G.get('frist_s')} s, Rückgabe {G.get('frist_rc')}")
+
+
+# H (v3.13.0): Selbsttest endet von selbst (RAKSCRIBE_SELFTEST_ENDE) — für den Ordi-Probelauf am Büro-PC
+def fall_h():
+    work = pathlib.Path(tempfile.mkdtemp(prefix="rks_H_"))
+    shutil.copy(EXE, work / EXE.name)
+    state = work / "selftest.json"
+    env = dict(os.environ, APPDATA=str(work / "appdata"), LOCALAPPDATA=str(work / "localappdata"),
+               RAKSCRIBE_SELFTEST=str(state), RAKSCRIBE_SELFTEST_ENDE="12")
+    t = time.time()
+    p = subprocess.Popen([str(work / EXE.name), "--minimiert"], cwd=work, env=env)
+    try:
+        rc = p.wait(timeout=120)
+    except subprocess.TimeoutExpired:
+        kill_all(p)
+        rc = "hängt"
+    try:
+        z = json.loads(state.read_text(encoding="utf-8"))
+    except Exception:
+        z = {}
+    return {"rc": rc, "s": round(time.time() - t, 1), "ende": z.get("ende") or {}, "ready": z.get("ready") or {}}
+
+
+H = fall_h()
+check("H_ende", "RAKSCRIBE_SELFTEST_ENDE=12: Selbsttest endet von selbst (Zustand „ende“, Exit 0, minimiert gestartet)",
+      H.get("rc") == 0 and bool(H.get("ende")) and H["ende"].get("minimiert_gestartet") is True
+      and 12 <= (H.get("s") or 0) <= 90, f"Exit {H.get('rc')} nach {H.get('s')} s, Titel {H['ende'].get('title')!r}")
 
 ok = all(r["ok"] for r in results) and a and c and e_lauf
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf,
