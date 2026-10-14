@@ -68,6 +68,20 @@ _FUELL = {"röntgen", "roentgen", "rö", "sonographie", "sonografie", "sono", "u
           "ebenen", "ebene", "und", "mit", "rechts", "links", "beidseits", "bds", "rechte", "rechten", "rechter",
           "rechtes", "linke", "linken", "linker", "linkes", "beide", "beiden", "beider", "aufnahme", "aufnahmen",
           "untersuchung", "ct", "mr", "mrt", "a.-p.", "ap", "seitlich", "zusätzlich", "zusaetzlich", "dann", "nun"}
+# v3.13.1: Wörter, nach denen eine Region NICHT einen neuen Abschnitt beginnt („Ausstrahlung in die BWS“, „HWS und BWS“)
+_KEIN_SCHNITT_NACH = {"in", "ins", "die", "der", "das", "den", "dem", "des", "zur", "zum", "zu", "bis", "und", "sowie",
+                      "oder", "bzw", "bzw.", "auch", "mit", "ohne", "von", "vom", "im", "am", "an", "auf", "über",
+                      "ueber", "nach", "gegen", "beider", "beide", "beiden", "als", "wie", "aus", "durch", "entlang",
+                      "unterhalb", "oberhalb", "höhe", "hoehe", "bereich", "übergang", "uebergang", "richtung",
+                      "betont", "betonter", "betonte", "nicht", "kein", "keine", "keiner", "einer", "eine", "ein",
+                      "seiner", "ihrer", "zwischen", "bei", "beim", "ganze", "ganzen", "gesamte", "gesamten"}
+_MODWORT = {"röntgen", "roentgen", "rö", "sonographie", "sonografie", "sono", "ultraschall", "duplex", "farbduplex",
+            "ct", "mr", "mrt"}
+_SEITENWORT = {"rechts", "links", "beidseits", "bds", "rechte", "rechten", "rechter", "rechtes", "linke", "linken",
+               "linker", "linkes", "beide", "beiden", "beider"}
+# Vorspann eines neuen Abschnitts („Sonographie der rechten Schulter“, „Röntgen der LWS“) — zählt nur mit Modalitäts-
+# oder Seitenwort; reine Artikel davor („in die BWS“) sind Rückbezug
+_VORSPANN = _MODWORT | _SEITENWORT | {"der", "die", "das", "des", "dem", "den", "2", "zwei", "ebenen"}
 _SATZGRENZE = re.compile(r"[.!?;:\n]+|(?<!\w)(?:punkt|neue\s+zeile|neuzeile|absatz)(?!\w)", re.I)
 _SEITE_GEGEN = {"rechts": "links", "links": "rechts"}
 
@@ -277,9 +291,50 @@ def wahl(seg, cas, templates, erkennen):
     return Wahl(d, "diktat", None, d)
 
 
+def _wort(w):
+    return w.lower().strip(",;:()\"'")
+
+
+def _innen_starts(satz, cas, templates, erkennen, annehmen):
+    """v3.13.1 (Peter 14.10.: „BWS Röntgen unauffällig LWS Röntgen Hyperlordose, ansonsten unauffällig“ — ohne
+    Satzzeichen, BWS fiel still weg): Stellen IM Satz, an denen eine CAS-Region als neuer Abschnitt beginnt →
+    [(pos_im_satz, leistung)]. Nur wenn (1) das Regionswort selbst zu dieser CAS-Leistung gehört, (2) davor kein
+    Bindewort/keine Präposition steht („in die BWS“, „HWS und BWS“) und kein Bindestrich-Kompositum vorliegt
+    („BWS-Kyphose“), (3) seit dem letzten Abschnittsbeginn schon Befundtext steht („BWS LWS unauffällig“ trennt nicht).
+    Modalitätswörter direkt davor („… unauffällig Röntgen LWS …“) gehören zum neuen Abschnitt.
+    annehmen(leistung) → True, wenn der Aufrufer dort wirklich einen neuen Abschnitt beginnt (andere, noch nicht
+    befundete Untersuchung); nur dann zählt der Befundtext neu."""
+    worte = list(re.finditer(r"\S+", satz))
+    out, inhalt = [], False
+    for i, m in enumerate(worte):
+        w = _wort(m.group())
+        reg = regionen(w) if "-" not in m.group().strip(",;:") else set()
+        if i > 0 and reg:
+            s = i
+            while s > 0 and _wort(worte[s - 1].group()) in _VORSPANN:
+                s -= 1
+            if not any(_wort(x.group()) in (_MODWORT | _SEITENWORT) for x in worte[s:i]):
+                s = i                    # nur Artikel davor → kein Vorspann
+            davor = _wort(worte[s - 1].group()) if s > 0 else ""
+            if s > 0 and inhalt and davor not in _KEIN_SCHNITT_NACH and not davor.endswith("-"):
+                rest = satz[worte[s].start():]
+                k = kopf(rest)
+                l, _ = abgleich(erkennen(br.rho_erkennen(k)[0]), k, cas, templates)
+                if l is not None and (reg & l.regionen) and annehmen(worte[s].start(), l):
+                    out.append((worte[s].start(), l))
+                    inhalt = False
+                    continue
+        if reg:
+            continue                     # Regionswort zählt nicht als Befundtext
+        if w and w not in _FUELL:
+            inhalt = True
+    return out
+
+
 def aufteilen(segmente, cas, templates, erkennen):
     """Mehrere CAS-Untersuchungen: Abschnitte zusätzlich an Satzanfängen teilen, die eine ANDERE, noch nicht befundete
-    CAS-Untersuchung nennen. Eine Untersuchung beginnt nur einmal (Rückbezug trennt nicht). Text bleibt unverändert."""
+    CAS-Untersuchung nennen — seit v3.13.1 auch mitten im Satz, wenn das Diktat ohne Satzzeichen ankommt (siehe
+    _innen_starts). Eine Untersuchung beginnt nur einmal (Rückbezug trennt nicht). Text bleibt unverändert."""
     if len(set(l.vorlage or l.kurz for l in cas.alle if l.spezifisch or l.regionen)) < 2:
         return list(segmente)
     out, benutzt = [], set()
@@ -288,18 +343,25 @@ def aufteilen(segmente, cas, templates, erkennen):
         for pos, satz in saetze(seg):
             k = kopf(satz)
             l, _ = abgleich(erkennen(br.rho_erkennen(k)[0]), k, cas, templates)
-            if l is None:
-                continue
-            ident = l.vorlage or l.kurz
-            if aktuell is None:
+            if l is not None:
+                ident = l.vorlage or l.kurz
+                if aktuell is None:
+                    aktuell = ident
+                    benutzt.add(ident)
+                elif ident != aktuell and ident not in benutzt:
+                    starts.append(pos)
+                    aktuell = ident
+                    benutzt.add(ident)
+            def annehmen(ipos, li, pos=pos):
+                nonlocal aktuell
+                ident = li.vorlage or li.kurz
+                if aktuell is None or ident == aktuell or ident in benutzt:
+                    return False
+                starts.append(pos + ipos)
                 aktuell = ident
                 benutzt.add(ident)
-                continue
-            if ident == aktuell or ident in benutzt:
-                continue
-            starts.append(pos)
-            aktuell = ident
-            benutzt.add(ident)
+                return True
+            _innen_starts(satz, cas, templates, erkennen, annehmen)
         teile = [seg[a:b].strip(" ,;\n") for a, b in zip(starts, starts[1:] + [len(seg)])]
         out.extend(t for t in teile if t)
     return out
@@ -316,13 +378,22 @@ def hinweise(segmente, wahlen, cas, templates):
     for l in cas.alle:
         if not (l.vorlage or l.regionen):
             continue
-        diktiert = False
+        diktiert = erwaehnt = False
         for seg, w in zip(segmente, wahlen):
-            if w.leistung is l or (l.vorlage and w.vorlage == l.vorlage) or (l.regionen & regionen(seg)):
+            if w.leistung is l or (l.vorlage and w.vorlage == l.vorlage) or \
+                    (l.regionen & regionen(vorlagen_text(w.vorlage, templates))):
                 diktiert = True
                 break
-        if not diktiert:
-            out.append(f"{l.label} laut CAS, nicht diktiert")
+            if l.regionen & regionen(seg):
+                if not l.spezifisch or generisch(w.vorlage, templates):
+                    diktiert = True      # unsichere Leistung bzw. Sammel-Vorlage: Region im Text genügt (wie bisher)
+                    break
+                erwaehnt = True
+        if diktiert:
+            continue
+        # v3.13.1: Region steht im Diktat, hat aber keinen eigenen Befund bekommen → nicht mehr still schlucken
+        out.append(f"{l.label}: im Diktat genannt, aber KEIN eigener Befund – bitte prüfen" if erwaehnt
+                   else f"{l.label} laut CAS, nicht diktiert")
     for seg, w in zip(segmente, wahlen):
         if w.leistung is not None and w.leistung.seite in _SEITE_GEGEN:
             s = br.diktierte_seite(seg)

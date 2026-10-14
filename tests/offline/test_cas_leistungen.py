@@ -119,6 +119,30 @@ check("k) zwei Leistungen, Diktat ohne Region → allgemein + beide „nicht dik
       and len(h) == 2)
 segs, w, h = wahlen([ABD], "Oberbauch: freie Luft unter dem Zwerchfell.")
 check("l) Leistung ohne Vorlage („?“): kein Zwang, kein falscher Hinweis, wenn die Region diktiert ist", h == [], str(h))
+
+# v3.13.1 (Peter 14.10.: CAS BWS + LWS, Diktat ohne Satzzeichen → BWS fiel still weg, EOL übergab nur die LWS)
+BWS = L("x-bws", "BWS", "Röntgen", "brustwirbelsäule_in_2_ebenen")
+for d, soll in [
+    ("BWS Röntgen unauffällig LWS Röntgen hyperlordose, ansonsten unauffällig",
+     ["BWS Röntgen unauffällig", "LWS Röntgen hyperlordose, ansonsten unauffällig"]),
+    ("BWS unauffällig Röntgen LWS Hyperlordose", ["BWS unauffällig", "Röntgen LWS Hyperlordose"]),
+    ("LWS Skoliose mit Scheitel thorakolumbal, BWS unauffällig",
+     ["LWS Skoliose mit Scheitel thorakolumbal", "BWS unauffällig"]),
+]:
+    segs, w, h = wahlen([BWS, LWS], d)
+    check(f"n) ohne Satzzeichen im Satz geteilt: {d[:40]}…", segs == soll and h == []
+          and {x.vorlage for x in w} == {"brustwirbelsäule_in_2_ebenen", "lendenwirbelsäule_in_2_ebenen"}, f"{segs} {h}")
+for d in ["LWS Hyperlordose, Spondylose bis in die BWS reichend", "LWS Hyperlordose, BWS-Kyphose",
+          "BWS LWS unauffällig", "BWS und LWS unauffällig"]:
+    segs, w, h = wahlen([BWS, LWS], d)
+    check(f"o) Rückbezug/Kompositum/Aufzählung trennt nicht, aber Hinweis statt still: {d}", len(segs) == 1
+          and h == ["BWS: im Diktat genannt, aber KEIN eigener Befund – bitte prüfen"], f"{segs} {h}")
+segs, w, h = wahlen([HWS, SOSUR], "HWS Osteochondrose C5/6 Sonographie der rechten Schulter Bursitis subacromialis")
+check("p) Vorspann „Sonographie der rechten“ gehört zum neuen Abschnitt",
+      segs == ["HWS Osteochondrose C5/6", "Sonographie der rechten Schulter Bursitis subacromialis"]
+      and [x.vorlage for x in w] == ["halswirbelsäule_in_2_ebenen", "sonografie_schultergelenk"], f"{segs}")
+segs, w, h = wahlen([HWS, LWS], "HWS Osteochondrose C5/6, Ausstrahlung in die LWS nicht erkennbar")
+check("q) „in die LWS“ ist kein neuer Abschnitt", len(segs) == 1, f"{segs}")
 segs, w, h = wahlen([CSU], "CT der rechten Schulter: Mehrfragmentfraktur des Humeruskopfes.")
 check("m) CT Schulter (keine CT-Vorlage) + Diktat „CT …“ → allgemein (Titel aus dem Diktat) statt Röntgen-Schulter",
       w[0].vorlage == "allgemein" and h == [], f"{w[0]} {h}")
