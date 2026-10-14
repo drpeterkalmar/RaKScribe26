@@ -1008,7 +1008,9 @@ class RaKScribeApp(ctk.CTk):
                     "key_chip": self.key_chip.cget("text").strip(),
                     "geometry": self.winfo_geometry(),
                     "screen": [self.winfo_screenwidth(), self.winfo_screenheight()],
-                    "report_heading_tags": len(tb.tag_ranges("md_title")) // 2 + len(tb.tag_ranges("md_head")) // 2,
+                    "report_heading_tags": (len(tb.tag_ranges("md_title")) + len(tb.tag_ranges("md_title_n"))
+                                            + len(tb.tag_ranges("md_head"))) // 2,
+                    "report_title_tags": (len(tb.tag_ranges("md_title")) + len(tb.tag_ranges("md_title_n"))) // 2,
                     "report_hidden_hash_tags": len(tb.tag_ranges("md_hidden")) // 2,
                     "report_text_keeps_markdown": self.result_text.get("1.0", "end").lstrip().startswith("##"),
                     "toggle_calls": getattr(self, "_toggle_calls", 0),
@@ -1195,6 +1197,9 @@ class RaKScribeApp(ctk.CTk):
         tb.tag_configure("md_hidden", elide=True)
         tb.tag_configure("md_title", font=(UI_FONT, 17, "bold"), foreground=ACCENT_PURPLE, spacing1=2, spacing3=6)
         tb.tag_configure("md_head", font=(UI_FONT, 15, "bold"), foreground="#FFFFFF", spacing1=12, spacing3=4)
+        # v3.13.2 (Peter 14.10.: „die Titel BWS und LWS sind unterschiedlich eingefärbt“): JEDER Untersuchungstitel wie der
+        # erste – nur „Befund“/„Ergebnis“ sind Zwischenüberschriften; ab dem zweiten Titel mit Abstand nach oben
+        tb.tag_configure("md_title_n", font=(UI_FONT, 17, "bold"), foreground=ACCENT_PURPLE, spacing1=22, spacing3=6)
         tb.configure(spacing2=3, padx=10, pady=8)
         self.transcript_text._textbox.configure(spacing2=3, padx=10, pady=8)
 
@@ -1202,7 +1207,7 @@ class RaKScribeApp(ctk.CTk):
             try:
                 if not tb.edit_modified():
                     return
-                for tag in ("md_hidden", "md_title", "md_head"):
+                for tag in ("md_hidden", "md_title", "md_title_n", "md_head"):
                     tb.tag_remove(tag, "1.0", "end")
                 first = True
                 last = int(tb.index("end-1c").split(".")[0])
@@ -1214,7 +1219,12 @@ class RaKScribeApp(ctk.CTk):
                         hashes = len(stripped) - len(stripped.lstrip("#"))
                         pre = lead + hashes + (1 if stripped[hashes:hashes + 1] == " " else 0)
                         tb.tag_add("md_hidden", f"{ln}.0", f"{ln}.{pre}")
-                        tb.tag_add("md_title" if first else "md_head", f"{ln}.{pre}", f"{ln}.end")
+                        kopf = line[pre:].strip().rstrip(":").strip().lower()
+                        if kopf in ("befund", "ergebnis"):
+                            tag = "md_head"
+                        else:
+                            tag = "md_title" if first else "md_title_n"
+                        tb.tag_add(tag, f"{ln}.{pre}", f"{ln}.end")
                         first = False
                     elif stripped:
                         first = False
