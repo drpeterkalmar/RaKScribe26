@@ -22,7 +22,7 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
      Bestätigung nach EOL, Kopfzeile bei 1240/900 px ohne Überdeckung
      v3.13.0: IB-Lab-Bausteine (cas_ibl_<id>.json der Brücke 1.2.0) → Band-Zeile „IB Lab: FROG links ✓“ (hervorgehoben),
      INS „Fuß links unauffällig.“ → Messwerte wörtlich im Befund, Diagnose nicht ins unauffällige Ergebnis (Hinweis),
-     neue Fassung nach dem Befund → „neu, nicht im Befund“ + Knopf → Knopf ersetzt die alte Fassung
+     neue Fassung nach dem Befund → v3.14.0: automatisch sichtbar eingefügt (alte Fassung ersetzt, Hinweis)
   H  v3.13.0: Selbsttest mit RAKSCRIBE_SELFTEST_ENDE endet von selbst (für den Ordi-Probelauf am Büro-PC)
   G  v3.11.0 Bereitschaft: Start mit --minimiert → nur Taskleisten-Symbol, nicht vorne; Leerlauf (CPU/Speicher, psutil);
      zweiter Start → keine zweite Instanz, laufende nach vorne (mit --minimiert: still); CAS-Auftrag → vorne, Annahme
@@ -277,7 +277,7 @@ def fall_f(state, work, hwnd=None):
     ph("cas_status#5", 1.0)
     f["nur_unauffaellig"] = ph("text_ins#2|Unauffällig.")
     ph("cas_abbrechen#5")
-    # v3.13.0: IB-Lab-Bausteine — kommen nach dem Auftrag, INS ohne KI (Normalbefund-Weg), neue Fassung → Knopf
+    # v3.13.0: IB-Lab-Bausteine — kommen nach dem Auftrag, INS ohne KI (Normalbefund-Weg), neue Fassung → v3.14.0 automatisch
     auftrag("20261013010", "uitest6")
     leistungen("uitest6", "20261013010", [L_FUSSL])
     f["ibl_ohne"] = ph("cas_status#6", 1.0)
@@ -802,10 +802,12 @@ cf("v3.13.0 INS „Fuß links unauffällig.“: Messwert wörtlich im Befund, Di
    and any("nicht ins Ergebnis übernommen" in h for h in gf("ibl_ins", "ibl_hinweise", []) or [])
    and str(gf("ibl_ins", "ibl_hinweis_label", "")).startswith("⚠") and gf("ibl_ins", "ibl_im_befund") == {"frog": 1},
    f"{str(gf('ibl_ins', 'result_ende', ''))[-220:]!r} / {gf('ibl_ins', 'ibl_hinweise')}")
-cf("v3.13.0 neue Fassung nach dem Befund: nichts still geändert, „neu, nicht im Befund“ + Knopf „＋ IB Lab einfügen“",
-   gf("ibl_neu", "ibl_knopf_sichtbar") is True and "neu, nicht im Befund" in str(gf("ibl_neu", "ibl_band", ""))
-   and "18,2°" not in str(gf("ibl_neu", "result_ende", "")), f"{gf('ibl_neu', 'ibl_band')!r} / {gf('ibl_neu', 'ibl_knopf_sichtbar')}")
-cf("v3.13.0 Knopf: neue Fassung im Befund (alte Zeilen ersetzt, nichts doppelt), Knopf wieder weg",
+cf("v3.14.0 neue Fassung nach dem Befund (vor EOL): automatisch SICHTBAR eingefügt (Hinweis), kein Knopf nötig",
+   gf("ibl_neu", "ibl_auto_n") == 1 and gf("ibl_neu", "ibl_knopf_sichtbar") is False
+   and "Hallux-valgus-Winkel links 18,2° (IB Lab FROG)." in str(gf("ibl_neu", "result_ende", ""))
+   and "neu, nicht im Befund" not in str(gf("ibl_neu", "ibl_band", "")),
+   f"{gf('ibl_neu', 'ibl_band')!r} / Knopf {gf('ibl_neu', 'ibl_knopf_sichtbar')} / auto {gf('ibl_neu', 'ibl_auto_n')}")
+cf("v3.13.0/3.14.0 neue Fassung im Befund (alte Zeilen ersetzt, nichts doppelt), Knopf weg",
    "Hallux-valgus-Winkel links 18,2° (IB Lab FROG)." in str(gf("ibl_eingefuegt", "result_ende", ""))
    and str(gf("ibl_eingefuegt", "result_ende", "")).count("Calcaneusneigungswinkel links 12,4° (IB Lab FROG).") == 1
    and gf("ibl_eingefuegt", "ibl_knopf_sichtbar") is False and gf("ibl_eingefuegt", "ibl_im_befund") == {"frog": 2},
