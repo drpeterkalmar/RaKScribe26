@@ -39,6 +39,13 @@ for z, wartet, led in F["led_fuer"]:
 for taste, ereignis in F["belegung"].items():
     check(f"Belegung {taste}", sm.BELEGUNG.get(taste) == ereignis, str(sm.BELEGUNG.get(taste)))
 check("jede Taste steht in der Belegungstabelle", all(t in F["belegung"] for t, _ in sm.TASTEN))
+# v3.15.0 Mammo-Maske (nur EXE): zusätzliche Belegung nur mit offener Maske — eingeübte Tasten nie umgedeutet
+import maske as _mk  # noqa: E402
+_mb = _mk.tasten_belegung(_mk.laden(str(ROOT / "masken.json")))
+for taste, aktion in F["belegung_maske"].items():
+    check(f"Masken-Belegung {taste}", _mb.get(taste) == aktion, str(_mb.get(taste)))
+check("Masken-Belegung: jede Taste steht in der Tabelle, keine eingeübte Taste belegt",
+      all(t in F["belegung_maske"] for t, _ in sm.TASTEN) and not set(_mb) & set(sm.BELEGUNG))
 for text, ok in F["sendefaehig"]:
     check(f"sendefähig: {text[:40]!r}", sm.sendefaehig(text) == ok)
 

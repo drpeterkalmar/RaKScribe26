@@ -13,7 +13,7 @@ import hashlib
 import json
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import Dict, List
 
 STANDARD_INHALT = (
     "[SETTINGS]\n"
@@ -33,6 +33,7 @@ class Config:
     llm_model: str = "gemini-3.5-flash"
     api_key: str = ""           # nur für LLM_PROVIDER = openai/ollama (Gemini: Praxis-Schlüssel)
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
+    maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     angelegt: bool = False      # Datei fehlte und wurde mit Standardwerten angelegt
     warnungen: List[str] = field(default_factory=list)
 
@@ -78,6 +79,12 @@ def load_config(path):
     cfg.llm_model = (sek.get("LLM_MODEL", "") or cfg.llm_model).strip()
     cfg.api_key = sek.get("API_KEY", "").strip().replace('"', '')
     cfg.rag_beispiele = _int(sek, "RAG_BEISPIELE", 0, cfg.warnungen)
+    # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
+    if parser.has_section("MASKE"):
+        for name in ("NAECHSTES_FELD", "VORIGES_FELD", "UEBERNEHMEN", "MASKE_UMSCHALTEN"):
+            wert = parser["MASKE"].get(name, "").strip()
+            if wert:
+                cfg.maske_tasten[name.lower()] = wert
     return cfg
 
 

@@ -1,0 +1,76 @@
+{
+ "_info": "v3.15.0 Masken (Peter 14.10.2026: Mammographie diktieren → Maske mit Feldern, Feldsprung per SpeechMike-Taste, Vorbefund schon eingetragen). Generisch: Felder, Labels zum Zerlegen eines Vorbefunds, „unverändert“, Werte (ACR/BI-RADS), Titel, Schluss-Baustein, Tasten. Keine RIS-Tabellen, keine Patientendaten. Logik: source_code/maske.py, Tests: tests/offline/test_maske.py + maske_faelle.txt. Tastenbelegung überschreibbar in config.ini [MASKE] (NAECHSTES_FELD = FF usw.). EXE-only (die Web-App hat keinen CAS-Auftrag).",
+ "version": "2026-10-15",
+ "tasten": {
+  "naechstes_feld": "FF",
+  "voriges_feld": "REW",
+  "uebernehmen": "F3",
+  "maske_umschalten": "F4"
+ },
+ "masken": {
+  "mammographie": {
+   "name": "Mammo-Maske",
+   "ausloeser": {
+    "vorlagen": ["mammographie_beidseits"],
+    "sono_vorlagen": ["mammasonographie_beidseits"],
+    "screening_worte": ["screening", "rescreen", "bkfp", "früherkennung"],
+    "sono_worte": ["sono", "ultraschall"]
+   },
+   "titel": {
+    "kurativ": "Mammographie {seite}",
+    "screening": "Mammographie {seite} – Screening",
+    "seite_standard": "beidseits"
+   },
+   "felder": [
+    {"id": "inspektion", "label": "Inspektion und Palpation",
+     "synonyme": ["Inspektion/Palpation", "Inspektion und Tastbefund", "Palpation und Inspektion", "Klinische Untersuchung",
+                  "Klinischer Befund", "Inspektion", "Palpation", "Tastbefund", "Palpationsbefund", "Klinik"],
+     "vergleich": false},
+    {"id": "mammographie", "label": "Mammographie",
+     "synonyme": ["Mammographie beidseits", "Mammographie bds.", "Mammografie", "Digitale Mammographie"],
+     "anhaengen": ["Tomosynthese"],
+     "vergleich": true},
+    {"id": "sonographie", "label": "Sonographie",
+     "synonyme": ["Mammasonographie beidseits", "Mammasonographie", "Mammasonografie", "Sonographie beidseits",
+                  "Sonographie der Mammae", "Sonografie", "Ultraschall der Mammae", "Ultraschall"],
+     "vergleich": true, "nur_mit_sono": true},
+    {"id": "ergebnis", "label": "Ergebnis", "typ": "ergebnis",
+     "synonyme": ["Zusammenfassung", "Beurteilung", "Befundergebnis"],
+     "vergleich": false}
+   ],
+   "werte": {
+    "acr": {"label": "ACR"},
+    "birads": {"label": "BIRADS"}
+   },
+   "unveraendert": ["unverändert", "unverändert.", "befund unverändert", "unveränderter befund", "beidseits unverändert",
+                    "unverändert beidseits", "wie vorbefund", "wie im vorbefund", "wie voruntersuchung", "wie zuvor",
+                    "idem", "status idem", "keine änderung", "keine befundänderung", "keine veränderung",
+                    "im vergleich unverändert", "verglichen mit der voruntersuchung unverändert",
+                    "verglichen mit voruntersuchung unverändert", "verglichen mit vorbefund unverändert",
+                    "unverändert zur voruntersuchung", "unverändert zum vorbefund", "unverändert zur vormammographie",
+                    "gleich wie vorbefund", "gleich wie voruntersuchung", "vorbefund übernehmen", "vorbefund"],
+   "vergleich": {
+    "klein_anfang": ["beidseits", "beidseitig", "unauffällig", "regelrecht", "kleinfleckig", "grobfleckig", "fleckig",
+                     "symmetrisch", "seitengleich", "involutiv", "fettreich", "fibroglandulär", "heterogen", "homogen",
+                     "überwiegend", "vorwiegend", "weitgehend", "vereinzelt", "vereinzelte", "multiple", "zahlreiche",
+                     "insuspekt", "gering", "geringgradig", "mäßig", "mäßiggradig", "vollständig", "teilweise",
+                     "altersentsprechend", "dicht", "locker"]
+   },
+   "ergebnis_ende": ["verlaufskontrolle", "im rahmen ihrer früherkennungsuntersuchung", "ihr befund ist unauffällig",
+                     "your ", "za vreme", "erken ", "erstbefunder", "zweitbefunder", "mit bestem dank",
+                     "mit freundlichen", "mit besten grüßen", "mit kollegialen", "bei zwischenzeitlich",
+                     "frau «patname»", "mammographie-zweitbefunder"],
+   "normalbaustein": "mam1",
+   "schluss": {
+    "screening": {
+     "_quelle": "Screening-Baustein der Praxis für BI-RADS 1/2 (BKFP-Standardtext, ohne Patientendaten). BI-RADS 0/3/4/5/6: Baustein mit Namen bzw. Kontrollintervall bleibt in CAS — RaKScribe setzt dann nichts ein und zeigt einen Hinweis.",
+     "texte": {
+      "1": "Verlaufskontrolle bei unverändertem klinischem Befund nach den Vorgaben des österreichischen Brustkrebsfrüherkennungsprogrammes in zwei Jahren empfehlenswert.\nBei zwischenzeitlich auftretenden Beschwerden oder verdächtigem Tastbefund wäre eine kurative Mammographie gemäß der Indikationenliste auf Überweisung durch den behandelnden Arzt möglich.",
+      "2": "Verlaufskontrolle bei unverändertem klinischem Befund nach den Vorgaben des österreichischen Brustkrebsfrüherkennungsprogrammes in zwei Jahren empfehlenswert.\nBei zwischenzeitlich auftretenden Beschwerden oder verdächtigem Tastbefund wäre eine kurative Mammographie gemäß der Indikationenliste auf Überweisung durch den behandelnden Arzt möglich."
+     },
+     "hinweis_sonst": "BI-RADS {birads} (Screening): Screening-Text mit Namen/Kontrollintervall bitte wie bisher in CAS einsetzen"
+    }
+   }
+  }
+ }
+}

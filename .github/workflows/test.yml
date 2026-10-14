@@ -98,6 +98,10 @@ jobs:
         run: python tests/offline/test_ibl_bausteine.py
       - name: Kontext aus der Datenbank des RIS + IB-Lab-Gerüst vor dem Diktat (v3.14.0)
         run: python tests/offline/test_cas_kontext.py
+      - name: Mammo-Maske (Vorbefund zerlegen, „unverändert“, ACR/BI-RADS, Befund, Datenschutz, Tasten) (v3.15.0)
+        run: python tests/offline/test_maske.py
+      - name: Mammo-Maske im EXE-Ablauf (Feldsprung, Diktat je Feld, Warnung, INS, EOL, F4, Rückfall) (v3.15.0)
+        run: python tests/offline/test_maske_ablauf.py
       - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings pipeline_test.mjs

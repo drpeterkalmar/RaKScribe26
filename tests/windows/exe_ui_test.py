@@ -303,6 +303,97 @@ def fall_f(state, work, hwnd=None):
     return f
 
 
+# v3.15.0 Mammo-Maske (Fall M): CAS-Auftrag mit Mammographie-Screening (+ Mamma-Sono), Mammo-Vorbefund im Kontext
+# (synthetischer Text aus tests/offline/maske_faelle.txt) — Felder, Feldsprung, Warnung, F3, Diktat je Feld, INS, EOL
+L_MAMS = dict(_l("x-mammo-scr", "Mammographie bds. Screening", "Röntgen", "mammographie_beidseits"), mammo="screening")
+L_MAMMASONO = _l("x-mamma-sono", "Ultraschall der Mamma o.V.", "Sono", "mammasonographie_beidseits")
+_MF = json.loads((pathlib.Path(__file__).resolve().parents[1] / "offline" / "maske_faelle.txt").read_text(encoding="utf-8"))
+MAMMO_VB = {"nr": "20241012001", "datum": "2024-06-05", "untersuchung": "Mammographie bds. Screening",
+            "text": _MF["zerlegen"][0]["text"], "zeichen": 900, "gekuerzt": False, "werte": {"acr": "2", "birads": "2"}}
+SCREENING_12 = ("Verlaufskontrolle bei unverändertem klinischem Befund nach den Vorgaben des österreichischen "
+                "Brustkrebsfrüherkennungsprogrammes in zwei Jahren empfehlenswert.")
+
+
+def fall_m(state, work, hwnd=None):
+    ordner = work / "localappdata" / "RaKScribe"
+    ordner.mkdir(parents=True, exist_ok=True)
+
+    def datei(name, d):
+        tmp = ordner / (name + ".tmp")
+        tmp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, ordner / name)
+
+    def auftrag(nr, aid):
+        datei("cas_auftrag.json", {"protokoll": 1, "auftrag_id": aid, "nr": nr, "benutzer": "kp", "bruecke_pid": os.getpid(),
+                                   "zeit": time.time(), "zeit_text": "", "testbefund": False})
+        time.sleep(2.0)
+
+    def leistungen(aid, nr, liste):
+        datei(f"cas_leistungen_{aid}.json", {"protokoll": 1, "auftrag_id": aid, "nr": nr, "roh": "Datenbank",
+                                             "leistungen": liste, "quelle": "CAS-Datenbank", "katalog": "UI-Test",
+                                             "ms": 300, "zeit": time.time()})
+
+    def kontext(aid, nr, vb):
+        datei(f"cas_kontext_{aid}.json", {"protokoll": 1, "auftrag_id": aid, "nr": nr, "quelle": "CAS-Datenbank",
+                                          "zuweiser": "", "info": "", "befunder": "kp", "vorbefund": vb, "zeit": time.time()})
+
+    def antwort(aid):
+        try:
+            return json.loads((ordner / f"cas_antwort_{aid}.json").read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def bild(name):
+        try:
+            if hwnd:
+                screenshot(hwnd, OUT / name)
+        except Exception:
+            pass
+
+    def ph(name, warten=0.0):
+        if warten:
+            time.sleep(warten)
+        pathlib.Path(str(state) + ".trigger").write_text(name, encoding="utf-8")
+        return wait_json(state, name, 40)
+    m = {}
+    auftrag("20261015011", "uitestm1")
+    leistungen("uitestm1", "20261015011", [L_MAMS, L_MAMMASONO])
+    kontext("uitestm1", "20261015011", MAMMO_VB)
+    m["offen"] = ph("cas_status#m1", 1.5)
+    bild("M_maske.png")
+    m["ff"] = ph("sm_FF#m1")
+    m["rew"] = ph("sm_REW#m1")
+    m["ins_warn"] = ph("sm_INS#m1", 0.5)
+    bild("M_warnung.png")
+    m["f3"] = ph("sm_F3#m1")
+    ph("sm_FF#m2")
+    ph("chirp#unverändert|keine suspekten Herde|unverändert ACR 2 BIRADS 2")
+    m["rec"] = ph("sm_RECORD#m1")
+    m["ff_rec"] = ph("sm_FF#m3", 1.5)
+    bild("M_aufnahme.png")
+    ph("sm_FF#m4", 1.5)
+    m["ins"] = ph("sm_INS#m2", 1.5)
+    bild("M_befund.png")
+    m["eol"] = ph("cas_eol#m1")
+    m["antwort1"] = antwort("uitestm1")
+    txt = ordner / "cas_ergebnis_20261015011.txt"
+    m["ergebnis1"] = txt.read_text(encoding="utf-8") if txt.exists() else None
+    # Rückfall ohne Datenbank: kein Kontext, Leistung ohne Tarif-Kennzeichen → Maske ohne Vorbefund, Sono eingeklappt
+    auftrag("20261015012", "uitestm2")
+    leistungen("uitestm2", "20261015012", [dict(L_MAMS, mammo=None)])
+    m["ohne_db"] = ph("cas_status#m2", 1.5)
+    bild("M_ohne_vorbefund.png")
+    m["f4_aus"] = ph("sm_F4#m1")
+    m["f4_an"] = ph("sm_F4#m2")
+    m["klick"] = ph("maske_klick#3#m")
+    m["tippen"] = ph("maske_tippen#3#m|Unauffälliger Befund.\nACR: 1\nBIRADS: 1")
+    m["knopf"] = ph("maske_knopf#1#m")
+    m["ins2"] = ph("sm_INS#m3", 1.0)
+    bild("M_befund_ohne_vorbefund.png")
+    m["abbrechen"] = ph("cas_abbrechen#m2")
+    return m
+
+
 REPO = pathlib.Path(__file__).resolve().parents[2]
 
 
@@ -558,7 +649,7 @@ def fall_g():
 
 
 def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False, fake_audio=False, mit_fall_e=False,
-             sm_gesperrt=False, mit_fall_f=False):
+             sm_gesperrt=False, mit_fall_f=False, mit_fall_m=False):
     work = pathlib.Path(tempfile.mkdtemp(prefix=f"rks_{case}_"))
     shutil.copy(EXE, work / EXE.name)
     if old_prompt:
@@ -604,12 +695,13 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
             sm = wait_json(state, "sm_RECORD#0", 20)
         e = fall_e(state) if mit_fall_e else None
         f = fall_f(state, work, hwnd) if mit_fall_f else None
+        mm = fall_m(state, work, hwnd) if mit_fall_m else None
         if e:
             try:
                 screenshot(hwnd, OUT / f"{case}_ende.png")
             except Exception:
                 pass
-        return {"state": st, "after_f10": after, "fall_d": d, "sm_gesperrt": sm, "fall_e": e, "fall_f": f,
+        return {"state": st, "after_f10": after, "fall_d": d, "sm_gesperrt": sm, "fall_e": e, "fall_f": f, "fall_m": mm,
                 "screenshot": f"{case}.png",
                 "size": size, "t_start": round(t_start, 1)}
     finally:
@@ -826,6 +918,60 @@ for breite, sm_text in ((1240, "SpeechMike verbunden"), (900, "SpeechMike ✓"))
        bool(st) and st[1] >= 120 and (kopf.get("sm_chip") or [0, 0, ""])[2] == sm_text
        and not any(_ueberlappt(st, v) for v in andere.values()), json.dumps(kopf, ensure_ascii=False))
 
+# M (v3.15.0): Mammo-Maske — eigener Lauf (volles Fenster), Attrappen für Mikrofon/Google/chirp_3, Tasten über den Handler
+m_lauf = run_case("M_maske", with_key=True, demo=False, send_f10=False, fake_audio=True, mit_fall_m=True)
+MM = (m_lauf or {}).get("fall_m") or {}
+
+
+def cm(name, ok, detail=""):
+    check("M_maske", name, ok, detail)
+
+
+def gm(k, feld=None, default=None):
+    z = (MM.get(k) or {}).get("maske") or {}
+    return z if feld is None else z.get(feld, default)
+
+
+def gq(k):
+    return [f.get("quelle") for f in gm(k, "felder", []) or []]
+
+
+cm("Mammographie-Auftrag (+ Mamma-Sono, Vorbefund aus der Datenbank) → Maske gezeigt, links „MAMMO-MASKE“, 4 Felder mit "
+   "Vorbefund-Vorschlag", gm("offen", "offen") is True and gm("offen", "sichtbar") is True and gm("offen", "an") is True
+   and gm("offen", "titel_links") == "MAMMO-MASKE" and gq("offen") == ["vorbefund"] * 4 and gm("offen", "erkannt") == 4
+   and "Vorbefund 05.06.2024" in str(gm("offen", "kopf")), json.dumps(gm("offen"), ensure_ascii=False)[:600])
+cm("Vorspulen → Feld 2, Rückspulen → Feld 1", gm("ff", "aktiv") == 1 and gm("rew", "aktiv") == 0,
+   f"{gm('ff', 'aktiv')} / {gm('rew', 'aktiv')}")
+cm("INS mit offenen Vorschlägen → kein Befund, Warnung nennt die Felder",
+   "Noch nicht übernommen" in str(gm("ins_warn", "warnung")) and (MM.get("ins_warn") or {}).get("result") == ""
+   and (MM.get("ins_warn") or {}).get("job_zustand") == "READY", str(gm("ins_warn", "warnung")))
+cm("F3 → Inspektion übernommen", gq("f3")[:1] == ["uebernommen"], str(gq("f3")))
+cm("Record im Feld Mammographie → Aufnahme, Abschnitt angemeldet", (MM.get("rec") or {}).get("job_zustand") == "RECORDING"
+   and gm("rec", "aktiv") == 1 and (gm("rec", "felder") or [{}, {}])[1].get("wartet") is True, str(gm("rec", "zustand")))
+cm("Vorspulen während der Aufnahme → Sono-Feld, Aufnahme läuft weiter", gm("ff_rec", "aktiv") == 2
+   and (MM.get("ff_rec") or {}).get("job_zustand") == "RECORDING", str(gm("ff_rec", "zustand")))
+r = str((MM.get("ins") or {}).get("result_voll") or "")
+cm("INS → Befund aus den Feldern: Titel Screening, Inspektion übernommen, Mammographie „unverändert“ mit Vergleichsdatum, "
+   "Sono diktiert, Ergebnis + ACR/BIRADS, Screening-Text BI-RADS 2",
+   r.startswith("## Mammographie beidseits – Screening\n\n## Befund\nInspektion und Palpation: Unauffällig.\n\n"
+                "Mammographie: Verglichen mit 05.06.2024 beidseits unverändert vereinzelte insuspekte Verkalkungen")
+   and "Sonographie: Keine suspekten Herde." in r and "## Ergebnis\nMastopathie mit insuspekten Verkalkungen.\nACR: 2\n"
+   "BIRADS: 2\n\n" + SCREENING_12 in r and (MM.get("ins") or {}).get("status") == "KONTROLLE", r[:900])
+cm("EOL → genau dieser Befund an die Brücke („fertig“), Maske zu", (MM.get("antwort1") or {}).get("status") == "fertig"
+   and MM.get("ergebnis1") == r and gm("eol", "offen") is False, str(MM.get("antwort1")))
+cm("ohne Datenbank (kein Kontext): Maske ohne Vorbefund, Mammographie = Normalbaustein, Sono eingeklappt",
+   gm("ohne_db", "offen") is True and gm("ohne_db", "vorbefund") is None and gq("ohne_db") == ["leer", "vorlage", "leer", "leer"]
+   and (gm("ohne_db", "felder") or [{}] * 3)[2].get("sichtbar") is False, str(gm("ohne_db", "zustand")))
+cm("F4 → Maske aus (Diktat-Feld), F4 → wieder an", gm("f4_aus", "an") is False and gm("f4_aus", "sichtbar") is False
+   and gm("f4_aus", "titel_links") == "DIKTAT" and gm("f4_an", "an") is True and gm("f4_an", "sichtbar") is True)
+cm("Klick ins Ergebnis-Feld, getippt (Werte erkannt), Knopf „übernehmen“ am Normalbaustein",
+   gm("klick", "aktiv") == 3 and gq("tippen")[3:] == ["getippt"] and (gm("tippen", "felder") or [{}] * 4)[3].get("werte")
+   == {"acr": "1", "birads": "1"} and gq("knopf")[1:2] == ["uebernommen"], str(gm("knopf", "zustand")))
+r2 = str((MM.get("ins2") or {}).get("result_voll") or "")
+cm("INS → Befund ohne Vorbefund: Normalbaustein, getipptes Ergebnis, ACR/BIRADS 1, Screening-Text BI-RADS 1",
+   r2.startswith("## Mammographie beidseits – Screening") and "Mammographie: Kleinfleckig strukturierter Drüsenkörper." in r2
+   and "## Ergebnis\nUnauffälliger Befund.\nACR: 1\nBIRADS: 1" in r2 and SCREENING_12 in r2, r2[:700])
+
 # G (v3.11.0): Bereitschaft — minimiert warten, Einzelinstanz, nach CAS-EOL minimieren, Autostart über den Starter
 try:
     G = fall_g()
@@ -927,7 +1073,7 @@ check("H_ende", "RAKSCRIBE_SELFTEST_ENDE=12: Selbsttest endet von selbst (Zustan
       H.get("rc") == 0 and bool(H.get("ende")) and H["ende"].get("minimiert_gestartet") is True
       and 12 <= (H.get("s") or 0) <= 90, f"Exit {H.get('rc')} nach {H.get('s')} s, Titel {H['ende'].get('title')!r}")
 
-ok = all(r["ok"] for r in results) and a and c and e_lauf
+ok = all(r["ok"] for r in results) and a and c and e_lauf and m_lauf
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf,
                                               "G": G}, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
 lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
@@ -948,7 +1094,9 @@ if L.get("prozesse"):
 lines += ["", "Screenshots: `A_gesperrt.png` (ohne Schlüssel), `C_entsperrt.png` (mit Test-Schlüssel + Demo-Befund), "
           "`E_speechmike.png` / `E_speechmike_ende.png` (SpeechMike-Ablauf mit Attrappen, danach Fall F CAS-Auftrag), "
           "`G_minimiert.png` / `G_taskleiste.png` (RaKScribe nur als Taskleisten-Symbol), `G_cas_vorne.png` (nach CAS-Auftrag), "
-          "`F_ibl_band.png` / `F_ibl_befund.png` / `F_ibl_knopf.png` (v3.13.0 IB-Lab-Zeile, Werte im Befund, Knopf)."]
+          "`F_ibl_band.png` / `F_ibl_befund.png` / `F_ibl_knopf.png` (v3.13.0 IB-Lab-Zeile, Werte im Befund, Knopf), "
+          "`M_maske.png` / `M_warnung.png` / `M_aufnahme.png` / `M_befund.png` / `M_ohne_vorbefund.png` / "
+          "`M_befund_ohne_vorbefund.png` (v3.15.0 Mammo-Maske)."]
 (OUT / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("\n".join(lines))
 sys.exit(0 if ok else 1)

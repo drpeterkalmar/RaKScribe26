@@ -24,6 +24,8 @@ Dateien (gleiche Namen/Felder wie ris-mods bruecke/auftrag.py — Änderungen im
                               quelle, zuweiser, info, befunder, vorbefund: {nr, datum, untersuchung, text, zeichen, gekuerzt}
                               | null, zeit} — optional. NUR Anzeige: Kopfzeile im Band (Zuweiser, Info) und Fenster
                               „Vorbefund“. Geht nie an die KI und nie ins Protokoll (dort nur Längen).
+                              v3.15.0 (Brücke 2.1.0): bei Mammographie ist vorbefund der letzte fertige Mammo-Befund
+                              (jedes Mammo-Kürzel) mit werte {acr, birads} der Doppelbefundung → Vorschläge der Mammo-Maske.
                               cas_leistungen kann dann je Leistung „ziffer“ (Accession = Diktatnummer + Ziffer) und
                               „accession“ tragen → exakte Zuordnung der IB-Lab-Bausteine.
 Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel, KI-Messwerte der Untersuchung, ab v3.14.0
@@ -233,8 +235,13 @@ class Kanal:
             return {}
         vb = d.get("vorbefund")
         if isinstance(vb, dict):
+            roh_werte = vb.get("werte")
             vb = {k: vb.get(k) for k in ("nr", "datum", "untersuchung", "text", "zeichen", "gekuerzt")}
             vb["text"] = str(vb.get("text") or "")
+            # v3.15.0 (Brücke 2.1.0, Mammo-Maske): ACR/BI-RADS der Doppelbefundung des Vorbefunds (nur Anzeige/Vorschlag)
+            if isinstance(roh_werte, dict):
+                vb["werte"] = {k: str(roh_werte[k]).strip() for k in ("acr", "birads")
+                               if roh_werte.get(k) is not None and str(roh_werte[k]).strip()}
         else:
             vb = None
         return {"zuweiser": str(d.get("zuweiser") or ""), "info": str(d.get("info") or ""),

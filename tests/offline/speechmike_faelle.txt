@@ -66,6 +66,10 @@
               ["ERROR", true, "aus"], ["LOCKED", true, "aus"]],
  "belegung": {"RECORD": "record", "INS": "ins", "EOL": "eol", "STOP": "stop", "F1": "reset", "F2": "nur_text",
               "F3": null, "F4": null, "PLAY": null, "FF": null, "REW": null, "INSTR": null, "COMMAND": null},
+ "_belegung_maske": "v3.15.0 Mammo-Maske (nur EXE, nur mit offener Maske; masken.json „tasten“, config.ini [MASKE] überschreibt): zusätzlich zur Belegung oben, die eingeübten Tasten bleiben. Ohne Maske gilt nur „belegung“.",
+ "belegung_maske": {"FF": "naechstes_feld", "REW": "voriges_feld", "F3": "uebernehmen", "F4": "maske_umschalten",
+                    "RECORD": null, "INS": null, "EOL": null, "STOP": null, "F1": null, "F2": null, "PLAY": null,
+                    "INSTR": null, "COMMAND": null},
  "zustand": [
   ["READY", "toggle", "start"], ["READY", "reset", "reset"], ["READY", "text", "text_start"], ["READY", "record", "start"],
   ["READY", "stop", null], ["READY", "ins", "text_start"], ["READY", "eol", "senden"],

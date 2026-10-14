@@ -39,6 +39,7 @@ import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL
 import cas_vorlagen as _cv  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis für die Vorlagenwahl
 import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke — nach der KI wörtlich einsetzen
 import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
+import maske as _mk  # v3.15.0: Mammo-Maske — Felder per SpeechMike-Taste, Vorbefund schon eingetragen (ohne KI)
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -309,6 +310,13 @@ def load_templates():
 
 RADIOLOGY_TEMPLATES = {}  # init_runtime(): load_templates()
 DISPLAY_NAMES = []
+# v3.15.0 (Peter 14.10.): Masken (masken.json, gebündelt) + Tastenbelegung (config.ini [MASKE] überschreibt)
+MASKEN = {}  # init_runtime(): _mk.laden()
+MASKE_TASTEN = {}  # Taste → Aktion, z. B. {"FF": "naechstes_feld"}
+
+
+def maske_def(name="mammographie"):
+    return ((MASKEN or {}).get("masken") or {}).get(name) or {}
 # Region nicht erkannt → Vorlage „allgemein“ aus templates.json (v3.2 Peter 05.10.: kein Skelett-Standardtext).
 # Umbau Schritt 24 (Gutachten P3-1): die doppelt gepflegte Kopie ALLGEMEIN_FALLBACK entfällt.
 
@@ -624,6 +632,9 @@ def _zwischenablage_lesen():
         return f"(nicht lesbar: {e})"
 
 
+_SELBSTTEST_CHIRP = []  # v3.15.0: Texte, die die chirp_3-Attrappe der Reihe nach liefert (nur Selbsttest FAKEAUDIO)
+
+
 def _selbsttest_attrappen():
     """NUR Windows-UI-Test (RAKSCRIBE_SELFTEST + RAKSCRIBE_SELFTEST_FAKEAUDIO=1, Fall E): Mikrofon, Google-Streaming,
     chirp_3 und Gemini-Korrektur durch Attrappen ersetzen, damit Record → Pause → Weiter → INS → EOL auf dem
@@ -667,15 +678,171 @@ def _selbsttest_attrappen():
     sd = types.SimpleNamespace(InputStream=Strom, default=getattr(sd, "default", None))
     speech = types.SimpleNamespace(StreamingRecognizeRequest=lambda audio_content: audio_content)
     speech_client = Client()
-    _chirp3_worker = lambda pcm, sr, loc, token: "Kniegelenk rechts in 2 Ebenen unauffällig."  # noqa: E731
+    def _chirp_attrappe(pcm, sr, loc, token):  # v3.15.0: Fall M gibt je Feld-Abschnitt einen Text vor (Phase chirp#…)
+        return _SELBSTTEST_CHIRP.pop(0) if _SELBSTTEST_CHIRP else "Kniegelenk rechts in 2 Ebenen unauffällig."
+    _chirp3_worker = _chirp_attrappe
     _get_stt_access_token = lambda: "selbsttest"  # noqa: E731
     _korr.korrigieren = lambda text, key, block="", log=None: text
     log("[SELBSTTEST] Mikrofon, Google-Streaming, chirp_3 und Korrektur durch Attrappen ersetzt (FAKEAUDIO).")
 
 
+def gast_selbsttest():
+    """v3.15.0 (Ordi-Probelauf am Büro-PC): Selbsttest als „Gast“ neben einer laufenden RaKScribe — eigener Mutex, kein
+    SpeechMike-Gerät (Tasten nur über den Selbsttest), keine globalen F9/F10, kein Autostart-Abgleich, nichts im
+    Vordergrund erzwingen. Nur mit RAKSCRIBE_SELFTEST UND RAKSCRIBE_SELFTEST_GAST=1; im Praxisbetrieb wirkungslos."""
+    return bool(os.environ.get("RAKSCRIBE_SELFTEST")) and os.environ.get("RAKSCRIBE_SELFTEST_GAST") == "1"
+
+
 def keys_ready():
     """v3.0: App ist nur bedienbar, wenn Gemini- UND STT-Schlüssel vorhanden sind."""
     return bool(_load_vertex_key()) and (_SA_CREDENTIALS is not None or speech_client is not None)
+
+
+# ── v3.15.0 Mammo-Maske (Peter 14.10.2026): Felder untereinander im Diktat-Bereich — nur Anzeige, Klicks und Tippen.
+# Zustand: maske.Maske; Steuerung (Tasten, Aufnahme je Feld, INS/EOL): RaKScribeApp, Abschnitt „v3.15.0 Mammo-Maske“.
+MASKE_HOEHE = {"inspektion": 54, "mammographie": 118, "sonographie": 84, "ergebnis": 84}
+
+
+class MaskePanel:
+    def __init__(self, app, eltern):
+        self.app = app
+        self.rahmen = ctk.CTkFrame(eltern, fg_color="transparent")
+        self.kopf = ctk.CTkLabel(self.rahmen, text="", font=(UI_FONT, 13, "bold"), text_color=TEXT_PRIMARY, anchor="w",
+                                 justify="left")
+        self.kopf.pack(fill="x", padx=12, pady=(6, 0))
+        self.hilfe = ctk.CTkLabel(self.rahmen, text="", font=(UI_FONT, 11), text_color=TEXT_MUTED, anchor="w",
+                                  justify="left", wraplength=560)
+        self.hilfe.pack(fill="x", padx=12)
+        self.warnung = ctk.CTkLabel(self.rahmen, text="", font=(UI_FONT, 12, "bold"), text_color=WARN_AMBER, anchor="w",
+                                    justify="left", wraplength=560)
+        self.felder_rahmen = ctk.CTkFrame(self.rahmen, fg_color="transparent")
+        self.felder_rahmen.pack(fill="both", expand=True, padx=8, pady=(4, 6))
+        self.zeilen, self._inhalt, self._maske_id = [], {}, None
+        self.sichtbar = False
+
+    def aufbauen(self, m):
+        for z in self.zeilen:
+            z["rahmen"].destroy()
+        self.zeilen, self._inhalt, self._maske_id = [], {}, id(m)
+        for i, f in enumerate(m.felder):
+            fr = ctk.CTkFrame(self.felder_rahmen, fg_color=BGC_INPUT, corner_radius=10, border_width=1,
+                              border_color=BORDER_COLOR)
+            fr.pack(fill="both", expand=f.id != "inspektion", pady=3)
+            kopf = ctk.CTkFrame(fr, fg_color="transparent", height=26)
+            kopf.pack(fill="x", padx=10, pady=(5, 0))
+            lbl = ctk.CTkLabel(kopf, text=f.label, font=(UI_FONT, 13, "bold"), text_color=TEXT_PRIMARY, height=22)
+            lbl.pack(side="left")
+            knopf = ctk.CTkButton(kopf, text="✓ übernehmen", width=118, height=22, corner_radius=7, font=(UI_FONT, 11, "bold"),
+                                  fg_color="transparent", border_width=1, border_color=BORDER_STRONG, hover_color=BGC_CARD,
+                                  text_color=TEXT_PRIMARY, command=lambda i=i: self.app._maske_knopf(i))
+            chip = ctk.CTkLabel(kopf, text="", font=(UI_FONT, 11), text_color=TEXT_FAINT, height=22)
+            chip.pack(side="right", padx=(0, 8))
+            box = ctk.CTkTextbox(fr, height=MASKE_HOEHE.get(f.id, 70), font=(UI_FONT, 14), wrap="word",
+                                 fg_color="transparent", text_color=TEXT_PRIMARY, border_width=0,
+                                 scrollbar_button_color=BORDER_STRONG)
+            box.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+            tb = box._textbox
+            tb.tag_configure("vorschlag", foreground=TEXT_FAINT, font=(UI_FONT, 14, "italic"))
+            tb.tag_configure("live", foreground=TEXT_MUTED)
+            werte = None
+            if f.typ == "ergebnis":
+                werte = ctk.CTkLabel(fr, text="", font=(UI_FONT, 13, "bold"), text_color=TEXT_PRIMARY, anchor="w",
+                                     height=20)
+                werte.pack(fill="x", padx=12, pady=(0, 6))
+            for w in (fr, kopf, lbl, chip):
+                w.bind("<Button-1>", lambda e, i=i: self.app._maske_klick(i))
+            tb.bind("<Button-1>", lambda e, i=i: self.app._maske_klick(i, tippen=True), add="+")
+            tb.bind("<KeyRelease>", lambda e, i=i, b=box: self.app._maske_getippt(i, b.get("1.0", "end-1c")), add="+")
+            self.zeilen.append({"rahmen": fr, "label": lbl, "chip": chip, "knopf": knopf, "box": box, "werte": werte,
+                                "box_da": True})
+
+    def zeigen(self):
+        if not self.sichtbar:
+            self.app.transcript_text.pack_forget()
+            self.rahmen.pack(fill="both", expand=True, padx=4, pady=4)
+            self.sichtbar = True
+
+    def verstecken(self):
+        if self.sichtbar:
+            self.rahmen.pack_forget()
+            self.app.transcript_text.pack(fill="both", expand=True, padx=10, pady=8)
+            self.sichtbar = False
+
+    def aktualisieren(self, m, live=None, kopf="", hilfe="", warnung="", gesperrt=False):
+        if self._maske_id != id(m):
+            self.aufbauen(m)
+        live = live or {}
+        self.kopf.configure(text=kopf)
+        self.hilfe.configure(text=hilfe)
+        self.warnung.configure(text=warnung)
+        if warnung:
+            self.warnung.pack(fill="x", padx=12, before=self.felder_rahmen)
+        else:
+            self.warnung.pack_forget()
+        for i, (f, z) in enumerate(zip(m.felder, self.zeilen)):
+            aktiv = i == m.aktiv
+            z["rahmen"].configure(border_color=ACCENT_PURPLE if aktiv else BORDER_COLOR, border_width=2 if aktiv else 1)
+            z["label"].configure(text=("▶  " if aktiv else "") + f.label,
+                                 text_color=ACCENT_PURPLE if aktiv else TEXT_PRIMARY)
+            lt = (live.get(i) or "").strip()
+            chip = _mk.anzeige_zustand(f, m.datum)
+            if lt and f.quelle != _mk.DIKTAT:
+                chip = "diktiert … (ersetzt den Vorschlag)" if f.quelle in _mk.VORSCHLAG + (_mk.UEBERNOMMEN,) else "diktiert …"
+            z["chip"].configure(text=chip, text_color=READY_GREEN if f.quelle == _mk.UEBERNOMMEN else
+                                (WARN_AMBER if f.offen and i == m.aktiv else TEXT_FAINT))
+            if not f.sichtbar:
+                knopf_text = "＋ zuschalten"
+            elif f.quelle in _mk.VORSCHLAG:
+                knopf_text = "✓ übernehmen"
+            elif f.quelle == _mk.UEBERNOMMEN:
+                knopf_text = "↺ zurück"
+            elif f.quelle in (_mk.DIKTAT, _mk.GETIPPT):
+                knopf_text = "✕ verwerfen"
+            else:
+                knopf_text = ""
+            if knopf_text and not gesperrt:
+                z["knopf"].configure(text=knopf_text)
+                z["knopf"].pack(side="right")
+            else:
+                z["knopf"].pack_forget()
+            if not f.sichtbar and not lt:
+                if z["box_da"]:            # eingeklappt: nur die Kopfzeile, nimmt keinen Platz
+                    z["box"].pack_forget()
+                    z["rahmen"].pack(fill="x", expand=False, pady=3)
+                    z["box_da"] = False
+            elif not z["box_da"]:
+                z["rahmen"].pack(fill="both", expand=True, pady=3)
+                z["box"].pack(fill="both", expand=True, padx=6, pady=(0, 4))
+                z["box_da"] = True
+            text = _mk.vorschau(f, m)
+            if lt and f.quelle != _mk.DIKTAT:
+                teile = [("", None), (lt, "live")]
+            else:
+                teile = [(text, "vorschlag" if f.quelle in _mk.VORSCHLAG else None)] + ([(" " + lt, "live")] if lt else [])
+            soll = (tuple(teile), gesperrt)
+            if self._inhalt.get(i) != soll:
+                box = z["box"]
+                box.configure(state="normal")
+                try:
+                    cursor = box._textbox.index("insert")
+                except Exception:
+                    cursor = None
+                box.delete("1.0", "end")
+                for t, tag in teile:
+                    if t:
+                        box.insert("end", t, tag) if tag else box.insert("end", t)
+                if cursor is not None:
+                    try:
+                        box._textbox.mark_set("insert", cursor)   # beim Tippen bleibt der Cursor, wo er war
+                    except Exception:
+                        pass
+                if gesperrt:
+                    box.configure(state="disabled")
+                self._inhalt[i] = soll
+            if z["werte"] is not None:
+                w = _mk.werte_vorschau(f, m)
+                z["werte"].configure(text=f"ACR: {w.get('acr') or '–'}   ·   BIRADS: {w.get('birads') or '–'}",
+                                     text_color=TEXT_FAINT if f.quelle in _mk.VORSCHLAG else TEXT_PRIMARY)
 
 
 class RaKScribeApp(ctk.CTk):
@@ -765,7 +932,11 @@ class RaKScribeApp(ctk.CTk):
         self.nach_cas_minimieren_var = tk.BooleanVar(value=bool(einstellung_lesen("cas_minimieren", True)))
         # v3.13.0 (Peter 13.10.): IB-Lab-Bausteine der Brücke in den Befund übernehmen (Menü, Standard an)
         self.ibl_var = tk.BooleanVar(value=bool(einstellung_lesen("ibl_uebernehmen", True)))
-        threading.Thread(target=self._autostart_nachziehen, daemon=True).start()
+        # v3.15.0 (Peter 14.10.): Mammo-Maske bei CAS-Diktaten mit Mammographie-Leistung (Menü, Standard an)
+        self.maske_var = tk.BooleanVar(value=bool(einstellung_lesen("maske", True)))
+        self._maske_leeren()
+        if not gast_selbsttest():   # v3.15.0: der Gast-Selbsttest fasst Peters Autostart nie an
+            threading.Thread(target=self._autostart_nachziehen, daemon=True).start()
         # v3.8.2 (Peter 12.10.): SpeechMike-Steuerung im Menü abschaltbar (z. B. wenn SpeechMagic die Tasten braucht)
         self.speechmike_var = tk.BooleanVar(value=bool(einstellung_lesen("speechmike", True)))
         if self.speechmike_var.get():
@@ -869,7 +1040,8 @@ class RaKScribeApp(ctk.CTk):
             head = ctk.CTkFrame(c, fg_color="transparent", height=44)
             head.pack(fill="x", padx=16, pady=(8, 0))
             head.pack_propagate(False)
-            ctk.CTkLabel(head, text=title, font=(UI_FONT, 12, "bold"), text_color=TEXT_MUTED).pack(side="left")
+            head.titel = ctk.CTkLabel(head, text=title, font=(UI_FONT, 12, "bold"), text_color=TEXT_MUTED)
+            head.titel.pack(side="left")
             ctk.CTkFrame(c, fg_color=BORDER_COLOR, height=1, corner_radius=0).pack(fill="x", padx=1)
             foot = ctk.CTkFrame(c, fg_color=BGC_ELEV, corner_radius=0, height=66)
             foot.pack(side="bottom", fill="x", padx=1, pady=(0, 1))
@@ -878,6 +1050,7 @@ class RaKScribeApp(ctk.CTk):
             return c, head, foot
 
         left_card, left_head, left_foot = card(0, "DIKTAT")
+        self._maske_eltern, self.diktat_titel = left_card, left_head.titel   # v3.15.0: Mammo-Maske statt Diktat-Feld
         right_card, right_head, right_foot = card(1, "BEFUND")
 
         # v3.4.0 (Peter 07.10.): „Nur Text“ — rechts nur die korrigierte Spracherkennung, kein strukturierter Befund
@@ -984,6 +1157,9 @@ class RaKScribeApp(ctk.CTk):
                                              **rand_kw, **band_kw)
         self.bind_all("<F11>", lambda e: self._cas_taste("ins"))
         self.bind_all("<F12>", lambda e: self._cas_taste("eol"))
+        # v3.15.0: Mammo-Maske auch ohne SpeechMike (Fern-Test): Bild↓/Bild↑ = nächstes/voriges Feld
+        self.bind_all("<Next>", lambda e: self._maske_tastatur(+1))
+        self.bind_all("<Prior>", lambda e: self._maske_tastatur(-1))
 
     # ── v3.0: Selbsttest-Modus für den automatischen Windows-UI-Test (tests/windows/exe_ui_test.py).
     # NUR aktiv, wenn die Umgebungsvariable RAKSCRIBE_SELFTEST gesetzt ist — im Praxisbetrieb wirkungslos.
@@ -999,8 +1175,9 @@ class RaKScribeApp(ctk.CTk):
             elif geo:
                 self.geometry(geo)
             self.lift()
-            self.attributes("-topmost", True)
-            self.focus_force()
+            if not gast_selbsttest():   # v3.15.0: der Gast-Selbsttest drängt sich nicht vor
+                self.attributes("-topmost", True)
+                self.focus_force()
         if os.environ.get("RAKSCRIBE_SELFTEST_FAKEAUDIO") == "1":
             _selbsttest_attrappen()  # v3.8.0 Fall E: SpeechMike-Ablauf ohne Mikrofon/Google
 
@@ -1094,6 +1271,8 @@ class RaKScribeApp(ctk.CTk):
                     "ibl_markiert": int(getattr(self, "_ibl_markiert", 0)),
                     "ibl_auto_n": int(getattr(self, "_ibl_auto_n", 0)),
                     "befund_titel": befund_titel(self.result_text.get("1.0", "end-1c"), 400),
+                    "result_voll": self.result_text.get("1.0", "end-1c")[:3000],     # v3.15.0 Mammo-Maske
+                    "maske": self._maske_selbsttest(),
                     # v3.11.0: Bereitschaft (Fensterzustand, Zweitstarts, Autostart, Minimieren nach CAS-EOL)
                     "fenster": self.state(),
                     "minimiert_gestartet": bool(getattr(self, "_minimiert_gestartet", False)),
@@ -1155,6 +1334,21 @@ class RaKScribeApp(ctk.CTk):
                     elif phase == "befund_aendern":
                         self.result_text.insert("end", "\nVon Hand ergänzt.")
                         dump(phase)
+                    elif phase.startswith("chirp#"):
+                        # v3.15.0 (FAKEAUDIO): nächste Erkennungen der Attrappe, je Abschnitt eine („A|B|C“)
+                        _SELBSTTEST_CHIRP[:] = phase[6:].split("|")
+                        dump(phase)
+                    elif phase.startswith(("maske_klick#", "maske_knopf#", "maske_tippen#")):
+                        art, _, rest = phase.partition("#")
+                        nr, _, text = rest.partition("|")
+                        i = int(nr.split("#")[0])
+                        if art == "maske_klick":
+                            self._maske_klick(i)
+                        elif art == "maske_knopf":
+                            self._maske_knopf(i)
+                        else:
+                            self._maske_getippt(i, text)
+                        self.after(800, lambda p=phase: dump(p))
                     elif phase.startswith("cas_"):
                         # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
                         aktion = {"cas_testbefund": self.cas_testbefund, "cas_eol": self.befund_fertig,
@@ -1283,6 +1477,8 @@ class RaKScribeApp(ctk.CTk):
                           command=lambda: einstellung_schreiben("cas_minimieren", bool(self.nach_cas_minimieren_var.get())))
         m.add_checkbutton(label="IB-Lab-Bausteine übernehmen", variable=self.ibl_var,  # v3.13.0
                           command=self._ibl_umgeschaltet)
+        m.add_checkbutton(label="Mammo-Maske bei Mammographie (CAS)", variable=self.maske_var,  # v3.15.0
+                          command=self._maske_umgeschaltet)
         m.add_separator()
         m.add_command(label="Prompt bearbeiten…", command=self.toggle_prompt_view)
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
@@ -1299,6 +1495,8 @@ class RaKScribeApp(ctk.CTk):
         for zeile in HILFE_SPEECHMIKE:
             m.add_command(label=zeile, state="disabled")
         m.add_command(label="CAS-Diktat (blaues Band): F11 = INS · F12 = EOL → an CAS", state="disabled")  # v3.10.0
+        m.add_command(label="Mammo-Maske: " + (_mk.tasten_text(MASKE_TASTEN) or "–") + " · Bild↓/↑ = Feld",
+                      state="disabled")  # v3.15.0
         x = self.menu_btn.winfo_rootx()
         y = self.menu_btn.winfo_rooty() + self.menu_btn.winfo_height() + 4
         try:
@@ -1466,6 +1664,12 @@ class RaKScribeApp(ctk.CTk):
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
         self._ibl_geruest_text = None
+        if getattr(self, "_maske", None) is not None:   # v3.15.0: Maske wieder wie beim Öffnen (Vorschläge)
+            self._maske.neu()
+            self._maske_lauf, self._maske_abschnitte, self._maske_offen_k = False, {}, None
+            self._maske_warnung_version = self._maske_befund_version = None
+            self._maske_warnung = self._maske.werte_abweichung()
+            log("[MASKE] Neu: alle Felder wieder Vorschlag")
         if getattr(self, "_cas", None) is not None:
             self._ibl_band_zeigen()
             self.after(50, self._ibl_geruest_pruefen)      # v3.14.0: IB-Lab-Gerüst wieder vorab
@@ -1475,6 +1679,7 @@ class RaKScribeApp(ctk.CTk):
             self.update_status("READY", "ready")
             self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(width=0)
+        self._maske_anzeigen()
 
     def _aufnahme_stoppen(self):
         if self._aufnahme is not None:
@@ -1494,7 +1699,7 @@ class RaKScribeApp(ctk.CTk):
         a.on_text = lambda text, is_final: self.after(0, self.update_interim_text, text, is_final, gen, a.stream_abschnitt)
         self._aufnahme = a
         if getattr(self, "_cas", None) is not None:  # v3.10.0: Aufnahmen dieses CAS-Diktats sammeln (→ <Nr>.wav)
-            if not self._basis:
+            if not self._basis and not getattr(self, "_maske_lauf", False):   # v3.15.0: Maske = ein Diktat, viele Aufnahmen
                 self._cas_aufnahmen = []  # neues Diktat statt Nachdiktat: frühere Aufnahmen gehören nicht dazu
             self._cas_aufnahmen.append(a)
         a.start()
@@ -1548,7 +1753,9 @@ class RaKScribeApp(ctk.CTk):
 
         if aktion == "start":
             log("[RECORD] Aufnahme wird gestartet...")
-            self._einfuegen_ziel = self._einfuege_ziel_ermitteln()
+            self._maske_lauf = self._maske_aktiv()   # v3.15.0: Abschnitt je Feld statt eines Diktats
+            self._maske_abschnitte, self._maske_offen_k = {}, None
+            self._einfuegen_ziel = None if self._maske_lauf else self._einfuege_ziel_ermitteln()
             if self._einfuegen_ziel is not None:
                 log(f"[EINFÜGEN] Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt.")
             self.final_transcript = ""
@@ -1578,10 +1785,16 @@ class RaKScribeApp(ctk.CTk):
 
             self._aufnahme_starten(gen)
             log("[RECORD] Aufnahme- und Live-Anzeige-Thread gestartet.")
+            if self._maske_lauf:
+                self._maske_abschnitt_oeffnen()
+                log(f"[MASKE] Aufnahme ins Feld {self._maske.feld.id}")
+                self._maske_anzeigen()
         else:
             if kontrolle:
                 self._kontroll_gen = gen  # v3.8.0 INS: Befund nur anzeigen, EOL schickt ihn weiter
             log("[RECORD] Aufnahme wird beendet...")
+            if getattr(self, "_maske_lauf", False):
+                self._maske_abschnitt_schliessen(weiter=False)   # letzter Abschnitt gehört dem aktiven Feld
             self.is_recording = False
             self._aufnahme_stoppen()
             self._repariert_anzeigen()
@@ -1603,9 +1816,14 @@ class RaKScribeApp(ctk.CTk):
             self.record_btn.configure(state="disabled", text=f" Verarbeite... (ca. {self.eta_seconds}s) ")
             self.update_processing_timer()
 
+            maske_lauf = getattr(self, "_maske_lauf", False)
+
             def wait_and_process():
                 try:
-                    self._warten_und_verarbeiten(gen)
+                    if maske_lauf:
+                        self._maske_verarbeiten(gen)      # v3.15.0: Felder statt eines Diktats
+                    else:
+                        self._warten_und_verarbeiten(gen)
                 except Exception as e:
                     log_exception("[PROCESS] Unerwarteter Fehler")
                     self.after(0, lambda m=f"Fehler bei der Verarbeitung:\n{e}": self._ende_fehler(gen, m))
@@ -1691,6 +1909,8 @@ class RaKScribeApp(ctk.CTk):
             live[0] += transcript + " "
             live[1] = ""
         self._diktat_anzeigen()
+        if getattr(self, "_maske_lauf", False):
+            self._maske_anzeigen()
 
     def update_level_bar(self, rms):
         max_val = 10000  # Kalibriert auf typische Sprachlautstärke (vorher 1500)
@@ -1766,6 +1986,8 @@ class RaKScribeApp(ctk.CTk):
         """v3.6.0 (Peter 07.10.): getippten/eingefügten Text im Diktat-Feld ohne Aufnahme zu einem strukturierten
         Befund machen (Knopf „Befund aus Text“ bzw. Strg+Enter im Diktat-Feld). Gleiche Kette wie nach einer Aufnahme
         (Fehlhör-Liste → Bausteine → Regionen → Bypass/Gemini), immer strukturiert — auch wenn „Nur Text“ an ist."""
+        if self._maske_aktiv():                # v3.15.0: mit Mammo-Maske = INS (Befund aus den Feldern)
+            return self._maske_ins()
         text = self.transcript_text.get("1.0", "end-1c").strip()
         if not text:
             if kontrolle:  # v3.8.0 SpeechMike-INS ohne Diktat: Hinweis statt Dialog
@@ -1955,9 +2177,13 @@ class RaKScribeApp(ctk.CTk):
     def _speechmike_starten(self):
         """Lese-Thread fürs SpeechMike (ohne Gerät/ohne hidapi: eine Protokollzeile, F10/F9 unberührt)."""
         try:
+            ohne_geraet = None
+            if gast_selbsttest():   # v3.15.0: kein echtes Gerät öffnen (Tasten kommen nur aus dem Selbsttest)
+                import types
+                ohne_geraet = types.SimpleNamespace(enumerate=lambda *a, **k: [], device=None)
             self._speechmike = _sm.SpeechMikeLeser(
                 on_taste=lambda t, gedrueckt, roh: self.after(0, self.speechmike_taste, t, gedrueckt, roh),
-                log=log, on_verbindung=lambda b: self.after(0, self._speechmike_status, b))
+                log=log, on_verbindung=lambda b: self.after(0, self._speechmike_status, b), hid_modul=ohne_geraet)
             self._speechmike.starten()
         except Exception:
             log_exception("[SPEECHMIKE] Start fehlgeschlagen")
@@ -2010,6 +2236,8 @@ class RaKScribeApp(ctk.CTk):
     def speechmike_taste(self, taste, gedrueckt, roh=""):
         """SpeechMike-Taste (aus dem Lese-Thread per after(0)). Belegung speechmike.BELEGUNG — Loslassen und unbelegte
         Tasten (Play, Spulen, INSTR, F3, F4, Command) stehen nur im Protokoll ([SPEECHMIKE]-Zeile mit Rohdaten)."""
+        if gedrueckt and self._maske_taste(taste):     # v3.15.0: Mammo-Maske (Spulen, F3, F4 — nur mit offener Maske)
+            return
         ereignis = _sm.BELEGUNG.get(taste) if gedrueckt else None
         if ereignis is None:
             return
@@ -2032,7 +2260,8 @@ class RaKScribeApp(ctk.CTk):
             self._fortsetzen()
         else:
             bisher = self.transcript_text.get("1.0", "end-1c").strip()
-            self._aufnahme_umschalten("record", "start", basis="" if self._gesendet else bisher)
+            # v3.15.0: mit Mammo-Maske hält die Maske das Diktat (je Feld) — kein Nachdiktat über das Diktat-Feld
+            self._aufnahme_umschalten("record", "start", basis="" if (self._gesendet or self._maske_aktiv()) else bisher)
 
     def sm_stop(self):
         """Stop-Taste bzw. Schieber auf STOP = Pause (nur während der Aufnahme)."""
@@ -2052,6 +2281,8 @@ class RaKScribeApp(ctk.CTk):
             return
         if aktion == "stop":
             self._aufnahme_umschalten("ins", "stop", kontrolle=True)
+        elif self._maske_aktiv():              # v3.15.0: Befund aus den Feldern der Mammo-Maske
+            self._maske_ins()
         else:
             self.befund_aus_text(kontrolle=True)
 
@@ -2116,6 +2347,8 @@ class RaKScribeApp(ctk.CTk):
         bisher aus der ganzen Aufnahme (Messung 11.10., docs/benchmarks/pause_segmente_2026-10-11.txt)."""
         if self._job.ereignis(ereignis) != "pause":
             return
+        if getattr(self, "_maske_lauf", False):     # v3.15.0: Pause schließt den Abschnitt des aktiven Felds
+            return self._maske_pausieren()
         gen, a = self._job.gen, self._aufnahme
         k, start, ende = a.pausieren() if a is not None else (len(self._abschnitte), 0, 0)
         while len(self._abschnitte) <= k:
@@ -2154,11 +2387,14 @@ class RaKScribeApp(ctk.CTk):
             return
         if self._aufnahme is not None:
             self._aufnahme.fortsetzen()
+        if getattr(self, "_maske_lauf", False):     # v3.15.0: weiter im (ggf. in der Pause gewechselten) aktiven Feld
+            self._maske_abschnitt_oeffnen()
         log("[SPEECHMIKE] Weiter diktieren (gleiche Aufnahme).")
         self.update_status("RECORDING", "recording")
         if self._einfuegen_ziel is not None:
             self.status_badge.configure(text="   ●  Diktat wird an der Cursor-Stelle eingefügt   ")
         self._repariert_anzeigen()
+        self._maske_anzeigen()
 
     def _diktat_anzeigen(self):
         text = _seg.anzeige(self._basis, self._abschnitte, self._live)
@@ -2273,6 +2509,7 @@ class RaKScribeApp(ctk.CTk):
             f"{l.get('kurz')}({'-' if l.get('ohne_vorlage') else (l.get('vorlage') or '?')})" for l in liste) or "keine"))
         self._cas_band_zeigen()
         self._ibl_geruest_pruefen()             # v3.14.0: mit den Leistungen bekommt das Gerüst die richtigen Titel
+        self._maske_pruefen()                   # v3.15.0: Mammographie-Leistung → Mammo-Maske
 
     def _cas_hinweis_fuer_lauf(self):
         """Vorrang-Hinweis für pipeline.befund_aus_diktat: nur mit offenem Auftrag UND Leistungen, sonst None."""
@@ -2562,6 +2799,9 @@ class RaKScribeApp(ctk.CTk):
     def _cas_hat_inhalt(self):
         if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
             return True
+        m = getattr(self, "_maske", None)
+        if m is not None and m.heutiges():   # v3.15.0: übernommene/diktierte/getippte Felder sind Inhalt
+            return True
         if self._nur_geruest():          # v3.14.0: das IB-Lab-Gerüst ist kein Diktat
             return False
         return bool(self.transcript_text.get("1.0", "end-1c").strip() or self.result_text.get("1.0", "end-1c").strip())
@@ -2584,6 +2824,7 @@ class RaKScribeApp(ctk.CTk):
         self._bestaetigung_weg()
         self._cas_hinweise_zeigen([])
         self._ibl_befund_leeren()
+        self._maske_leeren()             # v3.15.0: eine Maske des vorigen (leeren) Auftrags gilt nicht mehr
         self._cas, self._cas_test = a, False
         self._cas_aufnahmen = [self._aufnahme] if (inhalt and self._aufnahme is not None) else []
         k.antworten(a, "angenommen")
@@ -2599,6 +2840,7 @@ class RaKScribeApp(ctk.CTk):
     def _cas_beenden(self):
         if self._nur_geruest():          # v3.14.0: ein unberührtes Gerüst gehört zum Auftrag
             self.result_text.delete("1.0", "end")
+        self._maske_leeren()             # v3.15.0: die Maske gehört zum Auftrag
         self._ibl_geruest_text = None
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
         self._cas_hinweise_zeigen([])
@@ -2670,6 +2912,12 @@ class RaKScribeApp(ctk.CTk):
         log(f"[CAS] Kontext {a.nr}: Zuweiser {'ja' if k.get('zuweiser') else 'nein'}, Info {len(k.get('info') or '')} "
             f"Zeichen, Vorbefund " + (f"{vb.get('nr')} ({len(vb.get('text') or '')} Zeichen)" if vb else "keiner"))
         self._cas_band_zeigen()
+        m = getattr(self, "_maske", None)       # v3.15.0: Vorbefund kam nach dem Öffnen der Maske → Vorschläge ergänzen
+        if m is not None and vb and m.vorbefund is None and m.vorbefund_setzen(vb):
+            self._maske_warnung = m.werte_abweichung()
+            log(f"[MASKE] Vorbefund {vb.get('nr')} nachgekommen: {m.zerlegung.anzahl}/{len(m.felder)} Felder")
+            self._maske_anzeigen()
+        self._maske_pruefen()
 
     def _vorbefund_zeigen(self):
         """Fenster mit dem letzten Vorbefund derselben Untersuchung (nur lesen). Der Text geht nie an die KI, nie in
@@ -2702,6 +2950,9 @@ class RaKScribeApp(ctk.CTk):
 
     def _cas_nach_vorne(self):
         """RaKScribe nach vorne holen (die Brücke hat das Recht dazu per AllowSetForegroundWindow weitergegeben)."""
+        if gast_selbsttest():   # v3.15.0: Gast-Selbsttest (Ordi-Probelauf): Fenster zeigen, aber nichts erzwingen
+            self.deiconify()
+            return
         try:
             self.deiconify()
             self.lift()
@@ -2730,6 +2981,7 @@ class RaKScribeApp(ctk.CTk):
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", _cas.TESTBEFUND)
         self._cas_test, self._cas_aufnahmen = True, []
+        self._maske_befund_version = None   # v3.15.0: Testbefund kommt nicht aus der Maske
         self._befund_wartet, self._gesendet = True, False
         self.update_status("KONTROLLE", "ready")
         log("[CAS] Testbefund eingesetzt.")
@@ -2763,6 +3015,8 @@ class RaKScribeApp(ctk.CTk):
         text = self.result_text.get("1.0", "end-1c").strip()
         if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
             self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+            return
+        if not self._maske_eol_pruefen():   # v3.15.0: Befund muss zum aktuellen Stand der Maske passen
             return
         a = self._cas
         # v3.14.0: kamen IB-Lab-Werte eben erst automatisch hinzu, braucht EOL eine Bestätigung (nie Ungesehenes senden)
@@ -2816,6 +3070,475 @@ class RaKScribeApp(ctk.CTk):
                 band.pack_forget()
             except Exception:
                 pass
+
+    # ── v3.15.0 Mammo-Maske (Peter 14.10.2026: „… eine Mammographie diktiere und gleich eine Maske aufgeht, wo ich mit
+    # einem Knopf am SpeechMike durchspringen kann von Punkt zu Punkt, und die Voruntersuchungsergebnisse … schon drinnen
+    # stehen!“). CAS-Auftrag mit Mammographie-Leistung → Maske statt Diktat-Feld (Menü schaltbar, F4 = freies Diktat).
+    # Record diktiert ins aktive Feld (ein Abschnitt je Feld, das Mikrofon bleibt offen), Vorspulen/Rückspulen springen,
+    # F3 übernimmt den Vorschlag. INS baut den Befund aus den Feldern (offene Vorschläge → erst Warnung), EOL wie gehabt.
+    # Der Vorbefund geht nie an die KI und nie ins Protokoll (maske.py, tests/offline/test_maske.py).
+    def _maske_leeren(self):
+        self._maske, self._maske_an, self._maske_lauf = None, False, False
+        self._maske_abschnitte, self._maske_offen_k = {}, None
+        self._maske_warnung_version = self._maske_befund_version = None
+        self._maske_warnung, self._maske_f3_zuletzt = "", None
+        ui = getattr(self, "_maske_ui", None)
+        if ui is not None:
+            try:
+                ui.verstecken()
+            except Exception:
+                log_exception("[MASKE] verstecken")
+        lbl = getattr(self, "diktat_titel", None)
+        if lbl is not None:
+            lbl.configure(text="DIKTAT")
+
+    def _maske_aktiv(self):
+        """Maske offen UND gezeigt (F4 = freies Diktat schaltet sie aus)."""
+        return getattr(self, "_maske", None) is not None and getattr(self, "_maske_an", False)
+
+    def _maske_ui_holen(self):
+        ui = getattr(self, "_maske_ui", None)
+        if ui is None and getattr(self, "_maske_eltern", None) is not None:
+            ui = self._maske_ui = MaskePanel(self, self._maske_eltern)
+        return ui
+
+    def _maske_einstellung(self):
+        v = getattr(self, "maske_var", None)
+        return True if v is None else bool(v.get())
+
+    def _maske_pruefen(self):
+        """CAS-Takt (Leistungen bzw. Kontext da): Mammographie-Leistung → Maske, einmal je Auftrag. Steht schon ein freies
+        Diktat da (oder läuft die Aufnahme), bleibt sie aus — F4 schaltet sie dann ein."""
+        a = getattr(self, "_cas", None)
+        d = maske_def()
+        if a is None or getattr(self, "_maske", None) is not None or not d or not self._maske_einstellung():
+            return
+        e = _mk.erkennen(a.leistungen, d)
+        if e is None:
+            return
+        try:
+            m = _mk.Maske(d, art=e["art"], seite=e["seite"], sono=e["sono"], vorbefund=a.vorbefund(),
+                          normal=_mk.normal_zerlegung(_pl.ORDI_BAUSTEINE, d))
+        except Exception:
+            log_exception("[MASKE] nicht geöffnet")
+            return
+        self._maske = m
+        frei = (self._job.zustand in (_js.READY, _js.ERROR) and not self.transcript_text.get("1.0", "end-1c").strip()
+                and (not self.result_text.get("1.0", "end-1c").strip() or self._nur_geruest()))
+        self._maske_an = frei
+        vb = m.vorbefund or {}
+        log(f"[MASKE] {a.nr}: Mammographie {e['art']}, Sono {'ja' if e['sono'] else 'nein'}"
+            + (f", {e['seite']}" if e["seite"] else "") + ", Vorbefund "
+            + (f"{vb.get('nr') or '?'} ({m.zerlegung.anzahl}/{len(m.felder)} Felder, Werte "
+               f"{'ja' if any(f.vorschlag_werte for f in m.felder) else 'nein'})" if vb else "keiner")
+            + f" · {'gezeigt' if frei else 'bereit (F4)'} · Tasten: {_mk.tasten_text(MASKE_TASTEN)}")
+        abw = m.werte_abweichung()
+        if abw:
+            log("[MASKE] Hinweis: Werte im Vorbefund-Brief ≠ Doppelbefundung")
+        self._maske_warnung = abw
+        if frei:
+            self._maske_zeigen()
+        else:
+            self._kurzhinweis("Mammo-Maske bereit – F4 schaltet sie ein (freies Diktat läuft)", 8000)
+
+    def _maske_zeigen(self):
+        ui = self._maske_ui_holen()
+        if ui is not None:
+            try:
+                ui.zeigen()
+            except Exception:
+                log_exception("[MASKE] zeigen")
+        lbl = getattr(self, "diktat_titel", None)
+        if lbl is not None:
+            lbl.configure(text="MAMMO-MASKE")
+        self._maske_anzeigen()
+
+    def _maske_verstecken(self):
+        ui = getattr(self, "_maske_ui", None)
+        if ui is not None:
+            try:
+                ui.verstecken()
+            except Exception:
+                log_exception("[MASKE] verstecken")
+        lbl = getattr(self, "diktat_titel", None)
+        if lbl is not None:
+            lbl.configure(text="DIKTAT")
+
+    def _maske_live(self):
+        """Live-Text (Streaming) je Feld: alle noch nicht erkannten Abschnitte dieses Felds."""
+        live = {}
+        for k, (feld, _s, _t) in sorted((getattr(self, "_maske_abschnitte", {}) or {}).items()):
+            t = _seg.live_text((getattr(self, "_live", {}) or {}).get(k)).strip()
+            if t:
+                live[feld] = (live.get(feld, "") + " " + t).strip()
+        return live
+
+    def _maske_kopf(self):
+        m = self._maske
+        vb = m.vorbefund or {}
+        teile = [maske_def().get("name") or "Maske", "Screening" if m.art == "screening" else "kurativ"]
+        if m.seite:
+            teile.append(m.seite)
+        teile.append("mit Sono" if m.sono else "ohne Sono-Leistung")
+        if vb:
+            teile.append(f"Vorbefund {m.datum or '?'}" + (f" ({vb.get('nr')})" if vb.get("nr") else "")
+                         + f" – {m.zerlegung.anzahl} von {len(m.felder)} Feldern erkannt")
+        else:
+            teile.append("kein Vorbefund")
+        return "  ·  ".join(teile)
+
+    def _maske_hilfe(self):
+        m = self._maske
+        return (f"Feld {m.aktiv + 1}/{len(m.felder)}: {m.feld.label}   ·   Record diktiert ins Feld   ·   "
+                + _mk.tasten_text(MASKE_TASTEN) + "   ·   INS = Befund")
+
+    def _maske_anzeigen(self):
+        if not self._maske_aktiv():
+            return
+        ui = self._maske_ui_holen()
+        if ui is None:
+            return
+        try:
+            gesperrt = self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)
+            ui.aktualisieren(self._maske, live=self._maske_live(), kopf=self._maske_kopf(), hilfe=self._maske_hilfe(),
+                             warnung=self._maske_warnung, gesperrt=gesperrt)
+        except Exception:
+            log_exception("[MASKE] Anzeige")
+
+    # Tasten ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+    def _maske_taste(self, taste):
+        """SpeechMike-Taste mit Masken-Belegung (masken.json / config.ini [MASKE]) → True = von der Maske verarbeitet.
+        Ohne offene Maske (bzw. Maske aus: nur F4) bleiben die Tasten wie bisher (Spulen/F3/F4: nichts)."""
+        aktion = (MASKE_TASTEN or {}).get(taste)
+        if aktion is None or getattr(self, "_maske", None) is None:
+            return False
+        if aktion == "maske_umschalten":
+            self._maske_umschalten()
+            return True
+        if not self._maske_an:
+            return False
+        {"naechstes_feld": lambda: self._maske_springen(+1), "voriges_feld": lambda: self._maske_springen(-1),
+         "uebernehmen": self._maske_f3}[aktion]()
+        return True
+
+    def _maske_tastatur(self, richtung):
+        """Bild↓/Bild↑ (Fern-Test ohne SpeechMike) — nur mit gezeigter Maske, sonst wie bisher."""
+        if not self._maske_aktiv():
+            return None
+        self._maske_springen(richtung)
+        return "break"
+
+    def _maske_springen(self, richtung):
+        m = self._maske
+        if self._job.zustand == _js.PROCESSING:
+            self._kurzhinweis("Befund wird erstellt – bitte kurz warten")
+            return
+        if not (m.naechstes() if richtung > 0 else m.voriges()):
+            self._kurzhinweis("Letztes Feld – INS erstellt den Befund" if richtung > 0 else "Erstes Feld", 3000)
+            return
+        if self._job.zustand == _js.RECORDING:
+            self._maske_abschnitt_schliessen(weiter=True)    # das Gesagte gehört dem bisherigen Feld, weiter im neuen
+        log(f"[MASKE] Feld {m.aktiv + 1}/{len(m.felder)}: {m.feld.id}")
+        self._maske_anzeigen()
+
+    def _maske_f3(self):
+        """F3 = Vorschlag des aktiven Felds bewusst übernehmen (noch einmal = zurück). Hat das Feld heute ein Diktat bzw.
+        getippten Text: zweimal F3 (innerhalb 4 s) = verwerfen. Während der Aufnahme: Abschnittsgrenze, danach Gesagtes
+        gehört wieder diesem Feld (Diktat gewinnt)."""
+        m = self._maske
+        if self._job.zustand == _js.PROCESSING:
+            self._kurzhinweis("Befund wird erstellt – bitte kurz warten")
+            return
+        self._maske_uebernehmen(m.aktiv, taste=True)
+
+    def _maske_uebernehmen(self, i, taste=False):
+        m = self._maske
+        if m is None or self._job.zustand == _js.PROCESSING:
+            return
+        f = m.felder[i]
+        if f.quelle in (_mk.DIKTAT, _mk.GETIPPT):
+            jetzt = time.monotonic()
+            vorher = getattr(self, "_maske_f3_zuletzt", None)
+            if not taste or (vorher and vorher[0] == i and jetzt - vorher[1] < 4.0):
+                self._maske_f3_zuletzt = None
+                schnitt = (self._job.zustand == _js.RECORDING and m.aktiv == i
+                           and self._maske_abschnitt_schliessen(weiter=False))
+                msg = m.verwerfen(i)
+                if schnitt:
+                    self._maske_weiter_nach_schnitt()
+            else:
+                self._maske_f3_zuletzt = (i, jetzt)
+                msg = f"{f.label}: heute {'diktiert' if f.quelle == _mk.DIKTAT else 'getippt'} – F3 noch einmal = verwerfen"
+        else:
+            schnitt = (self._job.zustand == _js.RECORDING and m.aktiv == i
+                       and self._maske_abschnitt_schliessen(weiter=False))
+            msg = m.uebernehmen(i)
+            if schnitt:
+                self._maske_weiter_nach_schnitt()
+        log(f"[MASKE] {f.id}: {f.quelle}")
+        self._kurzhinweis(msg, 4000)
+        self._maske_anzeigen()
+
+    def _maske_weiter_nach_schnitt(self):
+        a = self._aufnahme
+        if a is not None:
+            a.fortsetzen()
+            self._maske_abschnitt_oeffnen()
+
+    def _maske_knopf(self, i):
+        """Knopf am Feld: übernehmen / zurück / verwerfen / zuschalten (eingeklapptes Sono-Feld)."""
+        m = getattr(self, "_maske", None)
+        if m is None or self._job.zustand == _js.PROCESSING:
+            return
+        f = m.felder[i]
+        if not f.sichtbar:
+            m.sichtbar_schalten(i)
+            m.gehe_zu(i)
+            log(f"[MASKE] {f.id}: zugeschaltet")
+            self._maske_anzeigen()
+            return
+        self._maske_uebernehmen(i)
+
+    def _maske_klick(self, i, tippen=False):
+        m = getattr(self, "_maske", None)
+        if m is None or self._job.zustand == _js.PROCESSING:
+            return None
+        if i != m.aktiv:
+            if self._job.zustand == _js.RECORDING:
+                m.gehe_zu(i)
+                self._maske_abschnitt_schliessen(weiter=True)
+            else:
+                m.gehe_zu(i)
+            log(f"[MASKE] Feld {i + 1}/{len(m.felder)}: {m.feld.id} (Klick)")
+            self._maske_anzeigen()
+        return None
+
+    def _maske_getippt(self, i, text):
+        m = getattr(self, "_maske", None)
+        if m is None or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            return
+        if m.tippen(i, text):
+            log(f"[MASKE] {m.felder[i].id}: getippt")
+            self._maske_anzeigen()
+
+    def _maske_umschalten(self):
+        """F4 = Maske aus (freies Diktat wie bisher) / wieder an — nicht während Aufnahme oder Verarbeitung."""
+        if getattr(self, "_maske", None) is None:
+            return
+        if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            self._kurzhinweis("Maske umschalten: erst die Aufnahme beenden (INS)")
+            return
+        self._maske_an = not self._maske_an
+        if self._maske_an:
+            self._maske_zeigen()
+            self._kurzhinweis("Mammo-Maske an – Vorspulen/Rückspulen springen, Record diktiert ins Feld", 5000)
+        else:
+            self._maske_verstecken()
+            self._kurzhinweis("Maske aus – freies Diktat wie bisher (F4 = Maske wieder an)", 6000)
+        log(f"[MASKE] {'an' if self._maske_an else 'aus (freies Diktat)'}")
+
+    # Aufnahme je Feld ────────────────────────────────────────────────────────────────────────────────────────────────
+    def _maske_abschnitt_oeffnen(self):
+        """Der laufende Aufnahme-Abschnitt gehört ab jetzt dem aktiven Feld."""
+        a = self._aufnahme
+        k = a.abschnitt if a is not None else 0
+        self._maske_abschnitte[k] = self._maske.reservieren()
+        self._maske_offen_k = k
+
+    def _maske_abschnitt_schliessen(self, weiter):
+        """Abschnitt des bisherigen Felds schließen (Erkennung im Hintergrund, chirp_3 + Fehlhör-Liste) und — weiter —
+        sofort einen neuen fürs aktive Feld öffnen: das Mikrofon bleibt offen, es geht kein Wort verloren."""
+        a = self._aufnahme
+        if a is None or getattr(self, "_maske_offen_k", None) is None:
+            return False
+        k, start, ende = a.pausieren()
+        self._maske_offen_k = None
+        self._maske_abschnitt_erkennen(self._job.gen, a, k, start, ende)
+        if weiter:
+            a.fortsetzen()
+            self._maske_abschnitt_oeffnen()
+        return True
+
+    def _maske_abschnitt_erkennen(self, gen, a, k, start, ende):
+        if ende - start < _seg.MIN_SAMPLES:      # nur durchgesprungen (Stille) → ändert nichts
+            self._maske_abschnitt_text(k, "")
+            return
+        threading.Thread(target=self._maske_abschnitt_thread, args=(gen, a, k, start, ende), daemon=True).start()
+
+    def _maske_abschnitt_thread(self, gen, a, k, start, ende):
+        text = None
+        try:
+            pcm = a.samples()
+            token = _get_stt_access_token()
+            roh = _chirp3_worker(pcm[start:ende], self.samplerate, 'eu', token) if (pcm is not None and token) else None
+            text = apply_misheard(roh.strip()) if roh and roh.strip() else None
+        except Exception:
+            log_exception("[MASKE] Spracherkennung eines Felds fehlgeschlagen — Live-Text bleibt")
+        if text is None:   # Rettung wie bisher: der Live-Text (Streaming) dieses Abschnitts
+            text = apply_misheard(_seg.rettung("", [], {0: (getattr(self, "_live", {}) or {}).get(k, ["", ""])}))
+        self._ui(gen, lambda: self._maske_abschnitt_text(k, text))
+
+    def _maske_abschnitt_text(self, k, text):
+        z = (getattr(self, "_maske_abschnitte", {}) or {}).pop(k, None)
+        if z is None or getattr(self, "_maske", None) is None:
+            return
+        feld, sitzung, teil = z
+        if self._maske.diktat_fertig(feld, sitzung, teil, text) and (text or "").strip():
+            log(f"[MASKE] {self._maske.felder[feld].id}: Diktat-Abschnitt erkannt ({len(text)} Zeichen)")
+        self._maske_anzeigen()
+
+    def _maske_pausieren(self):
+        self._maske_abschnitt_schliessen(weiter=False)
+        self.update_status("PAUSED", "recording")
+        self.level_indicator.configure(width=0)
+        self._maske_anzeigen()
+
+    def _maske_verarbeiten(self, gen):
+        """Hintergrund-Thread nach dem Stopp (INS/F10): auf die Erkennung aller Feld-Abschnitte warten, dann Befund."""
+        aufnahme = self._aufnahme
+        if aufnahme is not None:
+            aufnahme.warten(timeout_stream=6.0)
+        t0 = time.time()
+        while time.time() - t0 < 90 and self._job.aktuell(gen) and getattr(self, "_maske_abschnitte", None):
+            time.sleep(0.1)
+        if not self._job.aktuell(gen):
+            log("[MASKE] Lauf abgebrochen — nichts übernommen.")
+            return
+        if getattr(self, "_maske_abschnitte", None):
+            log(f"[MASKE] {len(self._maske_abschnitte)} Abschnitt(e) ohne Erkennung nach 90 s – ohne sie weiter")
+            self._ui(gen, lambda: self._maske_abschnitte.clear())
+        self._job.ereignis("chirp_done", gen)
+        self._ui(gen, lambda: self._maske_ins_entscheiden(gen, nach_aufnahme=True))
+
+    # INS / EOL ───────────────────────────────────────────────────────────────────────────────────────────────────────
+    def _maske_warnen(self):
+        m = self._maske
+        self._maske_warnung_version = m.version
+        self._maske_warnung = _mk.offene_meldung(m)
+        erstes = m.offene()[0] if m.offene() else None
+        if erstes is not None:
+            m.gehe_zu(m.felder.index(erstes))
+        log("[MASKE] INS: offen " + ", ".join(f.id for f in m.offene()) + " – Warnung, kein Befund")
+        self._kurzhinweis("Noch nicht übernommen – F3 übernimmt, INS noch einmal = ohne diese Felder", 8000)
+        self._maske_anzeigen()
+
+    def _maske_ins(self):
+        """INS in Ruhe mit Maske: Befund aus den Feldern. Offene Vorschläge → erst Warnung; zweites INS ohne Änderung →
+        Befund ohne diese Felder (nie still übernommen)."""
+        m = self._maske
+        if m.wartende() or self._maske_abschnitte:
+            self._kurzhinweis("Spracherkennung läuft noch – gleich noch einmal INS")
+            return "break"
+        if not keys_ready():
+            self.refresh_key_state()
+            return "break"
+        self._maske_ins_entscheiden(None, nach_aufnahme=False)
+        return "break"
+
+    def _maske_ins_entscheiden(self, gen, nach_aufnahme):
+        m = self._maske
+        if m is None:
+            return
+        offen = m.offene()
+        bestaetigt = bool(offen) and self._maske_warnung_version == m.version
+        if offen and not bestaetigt:
+            if nach_aufnahme:
+                self._job.ereignis("report_done", gen)      # Verarbeitung zu Ende, ohne Befund → bereit
+                self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+                self.level_indicator.configure(fg_color=READY_GREEN, width=0)
+                self.update_status("READY", "ready")
+            self._maske_warnen()
+            return
+        if not offen and not m.heutiges():
+            if nach_aufnahme:
+                self._job.ereignis("kein_text", gen)
+                self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+                self.update_status("READY", "ready")
+            self._kurzhinweis("Maske leer – Record diktiert ins Feld, F3 übernimmt den Vorbefund", 6000)
+            self._maske_anzeigen()
+            return
+        if not nach_aufnahme:
+            if self._job.ereignis("ins") is None:
+                return
+            gen = self._job.gen
+            self._kontroll_gen = gen
+            self._befund_wartet = self._gesendet = False
+            self.record_btn.configure(state="disabled", text=" Verarbeite... ")
+        self.result_text.delete("1.0", "end")
+        self.update_status("PROCESSING", "busy")
+        self._maske_warnung = ""
+        log(f"[MASKE] INS: Befund aus {m.zustand()}" + (" (ohne offene Vorschläge, bestätigt)" if offen else ""))
+        threading.Thread(target=self._maske_bauen, args=(gen, bool(offen), m.version), daemon=True).start()
+        self._maske_anzeigen()
+
+    def _maske_bauen(self, gen, ohne_offene, version):
+        """Hintergrund-Thread: KI-Korrektur je diktiertem Feld (nur Peters Diktat), Befund deterministisch zusammensetzen,
+        IB-Lab-Werte wörtlich einsetzen."""
+        m = self._maske
+        try:
+            korr = lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print)  # noqa: E731
+            n_ki = _mk.vorverarbeiten(m, korrektur=korr)
+            b = _mk.befund_bauen(m, korrektur=korr, ohne_offene=ohne_offene)
+            report, einsatz = b.report, None
+            ibl = self._ibl_fuer_lauf()
+            if ibl is not None and report:
+                diktat = " ".join(f.roh for f in m.felder if f.roh)
+                einsatz = _ibl.einsetzen(report, ibl.bausteine, segmente=[report], diktat=diktat,
+                                         cas_leistungen=ibl.cas_leistungen, templates=RADIOLOGY_TEMPLATES)
+                report = einsatz.report
+            log(f"[MASKE] Befund: {len(report)} Zeichen, KI-Korrektur {n_ki} Feld(er), Hinweise {len(b.hinweise)}")
+        except Exception as e:
+            log_exception("[MASKE] Befund aus der Maske")
+            self.after(0, lambda m_=f"Befund aus der Maske nicht erstellt:\n{e}": self._ende_fehler(gen, m_))
+            return
+        if not self._job.aktuell(gen):
+            log("[MASKE] Lauf abgebrochen — Befund verworfen.")
+            return
+        self._ui(gen, lambda: self._maske_befund_zeigen(gen, report, b.hinweise, einsatz, version))
+
+    def _maske_befund_zeigen(self, gen, report, hinweise, einsatz, version):
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", report)
+        self._maske_befund_version = version
+        self._cas_hinweise_zeigen(hinweise)
+        if einsatz is not None or getattr(self, "_cas", None) is not None:
+            self._ibl_nach_lauf(type("Erg", (), {"ibl": einsatz})())
+        self._lauf_fertig(gen)
+        self._maske_anzeigen()
+
+    def _maske_eol_pruefen(self):
+        """EOL mit Maske: nur ein Befund, der aus dem AKTUELLEN Stand der Maske gebaut wurde (sonst erst INS)."""
+        m = getattr(self, "_maske", None)
+        if m is None or not self._maske_an or self._maske_befund_version is None:
+            return True
+        if self._maske_befund_version != m.version:
+            self._kurzhinweis("Maske seit dem Befund geändert – INS baut ihn neu, dann EOL", 6000)
+            log("[MASKE] EOL: Maske seit dem Befund geändert – nicht gesendet")
+            return False
+        return True
+
+    def _maske_umgeschaltet(self):
+        """Menü „Mammo-Maske bei Mammographie (CAS)“ — wirkt ab dem nächsten CAS-Diktat; eine offene Maske bleibt."""
+        einstellung_schreiben("maske", self._maske_einstellung())
+        log(f"[MASKE] Menü: Mammo-Maske {'an' if self._maske_einstellung() else 'aus'}")
+
+    def _maske_selbsttest(self):
+        """Selbsttest-Zustand der Maske (Windows-UI-Test Fall M, Ordi-Probelauf) — synthetische Texte."""
+        m = getattr(self, "_maske", None)
+        if m is None:
+            return {"offen": False}
+        ui = getattr(self, "_maske_ui", None)
+        return {"offen": True, "an": bool(self._maske_an), "sichtbar": bool(ui is not None and ui.sichtbar),
+                "art": m.art, "seite": m.seite, "sono": m.sono, "vorbefund": (m.vorbefund or {}).get("nr"),
+                "datum": m.datum, "erkannt": m.zerlegung.anzahl, "feld": m.feld.id, "aktiv": m.aktiv,
+                "version": m.version, "befund_version": self._maske_befund_version, "zustand": m.zustand(),
+                "warnung": self._maske_warnung, "tasten": _mk.tasten_text(MASKE_TASTEN),
+                "kopf": str(ui.kopf.cget("text")) if ui is not None else "",
+                "titel_links": str(self.diktat_titel.cget("text")) if getattr(self, "diktat_titel", None) else "",
+                "abschnitte_offen": len(self._maske_abschnitte or {}),
+                "felder": [{"id": f.id, "quelle": f.quelle, "sichtbar": f.sichtbar, "wartet": f.wartet,
+                            "text": _mk.vorschau(f, m)[:240], "werte": _mk.werte_vorschau(f, m),
+                            "chip": _mk.anzeige_zustand(f, m.datum)} for f in m.felder]}
 
     # ── v3.11.0: Bereitschaft (Peter 13.10.: „als Symbol in der Taskleiste warten, bis der nächste Befund diktiert
     # werden soll“). Autostart über den lokalen Starter (bereitschaft.py), Einzelinstanz in main(), nach CAS-EOL minimieren.
@@ -2894,6 +3617,9 @@ class RaKScribeApp(ctk.CTk):
         # Selbsttest ruft dieselben Handler (auf GitHub-Windows erreichen künstliche Tasten den Hook nicht)
         self._hotkeys = {'f10': lambda: self.after(0, self.toggle_recording),
                          'f9': lambda: self.after(0, self.reset_dictation)}
+        if gast_selbsttest():   # v3.15.0: keine globalen Tasten neben einer laufenden RaKScribe
+            log("[SELBSTTEST] Gast: F9/F10 nicht global angemeldet.")
+            return
         keyboard.add_hotkey('f10', self._hotkeys['f10'], suppress=True)
         keyboard.add_hotkey('f9', self._hotkeys['f9'], suppress=True)
 
@@ -2901,7 +3627,7 @@ def init_runtime():
     """Start der EXE (Umbau Schritt 16): Log-Kopf, Google-Bibliotheken, config.ini, Schlüssel + Speech-Client,
     LLM-Client, Befund-Prompt, Fehlhör-Liste, Vorlagen — in dieser Reihenfolge wie bisher beim Import."""
     global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY
-    global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES
+    global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES, MASKEN, MASKE_TASTEN
     log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
     log(f"BASE_DIR: {BASE_DIR}")
     log(f"RESOURCES_DIR: {RESOURCES_DIR}")
@@ -2936,6 +3662,14 @@ def init_runtime():
     _init_misheard()
     RADIOLOGY_TEMPLATES = load_templates()
     DISPLAY_NAMES = [v.get("display_name", "") for v in RADIOLOGY_TEMPLATES.values()]
+    try:  # v3.15.0: Mammo-Maske (masken.json gebündelt); fehlt sie, arbeitet RaKScribe wie bisher (ohne Maske)
+        MASKEN = _mk.laden()
+        MASKE_TASTEN = _mk.tasten_belegung(MASKEN, CFG.maske_tasten, log=print)
+        print(f"[INIT] Masken: {', '.join((MASKEN.get('masken') or {}).keys()) or 'keine'} · Tasten: "
+              f"{_mk.tasten_text(MASKE_TASTEN) or '-'}")
+    except Exception:
+        log_exception("[INIT] masken.json nicht ladbar — ohne Maske")
+        MASKEN, MASKE_TASTEN = {}, {}
     try:  # Umbau Schritt 20: gebündelte phrases.json früh prüfen (sonst fiele erst die Spracherkennung aus)
         print(f"[INIT] Phrasen: {len(_stt.medical_phrases())} Streaming, {len(_stt.chirp_phrases())} chirp_3")
     except Exception:
@@ -2946,7 +3680,10 @@ def main():
     # v3.11.0: nur EINE RaKScribe je Windows-Sitzung (zwei würden um denselben CAS-Auftrag konkurrieren). Ein zweiter
     # Start holt die laufende nach vorne; der Autostart-Starter (--minimiert) endet dann still.
     minimiert = _bs.minimiert_gewuenscht(sys.argv[1:])
-    if not _bs.einzelinstanz_sichern():
+    # v3.15.0: der Gast-Selbsttest (Ordi-Probelauf) hat einen eigenen Mutex — eine laufende RaKScribe bleibt unberührt
+    erste = (_bs.einzelinstanz_sichern(_bs.MUTEX + f"-Gast-{os.getpid()}") if gast_selbsttest()
+             else _bs.einzelinstanz_sichern())
+    if not erste:
         try:
             if not minimiert:
                 _bs.nach_vorne_bitten(_cas.ordner_standard(), exe=_bs.exe_pfad(), version=app_version())

@@ -61,8 +61,9 @@ check("Vorlagen-Erkennung nach init_runtime", rks.detect_template("Vorfuß recht
 
 code = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 haupt = code[code.index("def main():"):]
-check("main(): erst Einzelinstanz (v3.11.0), dann init_runtime(), dann das Fenster",
-      -1 < haupt.find("_bs.einzelinstanz_sichern()") < haupt.find("init_runtime()") < haupt.find("RaKScribeApp(")
+check("main(): erst Einzelinstanz (v3.11.0; v3.15.0 Gast-Selbsttest mit eigenem Mutex), dann init_runtime(), dann das Fenster",
+      -1 < haupt.find("_bs.einzelinstanz_sichern(") < haupt.find("init_runtime()") < haupt.find("RaKScribeApp(")
+      and "if gast_selbsttest()" in haupt
       and 'if __name__ == "__main__":\n    main()' in code)
 
 wf = (ROOT / ".github" / "workflows" / "build-exe.yml").read_text(encoding="utf-8")

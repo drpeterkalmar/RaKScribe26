@@ -102,6 +102,14 @@ LLM_MODEL = gemini-3.5-flash
 
 # Optional (Standard 0 = aus): Anzahl Praxis-Beispiele aus practice_reports.db im Prompt
 # RAG_BEISPIELE = 0
+
+# Optional (ab v3.15.0): SpeechMike-Tasten der Mammo-Maske (Standard aus masken.json). Mehrere Tasten mit Leerzeichen.
+# Erlaubt: FF, REW, F3, F4, PLAY, INSTR, COMMAND — Record, INS, EOL, Stop, F1, F2 bleiben immer, wie sie sind.
+# [MASKE]
+# NAECHSTES_FELD = FF
+# VORIGES_FELD = REW
+# UEBERNEHMEN = F3
+# MASKE_UMSCHALTEN = F4
 ```
 
 Fehlt die Datei, legt die EXE sie beim Start mit diesen Werten an. Fehlt eine Zeile oder ist ein Wert unbrauchbar,
@@ -191,6 +199,37 @@ ausgewertet und dürfen gelöscht werden.
   setzt RaKScribe danach wieder wörtlich ein (wie seit 3.13.0). Ohne Werte gibt es kein Gerüst.
 - **Werte, die erst später kommen**, setzt RaKScribe jetzt bis EOL selbst sichtbar in den Befund ein (Hinweis +
   Hervorhebung). Kamen sie weniger als 3 s vor EOL, muss EOL ein zweites Mal gedrückt werden — nie etwas Ungesehenes.
+
+## 🩻 Mammo-Maske: Felder per SpeechMike-Taste, Vorbefund schon eingetragen (EXE, ab v3.15.0)
+
+Hat ein CAS-Diktat eine **Mammographie-Leistung** (Screening oder kurativ), zeigt RaKScribe links statt des Diktat-Felds
+die **Mammo-Maske** mit vier Feldern: **Inspektion und Palpation · Mammographie · Sonographie · Ergebnis** (mit ACR und
+BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder Klick „＋ zuschalten“ holt sie dazu).
+
+| Taste (SpeechMike) | in der Maske |
+|---|---|
+| **Vorspulen** / **Rückspulen** | nächstes / voriges Feld (feste Reihenfolge: 3× Vorspulen = Ergebnis) — auch während der Aufnahme |
+| **Record** | diktiert ins aktive Feld (Pause/Weiter wie gewohnt); das Diktat **ersetzt** den Vorschlag dieses Felds |
+| **F3** | Vorbefund dieses Felds **bewusst übernehmen** (noch einmal = zurück); bei heutigem Diktat: 2× F3 = verwerfen |
+| **F4** | Maske aus = freies Diktat wie bisher (noch einmal = Maske wieder an) |
+| **INS** / **EOL** | Befund aus den Feldern rechts zur Kontrolle / an CAS — wie gewohnt |
+| Tastatur | Bild↓ / Bild↑ = Feld, Klick ins Feld = aktivieren, Tippen im Feld = Text von Hand |
+
+- **Vorbefund:** Die Brücke (ab 2.1.0) liefert den letzten fertigen Mammographie-Befund mit Datum und ACR/BI-RADS der
+  Doppelbefundung. RaKScribe zerlegt ihn an den Labels und trägt ihn **grau** als Vorschlag ein („Vorbefund TT.MM.JJJJ“).
+  Ein Vorschlag wird **nie still** zum heutigen Befund: INS warnt, solange ein Feld noch Vorschlag ist; ein zweites INS
+  ohne Änderung baut den Befund **ohne** diese Felder.
+- **„unverändert“** diktiert (oder F3) → der Vorbefund dieses Felds mit Vergleichsdatum, z. B. „Verglichen mit 05.06.2024
+  beidseits unverändert …“, „Verglichen mit 05.06.2024 weiterhin keine …“ — deterministisch, ohne KI.
+- Kein Vorbefund → Felder leer, im Mammographie-Feld der Normalbaustein „Mammo 1“ als Vorschlag.
+- **INS** baut den Befund aus den Feldern: Titel (Screening: „Mammographie beidseits – Screening“), Labels, Ergebnis mit
+  „ACR:“/„BIRADS:“; beim Screening mit BI-RADS 1/2 der Screening-Text der Praxis (BI-RADS 0/3/4/5: Hinweis, der Text mit
+  Namen/Kontrollintervall bleibt in CAS). Ändert sich die Maske nach INS, schickt EOL erst nach einem neuen INS.
+- **Datenschutz:** Der Vorbefund wird nur angezeigt und wörtlich eingesetzt — an die KI geht nur Peters Diktat eines
+  Felds (Korrektur der Spracherkennung), ins Protokoll nur Zustände und Zählungen.
+- Menü ☰ „Mammo-Maske bei Mammographie (CAS)“ schaltet sie ab. Definition: `masken.json`; Tests:
+  `tests/offline/test_maske.py`, `test_maske_ablauf.py`, Windows-UI-Test Fall M. Die Web-App hat keinen CAS-Auftrag und
+  damit keine Maske.
 
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*
