@@ -424,11 +424,13 @@ check("… Gen-Prompt informiert (<ibl_messwerte>), Hinweise amber in der IB-Lab
       app.ibl_hinweis_label.cget("text"))
 ibl_ablegen("z1", "20261013002", [FROG_BDS, LAMA_D])
 app._cas_einmal()
-check("neue Fassung + weiteres Modul nach dem Befund: nichts still geändert, „neu, nicht im Befund“ + Knopf",
-      "12,4°" not in app.result_text.text and app.ibl_knopf.sichtbar and app.ibl_label.cget("text")
-      == "IB Lab: FROG beidseits ✓ · LAMA beidseits ✓  ·  neu, nicht im Befund", app.ibl_label.cget("text"))
+check("v3.14.0 neue Fassung + weiteres Modul nach dem Befund: automatisch SICHTBAR eingefügt (Hinweis, hervorgehoben), "
+      "kein Knopf nötig", "12,4°" in app.result_text.text and not app.ibl_knopf.sichtbar
+      and getattr(app, "_ibl_auto_n", 0) == 1 and any("nachgekommen" in h for h in S.AUFZ.hinweise[-3:])
+      if hasattr(S.AUFZ, "hinweise") else "12,4°" in app.result_text.text and getattr(app, "_ibl_auto_n", 0) == 1,
+      app.ibl_label.cget("text"))
 app.ibl_einfuegen()
-check("Knopf „＋ IB Lab einfügen“: v1-Zeilen ersetzt, v2 drin, LAMA ohne Ganzbein-Abschnitt → Absatz am Ende + Hinweis",
+check("… v1-Zeilen ersetzt, v2 drin, LAMA ohne Ganzbein-Abschnitt → Absatz am Ende + Hinweis (Knopf danach ohne Wirkung)",
       "Hallux-valgus-Winkel rechts 24,3°" not in app.result_text.text
       and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in app.result_text.text
       and app.result_text.text.rstrip().endswith("Beinlängendifferenz von 15 mm.") and not app.ibl_knopf.sichtbar
@@ -439,6 +441,9 @@ app._ibl_details()
 check("Klick auf die IB-Lab-Zeile zeigt alle Werte und Hinweise", S.AUFZ.dialoge and S.AUFZ.dialoge[-1][0] == "showinfo"
       and "LAMA beidseits – Version 1 (im Befund)" in S.AUFZ.dialoge[-1][2], str(S.AUFZ.dialoge[-1:])[:200])
 befund = app.result_text.text
+app.befund_fertig()
+check("v3.14.0 erstes EOL kurz nach dem automatischen Einsetzen: noch nicht gesendet (bitte prüfen)",
+      antwort("z1").get("status") != "fertig" and app._cas is not None)
 app.befund_fertig()
 check("EOL: Befund samt IB-Lab-Werten an CAS, grünes Band, IB-Lab-Zeile weg",
       antwort("z1").get("status") == "fertig" and app.bestaetigung_band.sichtbar and not app.ibl_zeile.sichtbar

@@ -20,8 +20,14 @@ Dateien (gleiche Namen/Felder wie ris-mods bruecke/auftrag.py — Änderungen im
                               bausteine:[{accno, ziffer, modul, name, modul_name, version, aktualisiert, seiten,
                               befundteil, ergebnis, hinweise, nicht_zugeordnet}], zeit} — optional; Einsetzen nach der KI:
                               ibl_bausteine.py.
-Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel, KI-Messwerte der Untersuchung (und am Ende
-der Befund selbst, lokal).
+  cas_kontext_<id>.json       v3.14.0 (Brücke 2.0.0, RaK-Befund, aus der Datenbank des RIS): {protokoll, auftrag_id, nr,
+                              quelle, zuweiser, info, befunder, vorbefund: {nr, datum, untersuchung, text, zeichen, gekuerzt}
+                              | null, zeit} — optional. NUR Anzeige: Kopfzeile im Band (Zuweiser, Info) und Fenster
+                              „Vorbefund“. Geht nie an die KI und nie ins Protokoll (dort nur Längen).
+                              cas_leistungen kann dann je Leistung „ziffer“ (Accession = Diktatnummer + Ziffer) und
+                              „accession“ tragen → exakte Zuordnung der IB-Lab-Bausteine.
+Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel, KI-Messwerte der Untersuchung, ab v3.14.0
+Zuweiser/Info/Vorbefund zur Anzeige (und am Ende der Befund selbst) — alles nur lokal.
 """
 import io
 import json
@@ -113,12 +119,29 @@ class Auftrag:
         self.leistungen = None   # v3.12.0: Liste aus cas_leistungen_<id>.json; None = (noch) keine Datei
         self.ibl = None          # v3.13.0: Bausteine aus cas_ibl_<id>.json (Liste von dicts); None = (noch) keine Datei
         self.ibl_signatur = None  # Größe + Änderungszeit der zuletzt gelesenen Datei (nur bei Änderung neu lesen)
+        self.kontext = None      # v3.14.0: dict aus cas_kontext_<id>.json; None = (noch) keine Datei
 
     def labels(self):
         """Kurznamen der Leistungen fürs Band (ohne Abrechnungsposten), z. B. ['HWS', 'Schulter re. (Sono)']."""
         import cas_vorlagen as cv
         return [cv.label(l.get("text"), l.get("kurz"), l.get("modalitaet")) for l in (self.leistungen or [])
                 if not l.get("ohne_vorlage")]
+
+    def kopfzeile(self, max_info=90):
+        """v3.14.0: „Zuweiser: Dr. X · Info: …“ für das Band (nur Anzeige) — leer ohne Kontext."""
+        k = self.kontext or {}
+        teile = []
+        if str(k.get("zuweiser") or "").strip():
+            teile.append("Zuweiser: " + " ".join(str(k["zuweiser"]).split()))
+        info = " ".join(str(k.get("info") or "").split())
+        if info:
+            teile.append("Info: " + (info if len(info) <= max_info else info[:max_info - 1].rstrip() + "…"))
+        return "  ·  ".join(teile)
+
+    def vorbefund(self):
+        """v3.14.0: {nr, datum, untersuchung, text, …} oder None."""
+        vb = (self.kontext or {}).get("vorbefund")
+        return vb if isinstance(vb, dict) and str(vb.get("text") or "").strip() else None
 
     def band_text(self):
         t = f"CAS-Diktat {self.nr}" + (f" ({self.benutzer})" if self.benutzer else "")
@@ -198,6 +221,24 @@ class Kanal:
         if not isinstance(liste, list):
             return []
         return [l for l in liste if isinstance(l, dict) and (l.get("kurz") or l.get("text"))]
+
+    def kontext_lesen(self, a):
+        """v3.14.0: Kontext (Zuweiser, Info, Vorbefund) zum Auftrag a. None = (noch) nicht da, halb geschrieben oder nicht
+        zu diesem Auftrag; sonst dict mit den bekannten Feldern. Die Brücke räumt die Datei selbst auf."""
+        d = _json_lesen(os.path.join(self.ordner, f"cas_kontext_{a.auftrag_id}.json"))
+        if d is None:
+            return None
+        if str(d.get("auftrag_id") or "") != a.auftrag_id or str(d.get("nr") or "") != a.nr:
+            self.log(f"[CAS] Kontext verworfen (gehört nicht zu Auftrag {a.nr})")
+            return {}
+        vb = d.get("vorbefund")
+        if isinstance(vb, dict):
+            vb = {k: vb.get(k) for k in ("nr", "datum", "untersuchung", "text", "zeichen", "gekuerzt")}
+            vb["text"] = str(vb.get("text") or "")
+        else:
+            vb = None
+        return {"zuweiser": str(d.get("zuweiser") or ""), "info": str(d.get("info") or ""),
+                "befunder": str(d.get("befunder") or ""), "vorbefund": vb, "quelle": str(d.get("quelle") or "")}
 
     def ibl_lesen(self, a):
         """v3.13.0: IB-Lab-Bausteine zum Auftrag a, nur wenn sich die Datei der Brücke seit dem letzten Lesen geändert hat.

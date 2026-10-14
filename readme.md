@@ -175,5 +175,22 @@ ausgewertet und dürfen gelöscht werden.
 - Menü ☰ **„IB-Lab-Bausteine übernehmen“** (Standard an). Ohne Bausteine bzw. bei „aus“ sind Prompt und Befund bit-gleich
   mit 3.12.0 (726 Diktate). Tests: `tests/offline/test_ibl_bausteine.py`, live `tools/test_all_regions.py --ibl`.
 
+## 🗂️ Kontext aus dem RIS und IB-Lab-Gerüst vor dem Diktat (EXE, ab v3.14.0)
+
+- Die RaKScribe-Brücke (ab 2.0.0, Paket „RaK-Befund“) kann zum CAS-Diktat Angaben aus der Datenbank des RIS nachreichen
+  (`cas_kontext_<id>.json`): **Zuweiser** und **Info** erscheinen als Kopfzeile im blauen Band, der **letzte Vorbefund
+  derselben Untersuchung** öffnet sich über den Knopf „Vorbefund TT.MM.JJJJ“ in einem eigenen Fenster (nur lesen).
+  Diese Angaben sind **nur Anzeige**: Sie gehen nie an die KI, nie in den Befund und nie ins Protokoll (dort nur Längen).
+  Ein Test prüft, dass kein Prompt sie enthält (`tests/offline/test_cas_kontext.py`).
+- Kommen die Leistungen aus der Datenbank, trägt jede ihre **Ziffer** (Accession = Diktatnummer + Ziffer) — die
+  IB-Lab-Bausteine werden dann exakt der richtigen Untersuchung zugeordnet.
+- **IB-Lab-Gerüst vor dem ersten Wort:** Liegen beim Öffnen schon IB-Lab-Werte vor, steht im Befund-Feld das Gerüst des
+  strukturierten Befunds (Titel der Untersuchung, Messwerte wörtlich, Ergebnispunkte). **Auffällige Werte sind farbig
+  hervorgehoben** — nur, wenn eine Regel des IB-Lab-Abholers (Schwellen mit Quelle) daraus einen Ergebnispunkt gemacht hat;
+  sonst wird nichts gewertet. Diktiert wird wie gewohnt; der Befund aus dem Diktat ersetzt das Gerüst, die Messwerte
+  setzt RaKScribe danach wieder wörtlich ein (wie seit 3.13.0). Ohne Werte gibt es kein Gerüst.
+- **Werte, die erst später kommen**, setzt RaKScribe jetzt bis EOL selbst sichtbar in den Befund ein (Hinweis +
+  Hervorhebung). Kamen sie weniger als 3 s vor EOL, muss EOL ein zweites Mal gedrückt werden — nie etwas Ungesehenes.
+
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

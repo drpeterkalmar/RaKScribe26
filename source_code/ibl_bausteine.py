@@ -355,6 +355,17 @@ def _seite_passt(a, b):
     return not a or not b or a == b or "beidseits" in (a, b)
 
 
+def _leistung_zur_ziffer(ziffer, liste):
+    """v3.14.0: Tragen die CAS-Leistungen ihre Ziffer selbst (Brücke 2.0.0, aus der Datenbank: Accession = Diktatnummer +
+    Ziffer), gilt genau diese Leistung; sonst wie bisher die Stelle in der Liste (Kürzelzeile, unbestätigt)."""
+    dicts = [x for x in liste or [] if isinstance(x, dict)]
+    if any(isinstance(x.get("ziffer"), int) and x.get("ziffer") for x in dicts):
+        return next((x for x in dicts if x.get("ziffer") == ziffer), None)
+    if 1 <= ziffer <= len(liste or []) and isinstance(liste[ziffer - 1], dict):
+        return liste[ziffer - 1]
+    return None
+
+
 def zuordnen(b, teile, cas_leistungen=None, templates=None):
     """Abschnitt-Index für Baustein b oder None (mehrdeutig/keiner) + Art (ziffer | region | seite)."""
     reg = b.regionen
@@ -363,8 +374,9 @@ def zuordnen(b, teile, cas_leistungen=None, templates=None):
         kand = []                          # Rho & Co.: ohne Ziffer nur bei genau einer Untersuchung
     b_seite = b.seiten[0] if len(b.seiten) == 1 else ("beidseits" if b.seiten else "")
     liste = cas_leistungen or []
-    if 1 <= b.ziffer <= len(liste) and isinstance(liste[b.ziffer - 1], dict):
-        l_reg, l_seite = _leistung_info(liste[b.ziffer - 1], templates)
+    leistung = _leistung_zur_ziffer(b.ziffer, liste)
+    if leistung is not None:
+        l_reg, l_seite = _leistung_info(leistung, templates)
         if (reg is None or (l_reg & reg)) and _seite_passt(b_seite, l_seite):
             treffer = [i for i, a in enumerate(teile)
                        if (a.regionen & l_reg) and _seite_passt(a.seite, l_seite) and (reg is None or a.regionen & reg)]
@@ -660,3 +672,102 @@ class IblKontext:
 
     def __bool__(self):
         return any(b.befundteil or b.ergebnis for b in self.bausteine)
+
+
+# ───────────────────────────── v3.14.0: Gerüst vor dem Diktat, auffällige Werte ─────────────────────────────
+# Peter 14.10.2026: „RaKScribe soll bereits a priori relevante IBL-Zusatzinfos (pathologische Messwerte usw.) in den
+# structured report einbauen, wenn ich auf Diktieren klicke.“ Öffnet die Brücke RaKScribe mit IB-Lab-Bausteinen, steht
+# im Befund-Feld schon vor dem ersten Wort das Gerüst: je Untersuchung Titel, die Befundzeilen von IB Lab wörtlich und
+# die Ergebnispunkte — gebaut mit derselben Funktion wie nach der KI (einsetzen), also deterministisch und 1:1.
+# Auffällig (in der Anzeige hervorgehoben) ist eine Zeile nur, wenn eine Regel des Abholers aus dem Messwert einen
+# Ergebnispunkt gemacht hat (die Schwellen stehen mit Quelle in den Regeln des Abholers): der Messwert („Calcaneus-
+# neigungswinkel 10°“) steht dann wörtlich im Ergebnispunkt („Pes planus (Calcaneusneigungswinkel 10°).“). Ohne
+# Ergebnispunkt wird nichts gewertet, nur angezeigt. Keine Bausteine mit Inhalt → kein Gerüst (kein Platzhalter).
+_QUELLE_ZEILE = re.compile(r"\s*\((?:IB Lab|16 Bit|Radiobotics)[^)]*\)\s*\.?\s*$")
+
+
+def messung_text(zeile):
+    """„Calcaneusneigungswinkel 10° (IB Lab FROG).“ → „Calcaneusneigungswinkel 10°“."""
+    return _QUELLE_ZEILE.sub("", (zeile or "").strip()).rstrip(" .")
+
+
+def auffaellige_zeilen(bausteine):
+    """Befundzeilen, aus deren Messwert ein Ergebnispunkt wurde, und die Ergebnispunkte selbst (in Baustein-Reihenfolge)."""
+    out = []
+    for b in bausteine or []:
+        for z in b.befundteil:
+            m = messung_text(z)
+            if m and any(m in p for p in b.ergebnis):
+                out.append(z)
+        out += [p for p in b.ergebnis if p not in out]
+    return out
+
+
+def _titel_mit_seite(name, seite):
+    if not seite or seite in name.lower():
+        return name
+    return name.replace(" in ", f" {seite} in ", 1) if " in " in name else f"{name} {seite}"
+
+
+REGION_TITEL = {"frog": "Fuß", "lama": "Ganzbeinaufnahme", "hippo": "Becken und Hüften", "koala": "Knie",
+                "squirrel": "Wirbelsäule", "panda": "Hand", "rho": "Knochendichte (opportunistisch)"}
+
+
+def _leistung_fuer(b, liste, templates):
+    """CAS-Leistung (dict) zum Baustein: Ziffer (exakt bzw. Stelle), sonst eindeutig über Region und Seite; sonst None."""
+    reg = b.regionen
+    b_seite = b.seiten[0] if len(b.seiten) == 1 else ("beidseits" if b.seiten else "")
+    l = _leistung_zur_ziffer(b.ziffer, liste)
+    if l is not None:
+        l_reg, l_seite = _leistung_info(l, templates)
+        if (reg is None or (l_reg & reg)) and _seite_passt(b_seite, l_seite):
+            return l
+    if reg is None:
+        return None
+    kand = [x for x in liste or [] if isinstance(x, dict) and not x.get("ohne_vorlage")
+            and (_leistung_info(x, templates)[0] & reg) and _seite_passt(b_seite, _leistung_info(x, templates)[1])]
+    return kand[0] if len(kand) == 1 else None
+
+
+def geruest(bausteine, cas_leistungen=None, templates=None):
+    """Gerüst des strukturierten Befunds aus den IB-Lab-Bausteinen (vor dem Diktat) → Einsatz (report, zeilen,
+    eingesetzt, behandelt, zuordnung) oder None, wenn kein Baustein Befundzeilen oder Ergebnispunkte hat.
+    Je Untersuchung ein Abschnitt „## <Titel>“ / „## Befund“ / „## Ergebnis“ (nummeriert wie nach der KI); Titel = Vorlage
+    der zugeordneten CAS-Leistung (mit Seite), sonst Region des Moduls (mit Seite), sonst „IB Lab <Modul>“. Messwerte und
+    Ergebnispunkte wörtlich; leere Überschriften gibt es nicht."""
+    mit_inhalt = [b for b in bausteine or [] if b.befundteil or b.ergebnis]
+    if not mit_inhalt:
+        return None
+    templates = templates or {}
+    gruppen = []                                 # [(titel, [Bausteine])] in Reihenfolge
+    for b in mit_inhalt:
+        l = _leistung_fuer(b, cas_leistungen, templates)
+        name = (templates.get(l.get("vorlage")) or {}).get("display_name") if l and l.get("vorlage") else None
+        if name:
+            titel = _titel_mit_seite(name, l.get("seite") or "")
+        else:
+            seite = "beidseits" if {"rechts", "links"} <= set(b.seiten) else (b.seiten[0] if len(b.seiten) == 1 else "")
+            titel = (REGION_TITEL.get(b.modul, "") + (f" {seite}" if seite else "")).strip() or f"IB Lab {b.name}"
+        g = next((g for g in gruppen if g[0] == titel), None)
+        if g is None:
+            gruppen.append((titel, [b]))
+        else:
+            g[1].append(b)
+    e = Einsatz(report="")
+    teile = []
+    for titel, bs in gruppen:
+        befund = [z for b in bs for z in b.befundteil]
+        punkte = [p for b in bs for p in b.ergebnis]
+        block = [f"## {titel}"]
+        if befund:
+            block += ["", "## Befund"] + befund
+        if punkte:
+            block += ["", br.ergebnis_nummerieren("## Ergebnis\n" + "\n".join(punkte))]
+        teile.append("\n".join(block))
+        for b in bs:
+            e.behandelt[b.schluessel] = b.version
+            e.eingesetzt[b.schluessel] = list(b.befundteil) + list(b.ergebnis)
+            e.zuordnung[b.modul] = titel
+    e.report = "\n\n".join(teile).strip()
+    e.zeilen = [z for zs in e.eingesetzt.values() for z in zs]
+    return e

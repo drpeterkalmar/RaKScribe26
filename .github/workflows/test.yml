@@ -96,6 +96,8 @@ jobs:
         run: python tests/offline/test_cas_leistungen.py
       - name: IB-Lab-Bausteine (Zuordnung, Einsetzen nach der KI, Doppelung, Widerspruch, Messwert-Gate, Band, Knopf)
         run: python tests/offline/test_ibl_bausteine.py
+      - name: Kontext aus der Datenbank des RIS + IB-Lab-Gerüst vor dem Diktat (v3.14.0)
+        run: python tests/offline/test_cas_kontext.py
       - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings pipeline_test.mjs

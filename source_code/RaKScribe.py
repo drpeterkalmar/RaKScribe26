@@ -473,6 +473,12 @@ def _rag_beispiele(seg):
     return ""
 
 
+def _datum_kurz(iso):
+    """v3.14.0: „2024-03-12“ → „12.03.2024“ (sonst unverändert)."""
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", str(iso or "").strip())
+    return f"{m.group(3)}.{m.group(2)}.{m.group(1)}" if m else str(iso or "")
+
+
 def _pipeline_kontext(cas=None, ibl=None):
     """Kontext für pipeline.befund_aus_diktat — bei jedem Lauf neu (Prompt kann im Editor geändert werden).
     v3.12.0: cas = CAS-Leistungen des offenen Auftrags (cas_vorlagen.CasHinweis) oder None (= wie bisher).
@@ -933,6 +939,9 @@ class RaKScribeApp(ctk.CTk):
         self.cas_label = ctk.CTkLabel(cas_text, text="", font=(UI_FONT, 14, "bold"), text_color="#FFFFFF", height=22,
                                       anchor="w")
         self.cas_label.pack(side="top", anchor="w", pady=(6, 0))
+        # v3.14.0 (RaK-Befund): Kopfzeile aus der Datenbank des RIS — Zuweiser und Info zum Auftrag, NUR Anzeige
+        self.cas_kopf_label = ctk.CTkLabel(cas_text, text="", font=(UI_FONT, 12), text_color="#C9D4E8", height=18,
+                                           anchor="w")
         # v3.12.0: Hinweise zur Vorlagenwahl mit CAS-Leistungen („LWS laut CAS, nicht diktiert“) — nur Anzeige
         self.cas_hinweis_label = ctk.CTkLabel(cas_text, text="", font=(UI_FONT, 12, "bold"), text_color=WARN_AMBER,
                                               height=18, anchor="w")
@@ -970,6 +979,9 @@ class RaKScribeApp(ctk.CTk):
         # schon geprüften Befund — Peter 11.10.: nie etwas Ungesehenes weiterschicken)
         self.ibl_knopf = ctk.CTkButton(self.cas_band, text="＋ IB Lab einfügen", width=150, command=self.ibl_einfuegen,
                                        fg_color="#1E6B43", hover_color="#27A862", **band_kw)
+        # v3.14.0: letzter Vorbefund derselben Untersuchung (aus der Datenbank des RIS) — nur lesen, geht nie an die KI
+        self.vorbefund_knopf = ctk.CTkButton(self.cas_band, text="Vorbefund", width=150, command=self._vorbefund_zeigen,
+                                             **rand_kw, **band_kw)
         self.bind_all("<F11>", lambda e: self._cas_taste("ins"))
         self.bind_all("<F12>", lambda e: self._cas_taste("eol"))
 
@@ -1069,6 +1081,18 @@ class RaKScribeApp(ctk.CTk):
                     "ibl_im_befund": {f"{k[1]}": v for k, v in (getattr(self, "_ibl_im_befund", {}) or {}).items()},
                     "ibl_hervorgehoben": int(getattr(self, "_ibl_hervorgehoben", 0)),
                     "ibl_uebernehmen": bool(self._ibl_an()),
+                    # v3.14.0: Kopfzeile/Vorbefund (nur Anzeige) und IB-Lab-Gerüst vor dem Diktat
+                    "cas_kopfzeile": str(self.cas_kopf_label.cget("text")).strip()
+                    if getattr(self, "cas_kopf_label", None) else "",
+                    "cas_kopfzeile_sichtbar": bool(getattr(self, "cas_kopf_label", None)
+                                                   and self.cas_kopf_label.winfo_ismapped()),
+                    "vorbefund_knopf": str(self.vorbefund_knopf.cget("text")) if getattr(self, "vorbefund_knopf", None)
+                    and self.vorbefund_knopf.winfo_ismapped() else "",
+                    "vorbefund_gezeigt": int(getattr(self, "_vorbefund_gezeigt", 0)),
+                    "ibl_geruest": bool(self._nur_geruest()),
+                    "ibl_geruest_n": int(getattr(self, "_ibl_geruest_n", 0)),
+                    "ibl_markiert": int(getattr(self, "_ibl_markiert", 0)),
+                    "ibl_auto_n": int(getattr(self, "_ibl_auto_n", 0)),
                     "befund_titel": befund_titel(self.result_text.get("1.0", "end-1c"), 400),
                     # v3.11.0: Bereitschaft (Fensterzustand, Zweitstarts, Autostart, Minimieren nach CAS-EOL)
                     "fenster": self.state(),
@@ -1135,7 +1159,8 @@ class RaKScribeApp(ctk.CTk):
                         # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
                         aktion = {"cas_testbefund": self.cas_testbefund, "cas_eol": self.befund_fertig,
                                   "cas_ins": self.sm_ins, "cas_abbrechen": self.cas_abbrechen,
-                                  "cas_ibl_einfuegen": self.ibl_einfuegen}.get(phase.split("#")[0])  # v3.13.0 Knopf
+                                  "cas_ibl_einfuegen": self.ibl_einfuegen,                 # v3.13.0 Knopf
+                                  "cas_vorbefund": self._vorbefund_zeigen}.get(phase.split("#")[0])   # v3.14.0
                         if aktion:
                             aktion()
                         self.after(1500, lambda p=phase: dump(p))
@@ -1440,8 +1465,10 @@ class RaKScribeApp(ctk.CTk):
             self._ibl_befund_leeren()  # v3.13.0: die Bausteine bleiben beim Auftrag, nur ihr Stand im Befund geht
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
+        self._ibl_geruest_text = None
         if getattr(self, "_cas", None) is not None:
             self._ibl_band_zeigen()
+            self.after(50, self._ibl_geruest_pruefen)      # v3.14.0: IB-Lab-Gerüst wieder vorab
         if self._job.zustand == _js.LOCKED:
             self.refresh_key_state()
         else:
@@ -1683,8 +1710,8 @@ class RaKScribeApp(ctk.CTk):
         Rückgabe (start, ende) als Zeichen-Offsets im Befundtext oder None (= normales Diktat)."""
         try:
             tb = self.result_text._textbox
-            if not self.result_text.get("1.0", "end-1c").strip():
-                return None
+            if not self.result_text.get("1.0", "end-1c").strip() or self._nur_geruest():
+                return None                       # v3.14.0: im IB-Lab-Gerüst wird normal diktiert, nicht eingefügt
             if self.focus_get() is not tb or not _fokus_ist_eigenes_fenster():
                 return None
             if tb.tag_ranges("sel"):
@@ -2225,6 +2252,8 @@ class RaKScribeApp(ctk.CTk):
             else:
                 if self._cas.leistungen is None:
                     self._cas_leistungen_holen()
+                if self._cas is not None and self._cas.kontext is None:
+                    self._cas_kontext_holen()        # v3.14.0: Zuweiser, Info, Vorbefund (nur Anzeige)
                 self._ibl_holen()  # v3.13.0: Bausteine kommen beim Start oder später, neue Fassungen ersetzen alte
         neu = k.abholen()
         if neu is not None:
@@ -2243,6 +2272,7 @@ class RaKScribeApp(ctk.CTk):
         log(f"[CAS] Leistungen {self._cas.nr}: " + (", ".join(
             f"{l.get('kurz')}({'-' if l.get('ohne_vorlage') else (l.get('vorlage') or '?')})" for l in liste) or "keine"))
         self._cas_band_zeigen()
+        self._ibl_geruest_pruefen()             # v3.14.0: mit den Leistungen bekommt das Gerüst die richtigen Titel
 
     def _cas_hinweis_fuer_lauf(self):
         """Vorrang-Hinweis für pipeline.befund_aus_diktat: nur mit offenem Auftrag UND Leistungen, sonst None."""
@@ -2286,6 +2316,8 @@ class RaKScribeApp(ctk.CTk):
         neu = self._ibl_bausteine()
         log(f"[IBL] Bausteine {a.nr}: " + (", ".join(f"{b.name} v{b.version} (Ziffer {b.ziffer})" for b in neu) or "keine"))
         self._ibl_band_zeigen(hervorheben=any(alt.get(b.schluessel) != b.version for b in neu))
+        if not self._ibl_geruest_pruefen():          # v3.14.0: vor dem Diktat das Gerüst …
+            self._ibl_auto_nachtragen()              # … sonst Nachzügler sichtbar in den fertigen Befund
 
     def _ibl_fuer_lauf(self):
         """Für pipeline.befund_aus_diktat: nur mit offenem Auftrag, Bausteinen mit Inhalt und Menü-Schalter an."""
@@ -2307,9 +2339,90 @@ class RaKScribeApp(ctk.CTk):
         if self._ibl_an():
             hinweise += _ibl.anzeige_hinweise(self._ibl_bausteine())
         self._ibl_hinweise_zeigen(hinweise)
+        self._ibl_geruest_text = None            # v3.14.0: jetzt steht der Befund aus dem Diktat da
         self._ibl_band_zeigen()
+        self.after(300, self._ibl_markieren)     # v3.14.0: auffällige IB-Lab-Werte im Befund hervorheben
         # läuft noch im Zustand „Verarbeitung“: Knopf erst danach prüfen (Fassung, die während der KI kam)
-        self.after(800, self._ibl_band_zeigen)
+        self.after(800, lambda: (self._ibl_band_zeigen(), self._ibl_auto_nachtragen()))
+
+    # ── v3.14.0 (Peter 14.10.: „bereits a priori relevante IBL-Zusatzinfos … in den structured report einbauen, wenn ich
+    # auf Diktieren klicke“): Gerüst vor dem ersten Wort, auffällige Werte markiert, Nachzügler bis EOL sichtbar eingefügt.
+    def _nur_geruest(self):
+        """Steht im Befund-Feld genau das unberührte IB-Lab-Gerüst (und kein Diktat)?"""
+        g = getattr(self, "_ibl_geruest_text", None)
+        if not g:
+            return False
+        try:
+            return (self.result_text.get("1.0", "end-1c").strip() == g.strip()
+                    and not self.transcript_text.get("1.0", "end-1c").strip())
+        except Exception:
+            return False
+
+    def _ibl_geruest_pruefen(self):
+        """Gerüst (neu) ins Befund-Feld, wenn ein Auftrag mit IB-Lab-Bausteinen offen ist, noch nicht diktiert wird und
+        im Feld nichts anderes steht. → True, wenn das Feld das Gerüst zeigt (bzw. jetzt zeigt)."""
+        a = getattr(self, "_cas", None)
+        if a is None or not self._ibl_an() or not a.ibl:
+            return False
+        if self._job.zustand not in (_js.READY, _js.ERROR):
+            return False
+        frei = not self.result_text.get("1.0", "end-1c").strip() and not self.transcript_text.get("1.0", "end-1c").strip()
+        if not (frei or self._nur_geruest()):
+            return False
+        e = _ibl.geruest(self._ibl_bausteine(), list(a.leistungen or []), RADIOLOGY_TEMPLATES)
+        if e is None:
+            return False
+        if self._nur_geruest() and e.report.strip() == (self._ibl_geruest_text or "").strip():
+            return True
+        neu = not frei
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", e.report)
+        self._ibl_geruest_text = e.report
+        self._ibl_lauf_auftrag = a.auftrag_id
+        self._ibl_im_befund = dict(e.behandelt)
+        self._ibl_zeilen = {k: list(v) for k, v in e.eingesetzt.items()}
+        self._befund_wartet, self._gesendet = True, False
+        n = self._ibl_markieren()
+        self._ibl_geruest_n = getattr(self, "_ibl_geruest_n", 0) + 1
+        log(f"[IBL] Gerüst {a.nr}: {len(e.zeilen)} Zeile(n), {n} auffällig markiert" + (" (aktualisiert)" if neu else ""))
+        self._ibl_hinweise_zeigen(_ibl.anzeige_hinweise(self._ibl_bausteine()))
+        self._ibl_band_zeigen(hervorheben=neu)
+        self._kurzhinweis("IB-Lab-Werte stehen schon im Befund (auffällige markiert) – diktieren wie gewohnt"
+                          if not neu else "IB-Lab-Werte aktualisiert – im Befund markiert", 6000)
+        return True
+
+    def _ibl_markieren(self):
+        """Auffällige IB-Lab-Zeilen im Befund-Feld hervorheben (nur Anzeige). → Zahl der markierten Stellen."""
+        try:
+            tb = self.result_text._textbox
+            tb.tag_configure("ibl_auffaellig", foreground="#F5A623", font=(UI_FONT, 14, "bold"))
+            tb.tag_remove("ibl_auffaellig", "1.0", "end")
+            n = 0
+            if not self._ibl_an():
+                return 0
+            for z in _ibl.auffaellige_zeilen(self._ibl_bausteine()):
+                start = "1.0"
+                while True:
+                    pos = tb.search(z, start, stopindex="end", exact=True)
+                    if not pos:
+                        break
+                    ende = f"{pos}+{len(z)}c"
+                    tb.tag_add("ibl_auffaellig", pos, ende)
+                    n += 1
+                    start = ende
+            self._ibl_markiert = n
+            return n
+        except Exception:
+            log_exception("[IBL] Markieren")
+            return 0
+
+    def _ibl_auto_nachtragen(self):
+        """Nachzügler (Werte kamen nach dem Befund dieses Auftrags) sichtbar einsetzen — nur ohne laufende Aufnahme und
+        nur in einen Befund aus DIESEM Auftrag; kurz vor EOL schützt _cas_senden (zweites EOL nötig)."""
+        if not self._ibl_an() or not self._ibl_offen():
+            return False
+        self.ibl_einfuegen(auto=True)
+        return True
 
     def _ibl_befund_leeren(self):
         """F9, neue Aufnahme, neuer/beendeter Auftrag: der Stand im (alten) Befund und seine Hinweise gelten nicht mehr."""
@@ -2353,7 +2466,7 @@ class RaKScribeApp(ctk.CTk):
                     zeile.pack_forget()
             band = getattr(self, "cas_band", None)
             if band is not None and hasattr(band, "configure"):
-                band.configure(height=76 if bausteine else 56)
+                self._band_hoehe()                # v3.14.0: Grundzeile + Kopfzeile + IB-Lab-Zeile
             if hervorheben and bausteine and an:
                 self._ibl_hervorheben()
         except Exception:
@@ -2383,9 +2496,11 @@ class RaKScribeApp(ctk.CTk):
         log(f"[IBL] IB-Lab-Bausteine übernehmen: {'an' if self._ibl_an() else 'aus'}")
         self._ibl_band_zeigen()
 
-    def ibl_einfuegen(self):
+    def ibl_einfuegen(self, auto=False):
         """Knopf „＋ IB Lab einfügen“: Werte, die nach dem Befund kamen (bzw. eine neue Fassung), in den SICHTBAREN Befund
-        einsetzen — dieselben Regeln wie beim INS; eine ältere Fassung wird wörtlich ersetzt."""
+        einsetzen — dieselben Regeln wie beim INS; eine ältere Fassung wird wörtlich ersetzt.
+        v3.14.0 auto=True (Peter 14.10.: „bis EOL nachladen und sichtbar einfügen“): ohne Knopf, mit Hinweis und
+        Hervorhebung; ein EOL in den nächsten 3 s muss bestätigt werden (nie etwas Ungesehenes)."""
         offen = self._ibl_offen()
         if not offen or not self._ibl_an():
             self._ibl_band_zeigen()
@@ -2406,9 +2521,16 @@ class RaKScribeApp(ctk.CTk):
                                "bitte prüfen")
         self._ibl_hinweise_zeigen(hinweise + _ibl.anzeige_hinweise(self._ibl_bausteine()))
         self._befund_wartet, self._gesendet = True, False
-        log("[IBL] von Hand eingesetzt: " + ", ".join(f"{b.name} v{b.version}" for b in offen)
-            + f" · {len(e.zeilen)} Zeile(n)")
-        self._ibl_band_zeigen()
+        log(("[IBL] nachgekommen, automatisch eingesetzt: " if auto else "[IBL] von Hand eingesetzt: ")
+            + ", ".join(f"{b.name} v{b.version}" for b in offen) + f" · {len(e.zeilen)} Zeile(n)")
+        self._ibl_markieren()
+        if auto:
+            self._ibl_auto_zeit = time.monotonic()
+            self._ibl_eol_ok = False
+            self._ibl_auto_n = getattr(self, "_ibl_auto_n", 0) + 1
+            self._kurzhinweis("IB-Lab-Werte nachgekommen und eingefügt (" + ", ".join(b.name for b in offen)
+                              + ") – bitte prüfen", 8000)
+        self._ibl_band_zeigen(hervorheben=auto)
 
     def _ibl_details(self):
         """Klick auf die IB-Lab-Zeile: alle Bausteine, Werte und Hinweise (nur lesen)."""
@@ -2440,6 +2562,8 @@ class RaKScribeApp(ctk.CTk):
     def _cas_hat_inhalt(self):
         if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
             return True
+        if self._nur_geruest():          # v3.14.0: das IB-Lab-Gerüst ist kein Diktat
+            return False
         return bool(self.transcript_text.get("1.0", "end-1c").strip() or self.result_text.get("1.0", "end-1c").strip())
 
     def _cas_neu(self, a):
@@ -2473,10 +2597,19 @@ class RaKScribeApp(ctk.CTk):
             self._kurzhinweis(f"CAS-Diktat {a.nr}: erst den Praxis-Schlüssel laden, dann diktieren", 10000)
 
     def _cas_beenden(self):
+        if self._nur_geruest():          # v3.14.0: ein unberührtes Gerüst gehört zum Auftrag
+            self.result_text.delete("1.0", "end")
+        self._ibl_geruest_text = None
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
         self._cas_hinweise_zeigen([])
         self._ibl_befund_leeren()
         self._ibl_band_zeigen()
+        for w in (getattr(self, "cas_kopf_label", None), getattr(self, "vorbefund_knopf", None)):
+            if w is not None:
+                try:
+                    w.pack_forget()
+                except Exception:
+                    pass
         band = getattr(self, "cas_band", None)
         if band is not None:
             try:
@@ -2493,9 +2626,79 @@ class RaKScribeApp(ctk.CTk):
             if not self._cas.labels():   # ohne Leistungen wie bisher; mit Leistungen sagt es der EOL-Knopf
                 text += "   ·   EOL schickt den Befund an CAS"
             self.cas_label.configure(text=text)
+            kopf = self._cas.kopfzeile()           # v3.14.0
+            lbl = getattr(self, "cas_kopf_label", None)
+            if lbl is not None:
+                lbl.configure(text=kopf)
+                if kopf:
+                    lbl.pack(side="top", anchor="w", after=self.cas_label)
+                else:
+                    lbl.pack_forget()
+            vb = self._cas.vorbefund()
+            knopf = getattr(self, "vorbefund_knopf", None)
+            if knopf is not None:
+                if vb:
+                    knopf.configure(text="Vorbefund " + _datum_kurz(vb.get("datum")))
+                    knopf.pack(side="right", padx=6)
+                else:
+                    knopf.pack_forget()
+            self._band_hoehe()
             band.pack(fill="x", before=self.main_container)
         except Exception:
             log_exception("[CAS] Band")
+
+    def _band_hoehe(self):
+        """v3.14.0: Höhe des Bands nach den sichtbaren Zeilen (Grundzeile, Kopfzeile, IB-Lab-Zeile)."""
+        band = getattr(self, "cas_band", None)
+        if band is None or not hasattr(band, "configure"):
+            return
+        h = 56
+        if getattr(self, "_cas", None) is not None and self._cas.kopfzeile():
+            h += 18
+        if self._ibl_bausteine():
+            h += 20
+        band.configure(height=h)
+
+    # ── v3.14.0: Kontext aus der Datenbank des RIS (Brücke 2.0.0): Zuweiser, Info, Vorbefund — NUR Anzeige ──────────────
+    def _cas_kontext_holen(self):
+        a = self._cas
+        k = self._cas_kanal.kontext_lesen(a)
+        if k is None:
+            return
+        a.kontext = k
+        vb = a.vorbefund()
+        log(f"[CAS] Kontext {a.nr}: Zuweiser {'ja' if k.get('zuweiser') else 'nein'}, Info {len(k.get('info') or '')} "
+            f"Zeichen, Vorbefund " + (f"{vb.get('nr')} ({len(vb.get('text') or '')} Zeichen)" if vb else "keiner"))
+        self._cas_band_zeigen()
+
+    def _vorbefund_zeigen(self):
+        """Fenster mit dem letzten Vorbefund derselben Untersuchung (nur lesen). Der Text geht nie an die KI, nie in
+        den Befund und nie ins Protokoll."""
+        a = getattr(self, "_cas", None)
+        vb = a.vorbefund() if a is not None else None
+        if not vb:
+            return
+        try:
+            alt = getattr(self, "_vorbefund_fenster", None)
+            if alt is not None and alt.winfo_exists():
+                alt.destroy()
+            w = ctk.CTkToplevel(self)
+            w.title(f"Vorbefund {_datum_kurz(vb.get('datum'))} – {vb.get('untersuchung') or ''} (nur Anzeige)")
+            w.geometry("720x620")
+            box = ctk.CTkTextbox(w, wrap="word", font=(UI_FONT, 13))
+            box.pack(fill="both", expand=True, padx=10, pady=10)
+            text = str(vb.get("text") or "")
+            if vb.get("gekuerzt"):
+                text += "\n\n[… gekürzt – vollständig in CAS]"
+            box.insert("1.0", text)
+            box.configure(state="disabled")
+            w.attributes("-topmost", True)
+            w.after(400, lambda: w.attributes("-topmost", False))
+            self._vorbefund_fenster = w
+            self._vorbefund_gezeigt = getattr(self, "_vorbefund_gezeigt", 0) + 1
+            log(f"[CAS] Vorbefund angezeigt ({len(text)} Zeichen)")
+        except Exception:
+            log_exception("[CAS] Vorbefund")
 
     def _cas_nach_vorne(self):
         """RaKScribe nach vorne holen (die Brücke hat das Recht dazu per AllowSetForegroundWindow weitergegeben)."""
@@ -2562,6 +2765,13 @@ class RaKScribeApp(ctk.CTk):
             self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
             return
         a = self._cas
+        # v3.14.0: kamen IB-Lab-Werte eben erst automatisch hinzu, braucht EOL eine Bestätigung (nie Ungesehenes senden)
+        if time.monotonic() - getattr(self, "_ibl_auto_zeit", -1e9) < 3.0 and not getattr(self, "_ibl_eol_ok", False):
+            self._ibl_eol_ok = True
+            log("[IBL] EOL kurz nach dem automatischen Einsetzen – zweites EOL nötig")
+            self._kurzhinweis("IB-Lab-Werte eben eingefügt – bitte prüfen, dann EOL noch einmal", 6000)
+            return
+        self._ibl_eol_ok = False
         pcm = self._cas_pcm()
         self._ibl_eol_pruefen(text)
         try:
