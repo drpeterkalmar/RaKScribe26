@@ -246,6 +246,18 @@
    "in": "Rohdaten und Ro unklar",
    "out": "Rohdaten und Ro unklar",
    "keep": true
+  },
+  {
+   "in": "Beidseits involviertes Drüsengewebe ohne suspekte Verdichtung",
+   "out": "Beidseits involutiertes Drüsengewebe ohne suspekte Verdichtung"
+  },
+  {
+   "in": "involvierter Drüsenkörper beidseits",
+   "out": "involutierter Drüsenkörper beidseits"
+  },
+  {
+   "in": "Lymphknoten nicht involviert, Drüsengewebe unauffällig",
+   "out": "Lymphknoten nicht involviert, Drüsengewebe unauffällig"
   }
  ]
 }

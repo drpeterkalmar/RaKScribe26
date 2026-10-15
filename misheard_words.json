@@ -7,7 +7,7 @@
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
   "Kandidaten für neue Einträge: /usr/bin/python3 tools/misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 tests/offline/misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
- "version": "2026-10-13a",
+ "version": "2026-10-15a",
  "rules": [
   {
    "hear": [
@@ -108,6 +108,19 @@
    "mode": "auto",
    "source": "Mamma",
    "mean_show": "BI-RADS 2 / BI-RADS 4 / BI-RADS 0"
+  },
+  {
+   "hear": [
+    "involviert(e[nrs]?)?\\s+(Drüsen[a-zäöüß]*)"
+   ],
+   "regex": true,
+   "show": [
+    "involviertes Drüsengewebe"
+   ],
+   "mean": "involutiert$1 $2",
+   "mode": "auto",
+   "source": "Mamma (E2E 15.10.2026: chirp_3 „involviertes Drüsengewebe“)",
+   "mean_show": "involutiertes Drüsengewebe"
   },
   {
    "hear": [

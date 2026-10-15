@@ -304,6 +304,9 @@ Test: `tests/offline/test_cas_leistungen.py` Fall r).
 wurde „ACR: A“ und der Ergebnissatz „… beidseits 2.“. Steht direkt nach „ACR“ ein Buchstabe und danach (nur Leerzeichen
 dazwischen) eine Zahl bis Satzende/BI-RADS, gilt die Zahl („ACR A. 2 Herde“ bleibt A). Test: `test_maske.py`.
 
+**v3.16.4 Fehlhör-Liste (EXE + Web):** „involviertes Drüsengewebe/-körper“ → „involutiert…“ (nur direkt vor
+„Drüsen…“, „Lymphknoten nicht involviert“ bleibt) — im selben Test hörte chirp_3 „involviertes“.
+
 ## 🦴 Umschriebene Skelettbefunde ohne Widerspruch (EXE + Web, ab v3.15.5)
 
 Peter 15.10.2026: „Fersensporn diktiert, aber ‚Normale Form des Calcaneus …‘ steht noch da.“ Ein umschriebener Befund an
