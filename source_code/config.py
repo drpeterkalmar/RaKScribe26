@@ -34,6 +34,7 @@ class Config:
     api_key: str = ""           # nur für LLM_PROVIDER = openai/ollama (Gemini: Praxis-Schlüssel)
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
+    maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
     angelegt: bool = False      # Datei fehlte und wurde mit Standardwerten angelegt
     warnungen: List[str] = field(default_factory=list)
 
@@ -85,6 +86,9 @@ def load_config(path):
             wert = parser["MASKE"].get(name, "").strip()
             if wert:
                 cfg.maske_tasten[name.lower()] = wert
+            wert = parser["MASKE"].get("AMBIENT_" + name, "").strip()   # v3.15.4: SpeechMike Ambient (ohne F1–F4)
+            if wert:
+                cfg.maske_tasten_ambient[name.lower()] = wert
     return cfg
 
 

@@ -10,6 +10,11 @@ bekommt nur Peters Diktat eines Felds) und nie ins Protokoll (dort nur Zustände
 Feld-Zustände (quelle): leer · vorbefund (Vorschlag aus dem Vorbefund, grau) · vorlage (Vorschlag Normalbaustein, grau) ·
 uebernommen (Vorschlag bewusst übernommen: Taste/Klick) · diktat (heute diktiert: ersetzt den Vorschlag) · getippt.
 Ein Vorschlag wird nie still zum heutigen Befund: INS warnt bei offenen Vorschlägen (zweites INS = ohne diese Felder).
+
+v3.15.4 (Peter 15.10.: „wenn ich den bestehenden text markiere wird er durch mein diktat überschrieben. oder ich lösche ihn
+selbständig“): Markierung im Feld → das nächste Diktat ersetzt genau sie; Cursor im Feld mit heutigem Text → an der Stelle
+einfügen; sonst wie bisher. Steht danach Vorbefund-/Normalbaustein-Text mit im Feld, gilt es als getippt (ohne KI — die
+KI bekommt weiterhin nur Peters Diktat). Abschnitte eines Felds werden in ihrer Reihenfolge angewendet.
 """
 import json
 import os
@@ -18,11 +23,14 @@ import sys
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional
 
+import einfuegen as _einf
+
 LEER, VORBEFUND, VORLAGE, UEBERNOMMEN, DIKTAT, GETIPPT = "leer", "vorbefund", "vorlage", "uebernommen", "diktat", "getippt"
 VORSCHLAG = (VORBEFUND, VORLAGE)
 AKTIONEN = ("naechstes_feld", "voriges_feld", "uebernehmen", "maske_umschalten")
 # eingeübte Tasten (SpeechMike-Bericht 3.8.0) — die Maske deutet sie nie um
 FESTE_TASTEN = ("RECORD", "INS", "EOL", "F1", "F2", "STOP")
+TASTATUR = "tastatur"   # v3.15.4: kein SpeechMike verbunden (Fern-Test) — Hilfezeile mit den Tastatur-Tasten
 
 
 def _datei(name):
@@ -43,11 +51,12 @@ def laden(pfad=None):
 
 
 # ───────────────────────────── Tasten ─────────────────────────────
-def tasten_belegung(definition, ueberschreiben=None, log=None):
+def tasten_belegung(definition, ueberschreiben=None, log=None, satz="tasten"):
     """{Taste: Aktion} aus masken.json „tasten“ ({Aktion: Taste}), optional überschrieben (config.ini [MASKE]).
-    Eine eingeübte Taste (Record, INS, EOL, F1, F2, Stop) oder eine unbekannte Aktion wird nie übernommen."""
+    Eine eingeübte Taste (Record, INS, EOL, F1, F2, Stop) oder eine unbekannte Aktion wird nie übernommen.
+    v3.15.4: satz = „tasten_ambient“ für das SpeechMike Ambient (ohne F1–F4; config.ini [MASKE] AMBIENT_…)."""
     log = log or (lambda *a: None)
-    soll = dict((definition or {}).get("tasten") or {})
+    soll = dict((definition or {}).get(satz) or {})
     for aktion, taste in (ueberschreiben or {}).items():
         aktion = str(aktion).strip().lower()
         if aktion not in AKTIONEN:
@@ -67,27 +76,56 @@ def tasten_belegung(definition, ueberschreiben=None, log=None):
     return out
 
 
+# Anzeige-Reihenfolge je Aktion: F-Tasten (Premium) vor Play/Command (Ambient ohne F1–F4)
+_TASTEN_REIHE = ("FF", "REW", "F3", "F4", "PLAY", "COMMAND", "INSTR")
+
+
+def tasten_fuer(belegung, aktion, verfuegbar=None):
+    """Tasten einer Aktion in Anzeige-Reihenfolge; verfuegbar = Tasten des erkannten Geräts (None = alle)."""
+    t = [k for k, a in belegung.items() if a == aktion and (verfuegbar in (None, TASTATUR) or k in verfuegbar)]
+    return sorted(t, key=lambda k: (_TASTEN_REIHE.index(k) if k in _TASTEN_REIHE else len(_TASTEN_REIHE), k))
+
+
+def taste_name(belegung, aktion, verfuegbar=None):
+    """Name der Taste für Hinweise („Play noch einmal = verwerfen“): ohne SpeechMike die Tastatur (F3/F4), sonst die
+    erste Taste des Geräts für diese Aktion."""
+    if verfuegbar == TASTATUR:
+        return {"uebernehmen": "F3", "maske_umschalten": "F4"}.get(aktion, "")
+    t = tasten_fuer(belegung, aktion, verfuegbar)
+    return TASTEN_NAME.get(t[0], t[0]) if t else {"uebernehmen": "F3", "maske_umschalten": "F4"}.get(aktion, "")
+
+
 def tasten_text(belegung):
-    """Kurztext für Protokoll und Hilfezeile, z. B. „FF = nächstes Feld · REW = voriges Feld · …“."""
+    """Kurztext für Protokoll und Menü, mehrere Tasten einer Aktion mit „/“, z. B. „Vorspulen = nächstes Feld ·
+    Rückspulen = voriges Feld · F3/Play = Vorbefund übernehmen · F4/Command = Maske aus/an“."""
     namen = {"naechstes_feld": "nächstes Feld", "voriges_feld": "voriges Feld", "uebernehmen": "Vorbefund übernehmen",
              "maske_umschalten": "Maske aus/an"}
-    reihe = sorted(belegung.items(), key=lambda kv: (AKTIONEN.index(kv[1]), kv[0]))
-    return " · ".join(f"{TASTEN_NAME.get(t, t)} = {namen[a]}" for t, a in reihe)
+    out = []
+    for aktion in AKTIONEN:
+        t = tasten_fuer(belegung, aktion)
+        if t:
+            out.append(f"{'/'.join(TASTEN_NAME.get(k, k) for k in t)} = {namen[aktion]}")
+    return " · ".join(out)
 
 
-def tasten_kurz(belegung):
-    """Kurzfassung für die Hilfezeile der Maske, z. B. „Vorspulen/Rückspulen = Feld · F3 = übernehmen · F4 = Maske aus“."""
+def tasten_kurz(belegung, verfuegbar=None):
+    """Kurzfassung für die Hilfezeile der Maske — nur Tasten, die das erkannte Gerät hat (v3.15.4: SpeechMike Ambient
+    ohne F1–F4 → „Vorspulen/Rückspulen = Feld · Play = übernehmen · Command = Maske aus“), je Aktion die erste Taste.
+    verfuegbar: None = alle (Premium bzw. unbekannt), Menge = Tasten des Geräts, TASTATUR = kein SpeechMike."""
+    if verfuegbar == TASTATUR:
+        return "Bild↓/Bild↑ = Feld · F3 = übernehmen · F4 = Maske aus"
+
     def namen(aktion):
-        return [TASTEN_NAME.get(t, t) for t, a in sorted(belegung.items()) if a == aktion]
+        return [TASTEN_NAME.get(t, t) for t in tasten_fuer(belegung, aktion, verfuegbar)]
     vor, zur = namen("naechstes_feld"), namen("voriges_feld")
     teile = []
-    if len(vor) == 1 and len(zur) == 1:
+    if vor and zur:
         teile.append(f"{vor[0]}/{zur[0]} = Feld")
     else:
-        teile += [f"{'/'.join(vor)} = nächstes Feld"] if vor else []
-        teile += [f"{'/'.join(zur)} = voriges Feld"] if zur else []
-    teile += [f"{'/'.join(namen('uebernehmen'))} = übernehmen"] if namen("uebernehmen") else []
-    teile += [f"{'/'.join(namen('maske_umschalten'))} = Maske aus"] if namen("maske_umschalten") else []
+        teile += [f"{vor[0]} = nächstes Feld"] if vor else []
+        teile += [f"{zur[0]} = voriges Feld"] if zur else []
+    teile += [f"{namen('uebernehmen')[0]} = übernehmen"] if namen("uebernehmen") else []
+    teile += [f"{namen('maske_umschalten')[0]} = Maske aus"] if namen("maske_umschalten") else []
     return " · ".join(teile)
 
 
@@ -436,6 +474,19 @@ def erkennen(leistungen, maske_def):
 
 # ───────────────────────────── Maske (Zustand) ─────────────────────────────
 @dataclass
+class Abschnitt:
+    """v3.15.4: Diktat-Abschnitt eines Felds, solange die Spracherkennung läuft. art: „ersetzen“ (erstes Diktat ersetzt
+    Vorschlag/Übernommenes/Getipptes), „anhaengen“ (Nachdiktat), „ziel“ (markierter Text bzw. Cursor-Stelle: von/bis im
+    beim Abschnittsbeginn angezeigten Text basis)."""
+    nr: int
+    art: str
+    von: int = 0
+    bis: int = 0
+    basis: str = ""
+    text: Optional[str] = None               # None = Spracherkennung läuft
+
+
+@dataclass
 class Feld:
     id: str
     label: str
@@ -447,11 +498,13 @@ class Feld:
     vorschlag_art: str = ""                 # VORBEFUND | VORLAGE | ""
     vorschlag_werte: Dict[str, str] = field(default_factory=dict)
     quelle: str = LEER
-    teile: List[Optional[str]] = field(default_factory=list)   # Diktat-Abschnitte (None = Spracherkennung läuft)
+    teile: List[Optional[str]] = field(default_factory=list)   # erkannte Diktat-Abschnitte (Peters Wörter)
     sitzung: int = 0                        # steigt, wenn das Feld geleert wird (späte Erkennung alter Abschnitte verfällt)
     text: str = ""                          # übernommener / getippter Text (bei DIKTAT: Ergebnis der Verarbeitung)
     werte: Dict[str, str] = field(default_factory=dict)        # heutige Werte (übernommen/getippt/diktiert)
     verarbeitet: Dict[str, tuple] = field(default_factory=dict)  # Rohtext → (Text, Werte, Hinweis): je Diktat nur einmal KI
+    laufend: List[Abschnitt] = field(default_factory=list)     # v3.15.4: Abschnitte, deren Erkennung noch läuft
+    cursor: Optional[int] = None            # v3.15.4: Cursor-Stelle nach dem Einfügen (für die Anzeige, einmalig)
 
     @property
     def roh(self):
@@ -459,7 +512,7 @@ class Feld:
 
     @property
     def wartet(self):
-        return any(t is None for t in self.teile)
+        return bool(self.laufend)
 
     @property
     def offen(self):
@@ -484,6 +537,8 @@ class Maske:
         self.datum = datum_kurz((self.vorbefund or {}).get("datum"))
         self.schluss_an = schluss_an
         self.version = 0
+        self.gross_satzanfang = True            # v3.15.4: Einfügen an der Cursor-Stelle (Menü „Satzanfang groß“)
+        self._abschnitt_nr = 0
         self.felder = []
         for f in maske_def.get("felder") or []:
             nur_sono = bool(f.get("nur_mit_sono"))
@@ -570,13 +625,13 @@ class Maske:
         self.version += 1
 
     def _leeren(self, f):
-        f.teile, f.text, f.werte, f.verarbeitet = [], "", {}, {}
+        f.teile, f.text, f.werte, f.verarbeitet, f.laufend, f.cursor = [], "", {}, {}, [], None
         f.sitzung += 1
 
     # Übernehmen / Diktat / Tippen ─────────────────────────────────────────────
-    def uebernehmen(self, i=None):
+    def uebernehmen(self, i=None, taste="F3"):
         """Vorschlag des Felds bewusst übernehmen (Vorbefund: mit Vergleichsdatum, wie „unverändert“). Noch einmal = wieder
-        Vorschlag. → Meldung für die Hilfezeile."""
+        Vorschlag. → Meldung für die Hilfezeile (taste = Name der Taste des Geräts, z. B. „Play“ am Ambient)."""
         f = self.felder[self.aktiv if i is None else i]
         if f.quelle == UEBERNOMMEN:
             self._leeren(f)
@@ -585,7 +640,7 @@ class Maske:
             return f"{f.label}: wieder Vorschlag (nicht übernommen)"
         if f.quelle not in VORSCHLAG:
             if f.quelle in (DIKTAT, GETIPPT):
-                return f"{f.label}: heute {'diktiert' if f.quelle == DIKTAT else 'getippt'} – F3 noch einmal = verwerfen"
+                return f"{f.label}: heute {'diktiert' if f.quelle == DIKTAT else 'getippt'} – {taste} noch einmal = verwerfen"
             return f"{f.label}: kein Vorbefund – Record diktiert"
         self._leeren(f)
         f.text = self._vorschlag_heute(f)
@@ -612,39 +667,96 @@ class Maske:
         self._geaendert()
         return f"{f.label}: Diktat verworfen" + (" – wieder Vorbefund" if f.vorschlag_art == VORBEFUND else "")
 
-    def reservieren(self, i=None):
+    def reservieren(self, i=None, ziel=None):
         """Diktat-Abschnitt für das Feld anmelden (Spracherkennung läuft). Der Stand des Felds ändert sich erst, wenn
-        Text erkannt ist — Stille beim Durchspringen ändert nichts. → (Feld-Index, Sitzung, Teil-Index)."""
+        Text erkannt ist — Stille beim Durchspringen ändert nichts. v3.15.4: ziel = (von, bis) im angezeigten Feldtext
+        (Markierung bzw. Cursor-Stelle) → das Diktat ersetzt genau diese Stelle; nur, solange im Feld nichts mehr
+        erkannt wird (sonst Nachdiktat wie bisher). → (Feld-Index, Sitzung, Abschnitt-Nr.)."""
         k = self.aktiv if i is None else i
         f = self.felder[k]
-        f.teile.append(None)
-        return k, f.sitzung, len(f.teile) - 1
+        self._abschnitt_nr += 1
+        if ziel is not None and not f.laufend:
+            basis = vorschau(f, self)
+            von, bis = sorted(max(0, min(int(x), len(basis))) for x in ziel)
+            a = Abschnitt(self._abschnitt_nr, "ziel", von, bis, basis)
+        else:
+            a = Abschnitt(self._abschnitt_nr, "anhaengen" if (f.laufend or f.quelle == DIKTAT) else "ersetzen")
+        f.laufend.append(a)
+        return k, f.sitzung, a.nr
 
-    def diktat_fertig(self, k, sitzung, teil, text):
-        """Erkannter Text eines Abschnitts. Das erste Wort ersetzt Vorschlag/Übernommenes/Getipptes (Diktat gewinnt);
-        weitere Abschnitte im selben Feld hängen an (Nachdiktat). Leer (Stille) → nichts ändert sich."""
+    def diktat_fertig(self, k, sitzung, nr, text):
+        """Erkannter Text eines Abschnitts. Die Abschnitte eines Felds wirken in ihrer Reihenfolge (ein später erkannter
+        früherer Abschnitt wartet nicht hinten an). Das erste Wort ersetzt Vorschlag/Übernommenes/Getipptes (Diktat
+        gewinnt); weitere Abschnitte im selben Feld hängen an (Nachdiktat); ein Abschnitt mit Ziel ersetzt die Markierung
+        bzw. fügt an der Cursor-Stelle ein. Leer (Stille) → nichts ändert sich. → False, wenn der Abschnitt verfallen
+        ist (Feld inzwischen geleert, übernommen oder getippt)."""
         f = self.felder[k]
-        if sitzung != f.sitzung or teil >= len(f.teile):
+        a = next((x for x in f.laufend if x.nr == nr), None) if sitzung == f.sitzung else None
+        if a is None:
             return False
-        t = (text or "").strip()
-        f.teile[teil] = t
-        if t and f.quelle != DIKTAT:
-            f.text, f.werte, f.verarbeitet = "", {}, {}
-            f.quelle, f.sichtbar = DIKTAT, True     # diktiert = gewollt (auch ein eingeklapptes Sono-Feld)
-        if t:
-            f.verarbeitet = {}
+        a.text = (text or "").strip()
+        while f.laufend and f.laufend[0].text is not None:
+            self._anwenden(f, f.laufend.pop(0))
         self._geaendert()
         return True
 
+    def _anwenden(self, f, a):
+        t = a.text
+        if not t:
+            return
+        f.sichtbar = True                           # diktiert = gewollt (auch ein eingeklapptes Sono-Feld)
+        art = a.art
+        if art == "ziel":
+            if vorschau(f, self) != a.basis:       # Feld inzwischen anders (z. B. Vorbefund nachgekommen) → anhängen
+                art = "anhaengen"
+            elif not a.basis.strip():
+                art = "ersetzen"
+            elif a.von <= 0 and a.bis >= len(a.basis.rstrip()):
+                art = "alles"                       # ganzer Text markiert = neues Diktat (heutige Werte bleiben)
+        heutige = self._heutige_werte(f, a.basis if a.art == "ziel" else None)
+        if art == "ziel":
+            if a.basis[a.von:a.bis].rstrip().endswith((".", "!", "?")) and not t.rstrip().endswith((".", "!", "?", ":")):
+                t = t.rstrip() + "."                # markierter Satz samt Punkt ersetzt → der Punkt bleibt
+            neu, cursor = _einf.einfuegen(a.basis, a.von, a.bis, t, gross=self.gross_satzanfang)
+            if f.quelle == DIKTAT and not _zeigt_vorbefund(f, self):
+                f.teile, f.verarbeitet = [_mit_werten(neu, heutige, f)], {}    # nur Peters Wörter → bleibt Diktat (KI)
+            else:                                   # Vorbefund/Normalbaustein/Getipptes steht mit drin → getippt, ohne KI
+                f.text, f.werte, f.quelle, f.teile, f.verarbeitet = neu, heutige, GETIPPT, [], {}
+            f.cursor = cursor
+            return
+        if art == "anhaengen" and f.quelle == DIKTAT:
+            f.teile.append(t)
+            f.verarbeitet = {}
+            return
+        if art == "anhaengen" and f.quelle == GETIPPT and f.text.strip():
+            f.text = f.text.rstrip() + " " + t      # nach dem Einfügen weiterdiktiert
+            return
+        f.text, f.werte, f.verarbeitet = "", {}, {}
+        f.teile = [_mit_werten(t, heutige, f) if art == "alles" else t]
+        f.quelle = DIKTAT
+
+    def _heutige_werte(self, f, angezeigt=None):
+        """ACR/BI-RADS, die das Feld heute schon trägt (diktiert, getippt, übernommen) und die NICHT im Textfeld stehen
+        (nur unter dem Feld) — die bleiben beim Ändern des Texts. Was im Text steht, ändert der Text selbst (markiert und
+        ersetzt bzw. gelöscht = weg). Vorschlag-Werte zählen nie (nichts still übernehmen)."""
+        if f.quelle in VORSCHLAG + (LEER,):
+            return {}
+        sichtbar = werte_aus_text(vorschau(f, self) if angezeigt is None else angezeigt)[1]
+        return {k: v for k, v in werte_vorschau(f, self).items() if k not in sichtbar}
+
     def tippen(self, i, text):
-        """Von Hand im Feld geändert → getippt (wie geschrieben, ohne KI). Unverändert gegenüber der Anzeige → nichts."""
+        """Von Hand im Feld geändert → getippt (wie geschrieben, ohne KI). Unverändert gegenüber der Anzeige → nichts.
+        v3.15.4: heute diktierte/übernommene ACR/BI-RADS bleiben (sie stehen nicht im Textfeld); ganz gelöscht → leer
+        (stand ein Vorschlag da: „gelöscht“, kommt nicht in den Befund; ✕ verwerfen holt ihn zurück)."""
         f = self.felder[i]
         t = (text or "").strip()
         if t == vorschau(f, self).strip():
             return False
+        heutige = self._heutige_werte(f)
         self._leeren(f)
         # wie getippt stehen lassen (auch „ACR: 1“-Zeilen im Ergebnis — die Werte liest erst der Befund heraus)
-        f.text, f.quelle, f.sichtbar = t, (GETIPPT if t else (f.vorschlag_art or LEER)), True
+        f.text, f.quelle, f.sichtbar = t, (GETIPPT if (t or f.vorschlag_art) else LEER), True
+        f.werte = heutige if f.quelle == GETIPPT else {}
         self._geaendert()
         return True
 
@@ -674,7 +786,7 @@ class Maske:
         return [f for f in self.felder if f.wartet]
 
     def heutiges(self):
-        return any(f.quelle in (DIKTAT, GETIPPT, UEBERNOMMEN) for f in self.felder)
+        return any(f.quelle in (DIKTAT, UEBERNOMMEN) or (f.quelle == GETIPPT and f.text.strip()) for f in self.felder)
 
     def zustand(self):
         """Für Selbsttest/Protokoll: je Feld id:quelle (ohne Text)."""
@@ -701,6 +813,31 @@ def vorschau(f, maske):
     return ""
 
 
+def _zeigt_vorbefund(f, maske):
+    """Zeigt ein diktiertes Feld den Vorbefund („unverändert“ → Vergleichssatz)? Dann ist ein Einfügen darin kein reines
+    Diktat mehr (der Vorbefund ginge sonst an die KI)."""
+    t = werte_aus_text(f.roh)[0] if f.typ == "ergebnis" else f.roh
+    return ist_unveraendert(t, maske.definition) and f.vorschlag_art == VORBEFUND and bool(f.vorschlag.strip())
+
+
+def _mit_werten(text, werte, f):
+    """Ergebnis-Feld: heutige ACR/BI-RADS, die nicht im Text stehen (sie stehen unter dem Feld), als Diktat-Wörter
+    anhängen — sonst gingen sie beim Ersetzen des Texts verloren. Neu diktierte Werte gehen vor."""
+    if f.typ != "ergebnis" or not werte:
+        return text
+    da = werte_aus_text(text)[1]
+    fehlt = [f"{_WERT_KURZ[k]} {v}" for k, v in werte.items() if k in _WERT_KURZ and v and k not in da]
+    return (text.rstrip() + " " + " ".join(fehlt)).strip() if fehlt else text
+
+
+_WERT_KURZ = {"acr": "ACR", "birads": "BIRADS"}
+
+
+def laufend_ziel(f):
+    """Der Abschnitt mit Ziel (Markierung/Cursor), dessen Erkennung noch läuft — für die Live-Anzeige an der Stelle."""
+    return f.laufend[0] if f.laufend and f.laufend[0].art == "ziel" else None
+
+
 def werte_vorschau(f, maske):
     """ACR/BI-RADS, die das Feld gerade trägt (Vorschlag, übernommen/getippt, diktiert — „unverändert“ mit den Werten des
     Vorbefunds, diktierte Werte gehen vor)."""
@@ -719,7 +856,9 @@ def werte_vorschau(f, maske):
             return v
         return w
     if f.quelle == GETIPPT:
-        return werte_aus_text(f.text)[1]
+        w = dict(f.werte)                       # v3.15.4: heutige Werte bleiben, getippte gehen vor
+        w.update(werte_aus_text(f.text)[1])
+        return w
     return dict(f.werte)
 
 
@@ -810,6 +949,8 @@ def befund_bauen(maske, korrektur=None, misheard=None, ohne_offene=False):
             text, w = f.text, dict(f.werte)
         elif f.quelle == GETIPPT:
             text, w = (werte_aus_text(f.text) if f.typ == "ergebnis" else (f.text, {}))
+            if f.typ == "ergebnis":
+                w = {**f.werte, **w}            # v3.15.4: heutige Werte bleiben, getippte gehen vor
             text = satz(text)
         else:
             continue
@@ -880,13 +1021,14 @@ def schluss_text(maske, birads):
     return "", (s.get("hinweis_sonst") or "").format(birads=b.upper())
 
 
-def offene_meldung(maske):
-    """Warnung vor INS: welche Felder noch Vorbefund-/Vorschlag-Stand haben (nichts wird still übernommen)."""
+def offene_meldung(maske, taste="F3"):
+    """Warnung vor INS: welche Felder noch Vorbefund-/Vorschlag-Stand haben (nichts wird still übernommen). taste = Name
+    der Übernehmen-Taste des Geräts (Ambient: „Play“)."""
     offen = maske.offene()
     if not offen:
         return ""
     namen = ", ".join(f.label + (" (Vorbefund)" if f.vorschlag_art == VORBEFUND else " (Normalbaustein)") for f in offen)
-    return (f"Noch nicht übernommen: {namen} – F3 übernimmt · Record diktiert neu · INS noch einmal = ohne diese "
+    return (f"Noch nicht übernommen: {namen} – {taste} übernimmt · Record diktiert neu · INS noch einmal = ohne diese "
             f"{'Felder' if len(offen) > 1 else 'Feld'}")
 
 
@@ -909,5 +1051,7 @@ def anzeige_zustand(f, datum=""):
     """Kurztext rechts am Feld (Chip)."""
     if not f.sichtbar:
         return "eingeklappt – keine Sono-Leistung" if f.nur_mit_sono else "eingeklappt"
+    if f.quelle == GETIPPT and not f.text.strip():
+        return "gelöscht – kommt nicht in den Befund"
     return {VORBEFUND: f"Vorbefund {datum}".strip(), VORLAGE: "Normalbaustein (Vorschlag)", UEBERNOMMEN: "✓ übernommen",
             DIKTAT: "… erkennt" if f.wartet else "diktiert", GETIPPT: "getippt", LEER: "leer"}.get(f.quelle, f.quelle)

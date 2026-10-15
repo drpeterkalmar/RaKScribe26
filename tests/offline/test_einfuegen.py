@@ -132,5 +132,53 @@ check("EXE ohne Cursor im Befund: normaler Ablauf, neuer Befund ersetzt den alte
 app.reset_dictation()
 check("EXE F9 löscht das Einfüge-Ziel", app._einfuegen_ziel is None)
 
+# v3.15.4 (Peter 15.10., Ordi-Protokoll: Record → Pause → in den Befund geklickt → Record = „weiter“ → die Stelle wurde
+# nie gelesen, INS baute einen neuen Befund): SpeechMike-Ablauf mit Klick in der Pause, mit und ohne „Nur Text“, im CAS-Band
+mod._llm_aufruf = lambda p: (_ for _ in ()).throw(AssertionError("Befund-KI beim Einfügen gerufen"))
+
+
+def lauf_pause(sel=None, insert=0, nur_text=False, cas=False):
+    mod._chirp3_worker = lambda pcm, sr, loc, token: "zusätzlich kleiner Gelenkerguss"
+    app = S.baue_app(mod)
+    app.result_text.insert("1.0", BEFUND)
+    app.transcript_text.insert("1.0", "Knie rechts unauffällig")      # bisheriges Diktat (Nachdiktat-Basis)
+    tb = FakeTb(app.result_text, insert, sel)
+    app.result_text._textbox = tb
+    fokus = {"tb": None}
+    app.focus_get = lambda: fokus["tb"]
+    app.status_badge = S.FakeWidget()
+    app.repariert_label = S.FakeWidget()
+    app.nur_text_var = type("V", (), {"get": lambda self: nur_text})()
+    if cas:
+        app._cas = type("A", (), {"nr": "20261015901", "leistungen": None, "kontext": None})()
+        app._cas_aufnahmen, app._cas_hinweise = [], []
+        app._cas_hinweise_zeigen = lambda h: None
+        app._ibl_befund_leeren = lambda: None
+        app._ibl_nach_lauf = lambda e: None
+    app.sm_record()                                   # Record: Aufnahme startet (noch nicht in den Befund geklickt)
+    S.pump(app, lambda: len(app._aufnahme.puffer) >= 6)
+    app.sm_record()                                   # Pause
+    S.pump(app, lambda: False, 0.3)
+    fokus["tb"] = tb                                  # … jetzt in den Befund geklickt bzw. markiert
+    app.sm_record()                                   # Record = weiter
+    S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
+    app.sm_ins()
+    S.pump(app, lambda: app._job.zustand in ("READY", "ERROR") and app._status_raw != "PROCESSING", 8)
+    S.pump(app, lambda: False, 0.8)
+    app._aufnahme_stoppen()
+    return app, tb
+
+
+app, tb = lauf_pause(insert=pos)
+check("SpeechMike: in der Pause in den Befund geklickt → Diktat an der Stelle eingefügt, Rest bleibt, nichts eingefügt "
+      "ins RIS", app.result_text.text == erwartet and S.AUFZ.tasten == [] and app._status_raw == "KONTROLLE",
+      repr(app.result_text.text))
+app, tb = lauf_pause(sel=(a, a + len("Kein Erguss.")), nur_text=True)
+check("… mit „Nur Text“: Markierung durch den korrigierten Text ersetzt (kein Befundumbau)",
+      app.result_text.text == BEFUND.replace("Kein Erguss.", "Zusätzlich kleiner Gelenkerguss."), repr(app.result_text.text))
+app, tb = lauf_pause(insert=pos, cas=True)
+check("… mit offenem CAS-Auftrag (blaues Band): ebenso eingefügt, wartet auf EOL", app.result_text.text == erwartet
+      and app._status_raw == "KONTROLLE", repr(app.result_text.text))
+
 print("FAILS:", fails)
 sys.exit(1 if fails else 0)

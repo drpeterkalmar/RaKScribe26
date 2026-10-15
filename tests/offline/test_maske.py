@@ -267,5 +267,103 @@ bel2 = M.tasten_belegung(DEF_ALL, {"naechstes_feld": "FF INSTR", "voriges_feld":
 check("config.ini: zusätzliche Taste (INSTR) geht, eingeübte (INS) nie, unbekannte Aktion ignoriert",
       bel2.get("INSTR") == "naechstes_feld" and "INS" not in bel2 and "REW" not in bel2 and len(log) == 2, f"{bel2} {log}")
 
+# v3.15.4 (Peter 15.10.: SpeechMike Ambient ohne F1–F4): Belegung je erkanntem Gerät
+import speechmike as SM  # noqa: E402
+amb = M.tasten_belegung(DEF_ALL, satz="tasten_ambient")
+check("Ambient: Vorspulen/Rückspulen = Feld, Play = übernehmen, Command = Maske aus/an (eigene Belegung)",
+      amb == {"FF": "naechstes_feld", "REW": "voriges_feld", "PLAY": "uebernehmen", "COMMAND": "maske_umschalten"}, repr(amb))
+check("… SpeechMike III/Premium unverändert (F3/F4, Play/Command nicht belegt)", "PLAY" not in bel and "COMMAND" not in bel)
+check("Hilfezeile Ambient: nur Tasten, die das Gerät hat", M.tasten_kurz(amb, SM.AMBIENT_TASTEN)
+      == "Vorspulen/Rückspulen = Feld · Play = übernehmen · Command = Maske aus", M.tasten_kurz(amb, SM.AMBIENT_TASTEN))
+check("Hilfezeile ohne SpeechMike: Tastatur (Bild↓/↑, F3, F4)", M.tasten_kurz(bel, M.TASTATUR)
+      == "Bild↓/Bild↑ = Feld · F3 = übernehmen · F4 = Maske aus")
+check("Tastenname für Hinweise: Ambient „Play“/„Command“, Premium „F3“/„F4“, Tastatur „F3“",
+      M.taste_name(amb, "uebernehmen", SM.AMBIENT_TASTEN) == "Play" and M.taste_name(amb, "maske_umschalten",
+      SM.AMBIENT_TASTEN) == "Command" and M.taste_name(bel, "uebernehmen") == "F3" and M.taste_name(amb, "uebernehmen",
+      M.TASTATUR) == "F3")
+check("Menü/Protokoll: mehrere Tasten einer Aktion mit „/“", M.tasten_text(dict(bel, PLAY="uebernehmen"))
+      == "Vorspulen = nächstes Feld · Rückspulen = voriges Feld · F3/Play = Vorbefund übernehmen · F4 = Maske aus/an",
+      M.tasten_text(dict(bel, PLAY="uebernehmen")))
+log = []
+amb2 = M.tasten_belegung(DEF_ALL, {"uebernehmen": "PLAY INSTR", "maske_umschalten": "STOP"}, log=log.append,
+                         satz="tasten_ambient")
+check("config.ini [MASKE] AMBIENT_…: überschreibt nur die Ambient-Belegung, Stop bleibt eingeübt", amb2.get("INSTR")
+      == "uebernehmen" and "STOP" not in amb2 and len(log) == 1, f"{amb2} {log}")
+mT = neu_maske()
+mT.gehe_zu(1)
+k_, s_, n_ = mT.reservieren()
+mT.diktat_fertig(k_, s_, n_, "neuer Herd")
+check("Meldungen nennen die Taste des Geräts („Play noch einmal = verwerfen“, „Play übernimmt“)",
+      mT.uebernehmen(1, taste="Play").endswith("Play noch einmal = verwerfen")
+      and "– Play übernimmt ·" in M.offene_meldung(mT, "Play"), M.offene_meldung(mT, "Play"))
+check("Gerätemodell: Seriennummer PSM5… = Ambient (meldet sich als „SpeechMike III“ 0C1D), sonst alle Tasten",
+      SM.modell({"serial_number": "PSM50000000001", "product_string": "SpeechMike III", "product_id": 0x0C1D})["tasten"]
+      == SM.AMBIENT_TASTEN and SM.modell({"serial_number": "", "product_string": "SpeechMike III"})["tasten"] is None
+      and SM.modell({"product_string": "SpeechMike Ambient"})["name"] == "SpeechMike Ambient (PSM5000)")
+check("Play als Druckknopf vs. Schieberstellung (Rohbericht beim Loslassen)", not SM.schieber_stellung(
+      "80 00 00 00 00 00 00 00 00") and SM.schieber_stellung("80 00 00 00 00 00 00 00 02") and SM.tasten_maske(
+      "80 00 00 00 00 00 00 20 00") == 0x20 and SM.tasten_maske("kaputt") == 0)
+
+# ───────────────────────────── Teil 6: Markieren / Cursor / Löschen (v3.15.4) ─────────────────────────────
+for fall in F["markieren"]:
+    mm = neu_maske(vorbefund=VB if fall["vorbefund"] else None)
+    i = mm.index(fall["feld"])
+    for schritt in fall["vorher"]:
+        if "diktat" in schritt:
+            k_, s_, n_ = mm.reservieren(i)
+            mm.diktat_fertig(k_, s_, n_, schritt["diktat"])
+        elif "uebernehmen" in schritt:
+            mm.uebernehmen(i)
+        elif "tippen" in schritt:
+            mm.tippen(i, schritt["tippen"])
+    f = mm.felder[i]
+    if fall.get("diktat") is not None:
+        basis = M.vorschau(f, mm)
+        von = len(basis) if fall.get("von") in ("ende", "alles") else int(fall.get("von", 0))
+        bis = fall.get("bis", von)
+        bis = len(basis) if bis in ("ende", "alles") else int(bis)
+        k_, s_, n_ = mm.reservieren(i, ziel=(von, bis))
+        mm.diktat_fertig(k_, s_, n_, fall["diktat"])
+    soll, ist = fall["soll"], {}
+    ist["quelle"], ist["vorschau"], ist["roh"] = f.quelle, M.vorschau(f, mm), f.roh
+    ist["werte"], ist["offen"], ist["chip"] = M.werte_vorschau(f, mm), f.offen, M.anzeige_zustand(f, mm.datum)
+    KORR.clear()
+    rep = M.befund_bauen(mm, korrektur=korrektur, ohne_offene=True).report
+    ist["ki"] = list(KORR)
+    falsch = {k: (ist[k], v) for k, v in soll.items() if k in ist and ist[k] != v}
+    if "befund_enthaelt" in soll and soll["befund_enthaelt"] not in rep:
+        falsch["befund_enthaelt"] = rep
+    if "befund_ohne" in soll and soll["befund_ohne"] in rep:
+        falsch["befund_ohne"] = rep
+    check(f"markieren: {fall['name']}", not falsch, json.dumps(falsch, ensure_ascii=False, indent=1))
+
+mR = neu_maske(vorbefund=None)
+i = mR.index("inspektion")
+k_, s_, n_ = mR.reservieren(i)
+mR.diktat_fertig(k_, s_, n_, "unauffällig")
+z1 = mR.reservieren(i, ziel=(0, 0))
+z2 = mR.reservieren(i, ziel=(0, 0))
+mR.diktat_fertig(*z2, "beidseits")
+check("Reihenfolge: ein später erkanntes Nachdiktat wartet auf den Abschnitt davor (nichts verdreht)",
+      mR.felder[i].wartet and M.vorschau(mR.felder[i], mR) == "unauffällig", M.vorschau(mR.felder[i], mR))
+mR.diktat_fertig(*z1, "klinisch")
+check("… dann beide in Reihenfolge: Einfügen an der Cursor-Stelle, danach angehängt (zweiter Abschnitt ohne Ziel)",
+      not mR.felder[i].wartet and M.vorschau(mR.felder[i], mR) == "Klinisch unauffällig beidseits",
+      M.vorschau(mR.felder[i], mR))
+mV = neu_maske(vorbefund=None)
+i = mV.index("mammographie")
+zV = mV.reservieren(i, ziel=(0, 11))
+mV.vorbefund_setzen(VB)
+mV.diktat_fertig(*zV, "Mammographie neu")
+check("Feld während der Erkennung geändert (Vorbefund nachgekommen) → kein Einfügen an falscher Stelle, Diktat ersetzt",
+      mV.felder[i].quelle == "diktat" and M.vorschau(mV.felder[i], mV) == "Mammographie neu", M.vorschau(mV.felder[i], mV))
+mL = neu_maske()
+for i in range(4):
+    mL.tippen(i, "")
+check("alles selbst gelöscht → „Maske leer“ (kein leerer Befund, kein offener Vorschlag)", not mL.heutiges()
+      and not mL.offene(), mL.zustand())
+mL.verwerfen(1)
+check("✕ verwerfen nach dem Löschen holt den Vorschlag zurück", mL.felder[1].quelle == "vorbefund" and mL.felder[1].offen)
+
 print("\n" + ("✅ MASKE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

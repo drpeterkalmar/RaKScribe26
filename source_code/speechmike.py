@@ -11,7 +11,8 @@ Philips SpeechControl/SpeechMagic bekommen dieselben Tastenberichte weiterhin.
 
 Belegung (Peter 11.10., Nachtrag 3 — endgültig): Record = Aufnahme/Pause/Weiter, INS = Befund rechts erstellen (nichts
 einfügen), EOL = sichtbaren Befund weiterschicken + alles leeren, Stop = Pause, F1 = Neu, F2 = Nur Text. Alle anderen
-Tasten nur ins Protokoll.
+Tasten nur ins Protokoll — außer bei offener Mammo-Maske (v3.15: Spulen = Feld, F3/Play = übernehmen, F4/Command = Maske
+aus/an; Belegung in masken.json, RaKScribe.py _maske_taste).
 """
 import collections
 import threading
@@ -36,6 +37,37 @@ _SCHIEBER_MASKE = sum(b for n, b in TASTEN if n in SCHIEBER)
 
 # Taste → Ereignis der Oberfläche (jobstate.UI_EREIGNISSE); fehlt die Taste, wird sie nur protokolliert
 BELEGUNG = {"RECORD": "record", "INS": "ins", "EOL": "eol", "STOP": "stop", "F1": "reset", "F2": "nur_text"}
+
+# v3.15.4 (Peter 15.10.: „ich hab im büro nur ein ambient … hat aber weniger buttons“): Tasten des SpeechMike Ambient
+# PSM5000 laut Philips-Handbuch (Event-Modus): Record, Vorspulen, Rückspulen, Play, Command, INS/OVR, EOL — keine F1–F4,
+# kein INSTR. Es meldet sich wie ein Premium Air als 0911:0C1D „SpeechMike III“; erkennbar an der Seriennummer „PSM5…“
+# (Ordi-Probelauf 15.10.: PSM5000…). Das SDK nutzt für das Ambient dieselben Tasten-Bits (Druckknöpfe, kein Schieber).
+AMBIENT_TASTEN = frozenset({"RECORD", "FF", "REW", "PLAY", "COMMAND", "INS", "EOL"})
+
+
+def modell(info):
+    """Gerätemodell aus der USB-Kennung (hid.enumerate-Eintrag), ohne Befehl ans Gerät — nur für Hilfezeile/Diagnose.
+    → {"name": …, "tasten": Menge der Tasten oder None (= alle, z. B. Premium)}."""
+    serie = str((info or {}).get("serial_number") or "").strip().upper()
+    produkt = str((info or {}).get("product_string") or "")
+    if serie.startswith("PSM5") or "ambient" in produkt.lower():
+        return {"name": "SpeechMike Ambient (PSM5000)", "tasten": AMBIENT_TASTEN}
+    return {"name": "", "tasten": None}
+
+
+def tasten_maske(roh):
+    """16-Bit-Tastenmaske aus der Rohzeile eines Tastenberichts („80 00 … 00 04“) — 0, wenn nicht lesbar."""
+    try:
+        b = [int(x, 16) for x in str(roh or "").split()]
+    except ValueError:
+        return 0
+    return (b[7] | (b[8] << 8)) if len(b) >= 9 and b[0] == BERICHT_TASTEN else 0
+
+
+def schieber_stellung(roh):
+    """Steht im Bericht eine Schieberstellung (REC/STOP/PLAY/REW/FF)? Beim Loslassen einer Druckknopf-Taste nein — beim
+    Weiterschieben eines Schiebers ja (die neue Stellung kommt im selben Bericht)."""
+    return bool(tasten_maske(roh) & _SCHIEBER_MASKE)
 
 ENTPRELL_S = 0.25    # zweiter Druck derselben Taste innerhalb 0,25 s = Prellen, zählt nicht
 # Tasten, deren Bit bei jedem Druck umschaltet statt beim Loslassen zurückzugehen (falls die Hardware-Prüfung am rog17
@@ -151,6 +183,7 @@ class SpeechMikeLeser:
         self._hid = hid_modul
         self.scan_s = scan_s
         self.verbunden = None              # Beschreibung des offenen Geräts oder None
+        self.modell = None                 # v3.15.4: modell(info) des offenen Geräts (Ambient: Tasten ohne F1–F4)
         self.dekodierer = Dekodierer()
         self.verlauf = collections.deque(maxlen=40)   # Diagnose: letzte Tasten
         self.led_soll = "aus"
@@ -220,10 +253,12 @@ class SpeechMikeLeser:
                 continue
             beschreibung = (f"{info.get('product_string') or 'SpeechMike'} "
                             f"({info['vendor_id']:04x}:{info['product_id']:04x})").strip()
+            self.modell = modell(info)
             self.verbunden = beschreibung
             self.dekodierer.zuruecksetzen()
             self._led_gesendet = None
-            self.log(f"[SPEECHMIKE] Verbunden: {beschreibung}, Usage-Page 0x{USAGE_PAGE:04X}, geteilt geöffnet.")
+            self.log(f"[SPEECHMIKE] Verbunden: {beschreibung}, Usage-Page 0x{USAGE_PAGE:04X}, geteilt geöffnet."
+                     + (f" Modell: {self.modell['name']} – Tasten ohne F1–F4." if self.modell["tasten"] else ""))
             self.on_verbindung(beschreibung)
             try:
                 self._lesen(dev)
@@ -234,7 +269,7 @@ class SpeechMikeLeser:
                     dev.close()
                 except Exception:
                     pass
-                self.verbunden = None
+                self.verbunden = self.modell = None
                 self.on_verbindung(None)
 
     def _led_schreiben(self, dev):

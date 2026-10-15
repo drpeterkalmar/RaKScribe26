@@ -73,9 +73,12 @@ def ist_praxis_schluessel(data):
 
 
 def stt_credentials(stt_dict):
-    """Service-Account-Credentials für Speech-to-Text (google-auth erst hier importiert)."""
+    """Service-Account-Credentials für Speech-to-Text (google-auth erst hier importiert). v3.15.4: MIT Scope — ohne
+    Scope scheiterte jede Token-Erneuerung für chirp_3 mit „invalid_scope“ (Ordi-Protokoll 15.10.2026: 18 von 18
+    Volltranskriptionen), die EXE nahm dann still das schwächere Streaming-Transkript. Der SpeechClient (Live-Anzeige)
+    ergänzte sich den Scope selbst, darum fiel es nicht auf."""
     from google.oauth2 import service_account
-    return service_account.Credentials.from_service_account_info(stt_dict)
+    return service_account.Credentials.from_service_account_info(stt_dict, scopes=[STT_SCOPE])
 
 
 def expiry_timestamp(expiry, fallback):

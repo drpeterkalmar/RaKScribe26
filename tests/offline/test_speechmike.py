@@ -46,6 +46,10 @@ for taste, aktion in F["belegung_maske"].items():
     check(f"Masken-Belegung {taste}", _mb.get(taste) == aktion, str(_mb.get(taste)))
 check("Masken-Belegung: jede Taste steht in der Tabelle, keine eingeübte Taste belegt",
       all(t in F["belegung_maske"] for t, _ in sm.TASTEN) and not set(_mb) & set(sm.BELEGUNG))
+_ma = _mk.tasten_belegung(_mk.laden(str(ROOT / "masken.json")), satz="tasten_ambient")   # v3.15.4
+for taste, aktion in F["belegung_maske_ambient"].items():
+    check(f"Masken-Belegung Ambient {taste}", _ma.get(taste) == aktion, str(_ma.get(taste)))
+check("Ambient-Belegung nur mit Tasten, die das Ambient hat", set(_ma) <= sm.AMBIENT_TASTEN and not set(_ma) & set(sm.BELEGUNG))
 for text, ok in F["sendefaehig"]:
     check(f"sendefähig: {text[:40]!r}", sm.sendefaehig(text) == ok)
 

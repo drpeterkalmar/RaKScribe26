@@ -70,6 +70,10 @@
  "belegung_maske": {"FF": "naechstes_feld", "REW": "voriges_feld", "F3": "uebernehmen", "F4": "maske_umschalten",
                     "RECORD": null, "INS": null, "EOL": null, "STOP": null, "F1": null, "F2": null, "PLAY": null,
                     "INSTR": null, "COMMAND": null},
+ "_belegung_maske_ambient": "v3.15.4 (Peter 15.10.): SpeechMike Ambient PSM5000 (ohne F1–F4, Seriennummer PSM5…) — eigene Masken-Belegung masken.json „tasten_ambient“; SpeechMike III/Premium behalten „belegung_maske“.",
+ "belegung_maske_ambient": {"FF": "naechstes_feld", "REW": "voriges_feld", "PLAY": "uebernehmen", "COMMAND": "maske_umschalten",
+                            "RECORD": null, "INS": null, "EOL": null, "STOP": null, "F1": null, "F2": null, "F3": null,
+                            "F4": null, "INSTR": null},
  "zustand": [
   ["READY", "toggle", "start"], ["READY", "reset", "reset"], ["READY", "text", "text_start"], ["READY", "record", "start"],
   ["READY", "stop", null], ["READY", "ins", "text_start"], ["READY", "eol", "senden"],

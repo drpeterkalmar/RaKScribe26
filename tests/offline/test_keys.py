@@ -97,5 +97,26 @@ src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 check("EXE nutzt keys.py", "_keys.load_praxis_key(BASE_DIR, USER_KEY_PATH" in src and "_keys.SttTokenCache()" in src
       and "creds.expiry.timestamp()" not in src)
 
+# v3.15.4 (Ordi-Protokoll 15.10.: „invalid_scope“ bei jeder chirp_3-Volltranskription): Credentials MIT Scope
+import types  # noqa: E402
+_auf = {}
+_sa = types.SimpleNamespace(Credentials=types.SimpleNamespace(
+    from_service_account_info=lambda info, **kw: _auf.update(info=info, **kw) or "creds"))
+_alt = {n: sys.modules.get(n) for n in ("google", "google.oauth2", "google.oauth2.service_account")}
+sys.modules["google"] = types.ModuleType("google")
+sys.modules["google.oauth2"] = types.ModuleType("google.oauth2")
+sys.modules["google.oauth2"].service_account = _sa
+sys.modules["google.oauth2.service_account"] = _sa
+try:
+    _c = k.stt_credentials({"private_key": "x"})
+finally:
+    for n, m in _alt.items():
+        if m is None:
+            sys.modules.pop(n, None)
+        else:
+            sys.modules[n] = m
+check("STT-Credentials mit Scope cloud-platform (ohne: jede chirp_3-Token-Erneuerung „invalid_scope“)",
+      _c == "creds" and _auf.get("scopes") == ["https://www.googleapis.com/auth/cloud-platform"], repr(_auf))
+
 print("\n" + ("✅ SCHLÜSSEL PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

@@ -194,6 +194,56 @@ check("Pipeline f): HWS Röntgen + Schulter Sono → zwei Befunde, Schulter mit 
       [p.rsplit("<untersuchung>", 1)[1].split("</untersuchung>")[0] for p in prompts]
       == ["Halswirbelsäule in 2 Ebenen", "Sonographie des Schultergelenkes"], str(erg.vorlagen))
 
+# v3.15.4 (Peter 15.10., Ordi-Probelauf: Leistung „Handgelenk bds.“, Diktat „SL-Spalt links, ansonsten unauffällig“ →
+# 1. Versuch nur „Handgelenk links in 2 Ebenen“): beidseitige CAS-Leistung → IMMER beidseitiger Befund (deterministisch)
+def kontext_seite(cas, prompts, seite_im_titel="links"):
+    def llm(p):
+        prompts.append(p)
+        titel = p.rsplit("<untersuchung>", 1)[1].split("</untersuchung>")[0]
+        t = pl.br.titel_mit_seite(titel, seite_im_titel)          # die KI nimmt (fälschlich) die diktierte Seite
+        return (f"## {t}\n\n## Befund\nLinks pathologisch, rechts unauffällig, ausreichend lang für den Test.\n\n"
+                "## Ergebnis\n1. Befund links.")
+    return pl.Kontext(templates=T, display_names=DISPLAY, prompt=PROMPT, llm=llm, log=lambda *a: None, cas=cas)
+
+
+BDS = [("Handgelenk", "handgelenk_in_2_ebenen", "Handgelenk bds.", "beidseits",
+        "SL-Spalt links erweitert, ansonsten unauffällig", "Handgelenk beidseits in 2 Ebenen"),
+       ("Knie", "kniegelenk_in_2_ebenen", "Knie bds.", "beidseits",
+        "Knie links geringgradige Gonarthrose, ansonsten unauffällig", "Kniegelenk beidseits in 2 Ebenen"),
+       ("Hüfte", "hüftgelenk_in_2_ebenen", "Hüfte beidseits", "beidseits",
+        "Hüfte rechts mäßiggradige Coxarthrose", "Hüftgelenk beidseits in 2 Ebenen"),
+       ("Schulter (Text „bilateral“, Brücke ohne Seite)", "schultergelenk_in_2_ebenen", "Schulter bilateral", None,
+        "Schulter links Tendinosis calcarea", "Schultergelenk beidseits in 2 Ebenen"),
+       ("Fuß", "fuß_in_2_ebenen", "Fuß bds.", "beidseits", "Fuß rechts Hallux valgus", "Fuß beidseits in 2 Ebenen")]
+for name, key, text, seite, diktat, soll in BDS:
+    prompts = []
+    erg = pl.befund_aus_diktat(diktat, kontext_seite(cv.CasHinweis([L("x", text, "Röntgen", key, seite)], T), prompts))
+    titel = erg.report.splitlines()[0]
+    check(f"beidseits laut CAS – {name}: „{soll}“ (die KI schrieb die diktierte Seite), Prompt mit <cas_beidseits>, Hinweis",
+          titel == "## " + soll and len(prompts) == 1 and "<cas_beidseits>" in prompts[0] and "„" + text + "“ ist BEIDSEITS"
+          in prompts[0] and any("Befund beidseits" in h for h in erg.cas_hinweise), f"{titel} {erg.cas_hinweise}")
+erg = pl.befund_aus_diktat("Handgelenk links unauffällig", kontext_seite(cv.CasHinweis([L("x", "Handgelenk bds.", "Röntgen",
+                           "handgelenk_in_2_ebenen", "beidseits")], T), []))
+check("beidseits laut CAS, Normalbefund (ohne KI): „Handgelenk beidseits in 2 Ebenen“, Ergebnis „… beidseits.“",
+      erg.report.startswith("## Handgelenk beidseits in 2 Ebenen") and "beidseits." in erg.report.split("## Ergebnis")[1],
+      erg.report)
+prompts = []
+erg = pl.befund_aus_diktat("SL-Spalt links erweitert, ansonsten unauffällig", kontext_seite(cv.CasHinweis([L(
+    "x", "Handgelenk li.", "Röntgen", "handgelenk_in_2_ebenen", "links")], T), prompts))
+check("Gegenprobe: Leistung einseitig (links) + Diktat links → bleibt einseitig, kein <cas_beidseits>",
+      erg.report.startswith("## Handgelenk links in 2 Ebenen") and not any("<cas_beidseits>" in p for p in prompts),
+      erg.report[:60])
+for text, key in (("Beckenübersicht bds.", "beckenübersicht_stehend"), ("LWS beidseits", "lendenwirbelsäule_in_2_ebenen")):
+    erg = pl.befund_aus_diktat("unauffällig", kontext_seite(cv.CasHinweis([L("x", text, "Röntgen", key, "beidseits")], T), []))
+    check(f"Gegenprobe: unpaarige Region ({text}) bekommt nie „beidseits“", "beidseits" not in erg.report.splitlines()[0],
+          erg.report.splitlines()[0])
+check("Titel: Seite ersetzt bzw. ergänzt", [cv.titel_beidseits(t) for t in ("Handgelenk links in 2 Ebenen",
+      "Sonographie des Schultergelenkes rechts", "Hüftgelenk re. in 2 Ebenen", "Kniegelenk in 2 Ebenen",
+      "Fuß beidseits in 2 Ebenen")] == ["Handgelenk beidseits in 2 Ebenen", "Sonographie des Schultergelenkes beidseits",
+      "Hüftgelenk beidseits in 2 Ebenen", "Kniegelenk beidseits in 2 Ebenen", "Fuß beidseits in 2 Ebenen"],
+      str([cv.titel_beidseits(t) for t in ("Handgelenk links in 2 Ebenen", "Sonographie des Schultergelenkes rechts",
+                                            "Hüftgelenk re. in 2 Ebenen", "Kniegelenk in 2 Ebenen")]))
+
 # keine CAS-Datei: bit-gleich wie bisher (CAS-Funktionen werden gar nicht aufgerufen)
 gesperrt = {}
 for name in ("aufteilen", "wahl", "hinweise", "prompt_block", "CasHinweis"):

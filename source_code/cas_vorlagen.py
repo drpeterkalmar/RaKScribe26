@@ -154,6 +154,62 @@ class Leistung:
         return self.vorlage is not None and self.vorlage != "allgemein"
 
 
+_BEIDSEITS_TEXT = re.compile(r"(?<![a-zäöü])(?:bds|beidseits|beidseitig\w*|bilateral\w*|beide[nr]?)(?![a-zäöü])", re.I)
+
+
+def seite_aus_text(text):
+    """v3.15.4: „beidseits“, wenn der Leistungstext beidseitig ist (bds./beidseits/bilateral) und die Brücke keine Seite
+    mitgab (die Brücke kennt „bilateral“ nicht) — sonst None (die Brücke entscheidet rechts/links)."""
+    return "beidseits" if _BEIDSEITS_TEXT.search(text or "") else None
+
+
+# paarige Regionen (Extremitäten/Gelenke) — Wirbelsäule, Becken, Thorax, Schädel bekommen nie eine Seite
+PAARIG = {"schulter", "oberarm", "ellbogen", "unterarm", "hand", "huefte", "oberschenkel", "knie", "unterschenkel",
+          "sprunggelenk", "fuss"}
+
+
+def beidseits(w):
+    """v3.15.4 (Peter 15.10., „Handgelenk bds.“ + Diktat „SL-Spalt links“ → nur „Handgelenk links“): Vorlagenwahl mit
+    beidseitiger CAS-Leistung einer paarigen Region → der Befund ist IMMER beidseitig (deterministisch, nicht der KI
+    überlassen)."""
+    return (w is not None and w.leistung is not None and w.leistung.seite == "beidseits"
+            and bool(w.leistung.regionen & PAARIG))
+
+
+_TITEL_SEITE = re.compile(r"(?<![\wäöüß])(?:rechts|links|re\.|li\.|rechte[rsnm]?|linke[rsnm]?|bds\.?|beidseitig\w*)"
+                          r"(?![\wäöüß])\s*", re.I)
+
+
+def titel_beidseits(titel):
+    """„Handgelenk links in 2 Ebenen“ → „Handgelenk beidseits in 2 Ebenen“ (Seite ersetzt bzw. ergänzt)."""
+    t = " ".join(_TITEL_SEITE.sub("", titel or "").split())
+    return br.titel_mit_seite(t, "beidseits") if "beidseits" not in t.lower() else t
+
+
+def report_beidseits(report):
+    """Untersuchungs-Überschrift(en) eines Befunds (nicht Befund/Ergebnis) auf „beidseits“ setzen."""
+    out = []
+    for z in (report or "").split("\n"):
+        k = z.strip()
+        if k.startswith("## ") and k[3:].strip().rstrip(":").lower() not in ("befund", "ergebnis"):
+            z = "## " + titel_beidseits(k[3:].strip())
+        out.append(z)
+    return "\n".join(out)
+
+
+def beidseits_block(w):
+    """<cas_beidseits> für den Gen-Prompt (nur mit beidseitiger CAS-Leistung; sonst bleibt der Prompt bit-gleich)."""
+    return ("<cas_beidseits>\n"
+            f"Die CAS-Leistung „{w.leistung.label}“ ist BEIDSEITS: Es entsteht EIN beidseitiger Befund. Die Überschrift "
+            "enthält „beidseits“ (z. B. „## Handgelenk beidseits in 2 Ebenen“), auch wenn das Diktat nur eine Seite "
+            "nennt. Befundtext: Die Normalbefund-Sätze der Vorlage gelten für beide Seiten (wo nötig „beidseits“); eine "
+            "diktierte Pathologie steht mit ihrer Seite („Links …“) an der Stelle des betroffenen Normalsatzes, der Rest "
+            "dieses Satzes bleibt als „ansonsten …“ bzw. „rechts …“ stehen; die nicht diktierte Seite ist unauffällig. "
+            "Ergebnis: jede Pathologie mit ihrer Seite als nummerierter Punkt; bei einer auffälligen Seite KEIN "
+            "„Regelrechte Darstellung …“ für die ganze Untersuchung.\n"
+            "</cas_beidseits>")
+
+
 def label(text, kurz, modalitaet):
     """Kurzname für Band/Hinweis aus dem CAS-Kurztext: „Sonographie der Schulter re.“ → „Schulter re. (Sono)“."""
     t = (text or "").strip() or (kurz or "").strip()
@@ -185,7 +241,8 @@ class CasHinweis:
             text = d.get("text") or ""
             self.alle.append(Leistung(
                 kurz=str(d.get("kurz") or ""), label=label(text, d.get("kurz"), mod), vorlage=v, modalitaet=mod,
-                seite=d.get("seite"), regionen=regionen(text + " " + (vorlagen_text(v, templates) if v else ""))))
+                seite=d.get("seite") or seite_aus_text(text),
+                regionen=regionen(text + " " + (vorlagen_text(v, templates) if v else ""))))
 
     def __bool__(self):
         return bool(self.alle)
@@ -399,6 +456,8 @@ def hinweise(segmente, wahlen, cas, templates):
             s = br.diktierte_seite(seg)
             if s == _SEITE_GEGEN[w.leistung.seite]:
                 out.append(f"Seite: diktiert {s}, laut CAS {w.leistung.seite} ({w.leistung.label})")
+        elif beidseits(w) and br.diktierte_seite(seg) in _SEITE_GEGEN:
+            out.append(f"Laut CAS beidseits ({w.leistung.label}): Befund beidseits, diktiert nur {br.diktierte_seite(seg)}")
     return out
 
 

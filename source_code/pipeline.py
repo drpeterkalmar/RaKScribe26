@@ -90,11 +90,16 @@ def ist_normalbefund(raw, template_key, display_names):
     return nb.is_pure_normal_finding(raw, display_names) and template_key != "allgemein"
 
 
-def bypass_befund(raw, template_data, seite=None):
+def bypass_befund(raw, template_data, seite=None, erzwingen=False):
     """Normalbefund direkt aus der Vorlage. v3.2 (Peter 05.10.): Ergebnis = Normal-Ergebnis der Untersuchung
     (+ Seite) — NIE das Diktat abschreiben; v3.2.2: CSA-Platzhalter raus (nachbearbeiten).
-    v3.12.0: seite = Seite der passenden CAS-Leistung — nur, wenn das Diktat selbst keine nennt."""
-    mit_seite = raw if (not seite or br.diktierte_seite(raw)) else f"{raw} {seite}"
+    v3.12.0: seite = Seite der passenden CAS-Leistung — nur, wenn das Diktat selbst keine nennt.
+    v3.15.4: erzwingen = CAS-Leistung beidseits → „beidseits“, auch wenn das Diktat eine Seite nennt."""
+    if erzwingen and seite:
+        raw_ohne = " ".join(re.sub(r"(?<!\w)(?:rechts|links|re\.|li\.)(?!\w)", " ", raw, flags=re.I).split())
+        mit_seite = f"{raw_ohne} {seite}"
+    else:
+        mit_seite = raw if (not seite or br.diktierte_seite(raw)) else f"{raw} {seite}"
     ergebnis = br.ergebnis_mit_seite(template_data.get('ergebnis', ''), mit_seite)
     tpl_lines = template_data['body'].split('\n')
     tpl_title = br.titel_mit_seite(detect.derive_untersuchungs_titel(raw, tpl_lines[0].strip().rstrip(':')), mit_seite)
@@ -157,18 +162,26 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         return br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
+    bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
     if ist_normalbefund(seg, template_key, ctx.display_names):
         ctx.log(f"[BYPASS] Normalbefund erkannt: {protokoll.diktat(seg)}. Generiere direkt aus Template '{template_key}'.")
-        seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else None
-        roh = bypass_befund(seg, template_data, seite)
+        # v3.15.4: Seite aus CAS nur für paarige Regionen (Wirbelsäule/Becken/Thorax/Schädel nie „beidseits“)
+        seite = (wahl.leistung.seite if (wahl is not None and wahl.leistung is not None
+                                         and wahl.leistung.regionen & cv.PAARIG) else None)
+        roh = bypass_befund(seg, template_data, seite, erzwingen=bds)
     else:
         beispiele = ctx.beispiele(seg) if ctx.beispiele else ""
-        roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, ctx.hinweise, beispiele, _cas_block(ctx),
+        cas_block = _cas_block(ctx) + ("\n" + cv.beidseits_block(wahl) if bds else "")
+        roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, ctx.hinweise, beispiele, cas_block,
                                  _ibl_block(seg, template_key, ctx)))
     if ctx.protokoll is not None:
         ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
     # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
-    return br.nachbearbeiten(roh)
+    out = br.nachbearbeiten(roh)
+    if bds:
+        ctx.log(f"[CAS] beidseits laut CAS ({wahl.leistung.kurz}): Überschrift „beidseits“")
+        out = cv.report_beidseits(out)
+    return out
 
 
 def _cas_block(ctx):

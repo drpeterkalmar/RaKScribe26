@@ -313,6 +313,7 @@ DISPLAY_NAMES = []
 # v3.15.0 (Peter 14.10.): Masken (masken.json, gebündelt) + Tastenbelegung (config.ini [MASKE] überschreibt)
 MASKEN = {}  # init_runtime(): _mk.laden()
 MASKE_TASTEN = {}  # Taste → Aktion, z. B. {"FF": "naechstes_feld"}
+MASKE_TASTEN_AMBIENT = {}  # v3.15.4: SpeechMike Ambient (ohne F1–F4): Play = übernehmen, Command = Maske aus/an
 
 
 def maske_def(name="mammographie"):
@@ -560,6 +561,7 @@ HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstell
 BESTAETIGUNG_MS = 4500  # v3.12.0 (Peter 13.10.): grünes Band „An CAS übergeben“ nach EOL, nicht zu übersehen
 MINIMIEREN_NACH_EOL_MS = BESTAETIGUNG_MS + 100  # v3.11.0: danach wieder als Symbol in die Taskleiste (erst nach dem Band)
 CAS_GRUEN = "#1E6B43"
+MENU_HAKEN = "#FFFFFF"   # v3.15.4: Häkchen im ☰-Menü weiß statt schwarz (dunkles Menü)
 KOPF_BREIT_AB = 1150   # v3.12.0: darunter schmale Kopfzeile (Mikrofon-Auswahl + SpeechMike-Hinweis kürzer)
 
 
@@ -767,8 +769,36 @@ class MaskePanel:
                 w.bind("<Button-1>", lambda e, i=i: self.app._maske_klick(i))
             tb.bind("<Button-1>", lambda e, i=i: self.app._maske_klick(i, tippen=True), add="+")
             tb.bind("<KeyRelease>", lambda e, i=i, b=box: self.app._maske_getippt(i, b.get("1.0", "end-1c")), add="+")
+            for k in ("<Control-a>", "<Control-A>"):   # v3.15.4: Strg+A markiert den ganzen Feldtext (dann Record/Entf)
+                tb.bind(k, lambda e, t=tb: (t.tag_add("sel", "1.0", "end-1c"), t.mark_set("insert", "end-1c"), "break")[-1])
             self.zeilen.append({"rahmen": fr, "label": lbl, "chip": chip, "knopf": knopf, "box": box, "werte": werte,
                                 "box_da": True})
+
+    def ziel(self, i):
+        """v3.15.4: Markierung bzw. Cursor-Stelle im Feld i als Zeichen-Offsets (von, bis, markiert) — nur, wenn dieses
+        Feld den Tastatur-Fokus hat (hineingeklickt); sonst None."""
+        if not (0 <= i < len(self.zeilen)):
+            return None
+        tb = self.zeilen[i]["box"]._textbox
+        if self.app.focus_get() is not tb and not getattr(self.app, "_st_ziel", False):   # Selbsttest: markieren()
+            return None
+
+        def off(index):
+            r = tb.count("1.0", index, "chars")
+            return int((r[0] if isinstance(r, tuple) else r) or 0)
+        if tb.tag_ranges("sel"):
+            return off("sel.first"), off("sel.last"), True
+        a = off("insert")
+        return a, a, False
+
+    def markieren(self, i, von, bis):
+        """Selbsttest: Feld i fokussieren und von…bis markieren (wie mit der Maus)."""
+        tb = self.zeilen[i]["box"]._textbox
+        tb.focus_set()
+        tb.tag_remove("sel", "1.0", "end")
+        if bis > von:
+            tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
+        tb.mark_set("insert", f"1.0+{bis}c")
 
     def zeigen(self):
         if not self.sichtbar:
@@ -800,7 +830,10 @@ class MaskePanel:
                                  text_color=ACCENT_PURPLE if aktiv else TEXT_PRIMARY)
             lt = (live.get(i) or "").strip()
             chip = _mk.anzeige_zustand(f, m.datum)
-            if lt and f.quelle != _mk.DIKTAT:
+            z_lauf = _mk.laufend_ziel(f)            # v3.15.4: Diktat über eine Markierung bzw. an der Cursor-Stelle
+            if lt and z_lauf is not None:
+                chip = "diktiert … (ersetzt die Markierung)" if z_lauf.bis > z_lauf.von else "diktiert … (an der Cursor-Stelle)"
+            elif lt and f.quelle != _mk.DIKTAT:
                 chip = "diktiert … (ersetzt den Vorschlag)" if f.quelle in _mk.VORSCHLAG + (_mk.UEBERNOMMEN,) else "diktiert …"
             z["chip"].configure(text=chip, text_color=READY_GREEN if f.quelle == _mk.UEBERNOMMEN else
                                 (WARN_AMBER if f.offen and i == m.aktiv else TEXT_FAINT))
@@ -829,11 +862,15 @@ class MaskePanel:
                 z["box"].pack(fill="both", expand=True, padx=6, pady=(0, 4))
                 z["box_da"] = True
             text = _mk.vorschau(f, m)
-            if lt and f.quelle != _mk.DIKTAT:
+            vtag = "vorschlag" if f.quelle in _mk.VORSCHLAG else None
+            if lt and z_lauf is not None:          # Live-Text an der markierten Stelle statt der Markierung
+                teile = [(z_lauf.basis[:z_lauf.von], vtag), (lt, "live"), (z_lauf.basis[z_lauf.bis:], vtag)]
+            elif lt and f.quelle != _mk.DIKTAT:
                 teile = [("", None), (lt, "live")]
             else:
-                teile = [(text, "vorschlag" if f.quelle in _mk.VORSCHLAG else None)] + ([(" " + lt, "live")] if lt else [])
-            soll = (tuple(teile), gesperrt)
+                teile = [(text, vtag)] + ([(" " + lt, "live")] if lt else [])
+            zu = gesperrt or f.wartet               # v3.15.4: in der Pause tippbar, nur solange das Feld erkannt wird nicht
+            soll = (tuple(teile), zu)
             if self._inhalt.get(i) != soll:
                 box = z["box"]
                 box.configure(state="normal")
@@ -841,6 +878,8 @@ class MaskePanel:
                     cursor = box._textbox.index("insert")
                 except Exception:
                     cursor = None
+                if f.cursor is not None:            # nach dem Einfügen: Cursor hinter das Eingefügte
+                    cursor, f.cursor = f"1.0+{f.cursor}c", None
                 box.delete("1.0", "end")
                 for t, tag in teile:
                     if t:
@@ -850,7 +889,7 @@ class MaskePanel:
                         box._textbox.mark_set("insert", cursor)   # beim Tippen bleibt der Cursor, wo er war
                     except Exception:
                         pass
-                if gesperrt:
+                if zu:
                     box.configure(state="disabled")
                 self._inhalt[i] = soll
             if z["werte"] is not None:
@@ -1069,9 +1108,12 @@ class RaKScribeApp(ctk.CTk):
 
         # v3.4.0 (Peter 07.10.): „Nur Text“ — rechts nur die korrigierte Spracherkennung, kein strukturierter Befund
         self.nur_text_var = tk.BooleanVar(value=bool(einstellung_lesen("nur_text", False)))
+        # v3.15.4 (Peter 15.10.: Häkchen/Schalter schlecht sichtbar): heller Knopf, sichtbarer Rahmen auch ausgeschaltet
         self.nur_text_switch = ctk.CTkSwitch(right_head, text="Nur Text", variable=self.nur_text_var,
                                              command=self._nur_text_umgeschaltet, font=(UI_FONT, 12),
-                                             text_color=TEXT_MUTED, progress_color=ACCENT_PURPLE)
+                                             text_color=TEXT_PRIMARY, progress_color=ACCENT_PURPLE,
+                                             fg_color=BORDER_STRONG, border_color=TEXT_FAINT, border_width=2,
+                                             button_color=TEXT_PRIMARY, button_hover_color="#FFFFFF")
         self.nur_text_switch.pack(side="right", pady=10)
         # v3.7.0 (Peter 07.10.): Option im Menü — beim Diktat in den Befund am Satzanfang groß beginnen
         self.gross_satzanfang_var = tk.BooleanVar(value=bool(einstellung_lesen("gross_satzanfang", True)))
@@ -1174,6 +1216,9 @@ class RaKScribeApp(ctk.CTk):
         # v3.15.0: Mammo-Maske auch ohne SpeechMike (Fern-Test): Bild↓/Bild↑ = nächstes/voriges Feld
         self.bind_all("<Next>", lambda e: self._maske_tastatur(+1))
         self.bind_all("<Prior>", lambda e: self._maske_tastatur(-1))
+        # v3.15.4 (Peter 15.10.: „F3 reagiert nicht“ — es war die Tastatur): F3 = übernehmen/verwerfen, F4 = Maske aus/an
+        self.bind_all("<F3>", lambda e: self._maske_tastatur_aktion("uebernehmen"))
+        self.bind_all("<F4>", lambda e: self._maske_tastatur_aktion("maske_umschalten"))
 
     # ── v3.0: Selbsttest-Modus für den automatischen Windows-UI-Test (tests/windows/exe_ui_test.py).
     # NUR aktiv, wenn die Umgebungsvariable RAKSCRIBE_SELFTEST gesetzt ist — im Praxisbetrieb wirkungslos.
@@ -1244,6 +1289,7 @@ class RaKScribeApp(ctk.CTk):
                     "befund_wartet": bool(getattr(self, "_befund_wartet", False)),
                     "nur_text": bool(self.nur_text_aktiv()),
                     "einfuegungen": getattr(self, "_einfuege_zaehler", 0),
+                    "einfuegen_ziel": list(self._einfuegen_ziel) if getattr(self, "_einfuegen_ziel", None) else None,
                     "hinweis": getattr(self, "_letzter_hinweis", ""),
                     "repariert": str(self.repariert_label.cget("text")),
                     "zwischenablage": _zwischenablage_lesen()[:600],
@@ -1262,6 +1308,13 @@ class RaKScribeApp(ctk.CTk):
                     "bestaetigung_sichtbar": bool(getattr(self, "bestaetigung_band", None)
                                                   and self.bestaetigung_band.winfo_ismapped()),
                     "kopf": self._kopf_geometrie(),
+                    # v3.15.4: ☰-Knopf (Bildschirm-Lage) für den Screenshot des Menüs mit den Häkchen
+                    "menu_btn_xy": [self.menu_btn.winfo_rootx(), self.menu_btn.winfo_rooty(), self.menu_btn.winfo_width(),
+                                    self.menu_btn.winfo_height()] if getattr(self, "menu_btn", None) else None,
+                    "menu_haken": MENU_HAKEN,
+                    "nur_text_switch": {k: str(self.nur_text_switch.cget(k)) for k in ("button_color", "fg_color",
+                                                                                      "border_width")}
+                    if getattr(self, "nur_text_switch", None) else None,
                     # v3.13.0: IB-Lab-Bausteine (Band-Zeile, Hinweise, Knopf, Stand im Befund, Menü-Schalter)
                     "ibl_band": str(self.ibl_label.cget("text")).strip() if getattr(self, "ibl_label", None) else "",
                     "ibl_band_sichtbar": bool(getattr(self, "ibl_zeile", None) and self.ibl_zeile.winfo_ismapped()),
@@ -1352,7 +1405,7 @@ class RaKScribeApp(ctk.CTk):
                         # v3.15.0 (FAKEAUDIO): nächste Erkennungen der Attrappe, je Abschnitt eine („A|B|C“)
                         _SELBSTTEST_CHIRP[:] = phase[6:].split("|")
                         dump(phase)
-                    elif phase.startswith(("maske_klick#", "maske_knopf#", "maske_tippen#")):
+                    elif phase.startswith(("maske_klick#", "maske_knopf#", "maske_tippen#", "maske_markieren#")):
                         art, _, rest = phase.partition("#")
                         nr, _, text = rest.partition("|")
                         i = int(nr.split("#")[0])
@@ -1360,8 +1413,52 @@ class RaKScribeApp(ctk.CTk):
                             self._maske_klick(i)
                         elif art == "maske_knopf":
                             self._maske_knopf(i)
+                        elif art == "maske_markieren":
+                            # v3.15.4: Feld i fokussieren und von|bis markieren (wie mit der Maus), z. B. maske_markieren#0|0|7
+                            von, _, bis = text.partition("|")
+                            self._st_ziel = True
+                            self._maske_ui.markieren(i, int(von or 0), int(bis or von or 0))
                         else:
                             self._maske_getippt(i, text)
+                        self.after(800, lambda p=phase: dump(p))
+                    elif phase.startswith(("befund_markieren#", "befund_fokus_weg")):
+                        # v3.15.4: Cursor/Markierung im Befund rechts (wie mit der Maus), z. B. befund_markieren#12|20;
+                        # befund_fokus_weg = Fokus ins Diktat-Feld links (kein Ziel)
+                        tb = self.result_text._textbox
+                        if phase.startswith("befund_markieren#"):
+                            von, _, bis = phase.split("#")[1].partition("|")
+                            von, bis = int(von or 0), int(bis or von or 0)
+                            self._st_ziel = True
+                            tb.focus_set()
+                            tb.tag_remove("sel", "1.0", "end")
+                            if bis > von:
+                                tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
+                            tb.mark_set("insert", f"1.0+{bis}c")
+                        else:
+                            self._st_ziel = False
+                            tb.tag_remove("sel", "1.0", "end")
+                            self.transcript_text._textbox.focus_set()
+                        dump(phase)
+                    elif phase.startswith("diktat_setzen#"):
+                        # v3.15.4: bisheriges Diktat links (wie nach einem früheren Diktat) — ohne INS
+                        self.transcript_text.delete("1.0", "end")
+                        self.transcript_text.insert("1.0", phase.partition("#")[2])
+                        dump(phase)
+                    elif phase.startswith(("nur_text_an", "nur_text_aus")):
+                        self.nur_text_var.set(phase.startswith("nur_text_an"))   # wie der Schalter „Nur Text“
+                        self._nur_text_umgeschaltet()
+                        dump(phase)
+                    elif phase.startswith("geraet#"):
+                        # v3.15.4: erkanntes SpeechMike-Modell vorgeben (ambient | premium | keins | auto)
+                        art = phase.split("#")[1]
+                        self._st_modell = {"ambient": {"name": "SpeechMike Ambient (PSM5000)", "tasten": _sm.AMBIENT_TASTEN},
+                                           "premium": {"name": "SpeechMike Premium (Selbsttest)", "tasten": None},
+                                           "keins": {}}.get(art)
+                        self._maske_anzeigen()
+                        dump(phase)
+                    elif phase.startswith("kb_"):
+                        # v3.15.4: F3/F4 auf der Tastatur (derselbe Handler wie bind_all), z. B. kb_F3#1
+                        self._maske_tastatur_aktion({"F3": "uebernehmen", "F4": "maske_umschalten"}[phase[3:].split("#")[0]])
                         self.after(800, lambda p=phase: dump(p))
                     elif phase.startswith("cas_"):
                         # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
@@ -1469,8 +1566,9 @@ class RaKScribeApp(ctk.CTk):
 
     # ── v3.0: Menü ──
     def open_menu(self):
+        # v3.15.4 (Peter 15.10.: Häkchen schwarz auf dunkelblau): selectcolor = Farbe des Häkchens (Windows-Menü)
         m = tk.Menu(self, tearoff=0, bg=BGC_ELEV, fg=TEXT_PRIMARY, activebackground=BGC_CARD,
-                    activeforeground="#FFFFFF", bd=0, font=(UI_FONT, 11))
+                    activeforeground="#FFFFFF", selectcolor=MENU_HAKEN, bd=0, font=(UI_FONT, 11))
         m.add_command(label="Schlüssel-Datei laden…", command=self.load_key_dialog)
         if _praxis_key_path() == USER_KEY_PATH:
             m.add_command(label="Gespeicherten Schlüssel entfernen", command=self.remove_user_key)
@@ -1509,8 +1607,11 @@ class RaKScribeApp(ctk.CTk):
         for zeile in HILFE_SPEECHMIKE:
             m.add_command(label=zeile, state="disabled")
         m.add_command(label="CAS-Diktat (blaues Band): F11 = INS · F12 = EOL → an CAS", state="disabled")  # v3.10.0
-        m.add_command(label="Mammo-Maske: " + (_mk.tasten_text(MASKE_TASTEN) or "–") + " · Bild↓/↑ = Feld",
+        m.add_command(label="Mammo-Maske: " + (_mk.tasten_text(MASKE_TASTEN) or "–") + " · Tastatur: Bild↓/↑ = Feld, F3, F4",
                       state="disabled")  # v3.15.0
+        if MASKE_TASTEN_AMBIENT:  # v3.15.4
+            m.add_command(label="   SpeechMike Ambient: " + _mk.tasten_text(MASKE_TASTEN_AMBIENT)
+                          + " · Text markieren + Record = überschreiben", state="disabled")
         x = self.menu_btn.winfo_rootx()
         y = self.menu_btn.winfo_rooty() + self.menu_btn.winfo_height() + 4
         try:
@@ -1946,7 +2047,7 @@ class RaKScribeApp(ctk.CTk):
             tb = self.result_text._textbox
             if not self.result_text.get("1.0", "end-1c").strip() or self._nur_geruest():
                 return None                       # v3.14.0: im IB-Lab-Gerüst wird normal diktiert, nicht eingefügt
-            if self.focus_get() is not tb or not _fokus_ist_eigenes_fenster():
+            if not getattr(self, "_st_ziel", False) and (self.focus_get() is not tb or not _fokus_ist_eigenes_fenster()):
                 return None
             if tb.tag_ranges("sel"):
                 a, b = tb.index("sel.first"), tb.index("sel.last")
@@ -2223,6 +2324,7 @@ class RaKScribeApp(ctk.CTk):
 
     def _speechmike_status(self, beschreibung):
         self._sm_beschreibung = beschreibung
+        self.after(0, self._maske_anzeigen)   # v3.15.4: Hilfezeile der Maske mit den Tasten des erkannten Geräts
         chip = getattr(self, "sm_chip", None)
         if chip is not None:
             kurz = getattr(self, "_kopf_breit", True) is False   # v3.12.0: schmales Fenster → kurzer Hinweis
@@ -2250,7 +2352,7 @@ class RaKScribeApp(ctk.CTk):
     def speechmike_taste(self, taste, gedrueckt, roh=""):
         """SpeechMike-Taste (aus dem Lese-Thread per after(0)). Belegung speechmike.BELEGUNG — Loslassen und unbelegte
         Tasten (Play, Spulen, INSTR, F3, F4, Command) stehen nur im Protokoll ([SPEECHMIKE]-Zeile mit Rohdaten)."""
-        if gedrueckt and self._maske_taste(taste):     # v3.15.0: Mammo-Maske (Spulen, F3, F4 — nur mit offener Maske)
+        if self._maske_taste(taste, gedrueckt, roh):   # v3.15.0: Mammo-Maske (Spulen, F3/Play, F4/Command — nur mit Maske)
             return
         ereignis = _sm.BELEGUNG.get(taste) if gedrueckt else None
         if ereignis is None:
@@ -2403,6 +2505,14 @@ class RaKScribeApp(ctk.CTk):
             self._aufnahme.fortsetzen()
         if getattr(self, "_maske_lauf", False):     # v3.15.0: weiter im (ggf. in der Pause gewechselten) aktiven Feld
             self._maske_abschnitt_oeffnen()
+        else:
+            # v3.15.4 (Peter 15.10.: „warum kann ich nicht mehr rechts … in den Befund reindiktieren?“ — Ordi-Protokoll:
+            # Record → Pause → in den Befund geklickt → Record = „weiter“, die Stelle wurde nie gelesen): in der Pause in
+            # den Befund geklickt bzw. markiert → das Diktat dieser Aufnahme kommt an diese Stelle (wie seit 3.5.0)
+            z = self._einfuege_ziel_ermitteln()
+            if z is not None and z != self._einfuegen_ziel:
+                self._einfuegen_ziel = z
+                log(f"[EINFÜGEN] In der Pause in den Befund geklickt – Diktat wird an Stelle {z} eingefügt.")
         log("[SPEECHMIKE] Weiter diktieren (gleiche Aufnahme).")
         self.update_status("RECORDING", "recording")
         if self._einfuegen_ziel is not None:
@@ -3154,15 +3264,19 @@ class RaKScribeApp(ctk.CTk):
             + (f", {e['seite']}" if e["seite"] else "") + ", Vorbefund "
             + (f"{vb.get('nr') or '?'} ({m.zerlegung.anzahl}/{len(m.felder)} Felder, Werte "
                f"{'ja' if any(f.vorschlag_werte for f in m.felder) else 'nein'})" if vb else "keiner")
-            + f" · {'gezeigt' if frei else 'bereit (F4)'} · Tasten: {_mk.tasten_text(MASKE_TASTEN)}")
+            + f" · {'gezeigt' if frei else 'bereit (' + self._maske_tastenname('maske_umschalten') + ')'} · Tasten: "
+            + _mk.tasten_text(self._maske_belegung()))
         abw = m.werte_abweichung()
         if abw:
             log("[MASKE] Hinweis: Werte im Vorbefund-Brief ≠ Doppelbefundung")
         self._maske_warnung = abw
+        v = getattr(self, "gross_satzanfang_var", None)
+        m.gross_satzanfang = bool(v.get()) if v is not None else True
         if frei:
             self._maske_zeigen()
         else:
-            self._kurzhinweis("Mammo-Maske bereit – F4 schaltet sie ein (es steht schon Text da)", 8000)
+            self._kurzhinweis(f"Mammo-Maske bereit – {self._maske_tastenname('maske_umschalten')} schaltet sie ein "
+                              "(es steht schon Text da)", 8000)
 
     def _maske_zeigen(self):
         ui = self._maske_ui_holen()
@@ -3212,10 +3326,38 @@ class RaKScribeApp(ctk.CTk):
             teile.append("kein Vorbefund")
         return "  ·  ".join(teile)
 
+    def _maske_modell(self):
+        """v3.15.4: erkanntes SpeechMike-Modell ({"name", "tasten"}), None = kein SpeechMike verbunden. Selbsttest:
+        _st_modell ({} = kein Gerät)."""
+        st = getattr(self, "_st_modell", None)
+        if st is not None:
+            return st or None
+        smk = getattr(self, "_speechmike", None)
+        if smk is None or not smk.verbunden:
+            return None
+        return getattr(smk, "modell", None) or {"name": "", "tasten": None}
+
+    def _maske_belegung(self):
+        """Tastenbelegung der Maske je erkanntem Gerät (Peter 15.10.): SpeechMike Ambient → masken.json
+        „tasten_ambient“ (Play = übernehmen, Command = Maske aus/an); sonst „tasten“ — SpeechMike III/Premium wie bisher."""
+        m = self._maske_modell()
+        return MASKE_TASTEN_AMBIENT if (m and m.get("tasten") and MASKE_TASTEN_AMBIENT) else MASKE_TASTEN
+
+    def _maske_tasten_verfuegbar(self):
+        """Tasten des erkannten SpeechMike (Ambient: ohne F1–F4), None = alle (Premium/unbekannt), _mk.TASTATUR = kein
+        SpeechMike verbunden (Fern-Test mit Bild↓/↑, F3, F4)."""
+        m = self._maske_modell()
+        return _mk.TASTATUR if m is None else m.get("tasten")
+
+    def _maske_tastenname(self, aktion):
+        """Name der Taste für Hinweise, z. B. „Play“ (Ambient) bzw. „F3“ (Premium, Tastatur)."""
+        return _mk.taste_name(self._maske_belegung() or {}, aktion, self._maske_tasten_verfuegbar())
+
     def _maske_hilfe(self):
         m = self._maske
-        return (f"Feld {m.aktiv + 1}/{len(m.felder)}: {m.feld.label}   ·   Record diktiert ins Feld   ·   "
-                + _mk.tasten_kurz(MASKE_TASTEN) + "   ·   INS = Befund")
+        return (f"Feld {m.aktiv + 1}/{len(m.felder)}: {m.feld.label}   ·   Record diktiert ins Feld (markierter Text wird "
+                "ersetzt)   ·   " + _mk.tasten_kurz(self._maske_belegung(), self._maske_tasten_verfuegbar())
+                + "   ·   INS = Befund")
 
     def _maske_anzeigen(self):
         if not self._maske_aktiv():
@@ -3224,7 +3366,9 @@ class RaKScribeApp(ctk.CTk):
         if ui is None:
             return
         try:
-            gesperrt = self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)
+            # v3.15.4 (Peter 15.10.: in der Pause weder löschen noch übernehmen): gesperrt nur bei laufender Aufnahme bzw.
+            # während der Befund entsteht — in der Pause sind Tippen, Markieren, Entf und die Knöpfe frei
+            gesperrt = self._job.zustand in (_js.RECORDING, _js.PROCESSING)
             ui.aktualisieren(self._maske, live=self._maske_live(), kopf=self._maske_kopf(), hilfe=self._maske_hilfe(),
                              warnung=self._maske_warnung_text(), gesperrt=gesperrt)
         except Exception:
@@ -3234,31 +3378,74 @@ class RaKScribeApp(ctk.CTk):
         """Warnung nach INS (nur die NOCH offenen Felder — weg, sobald keins mehr offen ist) + Hinweis zum Vorbefund."""
         teile = []
         if getattr(self, "_maske_ins_warnung", False) and self._maske is not None:
-            teile.append(_mk.offene_meldung(self._maske))
+            teile.append(_mk.offene_meldung(self._maske, self._maske_tastenname("uebernehmen")))
         teile.append(getattr(self, "_maske_warnung", "") or "")
         return "\n".join(t for t in teile if t)
 
     # Tasten ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    def _maske_taste(self, taste):
+    def _maske_taste(self, taste, gedrueckt=True, roh=""):
         """SpeechMike-Taste mit Masken-Belegung (masken.json / config.ini [MASKE]) → True = von der Maske verarbeitet.
-        Ohne offene Maske (bzw. Maske aus: nur F4) bleiben die Tasten wie bisher (Spulen/F3/F4: nichts)."""
-        aktion = (MASKE_TASTEN or {}).get(taste)
-        if aktion is None or getattr(self, "_maske", None) is None:
+        Ohne offene Maske (bzw. Maske aus: nur Maske an) bleiben die Tasten wie bisher (Spulen/F3/F4/Play/Command:
+        nichts). v3.15.4: Eine Schieber-Taste (Play) zum Übernehmen zählt erst beim Loslassen und nur, wenn im selben
+        Bericht keine Schieberstellung steht — am Ambient ist Play ein Druckknopf; an einem Schieber-SpeechMike wäre
+        PLAY eine Stellung, über die man beim Schieben fährt (nie still übernehmen)."""
+        if getattr(self, "_maske", None) is None:
+            return False
+        aktion = (self._maske_belegung() or {}).get(taste)
+        if aktion is None:
+            if taste in ("PLAY", "COMMAND") and self._maske_an and self._maske_druckknopf(taste, gedrueckt, roh):
+                # z. B. ein Ambient, das nicht erkannt wurde: sagen, was geht (SpeechMike III/Premium sonst unverändert)
+                self._kurzhinweis(f"{_mk.TASTEN_NAME.get(taste, taste)} ist an diesem SpeechMike in der Maske nicht "
+                                  f"belegt – {self._maske_tastenname('uebernehmen')} übernimmt, "
+                                  f"{self._maske_tastenname('maske_umschalten')} = Maske aus", 6000)
+            return False
+        schieber = taste in _sm.SCHIEBER and aktion not in ("naechstes_feld", "voriges_feld")
+        if schieber:
+            if not self._maske_druckknopf(taste, gedrueckt, roh, melden=True):
+                return True
+        elif not gedrueckt:
             return False
         if aktion == "maske_umschalten":
             self._maske_umschalten()
             return True
         if not self._maske_an:
             return False
+        name = _mk.TASTEN_NAME.get(taste, taste)
         {"naechstes_feld": lambda: self._maske_springen(+1), "voriges_feld": lambda: self._maske_springen(-1),
-         "uebernehmen": self._maske_f3}[aktion]()
+         "uebernehmen": lambda: self._maske_f3(name)}[aktion]()
         return True
+
+    def _maske_druckknopf(self, taste, gedrueckt, roh, melden=False):
+        """Ein Druck als Druckknopf: andere Tasten beim Drücken; Schieber-Tasten (Play) erst beim Loslassen, nur ohne
+        Schieberstellung im selben Bericht und höchstens 3 s gehalten (sonst: über die Stellung geschoben)."""
+        if taste not in _sm.SCHIEBER:
+            return gedrueckt
+        if gedrueckt:
+            self._maske_schieber_druck = (taste, time.monotonic())
+            return False
+        druck, self._maske_schieber_druck = getattr(self, "_maske_schieber_druck", None), None
+        ok = bool(druck) and druck[0] == taste and not _sm.schieber_stellung(roh) and time.monotonic() - druck[1] <= 3.0
+        if not ok and melden:
+            log(f"[MASKE] {taste} als Schieberstellung (bzw. zu lang gehalten) – nichts übernommen")
+        return ok
 
     def _maske_tastatur(self, richtung):
         """Bild↓/Bild↑ (Fern-Test ohne SpeechMike) — nur mit gezeigter Maske, sonst wie bisher."""
         if not self._maske_aktiv():
             return None
         self._maske_springen(richtung)
+        return "break"
+
+    def _maske_tastatur_aktion(self, aktion):
+        """v3.15.4: F3/F4 auf der Tastatur (Fern-Test, Ambient ohne F-Tasten) — wie die SpeechMike-Tasten, nur mit Maske."""
+        if getattr(self, "_maske", None) is None:
+            return None
+        if aktion == "maske_umschalten":
+            self._maske_umschalten()
+            return "break"
+        if not self._maske_an:
+            return None
+        self._maske_f3("F3")
         return "break"
 
     def _maske_springen(self, richtung):
@@ -3274,21 +3461,22 @@ class RaKScribeApp(ctk.CTk):
         log(f"[MASKE] Feld {m.aktiv + 1}/{len(m.felder)}: {m.feld.id}")
         self._maske_anzeigen()
 
-    def _maske_f3(self):
-        """F3 = Vorschlag des aktiven Felds bewusst übernehmen (noch einmal = zurück). Hat das Feld heute ein Diktat bzw.
-        getippten Text: zweimal F3 (innerhalb 4 s) = verwerfen. Während der Aufnahme: Abschnittsgrenze, danach Gesagtes
-        gehört wieder diesem Feld (Diktat gewinnt)."""
+    def _maske_f3(self, name="F3"):
+        """F3 bzw. Play (Ambient) = Vorschlag des aktiven Felds bewusst übernehmen (noch einmal = zurück). Hat das Feld
+        heute ein Diktat bzw. getippten Text: zweimal (innerhalb 4 s) = verwerfen. Während der Aufnahme:
+        Abschnittsgrenze, danach Gesagtes gehört wieder diesem Feld (Diktat gewinnt)."""
         m = self._maske
         if self._job.zustand == _js.PROCESSING:
             self._kurzhinweis("Befund wird erstellt – bitte kurz warten")
             return
-        self._maske_uebernehmen(m.aktiv, taste=True)
+        self._maske_uebernehmen(m.aktiv, taste=True, name=name)
 
-    def _maske_uebernehmen(self, i, taste=False):
+    def _maske_uebernehmen(self, i, taste=False, name=None):
         m = self._maske
         if m is None or self._job.zustand == _js.PROCESSING:
             return
         f = m.felder[i]
+        name = name or self._maske_tastenname("uebernehmen")
         if f.quelle in (_mk.DIKTAT, _mk.GETIPPT):
             jetzt = time.monotonic()
             vorher = getattr(self, "_maske_f3_zuletzt", None)
@@ -3301,11 +3489,12 @@ class RaKScribeApp(ctk.CTk):
                     self._maske_weiter_nach_schnitt()
             else:
                 self._maske_f3_zuletzt = (i, jetzt)
-                msg = f"{f.label}: heute {'diktiert' if f.quelle == _mk.DIKTAT else 'getippt'} – F3 noch einmal = verwerfen"
+                msg = (f"{f.label}: heute {'diktiert' if f.quelle == _mk.DIKTAT else 'getippt'} – {name} noch einmal = "
+                       "verwerfen")
         else:
             schnitt = (self._job.zustand == _js.RECORDING and m.aktiv == i
                        and self._maske_abschnitt_schliessen(weiter=False))
-            msg = m.uebernehmen(i)
+            msg = m.uebernehmen(i, taste=name)
             if schnitt:
                 self._maske_weiter_nach_schnitt()
         log(f"[MASKE] {f.id}: {f.quelle}")
@@ -3347,8 +3536,13 @@ class RaKScribeApp(ctk.CTk):
         return None
 
     def _maske_getippt(self, i, text):
+        """Von Hand im Feld geändert (auch Entf/Rücktaste). v3.15.4 (Peter 15.10.: „oder ich lösche ihn selbständig“):
+        auch in der Pause — gesperrt nur bei laufender Aufnahme, während der Befund entsteht und solange dieses Feld
+        noch erkannt wird."""
         m = getattr(self, "_maske", None)
-        if m is None or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+        if m is None or not (0 <= i < len(m.felder)):
+            return
+        if self._job.zustand in (_js.RECORDING, _js.PROCESSING) or m.felder[i].wartet:
             return
         if m.tippen(i, text):
             log(f"[MASKE] {m.felder[i].id}: getippt")
@@ -3367,16 +3561,43 @@ class RaKScribeApp(ctk.CTk):
             self._kurzhinweis("Mammo-Maske an – Vorspulen/Rückspulen springen, Record diktiert ins Feld", 5000)
         else:
             self._maske_verstecken()
-            self._kurzhinweis("Maske aus – freies Diktat wie bisher (F4 = Maske wieder an)", 6000)
+            self._kurzhinweis(f"Maske aus – freies Diktat wie bisher ({self._maske_tastenname('maske_umschalten')} = "
+                              "Maske wieder an)", 6000)
         log(f"[MASKE] {'an' if self._maske_an else 'aus (freies Diktat)'}")
 
     # Aufnahme je Feld ────────────────────────────────────────────────────────────────────────────────────────────────
     def _maske_abschnitt_oeffnen(self):
-        """Der laufende Aufnahme-Abschnitt gehört ab jetzt dem aktiven Feld."""
+        """Der laufende Aufnahme-Abschnitt gehört ab jetzt dem aktiven Feld (v3.15.4: mit Markierung/Cursor im Feld
+        ersetzt er genau die Markierung bzw. wird an der Stelle eingefügt)."""
         a = self._aufnahme
         k = a.abschnitt if a is not None else 0
-        self._maske_abschnitte[k] = self._maske.reservieren()
+        ziel = self._maske_ziel_ermitteln()
+        self._maske_abschnitte[k] = self._maske.reservieren(ziel=ziel)
         self._maske_offen_k = k
+        if ziel is not None:
+            log(f"[MASKE] {self._maske.feld.id}: Diktat {'ersetzt die Markierung' if ziel[1] > ziel[0] else 'an der Cursor-Stelle'}")
+
+    def _maske_ziel_ermitteln(self):
+        """v3.15.4 (Peter 15.10.: „wenn ich den bestehenden text markiere wird er durch mein diktat überschrieben“): Text im
+        AKTIVEN Feld markiert → (von, bis); nur der Cursor im Feld (hineingeklickt) → an dieser Stelle einfügen — aber nur
+        in einem Feld mit heutigem Text: ein grauer Vorschlag wird wie bisher ganz ersetzt (ein Klick aktiviert das Feld,
+        er übernimmt nichts). Fokus in einem anderen Feld oder RaKScribe nicht vorne → None (wie bisher)."""
+        m, ui = getattr(self, "_maske", None), getattr(self, "_maske_ui", None)
+        if m is None or ui is None or not hasattr(ui, "ziel"):
+            return None
+        try:
+            if not getattr(self, "_st_ziel", False) and not _fokus_ist_eigenes_fenster():
+                return None
+            z = ui.ziel(m.aktiv)
+            if z is None:
+                return None
+            von, bis, markiert = z
+            if not markiert and m.feld.quelle in _mk.VORSCHLAG + (_mk.LEER,):
+                return None
+            return von, bis
+        except Exception as e:
+            log(f"[MASKE] Markierung/Cursor nicht lesbar: {e}")
+            return None
 
     def _maske_abschnitt_schliessen(self, weiter):
         """Abschnitt des bisherigen Felds schließen (Erkennung im Hintergrund, chirp_3 + Fehlhör-Liste) und — weiter —
@@ -3452,7 +3673,8 @@ class RaKScribeApp(ctk.CTk):
         if erstes is not None:
             m.gehe_zu(m.felder.index(erstes))
         log("[MASKE] INS: offen " + ", ".join(f.id for f in m.offene()) + " – Warnung, kein Befund")
-        self._kurzhinweis("Noch nicht übernommen – F3 übernimmt, INS noch einmal = ohne diese Felder", 8000)
+        self._kurzhinweis(f"Noch nicht übernommen – {self._maske_tastenname('uebernehmen')} übernimmt, INS noch einmal = "
+                          "ohne diese Felder", 8000)
         self._maske_anzeigen()
 
     def _maske_ins(self):
@@ -3487,7 +3709,8 @@ class RaKScribeApp(ctk.CTk):
                 self._job.ereignis("kein_text", gen)
                 self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
                 self.update_status("READY", "ready")
-            self._kurzhinweis("Maske leer – Record diktiert ins Feld, F3 übernimmt den Vorbefund", 6000)
+            self._kurzhinweis(f"Maske leer – Record diktiert ins Feld, {self._maske_tastenname('uebernehmen')} übernimmt "
+                              "den Vorbefund", 6000)
             self._maske_anzeigen()
             return
         if not nach_aufnahme:
@@ -3565,7 +3788,8 @@ class RaKScribeApp(ctk.CTk):
                 "art": m.art, "seite": m.seite, "sono": m.sono, "vorbefund": (m.vorbefund or {}).get("nr"),
                 "datum": m.datum, "erkannt": m.zerlegung.anzahl, "feld": m.feld.id, "aktiv": m.aktiv,
                 "version": m.version, "befund_version": self._maske_befund_version, "zustand": m.zustand(),
-                "warnung": self._maske_warnung_text(), "tasten": _mk.tasten_text(MASKE_TASTEN),
+                "warnung": self._maske_warnung_text(), "tasten": _mk.tasten_text(self._maske_belegung()),
+                "hilfe": self._maske_hilfe(), "geraet": (self._maske_modell() or {}).get("name", "keins") or "unbekannt",
                 "kopf": str(ui.kopf.cget("text")) if ui is not None else "",
                 "titel_links": str(self.diktat_titel.cget("text")) if getattr(self, "diktat_titel", None) else "",
                 "abschnitte_offen": len(self._maske_abschnitte or {}),
@@ -3641,7 +3865,9 @@ class RaKScribeApp(ctk.CTk):
                     else "SpeechMike-Unterstützung ist nicht gestartet — Details in rakscribe.log.")
         else:
             zeilen = list(smk.verlauf)[-15:]
-            info = (f"Gerät: {smk.verbunden or 'nicht verbunden (Anstecken genügt)'}\nLED: {smk.led_soll}\n\n"
+            modell = (getattr(smk, "modell", None) or {}).get("name")
+            info = (f"Gerät: {smk.verbunden or 'nicht verbunden (Anstecken genügt)'}"
+                    + (f" — {modell}" if modell else "") + f"\nLED: {smk.led_soll}\n\n"
                     "Letzte Tasten:\n" + ("\n".join(zeilen) or "(noch keine)") + "\n\n" + "\n".join(HILFE_SPEECHMIKE)
                     + f"\n\nAlle Tasten mit Rohdaten: {LOG_FILE_PATH} (Zeilen [SPEECHMIKE]).")
         messagebox.showinfo("SpeechMike-Diagnose", info)
@@ -3660,7 +3886,7 @@ def init_runtime():
     """Start der EXE (Umbau Schritt 16): Log-Kopf, Google-Bibliotheken, config.ini, Schlüssel + Speech-Client,
     LLM-Client, Befund-Prompt, Fehlhör-Liste, Vorlagen — in dieser Reihenfolge wie bisher beim Import."""
     global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY
-    global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES, MASKEN, MASKE_TASTEN
+    global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES, MASKEN, MASKE_TASTEN, MASKE_TASTEN_AMBIENT
     log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
     log(f"BASE_DIR: {BASE_DIR}")
     log(f"RESOURCES_DIR: {RESOURCES_DIR}")
@@ -3698,11 +3924,12 @@ def init_runtime():
     try:  # v3.15.0: Mammo-Maske (masken.json gebündelt); fehlt sie, arbeitet RaKScribe wie bisher (ohne Maske)
         MASKEN = _mk.laden()
         MASKE_TASTEN = _mk.tasten_belegung(MASKEN, CFG.maske_tasten, log=print)
+        MASKE_TASTEN_AMBIENT = _mk.tasten_belegung(MASKEN, CFG.maske_tasten_ambient, log=print, satz="tasten_ambient")
         print(f"[INIT] Masken: {', '.join((MASKEN.get('masken') or {}).keys()) or 'keine'} · Tasten: "
-              f"{_mk.tasten_text(MASKE_TASTEN) or '-'}")
+              f"{_mk.tasten_text(MASKE_TASTEN) or '-'} · Ambient: {_mk.tasten_text(MASKE_TASTEN_AMBIENT) or '-'}")
     except Exception:
         log_exception("[INIT] masken.json nicht ladbar — ohne Maske")
-        MASKEN, MASKE_TASTEN = {}, {}
+        MASKEN, MASKE_TASTEN, MASKE_TASTEN_AMBIENT = {}, {}, {}
     try:  # Umbau Schritt 20: gebündelte phrases.json früh prüfen (sonst fiele erst die Spracherkennung aus)
         print(f"[INIT] Phrasen: {len(_stt.medical_phrases())} Streaming, {len(_stt.chirp_phrases())} chirp_3")
     except Exception:

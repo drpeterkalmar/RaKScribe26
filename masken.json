@@ -1,11 +1,17 @@
 {
- "_info": "v3.15.0 Masken (Peter 14.10.2026: Mammographie diktieren → Maske mit Feldern, Feldsprung per SpeechMike-Taste, Vorbefund schon eingetragen). Generisch: Felder, Labels zum Zerlegen eines Vorbefunds, „unverändert“, Werte (ACR/BI-RADS), Titel, Schluss-Baustein, Tasten. Keine RIS-Tabellen, keine Patientendaten. Logik: source_code/maske.py, Tests: tests/offline/test_maske.py + maske_faelle.txt. Tastenbelegung überschreibbar in config.ini [MASKE] (NAECHSTES_FELD = FF usw.). EXE-only (die Web-App hat keinen CAS-Auftrag).",
- "version": "2026-10-15",
+ "_info": "v3.15.0 Masken (Peter 14.10.2026: Mammographie diktieren → Maske mit Feldern, Feldsprung per SpeechMike-Taste, Vorbefund schon eingetragen). Generisch: Felder, Labels zum Zerlegen eines Vorbefunds, „unverändert“, Werte (ACR/BI-RADS), Titel, Schluss-Baustein, Tasten. Keine RIS-Tabellen, keine Patientendaten. Logik: source_code/maske.py, Tests: tests/offline/test_maske.py + maske_faelle.txt. Tastenbelegung überschreibbar in config.ini [MASKE] (NAECHSTES_FELD = FF usw.). v3.15.4 (Peter 15.10., SpeechMike Ambient ohne F1–F4): Belegung je erkanntem Gerät — „tasten“ für SpeechMike III/Premium (unverändert), „tasten_ambient“ für das Ambient (Seriennummer PSM5…): Play = übernehmen (beim Loslassen, nie als Schieber-Stellung), Command = Maske aus/an; config.ini [MASKE] AMBIENT_UEBERNEHMEN = … überschreibt. EXE-only (die Web-App hat keinen CAS-Auftrag).",
+ "version": "2026-10-15b",
  "tasten": {
   "naechstes_feld": "FF",
   "voriges_feld": "REW",
   "uebernehmen": "F3",
   "maske_umschalten": "F4"
+ },
+ "tasten_ambient": {
+  "naechstes_feld": "FF",
+  "voriges_feld": "REW",
+  "uebernehmen": "PLAY",
+  "maske_umschalten": "COMMAND"
  },
  "masken": {
   "mammographie": {

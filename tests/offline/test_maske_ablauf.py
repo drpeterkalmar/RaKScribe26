@@ -78,10 +78,15 @@ class Var:
 
 
 class FakeMaskeUI:
-    """Statt MaskePanel (Tk): merkt sich, was gezeigt würde."""
+    """Statt MaskePanel (Tk): merkt sich, was gezeigt würde. v3.15.4: auswahl = Markierung/Cursor je Feld (von, bis,
+    markiert), wie MaskePanel.ziel() sie aus dem fokussierten Textfeld liest."""
     def __init__(self):
         self.sichtbar, self.aufrufe, self.letzt = False, 0, {}
         self.kopf = FakeBand()
+        self.auswahl = {}
+
+    def ziel(self, i):
+        return self.auswahl.get(i)
 
     def zeigen(self):
         self.sichtbar = True
@@ -193,8 +198,9 @@ check("Kopf: Screening · mit Sono · Vorbefund 05.06.2024 (vor N Jahren) (Nr) �
       "Screening" in app._maske_ui.letzt["kopf"] and _re.search(r"Vorbefund 05\.06\.2024 \(vor \d+ Jahren\) \(20241012001\) "
                                                                 r"– 4 von 4 Feldern erkannt", app._maske_ui.letzt["kopf"]),
       app._maske_ui.letzt)
-check("Hilfezeile: aktives Feld + Tasten", app._maske_ui.letzt["hilfe"].startswith("Feld 1/4: Inspektion und Palpation")
-      and "Vorspulen/Rückspulen = Feld · F3 = übernehmen" in app._maske_ui.letzt["hilfe"], app._maske_ui.letzt["hilfe"])
+check("Hilfezeile: aktives Feld + Tasten (ohne SpeechMike: Tastatur Bild↓/↑, F3, F4)",
+      app._maske_ui.letzt["hilfe"].startswith("Feld 1/4: Inspektion und Palpation")
+      and "Bild↓/Bild↑ = Feld · F3 = übernehmen · F4 = Maske aus" in app._maske_ui.letzt["hilfe"], app._maske_ui.letzt["hilfe"])
 taste("FF")
 check("Vorspulen → Feld 2 (Mammographie)", m.aktiv == 1 and "Feld 2/4: Mammographie" in app._maske_ui.letzt["hilfe"])
 taste("REW")
@@ -343,6 +349,138 @@ check("… INS ohne Maske und ohne Diktat → kein Befund aus fremdem Text (Hinw
       app.result_text.text == befund_m7 and "Kein Diktat" in app._letzter_hinweis, app._letzter_hinweis)
 app.reset_dictation()
 app.cas_abbrechen()
+
+# ───────────── 2c. v3.15.4 (Peter 15.10.): SpeechMike Ambient ohne F1–F4, Tippen/Knöpfe in der Pause, Markieren
+class FakeLeser:
+    """Statt SpeechMikeLeser: verbundenes Gerät mit erkanntem Modell."""
+    def __init__(self, modell, verbunden="SpeechMike III (0911:0c1d)"):
+        self.modell, self.verbunden, self.led_soll = modell, verbunden, "aus"
+
+    def led(self, name):
+        self.led_soll = name
+
+
+def roh(maske):
+    return "80 00 00 00 00 00 00 %02x %02x" % (maske & 0xFF, maske >> 8)
+
+
+def sm(t, los=None):
+    """Druck + Loslassen wie vom Gerät (Loslass-Bericht wählbar, z. B. mit Schieberstellung)."""
+    bit = dict(mod._sm.TASTEN)[t]
+    app.speechmike_taste(t, True, roh(bit))
+    app.speechmike_taste(t, False, roh(0) if los is None else roh(los))
+    S.pump(app, lambda: False, 0.05)
+
+
+ablegen("20261015009", "m9")
+app._cas_einmal()
+leistungen("m9", "20261015009", [L_MAMS, L_SONO])
+kontext("m9", "20261015009")
+app._cas_einmal()
+m = app._maske
+check("Mammo-Auftrag (Vorbereitung Ambient) → Maske gezeigt", m is not None and app._maske_an)
+app._speechmike = FakeLeser(mod._sm.modell({"serial_number": "PSM50000000001", "product_string": "SpeechMike III"}))
+app._speechmike_status(app._speechmike.verbunden)
+S.pump(app, lambda: False, 0.05)
+h = app._maske_ui.letzt["hilfe"]
+check("Ambient erkannt (Seriennummer PSM5…, meldet sich als „SpeechMike III“) → Hilfezeile mit Play/Command, ohne F3/F4",
+      "Vorspulen/Rückspulen = Feld · Play = übernehmen · Command = Maske aus" in h and "F3" not in h
+      and "markierter Text wird ersetzt" in h, h)
+sm("PLAY")
+check("Play (Druckknopf) → Inspektion übernommen", m.felder[0].quelle == "uebernommen", m.zustand())
+sm("PLAY", los=1 << 9)
+check("Play, losgelassen mit Schieberstellung (STOP) → nichts (nie still übernehmen)", m.felder[0].quelle == "uebernommen")
+sm("PLAY")
+check("Play noch einmal → wieder Vorschlag", m.felder[0].quelle == "vorbefund")
+sm("F3")
+check("F3 (hat das Ambient nicht) → nichts", m.felder[0].quelle == "vorbefund")
+sm("COMMAND")
+check("Command → Maske aus, Hinweis nennt Command", not app._maske_an and "Command = Maske wieder an" in app._letzter_hinweis,
+      app._letzter_hinweis)
+sm("COMMAND")
+check("Command → Maske wieder an", app._maske_an)
+CHIRP[:] = ["und auf und auffällig unauffällig"]
+app.sm_record()
+sprechen()
+app.sm_record()
+app._maske_getippt(0, "Unauffällig.")
+check("Pause, Feld wird noch erkannt → Tippen in diesem Feld wartet (nichts geht verloren)", m.felder[0].quelle != "getippt")
+warte(lambda: not m.felder[0].wartet)
+check("Pause: Diktat steht im Feld, Felder nicht gesperrt (Knöpfe/Tippen frei)", app._job.zustand == "PAUSED"
+      and m.felder[0].quelle == "diktat" and app._maske_ui.letzt["gesperrt"] is False, f"{m.zustand()} {app._maske_ui.letzt}")
+app._maske_getippt(0, "Unauffällig.")
+check("Tippen in der Pause → getippt (Peter: „oder ich lösche ihn selbständig“)", m.felder[0].quelle == "getippt"
+      and m.felder[0].text == "Unauffällig.")
+app._maske_knopf(0)
+check("Knopf „✕ verwerfen“ in der Pause → wieder Vorbefund, Pause bleibt", m.felder[0].quelle == "vorbefund"
+      and app._job.zustand == "PAUSED")
+sm("FF")
+mod._fokus_ist_eigenes_fenster = lambda: True
+app._maske_ui.auswahl = {1: (109, 160, True)}          # „Im Übrigen unauffällig strukturierter Drüsenkörper.“ markiert
+CHIRP[:] = ["neu aufgetretener Herd links oben außen"]
+app.sm_record()
+check("Record (weiter) mit Markierung im grauen Vorbefund → Abschnitt ersetzt genau die Markierung",
+      app._job.zustand == "RECORDING" and m.felder[1].laufend and m.felder[1].laufend[0].art == "ziel", m.zustand())
+sprechen()
+app.sm_record()
+warte(lambda: not m.felder[1].wartet)
+check("… nur die Markierung ersetzt, der Rest des Vorbefunds bleibt, gilt als getippt (ohne KI)",
+      m.felder[1].quelle == "getippt" and M.vorschau(m.felder[1], m) == "Verglichen mit 05.06.2024 beidseits unverändert "
+      "vereinzelte insuspekte Verkalkungen sowie Gefäßverkalkungen. Neu aufgetretener Herd links oben außen. Cutis und "
+      "Subcutis unauffällig.", M.vorschau(m.felder[1], m))
+sm("FF")
+app._maske_ui.auswahl = {2: (5, 5, False)}             # nur hineingeklickt (Cursor) in den grauen Vorschlag
+CHIRP[:] = ["keine Herde"]
+app.sm_record()
+sprechen()
+app.sm_record()
+warte(lambda: not m.felder[2].wartet)
+check("nur Klick in einen grauen Vorschlag + Record → wie bisher: Diktat ersetzt den ganzen Vorschlag",
+      m.felder[2].quelle == "diktat" and m.felder[2].roh == "keine Herde", m.zustand())
+app._maske_ui.auswahl = {2: (5, 5, False)}             # Cursor im diktierten Feld → an der Stelle einfügen
+CHIRP[:] = ["suspekten"]
+app.sm_record()
+sprechen()
+app.sm_record()
+warte(lambda: not m.felder[2].wartet)
+check("Cursor im diktierten Feld + Record → an der Stelle eingefügt", m.felder[2].roh == "keine suspekten Herde",
+      m.felder[2].roh)
+mod._fokus_ist_eigenes_fenster = lambda: False
+app._maske_ui.auswahl = {}
+app._maske_tastatur_aktion("maske_umschalten")
+check("F4 auf der Tastatur in der Pause → nicht umgeschaltet (Hinweis)", app._maske_an and "erst die Aufnahme"
+      in app._letzter_hinweis)
+app.sm_ins()
+ruhe()
+app._maske_tastatur_aktion("uebernehmen")
+check("F3 auf der Tastatur → übernimmt (auch am Ambient)", m.felder[0].quelle == "uebernehmen" or
+      m.felder[0].quelle == "uebernommen", m.zustand())
+app._speechmike = FakeLeser(mod._sm.modell({"serial_number": "", "product_string": "SpeechMike III"}),
+                            "SpeechMike III (0911:0c1c)")
+app._speechmike_status(app._speechmike.verbunden)
+S.pump(app, lambda: False, 0.05)
+h = app._maske_ui.letzt["hilfe"]
+check("SpeechMike III/Premium → Hilfezeile wie bisher (F3/F4)", "Vorspulen/Rückspulen = Feld · F3 = übernehmen · F4 = "
+      "Maske aus" in h, h)
+vorher = m.zustand()
+sm("PLAY")
+check("… Play dort nicht belegt: nichts geändert, Hinweis nennt F3", m.zustand() == vorher and "F3 übernimmt"
+      in app._letzter_hinweis, app._letzter_hinweis)
+sm("F3")
+check("… F3 wie bisher (übernommen → wieder Vorschlag)", m.felder[0].quelle == "vorbefund", m.zustand())
+for i in (0, 3):
+    app._maske_knopf(i)
+app.sm_ins()
+ruhe()
+r9 = app.result_text.text
+check("INS → Befund mit dem eingesetzten Satz, Sono mit eingefügtem Wort", "Neu aufgetretener Herd links oben außen. Cutis "
+      "und Subcutis unauffällig." in r9 and "Sonographie: Keine suspekten Herde." in r9, r9)
+check("KI bekam nur Peters Diktate (nie den Vorbefund-Text des getippten Mammographie-Felds)",
+      not any("Gefäßverkalkungen" in k for k in KORR), KORR)
+app.befund_fertig()
+S.pump(app, lambda: False, 0.2)
+check("EOL → an die Brücke", antwort("m9").get("status") == "fertig", antwort("m9"))
+app._speechmike = None
 
 # ───────────── 3. keine Maske: Röntgen, Menü aus; Spulen wie bisher ─────────────
 ablegen("20261015004", "m4")

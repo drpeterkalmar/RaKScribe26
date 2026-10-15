@@ -391,10 +391,106 @@ def fall_m(state, work, hwnd=None):
     m["ins2"] = ph("sm_INS#m3", 1.0)
     bild("M_befund_ohne_vorbefund.png")
     m["abbrechen"] = ph("cas_abbrechen#m2")
+    # v3.15.4 (Peter 15.10.): SpeechMike Ambient ohne F1–F4 (Play/Command), Markieren + Drüberdiktieren, Tippen in der
+    # Pause, F3/F4 auf der Tastatur — derselbe Weg wie Gerät/Tastatur (Dekodierer bzw. bind_all-Handler)
+    auftrag("20261015013", "uitestm3")
+    leistungen("uitestm3", "20261015013", [L_MAMS, L_MAMMASONO])
+    kontext("uitestm3", "20261015013", MAMMO_VB)
+    m["a_offen"] = ph("cas_status#m4", 1.5)
+    m["a_geraet"] = ph("geraet#ambient")
+    m["a_play"] = ph("sm_PLAY#a1")
+    m["a_cmd_aus"] = ph("sm_COMMAND#a1")
+    m["a_cmd_an"] = ph("sm_COMMAND#a2")
+    ph("sm_FF#a1")
+    m["a_markiert"] = ph("maske_markieren#1|109|160")
+    ph("chirp#neu aufgetretener Herd links oben außen")
+    m["a_rec"] = ph("sm_RECORD#a1")
+    m["a_pause"] = ph("sm_RECORD#a2", 1.5)
+    bild("M_markiert_ersetzt.png")
+    m["a_tippen_pause"] = ph("maske_tippen#2|Keine suspekten Herde.")
+    ph("sm_FF#a2")
+    ph("sm_FF#a3")
+    m["a_kb_f3"] = ph("kb_F3#a1")
+    m["a_ins"] = ph("sm_INS#a1", 1.0)
+    bild("M_ambient_befund.png")
+    m["a_kb_f4_aus"] = ph("kb_F4#a1")
+    m["a_kb_f4_an"] = ph("kb_F4#a2")
+    m["a_premium"] = ph("geraet#premium")
+    m["a_abbrechen"] = ph("cas_abbrechen#m4")
+    ph("geraet#auto")
+    # v3.15.4 (Peter 15.10.: „warum kann ich nicht mehr rechts mit nur text in den Befund reindiktieren?“): Record →
+    # Pause → in den Befund geklickt → Record (weiter) → INS: das Diktat steht an der Stelle; mit „Nur Text“ ersetzt es
+    # die Markierung — beides im CAS-Band, nichts geht an CAS vor EOL
+    auftrag("20261015014", "uitestm5")
+    leistungen("uitestm5", "20261015014", [_l("x-hg-bds", "Handgelenk bds.", "Röntgen", "handgelenk_in_2_ebenen",
+                                              seite="beidseits")])
+    m["e_offen"] = ph("cas_status#m5", 1.5)
+    m["e_test"] = ph("cas_testbefund#e1")
+    ph("diktat_setzen#Handgelenk links SL-Spalt erweitert")
+    ph("befund_fokus_weg#e1")
+    ph("chirp#zusätzlich kleiner Gelenkerguss|zusätzlich kleiner Gelenkerguss")   # Pause-Reparatur + Endtext
+    ph("sm_RECORD#e1")
+    ph("sm_RECORD#e2", 1.0)
+    m["e_klick"] = ph("befund_markieren#" + str(TESTBEFUND.index("Dieser Text")))
+    m["e_weiter"] = ph("sm_RECORD#e3")
+    m["e_ins"] = ph("sm_INS#e1", 1.5)
+    bild("E_befund_eingefuegt.png")
+    m["e_nt"] = ph("nur_text_an#e1")
+    ph("chirp#ersetzt|ersetzt")
+    ph("befund_fokus_weg#e2")
+    ph("sm_RECORD#e4")
+    ph("sm_RECORD#e5", 1.0)
+    i0 = TESTBEFUND.index("TESTBEFUND ohne")
+    m["e_mark"] = ph(f"befund_markieren#{i0}|{i0 + len('TESTBEFUND')}")
+    ph("sm_RECORD#e6")
+    m["e_ins2"] = ph("sm_INS#e2", 1.5)
+    ph("nur_text_aus#e1")
+    m["e_abbrechen"] = ph("cas_abbrechen#m5")
+    m["e_antwort"] = antwort("uitestm5")
+    # v3.15.4 (Peter 15.10.: Häkchen im Optionen-Menü schwarz auf dunkelblau): ☰ anklicken, Menü fotografieren, ESC
+    m["menu"] = menu_foto(m["a_abbrechen"], hwnd)
+    m["nach_menu"] = ph("cas_status#nach_menu", 0.5)
     return m
 
 
+def menu_foto(zustand, hwnd):
+    """☰-Menü der echten EXE öffnen (Mausklick), Bildschirmbereich fotografieren (O_menu_haekchen.png) und die hellen
+    Pixel in der Häkchen-Spalte zählen (weiße Häkchen ≠ schwarz auf dunkel); danach ESC."""
+    out = {"ok": False}
+    try:
+        import win32api
+        import win32con
+        from PIL import ImageGrab
+        x, y, w, h = (zustand or {}).get("menu_btn_xy") or (0, 0, 0, 0)
+        if not w:
+            return out
+        win32api.SetCursorPos((x + w // 2, y + h // 2))
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        time.sleep(1.5)
+        links, oben = max(0, x - 260), y + h
+        img = ImageGrab.grab(bbox=(links, oben, links + 620, oben + 720), all_screens=True)
+        img.save(OUT / "O_menu_haekchen.png")
+        spalte = img.convert("L").crop((10, 0, 40, img.size[1]))      # Häkchen-Spalte des Menüs (links)
+        out["helle_pixel_haekchen_spalte"] = sum(1 for v in spalte.getdata() if v > 200)
+        out["ok"] = True
+    except Exception as e:
+        out["fehler"] = f"{type(e).__name__}: {e}"
+    finally:
+        try:
+            import win32api
+            import win32con
+            win32api.keybd_event(win32con.VK_ESCAPE, 0, 0, 0)
+            win32api.keybd_event(win32con.VK_ESCAPE, 0, win32con.KEYEVENTF_KEYUP, 0)
+            time.sleep(0.8)
+        except Exception:
+            pass
+    return out
+
+
 REPO = pathlib.Path(__file__).resolve().parents[2]
+TESTBEFUND = ("## TEST RaKScribe-Brücke – bitte nicht vidieren\n\n## Befund\nTESTBEFUND ohne Diktat und ohne Patientenbezug. "
+              "Dieser Text prüft nur die Übergabe von RaKScribe an CAS.\n\n## Ergebnis\nTEST – bitte nicht vidieren.")
 
 
 def rks_prozesse():
@@ -971,6 +1067,43 @@ r2 = str((MM.get("ins2") or {}).get("result_voll") or "")
 cm("INS → Befund ohne Vorbefund: Normalbaustein, getipptes Ergebnis, ACR/BIRADS 1, Screening-Text BI-RADS 1",
    r2.startswith("## Mammographie beidseits – Screening") and "Mammographie: Kleinfleckig strukturierter Drüsenkörper." in r2
    and "## Ergebnis\nUnauffälliger Befund.\nACR: 1\nBIRADS: 1" in r2 and SCREENING_12 in r2, r2[:700])
+
+A_MAMMO = ("Verglichen mit 05.06.2024 beidseits unverändert vereinzelte insuspekte Verkalkungen sowie Gefäßverkalkungen. "
+           "Neu aufgetretener Herd links oben außen. Cutis und Subcutis unauffällig.")
+cm("v3.15.4 SpeechMike Ambient erkannt → Hilfezeile „Play = übernehmen · Command = Maske aus“ (ohne F3/F4)",
+   "Vorspulen/Rückspulen = Feld · Play = übernehmen · Command = Maske aus" in str(gm("a_geraet", "hilfe"))
+   and "F3" not in str(gm("a_geraet", "hilfe")), str(gm("a_geraet", "hilfe")))
+cm("Ambient: Play → Inspektion übernommen; Command → Maske aus, Command → wieder an",
+   gq("a_play")[:1] == ["uebernommen"] and gm("a_cmd_aus", "an") is False and gm("a_cmd_an", "an") is True,
+   f"{gq('a_play')} / {gm('a_cmd_aus', 'an')} / {gm('a_cmd_an', 'an')}")
+fa = (gm("a_pause", "felder") or [{}, {}])[1]
+cm("Markierung im grauen Vorbefund + Record → nur die Markierung ersetzt, Rest bleibt (getippt, ohne KI); Pause",
+   fa.get("quelle") == "getippt" and str(fa.get("text", "")).startswith(A_MAMMO[:200])
+   and (MM.get("a_pause") or {}).get("job_zustand") == "PAUSED", json.dumps(fa, ensure_ascii=False)[:400])
+cm("In der Pause tippen → getippt (Felder nicht gesperrt)", (gm("a_tippen_pause", "felder") or [{}] * 3)[2].get("quelle")
+   == "getippt" and (MM.get("a_tippen_pause") or {}).get("job_zustand") == "PAUSED", str(gm("a_tippen_pause", "zustand")))
+cm("F3 auf der Tastatur → Ergebnis übernommen", gq("a_kb_f3")[3:] == ["uebernommen"], str(gq("a_kb_f3")))
+ra = str((MM.get("a_ins") or {}).get("result_voll") or "")
+cm("INS → Befund mit eingesetztem Satz und getippter Sonographie", "Mammographie: " + A_MAMMO in ra
+   and "Sonographie: Keine suspekten Herde." in ra and "ACR: 2\nBIRADS: 2" in ra, ra[:900])
+cm("F4 auf der Tastatur → Maske aus/an; SpeechMike III/Premium → Hilfezeile wieder F3/F4",
+   gm("a_kb_f4_aus", "an") is False and gm("a_kb_f4_an", "an") is True
+   and "F3 = übernehmen · F4 = Maske aus" in str(gm("a_premium", "hilfe")), str(gm("a_premium", "hilfe")))
+
+re1 = str((MM.get("e_ins") or {}).get("result_voll") or "")
+cm("v3.15.4 CAS-Band: Record → Pause → in den Befund geklickt → Record (weiter) → INS: Diktat an der Stelle, Rest bleibt",
+   (MM.get("e_weiter") or {}).get("einfuegen_ziel") is not None and "ohne Patientenbezug. Zusätzlich kleiner Gelenkerguss "
+   "Dieser Text prüft nur" in re1 and re1.startswith("## TEST RaKScribe-Brücke") and (MM.get("e_ins") or {}).get("status")
+   == "KONTROLLE", re1[:400])
+re2 = str((MM.get("e_ins2") or {}).get("result_voll") or "")
+cm("… mit „Nur Text“: die Markierung im Befund wird durch das Diktat ersetzt (kein Befundumbau), nichts an CAS vor EOL",
+   "## Befund\nErsetzt ohne Diktat und ohne Patientenbezug. Zusätzlich kleiner Gelenkerguss" in re2
+   and (MM.get("e_nt") or {}).get("nur_text") is True and (MM.get("e_antwort") or {}).get("status") != "fertig", re2[:400])
+mf = MM.get("menu") or {}
+cm("v3.15.4 ☰-Menü: Häkchen weiß (selectcolor), Foto O_menu_haekchen.png; „Nur Text“-Schalter mit hellem Knopf und Rahmen",
+   (MM.get("offen") or {}).get("menu_haken") == "#FFFFFF" and str(((MM.get("offen") or {}).get("nur_text_switch") or {})
+   .get("border_width")) == "2" and mf.get("ok") is True and (mf.get("helle_pixel_haekchen_spalte") or 0) > 0
+   and (MM.get("nach_menu") or {}).get("status") is not None, json.dumps(mf, ensure_ascii=False))
 
 # G (v3.11.0): Bereitschaft — minimiert warten, Einzelinstanz, nach CAS-EOL minimieren, Autostart über den Starter
 try:

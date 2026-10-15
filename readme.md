@@ -206,14 +206,27 @@ Hat ein CAS-Diktat eine **Mammographie-Leistung** (Screening oder kurativ), zeig
 die **Mammo-Maske** mit vier Feldern: **Inspektion und Palpation · Mammographie · Sonographie · Ergebnis** (mit ACR und
 BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder Klick „＋ zuschalten“ holt sie dazu).
 
-| Taste (SpeechMike) | in der Maske |
-|---|---|
-| **Vorspulen** / **Rückspulen** | nächstes / voriges Feld (feste Reihenfolge: 3× Vorspulen = Ergebnis) — auch während der Aufnahme |
-| **Record** | diktiert ins aktive Feld (Pause/Weiter wie gewohnt); das Diktat **ersetzt** den Vorschlag dieses Felds |
-| **F3** | Vorbefund dieses Felds **bewusst übernehmen** (noch einmal = zurück); bei heutigem Diktat: 2× F3 = verwerfen |
-| **F4** | Maske aus = freies Diktat wie bisher (noch einmal = Maske wieder an) |
-| **INS** / **EOL** | Befund aus den Feldern rechts zur Kontrolle / an CAS — wie gewohnt |
-| Tastatur | Bild↓ / Bild↑ = Feld, Klick ins Feld = aktivieren, Tippen im Feld = Text von Hand |
+| Taste | SpeechMike III / Premium | SpeechMike Ambient (ab v3.15.4) | Tastatur |
+|---|---|---|---|
+| nächstes / voriges Feld (feste Reihenfolge: 3× = Ergebnis), auch während der Aufnahme | Vorspulen / Rückspulen | Vorspulen / Rückspulen | Bild↓ / Bild↑ |
+| diktiert ins aktive Feld (Pause/Weiter wie gewohnt); das Diktat **ersetzt** den Vorschlag | Record | Record | F10 |
+| Vorbefund dieses Felds **bewusst übernehmen** (noch einmal = zurück); bei heutigem Text: 2× = verwerfen | F3 | **Play** | F3 (ab v3.15.4) |
+| Maske aus = freies Diktat wie bisher (noch einmal = wieder an) | F4 | **Command** | F4 (ab v3.15.4) |
+| Befund aus den Feldern zur Kontrolle / an CAS | INS / EOL | INS / EOL | F11 / F12 |
+
+- **Belegung je erkanntem Gerät (v3.15.4):** Das SpeechMike Ambient (PSM5000, ohne F1–F4) meldet sich wie ein
+  Premium Air als „SpeechMike III“ (0911:0C1D) und wird an seiner Seriennummer „PSM5…“ erkannt. Nur dann gelten Play und
+  Command; SpeechMike III/Premium bleiben bei F3/F4. Die Hilfezeile über den Feldern zeigt die Tasten des erkannten
+  Geräts (ohne SpeechMike: die Tastatur). Play zählt beim Loslassen und nie als Schieberstellung. Eigene Belegung:
+  `config.ini` `[MASKE]` (`UEBERNEHMEN = …`, für das Ambient `AMBIENT_UEBERNEHMEN = …`).
+- **Text markieren und drüberdiktieren (v3.15.4):** Text im aktiven Feld markieren → Record → das Diktat ersetzt genau die
+  Markierung; Cursor in ein Feld mit heutigem Text gesetzt → an dieser Stelle eingefügt; ohne Markierung/Cursor wie
+  bisher (ein grauer Vorschlag wird durch einen bloßen Klick nicht übernommen). Steht danach Vorbefund-Text mit im Feld,
+  gilt es als getippt (ohne KI — die KI bekommt nur Peters Diktat). Strg+A markiert den ganzen Feldtext.
+- **Selbst löschen/korrigieren (v3.15.4):** Tippen, Markieren, Entf und die Knöpfe „✓ übernehmen“/„✕ verwerfen“ gehen auch
+  in der **Pause** (gesperrt nur bei laufender Aufnahme, während der Befund entsteht und solange das Feld noch erkannt
+  wird). Ganz gelöscht → das Feld ist leer und kommt nicht in den Befund; „✕ verwerfen“ holt den Vorschlag zurück.
+- **Am Ambient ohne F1/F2:** „Neu“ (F1) = F9 bzw. Knopf „↺ Neu (F9)“, „Nur Text“ (F2) = Schalter oben rechts im Befund.
 
 - **Vorbefund:** Die Brücke (ab 2.1.0) liefert den letzten fertigen Mammographie-Befund mit Datum und ACR/BI-RADS der
   Doppelbefundung. RaKScribe zerlegt ihn an den Labels und trägt ihn **grau** als Vorschlag ein („Vorbefund TT.MM.JJJJ“).
@@ -232,6 +245,19 @@ BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder 
 - Menü ☰ „Mammo-Maske bei Mammographie (CAS)“ schaltet sie ab. Definition: `masken.json`; Tests:
   `tests/offline/test_maske.py`, `test_maske_ablauf.py`, Windows-UI-Test Fall M. Die Web-App hat keinen CAS-Auftrag und
   damit keine Maske.
+
+## 🔧 v3.15.4 außerdem (Peter 15.10.2026, Ordi-Probelauf)
+
+- **Genaue Spracherkennung (chirp_3) in der EXE repariert:** Die Schlüssel für chirp_3 wurden ohne Scope angelegt — jede
+  Token-Erneuerung scheiterte mit „invalid_scope“ (Ordi-Protokoll 15.10.: 18 von 18 Volltranskriptionen), RaKScribe nahm
+  dann still das schwächere Live-Transkript. Jetzt mit Scope `cloud-platform` (wie alle Werkzeuge am Mac).
+- **Beidseitige CAS-Leistung → beidseitiger Befund:** Ist die CAS-Leistung einer paarigen Region beidseits („bds.“,
+  „beidseits“, „bilateral“), heißt die Überschrift immer „… beidseits …“ (auch wenn nur eine Seite diktiert wurde), der
+  Gen-Prompt bekommt die Regel für den beidseitigen Befundtext, das Band einen Hinweis. Wirbelsäule/Becken nie.
+- **Drüberdiktieren rechts nach einer Pause:** Record → Pause → in den Befund klicken bzw. Text markieren → Record
+  (weiter) → INS setzt das Diktat an diese Stelle (wie seit v3.5.0 beim Start; bisher wurde die Stelle in der Pause nicht
+  gelesen und INS baute einen neuen Befund bzw. ersetzte ihn bei „Nur Text“). Gilt auch im CAS-Band.
+- **Häkchen im ☰-Menü weiß** statt schwarz auf dunkelblau; Schalter „Nur Text“ mit hellem Knopf und Rahmen.
 
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*
