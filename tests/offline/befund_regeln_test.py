@@ -62,6 +62,20 @@ for c in F["mammasono_beidseits"]:  # v3.7.2 Peter: Mammasono immer beidseits
     check(g == c["out"], f"mammasono: {c['in'][:40]!r}", g)
 for c in F["prompt_version"]:
     check(br.prompt_version(c["in"]) == c["version"] and br.strip_prompt_marker(c["in"]) == c["stripped"], c["in"][:50])
+W = F["widerspruch"]  # v3.15.5: umschriebene Skelettbefunde vs. Normalsätze der Vorlage
+TPL = json.loads((ROOT / "templates.json").read_text(encoding="utf-8"))
+for c in W["bereinigen"]:
+    g = br.widersprueche_bereinigen(c["in"], c["diktat"])[0]
+    check(g == c["out"], f"widerspruch: {c['name']}", g)
+for c in W["einschraenken"]:
+    g = br.satz_einschraenken(c["in"])
+    check(g == c["out"], f"einschränken: {c['in'][:40]!r}", g)
+for c in W["befunde"]:
+    g = [[b["id"], b["phrase"], b["global"]] for b in br.widerspruch_befunde(c["in"])]
+    check(g == c["out"], f"befunde: {c['in']!r}", g)
+for c in W["prompt"]:
+    g = br.widerspruch_prompt(br.widerspruch_befunde(c["diktat"]), TPL[c["vorlage"]]["body"])
+    check(g == c["out"], f"wid-prompt: {c['diktat']!r}", g)
 
 print("── PY: EXE-Prompt-Auswahl (waehle_prompt)")
 NEU = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-a -->\nNEU"

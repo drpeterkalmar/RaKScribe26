@@ -102,6 +102,8 @@ jobs:
         run: python tests/offline/test_maske.py
       - name: Mammo-Maske im EXE-Ablauf (Feldsprung, Diktat je Feld, Warnung, INS, EOL, F4, Rückfall) (v3.15.0)
         run: python tests/offline/test_maske_ablauf.py
+      - name: Widerspruchs-Matrix (v3.15.5, alle Skelett-Vorlagen × Befund-Kategorien, EXE = Web)
+        run: python tests/offline/widerspruch_matrix_test.py
       - name: Web-Pipeline (Abbruch, Fehlerweitergabe, kein Whisper auf Pages)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings pipeline_test.mjs

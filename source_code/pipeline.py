@@ -156,10 +156,14 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
             template_data = bs.vorlage(b_key, bausteine, seg)
             beispiele = ctx.beispiele(seg) if ctx.beispiele else ""
             hinweise = (ctx.hinweise + "\n" if ctx.hinweise else "") + bs.KI_HINWEIS.format(key=b_key)
+            wid_block = br.widerspruch_prompt(br.widerspruch_befunde(seg), template_data["body"])   # v3.15.5
+            if wid_block:
+                beispiele = wid_block + ("\n" + beispiele if beispiele else "")
             roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, hinweise, beispiele, _cas_block(ctx)))
         if ctx.protokoll is not None:
             ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
-        return br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
+        out = br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
+        return out if woertlich else br.widersprueche_bereinigen(out, seg)[0]   # v3.15.5
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
@@ -172,12 +176,21 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     else:
         beispiele = ctx.beispiele(seg) if ctx.beispiele else ""
         cas_block = _cas_block(ctx) + ("\n" + cv.beidseits_block(wahl) if bds else "")
+        # v3.15.5 (Peter 15.10.): diktierte umschriebene Befunde + die widersprechenden Normalsätze der Vorlage — an der
+        # Stelle {examples} wie in der Web-App (pipeline.ts)
+        wid_block = br.widerspruch_prompt(br.widerspruch_befunde(seg), template_data["body"])
+        if wid_block:
+            beispiele = wid_block + ("\n" + beispiele if beispiele else "")
         roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, ctx.hinweise, beispiele, cas_block,
                                  _ibl_block(seg, template_key, ctx)))
     if ctx.protokoll is not None:
         ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
     # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
     out = br.nachbearbeiten(roh)
+    # v3.15.5: übrig gebliebene widersprechende Normalsätze → „Im Übrigen …“, Befund/Ergebnis nennen den Befund
+    out, aend = br.widersprueche_bereinigen(out, seg)
+    if aend:
+        ctx.log(f"[WIDERSPRUCH] {len(aend)} Korrektur(en) nach der KI: " + " · ".join(a[:50] for a in aend))
     if bds:
         ctx.log(f"[CAS] beidseits laut CAS ({wahl.leistung.kurz}): Überschrift „beidseits“")
         out = cv.report_beidseits(out)

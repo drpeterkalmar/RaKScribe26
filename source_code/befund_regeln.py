@@ -492,3 +492,350 @@ def vorrang_vorlage(text, templates, daten=None):
             continue
         best, best_len = key, len(n)
     return best
+
+
+# ── v3.15.5 Widerspruchs-Prüfung Pathologie ↔ Normalsatz (Peter 15.10.2026: „wenn ich fersensporne diktiere sollte im
+# befundtext nicht stehen dass die ferse eine normale kontur hat“ … „Fibroostosen, Exostosen, Spondylosen usw. können in
+# praktisch jeder Knochenregion auftreten.“) — Katalog und Normalsatz-Merkmale: vorlagen_vorrang.json „widersprueche“.
+# Vor der KI: die widersprechenden Sätze der Vorlage stehen im Gen-Prompt (<widersprueche>). Nach der KI: übrig gebliebene
+# widersprechende Normalsätze werden auf „Im Übrigen …“ eingeschränkt, der Befund fehlt nie im Befundtext und im
+# Ergebnis steht er statt „Regelrechte Darstellung …“. Ohne diktierten Befund bleibt alles Zeichen für Zeichen gleich.
+# Sync: web_app/src/befundRegeln.ts (widerspruchBefunde, widerspruchSaetze, satzEinschraenken, widersprucheBereinigen,
+# widerspruchPrompt), Fälle befund_regeln_fixtures.json „widerspruch“, Matrix tests/offline/widerspruch_matrix_test.py.
+_WID_CACHE = {}
+
+
+def _wid(daten=None):
+    d = (daten if daten is not None else _vorrang_laden()).get("widersprueche") or {}
+    c = _WID_CACHE.get(id(d))
+    if c is None:
+        c = {"d": d, "kat": [], "merk": {}, "strukt": {}}
+        for k in d.get("kategorien") or []:
+            c["kat"].append(dict(k, _re=re.compile(k["muster"]), _aus=re.compile(k["ausser"]) if k.get("ausser") else None,
+                                 _bef=re.compile(k["befund"]) if k.get("befund") else None))
+        for n, m in (d.get("merkmale") or {}).items():
+            c["merk"][n] = (re.compile(m["muster"]), re.compile(m["ausser"]) if m.get("ausser") else None)
+        for n, m in (d.get("strukturen") or {}).items():
+            c["strukt"][n] = re.compile(m)
+        for n in ("einschraenkung", "verneinung_vor", "verneinung_nach", "skelett"):
+            c[n] = re.compile(d[n]) if d.get(n) else None
+        _WID_CACHE[id(d)] = c
+    return c
+
+
+_WID_TRENNER = re.compile(r"[.;,:!?\n]+|(?<![a-zäöüß])(?:punkt|neue zeile|neuzeile|absatz)(?![a-zäöüß])|\s[–-]\s", re.I)
+_WID_VORSPANN = re.compile(r"^(?:und|sowie|mit|zusätzlich|außerdem|ausserdem|auch|dazu|bei)\s+", re.I)
+# Vorspann eines diktierten Teilsatzes, der nicht zum Befund gehört („Knie rechts Osteophyt …“ → „Osteophyt …“)
+_WID_REGION_SEITE = re.compile(
+    r"(?<![a-zäöüß])(?:rechts|links|beidseits|beidseitig|bds|re|li|röntgen|sono[a-zäöüß]*|ultraschall|ct|mrt?|"
+    r"(?:knie|hüft|hand|sprung|ellbogen|ellenbogen|schulter|iliosakral|kiefer)(?:gelenk[a-zäöüß]*)?|knie|hüfte|ferse|"
+    r"calcaneus|kalkaneus|becken[a-zäöüß]*|[hbl]ws|wirbelsäule|schulter|ellbogen|hand|finger|daumen|fuß|fuss|vorfuß|"
+    r"mittelfuß|zehe[a-zäöüß]*|osg|usg|unterschenkel|oberschenkel|oberarm|unterarm|schädel|thorax|clavicula|patella|"
+    r"in (?:2|zwei) ebenen|befund)(?![a-zäöüß])", re.I)
+
+
+def _wid_phrase(roh, start):
+    """Diktierter Befund ab dem Ende des Vorspanns (Region/Seite) vor dem Treffer bis zum Ende des Teilsatzes."""
+    vor = roh[:start]
+    ende = 0
+    for m in _WID_REGION_SEITE.finditer(vor):
+        ende = m.end()
+    return roh[ende:].strip(" ,;:")
+
+
+def _wid_gruppen(text, c):
+    return {n for n, rx in c["strukt"].items() if rx.search(text)}
+
+
+def widerspruch_befunde(diktat, daten=None):
+    """Diktat → umschriebene/degenerative Befunde aus dem Katalog, nicht verneint („kein Fersensporn“ zählt nicht).
+    Je Befund: id, name, phrase (diktierter Teilsatz), gruppen (Strukturen des Teilsatzes + Standard der Kategorie),
+    global (Lage unbekannt bzw. die ganze Region, z. B. Osteopenie)."""
+    c = _wid(daten)
+    out = []
+    for teil in _WID_TRENNER.split(diktat or ""):
+        roh = _WID_VORSPANN.sub("", " ".join(teil.split()))
+        t = roh.lower()
+        if not t:
+            continue
+        for k in c["kat"]:
+            if k["_aus"] is not None and k["_aus"].search(t):
+                continue
+            for m in k["_re"].finditer(t):
+                if c["verneinung_vor"] is not None and c["verneinung_vor"].search(t[:m.start()]):
+                    continue
+                if c["verneinung_nach"] is not None and c["verneinung_nach"].search(t[m.end():]):
+                    continue
+                eigene = _wid_gruppen(t, c)
+                out.append({"id": k["id"], "name": k["name"], "phrase": _wid_phrase(roh, m.start()) or roh,
+                            "gruppen": sorted(eigene | set(k.get("gruppen") or [])),
+                            "global": bool(k.get("global")) or not (eigene | set(k.get("gruppen") or []))})
+                break
+    return out
+
+
+_WID_TEILSATZ = re.compile(r"[.,;:\n]")
+
+
+def _nennt(text, k, c, rx=None):
+    """Nennt text (klein) den Befund der Kategorie k NICHT verneint? („Keine periartikulären Verkalkungen“ ist ein
+    Normalsatz, kein Befund.) Verneinung und Ausnahmen gelten im Teilsatz des Treffers. rx = anderes Muster
+    (Deskriptoren)."""
+    for m in (rx or k["_re"]).finditer(text):
+        a = max((x.end() for x in _WID_TEILSATZ.finditer(text, 0, m.start())), default=0)
+        e = next((x.start() for x in _WID_TEILSATZ.finditer(text, m.end())), len(text))
+        teil = text[a:e]
+        if k["_aus"] is not None and k["_aus"].search(teil):
+            continue
+        if c["verneinung_vor"] is not None and c["verneinung_vor"].search(text[a:m.start()]):
+            continue
+        if c["verneinung_nach"] is not None and c["verneinung_nach"].search(text[m.end():e]):
+            continue
+        return True
+    return False
+
+
+def _beschreibt(text, k, c):
+    """Befund genannt ODER mit seinen Deskriptoren beschrieben („Verschmälerung des Gelenkspaltes mit Osteophyten“ statt
+    „Gonarthrose“ — Diagnosen gehören laut Prompt ins Ergebnis, der Befundtext beschreibt)."""
+    return _nennt(text, k, c) or (k.get("_bef") is not None and _nennt(text, k, c, k["_bef"]))
+
+
+def ist_skelett_text(text, daten=None):
+    """Beschreibt der Text (Vorlage bzw. Befundteil) Skelett (Kortikalis, Gelenkspalt, Wirbelkörper …)?"""
+    rx = _wid(daten)["skelett"]
+    return bool(rx is not None and rx.search((text or "").lower()))
+
+
+_WID_ABK = {"bzw", "ca", "z", "b", "u", "a", "v", "d", "h", "evtl", "ggf", "inkl", "max", "min", "lig", "n", "nn", "m",
+            "mm", "li", "re", "bds", "vs", "st", "p", "i", "dr", "o", "s", "co", "e", "g", "ap", "pa", "bspw", "usw"}
+
+
+def saetze_mit_lage(text):
+    """Text → [(start, ende)] je Satz (nicht nach Abkürzungen wie „bzw.“, „a.-p.“, „z. B.“; Zeilen sind Grenzen)."""
+    out, start, i, n = [], 0, 0, len(text or "")
+    while i < n:
+        ch = text[i]
+        if ch == "\n":
+            if text[start:i].strip():
+                out.append((start, i))
+            start = i + 1
+        elif ch in ".!?" and (i + 1 == n or text[i + 1] in " \n"):
+            wort = re.split(r"[\s(/]", text[start:i])[-1].lower().strip("-.")
+            if ch != "." or not (wort in _WID_ABK or re.fullmatch(r"[a-zäöü](?:\.-?[a-zäöü])*", wort or "-")):
+                out.append((start, i + 1))
+                start = i + 1
+        i += 1
+    if text[start:n].strip():
+        out.append((start, n))
+    return [(a + len(text[a:b]) - len(text[a:b].lstrip()), b) for a, b in out if text[a:b].strip()]
+
+
+def widerspruch_saetze(text, befunde, daten=None):
+    """Sätze in text (Vorlage oder Befundteil), die einem diktierten Befund widersprechen: Normalsatz-Merkmal der
+    Kategorie, nicht schon eingeschränkt („im Übrigen“, „ansonsten“ …), nennt den Befund nicht selbst, und betrifft die
+    Lage (allgemeiner Satz oder dieselbe Struktur; ein Satz über eine BESTIMMTE andere Struktur bleibt).
+    → [(start, ende, [befund-ids])]."""
+    if not befunde:
+        return []
+    c = _wid(daten)
+    kat = {k["id"]: k for k in c["kat"]}
+    out = []
+    for a, b in saetze_mit_lage(text or ""):
+        s = text[a:b].lower()
+        if c["einschraenkung"] is not None and c["einschraenkung"].search(s):
+            continue
+        if any(_beschreibt(s, kat[x["id"]], c) for x in befunde if x["id"] in kat):
+            continue                                   # beschreibt den Befund selbst (Pathologie-Satz)
+        sg = _wid_gruppen(s, c)
+        ids = []
+        for x in befunde:
+            k = kat.get(x["id"])
+            if k is None:
+                continue
+            treffer = False
+            for mn in k.get("merkmale") or []:
+                rx = c["merk"].get(mn)
+                if rx and rx[0].search(s) and not (rx[1] is not None and rx[1].search(s)):
+                    treffer = True
+                    break
+            if treffer and _wid_betrifft(sg, x):
+                ids.append(x["id"])
+        if ids:
+            out.append((a, b, ids))
+    return out
+
+
+_WID_GENERISCH = {"gelenk", "weichteile"}
+
+
+def _wid_betrifft(sg, befund):
+    """Betrifft ein Satz mit den Strukturgruppen sg die Lage des Befunds? Allgemeiner Satz (keine Gruppe) bzw. Befund
+    ohne bekannte Lage → ja. Nennt der Satz eine bestimmte Struktur (z. B. Hüftgelenk), muss der Befund dort liegen
+    (Fibroostose am Trochanter ≠ Hüftgelenk; ISG-Arthrose ≠ Hüftgelenke); nur „Gelenk“/„Weichteile“ → Kategorie passt."""
+    fg = set(befund["gruppen"])
+    if befund["global"] or not sg:
+        return True
+    sg_spez, fg_spez = sg - _WID_GENERISCH, fg - _WID_GENERISCH
+    if sg_spez:
+        return bool(sg_spez & fg_spez) or (not fg_spez and bool(sg & fg))
+    return bool(sg & fg)
+
+
+_WID_VERB = re.compile(r"^(?:ist|sind|zeigt|zeigen|weist|weisen|stellt|stellen|steht|stehen|liegt|liegen|erscheint|"
+                       r"erscheinen|endet|enden|besteht|bestehen|findet|finden|ragt|ragen)$")
+_WID_KLEIN = re.compile(r"^(?:normale?[rsnm]?|normal|regelrechte?[rsnm]?|regelrecht|glatte?[rsnm]?|scharfe?[rsnm]?|"
+                        r"anatomisch[a-zäöüß]*|ordnungsgemäße?[rsnm]?|keine?[rsnm]?|kein|unauffällige?[rsnm]?|"
+                        r"altersentsprechende?[rsnm]?|symmetrische?[rsnm]?|achsengerechte?[rsnm]?|allseits|"
+                        r"harmonische?[rsnm]?|regulär[a-zäöüß]*|intakte?[rsnm]?|"
+                        r"gute?[rsnm]?|erhaltene?[rsnm]?|beide[rn]?|die|der|das|den|dem|des|eine?[rsnm]?|sie|es)$", re.I)
+
+
+def _klein_anfang(t):
+    w = t.split(" ", 1)[0]
+    return (w[:1].lower() + t[1:]) if _WID_KLEIN.match(w.rstrip(",:")) else t
+
+
+def satz_einschraenken(satz):
+    """Normalsatz nur noch für den Rest gelten lassen: „Im Übrigen …“ (Verb an zweiter Stelle bleibt: „Die Gelenkflächen
+    sind glatt.“ → „Im Übrigen sind die Gelenkflächen glatt.“; Label-Stil „Kortikalis: glatte Kontur.“ → „Kortikalis: im
+    Übrigen glatte Kontur.“)."""
+    t = (satz or "").strip()
+    m = re.match(r"^([A-ZÄÖÜ][^:.]{0,48}):\s+(\S.*)$", t, re.S)
+    if m and not any(_WID_VERB.match(w.lower()) for w in m.group(1).split()):
+        return f"{m.group(1)}: im Übrigen {_klein_anfang(m.group(2))}"
+    w = t.split(" ")
+    for i in range(1, min(13, len(w))):
+        if _WID_VERB.match(w[i].lower()):
+            subjekt = " ".join(w[:i])
+            return "Im Übrigen " + w[i] + " " + _klein_anfang(subjekt) + ("" if i + 1 >= len(w) else " " + " ".join(w[i + 1:]))
+    return "Im Übrigen " + _klein_anfang(t)
+
+
+def widerspruch_prompt(befunde, vorlage, daten=None):
+    """<widersprueche> für den Gen-Prompt — nur, wenn die Vorlage einem diktierten Befund widerspricht (sonst bleibt
+    der Prompt bit-gleich)."""
+    if not befunde or not ist_skelett_text(vorlage, daten):
+        return ""
+    saetze = widerspruch_saetze(vorlage, befunde, daten)
+    if not saetze:
+        return ""
+    diktiert = "; ".join(f"„{b['phrase']}“ ({b['name']})" for b in befunde)
+    liste = " ".join(f"„{(vorlage or '')[a:e].strip()}“" for a, e, _ in saetze)
+    return ("<widersprueche>\n"
+            f"Diktiert: {diktiert}.\n"
+            f"Diese Sätze der Vorlage widersprechen dem diktierten Befund und dürfen so NICHT stehen bleiben: {liste}\n"
+            "Regeln: Schränke jeden dieser Sätze nur im betroffenen Teil ein („Im Übrigen …“ bzw. „…, abgesehen von …“) "
+            "oder lass den betroffenen Teil weg; den übrigen Normaltext der Vorlage übernimmst du wörtlich. Der Befund "
+            "steht als eigener Satz an der Stelle des betroffenen Normalsatzes. Im Ergebnis steht er als nummerierter "
+            "Punkt (mit Seite) — nie „Regelrechte Darstellung …“ oder „unauffällig“ für die ganze Untersuchung.\n"
+            "</widersprueche>")
+
+
+_WID_NORMAL_ERG = re.compile(r"regelrechte darstellung|unauffällige[rsn]? (?:befund|darstellung)|ohne pathologischen befund|"
+                             r"normalbefund|altersentsprechend unauffällig|regelrechter befund", re.I)
+
+
+def _abschnitt(zeilen, name):
+    """[(start, ende)] der Zeilen nach „## name“ bis zur nächsten Überschrift."""
+    out = []
+    for i, z in enumerate(zeilen):
+        if z.strip().lower().rstrip(":") == "## " + name:
+            j = i + 1
+            while j < len(zeilen) and not zeilen[j].lstrip().startswith("## "):
+                j += 1
+            out.append((i + 1, j))
+    return out
+
+
+def widersprueche_bereinigen(report, diktat, daten=None):
+    """Nach der KI (EXE + Web gleich): widersprechende Normalsätze im Befundteil → „Im Übrigen …“, fehlender Befund →
+    eigener Satz, Ergebnis nennt den Befund statt „Regelrechte Darstellung …“. → (report, Liste der Änderungen).
+    Ohne diktierten Befund bzw. ohne Skelett-Befundteil unverändert."""
+    befunde = widerspruch_befunde(diktat, daten)
+    if not befunde or not report or "## Befund" not in report:
+        return report, []
+    c = _wid(daten)
+    kat = {k["id"]: k for k in c["kat"]}
+    zeilen = report.split("\n")
+    aenderungen = []
+    seite = diktierte_seite(diktat)
+    for a, e in _abschnitt(zeilen, "befund"):
+        text = "\n".join(zeilen[a:e])
+        if not ist_skelett_text(text, daten):
+            continue
+        treffer = widerspruch_saetze(text, befunde, daten)
+        vor = _befundsaetze_danach(text, treffer, befunde, kat, c)
+        neu, pos, erste = [], 0, None
+        for s0, s1, art in sorted([(x[0], x[1], "e") for x in treffer] + [(x[0], x[1], "v") for x in vor]):
+            stueck = text[pos:s0]
+            if art == "v":                          # Befundsatz: wandert vor den ersten eingeschränkten Satz
+                neu.append(stueck[:-1] if stueck.endswith(" ") else stueck)
+                aenderungen.append(f"vorgezogen: {text[s0:s1].strip()[:60]}")
+            else:
+                neu.append(stueck)
+                if erste is None:
+                    neu.append("".join(text[x0:x1] + " " for x0, x1 in vor))
+                    erste = sum(len(x) for x in neu)
+                neu.append(satz_einschraenken(text[s0:s1]))
+                aenderungen.append(f"eingeschränkt: {text[s0:s1].strip()[:60]}")
+            pos = s1
+        neu.append(text[pos:])
+        text = "".join(neu)
+        fehlend = [b for b in befunde if b["id"] in kat and not _beschreibt(text.lower(), kat[b["id"]], c)]
+        if fehlend:
+            satz = " ".join(_satz_aus_phrase(b["phrase"]) for b in fehlend)
+            if erste is not None:                   # vor dem ersten eingeschränkten Normalsatz
+                text = text[:erste] + satz + " " + text[erste:]
+            else:                                   # sonst ans Ende des ersten Absatzes
+                anfang = len(text) - len(text.lstrip())
+                absatz = text.find("\n\n", anfang)
+                stelle = absatz if absatz > 0 else len(text.rstrip())
+                text = text[:stelle].rstrip() + " " + satz + text[stelle:]
+            aenderungen.append(f"Befund ergänzt: {satz[:60]}")
+        zeilen[a:e] = text.split("\n")
+        break
+    for a, e in _abschnitt(zeilen, "ergebnis"):
+        inhalt = [i for i in range(a, e) if zeilen[i].strip()]
+        nennt = [i for i in inhalt if any(_nennt(zeilen[i].lower(), kat[b["id"]], c) or
+                                          (re.search(kat[b["id"]].get("ergebnis") or "$^", zeilen[i].lower())
+                                           and not _WID_NORMAL_ERG.search(zeilen[i]))
+                                          for b in befunde if b["id"] in kat)]
+        normal = [i for i in inhalt if _WID_NORMAL_ERG.search(zeilen[i]) and i not in nennt]
+        if normal:
+            for i in reversed(normal):
+                aenderungen.append(f"Ergebnis ohne Normalsatz: {zeilen[i].strip()[:60]}")
+                del zeilen[i]
+            e -= len(normal)
+        if not nennt:
+            punkte = [_satz_aus_phrase(b["phrase"], seite) for b in befunde]
+            stelle = e
+            while stelle > a and not zeilen[stelle - 1].strip():
+                stelle -= 1
+            zeilen[stelle:stelle] = punkte
+            aenderungen.append("Ergebnis ergänzt: " + "; ".join(p[:40] for p in punkte))
+        block = "\n".join(zeilen)
+        zeilen = ergebnis_nummerieren(block).split("\n")
+        break
+    return "\n".join(zeilen), aenderungen
+
+
+def _befundsaetze_danach(text, treffer, befunde, kat, c):
+    """Sätze, die den diktierten Befund nennen/beschreiben und in derselben Zeile NACH dem ersten eingeschränkten
+    Normalsatz stehen — die stellt widersprueche_bereinigen vor ihn („Plantarer Fersensporn. Im Übrigen normale Form
+    des Calcaneus …“ statt „Im Übrigen …“, bevor der Befund überhaupt genannt ist)."""
+    if not treffer:
+        return []
+    erste = treffer[0][0]
+    ende = text.find("\n", erste)
+    ende = len(text) if ende < 0 else ende
+    eingeschraenkt = {(x[0], x[1]) for x in treffer}
+    return [(a, b) for a, b in saetze_mit_lage(text) if erste < a and b <= ende and (a, b) not in eingeschraenkt
+            and any(_beschreibt(text[a:b].lower(), kat[x["id"]], c) for x in befunde if x["id"] in kat)]
+
+
+def _satz_aus_phrase(phrase, seite=""):
+    t = " ".join((phrase or "").split()).strip(" ,;:.")
+    if seite and not re.search(r"(?<![a-zäöüß])(?:rechts|links|beidseits|beidseitig|bds)(?![a-zäöüß])", t, re.I):
+        t = f"{t} {seite}"
+    return (t[:1].upper() + t[1:] + ".") if t else ""

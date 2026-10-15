@@ -519,5 +519,153 @@
     "out": "x Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
    }
   ]
+ },
+ "widerspruch": {
+  "_doc": "v3.15.5 Widerspruchs-Prüfung (umschriebene Skelettbefunde): widersprueche_bereinigen ≡ widersprucheBereinigen, satz_einschraenken ≡ satzEinschraenken, widerspruch_befunde ≡ widerspruchBefunde ([id, phrase, global]), widerspruch_prompt ≡ widerspruchPrompt (vorlage = Schlüssel in templates.json). Daten: vorlagen_vorrang.json → widersprueche.",
+  "bereinigen": [
+   {
+    "name": "Fersensporn plantar (Calcaneus)",
+    "diktat": "Calcaneus rechts: Fersensporn plantar, ansonsten unauffällig",
+    "in": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Plantarer Fersensporn. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus rechts.",
+    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\n1. Fersensporn plantar rechts."
+   },
+   {
+    "name": "Fibroostose Trochanter major (Hüfte) – Hüftgelenk-Satz bleibt",
+    "diktat": "Hüfte links: Fibroostose am Trochanter major, sonst unauffällig",
+    "in": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nAnatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne. Der CCD-Winkel ist im Normbereich. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen. Fibroostose am Trochanter major. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Hüftgelenkes links.",
+    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nAnatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne. Der CCD-Winkel ist im Normbereich. Mineralgehalt und Knochenstruktur sind regelrecht. Fibroostose am Trochanter major. Im Übrigen sind die kortikalen Randkonturen normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.\n\n## Ergebnis\n1. Fibroostose am Trochanter major links."
+   },
+   {
+    "name": "Fibroostose Trochanter major (Becken)",
+    "diktat": "Becken: Fibroostose am Trochanter major rechts, sonst unauffällig",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Fibroostose am Trochanter major rechts. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Fibroostose am Trochanter major rechts. Im Übrigen sind die kortikalen Randkonturen normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\n1. Fibroostose am Trochanter major rechts."
+   },
+   {
+    "name": "Enthesiopathie Olecranon (Ellbogen)",
+    "diktat": "Ellbogen rechts: Enthesiopathie am Olecranon, ansonsten unauffällig",
+    "in": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen. Kompakta und Kortikalis nach Breite und Kontur regelrecht. Enthesiopathie am Olecranon.\n\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\nRegelrechte Darstellung des Ellbogengelenkes rechts.",
+    "out": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen. Enthesiopathie am Olecranon. Im Übrigen Kompakta und Kortikalis nach Breite und Kontur regelrecht.\n\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\n1. Enthesiopathie am Olecranon rechts."
+   },
+   {
+    "name": "Osteophyt Patellaoberpol (Knie), Befund fehlt im Text",
+    "diktat": "Knie links: kleiner Osteophyt am Patellaoberpol, sonst unauffällig",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nKleiner Osteophyt am Patellaoberpol. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Kleiner Osteophyt am Patellaoberpol links."
+   },
+   {
+    "name": "Gegenprobe: unauffällig → unverändert",
+    "diktat": "Knie rechts unauffällig",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts."
+   },
+   {
+    "name": "Gegenprobe: kein Fersensporn → unverändert",
+    "diktat": "Calcaneus links: kein Fersensporn, keine Fraktur",
+    "in": "## Calcaneus links in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus links.",
+    "out": "## Calcaneus links in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus links."
+   },
+   {
+    "name": "Gegenprobe: KI hat schon eingeschränkt → unverändert",
+    "diktat": "Calcaneus rechts: Fersensporn plantar",
+    "in": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\n1. Plantarer Fersensporn rechts.",
+    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\n1. Plantarer Fersensporn rechts."
+   },
+   {
+    "name": "Deskriptoren statt Diagnose: Gonarthrose nicht in den Befundtext",
+    "diktat": "Knie rechts mäßiggradige Gonarthrose",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   }
+  ],
+  "einschraenken": [
+   {
+    "in": "Normale Form des Calcaneus mit regelrechten Winkelmaßen.",
+    "out": "Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen."
+   },
+   {
+    "in": "Die Gelenkflächen sind glatt.",
+    "out": "Im Übrigen sind die Gelenkflächen glatt."
+   },
+   {
+    "in": "Kortikalis: glatte Kontur.",
+    "out": "Kortikalis: im Übrigen glatte Kontur."
+   },
+   {
+    "in": "Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.",
+    "out": "Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung."
+   },
+   {
+    "in": "Mineralgehalt und Knochenstruktur sind regelrecht.",
+    "out": "Im Übrigen sind Mineralgehalt und Knochenstruktur regelrecht."
+   }
+  ],
+  "befunde": [
+   {
+    "in": "Fersensporn plantar",
+    "out": [
+     [
+      "fibroostose",
+      "Fersensporn plantar",
+      false
+     ]
+    ]
+   },
+   {
+    "in": "kein Fersensporn",
+    "out": []
+   },
+   {
+    "in": "Knie links: keine Arthrose, Osteophyt am Patellaoberpol",
+    "out": [
+     [
+      "osteophyt",
+      "Osteophyt am Patellaoberpol",
+      false
+     ]
+    ]
+   },
+   {
+    "in": "Hüfte unauffällig",
+    "out": []
+   },
+   {
+    "in": "Fibroostose am Trochanter major rechts",
+    "out": [
+     [
+      "fibroostose",
+      "Fibroostose am Trochanter major rechts",
+      false
+     ]
+    ]
+   },
+   {
+    "in": "Osteopenie",
+    "out": [
+     [
+      "osteopenie",
+      "Osteopenie",
+      true
+     ]
+    ]
+   }
+  ],
+  "prompt": [
+   {
+    "diktat": "Calcaneus rechts: Fersensporn plantar",
+    "vorlage": "calcaneus_in_2_ebenen",
+    "out": "<widersprueche>\nDiktiert: „Fersensporn plantar“ (Fibroostose/Enthesiopathie/Sporn).\nDiese Sätze der Vorlage widersprechen dem diktierten Befund und dürfen so NICHT stehen bleiben: „Normale Form des Calcaneus mit regelrechten Winkelmaßen.“ „Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.“\nRegeln: Schränke jeden dieser Sätze nur im betroffenen Teil ein („Im Übrigen …“ bzw. „…, abgesehen von …“) oder lass den betroffenen Teil weg; den übrigen Normaltext der Vorlage übernimmst du wörtlich. Der Befund steht als eigener Satz an der Stelle des betroffenen Normalsatzes. Im Ergebnis steht er als nummerierter Punkt (mit Seite) — nie „Regelrechte Darstellung …“ oder „unauffällig“ für die ganze Untersuchung.\n</widersprueche>"
+   },
+   {
+    "diktat": "Calcaneus rechts unauffällig",
+    "vorlage": "calcaneus_in_2_ebenen",
+    "out": ""
+   },
+   {
+    "diktat": "Hüfte links: Fibroostose am Trochanter major",
+    "vorlage": "hüftgelenk_in_2_ebenen",
+    "out": "<widersprueche>\nDiktiert: „Fibroostose am Trochanter major“ (Fibroostose/Enthesiopathie/Sporn).\nDiese Sätze der Vorlage widersprechen dem diktierten Befund und dürfen so NICHT stehen bleiben: „Die kortikalen Randkonturen sind normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen.“\nRegeln: Schränke jeden dieser Sätze nur im betroffenen Teil ein („Im Übrigen …“ bzw. „…, abgesehen von …“) oder lass den betroffenen Teil weg; den übrigen Normaltext der Vorlage übernimmst du wörtlich. Der Befund steht als eigener Satz an der Stelle des betroffenen Normalsatzes. Im Ergebnis steht er als nummerierter Punkt (mit Seite) — nie „Regelrechte Darstellung …“ oder „unauffällig“ für die ganze Untersuchung.\n</widersprueche>"
+   }
+  ]
  }
 }

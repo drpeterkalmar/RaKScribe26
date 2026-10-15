@@ -27,7 +27,9 @@ def alter_gen_prompt(raw, t):
     p_full = p_full + "<normal_ergebnis>" + (t.get('ergebnis') or "Unauffälliger Befund.") + "</normal_ergebnis>\n"
     if pp.MISHEARD_HINTS:
         p_full = p_full + pp.MISHEARD_HINTS + "\n"
-    return p_full.replace("{examples}", "") if "{examples}" in p_full else p_full + "\n\n" + ""
+    # v3.15.5: diktierte umschriebene Befunde + widersprechende Normalsätze der Vorlage an der Stelle {examples}
+    wid = br.widerspruch_prompt(br.widerspruch_befunde(raw), t["body"])
+    return p_full.replace("{examples}", wid) if "{examples}" in p_full else p_full + "\n\n" + wid
 
 
 aufrufe = []
@@ -60,7 +62,7 @@ for c in cases:
         check(f"Bypass = prod_pipeline.bypass_report: {c['in'][:50]!r}", ok, f"\n{erg.report[:200]}\n--- soll ---\n{soll[:200]}")
     else:
         ok = len(aufrufe) == 1 and aufrufe[0] == alter_gen_prompt(raw, pp.TEMPLATES.get(key) or pp.TEMPLATES["allgemein"]) \
-            and erg.report == br.nachbearbeiten(LLM_ANTWORT)
+            and erg.report == br.widersprueche_bereinigen(br.nachbearbeiten(LLM_ANTWORT), raw)[0]   # v3.15.5
         llm_ok += ok
         check(f"LLM-Pfad, Gen-Prompt zeichengleich: {c['in'][:50]!r}", ok)
 check(f"Bypass-Fälle geprüft ({bypass_ok}) und LLM-Fälle geprüft ({llm_ok})", bypass_ok >= 10 and llm_ok >= 5)

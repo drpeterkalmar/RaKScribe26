@@ -3,7 +3,7 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, type VorrangDaten } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { ORDI_BAUSTEINE, befundBaustein, nurBaustein, bericht as bausteinBericht, vorlage as bausteinVorlage, kiHinweis, saetzeEinsetzen, type Bausteine } from './bausteine.ts';
@@ -37,9 +37,11 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
     }
     if (!ctx.apiKey) throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
     const v = bausteinVorlage(bKey, bausteine, seg);
-    const roh = await callGeminiLLM(seg, v.body, v.display_name, kiHinweis(bKey), v.ergebnis, ctx);
+    const wid = ctx.vorrang.widersprueche;
+    const hinweis = [kiHinweis(bKey), widerspruchPrompt(widerspruchBefunde(seg, wid), v.body, wid)].filter(Boolean).join('\n');
+    const roh = await callGeminiLLM(seg, v.body, v.display_name, hinweis, v.ergebnis, ctx);
     ctx.status('Validiere Befund-Konsistenz...');
-    return nachbearbeiten(await validateReportConsistency(seg, roh, ctx));
+    return widersprucheBereinigen(nachbearbeiten(await validateReportConsistency(seg, roh, ctx)), seg, wid)[0];  // v3.15.5
   }
   const detectedKey = detectTemplate(seg, ctx.templates, ctx.vorrang);
   const activeTemplate = ctx.templates[detectedKey] || ctx.templates['allgemein'];  // templates.json enthält „allgemein“
@@ -62,11 +64,17 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
   if (!ctx.apiKey) {
     throw new Error("KI-Strukturierung nicht möglich: Es ist kein Vertex AI API-Key konfiguriert.");
   }
-  const structuredText = await callGeminiLLM(seg, activeTemplate.body, activeTemplate.display_name, '', activeTemplate.ergebnis || 'Unauffälliger Befund.', ctx);
+  // v3.15.5 (Peter 15.10.): diktierte umschriebene Befunde + die widersprechenden Normalsätze der Vorlage (Sync: pipeline.py)
+  const wid = ctx.vorrang.widersprueche;
+  const widBlock = widerspruchPrompt(widerspruchBefunde(seg, wid), activeTemplate.body, wid);
+  const structuredText = await callGeminiLLM(seg, activeTemplate.body, activeTemplate.display_name, widBlock, activeTemplate.ergebnis || 'Unauffälliger Befund.', ctx);
   // Step 3: Konsistenz-Validierung gegen das Diktat
   ctx.status('Validiere Befund-Konsistenz...');
   const validatedReport = await validateReportConsistency(seg, structuredText, ctx);
-  return nachbearbeiten(validatedReport);
+  // v3.15.5: übrig gebliebene widersprechende Normalsätze → „Im Übrigen …“, Befund/Ergebnis nennen den Befund
+  const [bereinigt, aend] = widersprucheBereinigen(nachbearbeiten(validatedReport), seg, wid);
+  if (aend.length) console.log(`[WIDERSPRUCH] ${aend.length} Korrektur(en) nach der KI`);
+  return bereinigt;
 };
 
 export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promise<string> => {

@@ -259,5 +259,29 @@ BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder 
   gelesen und INS baute einen neuen Befund bzw. ersetzte ihn bei „Nur Text“). Gilt auch im CAS-Band.
 - **Häkchen im ☰-Menü weiß** statt schwarz auf dunkelblau; Schalter „Nur Text“ mit hellem Knopf und Rahmen.
 
+## 🦴 Umschriebene Skelettbefunde ohne Widerspruch (EXE + Web, ab v3.15.5)
+
+Peter 15.10.2026: „Fersensporn diktiert, aber ‚Normale Form des Calcaneus …‘ steht noch da.“ Ein umschriebener Befund an
+EINER Stelle darf dem Normaltext der Vorlage nicht widersprechen — das gilt jetzt für alle Skelett-Vorlagen (Röntgen,
+CT/MR, Prothesen, Ordi-Bausteine mit Skelett-Normaltext).
+
+- **Katalog als Daten** (`vorlagen_vorrang.json` → `widersprueche`): 20 Befund-Kategorien (Fibroostose/Enthesiopathie/
+  Sporn, Exostose, Osteophyt, Arthrose inkl. AC/ISG/Finger/Zehen/Kiefergelenk, Spondylose, Spondylarthrose,
+  Osteochondrose, Unkovertebralarthrose, Baastrup, DISH, Verkalkung, Chondrokalzinose, Os accessorium/Sesambein,
+  Enostose, Zyste, alte Fraktur, Fehlstellung, Osteopenie, Skoliose, Sklerose) mit Deskriptoren, 21 Normalsatz-Merkmale
+  (Form, Kontur, Kortikalis, Gelenkspalt, „keine Verkalkungen“ …) und 25 Strukturgruppen (Trochanter ≠ Hüftgelenk,
+  ISG ≠ Hüftgelenke, Unkovertebral- ≠ Facettengelenke …). Verneinte Befunde („kein Fersensporn“) zählen nicht.
+- **Vor der KI:** Widerspricht ein Satz der Vorlage einem diktierten Befund, bekommt der Gen-Prompt den Block
+  `<widersprueche>` mit genau diesen Sätzen (an der Stelle `{examples}`, EXE = Web); dazu die Konflikt-Regel im Prompt
+  (Marker `2026-10-15-v3155-umschriebene-befunde`) und eine Zeile im Web-Prüfer (Call 2).
+- **Nach der KI (deterministisch, EXE = Web):** übrig gebliebene widersprechende Normalsätze → „Im Übrigen …“ (nur der
+  betroffene Satz, der übrige Normaltext bleibt Zeichen für Zeichen), der Befundsatz steht davor; fehlt der Befund im
+  Befundtext, kommt der diktierte Teilsatz dorthin; das Ergebnis nennt den Befund (mit Seite) statt „Regelrechte
+  Darstellung …“. Ohne diktierten Befund bleibt alles unverändert.
+- **Tests:** `tests/offline/widerspruch_matrix_test.py` baut die Matrix aller Skelett-Vorlagen × Kategorien
+  (98 Vorlagen/Bausteine, 1062 Kombinationen, 0 Fehler, 200 Gegenproben unverändert, EXE = Web) →
+  [`docs/widerspruch_matrix.md`](docs/widerspruch_matrix.md); Fixtures `widerspruch` in `befund_regeln_fixtures.json`
+  (PY + TS); Live-Check mit Gemini `tools/verify_widerspruch.py` (EXE 8/8, Web 8/8).
+
 ---
 *(c) 2025-2026 Dr. Peter Kalmar - Modernes Reporting für die radiologische Praxis.*

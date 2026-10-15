@@ -48,6 +48,7 @@ Abkürzungen: **P** = `radiology_prompt.txt` (EXE + Web + Harness), **V** = Web-
 | Syndesmose (Messwert bleibt im Befund!) | P Konflikt-Regel + ERHALT-REGEL Messwerte | verify_sprunggelenk |
 | Kardiomegalie, Atelektase/Pneumonie, Pleuraerguss, Pneumothorax, Hilus/Mediastinum | P Konflikt-Regeln (Thorax) + ❌/✅ Kardiomegalie | verify_peter_ergebnis (Kardiomegalie) |
 | Pneumoperitoneum, Obstruktion, Colitis, Aerobilie, Konkremente | P Konflikt-Regeln (Abdomen) | — |
+| Umschriebene Skelettbefunde (v3.15.5: Fibroostose/Enthesiopathie/Sporn, Exostose, Osteophyt, Arthrose inkl. AC/ISG/Finger/Zehen/Kiefer, Spondylose, Spondylarthrose, Osteochondrose, Unkovertebralarthrose, Baastrup, DISH, Verkalkung, Chondrokalzinose, Os accessorium, Enostose, Zyste, alte Fraktur, Fehlstellung, Osteopenie, Skoliose, Sklerose) → widersprechende Normalsätze nur im betroffenen Teil einschränken („Im Übrigen …“), Ergebnis nennt den Befund | T Katalog `widersprueche` in `vorlagen_vorrang.json` (Kategorien, Normalsatz-Merkmale, Strukturgruppen); P Konflikt-Regel + ❌/✅ (Calcaneus, Hüfte) + Block `<widersprueche>` an `{examples}`; V 3; D `widersprueche_bereinigen` ≡ `widersprucheBereinigen` nach der KI | widerspruch_matrix_test (alle Skelett-Vorlagen + Bausteine × Kategorien, Gegenproben, EXE = Web → `docs/widerspruch_matrix.md`), befund_regeln_test (Fixtures `widerspruch`) |
 
 ## Diktat-Verarbeitungsregeln
 

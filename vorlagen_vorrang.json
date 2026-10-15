@@ -327,5 +327,390 @@
         "((beidseit|beiderseit|bds)\\w* (hueft|tep|prothes)|(hueft|tep|prothes)\\w* (beidseit|beiderseit|bds)|(hueft|tep|prothes)\\w* (rechts und links|links und rechts))"
       ]
     }
-  ]
+  ],
+  "widersprueche": {
+    "_info": "v3.15.5 (Peter 15.10.2026: „Fibroostosen, Exostosen, Spondylosen usw. können in praktisch jeder Knochenregion auftreten.“): Widerspruchs-Prüfung Pathologie ↔ Normalsatz für alle Skelett-Vorlagen. kategorien = Befund-Katalog (Diktat, verneint zählt nicht), merkmale = Normalsatz-Merkmale, die einer Kategorie widersprechen, strukturen = Strukturgruppen (ein Satz über eine BESTIMMTE andere Struktur widerspricht einem umschriebenen Befund woanders nicht). Interpreter: befund_regeln.widerspruch_* ≡ befundRegeln.ts widerspruch*; Fälle: befund_regeln_fixtures.json „widerspruch“, Matrix: tests/offline/widerspruch_matrix_test.py. Alle Muster gelten für klein geschriebenen Text.",
+    "version": "2026-10-15",
+    "skelett": "kortikalis|corticalis|knochenstruktur|mineralgehalt|gelenkspalt|gelenksspalt|gelenkfläch|wirbelkörper|hwk|bwk|lwk|skelett|spongiosa|kompakta|randkontur|knöchern|achsenverlauf|bandscheib|medulla ossium|platae terminales|prothesenkomponent|kalotte|achsenverhältnisse|artikulierende",
+    "einschraenkung": "(?<![a-zäöüß])(?:im übrigen|übrige[nrsm]?|ansonsten|sonst|abgesehen|bis auf|außer|ausser|mit ausnahme|weiterhin)(?![a-zäöüß])",
+    "verneinung_vor": "(?<![a-zäöüß])(?:kein[a-zäöüß0-9_]*|ohne|nicht|ausschluss|ausgeschlossen|frei von|weder|kein anhalt[a-zäöüß0-9_]*|kein hinweis|kein nachweis)(?![a-zäöüß])",
+    "verneinung_nach": "^[^.]{0,40}(?:nicht (?:nachweisbar|vorhanden|erkennbar|abgrenzbar|sichtbar)|ausgeschlossen)",
+    "merkmale": {
+      "kontur": {
+        "muster": "(?:kontur|randkontur|begrenz|abgrenz|kortikalis|corticalis|kompakta)[a-zäöüß0-9_]*[^.]{0,80}(?:glatt|scharf|regelrecht|intakt)|(?<![a-zäöüß])(?:glatt|scharf)[a-zäöüß0-9_]*[^.]{0,80}(?:kontur|begrenz|abgrenz|kortikalis|corticalis)|ohne (?:nachweis (?:einer |von )?)?pathologische[a-zäöüß0-9_]* (?:kontur)?unterbrechung|(?<![a-zäöüß])kein[a-zäöüß0-9_]* pathologische[a-zäöüß0-9_]* konturunterbrechung|(?<![a-zäöüß])normale?[rsn]?[^.]{0,30}begrenzung",
+        "ausser": "spongiosa|bälkchen|trabekel"
+      },
+      "form": {
+        "muster": "(?<![a-zäöüß])(?:anatomisch )?(?:normale?[rsn]?|regelrechte?[rsn]?|regul[äa]re?[rsn]?|unauffällige?[rsn]?|symmetrische?[rsn]?)(?: und [a-zäöüß0-9_]+)? (?:form|konfiguration)(?![a-zäöüß])|(?<![a-zäöüß])(?:anatomisch )?(?:normal|regelrecht|regulär|ordnungsgemäß|symmetrisch)(?: und symmetrisch)? (?:geformt|konfiguriert)[a-zäöüß0-9_]*|(?<![a-zäöüß])nach (?:anzahl, )?form(?![a-zäöüß])[^.]{0,80}(?:normal|regelrecht|regulär)|(?<![a-zäöüß])form(?![a-zäöüß])[^.]{0,40}(?:normal|regelrecht|regulär|unauffällig)"
+      },
+      "stellung": {
+        "muster": "(?<![a-zäöüß])(?:normale?[rsn]?|regelrechte?[rsn]?|ordnungsgemäße?[rsn]?|achsengerechte?[rsn]?|anatomische?[rsn]?) (?:[a-zäöüß0-9_]+ )?(?:stellung|artikulation|position)(?![a-zäöüß])|(?<![a-zäöüß])stellung(?![a-zäöüß])[^.]{0,60}(?:normal|regelrecht|ordnungsgemäß|regulär)|achsengerecht"
+      },
+      "gelenkspalt": {
+        "muster": "(?:gelenk|gelenks)spalt[a-zäöüß0-9_]*[^.]{0,40}(?:normal|regelrecht|unauffällig|altersentsprechend)|(?<![a-zäöüß])normal[a-zäöüß0-9_]* weite[a-zäöüß0-9_]* (?:der |des )?(?:gelenk|gelenks)spalt|normal weit zueinander|(?:symphysenspalt|iliosakralgelenk)[a-zäöüß0-9_]*[^.]{0,40}normal weit|regelrechte darstellung (?:beider |der )?gelenk(?:s)?spalt"
+      },
+      "gelenkflaechen": {
+        "muster": "(?:gelenkfläche|artikulierende[a-zäöüß0-9_]* fläche|gelenkbildende[a-zäöüß0-9_]* fläche|gelenkkörper)[a-zäöüß0-9_]*[^.]{0,80}(?:glatt|kongruent|regelrecht|normal|regulär)|(?<![a-zäöüß])(?:normal|regelrecht)[a-zäöüß0-9_]* (?:konfiguriert|geformt)[a-zäöüß0-9_]*,? (?:glatte[a-zäöüß0-9_]* )?gelenkfläche|(?<![a-zäöüß])glatte[a-zäöüß0-9_]* gelenkfläche"
+      },
+      "osteophyten": {
+        "muster": "(?<![a-zäöüß])kein[a-zäöüß0-9_]*[^.]{0,40}(?:osteophyt|randzack|spondylophyt|randwulst|exophyt)|(?:gelenkränder|gelenkrand|gelenkkanten)[a-zäöüß0-9_]*[^.]{0,40}(?:glatt|unauffällig|scharf|regelrecht)"
+      },
+      "mineral": {
+        "muster": "mineral(?:gehalt|isation|salzgehalt)[a-zäöüß0-9_]*[^.]{0,60}(?:regelrecht|normal|unauffällig|regulär)|(?<![a-zäöüß])(?:regelrechte?|normale?)[rsn]? mineral"
+      },
+      "struktur": {
+        "muster": "(?:knochen|spongiosa)struktur[a-zäöüß0-9_]*[^.]{0,60}(?:regelrecht|normal|unauffällig|regulär)|spongiosa[a-zäöüß0-9_]*[^.]{0,40}(?:regelrecht|normal|scharf)|medulla ossium[^.]{0,40}(?:regulär|regelrecht|normal)|(?<![a-zäöüß])keine (?:fokalen? )?läsion"
+      },
+      "verkalkung": {
+        "muster": "(?<![a-zäöüß])kein[a-zäöüß0-9_]*[^.]{0,60}(?:verkalkung|kalzifikation|kalkdepot|kalkeinlagerung)|ohne (?:hinweis auf |nachweis von )?verkalkung"
+      },
+      "bandscheiben": {
+        "muster": "bandscheiben[a-zäöüß0-9_]*[^.]{0,40}(?:normal|regelrecht|physiologisch)|(?:zwischenwirbel|intervertebral)[a-zäöüß0-9_]*räume?[^.]{0,40}(?:normal|regelrecht)|(?<![a-zäöüß])normale?r? weite der zwischenwirbelräume|spatien intervertebralia[^.]{0,30}normal"
+      },
+      "facetten": {
+        "muster": "(?:zwischenwirbel|wirbel|facetten)gelenke[^.]{0,60}(?:ohne auffälligkeit|unauffällig|regelrecht)"
+      },
+      "unkovertebral": {
+        "muster": "unkovertebral[a-zäöüß0-9_]*[^.]{0,60}(?:ohne auffälligkeit|unauffällig|regelrecht)"
+      },
+      "deckplatten": {
+        "muster": "(?:grund|deck|abschluss)platten[^.]{0,60}(?:glatt|scharf|regelrecht|normal)|platae terminales[^.]{0,40}glatt"
+      },
+      "fortsaetze": {
+        "muster": "(?:dorn|quer|gelenk)[a-zäöüß0-9_]*fortsätze?[^.]{0,80}(?:ordnungsgemäß|regelrecht|normal|unauffällig|o\\.\\s?b\\.)"
+      },
+      "achse": {
+        "muster": "(?<![a-zäöüß])normale?r? (?:lordose|kyphose|achsenverlauf)(?![a-zäöüß])|achsenverlauf[^.]{0,20}(?:normal|regelrecht)|(?:lordose|kyphose)(?![a-zäöüß])[^.]{0,30}(?:normal|regelrecht|physiologisch|harmonisch)|(?<![a-zäöüß])harmonische[a-zäöüß0-9_]* (?:lordose|kyphose)|achsenverhältnisse[^.]{0,20}regelrecht"
+      },
+      "anzahl": {
+        "muster": "(?<![a-zäöüß])anzahl(?![a-zäöüß])[^.]{0,100}(?:normal|regelrecht|regulär)"
+      },
+      "ansaetze": {
+        "muster": "(?:sehnen|band)?ansätze?(?![a-zäöüß])[^.]{0,40}(?:unauffällig|regelrecht|glatt)"
+      },
+      "knorpel": {
+        "muster": "knorpel[a-zäöüß0-9_]*[^.]{0,60}(?:regelhaft|normal|glatt|regelrecht|intakt|regulär)"
+      },
+      "ossaer": {
+        "muster": "regelrechte darstellung der (?:ossären|knöchernen) strukturen|(?:ossäre|knöcherne)[rn]? strukturen[a-zäöüß0-9_]*[^.]{0,40}(?:regelrecht|unauffällig|normal)|(?:mitabgebildete|abgebildete|dargestellte)[rn]? (?:anteile|abschnitte|skelettabschnitte|skelettanteile)[^.]{0,60}unauffällig|knochenstrukturen[^.]{0,60}unauffällig|(?<![a-zäöüß])(?:unauffällig|regelrecht|normal) strukturiert"
+      },
+      "gelenk_unauffaellig": {
+        "muster": "gelenke?(?![a-zäöüß])[^.]{0,40}(?:unauffällig|o\\.\\s?b\\.|regelrecht)"
+      },
+      "subchondral": {
+        "muster": "(?<![a-zäöüß])kein[a-zäöüß0-9_]* subchondral[a-zäöüß0-9_]*"
+      }
+    },
+    "strukturen": {
+      "femur": "femur|oberschenkel|trochanter|schenkelhals|schenkelschaft",
+      "huefte": "hüftgelenk|hüftk[oö]pf|femurk[oö]pf|capita femoris|caput femoris|pfanne|acetabul|pfannendach|ccd|coxarthr",
+      "becken": "becken|os ilium|darmbein|beckenkamm|crista iliaca|spina iliaca|sitzbein|os ischii|tuber ischiadicum|schambein|os pubis|scham",
+      "symphyse": "symphyse|symphysen",
+      "isg": "iliosakral|sakroiliakal|isg|si-gelenk|sakroiliitis",
+      "sakrum": "os sacrum|kreuzbein|sakrum|sacrum|steißbein|os coccygis",
+      "calcaneus": "calcaneus|kalkaneus|ferse|fersen|tuber calcanei",
+      "fuss": "fußskelett|fußwurzel|metatars|mittelfuß|vorfuß|zehe|talus|naviculare pedis|cuboid|cuneiform|fußgewölbe|großzeh|calcaneus|kalkaneus|fersen",
+      "osg": "sprunggelenk|malleol|talus|syndesmose|tibiotalar",
+      "patella": "patella|kniescheibe|patellapol",
+      "knie": "kniegelenk|femurkondyl|kondyl|condyl|tibiaplateau|menisk|tuberositas tibiae|tibiakopf|gonarthr|femoropatellar|retropatellar",
+      "tibia": "tibia|schienbein|unterschenkel|tuberositas tibiae",
+      "fibula": "fibula|wadenbein",
+      "humerus": "humerus|oberarm|tuberculum majus|tuberculum minus|epicondyl|epikondyl|sulcus",
+      "schulter": "schultergelenk|glenoid|ac-gelenk|akromi|acromi|clavicula|klavikula|schlüsselbein|scapula|skapula|coracoid|rotatorenmanschette|schultergürtel|tuberculum majus|tuberculum minus|humeruskopf|supraspinatus|infraspinatus|subscapularis|teres minor|bizepssehne|bursa subacromialis|omarthr",
+      "ellbogen": "ellbogen|ellenbogen|olecranon|olekranon|capitulum|trochlea|radiusköpfchen|processus coronoideus|canalis cubitalis|epicondyl|epikondyl",
+      "unterarm": "unterarm|radius|ulna|elle|speiche|olecranon|olekranon|processus styloideus",
+      "hand": "handgelenk|karp|scaphoid|skaphoid|kahnbein|lunatum|mittelhand|metacarp|finger|daumen|nagelkranz|handwurzel|processus styloideus|discus triangularis|rhizarthr|heberden|bouchard",
+      "phalangen": "phalang|endglied|grundglied|mittelglied",
+      "wirbelsaeule": "wirbelkörper|wirbelsäule|hwk|bwk|lwk|wirbel|bandscheib|zwischenwirbel|dornfortsatz|dornfortsätze|querfortsatz|gelenkfortsatz|bogenwurzel|unkovertebral|facetten|spinalkanal|neuroforam|dens|atlant|lordose|kyphose|achsenverlauf|columna|platae terminales|spatien|disci",
+      "schaedel": "schädel|kalotte|schädelbasis|sella|schädelnäht|nnh|nasennebenh|gesichtsschädel|orbita|jochb|nasenbein|kiefer|mandibula|maxilla|zahn|zähne|planum",
+      "thoraxskelett": "rippe|sternum|brustbein|hemithorax",
+      "gelenk": "gelenkfläche|gelenkflächen|artikulierende|gelenkbildende|gelenkspalt|gelenksspalt|gelenkkörper|gelenkr[äa]nd|gelenkkant|gelenkwinkel",
+      "weichteile": "weichteil|muskulatur|weichteilmantel|haut|subcutis|cutis",
+      "prothese": "prothes|tep|komponent|zementmantel|implantat|osteosynthese"
+    },
+    "kategorien": [
+      {
+        "id": "fibroostose",
+        "name": "Fibroostose/Enthesiopathie/Sporn",
+        "muster": "fibro-?ostos[a-zäöüß0-9_]*|fibroostitis|enthes(?:io)?path[a-zäöüß0-9_]*|enthesiophyt[a-zäöüß0-9_]*|insertions?tendinopath[a-zäöüß0-9_]*|[a-zäöüß0-9_]*sporn[a-zäöüß0-9_]*|haglund[a-zäöüß0-9_]*|ossifikation am (?:sehnen|band)ansatz",
+        "merkmale": [
+          "kontur",
+          "form",
+          "ansaetze",
+          "ossaer"
+        ],
+        "gruppen": [],
+        "befund": "fibro|enthes|sporn|ausziehung|auszug|dornförmig|knöchern[a-zäöüß]* (?:anbau|ausläufer|apposition)|kortikale[a-zäöüß]* unregelmäßig|haglund|(?:insertions|ansatz)(?:ossifi|tendin|verkalk)|ossifikation[a-zäöüß]* (?:am|des|der|im) (?:sehnen|band|ansatz|insertion)",
+        "ergebnis": "fibro|enthes|sporn|haglund|(?:insertions|ansatz)(?:ossifi|tendin|verkalk)"
+      },
+      {
+        "id": "exostose",
+        "name": "Exostose/Osteochondrom",
+        "muster": "exostos[a-zäöüß0-9_]*|osteochondrom[a-zäöüß0-9_]*|kartilaginäre[a-zäöüß0-9_]* exostose",
+        "merkmale": [
+          "kontur",
+          "form",
+          "ossaer"
+        ],
+        "gruppen": [],
+        "befund": "exostos|osteochondrom|ausziehung|auszug|auswuchs|knöchern[a-zäöüß]* (?:anbau|vorsprung|protuberanz)",
+        "ergebnis": "exostos|osteochondrom"
+      },
+      {
+        "id": "osteophyt",
+        "name": "Osteophyt/Randzacke",
+        "muster": "osteophyt[a-zäöüß0-9_]*|randzack[a-zäöüß0-9_]*|randwulst[a-zäöüß0-9_]*|randausziehung[a-zäöüß0-9_]*|osteophytär[a-zäöüß0-9_]*",
+        "merkmale": [
+          "osteophyten",
+          "kontur",
+          "form",
+          "gelenkflaechen",
+          "gelenk_unauffaellig"
+        ],
+        "gruppen": [
+          "gelenk"
+        ],
+        "befund": "osteophyt|randzack|randwulst|randausziehung|ausziehung|auszug|randzuschärf|zuspitzung",
+        "ergebnis": "osteophyt|randzack|randwulst|randausziehung"
+      },
+      {
+        "id": "arthrose",
+        "name": "Arthrose (jedes Gelenk inkl. AC, ISG, Finger, Zehen, Kiefergelenk)",
+        "muster": "[a-zäöüß0-9_]*arthrose[a-zäöüß0-9_]*|arthrosis|[a-zäöüß0-9_]*arthrot[a-zäöüß0-9_]*|gelenk(?:s)?spaltverschmäler[a-zäöüß0-9_]*|degenerative[a-zäöüß0-9_]* (?:gelenk)?veränderung[a-zäöüß0-9_]*",
+        "ausser": "spondylarthrose|facettenarthrose|facettengelenksarthrose|wirbelgelenksarthrose|unkovertebral|uncovertebral|unkarthrose|neoarthros|pseudarthros",
+        "merkmale": [
+          "gelenkspalt",
+          "gelenkflaechen",
+          "osteophyten",
+          "form",
+          "knorpel",
+          "subchondral",
+          "gelenk_unauffaellig"
+        ],
+        "gruppen": [
+          "gelenk"
+        ],
+        "befund": "verschmälerung des [a-zäöüß ]*gelenk(?:s)?spalt|gelenk(?:s)?spalt[a-zäöüß]*verschmäler|verschmälert[a-zäöüß]* gelenk(?:s)?spalt|osteophyt|subchondral[a-zäöüß]* skleros|randzack|randwulst|randzuschärf|arthrot|arthros",
+        "ergebnis": "arthros|arthrot|gelenk(?:s)?spalt[a-zäöüß]*verschmäler|verschmälert[a-zäöüß]* gelenk(?:s)?spalt|verschmälerung des [a-zäöüß ]*gelenk(?:s)?spalt"
+      },
+      {
+        "id": "spondylose",
+        "name": "Spondylose/Spondylophyten",
+        "muster": "spondylos[a-zäöüß0-9_]*|spondylophyt[a-zäöüß0-9_]*|spondylosis",
+        "merkmale": [
+          "kontur",
+          "deckplatten",
+          "osteophyten"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "befund": "spondylophyt|spondylos|randzack|osteophyt",
+        "ergebnis": "spondylos|spondylophyt"
+      },
+      {
+        "id": "osteochondrose",
+        "name": "Osteochondrose/Diskopathie",
+        "muster": "osteochondros[a-zäöüß0-9_]*|diskopath[a-zäöüß0-9_]*|discopath[a-zäöüß0-9_]*|chondrose[a-zäöüß0-9_]*|bandscheiben(?:raum)?verschmäler[a-zäöüß0-9_]*|bandscheibendegener[a-zäöüß0-9_]*",
+        "ausser": "osteochondrosis pubis|osteochondrosis dissecans",
+        "merkmale": [
+          "bandscheiben",
+          "deckplatten",
+          "kontur"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "befund": "verschmälerung des (?:intervertebral|bandscheiben|zwischenwirbel)|(?:intervertebral|bandscheiben|zwischenwirbel)[a-zäöüß]* [a-zäöüß ]{0,20}verschmäler|skleros[a-zäöüß]* der (?:abschluss|grund|deck)platten|chondros|osteochondros|diskopath",
+        "ergebnis": "osteochondros|diskopath|discopath|chondros|bandscheib"
+      },
+      {
+        "id": "spondylarthrose",
+        "name": "Spondylarthrose/Facettenarthrose",
+        "muster": "spondylarthros[a-zäöüß0-9_]*|facetten[a-zäöüß0-9_]*arthros[a-zäöüß0-9_]*|wirbelgelenksarthros[a-zäöüß0-9_]*",
+        "merkmale": [
+          "facetten"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "befund": "degenerative[a-zäöüß]* veränderung[a-zäöüß]* der (?:kleinen )?(?:wirbel|zwischenwirbel|facetten)gelenke|spondylarthros|facetten(?:gelenk)?s?arthros|facettengelenk[a-zäöüß]*[^.]{0,40}(?:arthros|hypertroph|skleros|degenerativ)",
+        "ergebnis": "spondylarthros|facetten(?:gelenk)?s?arthros|facettengelenk[a-zäöüß]*[^.]{0,40}(?:arthros|hypertroph|degenerativ)|wirbelgelenk[a-zäöüß]*arthros"
+      },
+      {
+        "id": "unkovertebralarthrose",
+        "name": "Unkovertebralarthrose",
+        "muster": "un[ck]overtebral[a-zäöüß0-9_]*\\s?(?:gelenks?)?arthros[a-zäöüß0-9_]*|un[ck]overtebrale[a-zäöüß0-9_]* arthros[a-zäöüß0-9_]*|unkarthros[a-zäöüß0-9_]*",
+        "merkmale": [
+          "unkovertebral"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "befund": "un[ck]overtebral[a-zäöüß]*arthros|un[ck]overtebral[a-zäöüß]*[^.]{0,40}(?:arthros|hypertroph|osteophyt|skleros|ausgezogen|ausziehung|zugespitzt|degenerativ)|(?:hypertroph|osteophyt|ausziehung|degenerativ)[^.]{0,40}un[ck]overtebral|unkarthros",
+        "ergebnis": "un[ck]overtebral[a-zäöüß]*arthros|un[ck]overtebral[a-zäöüß]*[^.]{0,40}(?:arthros|hypertroph|osteophyt)|unkarthros"
+      },
+      {
+        "id": "baastrup",
+        "name": "Baastrup/Neoarthrosis interspinosa",
+        "muster": "baastrup[a-zäöüß0-9_]*|neoarthros[a-zäöüß0-9_]* interspinos[a-zäöüß0-9_]*|neoarthros[a-zäöüß0-9_]*|kissing spine",
+        "merkmale": [
+          "fortsaetze",
+          "kontur"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "befund": "baastrup|neoarthros|kissing|dornfortsätze?[^.]{0,40}(?:kontakt|berühr|skleros|anlieg)",
+        "ergebnis": "baastrup|neoarthros|kissing"
+      },
+      {
+        "id": "dish",
+        "name": "DISH/Morbus Forestier",
+        "muster": "(?<![a-zäöüß])dish(?![a-zäöüß])|forestier|hyperostos[a-zäöüß0-9_]* (?:ankylos|vertebral)|ankylosierende[a-zäöüß0-9_]* hyperostos[a-zäöüß0-9_]*",
+        "merkmale": [
+          "kontur",
+          "osteophyten",
+          "verkalkung"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "befund": "(?<![a-zäöüß])dish(?![a-zäöüß])|forestier|hyperostos|ossifikation[a-zäöüß]* (?:des|der) (?:vorderen )?(?:längsband|lig)|brückenbild|spangenbild|überbrück",
+        "ergebnis": "dish|forestier|hyperostos"
+      },
+      {
+        "id": "verkalkung",
+        "name": "Verkalkung/Tendinosis calcarea",
+        "muster": "verkalk[a-zäöüß0-9_]*|kalzifi[a-zäöüß0-9_]*|kalkdepot[a-zäöüß0-9_]*|kalkeinlager[a-zäöüß0-9_]*|tendinosis calcarea|calcarea|kalkherd[a-zäöüß0-9_]*",
+        "ausser": "gefäß|gefäss|arterio|aorta|vaskulär|phlebolith|gefässverkalk",
+        "merkmale": [
+          "verkalkung"
+        ],
+        "gruppen": [
+          "weichteile",
+          "gelenk"
+        ],
+        "befund": "verkalk|kalzifi|kalkdepot|kalkeinlager|kalkherd|kalkdicht|calcarea",
+        "ergebnis": "verkalk|kalzifi|kalkdepot|kalkeinlager|kalkherd|kalkdicht|calcarea"
+      },
+      {
+        "id": "chondrokalzinose",
+        "name": "Chondrokalzinose",
+        "muster": "chondrokalzinos[a-zäöüß0-9_]*|chondrocalcinos[a-zäöüß0-9_]*|cppd|meniskusverkalk[a-zäöüß0-9_]*|pseudogicht",
+        "merkmale": [
+          "verkalkung",
+          "gelenk_unauffaellig"
+        ],
+        "gruppen": [
+          "gelenk"
+        ],
+        "befund": "chondrokalzin|chondrocalcin|knorpelverkalk|meniskusverkalk|(?:knorpel|menisk|diskus|discus)[a-zäöüß]*[^.]{0,30}verkalk|verkalk[a-zäöüß]*[^.]{0,30}(?:knorpel|menisk|diskus|discus)",
+        "ergebnis": "chondrokalzinos|chondrocalcinos|cppd|pseudogicht|meniskusverkalk|knorpelverkalk"
+      },
+      {
+        "id": "accessorium",
+        "name": "Os accessorium/Sesambein",
+        "muster": "os accessori[a-zäöüß0-9_]*|akzessorisch[a-zäöüß0-9_]*|accessori[a-zäöüß0-9_]*|sesambein[a-zäöüß0-9_]*|os trigonum|os tibiale externum|os peroneum|os vesalianum|os naviculare cornutum",
+        "merkmale": [
+          "anzahl"
+        ],
+        "gruppen": [],
+        "global": true,
+        "befund": "accessori|akzessor|sesambein|ossikel|os trigonum|os tibiale|os peroneum|os vesalianum|cornutum",
+        "ergebnis": "accessori|akzessor|sesambein|os trigonum|os tibiale|os peroneum|os vesalianum|cornutum"
+      },
+      {
+        "id": "enostose",
+        "name": "Enostose/Kompaktainsel",
+        "muster": "enostos[a-zäöüß0-9_]*|kompaktainsel[a-zäöüß0-9_]*|knocheninsel[a-zäöüß0-9_]*|bone island",
+        "merkmale": [
+          "struktur",
+          "ossaer"
+        ],
+        "gruppen": [],
+        "befund": "enostos|kompaktainsel|knocheninsel|sklerosierungsherd|skleroseherd|sklerotische[a-zäöüß]* (?:herd|areal|insel|fokus|bezirk)",
+        "ergebnis": "enostos|kompaktainsel|knocheninsel|bone island"
+      },
+      {
+        "id": "zyste",
+        "name": "Zyste/Geröllzyste",
+        "muster": "geröllzyst[a-zäöüß0-9_]*|zyst[a-zäöüß0-9_]*|(?<![a-zäöüß])ganglion[a-zäöüß0-9_]* intraoss[a-zäöüß0-9_]*",
+        "ausser": "baker|poplitea|synovial|parameniskal|meniskus|weichteil|sehnenscheide|bursa|niere|leber|ovar|schilddrüse",
+        "merkmale": [
+          "struktur",
+          "subchondral",
+          "ossaer"
+        ],
+        "gruppen": [],
+        "befund": "zyst|aufhellung|osteolys|lytisch",
+        "ergebnis": "zyst|ganglion"
+      },
+      {
+        "id": "fraktur",
+        "name": "Fraktur (frisch oder alt)",
+        "muster": "fraktur[a-zäöüß0-9_]*|frakturiert[a-zäöüß0-9_]*|kontinuitätsunterbrechung[a-zäöüß0-9_]*|fissur[a-zäöüß0-9_]*|kallus[a-zäöüß0-9_]*",
+        "merkmale": [
+          "kontur",
+          "form",
+          "struktur",
+          "ossaer"
+        ],
+        "gruppen": [],
+        "befund": "fraktur|kontinuitätsunterbrechung|fissur(?!a)|kallus|konsolidiert",
+        "ergebnis": "fraktur|kontinuitätsunterbrechung|fissur(?!a)|kallus"
+      },
+      {
+        "id": "fehlstellung",
+        "name": "Fehlstellung",
+        "muster": "fehlstellung[a-zäöüß0-9_]*|disloz[a-zäöüß0-9_]*|achsenabweich[a-zäöüß0-9_]*|subluxation[a-zäöüß0-9_]*|luxation[a-zäöüß0-9_]*|(?<![a-zäöüß])in fehlstellung",
+        "merkmale": [
+          "stellung"
+        ],
+        "gruppen": [],
+        "befund": "fehlstellung|disloz|achsenabweich|verkipp|luxation|abkippung|versatz",
+        "ergebnis": "fehlstellung|disloz|achsenabweich|luxation"
+      },
+      {
+        "id": "osteopenie",
+        "name": "Osteopenie/Osteoporose",
+        "muster": "osteopen[a-zäöüß0-9_]*|osteopor[a-zäöüß0-9_]*|demineralis[a-zäöüß0-9_]*|kalksalzarm[a-zäöüß0-9_]*|entkalk[a-zäöüß0-9_]*|vermindert[a-zäöüß0-9_]* mineral[a-zäöüß0-9_]*|mineralsalzminder[a-zäöüß0-9_]*",
+        "merkmale": [
+          "mineral"
+        ],
+        "gruppen": [],
+        "global": true,
+        "befund": "mineral[a-zäöüß]* (?:vermindert|herabgesetzt|reduziert|gemindert)|vermindert[a-zäöüß]* mineral|kalksalzarm|osteopen|osteopor|demineral|vermehrt[a-zäöüß]* strahlentransparenz|strahlentransparenz[a-zäöüß]* (?:vermehrt|erhöht)|kalksalzgehalt[a-zäöüß]* (?:vermindert|herabgesetzt|reduziert|gemindert)|vermindert[a-zäöüß]* kalksalz",
+        "ergebnis": "osteopen|osteopor|demineral|kalksalzarm|entkalk|vermindert[a-zäöüß]* (?:mineral|kalksalz)|(?:mineral|kalksalz)[a-zäöüß]* (?:vermindert|herabgesetzt|reduziert|gemindert)"
+      },
+      {
+        "id": "skoliose",
+        "name": "Skoliose/Fehlhaltung",
+        "muster": "skolios[a-zäöüß0-9_]*|skoliot[a-zäöüß0-9_]*|fehlhaltung[a-zäöüß0-9_]*|streckhaltung[a-zäöüß0-9_]*|steilstellung[a-zäöüß0-9_]*|hyperlordos[a-zäöüß0-9_]*|hyperkyphos[a-zäöüß0-9_]*|seitausbiegung[a-zäöüß0-9_]*|seitverbiegung[a-zäöüß0-9_]*|kyphosier[a-zäöüß0-9_]*|aufgehobene[a-zäöüß0-9_]* lordose|verstärkte[a-zäöüß0-9_]* (?:lordose|kyphose)",
+        "merkmale": [
+          "achse",
+          "stellung"
+        ],
+        "gruppen": [
+          "wirbelsaeule"
+        ],
+        "global": true,
+        "befund": "seitausbieg|skolios|skoliot|(?:links|rechts)konvex|[sc]-förmig|fehlhaltung|streckhaltung|steilstellung|hyperlordos|hyperkyphos|kyphosier|(?:aufgehobene|verstärkte|abgeflachte)[a-zäöüß]* (?:lordose|kyphose)",
+        "ergebnis": "seitausbieg|skolios|skoliot|(?:links|rechts)konvex|fehlhaltung|streckhaltung|steilstellung|hyperlordos|hyperkyphos|kyphosier|(?:aufgehobene|verstärkte|abgeflachte)[a-zäöüß]* (?:lordose|kyphose)"
+      },
+      {
+        "id": "sklerose",
+        "name": "Sklerose",
+        "muster": "skleros[a-zäöüß0-9_]*|sklerosier[a-zäöüß0-9_]*|hyperostos[a-zäöüß0-9_]*",
+        "ausser": "arteriosklerose|atherosklerose|aort|gefäß|gefäss|vaskul|subchondral|abschlussplatt|deckplatt|grundplatt|arthros|osteochondros|spondyl|gelenk",
+        "merkmale": [
+          "struktur",
+          "ossaer"
+        ],
+        "gruppen": [],
+        "befund": "skleros|hyperostos|verdicht",
+        "ergebnis": "skleros|hyperostos"
+      }
+    ]
+  }
 }

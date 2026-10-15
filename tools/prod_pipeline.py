@@ -51,6 +51,9 @@ VAL_TEMPLATE = _mv.group(1).replace("\\`", "`").replace('\\"', '"')
 def gen_prompt(raw, template_key=None, examples="", prompt=None, hints=True, template=None):
     """Gen-Prompt exakt wie die EXE (pipeline.gen_prompt; Web identisch bis auf die llm-Hinweise)."""
     t = template or TEMPLATES.get(template_key or detect_template(raw), TEMPLATES.get("allgemein"))
+    wid = br.widerspruch_prompt(br.widerspruch_befunde(raw), t["body"])   # v3.15.5 wie pipeline.py
+    if wid:
+        examples = wid + ("\n" + examples if examples else "")
     return _pipeline.gen_prompt(raw, t, prompt if prompt is not None else GEN_PROMPT_RAW,
                                 MISHEARD_HINTS if hints else "", examples)
 
@@ -114,7 +117,7 @@ def web_segment(seg, log=None):
         rep = c2 if ok and not (bef_in > 0 and bef_out < bef_in * 0.7) else c1
     if log is not None:
         log.append({"segment": seg, "template": key, "call1": c1, "roh": rep})
-    return br.nachbearbeiten(rep)
+    return br.widersprueche_bereinigen(br.nachbearbeiten(rep), seg)[0]   # v3.15.5 wie pipeline.ts
 
 
 def web_kette(diktat, log=None):
