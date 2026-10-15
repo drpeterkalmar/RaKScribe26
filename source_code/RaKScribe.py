@@ -3204,7 +3204,9 @@ class RaKScribeApp(ctk.CTk):
             teile.append(m.seite)
         teile.append("mit Sono" if m.sono else "ohne Sono-Leistung")
         if vb:
-            teile.append(f"Vorbefund {m.datum or '?'}" + (f" ({vb.get('nr')})" if vb.get("nr") else "")
+            jahre = _mk.alter_jahre(vb.get("datum"))
+            teile.append(f"Vorbefund {m.datum or '?'}" + (f" (vor {jahre} Jahren)" if jahre and jahre >= 2 else "")
+                         + (f" ({vb.get('nr')})" if vb.get("nr") else "")
                          + f" – {m.zerlegung.anzahl} von {len(m.felder)} Feldern erkannt")
         else:
             teile.append("kein Vorbefund")

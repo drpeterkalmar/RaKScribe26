@@ -102,6 +102,18 @@ def datum_kurz(iso):
     return f"{m.group(3)}.{m.group(2)}.{m.group(1)}" if m else str(iso or "").strip()
 
 
+def alter_jahre(iso, heute=None):
+    """Volle Jahre seit dem Vorbefund (ISO-Datum) — für den Hinweis „vor N Jahren“ (Probelauf M2: ein Vorbefund war
+    8 Jahre alt). None, wenn kein Datum."""
+    import datetime
+    try:
+        d = datetime.date.fromisoformat(str(iso or "")[:10])
+    except ValueError:
+        return None
+    heute = heute or datetime.date.today()
+    return int((heute - d).days // 365.25)
+
+
 def _norm(text):
     t = (text or "").lower().replace("ß", "ss")
     t = re.sub(r"[^\wäöü]+", " ", t)
@@ -214,8 +226,8 @@ def _ergebnis_ids(maske_def):
 def zerlegen(text, maske_def):
     """Vorbefund-Text (Befundteil, Klartext) → Felder nach Labels. Ein Label zählt am Zeilenanfang oder nach einem
     Satzende und braucht den Doppelpunkt (das Ergebnis-Label auch allein in seiner Zeile). Text vor dem ersten Label =
-    Titel. Das Ergebnis endet an der ersten Leerzeile bzw. nach den ACR/BI-RADS-Zeilen; was danach kommt (Screening-Text,
-    Befunder, Gruß), gehört zu keinem Feld."""
+    Titel. ACR/BI-RADS: aus dem Ergebnis; eigene Wert-Zeilen („ACR: B“) in anderen Abschnitten gehören auch zu den Werten
+    (nicht in deren Text). Was nach dem Ergebnis kommt (Screening-Text, Befunder, Gruß), gehört zu keinem Feld."""
     text = str(text or "").replace("\r\n", "\n").replace("\r", "\n").replace("\u00a0", " ")
     z = Zerlegung()
     if not text.strip():
@@ -240,6 +252,7 @@ def zerlegen(text, maske_def):
         z.titel = text.strip()
         return z
     z.titel = text[:treffer[0][0]].strip()
+    werte_aussen = {}
     for k, (a, e, fid, anh, label) in enumerate(treffer):
         ende = treffer[k + 1][0] if k + 1 < len(treffer) else len(text)
         stueck = text[e:ende]
@@ -247,7 +260,13 @@ def zerlegen(text, maske_def):
             stueck, rest = _ergebnis_schneiden(stueck, maske_def)
             if rest:
                 z.rest = (z.rest + "\n\n" + rest).strip()
-        inhalt = " ".join(l.strip() for l in stueck.split("\n") if l.strip())
+        zeilen = [l.strip() for l in stueck.split("\n") if l.strip()]
+        if fid not in erg_ids:
+            for l in [l for l in zeilen if _ist_wertzeile(l)]:
+                for w, v in werte_aus_text(l)[1].items():
+                    werte_aussen.setdefault(w, v)
+            zeilen = [l for l in zeilen if not _ist_wertzeile(l)]
+        inhalt = " ".join(zeilen)
         if anh and inhalt:
             inhalt = " ".join(label.split()) + ": " + inhalt
         if not inhalt:
@@ -258,40 +277,54 @@ def zerlegen(text, maske_def):
             rest, w = werte_aus_text(z.felder[fid])
             z.werte.update(w)
             z.felder[fid] = rest
+            if not rest:
+                z.felder.pop(fid)
+    for w, v in werte_aussen.items():
+        z.werte.setdefault(w, v)
     return z
 
 
-_WERT_ZEILE = re.compile(r"\s*(?:ACR|BI[\s-]?RADS)\b", re.I)
+_WERT_ZEILE = re.compile(r"\s*(?:ACR|BI[\s-]?RADS|(?:Brust|Drüsen)?[Dd]ichte)\b", re.I)
+
+
+def _ist_wertzeile(z):
+    """Eine reine Wert-Zeile („ACR: 2“, „BI-RADS 2 beidseits“, „ACR B, BIRADS 1“) — beginnt mit dem Wert-Label, liefert
+    einen Wert, und es bleibt kaum Text übrig. Ein Satz („Dichte des Drüsenkörpers erhöht“) ist keine."""
+    if not _WERT_ZEILE.match(z or ""):
+        return False
+    rest, werte = werte_aus_text(z)
+    rest = re.sub(r"(?i)\b(?:beidseits|bds|rechts|links|re|li|und|kategorie|typ)\b", "", rest)
+    return bool(werte) and len(re.sub(r"[\W_]+", "", rest)) <= 3
 
 
 def _ergebnis_schneiden(stueck, maske_def):
-    """Ergebnis bis zur ersten Leerzeile; ACR/BI-RADS-Zeilen gleich danach gehören dazu, nach ihnen endet es; ebenso an
-    einer Zeile, die mit einem Schluss-Merkmal aus masken.json beginnt („Verlaufskontrolle …“, „Erstbefunder …“).
-    → (ergebnis, rest)."""
+    """Ergebnis-Abschnitt bis zu einem Schluss-Merkmal (masken.json „ergebnis_ende“: Screening-Text, Befunder, Gruß).
+    Wert-Zeilen (ACR/BI-RADS) darin sind die Werte; Text = alle Absätze VOR der ersten Wert-Zeile (ohne Werte: nur der
+    erste Absatz). Nach den Werten Folgendes gehört zu keinem Feld. Stehen die Werte erst nach einem Schluss-Merkmal (alte
+    Briefe), zählen eigene Wert-Zeilen dort trotzdem. → (ergebnis, rest)."""
     ende_worte = [w.lower() for w in maske_def.get("ergebnis_ende") or []]
     zeilen = stueck.split("\n")
-    ergebnis, i, inhalt, wert_gesehen = [], 0, False, False
-    while i < len(zeilen):
-        z = zeilen[i]
-        if not z.strip():
-            if inhalt:
-                j = i
-                while j < len(zeilen) and not zeilen[j].strip():
-                    j += 1
-                if j < len(zeilen) and _WERT_ZEILE.match(zeilen[j]) and not wert_gesehen:
-                    i = j
-                    continue
-                break
-            i += 1
-            continue
-        ist_wert = bool(_WERT_ZEILE.match(z))
-        if (wert_gesehen and not ist_wert) or any(z.strip().lower().startswith(w) for w in ende_worte):
+    n = next((i for i, z in enumerate(zeilen) if z.strip() and any(z.strip().lower().startswith(w) for w in ende_worte)),
+             len(zeilen))
+    abschnitt, danach = zeilen[:n], zeilen[n:]
+    while abschnitt and not abschnitt[0].strip():
+        abschnitt = abschnitt[1:]
+    wert_idx = [i for i, z in enumerate(abschnitt) if _ist_wertzeile(z)]
+    if wert_idx:
+        text = [z for z in abschnitt[:wert_idx[0]] if z.strip()]
+        werte = [abschnitt[i] for i in wert_idx]
+        rest = [z for i, z in enumerate(abschnitt[wert_idx[0]:], wert_idx[0]) if i not in wert_idx] + danach
+        return "\n".join(text + werte), "\n".join(rest).strip()
+    erster = []
+    for i, z in enumerate(abschnitt):
+        if not z.strip() and erster:
+            danach = abschnitt[i:] + danach
             break
-        wert_gesehen = wert_gesehen or ist_wert
-        inhalt = True
-        ergebnis.append(z)
-        i += 1
-    return "\n".join(ergebnis), "\n".join(zeilen[i:]).strip()
+        if z.strip():
+            erster.append(z)
+    spaete = [z for z in danach if _ist_wertzeile(z)]             # Werte nach dem Screening-Text (alte Briefe)
+    rest = [z for z in danach if not _ist_wertzeile(z)]
+    return "\n".join(erster + spaete), "\n".join(rest).strip()
 
 
 # ───────────────────────────── „unverändert“ + Vergleichsdatum ─────────────────────────────

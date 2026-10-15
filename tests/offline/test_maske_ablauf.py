@@ -188,8 +188,11 @@ check("Mammographie-Leistung → Maske offen und gezeigt, Titel links „MAMMO-M
 check("Screening, Sono-Leistung da → 4 Felder, alle mit Vorbefund-Vorschlag vom 05.06.2024",
       m.art == "screening" and m.sono and [f.quelle for f in m.felder] == ["vorbefund"] * 4 and m.datum == "05.06.2024",
       m.zustand())
-check("Kopf: Screening · mit Sono · Vorbefund 05.06.2024 (Nr) – 4 von 4 Feldern", "Screening" in app._maske_ui.letzt["kopf"]
-      and "Vorbefund 05.06.2024 (20241012001) – 4 von 4 Feldern erkannt" in app._maske_ui.letzt["kopf"], app._maske_ui.letzt)
+import re as _re  # noqa: E402
+check("Kopf: Screening · mit Sono · Vorbefund 05.06.2024 (vor N Jahren) (Nr) – 4 von 4 Feldern",
+      "Screening" in app._maske_ui.letzt["kopf"] and _re.search(r"Vorbefund 05\.06\.2024 \(vor \d+ Jahren\) \(20241012001\) "
+                                                                r"– 4 von 4 Feldern erkannt", app._maske_ui.letzt["kopf"]),
+      app._maske_ui.letzt)
 check("Hilfezeile: aktives Feld + Tasten", app._maske_ui.letzt["hilfe"].startswith("Feld 1/4: Inspektion und Palpation")
       and "Vorspulen/Rückspulen = Feld · F3 = übernehmen" in app._maske_ui.letzt["hilfe"], app._maske_ui.letzt["hilfe"])
 taste("FF")

@@ -63,6 +63,10 @@ check("… mit Vorbefund-Datum eingesetzt", M.ohne_platzhalter(NORMAL.felder["ma
       == "Verglichen mit 05.06.2024 unverändert kleinfleckig strukturierter Drüsenkörper. Keine suspekten Verkalkungen. "
       "Subcutis und Cutis unauffällig.")
 
+import datetime as _dt  # noqa: E402
+check("Alter des Vorbefunds in vollen Jahren (Hinweis ab 2 Jahren)", M.alter_jahre("2018-06-05", _dt.date(2026, 10, 15)) == 8
+      and M.alter_jahre("2025-10-16", _dt.date(2026, 10, 15)) == 0 and M.alter_jahre("") is None)
+
 # ───────────────────────────── Teil 3: Maske ─────────────────────────────
 VB_TEXT = F["zerlegen"][0]["text"]
 VB = {"nr": "20241012001", "datum": "2024-06-05", "text": VB_TEXT, "werte": {"acr": "2", "birads": "2"}}
