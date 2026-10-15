@@ -180,6 +180,11 @@ _ZAHLWORT = {"null": "0", "eins": "1", "ein": "1", "zwei": "2", "zwo": "2", "dre
              "fuenf": "5", "sechs": "6", "i": "1", "ii": "2", "iii": "3", "iv": "4", "v": "5", "vi": "6"}
 _ACR = re.compile(r"\b(?:ACR|(?:Brust|Drüsen)?[Dd]ichte(?:typ)?)(?:[\s-]*(?:Typ|Kategorie|Dichte))?[\s:.,=-]*"
                   r"(?P<v>[1-4]|[A-Da-d]|IV|I{1,3}|eins|zwei|zwo|drei|vier)(?![\wäöü])", re.I)
+# v3.16.3 (Ordi-E2E 15.10.: chirp_3 schrieb „… beidseits ACRA 2. BI-RADS 1“ → bisher ACR A und „… beidseits 2.“):
+# Buchstabe direkt am bzw. nach „ACR“ und danach eine Zahl im selben Satz → die Zahl ist der Wert, der Buchstabe
+# ein Hörfehler. Nur mit Leerzeichen dazwischen und Satzende/BI-RADS danach („ACR A. 2 Herde“ bleibt A).
+_ACR_ZAHL = re.compile(r"\bACR[\s:=-]*[A-Da-d]\s+(?P<v>[1-4]|eins|zwei|zwo|drei|vier)(?=\s*(?:[.,;]|$|BI[\s-]?RADS))",
+                       re.I)
 _BIRADS = re.compile(r"\bBI[\s-]?RADS(?:[\s-]*Kategorie)?[\s:.,=-]*"
                      r"(?P<v>[0-6](?:\s?[a-c](?![\wäöü]))?|VI|IV|V|I{1,3}|null|eins|zwei|drei|vier|fünf|fuenf|sechs)"
                      r"(?![\wäöü])", re.I)
@@ -200,7 +205,7 @@ def werte_aus_text(text):
     „Dichte B“, Zahlwörter und römische Ziffern; die Werte bleiben in der diktierten Schreibweise (ACR B bleibt B)."""
     werte, rest = {}, str(text or "")
     for art, muster in (("birads", _BIRADS), ("acr", _ACR)):
-        m = muster.search(rest)
+        m = (_ACR_ZAHL.search(rest) if art == "acr" else None) or muster.search(rest)
         if not m:
             continue
         werte[art] = _wert(m.group("v"), art)

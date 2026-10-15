@@ -365,5 +365,16 @@ check("alles selbst gelöscht → „Maske leer“ (kein leerer Befund, kein off
 mL.verwerfen(1)
 check("✕ verwerfen nach dem Löschen holt den Vorschlag zurück", mL.felder[1].quelle == "vorbefund" and mL.felder[1].offen)
 
+# v3.16.3 (Ordi-E2E 15.10.: chirp_3 „… beidseits ACRA 2. BI-RADS 1“ → bisher ACR A + Rest „beidseits 2.“)
+for text, rest_soll, werte_soll in (
+        ("Unauffälliger Befund beidseits ACRA 2. BI-RADS 1", "Unauffälliger Befund beidseits.", {"acr": "2", "birads": "1"}),
+        ("Unauffälliger Befund beidseits. ACR a 2. BIRADS 1.", "Unauffälliger Befund beidseits.", {"acr": "2", "birads": "1"}),
+        ("beidseits ACRA zwei BI-RADS eins", "beidseits", {"acr": "2", "birads": "1"}),
+        ("ACR A. 2 Herde links.", "2 Herde links.", {"acr": "A"}),
+        ("Drüsendichte ACR B. BIRADS 2.", "Drüsendichte.", {"acr": "B", "birads": "2"}),
+        ("ACR 2, BIRADS 1", "", {"acr": "2", "birads": "1"})):
+    rest, w = M.werte_aus_text(text)
+    check(f"Werte „{text}“ → {werte_soll}, Rest {rest_soll!r}", rest == rest_soll and w == werte_soll, f"{rest!r} {w}")
+
 print("\n" + ("✅ MASKE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

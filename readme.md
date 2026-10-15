@@ -300,6 +300,10 @@ Vorlage der CAS-Leistung, wenn sich die beiden nur im Geschlecht unterscheiden u
 männlich, Frau/Mann, Prostata, Uterus, Ovar, Adnex). Nennt das Diktat das Geschlecht, gewinnt wie bisher das Diktat.
 Test: `tests/offline/test_cas_leistungen.py` Fall r).
 
+**v3.16.3 Mammo-Maske, Werte:** Die Spracherkennung schrieb im selben Test „… beidseits ACRA 2. BI-RADS 1“ — daraus
+wurde „ACR: A“ und der Ergebnissatz „… beidseits 2.“. Steht direkt nach „ACR“ ein Buchstabe und danach (nur Leerzeichen
+dazwischen) eine Zahl bis Satzende/BI-RADS, gilt die Zahl („ACR A. 2 Herde“ bleibt A). Test: `test_maske.py`.
+
 ## 🦴 Umschriebene Skelettbefunde ohne Widerspruch (EXE + Web, ab v3.15.5)
 
 Peter 15.10.2026: „Fersensporn diktiert, aber ‚Normale Form des Calcaneus …‘ steht noch da.“ Ein umschriebener Befund an
