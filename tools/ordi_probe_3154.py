@@ -1,4 +1,5 @@
-r"""Probelauf RaKScribe 3.15.4 am Büro-PC — für den Ordi-Hermes, nur Python-Standardbibliothek, synthetische Texte.
+r"""Probelauf RaKScribe 3.15.4 (ab 3.15.5 mit --version/--prompt) am Büro-PC — für den Ordi-Hermes, nur
+Python-Standardbibliothek, synthetische Texte.
 
 Startet die gelieferte rakscribe26.exe im eingebauten Selbsttest als GAST (wie der Probelauf der Mammo-Maske): eigene
 Ordner (APPDATA/LOCALAPPDATA im Arbeitsordner), kein SpeechMike-Gerät (Tasten nur über den Selbsttest, derselbe
@@ -11,9 +12,11 @@ Fälle (Peter 15.10.2026): A1 SpeechMike Ambient erkannt → Hilfezeile Play/Com
 A2 Text im grauen Vorbefund markiert + Record → nur die Markierung ersetzt; A3 Tippen in der Pause; A4 F3/F4 auf der
 Tastatur; A5 SpeechMike III/Premium → Hilfezeile F3/F4 wie bisher; E1/E2 CAS-Befund rechts: Record → Pause → in den
 Befund geklickt → Record → INS = Diktat an der Stelle (auch mit „Nur Text“); B1 CAS-Leistung beidseits + Diktat
-„… links unauffällig“ → „… beidseits …“ (Normalbefund ohne KI); K1 Häkchen-Farbe im Menü.
+„… links unauffällig“ → „… beidseits …“ (Normalbefund ohne KI); K1 Häkchen-Farbe im Menü; P1 (nur mit --prompt):
+eingebauter Befund-Prompt hat den erwarteten Versionsmarker (v3.15.5: umschriebene Skelettbefunde).
 
 Aufruf:  py -3.12 ordi_probe_3154.py --exe <rakscribe26.exe> --arbeit <neuer Arbeitsordner> --schluessel <dummy_key.json>
+         [--version 3.15.5 --prompt 2026-10-15-v3155-umschriebene-befunde]
 Ausgabe: Tabelle (Fall | erwartet | beobachtet | ok) + SHA256 der Tabelle, <Arbeitsordner>\ergebnis.json; Exit 0 = alles ok.
 """
 import argparse
@@ -64,8 +67,9 @@ def prozesse():
 
 
 class Lauf:
-    def __init__(self, exe, arbeit, schluessel, sekunden):
+    def __init__(self, exe, arbeit, schluessel, sekunden, version="3.15.4", prompt=""):
         self.arbeit = os.path.abspath(arbeit)
+        self.version, self.prompt = version, prompt
         self.exe_quelle, self.schluessel, self.sekunden = exe, schluessel, sekunden
         self.state = os.path.join(self.arbeit, "selbsttest.json")
         self.cas = os.path.join(self.arbeit, "localappdata", "RaKScribe")
@@ -137,9 +141,13 @@ class Lauf:
         self.t0 = time.time()
         self.p = subprocess.Popen([exe], cwd=os.path.dirname(exe), env=env)
         st = self.warten("ready", 120)
-        self.check("V0", "EXE startet als Gast-Selbsttest, Version 3.15.4, bereit",
+        self.check("V0", f"EXE startet als Gast-Selbsttest, Version {self.version}, bereit",
                    f"{(st or {}).get('title')} / {(st or {}).get('status')} / {round(time.time() - self.t0, 1)} s",
-                   bool(st) and "RaKScribe 3.15.4" in str(st.get("title")) and st.get("status") == "READY")
+                   bool(st) and f"RaKScribe {self.version} " in str(st.get("title")) and st.get("status") == "READY")
+        if self.prompt:
+            self.check("P1", f"eingebauter Befund-Prompt = {self.prompt}",
+                       f"{(st or {}).get('prompt_version')} / {(st or {}).get('prompt_quelle')}",
+                       (st or {}).get("prompt_version") == self.prompt)
         return bool(st)
 
     def beenden(self):
@@ -252,9 +260,11 @@ def main(argv=None):
     ap.add_argument("--arbeit", required=True)
     ap.add_argument("--schluessel", required=True, help="wertloser Test-Schlüssel (z. B. dummy_key.json des Probelaufs)")
     ap.add_argument("--sekunden", type=int, default=300, help="Sicherheitsnetz: die EXE endet spätestens danach")
+    ap.add_argument("--version", default="3.15.4", help="erwartete Version im Fenstertitel")
+    ap.add_argument("--prompt", default="", help="erwarteter Versionsmarker des eingebauten Befund-Prompts (Fall P1)")
     a = ap.parse_args(argv)
     vorher = prozesse()
-    lauf = Lauf(a.exe, a.arbeit, a.schluessel, a.sekunden)
+    lauf = Lauf(a.exe, a.arbeit, a.schluessel, a.sekunden, a.version, a.prompt)
     try:
         if lauf.starten():
             lauf.faelle()
