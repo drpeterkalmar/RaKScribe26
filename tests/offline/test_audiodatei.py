@@ -289,6 +289,34 @@ check("Audio laden: unlesbare Datei → Fehler-Zustand mit Meldung, kein Befund,
       app3._job.zustand == "ERROR" and not app3.result_text.text and CHIRP == []
       and S.AUFZ.dialoge[-1][:2] == ("showerror", "Audio-Datei") and "m4a" in S.AUFZ.dialoge[-1][2], f"{app3._job.zustand} {S.AUFZ.dialoge[-1:]}")
 
+class TB:
+    def __init__(self):
+        self.sel = None
+
+    def focus_set(self):
+        pass
+
+    def tag_remove(self, *a):
+        self.sel = None
+
+    def tag_add(self, tag, a, b):
+        self.sel = (a, b)
+
+    def mark_set(self, *a):
+        pass
+
+
+app4 = neue_app()
+app4.result_text.insert("1.0", "## Kniegelenk rechts\n\n## Befund\nMäßige Gonarthrose medial. Kein Erguss.")
+app4.result_text._textbox = TB()
+app4._st_suchen_markieren("befund_suchen#Chondrokalzinose|gonarthrose")
+mk = app4._st_markiert
+check("befund_suchen: erste gefundene Alternative (Groß/klein egal) markiert, vorher/nachher für die Prüfung",
+      mk["text"] == "Gonarthrose" and app4.result_text._textbox.sel == (f"1.0+{mk['von']}c", f"1.0+{mk['bis']}c")
+      and mk["nachher"] == " medial. Kein Erguss." and app4._st_ziel is True, str(mk))
+app4._st_suchen_markieren("befund_suchen#Meniskus")
+check("befund_suchen: nichts gefunden → „fehlt“, nichts markiert", app4._st_markiert.get("fehlt") == ["Meniskus"])
+
 # ───────────── 6. EXE im WAV-Modus ─────────────
 ZUSTAND = os.path.join(TMP, "zustand.json")
 os.environ["RAKSCRIBE_SELFTEST"] = ZUSTAND

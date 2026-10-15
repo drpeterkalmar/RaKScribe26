@@ -285,7 +285,9 @@ Screenings oft trotzdem gemacht), leer bleibt sie ohne Abschnitt und ohne Warnun
   ```
   Schritte: `taste` (RECORD, STOP, PLAY, FF, REW, EOL, INS, COMMAND, F1–F4, INSTR), `sprich` (Datei relativ zum Skript,
   wartet, bis sie gespielt ist), `warte_s`, `warte_auf` (cas, leistungen, kontext, maske, aufnahme, bereit, kontrolle,
-  kein_cas, fertig; Zeitgrenze → Abbruch), `trigger` (Selbsttest-Phase, z. B. `maske_markieren#0|0|7`, `geraet#ambient`),
+  kein_cas, fertig; Zeitgrenze → Abbruch), `trigger` (Selbsttest-Phase, z. B. `maske_markieren#0|0|7`, `geraet#ambient`;
+  ab v3.16.1 `befund_suchen#Text|Alternative` bzw. `maske_suchen#<Feld>|Text` = erste Fundstelle markieren, für
+  Korrektur-Diktate ohne feste Zeichenpositionen),
   `merke` (Zustand festhalten), `fehler` (`stt` | `ki` | `aus` = Netz-/KI-Ausfall simulieren), `ende`.
   Tests: `tests/offline/test_audiodatei.py`, Windows-UI-Test Fall E (Audio laden ogg/mp3) und Fall W (WAV-Modus).
 

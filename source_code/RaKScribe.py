@@ -1449,6 +1449,7 @@ class RaKScribeApp(ctk.CTk):
                     "wav_ablauf": self._wav_stand(),
                     "dialoge": list(_WAV_DIALOGE),
                     "audio_datei": getattr(self, "_audio_datei_info", None),
+                    "markiert": getattr(self, "_st_markiert", None),
                 }
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=1)
@@ -1583,6 +1584,11 @@ class RaKScribeApp(ctk.CTk):
             elif phase.startswith("minimieren"):
                 self.iconify()
                 self.after(800, lambda p=phase: dump(p))
+            elif phase.startswith(("befund_suchen#", "maske_suchen#")):
+                # v3.16.0 (WAV-Ablauf, Korrektur-Diktat): erste Fundstelle eines Suchtexts markieren (Alternativen mit |,
+                # Groß/klein egal) — befund_suchen#Gonarthrose|Erguss bzw. maske_suchen#<Feld>|<Text>|<Text>
+                self._st_suchen_markieren(phase)
+                dump(phase)
             elif phase.startswith("audio_laden#"):
                 # v3.16.0: Knopf „Audio laden“ mit dieser Datei (ohne Dateidialog): audio_laden#<Pfad>
                 self.audio_laden(phase.partition("#")[2])
@@ -1668,6 +1674,39 @@ class RaKScribeApp(ctk.CTk):
                 "kontrolle": z == _js.READY and bool(getattr(self, "_befund_wartet", False)),
                 "kein_cas": cas is None,
                 "fertig": z not in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)}[name]
+
+    def _st_suchen_markieren(self, phase):
+        art, _, rest = phase.partition("#")
+        teile = rest.split("|")
+        if art == "maske_suchen":
+            i = int(teile.pop(0) or 0)
+            ui = getattr(self, "_maske_ui", None)
+            try:
+                text = ui.zeilen[i]["box"].get("1.0", "end-1c")
+            except Exception:
+                m = getattr(self, "_maske", None)
+                text = _mk.vorschau(m.felder[i], m) if m is not None else ""
+        else:
+            i, text = None, self.result_text.get("1.0", "end-1c")
+        for such in [t for t in teile if t]:
+            von = text.lower().find(such.lower())
+            if von >= 0:
+                bis = von + len(such)
+                self._st_ziel = True
+                if art == "maske_suchen":
+                    self._maske_ui.markieren(i, von, bis)
+                else:
+                    tb = self.result_text._textbox
+                    tb.focus_set()
+                    tb.tag_remove("sel", "1.0", "end")
+                    tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
+                    tb.mark_set("insert", f"1.0+{bis}c")
+                self._st_markiert = {"wo": art, "feld": i, "von": von, "bis": bis, "text": text[von:bis],
+                                     "vorher": text[:von], "nachher": text[bis:]}
+                log(f"[SELBSTTEST] {art}: markiert {von}–{bis}")
+                return
+        self._st_markiert = {"wo": art, "feld": i, "fehlt": teile}
+        log(f"[SELBSTTEST] {art}: nichts gefunden")
 
     def _wav_fehler_setzen(self, art):
         global _WAV_FEHLER
