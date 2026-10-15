@@ -306,6 +306,41 @@ app.befund_fertig()
 S.pump(app, lambda: False, 0.2)
 check("EOL → an die Brücke, Maske zu", antwort("m2").get("status") == "fertig" and app._maske is None)
 
+# ───────────── 2b. Abbrechen mit Maske: interner Live-Text weg, Befund rechts bleibt; nächster Auftrag übernimmt nichts still
+ablegen("20261015007", "m7")
+app._cas_einmal()
+leistungen("m7", "20261015007", [L_MAMS, L_SONO])
+kontext("m7", "20261015007")
+app._cas_einmal()
+m = app._maske
+CHIRP[:] = ["unverändert"]
+app.sm_record()
+sprechen()
+app.sm_ins()
+ruhe()
+for i in (1, 2, 3):
+    app._maske_knopf(i)
+app.sm_ins()
+ruhe()
+befund_m7 = app.result_text.text
+check("Maske mit Aufnahme + Befund (Vorbereitung)", befund_m7.startswith("## Mammographie") and app.transcript_text.text != "",
+      repr(app.transcript_text.text[:40]))
+app.cas_abbrechen()
+check("Abbrechen mit Maske → interner Live-Text im Diktat-Feld weg, Befund rechts bleibt (wie seit 3.10)",
+      app.transcript_text.text == "" and app.result_text.text == befund_m7 and app._maske is None)
+ablegen("20261015008", "m8")
+app._cas_einmal()
+leistungen("m8", "20261015008", [L_MAMS])
+app._cas_einmal()
+check("… nächster Mammo-Auftrag: Maske bereit, nicht gezeigt (Text steht da), Hinweis „F4“",
+      app._maske is not None and not app._maske_an and "es steht schon Text da" in app._letzter_hinweis, app._letzter_hinweis)
+app.sm_ins()
+S.pump(app, lambda: False, 0.2)
+check("… INS ohne Maske und ohne Diktat → kein Befund aus fremdem Text (Hinweis „Kein Diktat“)",
+      app.result_text.text == befund_m7 and "Kein Diktat" in app._letzter_hinweis, app._letzter_hinweis)
+app.reset_dictation()
+app.cas_abbrechen()
+
 # ───────────── 3. keine Maske: Röntgen, Menü aus; Spulen wie bisher ─────────────
 ablegen("20261015004", "m4")
 app._cas_einmal()

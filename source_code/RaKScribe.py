@@ -3092,6 +3092,15 @@ class RaKScribeApp(ctk.CTk):
     # F3 übernimmt den Vorschlag. INS baut den Befund aus den Feldern (offene Vorschläge → erst Warnung), EOL wie gehabt.
     # Der Vorbefund geht nie an die KI und nie ins Protokoll (maske.py, tests/offline/test_maske.py).
     def _maske_leeren(self):
+        # Das Diktat-Feld trug während der Maske nur den internen Live-Text der Feld-Abschnitte (versteckt) — der gehört
+        # zu dieser Maske und darf nie als „freies Diktat“ an einem nächsten Auftrag hängen bleiben (Probelauf-CI, M12).
+        # Der sichtbare Befund rechts bleibt (wie seit 3.10: „der Text bleibt stehen“). Bei Maske aus (F4) = freies
+        # Diktat bleibt auch das Diktat-Feld.
+        if (getattr(self, "_maske", None) is not None and getattr(self, "_maske_an", False)
+                and getattr(self, "transcript_text", None) is not None
+                and self._job.zustand not in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)):
+            self.transcript_text.delete("1.0", "end")
+            self._sm_sitzung_leeren()
         self._maske, self._maske_an, self._maske_lauf = None, False, False
         self._maske_abschnitte, self._maske_offen_k = {}, None
         self._maske_warnung_version = self._maske_befund_version = None
@@ -3153,7 +3162,7 @@ class RaKScribeApp(ctk.CTk):
         if frei:
             self._maske_zeigen()
         else:
-            self._kurzhinweis("Mammo-Maske bereit – F4 schaltet sie ein (freies Diktat läuft)", 8000)
+            self._kurzhinweis("Mammo-Maske bereit – F4 schaltet sie ein (es steht schon Text da)", 8000)
 
     def _maske_zeigen(self):
         ui = self._maske_ui_holen()
