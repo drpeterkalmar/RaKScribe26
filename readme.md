@@ -220,7 +220,9 @@ BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder 
   Ein Vorschlag wird **nie still** zum heutigen Befund: INS warnt, solange ein Feld noch Vorschlag ist; ein zweites INS
   ohne Änderung baut den Befund **ohne** diese Felder.
 - **„unverändert“** diktiert (oder F3) → der Vorbefund dieses Felds mit Vergleichsdatum, z. B. „Verglichen mit 05.06.2024
-  beidseits unverändert …“, „Verglichen mit 05.06.2024 weiterhin keine …“ — deterministisch, ohne KI.
+  beidseits unverändert …“, „Verglichen mit 05.06.2024 weiterhin keine …“ — deterministisch, ohne KI. Eine alte
+  Datumsangabe im Vergleichssatz des Vorbefunds („Voruntersuchung (12.03.2022)“, „von 2022“) wird ersetzt, nie
+  ergänzt (ab v3.15.3).
 - Kein Vorbefund → Felder leer, im Mammographie-Feld der Normalbaustein „Mammo 1“ als Vorschlag.
 - **INS** baut den Befund aus den Feldern: Titel (Screening: „Mammographie beidseits – Screening“), Labels, Ergebnis mit
   „ACR:“/„BIRADS:“; beim Screening mit BI-RADS 1/2 der Screening-Text der Praxis (BI-RADS 0/3/4/5: Hinweis, der Text mit

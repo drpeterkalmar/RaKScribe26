@@ -145,6 +145,19 @@
     "acr": "2",
     "birads": "2"
    }
+  },
+  {
+   "name": "3.15.3 (Ordi-Probelauf M3): „Inspektion u. Palpation:“ – Verbinder „u.“/„&“/„+“ statt „und“",
+   "text": "Mammographie beidseits\n\nKlinische Angaben: Kontrolle.\n\nInspektion u. Palpation: Unauffällig.\nMammographie: Beidseits fettreich, keine Herde.\n\nErgebnis:\nUnauffällig.\nBIRADS: 1, ACR: A",
+   "felder": {
+    "inspektion": "Unauffällig.",
+    "mammographie": "Beidseits fettreich, keine Herde.",
+    "ergebnis": "Unauffällig."
+   },
+   "werte": {
+    "acr": "A",
+    "birads": "1"
+   }
   }
  ],
  "vergleich": [
@@ -192,6 +205,36 @@
    "text": "Mastopathie mit insuspekten Verkalkungen.",
    "datum": "2026-10-12",
    "soll": "Verglichen mit 12.10.2026 unverändert. Mastopathie mit insuspekten Verkalkungen."
+  },
+  {
+   "text": "Verglichen mit der Voruntersuchung (12.03.2022) unverändert.",
+   "datum": "2024-06-05",
+   "soll": "Verglichen mit 05.06.2024 unverändert."
+  },
+  {
+   "text": "Im Vergleich zur Voruntersuchung von 2022 unverändert.",
+   "datum": "2024-06-05",
+   "soll": "Verglichen mit 05.06.2024 unverändert."
+  },
+  {
+   "text": "Im Vergleich zur auswärtigen Voruntersuchung vom März 2022 zeigt sich ein unveränderter Befund.",
+   "datum": "2024-06-05",
+   "soll": "Verglichen mit 05.06.2024 zeigt sich ein unveränderter Befund."
+  },
+  {
+   "text": "Verglichen mit 12.03.2022 und 01.02.2020 beidseits unverändert.",
+   "datum": "2024-06-05",
+   "soll": "Verglichen mit 05.06.2024 beidseits unverändert."
+  },
+  {
+   "text": "Verglichen mit den Voraufnahmen aus dem Jahr 2021 beidseits unverändert.",
+   "datum": "2024-06-05",
+   "soll": "Verglichen mit 05.06.2024 beidseits unverändert."
+  },
+  {
+   "text": "Verglichen zur Voruntersuchung vom 12.03.2022 unverändert beidseits fettreiche Mammae.",
+   "datum": "2024-06-05",
+   "soll": "Verglichen zur Voruntersuchung vom 05.06.2024 unverändert beidseits fettreiche Mammae."
   }
  ],
  "werte": [

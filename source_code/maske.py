@@ -210,7 +210,8 @@ def _syn_muster(s):
         if not t:
             continue
         out.append(r"\s*/\s*" if "/" in t else (r"\s+" if t.isspace() else re.escape(t)))
-    return "".join(out)
+    # 3.15.3 (Ordi-Probelauf M3: „Inspektion u. Palpation:“): „und“ zwischen zwei Wörtern auch als „u.“, „&“, „+“
+    return "".join(out).replace(r"\s+und\s+", r"(?:\s+und\s+|\s*(?:u\.|&|\+)\s*)")
 
 
 def _label_muster(maske_def):
@@ -333,6 +334,18 @@ _VERGLEICH_DATUM = re.compile(r"^(?P<praefix>(?:Verglichen|Im\s+Vergleich)\s+(?:
                               r"(?:Vor\w*\s+)?(?:vom\s+)?)(?P<datum>" + _DATUM + r")", re.I)
 _VERGLEICH_OHNE = re.compile(r"^(?:Verglichen|Im\s+Vergleich)\s+(?:mit|zu|zur)\s+(?:(?:der|den|dem)\s+)?Vor\w+\b", re.I)
 _PLATZHALTER = re.compile(r"^(?:Verglichen|Im\s+Vergleich)\s+(?:mit|zu|zur)\s+(?:\.{3,}|…+)\s*(?:unverändert\s+)?", re.I)
+# 3.15.3 (Ordi-Probelauf M3): alte Datumsangaben, die nicht direkt hinter „vom“ stehen — „(12.03.2022)“, „von 2022“,
+# „vom März 2022“, „aus dem Jahr 2021“, „12.03.2022 und 01.02.2020“. Sonst bliebe das alte Datum neben dem neuen stehen.
+_MONAT = (r"(?:Jänner|Januar|Feber|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|"
+          r"(?:Jan|Feb|Mär|Apr|Jun|Jul|Aug|Sept?|Okt|Nov|Dez)\.)")
+_DATUM_ALT = (r"(?:\d{1,2}\.\s?\d{1,2}\.\s?\d{2,4}|\d{1,2}/\d{2,4}|(?:\d{1,2}\.\s?)?" + _MONAT + r"\s+\d{4}|"
+              r"(?:19|20)\d{2})(?!\d)")
+_VERGLEICH_KOPF = re.compile(
+    r"^(?:Verglichen|Im\s+Vergleich)\s+(?:mit|zu|zur)\s+"
+    r"(?:(?:der|den|dem|des|die|letzten|letzte|vorangegangenen|vorhergehenden|vorigen|auswärtigen|externen|alten|"
+    r"früheren)\s+)*(?:(?:Vor\w*|Mammo[gG]ra(?:ph|f)ie\w*|Untersuchung\w*|Aufnahme\w*|Befund\w*)\s*)?"
+    r"(?:(?:vom|von|aus(?:\s+dem\s+Jahre?)?|im(?:\s+Jahre?)?|am)\s+)?"
+    r"\(?\s*" + _DATUM_ALT + r"(?:\s*(?:und|,|bzw\.?|sowie)\s*" + _DATUM_ALT + r")*(?:\s*\))?", re.I)
 
 
 def ist_unveraendert(text, maske_def):
@@ -346,7 +359,8 @@ def vergleich(text, datum, maske_def):
     1. beginnt mit „Verglichen mit <Datum> …“ → nur das Datum ersetzt; 2. „Verglichen mit der Voruntersuchung …“ (ohne
     Datum) → „Verglichen mit <Datum> …“; 3. „Kein/Keine …“ → „Verglichen mit <Datum> weiterhin keine …“; 4. beginnt mit
     einem Eigenschaftswort aus masken.json → „Verglichen mit <Datum> unverändert <klein> …“; 5. sonst
-    „Verglichen mit <Datum> unverändert. <Text>“."""
+    „Verglichen mit <Datum> unverändert. <Text>“. 3.15.3: Steht die alte Angabe anders im Kopf („Voruntersuchung
+    (12.03.2022)“, „von 2022“, „vom März 2022“, zwei Daten), wird der ganze Kopf „Verglichen mit <Datum>“ — nie zwei Daten."""
     t = " ".join(str(text or "").split())
     d = datum_kurz(datum)
     if not t:
@@ -354,6 +368,10 @@ def vergleich(text, datum, maske_def):
     if not d:
         return satz(t)
     m = _VERGLEICH_DATUM.match(t)
+    k = _VERGLEICH_KOPF.match(t)
+    if k and (not m or k.end() > m.end()):           # 3.15.3: alte Angabe weiter hinten → der ganze Kopf wird neu
+        rest = t[k.end():].lstrip()
+        return satz(f"Verglichen mit {d}" + ("" if not rest or rest[0] in ".,;:" else " ") + rest)
     if m:
         praefix = m.group("praefix")
         if re.search(r"\bvom\s+$", praefix, re.I) is None and re.search(r"\bVor\w+\s+$", praefix, re.I):
