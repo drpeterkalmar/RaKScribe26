@@ -40,6 +40,7 @@ import cas_vorlagen as _cv  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis für d
 import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke — nach der KI wörtlich einsetzen
 import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
 import maske as _mk  # v3.15.0: Mammo-Maske — Felder per SpeechMike-Taste, Vorbefund schon eingetragen (ohne KI)
+import audiodatei as _ad  # v3.16.0: „Audio laden“ + WAV-Modus (Audio-Datei statt Mikrofon, echtes STT + Gemini)
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -117,17 +118,24 @@ _read_text_robust = _keys.read_text_robust
 USER_KEY_DIR, USER_KEY_PATH = _keys.user_key_paths()
 
 
+def _schluessel_benutzerpfad():
+    """v3.16.0: im WAV-Modus darf --schluessel auf eine vorhandene rakscribe-praxis-key.json zeigen (nur gelesen, nie
+    kopiert oder gelöscht); sonst der per Menü geladene Schlüssel in %APPDATA%\\RaKScribe wie bisher."""
+    extra = os.environ.get("RAKSCRIBE_WAV_SCHLUESSEL") if wav_modus() else None
+    return extra if extra else USER_KEY_PATH
+
+
 def _praxis_key_path():
-    return _keys.praxis_key_path(BASE_DIR, USER_KEY_PATH)
+    return _keys.praxis_key_path(BASE_DIR, _schluessel_benutzerpfad())
 
 
 def _load_praxis_key():
     """(gemini_key, stt_dict) aus rakscribe-praxis-key.json (keys.py)."""
-    return _keys.load_praxis_key(BASE_DIR, USER_KEY_PATH, log=print)
+    return _keys.load_praxis_key(BASE_DIR, _schluessel_benutzerpfad(), log=print)
 
 
 def _load_vertex_key():
-    return _keys.load_vertex_key(BASE_DIR, USER_KEY_PATH, log=print)
+    return _keys.load_vertex_key(BASE_DIR, _schluessel_benutzerpfad(), log=print)
 
 
 speech_client = None
@@ -677,7 +685,8 @@ def _selbsttest_attrappen():
                 elif n == 6:
                     yield antwort("Kniegelenk rechts in 2 Ebenen", True)
 
-    sd = types.SimpleNamespace(InputStream=Strom, default=getattr(sd, "default", None))
+    if _WAV is None:   # v3.16.0: im WAV-Modus bleibt die WavQuelle das Mikrofon (nur Google/KI sind Attrappen)
+        sd = types.SimpleNamespace(InputStream=Strom, default=getattr(sd, "default", None))
     speech = types.SimpleNamespace(StreamingRecognizeRequest=lambda audio_content: audio_content)
     speech_client = Client()
     def _chirp_attrappe(pcm, sr, loc, token):  # v3.15.0: Fall M gibt je Feld-Abschnitt einen Text vor (Phase chirp#…)
@@ -692,7 +701,82 @@ def gast_selbsttest():
     """v3.15.0 (Ordi-Probelauf am Büro-PC): Selbsttest als „Gast“ neben einer laufenden RaKScribe — eigener Mutex, kein
     SpeechMike-Gerät (Tasten nur über den Selbsttest), keine globalen F9/F10, kein Autostart-Abgleich, nichts im
     Vordergrund erzwingen. Nur mit RAKSCRIBE_SELFTEST UND RAKSCRIBE_SELFTEST_GAST=1; im Praxisbetrieb wirkungslos."""
-    return bool(os.environ.get("RAKSCRIBE_SELFTEST")) and os.environ.get("RAKSCRIBE_SELFTEST_GAST") == "1"
+    # v3.16.0: der WAV-Modus läuft immer als Gast
+    return bool(os.environ.get("RAKSCRIBE_SELFTEST")) and (os.environ.get("RAKSCRIBE_SELFTEST_GAST") == "1"
+                                                           or bool(os.environ.get("RAKSCRIBE_WAV_ABLAUF")))
+
+
+def types_ns(**k):
+    import types
+    return types.SimpleNamespace(**k)
+
+
+def wav_modus():
+    """v3.16.0: WAV-Modus (rakscribe26.exe --wav-ablauf <ablauf.json>): Audio-Dateien statt Mikrofon, Tasten aus dem
+    Ablaufskript, echtes Google-STT + Gemini. Nur zusammen mit dem Selbsttest-Gerüst (RAKSCRIBE_SELFTEST) — immer Gast."""
+    return bool(os.environ.get("RAKSCRIBE_WAV_ABLAUF")) and bool(os.environ.get("RAKSCRIBE_SELFTEST"))
+
+
+_WAV = None            # v3.16.0: audiodatei.WavQuelle im WAV-Modus (statt sounddevice)
+_WAV_FEHLER = "aus"    # v3.16.0: simulierter Ausfall im WAV-Modus: "stt" | "ki" | "aus"
+_WAV_DIALOGE = []      # v3.16.0: Dialoge, die der WAV-Modus statt anzuzeigen nur protokolliert
+
+
+def _streaming(reqs):
+    """Google-Streaming (Live-Anzeige) — v3.16.0: im WAV-Modus kann der Ablauf einen Netzausfall simulieren."""
+    if _WAV_FEHLER == "stt":
+        raise ConnectionError("WAV-Modus: simulierter Netzausfall (Spracherkennung)")
+    return speech_client.streaming_recognize(requests=reqs, config=STREAMING_CONFIG)
+
+
+class _StilleDialoge:
+    """v3.16.0: im WAV-Modus (unbeaufsichtigt) keine modalen Dialoge — nur Protokoll + Selbsttest-JSON."""
+    def _merken(self, art, titel="", text="", **_k):
+        _WAV_DIALOGE.append(f"{art}: {titel}: {text}"[:300])
+        log(f"[WAV] Dialog ({art}) unterdrückt: {titel}: {str(text)[:200]!r}")
+
+    def showinfo(self, titel="", text="", **k):
+        self._merken("info", titel, text)
+
+    def showwarning(self, titel="", text="", **k):
+        self._merken("warnung", titel, text)
+
+    def showerror(self, titel="", text="", **k):
+        self._merken("fehler", titel, text)
+
+    def askyesno(self, titel="", text="", **k):
+        self._merken("frage", titel, text)
+        return False
+
+
+def _wav_modus_einrichten():
+    """v3.16.0: Mikrofon → WavQuelle (Echtzeit-Blöcke), Dialoge still, Ausfall-Schalter um chirp_3 und die KI.
+    Google-Streaming, chirp_3 und Gemini bleiben die echten Aufrufe."""
+    global sd, _WAV, messagebox, _chirp3_worker, _llm_aufruf
+    if _WAV is not None:
+        return _WAV
+    _WAV = _ad.WavQuelle(log=log)
+    sd = _WAV
+    messagebox = _StilleDialoge()
+    chirp_echt, llm_echt, korr_echt = _chirp3_worker, _llm_aufruf, _korr.korrigieren
+
+    def chirp(*a, **k):
+        if _WAV_FEHLER == "stt":
+            raise ConnectionError("WAV-Modus: simulierter Netzausfall (chirp_3)")
+        return chirp_echt(*a, **k)
+
+    def llm(p):
+        if _WAV_FEHLER == "ki":
+            raise ConnectionError("WAV-Modus: simulierter Ausfall der KI (Gemini)")
+        return llm_echt(p)
+
+    def korr(*a, **k):
+        if _WAV_FEHLER == "ki":
+            raise ConnectionError("WAV-Modus: simulierter Ausfall der KI (Korrektur)")
+        return korr_echt(*a, **k)
+    _chirp3_worker, _llm_aufruf, _korr.korrigieren = chirp, llm, korr
+    log("[WAV] WAV-Modus: Audio-Dateien statt Mikrofon, Tasten aus dem Ablaufskript, echtes STT + Gemini, Gast.")
+    return _WAV
 
 
 def keys_ready():
@@ -1123,6 +1207,12 @@ class RaKScribeApp(ctk.CTk):
         self.level_container.pack(side="right", pady=19)
         self.level_indicator = ctk.CTkFrame(self.level_container, width=0, height=6, fg_color=READY_GREEN, corner_radius=3)
         self.level_indicator.place(x=0, y=0)
+        # v3.16.0 (Peter 15.10.): Audio-Datei statt Aufnahme (wav/mp3/m4a/ogg/opus, auch Telegram-Sprachnachrichten)
+        self.audio_btn = ctk.CTkButton(left_head, text="♪  Audio laden", width=118, height=28, font=(UI_FONT, 12),
+                                       fg_color="transparent", hover_color=BGC_ELEV, border_width=1,
+                                       border_color=BORDER_STRONG, text_color=TEXT_PRIMARY, corner_radius=8,
+                                       command=self.audio_laden)
+        self.audio_btn.pack(side="left", padx=(12, 0))
         # v3.8.0: nach einer SpeechMike-Pause ist das bisher Diktierte repariert (chirp_3 + Fehlhör-Liste)
         self.repariert_label = ctk.CTkLabel(left_head, text="", font=(UI_FONT, 11, "bold"), text_color=READY_GREEN)
         self.repariert_label.pack(side="right", padx=(0, 12))
@@ -1354,6 +1444,11 @@ class RaKScribeApp(ctk.CTk):
                     "aufnahme_offen": getattr(self, "_aufnahme", None) is not None,
                     "pid": os.getpid(),
                     "time": time.strftime("%H:%M:%S"),
+                    # v3.16.0: WAV-Modus (Ablauf je Schritt mit Zeiten, eingespielte Sekunden, unterdrückte Dialoge)
+                    "wav_modus": wav_modus(),
+                    "wav_ablauf": self._wav_stand(),
+                    "dialoge": list(_WAV_DIALOGE),
+                    "audio_datei": getattr(self, "_audio_datei_info", None),
                 }
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=1)
@@ -1378,6 +1473,128 @@ class RaKScribeApp(ctk.CTk):
 
         self.after(1200, lambda: (dump("start"), demo()))
         # Testskript legt <state>.trigger mit Phasen-Namen an → Zustand erneut festhalten
+        def phase_ausfuehren(phase):
+            """Eine Selbsttest-Phase ausführen (aus <state>.trigger bzw. v3.16.0 aus dem WAV-Ablauf).
+            True = RaKScribe wurde geschlossen."""
+            if phase == "simulate_processing":
+                # Fall D (Umbau Schritt 4): „Befund wird erstellt" ohne Aufnahme — danach drückt der Test F10/F9
+                self._job.simuliere_verarbeitung()
+                self.update_status("PROCESSING", "busy")
+                self.record_btn.configure(state="disabled", text=" Verarbeite... (Selbsttest) ")
+            if phase in ("taste_f10", "taste_f9"):
+                # gleicher Handler wie der F10/F9-Hotkey; Zustand erst nach dessen Ausführung festhalten
+                self._hotkeys[phase[-3:].lstrip("_")]()
+                self.after(800, lambda p=phase: dump(p))
+            elif phase.startswith("sm_"):
+                # v3.8.0: SpeechMike-Taste wie vom Gerät (Bericht → Dekodierer → derselbe Handler), z. B. sm_RECORD#1
+                self._selbsttest_taste(phase[3:].split("#")[0])
+                self.after(1500, lambda p=phase: dump(p))
+            elif phase == "befund_aendern":
+                self.result_text.insert("end", "\nVon Hand ergänzt.")
+                dump(phase)
+            elif phase.startswith("chirp#"):
+                # v3.15.0 (FAKEAUDIO): nächste Erkennungen der Attrappe, je Abschnitt eine („A|B|C“)
+                _SELBSTTEST_CHIRP[:] = phase[6:].split("|")
+                dump(phase)
+            elif phase.startswith(("maske_klick#", "maske_knopf#", "maske_tippen#", "maske_markieren#")):
+                art, _, rest = phase.partition("#")
+                nr, _, text = rest.partition("|")
+                i = int(nr.split("#")[0])
+                if art == "maske_klick":
+                    self._maske_klick(i)
+                elif art == "maske_knopf":
+                    self._maske_knopf(i)
+                elif art == "maske_markieren":
+                    # v3.15.4: Feld i fokussieren und von|bis markieren (wie mit der Maus), z. B. maske_markieren#0|0|7
+                    von, _, bis = text.partition("|")
+                    self._st_ziel = True
+                    self._maske_ui.markieren(i, int(von or 0), int(bis or von or 0))
+                else:
+                    self._maske_getippt(i, text)
+                self.after(800, lambda p=phase: dump(p))
+            elif phase.startswith(("befund_markieren#", "befund_fokus_weg")):
+                # v3.15.4: Cursor/Markierung im Befund rechts (wie mit der Maus), z. B. befund_markieren#12|20;
+                # befund_fokus_weg = Fokus ins Diktat-Feld links (kein Ziel)
+                tb = self.result_text._textbox
+                if phase.startswith("befund_markieren#"):
+                    von, _, bis = phase.split("#")[1].partition("|")
+                    von, bis = int(von or 0), int(bis or von or 0)
+                    self._st_ziel = True
+                    tb.focus_set()
+                    tb.tag_remove("sel", "1.0", "end")
+                    if bis > von:
+                        tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
+                    tb.mark_set("insert", f"1.0+{bis}c")
+                else:
+                    self._st_ziel = False
+                    tb.tag_remove("sel", "1.0", "end")
+                    self.transcript_text._textbox.focus_set()
+                dump(phase)
+            elif phase.startswith("diktat_setzen#"):
+                # v3.15.4: bisheriges Diktat links (wie nach einem früheren Diktat) — ohne INS
+                self.transcript_text.delete("1.0", "end")
+                self.transcript_text.insert("1.0", phase.partition("#")[2])
+                dump(phase)
+            elif phase.startswith(("nur_text_an", "nur_text_aus")):
+                self.nur_text_var.set(phase.startswith("nur_text_an"))   # wie der Schalter „Nur Text“
+                self._nur_text_umgeschaltet()
+                dump(phase)
+            elif phase.startswith("geraet#"):
+                # v3.15.4: erkanntes SpeechMike-Modell vorgeben (ambient | premium | keins | auto)
+                art = phase.split("#")[1]
+                self._st_modell = {"ambient": {"name": "SpeechMike Ambient (PSM5000)", "tasten": _sm.AMBIENT_TASTEN},
+                                   "premium": {"name": "SpeechMike Premium (Selbsttest)", "tasten": None},
+                                   "keins": {}}.get(art)
+                self._maske_anzeigen()
+                dump(phase)
+            elif phase.startswith("kb_"):
+                # v3.15.4: F3/F4 auf der Tastatur (derselbe Handler wie bind_all), z. B. kb_F3#1
+                self._maske_tastatur_aktion({"F3": "uebernehmen", "F4": "maske_umschalten"}[phase[3:].split("#")[0]])
+                self.after(800, lambda p=phase: dump(p))
+            elif phase.startswith("cas_"):
+                # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
+                aktion = {"cas_testbefund": self.cas_testbefund, "cas_eol": self.befund_fertig,
+                          "cas_ins": self.sm_ins, "cas_abbrechen": self.cas_abbrechen,
+                          "cas_ibl_einfuegen": self.ibl_einfuegen,                 # v3.13.0 Knopf
+                          "cas_vorbefund": self._vorbefund_zeigen}.get(phase.split("#")[0])   # v3.14.0
+                if aktion:
+                    aktion()
+                self.after(1500, lambda p=phase: dump(p))
+            elif phase.startswith("kopfzeile#"):
+                # v3.12.0: Kopfzeile bei Fensterbreite <n> mit „SpeechMike verbunden“ und langem Status
+                breite = int(phase.split("#", 1)[1])
+                self.state("normal")
+                self.geometry(f"{breite}x760")
+                self._speechmike_status("Selbsttest")
+                self.update_status("KONTROLLE", "ready")
+                self.after(1200, lambda p=phase: dump(p))
+            elif phase.startswith("text_ins#"):
+                # v3.12.0: getippter Text → INS (wie SpeechMike-INS aus dem Diktat-Feld), z. B. mit CAS-Leistungen
+                text = phase.partition("|")[2]
+                self.transcript_text.delete("1.0", "end")
+                self.transcript_text.insert("1.0", text)
+                self.befund_aus_text(kontrolle=True)
+                self.after(2500, lambda p=phase: dump(p))
+            elif phase.startswith(("autostart_an", "autostart_aus")):
+                # v3.11.0: derselbe Handler wie der Menü-Haken „Mit Windows starten (wartet minimiert)“
+                self.autostart_var.set(phase.startswith("autostart_an"))
+                self._autostart_umschalten()
+                self.after(800, lambda p=phase: dump(p))
+            elif phase.startswith("minimieren"):
+                self.iconify()
+                self.after(800, lambda p=phase: dump(p))
+            elif phase.startswith("audio_laden#"):
+                # v3.16.0: Knopf „Audio laden“ mit dieser Datei (ohne Dateidialog): audio_laden#<Pfad>
+                self.audio_laden(phase.partition("#")[2])
+                self.after(1500, lambda p=phase: dump(p))
+            elif phase == "ende":  # v3.13.0: Selbsttest beendet sich selbst (wie Fenster schließen)
+                dump(phase)
+                self._schliessen()
+                return True
+            else:
+                dump(phase)
+            return False
+
         def poll_trigger():
             trig = path + ".trigger"
             if os.path.exists(trig):
@@ -1385,123 +1602,15 @@ class RaKScribeApp(ctk.CTk):
                     with open(trig, "r", encoding="utf-8") as f:
                         phase = f.read().strip() or "trigger"
                     os.remove(trig)
-                    if phase == "simulate_processing":
-                        # Fall D (Umbau Schritt 4): „Befund wird erstellt" ohne Aufnahme — danach drückt der Test F10/F9
-                        self._job.simuliere_verarbeitung()
-                        self.update_status("PROCESSING", "busy")
-                        self.record_btn.configure(state="disabled", text=" Verarbeite... (Selbsttest) ")
-                    if phase in ("taste_f10", "taste_f9"):
-                        # gleicher Handler wie der F10/F9-Hotkey; Zustand erst nach dessen Ausführung festhalten
-                        self._hotkeys[phase[-3:].lstrip("_")]()
-                        self.after(800, lambda p=phase: dump(p))
-                    elif phase.startswith("sm_"):
-                        # v3.8.0: SpeechMike-Taste wie vom Gerät (Bericht → Dekodierer → derselbe Handler), z. B. sm_RECORD#1
-                        self._selbsttest_taste(phase[3:].split("#")[0])
-                        self.after(1500, lambda p=phase: dump(p))
-                    elif phase == "befund_aendern":
-                        self.result_text.insert("end", "\nVon Hand ergänzt.")
-                        dump(phase)
-                    elif phase.startswith("chirp#"):
-                        # v3.15.0 (FAKEAUDIO): nächste Erkennungen der Attrappe, je Abschnitt eine („A|B|C“)
-                        _SELBSTTEST_CHIRP[:] = phase[6:].split("|")
-                        dump(phase)
-                    elif phase.startswith(("maske_klick#", "maske_knopf#", "maske_tippen#", "maske_markieren#")):
-                        art, _, rest = phase.partition("#")
-                        nr, _, text = rest.partition("|")
-                        i = int(nr.split("#")[0])
-                        if art == "maske_klick":
-                            self._maske_klick(i)
-                        elif art == "maske_knopf":
-                            self._maske_knopf(i)
-                        elif art == "maske_markieren":
-                            # v3.15.4: Feld i fokussieren und von|bis markieren (wie mit der Maus), z. B. maske_markieren#0|0|7
-                            von, _, bis = text.partition("|")
-                            self._st_ziel = True
-                            self._maske_ui.markieren(i, int(von or 0), int(bis or von or 0))
-                        else:
-                            self._maske_getippt(i, text)
-                        self.after(800, lambda p=phase: dump(p))
-                    elif phase.startswith(("befund_markieren#", "befund_fokus_weg")):
-                        # v3.15.4: Cursor/Markierung im Befund rechts (wie mit der Maus), z. B. befund_markieren#12|20;
-                        # befund_fokus_weg = Fokus ins Diktat-Feld links (kein Ziel)
-                        tb = self.result_text._textbox
-                        if phase.startswith("befund_markieren#"):
-                            von, _, bis = phase.split("#")[1].partition("|")
-                            von, bis = int(von or 0), int(bis or von or 0)
-                            self._st_ziel = True
-                            tb.focus_set()
-                            tb.tag_remove("sel", "1.0", "end")
-                            if bis > von:
-                                tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
-                            tb.mark_set("insert", f"1.0+{bis}c")
-                        else:
-                            self._st_ziel = False
-                            tb.tag_remove("sel", "1.0", "end")
-                            self.transcript_text._textbox.focus_set()
-                        dump(phase)
-                    elif phase.startswith("diktat_setzen#"):
-                        # v3.15.4: bisheriges Diktat links (wie nach einem früheren Diktat) — ohne INS
-                        self.transcript_text.delete("1.0", "end")
-                        self.transcript_text.insert("1.0", phase.partition("#")[2])
-                        dump(phase)
-                    elif phase.startswith(("nur_text_an", "nur_text_aus")):
-                        self.nur_text_var.set(phase.startswith("nur_text_an"))   # wie der Schalter „Nur Text“
-                        self._nur_text_umgeschaltet()
-                        dump(phase)
-                    elif phase.startswith("geraet#"):
-                        # v3.15.4: erkanntes SpeechMike-Modell vorgeben (ambient | premium | keins | auto)
-                        art = phase.split("#")[1]
-                        self._st_modell = {"ambient": {"name": "SpeechMike Ambient (PSM5000)", "tasten": _sm.AMBIENT_TASTEN},
-                                           "premium": {"name": "SpeechMike Premium (Selbsttest)", "tasten": None},
-                                           "keins": {}}.get(art)
-                        self._maske_anzeigen()
-                        dump(phase)
-                    elif phase.startswith("kb_"):
-                        # v3.15.4: F3/F4 auf der Tastatur (derselbe Handler wie bind_all), z. B. kb_F3#1
-                        self._maske_tastatur_aktion({"F3": "uebernehmen", "F4": "maske_umschalten"}[phase[3:].split("#")[0]])
-                        self.after(800, lambda p=phase: dump(p))
-                    elif phase.startswith("cas_"):
-                        # v3.10.0: Knöpfe im CAS-Band (cas_testbefund, cas_eol, cas_ins, cas_abbrechen) bzw. nur Zustand
-                        aktion = {"cas_testbefund": self.cas_testbefund, "cas_eol": self.befund_fertig,
-                                  "cas_ins": self.sm_ins, "cas_abbrechen": self.cas_abbrechen,
-                                  "cas_ibl_einfuegen": self.ibl_einfuegen,                 # v3.13.0 Knopf
-                                  "cas_vorbefund": self._vorbefund_zeigen}.get(phase.split("#")[0])   # v3.14.0
-                        if aktion:
-                            aktion()
-                        self.after(1500, lambda p=phase: dump(p))
-                    elif phase.startswith("kopfzeile#"):
-                        # v3.12.0: Kopfzeile bei Fensterbreite <n> mit „SpeechMike verbunden“ und langem Status
-                        breite = int(phase.split("#", 1)[1])
-                        self.state("normal")
-                        self.geometry(f"{breite}x760")
-                        self._speechmike_status("Selbsttest")
-                        self.update_status("KONTROLLE", "ready")
-                        self.after(1200, lambda p=phase: dump(p))
-                    elif phase.startswith("text_ins#"):
-                        # v3.12.0: getippter Text → INS (wie SpeechMike-INS aus dem Diktat-Feld), z. B. mit CAS-Leistungen
-                        text = phase.partition("|")[2]
-                        self.transcript_text.delete("1.0", "end")
-                        self.transcript_text.insert("1.0", text)
-                        self.befund_aus_text(kontrolle=True)
-                        self.after(2500, lambda p=phase: dump(p))
-                    elif phase.startswith(("autostart_an", "autostart_aus")):
-                        # v3.11.0: derselbe Handler wie der Menü-Haken „Mit Windows starten (wartet minimiert)“
-                        self.autostart_var.set(phase.startswith("autostart_an"))
-                        self._autostart_umschalten()
-                        self.after(800, lambda p=phase: dump(p))
-                    elif phase.startswith("minimieren"):
-                        self.iconify()
-                        self.after(800, lambda p=phase: dump(p))
-                    elif phase == "ende":  # v3.13.0: Selbsttest beendet sich selbst (wie Fenster schließen)
-                        dump(phase)
-                        self._schliessen()
+                    if phase_ausfuehren(phase):
                         return
-                    else:
-                        dump(phase)
                 except Exception:
                     pass
             self.after(300, poll_trigger)
         self.after(1500, poll_trigger)
+        if wav_modus():   # v3.16.0: Ablaufskript (Tasten, Audio-Dateien) im eigenen Thread
+            self._st_dump, self._st_phase = dump, phase_ausfuehren
+            self.after(1500, self._wav_ablauf_starten)
         # v3.13.0 (Ordi-Probelauf am Büro-PC: nur Läufe, die von selbst enden): RAKSCRIBE_SELFTEST_ENDE=<Sekunden> →
         # Zustand „ende“ festhalten und RaKScribe schließen wie mit X (offener CAS-Auftrag → „abgebrochen“)
         try:
@@ -1520,6 +1629,144 @@ class RaKScribeApp(ctk.CTk):
         self._st_zeit = getattr(self, "_st_zeit", 1000.0) + 1.0
         smk.einspeisen([0x80, 0, 0, 0, 0, 0, 0, bit & 0xFF, bit >> 8], self._st_zeit)
         smk.einspeisen([0x80, 0, 0, 0, 0, 0, 0, 0, 0], self._st_zeit + 0.1)
+
+    # ── v3.16.0: WAV-Modus (Ablaufskript) und „Audio laden“ ──────────────────────────────────────────────────────────
+    def _wav_stand(self):
+        lf = getattr(self, "_wav_laeufer", None)
+        if lf is None:
+            return None
+        return {"protokoll": list(lf.protokoll), "fehler": lf.fehler, "fertig": lf.fertig,
+                "gespielt_s": round(_WAV.gespielt_s, 1) if _WAV is not None else 0.0, "stt_fehler": _WAV_FEHLER}
+
+    def _im_ui(self, fn, timeout=20.0):
+        """Aus dem Ablauf-Thread: fn im Tk-Thread ausführen und auf das Ergebnis warten (Tk ist nicht threadsicher)."""
+        fertig, erg = threading.Event(), {}
+
+        def lauf():
+            try:
+                erg["wert"] = fn()
+            except Exception as e:
+                erg["fehler"] = e
+            finally:
+                fertig.set()
+        self.after(0, lauf)
+        if not fertig.wait(timeout):
+            raise TimeoutError("Oberfläche antwortet nicht")
+        if "fehler" in erg:
+            raise erg["fehler"]
+        return erg.get("wert")
+
+    def _wav_bedingung(self, name):
+        z = self._job.zustand
+        cas = getattr(self, "_cas", None)
+        return {"cas": cas is not None,
+                "leistungen": cas is not None and cas.leistungen is not None,
+                "kontext": cas is not None and cas.kontext is not None,
+                "maske": bool(self._maske_aktiv()),
+                "aufnahme": z == _js.RECORDING,
+                "bereit": z in (_js.READY, _js.ERROR),
+                "kontrolle": z == _js.READY and bool(getattr(self, "_befund_wartet", False)),
+                "kein_cas": cas is None,
+                "fertig": z not in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)}[name]
+
+    def _wav_fehler_setzen(self, art):
+        global _WAV_FEHLER
+        _WAV_FEHLER = art
+        log(f"[WAV] Ausfall simuliert: {art}")
+
+    def _wav_ablauf_starten(self):
+        """v3.16.0: Ablaufskript laden und im eigenen Thread abarbeiten; am Ende Zustand „ende“ festhalten und schließen."""
+        dump, phase = self._st_dump, self._st_phase
+
+        def ende():
+            def zu():
+                dump("ende")
+                self._schliessen()
+            try:
+                self._im_ui(zu, timeout=30)
+            except Exception:
+                log_exception("[WAV] Schließen")
+        try:
+            ablauf = _ad.ablauf_laden(os.environ["RAKSCRIBE_WAV_ABLAUF"])
+        except _ad.AblaufFehler as e:
+            log(f"[WAV] {e}")
+            self._wav_laeufer = types_ns(protokoll=[], fehler=str(e), fertig=True)
+            threading.Thread(target=ende, daemon=True).start()
+            return
+        quelle = _WAV or _wav_modus_einrichten()
+        self._wav_laeufer = _ad.AblaufLaeufer(ablauf, quelle, {
+            "taste": lambda t: self._im_ui(lambda: self._selbsttest_taste(t)),
+            "trigger": lambda ph: self._im_ui(lambda: phase(ph)),
+            "merke": lambda name: self._im_ui(lambda: dump(name)),
+            "bedingung": lambda name: self._im_ui(lambda: self._wav_bedingung(name)),
+            "fehler": lambda art: self._im_ui(lambda: self._wav_fehler_setzen(art)),
+            "ende": ende}, log=log)
+        log(f"[WAV] Ablauf mit {len(ablauf['schritte'])} Schritten gestartet (max. {ablauf['max_s']:g} s).")
+        threading.Thread(target=self._wav_laeufer.lauf, daemon=True).start()
+
+    def audio_laden(self, pfad=None):
+        """v3.16.0 (Peter 15.10.): Knopf „Audio laden“ — Audio-Datei (wav/mp3/m4a/ogg/opus, Telegram-Sprachnachricht)
+        statt Aufnahme. Gleiche Kette wie nach einer Aufnahme (chirp_3 → Befund), Ergebnis rechts zur Kontrolle (nichts
+        eingefügt); mit CAS-Auftrag schickt EOL Befund + Datei-Audio als <Nr>.wav an die Brücke."""
+        if self._job.vorschau("text") is None:
+            self._kurzhinweis("Audio laden: erst Aufnahme bzw. Verarbeitung abwarten")
+            return
+        if self._maske_aktiv():
+            self._kurzhinweis("Mammo-Maske offen: Audio laden geht im freien Diktat (F4 bzw. Command)", 6000)
+            return
+        if not keys_ready():
+            self.refresh_key_state()
+            return
+        if not pfad:
+            from tkinter import filedialog
+            pfad = filedialog.askopenfilename(title="Audio-Datei laden (Diktat)", filetypes=_ad.DATEI_TYPEN)
+            if not pfad:
+                return
+        if self._job.ereignis("text") is None:
+            return
+        gen = self._job.gen
+        self._kontroll_gen = gen             # wie SpeechMike-INS: Befund nur anzeigen, EOL schickt ihn weiter
+        self._befund_wartet = self._gesendet = False
+        self._einfuegen_ziel, self._basis, self._abschnitte, self._live = None, "", [], {}
+        self._audio_datei_info = {"name": os.path.basename(pfad), "sekunden": None, "fehler": ""}
+        log(f"[AUDIO] Datei laden: {os.path.splitext(pfad)[1].lower() or '-'}")
+        self.transcript_text.delete("1.0", "end")
+        self.transcript_text.insert("1.0", f"… Audio-Datei wird erkannt: {os.path.basename(pfad)}")
+        self.result_text.delete("1.0", "end")
+        self.update_status("PROCESSING", "busy")
+        self.record_btn.configure(state="disabled", text=" Verarbeite... ")
+        threading.Thread(target=self._audio_datei_verarbeiten, args=(gen, pfad), daemon=True).start()
+
+    def _audio_datei_verarbeiten(self, gen, pfad):
+        try:
+            pcm = _ad.lesen(pfad, self.samplerate)
+        except _ad.AudioFehler as e:
+            self._audio_datei_info["fehler"] = str(e)
+            log(f"[AUDIO] {e}")
+            self._ui(gen, lambda: self.transcript_text.delete("1.0", "end"))
+            self.after(0, lambda m=str(e): self._ende_fehler(gen, m, "Audio-Datei"))
+            return
+        self._audio_datei_info["sekunden"] = round(len(pcm) / float(self.samplerate), 1)
+        log(f"[AUDIO] Datei geladen: {len(pcm) / float(self.samplerate):.1f} s")
+        if getattr(self, "_cas", None) is not None:
+            self._cas_aufnahmen = [_ad.DateiAufnahme(pcm)]   # EOL legt dieses Audio als <Nr>.wav ab
+        chirp_text = None
+        try:
+            token = _get_stt_access_token()
+            chirp_text = _chirp3_worker(pcm, self.samplerate, 'eu', token) if token else None
+        except Exception:
+            log_exception("[AUDIO] chirp_3 fehlgeschlagen")
+        if not self._job.aktuell(gen):
+            log("[AUDIO] Lauf abgebrochen — Ergebnis verworfen.")
+            return
+        if not (chirp_text and chirp_text.strip()):
+            self._ui(gen, lambda: self.transcript_text.delete("1.0", "end"))
+            self.after(0, lambda: self._ende_kein_text(gen))
+            return
+        self.final_transcript = self._neuer_text = chirp_text.strip()
+        text = self.final_transcript
+        self._ui(gen, lambda: (self.transcript_text.delete("1.0", "end"), self.transcript_text.insert("1.0", text)))
+        self.process_dictation(gen)
 
     # ── v3.0: Befund-Formatierung (## versteckt, Überschriften fett) — Text bleibt Markdown für Kopieren ──
     def _setup_report_formatting(self):
@@ -1592,6 +1839,7 @@ class RaKScribeApp(ctk.CTk):
         m.add_checkbutton(label="Mammo-Maske bei Mammographie (CAS)", variable=self.maske_var,  # v3.15.0
                           command=self._maske_umgeschaltet)
         m.add_separator()
+        m.add_command(label="Audio-Datei laden… (statt Aufnahme)", command=self.audio_laden)   # v3.16.0
         m.add_command(label="Prompt bearbeiten…", command=self.toggle_prompt_view)
         m.add_command(label="Web-App öffnen", command=lambda: __import__("webbrowser").open(
             "https://drpeterkalmar.github.io/RaKScribe26/"))
@@ -1804,7 +2052,7 @@ class RaKScribeApp(ctk.CTk):
         """Mikrofon (Capture-Thread) und Live-Anzeige (Streaming-Thread) getrennt starten (Gutachten P1-4)."""
         a = _af.Aufnahme(
             sd, self.samplerate, self.selected_device_index,
-            streaming=lambda reqs: speech_client.streaming_recognize(requests=reqs, config=STREAMING_CONFIG),
+            streaming=_streaming,                               # v3.16.0: eine Stelle (WAV-Modus: Ausfall)
             request_bauen=lambda b: speech.StreamingRecognizeRequest(audio_content=b),
             on_level=lambda rms: self.after(0, self.update_level_bar, rms),
             on_stream_fehler=lambda e: self._live_anzeige_fehler(gen, e),
@@ -2213,12 +2461,12 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
 
-    def _ende_fehler(self, gen, msg):
+    def _ende_fehler(self, gen, msg, titel="Generierungs-Fehler"):
         """Läuft im UI-Thread: Befund gescheitert → Status Fehler, Knopf wieder frei, ggf. Dialog."""
         if self._job.ereignis("report_failed", gen) is None:
             return
         if msg:
-            messagebox.showerror("Generierungs-Fehler", msg)
+            messagebox.showerror(titel, msg)
         self.update_status("ERROR", "busy")
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
@@ -2229,6 +2477,9 @@ class RaKScribeApp(ctk.CTk):
         md_text = self.result_text.get("1.0", "end-1c").strip()
         if not md_text:
             return False
+        if wav_modus():   # v3.16.0: die Zwischenablage gehört dem Menschen am PC
+            log("[WAV] Zwischenablage nicht angefasst.")
+            return True
         ok = _cb.clipboard_set(md_text, cb=win32clipboard, md_to_html=markdown.markdown, log=log)
         if ok:
             self.update_status("COPIED", "ready")
@@ -2282,6 +2533,9 @@ class RaKScribeApp(ctk.CTk):
 
     def _strg_v(self):
         """Die EINZIGE Stelle, die Strg+V sendet — Aufrufer haben vorher nachweislich erfolgreich kopiert."""
+        if wav_modus():   # v3.16.0: nie Tasten an fremde Fenster
+            log("[WAV] Strg+V unterdrückt.")
+            return
         keyboard.press_and_release('ctrl+v')
         self._einfuege_zaehler = getattr(self, "_einfuege_zaehler", 0) + 1
 
@@ -2411,6 +2665,10 @@ class RaKScribeApp(ctk.CTk):
         v3.10.0: Mit offenem CAS-Auftrag geht der Befund als Datei an die RaKScribe-Brücke (kein Strg+V)."""
         if getattr(self, "_cas", None) is not None:
             return self._cas_senden()
+        if wav_modus():   # v3.16.0: unbeaufsichtigt nie in ein fremdes Fenster einfügen
+            log("[WAV] EOL ohne CAS-Auftrag – nichts weitergeschickt.")
+            self._kurzhinweis("WAV-Modus: EOL nur mit CAS-Auftrag")
+            return
         text = self.result_text.get("1.0", "end-1c").strip()
         if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
             self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
@@ -3936,10 +4194,30 @@ def init_runtime():
         log_exception("[INIT] phrases.json nicht ladbar")
 
 
+def _wav_argumente(argv):
+    """v3.16.0: Kommandozeile des WAV-Modus → Umgebung des Selbsttest-Gerüsts (immer als Gast)."""
+    def wert(name):
+        if name in argv:
+            i = argv.index(name)
+            return argv[i + 1] if i + 1 < len(argv) else ""
+        return None
+    ablauf = wert("--wav-ablauf")
+    if not ablauf:
+        return
+    ablauf = os.path.abspath(ablauf)
+    os.environ["RAKSCRIBE_WAV_ABLAUF"] = ablauf
+    os.environ["RAKSCRIBE_SELFTEST"] = os.path.abspath(wert("--zustand") or os.environ.get("RAKSCRIBE_SELFTEST")
+                                                       or os.path.splitext(ablauf)[0] + ".zustand.json")
+    os.environ["RAKSCRIBE_SELFTEST_GAST"] = "1"
+    if wert("--schluessel"):
+        os.environ["RAKSCRIBE_WAV_SCHLUESSEL"] = os.path.abspath(wert("--schluessel"))
+
+
 def main():
     # v3.11.0: nur EINE RaKScribe je Windows-Sitzung (zwei würden um denselben CAS-Auftrag konkurrieren). Ein zweiter
     # Start holt die laufende nach vorne; der Autostart-Starter (--minimiert) endet dann still.
     minimiert = _bs.minimiert_gewuenscht(sys.argv[1:])
+    _wav_argumente(sys.argv[1:])   # v3.16.0: --wav-ablauf <ablauf.json> [--schluessel <key.json>] [--zustand <json>]
     # v3.15.0: der Gast-Selbsttest (Ordi-Probelauf) hat einen eigenen Mutex — eine laufende RaKScribe bleibt unberührt
     erste = (_bs.einzelinstanz_sichern(_bs.MUTEX + f"-Gast-{os.getpid()}") if gast_selbsttest()
              else _bs.einzelinstanz_sichern())
@@ -3953,6 +4231,8 @@ def main():
             log_exception("[START] Zweiter Start")
         return
     init_runtime()
+    if wav_modus():
+        _wav_modus_einrichten()
     ctk.set_appearance_mode("dark")
     app = RaKScribeApp(minimiert=minimiert)
     if minimiert:

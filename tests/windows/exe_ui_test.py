@@ -24,6 +24,10 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
      INS „Fuß links unauffällig.“ → Messwerte wörtlich im Befund, Diagnose nicht ins unauffällige Ergebnis (Hinweis),
      neue Fassung nach dem Befund → v3.14.0: automatisch sichtbar eingefügt (alte Fassung ersetzt, Hinweis)
   H  v3.13.0: Selbsttest mit RAKSCRIBE_SELFTEST_ENDE endet von selbst (für den Ordi-Probelauf am Büro-PC)
+  E  v3.16.0: Knopf „Audio laden“ (Phase audio_laden#<Pfad>) mit ogg/opus (Telegram) und mp3 → soundfile im Bündel,
+     Befund zur Kontrolle; m4a ohne Decoder → Meldung
+  W  v3.16.0 WAV-Modus: rakscribe26.exe --wav-ablauf <json> (Attrappen für Google, Mikrofon = WavQuelle): Record →
+     ogg einspielen → INS → Befund → endet von selbst (Exit 0), Ablauf-Protokoll ok, keine Dialoge offen
   G  v3.11.0 Bereitschaft: Start mit --minimiert → nur Taskleisten-Symbol, nicht vorne; Leerlauf (CPU/Speicher, psutil);
      zweiter Start → keine zweite Instanz, laufende nach vorne (mit --minimiert: still); CAS-Auftrag → vorne, Annahme
      < 1 s → EOL → wieder minimiert; Menü-Haken Autostart → Verknüpfung im echten Autostart-Ordner → wscript → Starter;
@@ -40,6 +44,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 EXE = pathlib.Path(sys.argv[1]).resolve()
 OUT = pathlib.Path(sys.argv[2]).resolve(); OUT.mkdir(parents=True, exist_ok=True)
 TAG = sys.argv[3] if len(sys.argv) > 3 else "?"
+AUDIO = pathlib.Path(__file__).resolve().parents[1] / "offline" / "audio"   # v3.16.0: ton_440.ogg / .mp3
 results = []
 
 
@@ -170,6 +175,12 @@ def fall_e(state):
     ph("sm_RECORD#5")
     e["f1"] = ph("sm_F1#1")
     e["play"] = ph("sm_PLAY#1")
+    # v3.16.0: Knopf „Audio laden“ (gleicher Handler) mit Telegram-ogg/opus und mp3 aus dem Repo (Sinuston, kein Diktat)
+    for art in ("ogg", "mp3"):
+        e[f"audio_{art}"] = ph("audio_laden#" + str(AUDIO / f"ton_440.{art}"), 0.5)
+        time.sleep(3)
+        e[f"audio_{art}_fertig"] = ph(f"audio_{art}_fertig")
+        ph(f"sm_F1#{art}")
     return e
 
 
@@ -925,6 +936,12 @@ ce("F2 → Nur Text aus", g("f2_aus", "nur_text") is False)
 ce("F1 → Neu: Aufnahme verworfen, bereit, LED aus", g("f1", "job_zustand") == "READY" and g("f1", "transcript") == ""
    and g("f1", "led") == "aus")
 ce("Play → nichts (nur Protokoll)", g("play", "job_zustand") == "READY")
+for _art in ("ogg", "mp3"):   # v3.16.0 Knopf „Audio laden“
+    _ad = g(f"audio_{_art}_fertig", "audio_datei") or {}
+    ce(f"Audio laden {_art} (soundfile im Bündel): ≈ 1,5 s gelesen, Befund rechts zur Kontrolle, nichts eingefügt",
+       not _ad.get("fehler") and 1.3 <= (_ad.get("sekunden") or 0) <= 1.7 and str(g(f"audio_{_art}_fertig", "result", "")).startswith("## Kniegelenk")
+       and g(f"audio_{_art}_fertig", "status") == "KONTROLLE",
+       f"{_ad} / {g(f'audio_{_art}_fertig', 'status')}")
 
 # F (v3.10.0): CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "source_code"))
@@ -1215,6 +1232,62 @@ H = fall_h()
 check("H_ende", "RAKSCRIBE_SELFTEST_ENDE=12: Selbsttest endet von selbst (Zustand „ende“, Exit 0, minimiert gestartet)",
       H.get("rc") == 0 and bool(H.get("ende")) and H["ende"].get("minimiert_gestartet") is True
       and 12 <= (H.get("s") or 0) <= 90, f"Exit {H.get('rc')} nach {H.get('s')} s, Titel {H['ende'].get('title')!r}")
+
+
+
+# W (v3.16.0): WAV-Modus der echten EXE — Kommandozeile, WavQuelle statt Mikrofon, Ablaufskript, endet von selbst
+def fall_w():
+    work = pathlib.Path(tempfile.mkdtemp(prefix="rks_W_"))
+    shutil.copy(EXE, work / EXE.name)
+    appdata = work / "appdata"
+    (appdata / "RaKScribe").mkdir(parents=True)
+    key = work / "schluessel" / "rakscribe-praxis-key.json"
+    key.parent.mkdir()
+    key.write_text(json.dumps(dummy_key()), encoding="utf-8")
+    shutil.copy(AUDIO / "ton_440.ogg", work / "diktat.ogg")
+    ablauf = work / "ablauf.json"
+    ablauf.write_text(json.dumps({"max_s": 120, "schritte": [
+        {"taste": "RECORD"}, {"sprich": "diktat.ogg"}, {"taste": "INS"},
+        {"warte_auf": "kontrolle", "timeout_s": 60}, {"merke": "nach_ins"}, {"taste": "EOL"}, {"merke": "nach_eol"},
+        {"ende": True}]}), encoding="utf-8")
+    env = dict(os.environ, APPDATA=str(appdata), LOCALAPPDATA=str(work / "localappdata"), RAKSCRIBE_SELFTEST_FAKEAUDIO="1")
+    env.pop("RAKSCRIBE_SELFTEST", None)
+    t = time.time()
+    p = subprocess.Popen([str(work / EXE.name), "--wav-ablauf", str(ablauf), "--schluessel", str(key)], cwd=work, env=env)
+    try:
+        rc = p.wait(timeout=180)
+    except subprocess.TimeoutExpired:
+        kill_all(p)
+        rc = "hängt"
+    try:
+        z = json.loads((work / "ablauf.zustand.json").read_text(encoding="utf-8"))
+    except Exception:
+        z = {}
+    return {"rc": rc, "s": round(time.time() - t, 1), "z": z}
+
+
+W = fall_w()
+WZ = W.get("z") or {}
+wa = (WZ.get("ende") or {}).get("wav_ablauf") or {}
+
+
+def cw(name, ok_, detail=""):
+    check("W_wavmodus", name, ok_, detail)
+
+
+cw("--wav-ablauf: endet von selbst (Exit 0), Zustand neben dem Ablauf (ablauf.zustand.json), Gast, Schlüssel per --schluessel",
+   W.get("rc") == 0 and bool(WZ.get("ende")) and (WZ.get("ende") or {}).get("wav_modus") is True
+   and (WZ.get("ende") or {}).get("keys_ready") is True, f"Exit {W.get('rc')} nach {W.get('s')} s")
+cw("Ablauf: alle 7 Schritte ok (Record, ogg einspielen, INS, Kontrolle, merken, EOL, merken), Zeiten je Schritt",
+   not wa.get("fehler") and len(wa.get("protokoll") or []) == 7 and all(x.get("ok") for x in wa.get("protokoll") or []),
+   json.dumps(wa.get("protokoll"), ensure_ascii=False)[:300] + " " + str(wa.get("fehler")))
+cw("WavQuelle spielte die Datei (≈ 1,5 s) in Echtzeit-Blöcken ein", 1.3 <= (wa.get("gespielt_s") or 0) <= 1.7,
+   str(wa.get("gespielt_s")))
+cw("INS → Befund zur Kontrolle; EOL ohne CAS-Auftrag fügt nichts ein (kein Strg+V, Zwischenablage unberührt)",
+   (WZ.get("nach_ins") or {}).get("status") == "KONTROLLE"
+   and str((WZ.get("nach_ins") or {}).get("result", "")).startswith("## Kniegelenk")
+   and (WZ.get("nach_eol") or {}).get("einfuegungen") == 0,
+   f"{(WZ.get('nach_ins') or {}).get('status')} / {(WZ.get('nach_eol') or {}).get('einfuegungen')}")
 
 ok = all(r["ok"] for r in results) and a and c and e_lauf and m_lauf
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf,

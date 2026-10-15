@@ -1050,7 +1050,7 @@ def normal_zerlegung(bausteine, maske_def):
 def anzeige_zustand(f, datum=""):
     """Kurztext rechts am Feld (Chip)."""
     if not f.sichtbar:
-        return "eingeklappt – keine Sono-Leistung" if f.nur_mit_sono else "eingeklappt"
+        return "optional (keine Sono-Leistung in CAS)" if f.nur_mit_sono else "eingeklappt"
     if f.quelle == GETIPPT and not f.text.strip():
         return "gelöscht – kommt nicht in den Befund"
     return {VORBEFUND: f"Vorbefund {datum}".strip(), VORLAGE: "Normalbaustein (Vorschlag)", UEBERNOMMEN: "✓ übernommen",

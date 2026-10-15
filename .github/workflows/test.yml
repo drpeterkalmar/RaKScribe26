@@ -32,7 +32,7 @@ jobs:
         working-directory: web_app
         run: npm ci
       - name: Python-Abhängigkeiten (EXE-Ablauftest, Workflow-Prüfung)
-        run: pip install numpy pyyaml
+        run: pip install numpy pyyaml soundfile
 
       - name: Regeln (PY + TS)
         run: python tests/offline/befund_regeln_test.py
@@ -52,6 +52,8 @@ jobs:
         run: python tests/offline/test_jobstate.py
       - name: EXE-Aufnahme getrennt von der Live-Anzeige
         run: python tests/offline/test_capture.py
+      - name: EXE Audio laden + WAV-Modus (Audio-Datei statt Mikrofon)
+        run: python tests/offline/test_audiodatei.py
       - name: EXE-Konfiguration (config.ini)
         run: python tests/offline/test_config.py
       - name: EXE-Schlüssel (Praxis-Schlüssel, Token-Cache)

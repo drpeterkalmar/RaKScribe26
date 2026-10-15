@@ -204,7 +204,9 @@ ausgewertet und dürfen gelöscht werden.
 
 Hat ein CAS-Diktat eine **Mammographie-Leistung** (Screening oder kurativ), zeigt RaKScribe links statt des Diktat-Felds
 die **Mammo-Maske** mit vier Feldern: **Inspektion und Palpation · Mammographie · Sonographie · Ergebnis** (mit ACR und
-BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder Klick „＋ zuschalten“ holt sie dazu).
+BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt und als „optional (keine Sono-Leistung in CAS)“
+markiert (ab v3.16.0): Vor-/Rückspulen hält dort, ein Diktat oder Klick „＋ zuschalten“ holt sie dazu (die Sono wird bei
+Screenings oft trotzdem gemacht), leer bleibt sie ohne Abschnitt und ohne Warnung.
 
 | Taste | SpeechMike III / Premium | SpeechMike Ambient (ab v3.15.4) | Tastatur |
 |---|---|---|---|
@@ -258,6 +260,34 @@ BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt (Diktat oder 
   (weiter) → INS setzt das Diktat an diese Stelle (wie seit v3.5.0 beim Start; bisher wurde die Stelle in der Pause nicht
   gelesen und INS baute einen neuen Befund bzw. ersetzte ihn bei „Nur Text“). Gilt auch im CAS-Band.
 - **Häkchen im ☰-Menü weiß** statt schwarz auf dunkelblau; Schalter „Nur Text“ mit hellem Knopf und Rahmen.
+
+## 🎧 Audio laden und WAV-Modus (EXE, ab v3.16.0)
+
+- **Knopf „♪ Audio laden“** (Kopf des Diktat-Felds, auch im ☰-Menü): eine Audio-Datei statt einer Aufnahme — wav, mp3,
+  ogg/opus (auch Telegram-Sprachnachrichten), flac. Die Datei läuft durch dieselbe Kette wie eine Aufnahme (chirp_3 →
+  Fehlhör-Liste → Befund), der Befund steht rechts **zur Kontrolle** (nichts wird eingefügt); mit CAS-Auftrag schickt
+  EOL Befund + Datei-Audio wie gewohnt an die Brücke. m4a/AAC öffnet die Desktop-App nicht (Meldung) — dafür die Web-App
+  oder die Datei als mp3/ogg speichern. Wie der Upload der Web-App.
+- **WAV-Modus für automatische Ende-zu-Ende-Tests:** `rakscribe26.exe --wav-ablauf ablauf.json [--schluessel key.json]
+  [--zustand zustand.json]`. Statt des Mikrofons spielt RaKScribe Audio-Dateien in Echtzeit-Blöcken (100 ms) ein, sonst
+  Stille; Google-Streaming, chirp_3 und Gemini sind **echt**. Die SpeechMike-Tasten drückt das Ablaufskript über
+  denselben Dekodierer wie das Gerät; am Ende schließt sich RaKScribe selbst (offener CAS-Auftrag → „abgebrochen“).
+  Läuft immer als Gast neben einer laufenden RaKScribe: eigener Mutex, kein SpeechMike-Gerät, keine globalen Tasten,
+  kein Autostart, Zwischenablage/Strg+V/Dialoge bleiben unberührt (Dialoge stehen nur im Protokoll). Der Zustand
+  (Befund, Maske, Ablauf-Protokoll mit Zeiten je Schritt) steht in `<ablauf>.zustand.json`.
+
+  ```json
+  {"max_s": 600, "schritte": [
+    {"warte_auf": "cas", "timeout_s": 180}, {"warte_auf": "leistungen", "timeout_s": 30},
+    {"taste": "RECORD"}, {"sprich": "diktat.wav"}, {"taste": "INS"},
+    {"warte_auf": "kontrolle", "timeout_s": 180}, {"merke": "nach_ins"},
+    {"taste": "EOL"}, {"warte_auf": "kein_cas", "timeout_s": 30}, {"ende": true}]}
+  ```
+  Schritte: `taste` (RECORD, STOP, PLAY, FF, REW, EOL, INS, COMMAND, F1–F4, INSTR), `sprich` (Datei relativ zum Skript,
+  wartet, bis sie gespielt ist), `warte_s`, `warte_auf` (cas, leistungen, kontext, maske, aufnahme, bereit, kontrolle,
+  kein_cas, fertig; Zeitgrenze → Abbruch), `trigger` (Selbsttest-Phase, z. B. `maske_markieren#0|0|7`, `geraet#ambient`),
+  `merke` (Zustand festhalten), `fehler` (`stt` | `ki` | `aus` = Netz-/KI-Ausfall simulieren), `ende`.
+  Tests: `tests/offline/test_audiodatei.py`, Windows-UI-Test Fall E (Audio laden ogg/mp3) und Fall W (WAV-Modus).
 
 ## 🦴 Umschriebene Skelettbefunde ohne Widerspruch (EXE + Web, ab v3.15.5)
 

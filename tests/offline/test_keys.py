@@ -94,7 +94,8 @@ cache.leeren()
 check("leeren() verwirft das Token (Schlüsselwechsel)", cache.token is None and cache.exp == 0)
 
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("EXE nutzt keys.py", "_keys.load_praxis_key(BASE_DIR, USER_KEY_PATH" in src and "_keys.SttTokenCache()" in src
+check("EXE nutzt keys.py", "_keys.load_praxis_key(BASE_DIR, _schluessel_benutzerpfad()" in src
+      and "return extra if extra else USER_KEY_PATH" in src and "_keys.SttTokenCache()" in src
       and "creds.expiry.timestamp()" not in src)
 
 # v3.15.4 (Ordi-Protokoll 15.10.: „invalid_scope“ bei jeder chirp_3-Volltranskription): Credentials MIT Scope
