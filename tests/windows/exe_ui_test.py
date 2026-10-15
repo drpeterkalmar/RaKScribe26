@@ -393,6 +393,7 @@ def fall_m(state, work, hwnd=None):
     m["abbrechen"] = ph("cas_abbrechen#m2")
     # v3.15.4 (Peter 15.10.): SpeechMike Ambient ohne F1–F4 (Play/Command), Markieren + Drüberdiktieren, Tippen in der
     # Pause, F3/F4 auf der Tastatur — derselbe Weg wie Gerät/Tastatur (Dekodierer bzw. bind_all-Handler)
+    ph("taste_f9")   # Befund des abgebrochenen Auftrags weg (sonst bleibt die Maske „bereit“, nicht gezeigt — wie 3.15.1)
     auftrag("20261015013", "uitestm3")
     leistungen("uitestm3", "20261015013", [L_MAMS, L_MAMMASONO])
     kontext("uitestm3", "20261015013", MAMMO_VB)
@@ -468,10 +469,19 @@ def menu_foto(zustand, hwnd):
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         time.sleep(1.5)
-        links, oben = max(0, x - 260), y + h
-        img = ImageGrab.grab(bbox=(links, oben, links + 620, oben + 720), all_screens=True)
-        img.save(OUT / "O_menu_haekchen.png")
-        spalte = img.convert("L").crop((10, 0, 40, img.size[1]))      # Häkchen-Spalte des Menüs (links)
+        breite = win32api.GetSystemMetrics(0)
+        oben = y + h
+        img = ImageGrab.grab(bbox=(0, oben, breite, oben + 760), all_screens=True).convert("RGB")
+        px = img.load()
+        # linke Kante des Menüs = Spalte mit langem hellem Rahmen (Windows zeichnet ihn (240, 240, 240))
+        x0 = next((xx for xx in range(img.size[0]) if sum(1 for yy in range(img.size[1])
+                                                          if px[xx, yy] == (240, 240, 240)) >= 250), None)
+        out["menu_links"] = x0
+        if x0 is None:
+            img.save(OUT / "O_menu_haekchen.png")
+            return out
+        img.crop((x0, 0, min(img.size[0], x0 + 560), img.size[1])).save(OUT / "O_menu_haekchen.png")
+        spalte = img.convert("L").crop((x0 + 2, 0, x0 + 20, img.size[1]))   # Häkchen-Spalte (vor den Beschriftungen)
         out["helle_pixel_haekchen_spalte"] = sum(1 for v in spalte.getdata() if v > 200)
         out["ok"] = True
     except Exception as e:
