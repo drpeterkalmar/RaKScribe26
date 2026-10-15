@@ -719,6 +719,20 @@ class MaskePanel:
         self.felder_rahmen.pack(fill="both", expand=True, padx=8, pady=(4, 6))
         self.zeilen, self._inhalt, self._maske_id = [], {}, None
         self.sichtbar = False
+        self.rahmen.bind("<Configure>", self._breite)
+
+    def _breite(self, e):
+        """Hilfe/Warnung/Kopf umbrechen nach der Breite des Diktat-Bereichs (nicht nach festen 560 px)."""
+        try:
+            skal = max(1.0, float(self.hilfe._get_widget_scaling()))
+        except Exception:
+            skal = 1.0
+        w = max(280, int((e.width - 36) / skal))
+        for lbl in (self.kopf, self.hilfe, self.warnung):
+            try:
+                lbl.configure(wraplength=w)
+            except Exception:
+                pass
 
     def aufbauen(self, m):
         for z in self.zeilen:
@@ -782,7 +796,7 @@ class MaskePanel:
         for i, (f, z) in enumerate(zip(m.felder, self.zeilen)):
             aktiv = i == m.aktiv
             z["rahmen"].configure(border_color=ACCENT_PURPLE if aktiv else BORDER_COLOR, border_width=2 if aktiv else 1)
-            z["label"].configure(text=("▶  " if aktiv else "") + f.label,
+            z["label"].configure(text=("●  " if aktiv else "") + f.label,
                                  text_color=ACCENT_PURPLE if aktiv else TEXT_PRIMARY)
             lt = (live.get(i) or "").strip()
             chip = _mk.anzeige_zustand(f, m.datum)
@@ -1668,7 +1682,7 @@ class RaKScribeApp(ctk.CTk):
             self._maske.neu()
             self._maske_lauf, self._maske_abschnitte, self._maske_offen_k = False, {}, None
             self._maske_warnung_version = self._maske_befund_version = None
-            self._maske_warnung = self._maske.werte_abweichung()
+            self._maske_warnung, self._maske_ins_warnung = self._maske.werte_abweichung(), False
             log("[MASKE] Neu: alle Felder wieder Vorschlag")
         if getattr(self, "_cas", None) is not None:
             self._ibl_band_zeigen()
@@ -3081,7 +3095,7 @@ class RaKScribeApp(ctk.CTk):
         self._maske, self._maske_an, self._maske_lauf = None, False, False
         self._maske_abschnitte, self._maske_offen_k = {}, None
         self._maske_warnung_version = self._maske_befund_version = None
-        self._maske_warnung, self._maske_f3_zuletzt = "", None
+        self._maske_warnung, self._maske_f3_zuletzt, self._maske_ins_warnung = "", None, False
         ui = getattr(self, "_maske_ui", None)
         if ui is not None:
             try:
@@ -3190,7 +3204,7 @@ class RaKScribeApp(ctk.CTk):
     def _maske_hilfe(self):
         m = self._maske
         return (f"Feld {m.aktiv + 1}/{len(m.felder)}: {m.feld.label}   ·   Record diktiert ins Feld   ·   "
-                + _mk.tasten_text(MASKE_TASTEN) + "   ·   INS = Befund")
+                + _mk.tasten_kurz(MASKE_TASTEN) + "   ·   INS = Befund")
 
     def _maske_anzeigen(self):
         if not self._maske_aktiv():
@@ -3201,9 +3215,17 @@ class RaKScribeApp(ctk.CTk):
         try:
             gesperrt = self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)
             ui.aktualisieren(self._maske, live=self._maske_live(), kopf=self._maske_kopf(), hilfe=self._maske_hilfe(),
-                             warnung=self._maske_warnung, gesperrt=gesperrt)
+                             warnung=self._maske_warnung_text(), gesperrt=gesperrt)
         except Exception:
             log_exception("[MASKE] Anzeige")
+
+    def _maske_warnung_text(self):
+        """Warnung nach INS (nur die NOCH offenen Felder — weg, sobald keins mehr offen ist) + Hinweis zum Vorbefund."""
+        teile = []
+        if getattr(self, "_maske_ins_warnung", False) and self._maske is not None:
+            teile.append(_mk.offene_meldung(self._maske))
+        teile.append(getattr(self, "_maske_warnung", "") or "")
+        return "\n".join(t for t in teile if t)
 
     # Tasten ──────────────────────────────────────────────────────────────────────────────────────────────────────────
     def _maske_taste(self, taste):
@@ -3414,7 +3436,7 @@ class RaKScribeApp(ctk.CTk):
     def _maske_warnen(self):
         m = self._maske
         self._maske_warnung_version = m.version
-        self._maske_warnung = _mk.offene_meldung(m)
+        self._maske_ins_warnung = True
         erstes = m.offene()[0] if m.offene() else None
         if erstes is not None:
             m.gehe_zu(m.felder.index(erstes))
@@ -3466,7 +3488,7 @@ class RaKScribeApp(ctk.CTk):
             self.record_btn.configure(state="disabled", text=" Verarbeite... ")
         self.result_text.delete("1.0", "end")
         self.update_status("PROCESSING", "busy")
-        self._maske_warnung = ""
+        self._maske_ins_warnung = False
         log(f"[MASKE] INS: Befund aus {m.zustand()}" + (" (ohne offene Vorschläge, bestätigt)" if offen else ""))
         threading.Thread(target=self._maske_bauen, args=(gen, bool(offen), m.version), daemon=True).start()
         self._maske_anzeigen()
@@ -3532,7 +3554,7 @@ class RaKScribeApp(ctk.CTk):
                 "art": m.art, "seite": m.seite, "sono": m.sono, "vorbefund": (m.vorbefund or {}).get("nr"),
                 "datum": m.datum, "erkannt": m.zerlegung.anzahl, "feld": m.feld.id, "aktiv": m.aktiv,
                 "version": m.version, "befund_version": self._maske_befund_version, "zustand": m.zustand(),
-                "warnung": self._maske_warnung, "tasten": _mk.tasten_text(MASKE_TASTEN),
+                "warnung": self._maske_warnung_text(), "tasten": _mk.tasten_text(MASKE_TASTEN),
                 "kopf": str(ui.kopf.cget("text")) if ui is not None else "",
                 "titel_links": str(self.diktat_titel.cget("text")) if getattr(self, "diktat_titel", None) else "",
                 "abschnitte_offen": len(self._maske_abschnitte or {}),

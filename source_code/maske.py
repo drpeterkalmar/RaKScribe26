@@ -75,6 +75,22 @@ def tasten_text(belegung):
     return " · ".join(f"{TASTEN_NAME.get(t, t)} = {namen[a]}" for t, a in reihe)
 
 
+def tasten_kurz(belegung):
+    """Kurzfassung für die Hilfezeile der Maske, z. B. „Vorspulen/Rückspulen = Feld · F3 = übernehmen · F4 = Maske aus“."""
+    def namen(aktion):
+        return [TASTEN_NAME.get(t, t) for t, a in sorted(belegung.items()) if a == aktion]
+    vor, zur = namen("naechstes_feld"), namen("voriges_feld")
+    teile = []
+    if len(vor) == 1 and len(zur) == 1:
+        teile.append(f"{vor[0]}/{zur[0]} = Feld")
+    else:
+        teile += [f"{'/'.join(vor)} = nächstes Feld"] if vor else []
+        teile += [f"{'/'.join(zur)} = voriges Feld"] if zur else []
+    teile += [f"{'/'.join(namen('uebernehmen'))} = übernehmen"] if namen("uebernehmen") else []
+    teile += [f"{'/'.join(namen('maske_umschalten'))} = Maske aus"] if namen("maske_umschalten") else []
+    return " · ".join(teile)
+
+
 TASTEN_NAME = {"FF": "Vorspulen", "REW": "Rückspulen", "F3": "F3", "F4": "F4", "INSTR": "INSTR", "COMMAND": "Command",
                "PLAY": "Play"}
 

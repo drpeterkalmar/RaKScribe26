@@ -256,6 +256,8 @@ check("Standard: Vorspulen = nächstes Feld, Rückspulen = voriges, F3 = überne
       bel == {"FF": "naechstes_feld", "REW": "voriges_feld", "F3": "uebernehmen", "F4": "maske_umschalten"}, repr(bel))
 check("Text für Protokoll/Hilfezeile", M.tasten_text(bel) == "Vorspulen = nächstes Feld · Rückspulen = voriges Feld · "
       "F3 = Vorbefund übernehmen · F4 = Maske aus/an", M.tasten_text(bel))
+check("Kurzfassung für die Hilfezeile der Maske", M.tasten_kurz(bel) == "Vorspulen/Rückspulen = Feld · F3 = übernehmen · "
+      "F4 = Maske aus", M.tasten_kurz(bel))
 log = []
 bel2 = M.tasten_belegung(DEF_ALL, {"naechstes_feld": "FF INSTR", "voriges_feld": "INS", "quatsch": "F4"}, log=log.append)
 check("config.ini: zusätzliche Taste (INSTR) geht, eingeübte (INS) nie, unbekannte Aktion ignoriert",

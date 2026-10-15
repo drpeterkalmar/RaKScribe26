@@ -191,7 +191,7 @@ check("Screening, Sono-Leistung da → 4 Felder, alle mit Vorbefund-Vorschlag vo
 check("Kopf: Screening · mit Sono · Vorbefund 05.06.2024 (Nr) – 4 von 4 Feldern", "Screening" in app._maske_ui.letzt["kopf"]
       and "Vorbefund 05.06.2024 (20241012001) – 4 von 4 Feldern erkannt" in app._maske_ui.letzt["kopf"], app._maske_ui.letzt)
 check("Hilfezeile: aktives Feld + Tasten", app._maske_ui.letzt["hilfe"].startswith("Feld 1/4: Inspektion und Palpation")
-      and "Vorspulen = nächstes Feld" in app._maske_ui.letzt["hilfe"], app._maske_ui.letzt["hilfe"])
+      and "Vorspulen/Rückspulen = Feld · F3 = übernehmen" in app._maske_ui.letzt["hilfe"], app._maske_ui.letzt["hilfe"])
 taste("FF")
 check("Vorspulen → Feld 2 (Mammographie)", m.aktiv == 1 and "Feld 2/4: Mammographie" in app._maske_ui.letzt["hilfe"])
 taste("REW")
@@ -202,10 +202,12 @@ check("Bild↓/Bild↑ (Fern-Test) springen ebenso", m.aktiv == 0)
 app.sm_ins()
 S.pump(app, lambda: False, 0.2)
 check("INS mit 4 offenen Vorschlägen → kein Befund, Warnung nennt sie, bereit", app.result_text.text == ""
-      and "Noch nicht übernommen: Inspektion und Palpation (Vorbefund)" in app._maske_warnung
-      and app._job.zustand == "READY", app._maske_warnung)
+      and "Noch nicht übernommen: Inspektion und Palpation (Vorbefund)" in app._maske_warnung_text()
+      and app._job.zustand == "READY", app._maske_warnung_text())
 taste("F3")
 check("F3 → Inspektion übernommen", m.felder[0].quelle == "uebernommen" and m.felder[0].text == "Unauffällig.")
+check("Warnung zeigt nur noch die offenen Felder (Inspektion erledigt)", "Inspektion" not in app._maske_warnung_text()
+      and "Mammographie (Vorbefund)" in app._maske_warnung_text(), app._maske_warnung_text())
 taste("FF")
 CHIRP[:] = ["unverändert", "keine suspekten Herde", "unverändert ACR 2 BIRADS 2"]
 app.sm_record()
@@ -290,7 +292,7 @@ check("Maske nach INS geändert → EOL schickt nicht (Hinweis)", antwort("m2").
       and "Maske seit dem Befund geändert" in app._letzter_hinweis, antwort("m2"))
 app.sm_ins()
 S.pump(app, lambda: False, 0.2)
-check("INS → Warnung (Sonographie offen)", "Sonographie (Vorbefund)" in app._maske_warnung, app._maske_warnung)
+check("INS → Warnung (Sonographie offen)", "Sonographie (Vorbefund)" in app._maske_warnung_text(), app._maske_warnung_text())
 app.sm_ins()
 ruhe()
 check("zweites INS ohne Änderung → Befund ohne Sonographie + Hinweis im Band",
