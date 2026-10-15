@@ -263,7 +263,8 @@ try:
                 # v3.15.5: diktierte umschriebene Befunde → <widersprueche> an der Stelle {examples} (wie ohne CAS)
                 alt.append(pl.gen_prompt(seg_ohne, T[key], PROMPT, "", pl.br.widerspruch_prompt(
                     pl.br.widerspruch_befunde(seg_ohne), T[key]["body"])))
-        ok = ok and alt == neu and e1.cas_hinweise == [] and e1.vorlagen == [] and not any("cas_untersuchungen" in p for p in neu)
+        ok = (ok and sorted(alt) == sorted(neu)       # Regionen laufen parallel → Reihenfolge der KI-Aufrufe nicht fest
+              and e1.cas_hinweise == [] and e1.vorlagen == [] and not any("cas_untersuchungen" in p for p in neu))
     check("ohne CAS-Datei: Prompts bit-gleich mit dem bisherigen Weg, keine CAS-Funktion aufgerufen", ok)
 finally:
     for name, f in gesperrt.items():

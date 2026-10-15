@@ -262,8 +262,10 @@ erg = pl.befund_aus_diktat("Fuß rechts: Hallux valgus. LWS: Osteochondrose L4/5
                                    cv.CasHinweis([L("x-fuss", "Fuß rechts", "Röntgen", "fuß_in_2_ebenen", "rechts"),
                                                   L("x-lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen")], T)))
 fuss, lws = abschnitt_von(erg.report, "Fuß"), abschnitt_von(erg.report, "Lendenwirbel")
+# Regionen laufen parallel (pipeline.befund_aus_diktat) → Reihenfolge der KI-Aufrufe ist nicht fest
 check("Pipeline: <ibl_messwerte> nur im Prompt des Fuß-Abschnitts, nicht der LWS",
-      len(prompts) == 2 and ["<ibl_messwerte>" in p for p in prompts] == [True, False], str(len(prompts)))
+      len(prompts) == 2 and sorted(("LWS" in p.split("<diktat>\n", 1)[1].split("\n</diktat>")[0], "<ibl_messwerte>" in p)
+                                   for p in prompts) == [(False, True), (True, False)], str(len(prompts)))
 check("… Messwerte + neue Diagnose im Fuß-Befund, nichts in der LWS, Hinweis in erg.ibl, nicht im Befund",
       "Calcaneusneigungswinkel rechts 10,0° (IB Lab FROG)." in fuss and "Pes planus rechts" in fuss
       and "IB Lab" not in lws and erg.ibl is not None and erg.ibl.hinweise and "bitte prüfen" not in erg.report
@@ -292,7 +294,7 @@ try:
             alt, neu = [], []
             e0 = pl.befund_aus_diktat(diktat, kontext(alt))
             e1 = pl.befund_aus_diktat(diktat, kontext(neu, ibl))
-            ok = ok and alt == neu and e0.report == e1.report and e1.ibl is None
+            ok = ok and sorted(alt) == sorted(neu) and e0.report == e1.report and e1.ibl is None   # Regionen parallel
     check("ohne Bausteine (bzw. nur Hinweise): Prompts + Befund bit-gleich, keine IBL-Funktion aufgerufen", ok)
 finally:
     for name, f in gesperrt.items():
