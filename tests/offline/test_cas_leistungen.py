@@ -117,6 +117,22 @@ check("j) zwei CAS-Leistungen in einem Satz → Kombi-Vorlage, kein Hinweis", [x
 segs, w, h = wahlen([FUSSL, LWS], "Unauffällig.")
 check("k) zwei Leistungen, Diktat ohne Region → allgemein + beide „nicht diktiert“", w[0].vorlage == "allgemein"
       and len(h) == 2)
+# v3.16.2 (Ordi-E2E 15.10.): CAS „Sono Abdomen F.“ (usabdf) → weiblich, auch wenn das Diktat kein Geschlecht nennt
+USABDF = L("usabdf", "Sono Abdomen F.", "Sono", "sonografie_abdomen_weiblich")
+USABDM = L("usabdm", "Sono Abdomen M.", "Sono", "sonografie_abdomen_maennlich")
+TH = L("th", "Thorax", "Röntgen", "thorax_in_2_ebenen")
+segs, w, h = wahlen([TH, USABDF], "Thorax p a und seitlich. Herz normal groß. Lunge frei. Ergebnis: Unauffälliger Thorax. "
+                                  "Sonographie des Abdomens. Leber homogen. Gallenblase steinfrei. Ergebnis: Unauffälliger Oberbauch.")
+check("r) CAS Sono Abdomen weiblich, Diktat ohne Geschlecht → weibliche Vorlage (detect allein: männlich)",
+      [x.vorlage for x in w] == ["thorax_in_2_ebenen", "sonografie_abdomen_weiblich"] and w[1].erkannt ==
+      "sonografie_abdomen_maennlich" and h == [], f"{[(x.vorlage, x.art) for x in w]} {h}")
+segs, w, h = wahlen([USABDM], "Sonographie des Abdomens. Leber homogen.")
+check("   … CAS männlich, Diktat ohne Geschlecht → männlich", [x.vorlage for x in w] == ["sonografie_abdomen_maennlich"], str(w))
+segs, w, h = wahlen([USABDF], "Sonographie des Abdomens männlich. Prostata normal groß.")
+check("   … Diktat nennt das Geschlecht selbst → Diktat gewinnt (wie bisher)", [x.vorlage for x in w] ==
+      ["sonografie_abdomen_maennlich"], str(w))
+segs, w, h = wahlen([USABDM], "Sonographie des Abdomens weiblich. Uterus unauffällig.")
+check("   … und umgekehrt (weiblich diktiert, CAS männlich)", [x.vorlage for x in w] == ["sonografie_abdomen_weiblich"], str(w))
 segs, w, h = wahlen([ABD], "Oberbauch: freie Luft unter dem Zwerchfell.")
 check("l) Leistung ohne Vorlage („?“): kein Zwang, kein falscher Hinweis, wenn die Region diktiert ist", h == [], str(h))
 

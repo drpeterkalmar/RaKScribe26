@@ -291,6 +291,15 @@ Screenings oft trotzdem gemacht), leer bleibt sie ohne Abschnitt und ohne Warnun
   `merke` (Zustand festhalten), `fehler` (`stt` | `ki` | `aus` = Netz-/KI-Ausfall simulieren), `ende`.
   Tests: `tests/offline/test_audiodatei.py`, Windows-UI-Test Fall E (Audio laden ogg/mp3) und Fall W (WAV-Modus).
 
+## 🧭 v3.16.2: Geschlecht aus der CAS-Leistung (EXE)
+
+Sono Abdomen gibt es als Vorlage „weiblich“ und „männlich“. Nennt das Diktat kein Geschlecht („Sonographie des
+Abdomens …“), wählte die Erkennung bisher immer „männlich“ — auch wenn die CAS-Leistung „Sono Abdomen F.“ (weiblich) war
+(gefunden im Ende-zu-Ende-Test mit Audio-Datei am 15.10.2026). Jetzt gilt bei gleicher Region und Modalität die
+Vorlage der CAS-Leistung, wenn sich die beiden nur im Geschlecht unterscheiden und das Diktat keines nennt (weiblich,
+männlich, Frau/Mann, Prostata, Uterus, Ovar, Adnex). Nennt das Diktat das Geschlecht, gewinnt wie bisher das Diktat.
+Test: `tests/offline/test_cas_leistungen.py` Fall r).
+
 ## 🦴 Umschriebene Skelettbefunde ohne Widerspruch (EXE + Web, ab v3.15.5)
 
 Peter 15.10.2026: „Fersensporn diktiert, aber ‚Normale Form des Calcaneus …‘ steht noch da.“ Ein umschriebener Befund an

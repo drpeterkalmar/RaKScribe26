@@ -4092,6 +4092,7 @@ class RaKScribeApp(ctk.CTk):
                 "abschnitte_offen": len(self._maske_abschnitte or {}),
                 "felder": [{"id": f.id, "quelle": f.quelle, "sichtbar": f.sichtbar, "wartet": f.wartet,
                             "text": _mk.vorschau(f, m)[:240], "werte": _mk.werte_vorschau(f, m),
+                            "roh": (f.roh or "")[:240],     # v3.16.2: Erkanntes vor der Korrektur (E2E-Fehlersuche)
                             "chip": _mk.anzeige_zustand(f, m.datum)} for f in m.felder]}
 
     # ── v3.11.0: Bereitschaft (Peter 13.10.: „als Symbol in der Taskleiste warten, bis der nächste Befund diktiert

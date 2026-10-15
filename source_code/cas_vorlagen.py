@@ -261,10 +261,22 @@ class CasHinweis:
 
 
 # ── Abgleich Diktat ↔ CAS ───────────────────────────────────────────────────────────────────────────────────────────
+_GESCHLECHT = re.compile(r"_(?:weiblich|maennlich)$")
+_GESCHLECHT_DIKTIERT = re.compile(r"weiblich|männlich|maennlich|\bfrau\b|\bmann\b|prostata|uterus|ovar|adnex", re.I)
+
+
+def _nur_geschlecht_offen(key, cas_vorlage, text):
+    """v3.16.2 (Ordi-E2E 15.10.: CAS „Sono Abdomen F.“ = weiblich, RaKScribe nahm „männlich“): Diktat- und CAS-Vorlage
+    unterscheiden sich nur in der Geschlechts-Endung, und das Diktat nennt kein Geschlecht (detect nimmt dann immer
+    „männlich“) → die CAS-Leistung kennt das Geschlecht, ihre Vorlage gilt."""
+    return (bool(cas_vorlage) and cas_vorlage != key and bool(_GESCHLECHT.search(key or ""))
+            and _GESCHLECHT.sub("", key) == _GESCHLECHT.sub("", cas_vorlage) and not _GESCHLECHT_DIKTIERT.search(text or ""))
+
+
 def abgleich(key, text, cas, templates):
     """Passt die erkannte Vorlage key (Abschnitt text) zu einer CAS-Leistung? → (Leistung, gewählte Vorlage) | (None, None).
     Gleiche Vorlage → sie. Gleiche Region + gleiche Modalität → die des Diktats (genauer, z. B. Knie-TEP statt Knie),
-    außer sie ist eine Sammel-Vorlage. Gleiche Region, andere Modalität → die CAS-Vorlage, wenn das Diktat selbst keine
+    außer sie ist eine Sammel-Vorlage oder unterscheidet sich nur im nicht diktierten Geschlecht (v3.16.2: dann CAS). Gleiche Region, andere Modalität → die CAS-Vorlage, wenn das Diktat selbst keine
     andere Modalität nennt (Diktat „Knie rechts: Baker-Zyste“, CAS „Sono Knie“)."""
     if not key or key.startswith("baustein:"):
         return None, None
@@ -280,6 +292,8 @@ def abgleich(key, text, cas, templates):
         if not (reg & l.regionen):
             continue
         if l.modalitaet is None or mod_k == l.modalitaet:
+            if _nur_geschlecht_offen(key, l.vorlage, text):
+                return l, l.vorlage
             return l, (key if not generisch(key, templates) else (l.vorlage or key))
         if mod_t is None or mod_t == l.modalitaet:
             return l, (l.vorlage or key)
