@@ -338,9 +338,16 @@ def wahl(seg, cas, templates, erkennen):
     """Vorlage für EINEN Diktat-Abschnitt (Rho-Auslöser schon entfernt). erkennen = detect.detect_template(text)."""
     d = erkennen(seg)
     l, v = abgleich(d, seg, cas, templates)
+    s = saetze(seg)
+    if l and l.vorlage and v != l.vorlage and s:
+        # v3.16.5 (Edge-Case-Runde 1 am Büro-PC 17.10., CAS „Hand inkl. Mittelhand li.“, Diktat „Hand in zwei Ebenen …
+        # Arthrose der Fingerendgelenke“ → Titel „Finger …“): nennt der Abschnitt GLEICH AM ANFANG genau die
+        # Untersuchung der CAS-Leistung, gilt deren Vorlage – ein Befundwort weiter hinten („Fingerendgelenke“) macht
+        # daraus keine andere Untersuchung. Eine genauere Untersuchung am Anfang („Knie-TEP rechts …“) bleibt.
+        if erkennen(kopf(s[0][1])) == l.vorlage:
+            return Wahl(l.vorlage, "kopf", l, d)
     if l:
         return Wahl(v, "bestaetigt", l, d)
-    s = saetze(seg)
     if s:
         dk = erkennen(kopf(s[0][1]))
         if dk != d:

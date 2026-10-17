@@ -307,6 +307,11 @@ dazwischen) eine Zahl bis Satzende/BI-RADS, gilt die Zahl („ACR A. 2 Herde“ 
 **v3.16.4 Fehlhör-Liste (EXE + Web):** „involviertes Drüsengewebe/-körper“ → „involutiert…“ (nur direkt vor
 „Drüsen…“, „Lymphknoten nicht involviert“ bleibt) — im selben Test hörte chirp_3 „involviertes“.
 
+**v3.16.5 Vorlage mit CAS-Leistung (EXE):** Nennt ein Diktat-Abschnitt gleich am Anfang genau die Untersuchung der
+CAS-Leistung („Hand in zwei Ebenen …“, CAS „Hand inkl. Mittelhand li.“), gilt deren Vorlage – ein Befundwort weiter
+hinten („Arthrose der Fingerendgelenke“) machte bisher „Finger links in 2 Ebenen“ daraus (Edge-Case-Runde am Büro-PC,
+17.10.2026). Eine genauere Untersuchung am Anfang („Knie-TEP rechts …“) bleibt. Test: `test_cas_leistungen.py`.
+
 ## 🦴 Umschriebene Skelettbefunde ohne Widerspruch (EXE + Web, ab v3.15.5)
 
 Peter 15.10.2026: „Fersensporn diktiert, aber ‚Normale Form des Calcaneus …‘ steht noch da.“ Ein umschriebener Befund an

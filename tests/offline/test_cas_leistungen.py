@@ -167,6 +167,19 @@ segs, w, h = wahlen([HWS, SOSUR], "Schulter rechts: Bursitis subacromialis. HWS:
 check("n) Rückbezug teilt nicht erneut (Reihenfolge wie diktiert)", len(segs) == 2
       and segs[1].startswith("HWS") and "Nochmals zur Schulter" in segs[1], str(segs))
 
+# v3.16.5: Untersuchung am Abschnittsanfang = CAS-Leistung → deren Vorlage (Befundwort weiter hinten zählt nicht)
+HANDL = L("x-hand-li", "Hand inkl.Mittelhand li.", "Röntgen", "hand_in_2_ebenen", "links")
+KNIER = L("x-knie-re", "Kniegelenk rechts", "Röntgen", "kniegelenk_in_2_ebenen", "rechts")
+for leist, diktat, soll, art in (
+        (HANDL, "Hand in zwei Ebenen. Regelrechte Stellung, keine Fraktur. Geringe Arthrose der Fingerendgelenke. "
+                "Ergebnis: Geringe Polyarthrose der Fingerendgelenke.", "hand_in_2_ebenen", "kopf"),
+        (HANDL, "Daumen links in zwei Ebenen. Keine Fraktur.", "finger_in_2_ebenen", "bestaetigt"),
+        (KNIER, "Knie-TEP rechts in zwei Ebenen. Regelrechter Sitz der Prothese.", "knieprothese", "bestaetigt"),
+        (KNIER, "Kniegelenk rechts in zwei Ebenen. Kleine Osteophyten.", "kniegelenk_in_2_ebenen", "bestaetigt")):
+    _, w, _ = wahlen([leist], diktat)
+    check(f"v3.16.5 Anfang des Abschnitts entscheidet: {diktat[:28]}… → {soll}",
+          [x.vorlage for x in w] == [soll] and w[0].art == art, [(x.vorlage, x.art) for x in w])
+
 # ───────────────────────────── Teil 2: Pipeline mit CAS ─────────────────────────────
 PROMPT = (ROOT / "radiology_prompt.txt").read_text(encoding="utf-8")
 
