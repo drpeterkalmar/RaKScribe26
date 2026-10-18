@@ -712,5 +712,208 @@
         "ergebnis": "skleros|hyperostos"
       }
     ]
+  },
+  "kurzsaetze": {
+    "_info": "v3.16.6 (Peter 18.10.2026: „Diktierte Kurzsätze dürfen im Befund nie wegfallen.“): Empfehlungs- und Einschränkungssätze. (1) Vorlagenwahl: ein Empfehlungssatz („Gehaltene Aufnahmen … empfohlen“, „CT Thorax zur weiteren Abklärung“) und eine Einschränkung („die Hüfte ist nicht miterfasst“) lösen KEINE Vorlage und keinen eigenen Regionen-Befund aus — detect_template/detectTemplate und split_regionen/splitRegionen sehen diese Sätze nicht (Satz 1 bleibt, dort nur Teilsätze nach dem ersten Komma). (2) Erhalt nach der KI: fehlt ein diktierter Empfehlungssatz im Befund, kommt er wörtlich als letzter Ergebnis-Punkt dazu; fehlt eine diktierte Einschränkung, kommt sie wörtlich als Befundsatz vor den Weichteil-Satz. „Vorhanden“ = ein Satz des Befunds enthält ≥ 50 % der Inhaltswörter (Wortanfang 5 Zeichen, Synonyme) — bei Einschränkungen zusammen mit einer Verneinung/Einschränkung; ein Empfehlungssatz des Befunds mit einem gemeinsamen Inhaltswort genügt. Interpreter: befund_regeln.ohne_empfehlungen/kurzsaetze_sichern ≡ befundRegeln.ts ohneEmpfehlungen/kurzsaetzeSichern; Fälle: befund_regeln_fixtures.json „kurzsaetze“, vorlagen_vorrang_tests.json. Muster gelten für klein geschriebenen Text.",
+    "version": "2026-10-18",
+    "empfehlung": "(?<![a-zäöüß])(?:empfohlen|empfehle[a-zäöüß]*|empfiehlt|empfehlung[a-zäöüß]*|anempfohlen|angeraten|anzuraten|ratsam|sinnvoll|ggf|gegebenenfalls|indiziert|erforderlich|zu erwägen|erwägenswert|vorgeschlagen|nahegelegt)(?![a-zäöüß])|(?<![a-zäöüß])(?:kontrolle|verlaufskontrolle|röntgenkontrolle|nachkontrolle|kontrollaufnahme[a-zäöüß]*|kontrolluntersuchung|wiedervorstellung)(?![a-zäöüß])[^.]{0,30}(?<![a-zäöüß])(?:in|nach)(?![a-zäöüß])\\s+(?:\\d+|einem|einer|ein|eine|zwei|drei|vier|fünf|sechs|acht|zehn|zwölf)\\s+(?:tag|tagen|woche|wochen|monat|monaten|jahr|jahren)(?![a-zäöüß])|(?<![a-zäöüß])(?:zur\\s+(?:weiteren\\s+)?abklärung|weitere[a-zäöüß]*\\s+abklärung|weiterführende[a-zäöüß]*\\s+(?:diagnostik|abklärung|untersuchung|bildgebung))(?![a-zäöüß])|(?<![a-zäöüß])(?:ergänzend[a-zäöüß]*|zusätzlich[a-zäöüß]*)(?![a-zäöüß])[^.]{0,80}(?<![a-zäöüß])(?:bei|falls|wenn)(?![a-zäöüß])[^.]{0,40}(?:verdacht|persist|anhalt|beschwerde|klinisch|zunahme|progred)|(?<![a-zäöüß])(?:bei|falls|wenn)(?![a-zäöüß])[^.]{0,40}(?:verdacht|persist|anhalt|beschwerde|klinisch|zunahme|progred)[^.]{0,80}(?<![a-zäöüß])(?:ergänzend[a-zäöüß]*|zusätzlich[a-zäöüß]*)(?![a-zäöüß])",
+    "einschraenkung": "(?<![a-zäöüß])(?:nicht|kaum|nur\\s+teilweise|nur\\s+teils|teilweise)\\s+(?:sicher\\s+|ausreichend\\s+|vollständig\\s+|eindeutig\\s+|mehr\\s+|mit\\s+)?(?:abgebildet|miterfasst|mit\\s*erfasst|erfasst|dargestellt|mitdargestellt|mitabgebildet|einsehbar|beurteilbar|beurteilt)(?![a-zäöüß])|(?<![a-zäöüß])(?:nur\\s+)?eingeschränkt\\s+(?:beurteil[a-zäöüß]*|einsehbar|aussagekräftig|verwertbar|darstellbar)(?![a-zäöüß])|(?<![a-zäöüß])(?:eingeschränkte|limitierte|reduzierte)(?![a-zäöüß])\\s+(?:beurteilbarkeit|aussagekraft|bildqualität)(?![a-zäöüß])|(?<![a-zäöüß])vergleich[a-zäöüß]*(?![a-zäöüß])[^.]{0,50}(?<![a-zäöüß])(?:nicht\\s+möglich|nicht\\s+vorliegend|liegt\\s+nicht\\s+vor|liegen\\s+nicht\\s+vor|nicht\\s+vorhanden|fehlt|fehlen|nicht\\s+verfügbar)(?![a-zäöüß])|(?<![a-zäöüß])kein[a-zäöüß]*\\s+(?:vorbefund[a-zäöüß]*|voraufnahme[a-zäöüß]*|vergleich[a-zäöüß]*|voruntersuchung[a-zäöüß]*|vorbilder[a-zäöüß]*)(?![a-zäöüß])|(?<![a-zäöüß])au(?:ß|ss)erhalb\\s+(?:des|der)\\s+(?:bild|aufnahme|untersuchung|abbildung)[a-zäöüß]*|(?<![a-zäöüß])(?:bewegungsartefakt|lagerungsbedingt|verwackel)[a-zäöüß]*",
+    "verneinung": "(?<![a-zäöüß])(?:nicht|kein[a-zäöüß]*|ohne|fehl[a-zäöüß]*|eingeschränkt[a-zäöüß]*|limitiert[a-zäöüß]*|reduziert[a-zäöüß]*|kaum|nur|au(?:ß|ss)erhalb|teilweise)(?![a-zäöüß])",
+    "anteil": 0.5,
+    "stamm": 5,
+    "stoppwoerter": [
+      "abgebildet",
+      "als",
+      "am",
+      "an",
+      "anempfohlen",
+      "angeraten",
+      "anzuraten",
+      "auch",
+      "auf",
+      "aus",
+      "ausreichend",
+      "bei",
+      "beurteilbar",
+      "beurteilt",
+      "bis",
+      "bitte",
+      "bzw",
+      "dargestellt",
+      "das",
+      "dass",
+      "dem",
+      "den",
+      "der",
+      "des",
+      "die",
+      "diese",
+      "dieser",
+      "dieses",
+      "dort",
+      "durch",
+      "eher",
+      "ein",
+      "eindeutig",
+      "eine",
+      "einem",
+      "einen",
+      "einer",
+      "eines",
+      "eingeschraenkt",
+      "einsehbar",
+      "empfehle",
+      "empfehlen",
+      "empfehlenswert",
+      "empfehlung",
+      "empfiehlt",
+      "empfohlen",
+      "erfasst",
+      "erforderlich",
+      "erwaegen",
+      "erwaegenswert",
+      "etc",
+      "evtl",
+      "fehlen",
+      "fehlt",
+      "fuer",
+      "gegebenenfalls",
+      "ggf",
+      "haben",
+      "hat",
+      "hier",
+      "im",
+      "in",
+      "indiziert",
+      "ist",
+      "kaum",
+      "kein",
+      "keine",
+      "keinem",
+      "keinen",
+      "keiner",
+      "keines",
+      "mehr",
+      "mit",
+      "mitabgebildet",
+      "mitdargestellt",
+      "miterfasst",
+      "moeglich",
+      "nach",
+      "nahegelegt",
+      "nicht",
+      "noch",
+      "nur",
+      "oder",
+      "punkt",
+      "ratsam",
+      "sehr",
+      "sich",
+      "sicher",
+      "sind",
+      "sinnvoll",
+      "sowie",
+      "teilweise",
+      "ueber",
+      "und",
+      "unter",
+      "verfuegbar",
+      "vollstaendig",
+      "vom",
+      "von",
+      "vor",
+      "vorgeschlagen",
+      "vorhanden",
+      "vorliegend",
+      "war",
+      "werden",
+      "wie",
+      "wird",
+      "wurde",
+      "wurden",
+      "zu",
+      "zum",
+      "zur"
+    ],
+    "synonyme": {
+      "bws": [
+        "brustw",
+        "thorakal"
+      ],
+      "hws": [
+        "halsw",
+        "zervik",
+        "cervik"
+      ],
+      "lws": [
+        "lende",
+        "lumba"
+      ],
+      "isg": [
+        "ilios",
+        "sakro",
+        "iliosakr"
+      ],
+      "osg": [
+        "sprun"
+      ],
+      "usg": [
+        "sprun"
+      ],
+      "mrt": [
+        "magne",
+        "kerns",
+        "mr"
+      ],
+      "ct": [
+        "compu"
+      ],
+      "sono": [
+        "sonof",
+        "ultra"
+      ],
+      "sonografie": [
+        "sono",
+        "ultra"
+      ],
+      "huefte": [
+        "hueft"
+      ],
+      "hueftgelenk": [
+        "hueft"
+      ],
+      "brustwirbelsaeule": [
+        "bws"
+      ],
+      "halswirbelsaeule": [
+        "hws"
+      ],
+      "lendenwirbelsaeule": [
+        "lws"
+      ],
+      "vorbefund": [
+        "vorau",
+        "vorun",
+        "vorbi",
+        "voruntersuch"
+      ],
+      "voraufnahme": [
+        "vorbe",
+        "vorun"
+      ],
+      "voraufnahmen": [
+        "vorbe",
+        "vorun"
+      ],
+      "vorbefunde": [
+        "vorau",
+        "vorun"
+      ],
+      "mr": [
+        "magne",
+        "kerns",
+        "mrt"
+      ]
+    }
   }
 }

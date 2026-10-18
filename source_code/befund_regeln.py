@@ -196,11 +196,16 @@ def split_regionen(text):
     """Diktat → Liste von Segmenten (je eine Region). Ein-Region-Diktate: [text] unverändert."""
     t = text or ""
     starts = []  # (pos, key)
+    saetze = None
     for m in _REGION_MARKER_RE.finditer(t):
         region = m.group("r1") or m.group("r2")
         seite = m.group("s1") or m.group("s2")
         key = (_gruppe(region), _seite_norm(seite))
         pos = m.end() - len(m.group(1))
+        if saetze is None:
+            saetze = diktat_saetze(t)
+        if _kurz_marker(t, pos, saetze):
+            continue  # v3.16.6: „Fuß rechts in 2 Ebenen empfohlen“ / „Fuß rechts nicht miterfasst“ → keine eigene Region
         if starts and starts[-1][1] == key:
             continue  # gleiche Region + Seite → derselbe Befund
         if any(k == key for _, k in starts):
@@ -839,3 +844,208 @@ def _satz_aus_phrase(phrase, seite=""):
     if seite and not re.search(r"(?<![a-zäöüß])(?:rechts|links|beidseits|beidseitig|bds)(?![a-zäöüß])", t, re.I):
         t = f"{t} {seite}"
     return (t[:1].upper() + t[1:] + ".") if t else ""
+
+
+# ── v3.16.6 Kurzsätze (Peter 18.10.2026: „Diktierte Kurzsätze dürfen im Befund nie wegfallen.“) ─────────────────────
+# Empfehlungs- und Einschränkungssätze, Muster in vorlagen_vorrang.json „kurzsaetze“ (EINE Quelle für EXE + Web).
+# (1) ohne_empfehlungen: Text für die Vorlagenwahl ohne diese Sätze — „Gehaltene Aufnahmen … empfohlen“ löst nicht die
+#     Stress-Vorlage aus (sonst befundet die KI nie gemachte Aufnahmen), „Die Hüfte ist nicht miterfasst“ nicht Becken+Hüfte.
+# (2) kurzsaetze_sichern: fehlt nach der KI ein diktierter Empfehlungs-/Einschränkungssatz, kommt er wörtlich zurück.
+# Sync: web_app/src/befundRegeln.ts (diktatSaetze, ohneEmpfehlungen, kurzsaetzeSichern), Fälle befund_regeln_fixtures.json
+# „kurzsaetze“.
+_KURZ_CACHE = {}
+# Satzgrenzen zusätzlich zu saetze_mit_lage: „;“, gesprochenes „Punkt“ …, „12 mm.“ (mm/cm stehen dort als Abkürzung)
+_KURZ_GRENZE = re.compile(r";|(?<![a-zäöüßA-ZÄÖÜ])(?:[pP]unkt|PUNKT|[nN]eue [zZ]eile|[nN]euzeile|[aA]bsatz)(?![a-zäöüßA-ZÄÖÜ])|(?<=[0-9] mm)\.(?=\s)|(?<=[0-9]mm)\.(?=\s)|(?<=[0-9] cm)\.(?=\s)|(?<=[0-9]cm)\.(?=\s)")
+
+
+def _kurz(daten=None):
+    d = (daten if daten is not None else _vorrang_laden()).get("kurzsaetze") or {}
+    c = _KURZ_CACHE.get(id(d))
+    if c is None:
+        rx = lambda k: re.compile(d[k]) if d.get(k) else None  # noqa: E731
+        c = {"d": d, "empf": rx("empfehlung"), "ein": rx("einschraenkung"), "vern": rx("verneinung"),
+             "stopp": set(d.get("stoppwoerter") or []), "syn": d.get("synonyme") or {},
+             "anteil": d.get("anteil", 0.5), "stamm": d.get("stamm", 5)}
+        _KURZ_CACHE[id(d)] = c
+    return c
+
+
+def diktat_saetze(text):
+    """Sätze eines Diktats [(start, ende)]: wie saetze_mit_lage, dazu „;“, gesprochenes „Punkt“/„neue Zeile“/„Absatz“
+    und „15 mm.“ am Satzende."""
+    out = []
+    for a, b in saetze_mit_lage(text or ""):
+        pos = a
+        for m in _KURZ_GRENZE.finditer(text[a:b]):
+            if text[pos:a + m.start()].strip():
+                out.append((pos, a + m.start()))
+            pos = a + m.end()
+        if text[pos:b].strip():
+            out.append((pos, b))
+    return [(a + len(text[a:b]) - len(text[a:b].lstrip()), a + len(text[a:b].rstrip())) for a, b in out]
+
+
+def _teilsaetze(text, a, b):
+    """Teilsätze (Komma-Grenzen) im Bereich [a, b)."""
+    out, pos = [], a
+    for i in range(a, b):
+        if text[i] == ",":
+            out.append((pos, i))
+            pos = i + 1
+    out.append((pos, b))
+    return [(x, y) for x, y in out if text[x:y].strip()]
+
+
+def _kurz_treffer(text, c):
+    """Bereiche [(start, ende, art)] der Empfehlungs- (art 'e', ganzer Satz) und Einschränkungs-Teilsätze (art 'n')."""
+    out = []
+    for i, (a, b) in enumerate(diktat_saetze(text)):
+        s = text[a:b].lower()
+        if c["empf"] is not None and c["empf"].search(s):
+            teile = _teilsaetze(text, a, b)
+            if i == 0:     # Satz 1 nennt die Untersuchung: nur Teilsätze nach dem ersten Komma
+                out += [(x, y, "e") for x, y in teile[1:] if c["empf"].search(text[x:y].lower())]
+            else:
+                out.append((a, b, "e"))
+            continue
+        if c["ein"] is not None and c["ein"].search(s):
+            for j, (x, y) in enumerate(_teilsaetze(text, a, b)):
+                if (i or j) and c["ein"].search(text[x:y].lower()):
+                    out.append((x, y, "n"))
+    return out
+
+
+def _kurz_marker(t, pos, saetze, daten=None):
+    """Steht die Regionsnennung an pos in einem Empfehlungs- oder Einschränkungs-Teilsatz (ab pos bis zum Komma)?"""
+    c = _kurz(daten)
+    for a, b in saetze:
+        if a <= pos < b:
+            for x, y in _teilsaetze(t, a, b):
+                if x <= pos < y:
+                    s = t[pos:y].lower()
+                    return bool((c["empf"] is not None and c["empf"].search(s)) or (c["ein"] is not None and c["ein"].search(s)))
+    return False
+
+
+def ohne_empfehlungen(text, daten=None):
+    """Text für die Vorlagenwahl: Empfehlungssätze und Einschränkungs-Teilsätze („… nicht miterfasst“) entfernt.
+    Ohne solche Sätze kommt der Text unverändert zurück."""
+    t = text or ""
+    treffer = _kurz_treffer(t, _kurz(daten))
+    if not treffer:
+        return text
+    neu, pos = [], 0
+    for a, b, _ in sorted(treffer):
+        neu.append(t[pos:a])
+        pos = max(pos, b)
+    neu.append(t[pos:])
+    rest = "".join(neu)
+    return rest if rest.strip() else text
+
+
+def _kurz_woerter(text):
+    return vorlage_normalisieren(text).split()
+
+
+def _kurz_stamm(c, w):
+    return [w[:c["stamm"]]] + list(c["syn"].get(w, []))
+
+
+def _kurz_inhalt(text, c):
+    """Inhaltswörter eines diktierten Satzes → je Wort die Liste erlaubter Wortanfänge."""
+    return [_kurz_stamm(c, w) for w in _kurz_woerter(text)
+            if (len(w) >= 3 or w in c["syn"]) and w not in c["stopp"] and not w.isdigit()]
+
+
+def _kurz_vorhanden(einheit, art, report_saetze, c):
+    inhalt = _kurz_inhalt(einheit, c)
+    rx = c["empf"] if art == "e" else c["ein"]
+    if not inhalt:
+        return any(rx is not None and rx.search(s.lower()) for s in report_saetze)
+    noetig = max(1, -int(-len(inhalt) * c["anteil"] // 1))
+    for s in report_saetze:
+        ws = _kurz_woerter(s)
+        hits = sum(1 for alt in inhalt if any(w.startswith(a) for w in ws for a in alt))
+        low = s.lower()
+        if art == "e":
+            if hits >= noetig or (hits and rx is not None and rx.search(low)):
+                return True
+        elif hits >= noetig and c["vern"] is not None and c["vern"].search(low):
+            return True
+    return False
+
+
+_KURZ_WEICHTEIL = re.compile(r"weichteil|weichgewebe|subkutan|subcutan|hautmantel", re.I)
+
+
+def _befund_einfuegen(zeilen, a, e, satz):
+    """Satz als letzten Befundsatz vor den Weichteil-Satz (der bleibt am Ende) in die Zeilen [a, e) einfügen."""
+    inhalt = [i for i in range(a, e) if zeilen[i].strip() and not zeilen[i].lstrip().startswith("#")]
+    if not inhalt:
+        zeilen.insert(e, satz)
+        return
+    i = inhalt[-1]
+    z = zeilen[i]
+    lage = saetze_mit_lage(z)
+    if lage and _KURZ_WEICHTEIL.search(z[lage[-1][0]:lage[-1][1]]):
+        s0 = lage[-1][0]
+        if z[:s0].strip():
+            zeilen[i] = z[:s0] + satz + " " + z[s0:]
+        elif len(inhalt) > 1:
+            j = inhalt[-2]
+            zeilen[j] = zeilen[j].rstrip() + " " + satz
+        else:
+            zeilen.insert(i, satz)
+        return
+    zeilen[i] = z.rstrip() + " " + satz
+
+
+def kurzsaetze_sichern(report, diktat, daten=None):
+    """Nach der KI (EXE + Web gleich): fehlt ein diktierter Empfehlungssatz → wörtlich als letzter Ergebnis-Punkt;
+    fehlt eine diktierte Einschränkung („die BWS ist nicht abgebildet“) → wörtlich als Befundsatz vor dem Weichteil-Satz.
+    → (report, Liste der Ergänzungen). Ohne solche Sätze im Diktat unverändert."""
+    if not report or "## Ergebnis" not in report:
+        return report, []
+    c = _kurz(daten)
+    d = diktat or ""
+    treffer = _kurz_treffer(d, c)
+    if not treffer:
+        return report, []
+    zeilen = report.split("\n")
+    text_zeilen = [z for z in zeilen if not z.lstrip().startswith("#")]
+    rtext = "\n".join(text_zeilen)
+    rsaetze = [rtext[a:b] for a, b in saetze_mit_lage(rtext)]
+    satz_lage = diktat_saetze(d)
+    neu_erg, neu_bef = [], []
+    for a, b, art in treffer:
+        einheit = d[a:b]
+        if _kurz_vorhanden(einheit, art, rsaetze, c):
+            continue
+        if art == "n" and not _kurz_inhalt(einheit, c):   # „eingeschränkt beurteilbar“ allein → ganzer Satz
+            einheit = next((d[x:y] for x, y in satz_lage if x <= a < y), einheit)
+        satz = satzform(" ".join(einheit.split()).strip(" ,;:"))
+        if satz and satz not in neu_erg and satz not in neu_bef:
+            (neu_erg if art == "e" else neu_bef).append(satz)
+    if not neu_erg and not neu_bef:
+        return report, []
+    if neu_bef:
+        bef = _abschnitt(zeilen, "befund")
+        if bef:
+            a, e = bef[0]
+        else:   # ohne „## Befund“: alles zwischen Titel und Ergebnis
+            e = next(i for i, z in enumerate(zeilen) if z.strip().lower().rstrip(":") == "## ergebnis")
+            a = 0
+        for s in neu_bef:
+            _befund_einfuegen(zeilen, a, e, s)
+            e = next(i for i, z in enumerate(zeilen) if z.strip().lower().rstrip(":") == "## ergebnis")
+    if neu_erg:
+        erg = _abschnitt(zeilen, "ergebnis")
+        a, e = erg[-1]
+        stelle = e
+        while stelle > a and not zeilen[stelle - 1].strip():
+            stelle -= 1
+        zeilen[stelle:stelle] = neu_erg
+        report = ergebnis_nummerieren("\n".join(zeilen))
+    else:
+        report = "\n".join(zeilen)
+    return report, ["Befund ergänzt: " + s for s in neu_bef] + ["Ergebnis ergänzt: " + s for s in neu_erg]

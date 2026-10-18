@@ -11,6 +11,9 @@
 //   titelMitSeite(t, raw)      Bypass-Überschrift bekommt die diktierte Seite
 //   promptVersion / stripPromptMarker   Versionsmarker der gemeinsamen Prompt-Datei radiology_prompt.txt
 
+// v3.16.6: Kurzsatz-Muster (Empfehlungen/Einschränkungen) aus der gemeinsamen Regel-Datei
+import vorrangJson from '../../vorlagen_vorrang.json' with { type: 'json' };
+
 const W = '[\\p{L}\\p{N}_]';
 const NB = `(?<!${W})`; // kein Wortzeichen davor
 const NA = `(?!${W})`;  // kein Wortzeichen danach
@@ -116,12 +119,15 @@ const SEG_REST = new RegExp(`(?:\\s*(?:${NB}neue\\s+zeile|${NB}neuzeile|${NB}abs
 export function splitRegionen(text: string): string[] {
   const t = text || '';
   const starts: { pos: number; key: string }[] = [];
+  let saetze: [number, number][] | null = null;
   for (const m of t.matchAll(new RegExp(MARKER_SRC, 'giu'))) {
     const g = m.groups || {};
     const region = g.r1 || g.r2;
     const seite = g.s1 || g.s2;
     const key = gruppe(region) + '|' + seiteNorm(seite);
     const pos = (m.index ?? 0) + m[0].length - m[1].length;
+    if (saetze === null) saetze = diktatSaetze(t);
+    if (kurzMarker(t, pos, saetze)) continue;  // v3.16.6: „Fuß rechts in 2 Ebenen empfohlen“ → keine eigene Region
     if (starts.length && starts[starts.length - 1].key === key) continue;
     if (starts.some(s => s.key === key)) continue;
     starts.push({ pos, key });
@@ -305,7 +311,7 @@ export const befundeZusammenfuegen = (reports: string[]): string =>
 // Vorrang-Regeln + Namens-Treffer aus ../../vorlagen_vorrang.json. Sync: source_code/befund_regeln.py vorrang_vorlage.
 export type VorrangRegel = { key: string; alle?: string[]; keins?: string[]; bereich?: string };
 export type VorrangDaten = { regeln: VorrangRegel[]; fuellwoerter?: string[]; kopf_woerter?: number; name_ausnahmen?: Record<string, string>;
-  widersprueche?: WiderspruchDaten };   // v3.15.5
+  widersprueche?: WiderspruchDaten; kurzsaetze?: KurzsatzDaten };   // v3.15.5, v3.16.6
 
 export const vorlageNormalisieren = (text: string): string => {
   let t = (text || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
@@ -655,4 +661,194 @@ export function widersprucheBereinigen(report: string, diktat: string, d?: Wider
     break;
   }
   return [zeilen.join('\n'), aenderungen];
+}
+
+// ── v3.16.6 Kurzsätze (Peter 18.10.2026: „Diktierte Kurzsätze dürfen im Befund nie wegfallen.“) ─────────────────────
+// Empfehlungs- und Einschränkungssätze, Muster in vorlagen_vorrang.json „kurzsaetze“ (EINE Quelle für EXE + Web).
+// (1) ohneEmpfehlungen: Text für die Vorlagenwahl ohne diese Sätze — „Gehaltene Aufnahmen … empfohlen“ löst nicht die
+//     Stress-Vorlage aus (sonst befundet die KI nie gemachte Aufnahmen), „Die Hüfte ist nicht miterfasst“ nicht Becken+Hüfte.
+// (2) kurzsaetzeSichern: fehlt nach der KI ein diktierter Empfehlungs-/Einschränkungssatz, kommt er wörtlich zurück.
+// Sync: source_code/befund_regeln.py (diktat_saetze, ohne_empfehlungen, kurzsaetze_sichern), Fälle befund_regeln_fixtures.json
+// „kurzsaetze“ — gleiche Ausgabe Zeichen für Zeichen.
+export type KurzsatzDaten = { empfehlung?: string; einschraenkung?: string; verneinung?: string; anteil?: number; stamm?: number;
+  stoppwoerter?: string[]; synonyme?: Record<string, string[]> };
+export const KURZSAETZE: KurzsatzDaten = (vorrangJson as { kurzsaetze?: KurzsatzDaten }).kurzsaetze || {};
+type KurzC = { empf: RegExp | null; ein: RegExp | null; vern: RegExp | null; stopp: Set<string>; syn: Record<string, string[]>;
+  anteil: number; stamm: number };
+const KURZ_CACHE = new WeakMap<object, KurzC>();
+const kurzC = (d: KurzsatzDaten = KURZSAETZE): KurzC => {
+  let c = KURZ_CACHE.get(d);
+  if (!c) {
+    const rx = (p?: string) => (p ? new RegExp(p, 'u') : null);
+    c = { empf: rx(d.empfehlung), ein: rx(d.einschraenkung), vern: rx(d.verneinung), stopp: new Set(d.stoppwoerter || []),
+      syn: d.synonyme || {}, anteil: d.anteil ?? 0.5, stamm: d.stamm ?? 5 };
+    KURZ_CACHE.set(d, c);
+  }
+  return c;
+};
+// Satzgrenzen zusätzlich zu saetzeMitLage: „;“, gesprochenes „Punkt“ …, „12 mm.“ (mm/cm stehen dort als Abkürzung)
+const KURZ_GRENZE = /;|(?<![a-zäöüßA-ZÄÖÜ])(?:[pP]unkt|PUNKT|[nN]eue [zZ]eile|[nN]euzeile|[aA]bsatz)(?![a-zäöüßA-ZÄÖÜ])|(?<=[0-9] mm)\.(?=\s)|(?<=[0-9]mm)\.(?=\s)|(?<=[0-9] cm)\.(?=\s)|(?<=[0-9]cm)\.(?=\s)/gu;
+
+// Sätze eines Diktats: wie saetzeMitLage, dazu „;“ und gesprochenes „Punkt“/„neue Zeile“/„Absatz“
+export function diktatSaetze(text: string): [number, number][] {
+  const t = text || '';
+  const out: [number, number][] = [];
+  for (const [a, b] of saetzeMitLage(t)) {
+    let pos = a;
+    for (const m of t.slice(a, b).matchAll(KURZ_GRENZE)) {
+      const s = a + (m.index ?? 0);
+      if (t.slice(pos, s).trim()) out.push([pos, s]);
+      pos = s + m[0].length;
+    }
+    if (t.slice(pos, b).trim()) out.push([pos, b]);
+  }
+  return out.map(([a, b]) => {
+    const st = t.slice(a, b);
+    return [a + (st.length - st.trimStart().length), a + st.trimEnd().length] as [number, number];
+  });
+}
+
+const teilsaetze = (t: string, a: number, b: number): [number, number][] => {
+  const out: [number, number][] = [];
+  let pos = a;
+  for (let i = a; i < b; i++) if (t[i] === ',') { out.push([pos, i]); pos = i + 1; }
+  out.push([pos, b]);
+  return out.filter(([x, y]) => t.slice(x, y).trim());
+};
+
+const kurzTreffer = (t: string, c: KurzC): [number, number, string][] => {
+  const out: [number, number, string][] = [];
+  diktatSaetze(t).forEach(([a, b], i) => {
+    const s = t.slice(a, b).toLowerCase();
+    if (c.empf && c.empf.test(s)) {
+      const teile = teilsaetze(t, a, b);
+      if (i === 0) {  // Satz 1 nennt die Untersuchung: nur Teilsätze nach dem ersten Komma
+        for (const [x, y] of teile.slice(1)) if (c.empf.test(t.slice(x, y).toLowerCase())) out.push([x, y, 'e']);
+      } else out.push([a, b, 'e']);
+      return;
+    }
+    if (c.ein && c.ein.test(s)) {
+      teilsaetze(t, a, b).forEach(([x, y], j) => {
+        if ((i || j) && c.ein!.test(t.slice(x, y).toLowerCase())) out.push([x, y, 'n']);
+      });
+    }
+  });
+  return out;
+};
+
+// Steht die Regionsnennung an pos in einem Empfehlungs- oder Einschränkungs-Teilsatz (ab pos bis zum Komma)?
+const kurzMarker = (t: string, pos: number, saetze: [number, number][], d: KurzsatzDaten = KURZSAETZE): boolean => {
+  const c = kurzC(d);
+  for (const [a, b] of saetze) {
+    if (a <= pos && pos < b) {
+      for (const [x, y] of teilsaetze(t, a, b)) {
+        if (x <= pos && pos < y) {
+          const s = t.slice(pos, y).toLowerCase();
+          return !!((c.empf && c.empf.test(s)) || (c.ein && c.ein.test(s)));
+        }
+      }
+    }
+  }
+  return false;
+};
+
+// Text für die Vorlagenwahl ohne Empfehlungssätze und Einschränkungs-Teilsätze; ohne solche Sätze unverändert
+export function ohneEmpfehlungen(text: string, d: KurzsatzDaten = KURZSAETZE): string {
+  const t = text || '';
+  const treffer = kurzTreffer(t, kurzC(d));
+  if (!treffer.length) return text;
+  const neu: string[] = [];
+  let pos = 0;
+  for (const [a, b] of [...treffer].sort((x, y) => x[0] - y[0] || x[1] - y[1])) {
+    neu.push(t.slice(pos, a));
+    pos = Math.max(pos, b);
+  }
+  neu.push(t.slice(pos));
+  const rest = neu.join('');
+  return rest.trim() ? rest : text;
+}
+
+const kurzWoerter = (t: string): string[] => vorlageNormalisieren(t).split(' ').filter(Boolean);
+const kurzInhalt = (t: string, c: KurzC): string[][] =>
+  kurzWoerter(t).filter(w => (w.length >= 3 || w in c.syn) && !c.stopp.has(w) && !/^\d+$/.test(w))
+    .map(w => [w.slice(0, c.stamm), ...(c.syn[w] || [])]);
+
+const kurzVorhanden = (einheit: string, art: string, rsaetze: string[], c: KurzC): boolean => {
+  const inhalt = kurzInhalt(einheit, c);
+  const rx = art === 'e' ? c.empf : c.ein;
+  if (!inhalt.length) return rsaetze.some(s => !!rx && rx.test(s.toLowerCase()));
+  const noetig = Math.max(1, Math.ceil(inhalt.length * c.anteil));
+  for (const s of rsaetze) {
+    const ws = kurzWoerter(s);
+    const hits = inhalt.filter(alt => ws.some(w => alt.some(a => w.startsWith(a)))).length;
+    const low = s.toLowerCase();
+    if (art === 'e') {
+      if (hits >= noetig || (hits && rx && rx.test(low))) return true;
+    } else if (hits >= noetig && c.vern && c.vern.test(low)) return true;
+  }
+  return false;
+};
+
+const KURZ_WEICHTEIL = /weichteil|weichgewebe|subkutan|subcutan|hautmantel/iu;
+const befundEinfuegen = (zeilen: string[], a: number, e: number, satz: string): void => {
+  const inhalt: number[] = [];
+  for (let i = a; i < e; i++) if (zeilen[i].trim() && !zeilen[i].trimStart().startsWith('#')) inhalt.push(i);
+  if (!inhalt.length) { zeilen.splice(e, 0, satz); return; }
+  const i = inhalt[inhalt.length - 1];
+  const z = zeilen[i];
+  const lage = saetzeMitLage(z);
+  if (lage.length && KURZ_WEICHTEIL.test(z.slice(lage[lage.length - 1][0], lage[lage.length - 1][1]))) {
+    const s0 = lage[lage.length - 1][0];
+    if (z.slice(0, s0).trim()) zeilen[i] = z.slice(0, s0) + satz + ' ' + z.slice(s0);
+    else if (inhalt.length > 1) { const j = inhalt[inhalt.length - 2]; zeilen[j] = zeilen[j].trimEnd() + ' ' + satz; }
+    else zeilen.splice(i, 0, satz);
+    return;
+  }
+  zeilen[i] = z.trimEnd() + ' ' + satz;
+};
+const ergebnisZeile = (zeilen: string[]): number => zeilen.findIndex(z => z.trim().toLowerCase().replace(/:+$/u, '') === '## ergebnis');
+
+// Nach der KI (EXE + Web gleich): fehlt ein diktierter Empfehlungssatz → wörtlich als letzter Ergebnis-Punkt; fehlt eine
+// diktierte Einschränkung („die BWS ist nicht abgebildet“) → wörtlich als Befundsatz vor dem Weichteil-Satz.
+export function kurzsaetzeSichern(report: string, diktat: string, d: KurzsatzDaten = KURZSAETZE): [string, string[]] {
+  if (!report || !report.includes('## Ergebnis')) return [report, []];
+  const c = kurzC(d);
+  const dk = diktat || '';
+  const treffer = kurzTreffer(dk, c);
+  if (!treffer.length) return [report, []];
+  const zeilen = report.split('\n');
+  const rtext = zeilen.filter(z => !z.trimStart().startsWith('#')).join('\n');
+  const rsaetze = saetzeMitLage(rtext).map(([a, b]) => rtext.slice(a, b));
+  const satzLage = diktatSaetze(dk);
+  const neuErg: string[] = [], neuBef: string[] = [];
+  for (const [a, b, art] of treffer) {
+    let einheit = dk.slice(a, b);
+    if (kurzVorhanden(einheit, art, rsaetze, c)) continue;
+    if (art === 'n' && !kurzInhalt(einheit, c).length) {  // „eingeschränkt beurteilbar“ allein → ganzer Satz
+      const s = satzLage.find(([x, y]) => x <= a && a < y);
+      if (s) einheit = dk.slice(s[0], s[1]);
+    }
+    const satz = satzform(stripZ(ws(einheit), ' ,;:'));
+    if (satz && !neuErg.includes(satz) && !neuBef.includes(satz)) (art === 'e' ? neuErg : neuBef).push(satz);
+  }
+  if (!neuErg.length && !neuBef.length) return [report, []];
+  if (neuBef.length) {
+    const bef = abschnitt(zeilen, 'befund');
+    let a = 0, e = ergebnisZeile(zeilen);
+    if (bef.length) [a, e] = bef[0];
+    for (const s of neuBef) {
+      befundEinfuegen(zeilen, a, e, s);
+      e = ergebnisZeile(zeilen);
+    }
+  }
+  let out: string;
+  if (neuErg.length) {
+    const erg = abschnitt(zeilen, 'ergebnis');
+    const [a, e] = erg[erg.length - 1];
+    let stelle = e;
+    while (stelle > a && !zeilen[stelle - 1].trim()) stelle--;
+    zeilen.splice(stelle, 0, ...neuErg);
+    out = ergebnisNummerieren(zeilen.join('\n'));
+  } else out = zeilen.join('\n');
+  return [out, [...neuBef.map(s => 'Befund ergänzt: ' + s), ...neuErg.map(s => 'Ergebnis ergänzt: ' + s)]];
 }

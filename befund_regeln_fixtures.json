@@ -136,6 +136,28 @@
    "out": [
     ""
    ]
+  },
+  {
+   "name": "Empfehlung mit anderer Region trennt nicht (v3.16.6)",
+   "in": "Sprunggelenk rechts. Keine Fraktur. Fuß rechts in zwei Ebenen empfohlen.",
+   "out": [
+    "Sprunggelenk rechts. Keine Fraktur. Fuß rechts in zwei Ebenen empfohlen."
+   ]
+  },
+  {
+   "name": "Einschränkung mit anderer Region trennt nicht (v3.16.6)",
+   "in": "Sprunggelenk rechts, Fuß rechts nicht miterfasst. Keine Fraktur.",
+   "out": [
+    "Sprunggelenk rechts, Fuß rechts nicht miterfasst. Keine Fraktur."
+   ]
+  },
+  {
+   "name": "Empfehlung im Befund-Satz einer echten Region trennt weiter (v3.16.6)",
+   "in": "Knie rechts: Gonarthrose, MRT empfohlen. Hüfte links: Coxarthrose.",
+   "out": [
+    "Knie rechts: Gonarthrose, MRT empfohlen.",
+    "Hüfte links: Coxarthrose."
+   ]
   }
  ],
  "nummerieren": [
@@ -665,6 +687,163 @@
     "diktat": "Hüfte links: Fibroostose am Trochanter major",
     "vorlage": "hüftgelenk_in_2_ebenen",
     "out": "<widersprueche>\nDiktiert: „Fibroostose am Trochanter major“ (Fibroostose/Enthesiopathie/Sporn).\nDiese Sätze der Vorlage widersprechen dem diktierten Befund und dürfen so NICHT stehen bleiben: „Die kortikalen Randkonturen sind normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen.“\nRegeln: Schränke jeden dieser Sätze nur im betroffenen Teil ein („Im Übrigen …“ bzw. „…, abgesehen von …“) oder lass den betroffenen Teil weg; den übrigen Normaltext der Vorlage übernimmst du wörtlich. Der Befund steht als eigener Satz an der Stelle des betroffenen Normalsatzes. Im Ergebnis steht er als nummerierter Punkt (mit Seite) — nie „Regelrechte Darstellung …“ oder „unauffällig“ für die ganze Untersuchung.\n</widersprueche>"
+   }
+  ]
+ },
+ "kurzsaetze": {
+  "_doc": "v3.16.6: Empfehlungs-/Einschränkungssätze (vorlagen_vorrang.json „kurzsaetze“). ohne = Text für die Vorlagenwahl; sichern = Erhalt nach der KI (out == in: Satz gilt als vorhanden, keine Ergänzung).",
+  "ohne": [
+   {
+    "in": "Sprunggelenk rechts in zwei Ebenen. Weichteilschwellung lateral. Keine Fraktur. Gehaltene Aufnahmen bei klinischem Verdacht auf Bandinstabilität empfohlen.",
+    "out": "Sprunggelenk rechts in zwei Ebenen. Weichteilschwellung lateral. Keine Fraktur. "
+   },
+   {
+    "in": "Sprunggelenk rechts gehaltene Aufnahmen. Vermehrte laterale Aufklappbarkeit, Talusvorschub 10 mm.",
+    "out": "Sprunggelenk rechts gehaltene Aufnahmen. Vermehrte laterale Aufklappbarkeit, Talusvorschub 10 mm."
+   },
+   {
+    "in": "HWS seitlich, Funktionsaufnahmen empfohlen.",
+    "out": "HWS seitlich,"
+   },
+   {
+    "in": "Schulter rechts in zwei Ebenen. Tendinosis calcarea 12 mm. Sonographie empfohlen.",
+    "out": "Schulter rechts in zwei Ebenen. Tendinosis calcarea 12 mm. "
+   },
+   {
+    "in": "Thorax pa. Rundherd rechts im Oberfeld 15 mm. CT Thorax zur weiteren Abklärung empfohlen.",
+    "out": "Thorax pa. Rundherd rechts im Oberfeld 15 mm. "
+   },
+   {
+    "in": "Handgelenk links in zwei Ebenen. Keine Fraktur. Ggf. Kahnbeinserie.",
+    "out": "Handgelenk links in zwei Ebenen. Keine Fraktur. "
+   },
+   {
+    "in": "Becken. Coxarthrose links. Die Hüfte ist nicht miterfasst.",
+    "out": "Becken. Coxarthrose links. "
+   },
+   {
+    "in": "Iliosakralgelenke. Mäßige Sklerosierung. Miterfasste LWS mit Osteochondrose L5 S1, die BWS ist nicht abgebildet.",
+    "out": "Iliosakralgelenke. Mäßige Sklerosierung. Miterfasste LWS mit Osteochondrose L5 S1,"
+   },
+   {
+    "in": "Knie rechts Punkt Gonarthrose Punkt MRT empfohlen",
+    "out": "Knie rechts Punkt Gonarthrose Punkt "
+   },
+   {
+    "in": "Thorax. Unauffällig. Kontrolle in 6 Wochen.",
+    "out": "Thorax. Unauffällig. "
+   },
+   {
+    "in": "LWS in zwei Ebenen. Osteochondrose L4 L5. Bei persistierenden Beschwerden ergänzend Funktionsaufnahmen.",
+    "out": "LWS in zwei Ebenen. Osteochondrose L4 L5. "
+   },
+   {
+    "in": "Sprunggelenk rechts in zwei Ebenen und gehaltene Aufnahmen. Vermehrte Aufklappbarkeit. MRT zur Bandbeurteilung empfohlen.",
+    "out": "Sprunggelenk rechts in zwei Ebenen und gehaltene Aufnahmen. Vermehrte Aufklappbarkeit. "
+   },
+   {
+    "in": "Gehaltene Aufnahmen empfohlen.",
+    "out": "Gehaltene Aufnahmen empfohlen."
+   },
+   {
+    "in": "Ellbogen rechts. Erguss; Axialaufnahme empfohlen.",
+    "out": "Ellbogen rechts. Erguss; "
+   },
+   {
+    "in": "Knie links in zwei Ebenen unauffällig.",
+    "out": "Knie links in zwei Ebenen unauffällig."
+   }
+  ],
+  "sichern": [
+   {
+    "name": "Empfehlung fehlt → letzter Ergebnis-Punkt",
+    "diktat": "Knie rechts in zwei Ebenen. Mäßige Gonarthrose medial betont. Keine freien Gelenkkörper. Klinische Korrelation empfohlen.",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung medial betont. Kein Hinweis auf freie Gelenkkörper. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung medial betont. Kein Hinweis auf freie Gelenkkörper. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Klinische Korrelation empfohlen."
+   },
+   {
+    "name": "Empfehlung umformuliert vorhanden → unverändert",
+    "diktat": "Knie rechts in zwei Ebenen. Gonarthrose. Klinische Korrelation empfohlen.",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung. Unauffällige Weichteile.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Korrelation mit der Klinik angeraten.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung. Unauffällige Weichteile.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Korrelation mit der Klinik angeraten."
+   },
+   {
+    "name": "Empfehlung gekürzt vorhanden → unverändert",
+    "diktat": "Sprunggelenk rechts in zwei Ebenen. Keine Fraktur. Gehaltene Aufnahmen bei klinischem Verdacht auf Bandinstabilität empfohlen.",
+    "in": "## Sprunggelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form.\n\nLaterale Weichteilschwellung.\n\n## Ergebnis\n1. Laterale Weichteilschwellung rechts.\n2. Ergänzende gehaltene Aufnahmen empfohlen.",
+    "out": "## Sprunggelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form.\n\nLaterale Weichteilschwellung.\n\n## Ergebnis\n1. Laterale Weichteilschwellung rechts.\n2. Ergänzende gehaltene Aufnahmen empfohlen."
+   },
+   {
+    "name": "Kontrolle umformuliert vorhanden → unverändert",
+    "diktat": "Thorax. Infiltrat rechts basal. Kontrolle in 6 Wochen empfohlen.",
+    "in": "## Thorax in 2 Ebenen\n\n## Befund\nInfiltrat rechts basal.\n\n## Ergebnis\n1. Infiltrat rechts basal.\n2. Röntgenkontrolle nach sechs Wochen angeraten.",
+    "out": "## Thorax in 2 Ebenen\n\n## Befund\nInfiltrat rechts basal.\n\n## Ergebnis\n1. Infiltrat rechts basal.\n2. Röntgenkontrolle nach sechs Wochen angeraten."
+   },
+   {
+    "name": "Normal-Ergebnis + Empfehlung → nummeriert",
+    "diktat": "Knie rechts. Unauffällig. Kontrolle in 6 Wochen empfohlen.",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nRegelrecht.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nRegelrecht.\n\n## Ergebnis\n1. Regelrechte Darstellung des Kniegelenkes rechts.\n2. Kontrolle in 6 Wochen empfohlen."
+   },
+   {
+    "name": "Einschränkung fehlt → vor den Weichteil-Absatz",
+    "diktat": "Iliosakralgelenke. Mäßige Sklerosierung der ISG beidseits. Miterfasste LWS mit Osteochondrose L5 S1, die BWS ist nicht abgebildet.",
+    "in": "## Iliosakralgelenke a.-p.\n\n## Befund\nMäßige subchondrale Sklerosierung der Iliosakralgelenke beidseits. Miterfasste LWS mit Verschmälerung des Intervertebralraums L5/S1.\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\n1. ISG-Arthrose beidseits.\n2. Osteochondrose L5/S1.",
+    "out": "## Iliosakralgelenke a.-p.\n\n## Befund\nMäßige subchondrale Sklerosierung der Iliosakralgelenke beidseits. Miterfasste LWS mit Verschmälerung des Intervertebralraums L5/S1. Die BWS ist nicht abgebildet.\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\n1. ISG-Arthrose beidseits.\n2. Osteochondrose L5/S1."
+   },
+   {
+    "name": "Einschränkung fehlt → vor den Weichteil-Satz derselben Zeile",
+    "diktat": "Iliosakralgelenke. Sklerosierung beidseits, die BWS ist nicht abgebildet.",
+    "in": "## Iliosakralgelenke a.-p.\n\n## Befund\nSklerosierung der Iliosakralgelenke beidseits. Unauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\n1. Sklerosierung beidseits.",
+    "out": "## Iliosakralgelenke a.-p.\n\n## Befund\nSklerosierung der Iliosakralgelenke beidseits. Die BWS ist nicht abgebildet. Unauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\n1. Sklerosierung beidseits."
+   },
+   {
+    "name": "Einschränkung fehlt, kein Weichteil-Satz → ans Befund-Ende",
+    "diktat": "Becken. Coxarthrose links. Die Hüfte ist nicht miterfasst.",
+    "in": "## Beckenübersicht\n\n## Befund\nGelenkspaltverschmälerung links.\n\n## Ergebnis\n1. Coxarthrose links.",
+    "out": "## Beckenübersicht\n\n## Befund\nGelenkspaltverschmälerung links. Die Hüfte ist nicht miterfasst.\n\n## Ergebnis\n1. Coxarthrose links."
+   },
+   {
+    "name": "Einschränkung umformuliert vorhanden (Synonym) → unverändert",
+    "diktat": "Iliosakralgelenke. Sklerosierung, die BWS ist nicht abgebildet.",
+    "in": "## Iliosakralgelenke a.-p.\n\n## Befund\nSklerosierung. Die Brustwirbelsäule ist nicht miterfasst. Unauffällige Weichteile.\n\n## Ergebnis\n1. Sklerosierung.",
+    "out": "## Iliosakralgelenke a.-p.\n\n## Befund\nSklerosierung. Die Brustwirbelsäule ist nicht miterfasst. Unauffällige Weichteile.\n\n## Ergebnis\n1. Sklerosierung."
+   },
+   {
+    "name": "Vergleich umformuliert vorhanden → unverändert",
+    "diktat": "LWS in zwei Ebenen. Osteochondrose L4 L5. Vergleich mit Vorbefund nicht möglich.",
+    "in": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nVerschmälerung L4/L5. Keine Voraufnahmen zum Vergleich vorliegend.\n\n## Ergebnis\n1. Osteochondrose L4/L5.",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nVerschmälerung L4/L5. Keine Voraufnahmen zum Vergleich vorliegend.\n\n## Ergebnis\n1. Osteochondrose L4/L5."
+   },
+   {
+    "name": "eingeschränkt beurteilbar ohne Inhaltswort, vorhanden → unverändert",
+    "diktat": "Thorax liegend, eingeschränkt beurteilbar. Kein Pneumothorax.",
+    "in": "## Thorax liegend\n\n## Befund\nAufnahme im Liegen, nur eingeschränkt beurteilbar. Kein Pneumothorax.\n\n## Ergebnis\nKein Pneumothorax.",
+    "out": "## Thorax liegend\n\n## Befund\nAufnahme im Liegen, nur eingeschränkt beurteilbar. Kein Pneumothorax.\n\n## Ergebnis\nKein Pneumothorax."
+   },
+   {
+    "name": "eingeschränkt beurteilbar fehlt → ganzer Satz",
+    "diktat": "Thorax liegend, eingeschränkt beurteilbar. Kein Pneumothorax.",
+    "in": "## Thorax liegend\n\n## Befund\nKein Pneumothorax.\n\n## Ergebnis\nKein Pneumothorax.",
+    "out": "## Thorax liegend\n\n## Befund\nKein Pneumothorax. Thorax liegend, eingeschränkt beurteilbar.\n\n## Ergebnis\nKein Pneumothorax."
+   },
+   {
+    "name": "ohne Empfehlung/Einschränkung → unverändert",
+    "diktat": "Knie rechts in zwei Ebenen. Mäßige Gonarthrose. Keine freien Gelenkkörper.",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts."
+   },
+   {
+    "name": "Empfehlung im Befundtext vorhanden → unverändert",
+    "diktat": "HWS. Steilstellung. Funktionsaufnahmen empfohlen.",
+    "in": "## Halswirbelsäule in 2 Ebenen\n\n## Befund\nStreckhaltung der HWS. Ergänzende Funktionsaufnahmen sind zu empfehlen.\n\n## Ergebnis\n1. Streckhaltung der HWS.",
+    "out": "## Halswirbelsäule in 2 Ebenen\n\n## Befund\nStreckhaltung der HWS. Ergänzende Funktionsaufnahmen sind zu empfehlen.\n\n## Ergebnis\n1. Streckhaltung der HWS."
+   },
+   {
+    "name": "MRT-Empfehlung umformuliert (Synonym) → unverändert",
+    "diktat": "Knie rechts. Gonarthrose. MRT empfohlen.",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Weiterführende Magnetresonanztomographie empfohlen.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Weiterführende Magnetresonanztomographie empfohlen."
    }
   ]
  }

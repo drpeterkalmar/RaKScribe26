@@ -57,6 +57,9 @@ def detect_template(text, templates):
     Vorrang-Regeln und den Fallback „Key steht im Diktat“."""
     # v3.2.3 (Peter 06.10.: alle Vorlagen erreichbar + korrekt priorisiert): zuerst Vorrang-Regeln und diktierter
     # Vorlagenname aus vorlagen_vorrang.json (EINE Datei für EXE + Web), danach die bisherige Erkennung.
+    # v3.16.6 (Peter 18.10.): Empfehlungs-/Einschränkungssätze („Gehaltene Aufnahmen … empfohlen“, „die Hüfte ist nicht
+    # miterfasst“) wählen keine Vorlage — sonst befundet die KI nie gemachte Aufnahmen. Muster: vorlagen_vorrang.json.
+    text = br.ohne_empfehlungen(text)
     _vorrang = br.vorrang_vorlage(text, templates)
     if _vorrang:
         return _vorrang

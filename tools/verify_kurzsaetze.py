@@ -6,6 +6,8 @@ Harmlos, aber dieselbe Mechanik würde auch „Keine Fraktur.“ oder „Verglei
 
 Prüft je Diktat, ob jeder diktierte Kurzsatz INHALTLICH im Befund steht (Regex auf den Kern, Formulierung frei).
 Absichtlich nur Sätze, die die Vorlage NICHT ohnehin mitbringt (sonst maskiert der Normalbefund einen Drop).
+v3.16.6: + 4 Fälle (Funktionsaufnahmen/CT nur empfohlen, Hüfte nicht miterfasst, Kontrolle in 6 Wochen), VERBOTEN = Spezial-
+Vorlage einer nur empfohlenen Untersuchung, Gegenprobe „keine erfundene Empfehlung“ bei Diktaten ohne Empfehlung.
 Ketten: EXE (pp.exe_kette = pipeline.befund_aus_diktat) und Web (pp.web_kette = Call 0/1/2 wie pipeline.ts),
 echtes Gemini, je N Läufe (Standard 3; temp 0 ist nicht deterministisch).
 
@@ -58,11 +60,37 @@ FAELLE = [
      [("Gehaltene Aufnahmen empfohlen", r"gehalten\w*[^.\n]{0,90}(empfohlen|empfehl|angeraten|sinnvoll)"
        r"|empfehl\w*[^.\n]{0,40}gehalten")]),
     # Fall 8b-Logik steht in VERBOTEN: empfohlene (nicht gemachte) gehaltene Aufnahmen dürfen nicht befundet werden
+    # v3.16.6: dieselben Klassen weiter gefasst (Funktionsaufnahmen/CT nur empfohlen, Einschränkung beim Becken, Kontrolle)
+    ("HWS in zwei Ebenen. Steilstellung der HWS. Osteochondrose C5 C6. Funktionsaufnahmen empfohlen.",
+     [("Funktionsaufnahmen empfohlen", r"funktion\w*[^.\n]{0,60}(empfohlen|empfehl|angeraten|sinnvoll)|empfehl\w*[^.\n]{0,40}funktion")]),
+    ("Becken. ISG-Arthrose beidseits. Die rechte Hüfte ist nicht vollständig miterfasst.",
+     [("Die rechte Hüfte ist nicht miterfasst", r"hüft\w*[^.\n]{0,50}nicht[^.\n]{0,30}(miterfasst|erfasst|abgebildet|dargestellt)"
+       r"|nicht[^.\n]{0,30}(miterfasst|erfasst|abgebildet|dargestellt)[^.\n]{0,40}hüft")]),
+    ("Handgelenk links in zwei Ebenen. Zustand nach distaler Radiusfraktur, in achsengerechter Stellung konsolidierend. "
+     "Röntgenkontrolle in 6 Wochen empfohlen.",
+     [("Kontrolle in 6 Wochen empfohlen", r"kontroll\w*[^.\n]{0,40}(6|sechs) wochen|(6|sechs) wochen[^.\n]{0,40}kontroll")]),
+    ("Thorax pa. Rundherd im rechten Oberfeld, 15 mm. CT Thorax zur weiteren Abklärung empfohlen.",
+     [("CT Thorax zur Abklärung empfohlen", r"(\bct\b|computertomo\w*)[^.\n]{0,60}(empfohlen|empfehl|abklärung|angeraten)"
+       r"|(empfehl|abklärung)\w*[^.\n]{0,40}(\bct\b|computertomo)"),
+      ("Rundherd 15 mm", r"rundherd[^\n]{0,80}15 mm|15 mm[^\n]{0,60}rundherd")]),
 ]
 
 
 # Fall-Nr. → Muster, die NICHT im Befund stehen dürfen (erfundene Inhalte aus falscher Vorlage)
-VERBOTEN = {8: [("Befund der nur EMPFOHLENEN gehaltenen Aufnahmen", r"öffnungswinkel|talusvorschub|mit gehaltenen aufnahmen")]}
+VERBOTEN = {8: [("Befund der nur EMPFOHLENEN gehaltenen Aufnahmen", r"öffnungswinkel|talusvorschub|mit gehaltenen aufnahmen")],
+            # v3.16.6: nur empfohlene Untersuchung ≠ Vorlage (Titel/Normalsätze der Spezial-Vorlage)
+            9: [("Befund der nur EMPFOHLENEN Funktionsaufnahmen", r"## funktionsaufnahmen|ante- und retroflexion|treppenphänomen")],
+            10: [("Vorlage Becken + Hüfte trotz „nicht miterfasst“", r"## beckenübersicht und hüfte")],
+            12: [("Vorlage CT Thorax trotz „CT empfohlen“", r"## ct thorax|mediastinum: keine")]}
+# v3.16.6 Gegenprobe gegen Erfinden: ohne diktierte Empfehlung darf keine im Befund stehen
+ERFUNDEN = ("keine erfundene Empfehlung", r"empfohlen|empfehl|angeraten|anzuraten|ratsam|\bggf\b|gegebenenfalls")
+
+
+def verboten(i):
+    v = list(VERBOTEN.get(i + 1, []))
+    if not re.search(r"empf|angerat|anzurat|ratsam|ggf", FAELLE[i][0].lower()):
+        v.append(ERFUNDEN)
+    return v
 
 
 def befundtext(rep):
@@ -88,14 +116,14 @@ def main():
         diktat, saetze = FAELLE[i]
         txt = befundtext(rep)
         miss = [s for s, rx in saetze if not re.search(rx, txt)]
-        miss += [s for s, rx in VERBOTEN.get(i + 1, []) if re.search(rx, txt)]
-        saetze = saetze + VERBOTEN.get(i + 1, [])
+        miss += [s for s, rx in verboten(i) if re.search(rx, txt)]
+        saetze = saetze + verboten(i)
         gesamt += len(saetze)
         fehlt += len(miss)
         out.append({"fall": i + 1, "kette": k, "lauf": r + 1, "diktat": diktat, "fehlt": miss, "befund": rep})
     print("Kurzsätze: %d/%d erhalten (%d Läufe je Kette, %.0f s)" % (gesamt - fehlt, gesamt, n, time.time() - t0))
     for i, (diktat, saetze) in enumerate(FAELLE):
-        for s, _ in saetze + VERBOTEN.get(i + 1, []):
+        for s, _ in saetze + verboten(i):
             for k in ("exe", "web"):
                 rot = sum(1 for o in out if o["fall"] == i + 1 and o["kette"] == k and s in o["fehlt"])
                 print("  %s Fall %d %-4s %d/%d  %s" % ("✅" if not rot else "❌", i + 1, k, n - rot, n, s))

@@ -1,6 +1,6 @@
 // Vorlagen-Erkennung und Befundtitel der Web-App (Umbau Schritt 17) — reine Funktionen, aus App.tsx herausgelöst.
 // Sync: source_code/detect.py (Parität: detect_fixtures.json → tests/offline/test_normalbefunde.py TEIL 2c; Titel: tests/offline/titel_fixtures.py).
-import { vorrangVorlage, type VorrangDaten } from './befundRegeln.ts';
+import { vorrangVorlage, ohneEmpfehlungen, KURZSAETZE, type VorrangDaten } from './befundRegeln.ts';
 
 export type Template = {
   display_name: string;
@@ -43,6 +43,9 @@ export function deriveUntersuchungsTitel(raw: string, displayName: string): stri
 export const MAMMOGRAPHIE_RE = /(?<![a-zäöüß])mammo(?:gra(?:ph|f|mm)|(?![a-zäöüß]))/;
 
 export function detectTemplate(text: string, templates: TemplatesMap, vorrangDaten: VorrangDaten): string {
+  // v3.16.6 (Peter 18.10.): Empfehlungs-/Einschränkungssätze („Gehaltene Aufnahmen … empfohlen“, „die Hüfte ist nicht
+  // miterfasst“) wählen keine Vorlage — sonst befundet die KI nie gemachte Aufnahmen. Sync: detect.py
+  text = ohneEmpfehlungen(text, vorrangDaten?.kurzsaetze ?? KURZSAETZE);
   // v3.2.3 (Peter 06.10.): Vorrang-Regeln + diktierter Vorlagenname aus vorlagen_vorrang.json zuerst (Sync: RaKScribe.py)
   const vorrang = vorrangVorlage(text, templates, vorrangDaten);
   if (vorrang) return vorrang;

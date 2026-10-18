@@ -163,7 +163,7 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         if ctx.protokoll is not None:
             ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
         out = br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
-        return out if woertlich else br.widersprueche_bereinigen(out, seg)[0]   # v3.15.5
+        return out if woertlich else br.kurzsaetze_sichern(br.widersprueche_bereinigen(out, seg)[0], seg)[0]   # v3.15.5, v3.16.6
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
@@ -191,6 +191,10 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     out, aend = br.widersprueche_bereinigen(out, seg)
     if aend:
         ctx.log(f"[WIDERSPRUCH] {len(aend)} Korrektur(en) nach der KI: " + " · ".join(a[:50] for a in aend))
+    # v3.16.6 (Peter 18.10.): diktierte Empfehlungs-/Einschränkungssätze, die der KI verloren gingen, wörtlich zurück
+    out, kurz = br.kurzsaetze_sichern(out, seg)
+    if kurz:
+        ctx.log(f"[KURZSATZ] {len(kurz)} diktierte(r) Satz/Sätze ergänzt: " + " · ".join(k[:60] for k in kurz))
     if bds:
         ctx.log(f"[CAS] beidseits laut CAS ({wahl.leistung.kurz}): Überschrift „beidseits“")
         out = cv.report_beidseits(out)

@@ -76,6 +76,13 @@ for c in W["befunde"]:
 for c in W["prompt"]:
     g = br.widerspruch_prompt(br.widerspruch_befunde(c["diktat"]), TPL[c["vorlage"]]["body"])
     check(g == c["out"], f"wid-prompt: {c['diktat']!r}", g)
+print("── PY: Kurzsätze (v3.16.6: Empfehlungen wählen keine Vorlage, diktierte Kurzsätze bleiben erhalten)")
+for c in F["kurzsaetze"]["ohne"]:
+    g = br.ohne_empfehlungen(c["in"])
+    check(g == c["out"], f"ohne Empfehlung: {c['in'][:45]!r}", g)
+for c in F["kurzsaetze"]["sichern"]:
+    g = br.kurzsaetze_sichern(c["in"], c["diktat"])[0]
+    check(g == c["out"], f"kurzsatz: {c['name']}", g)
 
 print("── PY: EXE-Prompt-Auswahl (waehle_prompt)")
 NEU = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-a -->\nNEU"
