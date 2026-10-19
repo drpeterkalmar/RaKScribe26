@@ -432,6 +432,41 @@ def vergleich(text, datum, maske_def):
     return satz(f"Verglichen mit {d} unverändert. {t}")
 
 
+_VORUNT_IM_TEXT = re.compile(r"\b(?:zur|zum|zu\s+der|mit\s+der|mit\s+dem|der|dem)\s+(?:letzten\s+|vorigen\s+)?"
+                             r"(?:Vor(?:untersuchung|befund|mammo[gG]ra(?:ph|f)ie|aufnahme)\w*)\b(?!\s*(?:vom|von|\(|\d))", re.I)
+_DATUM_IM_TEXT = re.compile(_DATUM_ALT)
+
+
+def vergleich_diktat(text, datum, maske_def):
+    """v3.16.7 (Peter 19.10.): heute NEU diktierter Text eines Vergleichs-Felds (Mammographie/Sonographie) bekommt das
+    Datum der Voruntersuchung — sonst stand es nur bei „unverändert“/Übernehmen im Befund. Nie „unverändert“ dazu (das
+    sagt nur Peters Diktat). 1. kein Datum bekannt / schon ein Datum im Diktat → wie diktiert; 2. „Verglichen mit der
+    Voruntersuchung …“ (ohne Datum) → „Verglichen mit <Datum> …“; 3. „… zur Voruntersuchung …“ im Satz → „… zur
+    Voruntersuchung vom <Datum> …“; 4. sonst vorn „Verglichen mit <Datum>“ (Eigenschaftswort/kein/unverändert klein
+    weiter, sonst mit Doppelpunkt)."""
+    t = " ".join(str(text or "").split())
+    d = datum_kurz(datum)
+    if not t or not d:
+        return satz(t) if t else ""
+    if _DATUM_IM_TEXT.search(t) and not _PLATZHALTER.match(t):
+        return satz(t)                      # Peter hat ein Datum diktiert → seines gilt
+    m = _PLATZHALTER.match(t)
+    if m:
+        return satz(f"Verglichen mit {d} " + t[m.end():].lstrip()) if t[m.end():].strip() else satz(f"Verglichen mit {d}")
+    m = _VERGLEICH_OHNE.match(t)
+    if m:
+        return satz(f"Verglichen mit {d}" + t[m.end():])
+    m = _VORUNT_IM_TEXT.search(t)
+    if m:
+        return satz(t[:m.end()] + f" vom {d}" + t[m.end():])
+    erstes = _norm(t.split(" ", 1)[0])
+    klein = {_norm(w) for w in ((maske_def.get("vergleich") or {}).get("klein_anfang") or [])
+             + ((maske_def.get("vergleich") or {}).get("diktat_klein_anfang") or [])}
+    if any(erstes == w or (erstes.startswith(w) and len(erstes) - len(w) <= 3) for w in klein):
+        return satz(f"Verglichen mit {d} {_klein_anfang(t)}")
+    return satz(f"Verglichen mit {d}: {t}")
+
+
 def ohne_platzhalter(text, datum=""):
     """Normalbaustein („Verglichen mit .......... unverändert …“): mit Vorbefund-Datum eingesetzt, ohne Vorbefund der
     Vergleich weg („Kleinfleckig strukturierter …“)."""
@@ -912,6 +947,8 @@ def feld_verarbeiten(f, maske, korrektur=None, misheard=None):
             for a, v in w2.items():
                 werte.setdefault(a, v)
         text = satz(k)
+        if f.vergleich and maske.vorbefund and maske.datum:     # v3.16.7: Voruntersuchungs-Datum auch bei neuem Diktat
+            text = vergleich_diktat(text, maske.datum, maske.definition)
     else:
         text = ""
     erg = (text, werte, hinweis)
@@ -967,6 +1004,17 @@ def befund_bauen(maske, korrektur=None, misheard=None, ohne_offene=False):
         if f.typ != "ergebnis" and f.id in texte and f.quelle == DIKTAT:
             for a, v in werte_in_text(texte[f.id]).items():
                 werte.setdefault(a, v)
+    # v3.16.7 (Peter 19.10.): heute nicht genannte ACR/BI-RADS kommen aus dem Vorbefund (Doppelbefundung final vor dem
+    # Brieftext) — sichtbar als Hinweis. Nicht, wenn das Ergebnis-Feld bewusst geleert wurde.
+    erg_f = next((f for f in maske.felder if f.typ == "ergebnis"), None)
+    if erg_f is not None and maske.vorbefund and not (erg_f.quelle == GETIPPT and not erg_f.text.strip()):
+        aus_vb = [a for a in ("acr", "birads") if not werte.get(a) and erg_f.vorschlag_werte.get(a)]
+        for a in aus_vb:
+            werte[a] = erg_f.vorschlag_werte[a]
+        if aus_vb:
+            labs = [(d.get("werte") or {}).get(a, {}).get("label") or _WERT_LABEL[a] for a in aus_vb]
+            b.hinweise.append(" und ".join(labs) + f" aus dem Vorbefund{(' vom ' + maske.datum) if maske.datum else ''}"
+                              " übernommen – bitte prüfen")
     b.werte = werte
     titel = titel_text(maske)
     zeilen = [f"## {titel}", "", "## Befund"]

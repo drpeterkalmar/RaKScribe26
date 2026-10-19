@@ -1,6 +1,6 @@
 {
  "_info": "v3.15.0 Masken (Peter 14.10.2026: Mammographie diktieren → Maske mit Feldern, Feldsprung per SpeechMike-Taste, Vorbefund schon eingetragen). Generisch: Felder, Labels zum Zerlegen eines Vorbefunds, „unverändert“, Werte (ACR/BI-RADS), Titel, Schluss-Baustein, Tasten. Keine RIS-Tabellen, keine Patientendaten. Logik: source_code/maske.py, Tests: tests/offline/test_maske.py + maske_faelle.txt. Tastenbelegung überschreibbar in config.ini [MASKE] (NAECHSTES_FELD = FF usw.). v3.15.4 (Peter 15.10., SpeechMike Ambient ohne F1–F4): Belegung je erkanntem Gerät — „tasten“ für SpeechMike III/Premium (unverändert), „tasten_ambient“ für das Ambient (Seriennummer PSM5…): Play = übernehmen (beim Loslassen, nie als Schieber-Stellung), Command = Maske aus/an; config.ini [MASKE] AMBIENT_UEBERNEHMEN = … überschreibt. EXE-only (die Web-App hat keinen CAS-Auftrag).",
- "version": "2026-10-15b",
+ "version": "2026-10-19a",
  "tasten": {
   "naechstes_feld": "FF",
   "voriges_feld": "REW",
@@ -60,7 +60,11 @@
                      "symmetrisch", "seitengleich", "involutiv", "fettreich", "fibroglandulär", "heterogen", "homogen",
                      "überwiegend", "vorwiegend", "weitgehend", "vereinzelt", "vereinzelte", "multiple", "zahlreiche",
                      "insuspekt", "gering", "geringgradig", "mäßig", "mäßiggradig", "vollständig", "teilweise",
-                     "altersentsprechend", "dicht", "locker"]
+                     "altersentsprechend", "dicht", "locker"],
+    "_diktat": "v3.16.7: neu diktierter Text (nicht „unverändert“) bekommt vorn „Verglichen mit <Datum>“ — diese Anfangswörter gehen klein weiter (zusätzlich zu klein_anfang), sonst folgt ein Doppelpunkt. Nie wird „unverändert“ ergänzt.",
+    "diktat_klein_anfang": ["unverändert", "kein", "keine", "keinerlei", "neu", "erstmals", "nunmehr", "jetzt", "weiterhin",
+                            "zunehmend", "abnehmend", "größenkonstant", "größenregredient", "größenprogredient",
+                            "regredient", "progredient", "stationär", "bekannt", "ähnlich", "gleichbleibend"]
    },
    "ergebnis_ende": ["verlaufskontrolle", "im rahmen ihrer früherkennungsuntersuchung", "ihr befund ist unauffällig",
                      "your ", "za vreme", "erken ", "erstbefunder", "zweitbefunder", "mit bestem dank",

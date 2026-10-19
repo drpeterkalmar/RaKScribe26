@@ -258,6 +258,23 @@
   {
    "in": "Lymphknoten nicht involviert, Drüsengewebe unauffällig",
    "out": "Lymphknoten nicht involviert, Drüsengewebe unauffällig"
+  },
+  {
+   "in": "Inspektion und Palpation: Blanden-Narben-Verhältnisse beidseits.",
+   "out": "Inspektion und Palpation: blande Narbenverhältnisse beidseits."
+  },
+  {
+   "in": "Blanden-Naben-Verhältnisse links.",
+   "out": "blande Narbenverhältnisse links."
+  },
+  {
+   "in": "Bei Blanden Naben Verhältnissen kein Rezidiv.",
+   "out": "Bei blanden Narbenverhältnissen kein Rezidiv."
+  },
+  {
+   "in": "Bei blanden Narbenverhältnissen kein Rezidiv.",
+   "keep": true,
+   "out": "Bei blanden Narbenverhältnissen kein Rezidiv."
   }
  ]
 }

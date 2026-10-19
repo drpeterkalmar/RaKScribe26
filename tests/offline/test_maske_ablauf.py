@@ -238,7 +238,7 @@ r = app.result_text.text
 SOLL_ANFANG = ("## Mammographie beidseits – Screening\n\n## Befund\nInspektion und Palpation: Unauffällig.\n\n"
                "Mammographie: Verglichen mit 05.06.2024 beidseits unverändert vereinzelte insuspekte Verkalkungen sowie "
                "Gefäßverkalkungen. Im Übrigen unauffällig strukturierter Drüsenkörper. Cutis und Subcutis unauffällig.\n\n"
-               "Sonographie: Keine suspekten Herde.\n\n## Ergebnis\n" + GEHEIM + " Mastopathie mit insuspekten Verkalkungen.\n"
+               "Sonographie: Verglichen mit 05.06.2024 keine suspekten Herde.\n\n## Ergebnis\n" + GEHEIM + " Mastopathie mit insuspekten Verkalkungen.\n"
                "ACR: 2\nBIRADS: 2\n\nVerlaufskontrolle bei unverändertem klinischem Befund")
 check("INS → Befund aus den Feldern rechts zur Kontrolle (Titel, Labels, Ergebnis, ACR/BIRADS, Screening-Text)",
       r.startswith(SOLL_ANFANG) and app._status_raw == "KONTROLLE" and app._befund_wartet, r)
@@ -474,7 +474,7 @@ app.sm_ins()
 ruhe()
 r9 = app.result_text.text
 check("INS → Befund mit dem eingesetzten Satz, Sono mit eingefügtem Wort", "Neu aufgetretener Herd links oben außen. Cutis "
-      "und Subcutis unauffällig." in r9 and "Sonographie: Keine suspekten Herde." in r9, r9)
+      "und Subcutis unauffällig." in r9 and "Sonographie: Verglichen mit 05.06.2024 keine suspekten Herde." in r9, r9)
 check("KI bekam nur Peters Diktate (nie den Vorbefund-Text des getippten Mammographie-Felds)",
       not any("Gefäßverkalkungen" in k for k in KORR), KORR)
 app.befund_fertig()

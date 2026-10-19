@@ -154,7 +154,7 @@ b2 = M.befund_bauen(m2, korrektur=korrektur, ohne_offene=True)
 check("zweites INS: Befund ohne das offene Feld + Hinweis", "Sonographie:" not in b2.report
       and b2.hinweise[0] == "Nicht im Befund (Vorschlag nicht übernommen): Sonographie", b2.hinweise)
 check("Diktat ersetzt den Vorbefund (Feldtext = korrigiertes Diktat)",
-      "Mammographie: Beidseits neue gruppierte Mikroverkalkungen links oben außen." in b2.report
+      "Mammographie: Verglichen mit 05.06.2024 beidseits neue gruppierte Mikroverkalkungen links oben außen." in b2.report
       and "Gefäßverkalkungen" not in b2.report and "Inspektion und Palpation: Unauffällig." in b2.report, b2.report)
 check("Ergebnis: Werte aus dem Diktat (ACR C, BIRADS 4), Text ohne sie", "## Ergebnis\nSuspekter Mikrokalk links.\nACR: C\n"
       "BIRADS: 4" in b2.report, b2.report)
@@ -193,7 +193,7 @@ m3.gehe_zu(2)
 a_, b_, c_ = m3.reservieren()
 m3.diktat_fertig(a_, b_, c_, "keine suspekten Herde")
 b3b = M.befund_bauen(m3, korrektur=korrektur)
-check("… Diktat ins eingeklappte Feld schaltet es zu", m3.felder[2].sichtbar and "Sonographie: Keine suspekten Herde."
+check("… Diktat ins eingeklappte Feld schaltet es zu", m3.felder[2].sichtbar and "Sonographie: Verglichen mit 05.06.2024 keine suspekten Herde."
       in b3b.report, b3b.report)
 
 # kein Vorbefund: Normalbaustein als Vorschlag, kurativ ohne Screening-Text
@@ -375,6 +375,48 @@ for text, rest_soll, werte_soll in (
         ("ACR 2, BIRADS 1", "", {"acr": "2", "birads": "1"})):
     rest, w = M.werte_aus_text(text)
     check(f"Werte „{text}“ → {werte_soll}, Rest {rest_soll!r}", rest == rest_soll and w == werte_soll, f"{rest!r} {w}")
+
+# v3.16.7 (Peter 19.10.): Voruntersuchungs-Datum auch bei NEU diktiertem Text, ACR/BI-RADS aus dem Vorbefund
+for text, soll in (
+        ("kleinfleckig strukturierter Drüsenkörper.", "Verglichen mit 05.06.2024 kleinfleckig strukturierter Drüsenkörper."),
+        ("Keine suspekten Herde.", "Verglichen mit 05.06.2024 keine suspekten Herde."),
+        ("Neu aufgetretener Herd links.", "Verglichen mit 05.06.2024 neu aufgetretener Herd links."),
+        ("Unverändert kleinfleckig.", "Verglichen mit 05.06.2024 unverändert kleinfleckig."),
+        ("Drüsenkörper kleinfleckig.", "Verglichen mit 05.06.2024: Drüsenkörper kleinfleckig."),
+        ("Verglichen mit der Voruntersuchung neuer Herd links.", "Verglichen mit 05.06.2024 neuer Herd links."),
+        ("Im Vergleich zur Voruntersuchung neuer Herd.", "Verglichen mit 05.06.2024 neuer Herd."),
+        ("Neuer Herd links, im Übrigen unverändert zur Voruntersuchung.",
+         "Neuer Herd links, im Übrigen unverändert zur Voruntersuchung vom 05.06.2024."),
+        ("Verglichen mit 2022 neuer Herd.", "Verglichen mit 2022 neuer Herd."),
+        ("Verglichen mit .......... neuer Herd.", "Verglichen mit 05.06.2024 neuer Herd.")):
+    ist = M.vergleich_diktat(text, "2024-06-05", D)
+    check(f"Diktat mit Vergleichsdatum: {text!r}", ist == soll, f"\n   IST  {ist!r}\n   SOLL {soll!r}")
+check("Diktat ohne bekanntes Datum bleibt wie diktiert", M.vergleich_diktat("neuer Herd", "", D) == "Neuer Herd.")
+m7 = neu_maske()
+m7.uebernehmen(0)
+for i, txt in ((1, "kleinfleckig strukturierter Drüsenkörper"), (3, "kein Hinweis auf Malignität")):
+    m7.gehe_zu(i)
+    a_, b_, c_ = m7.reservieren()
+    m7.diktat_fertig(a_, b_, c_, txt)
+b7 = M.befund_bauen(m7, korrektur=korrektur, ohne_offene=True)
+check("neu diktierte Mammographie → „Verglichen mit <Datum> …“",
+      "Mammographie: Verglichen mit 05.06.2024 kleinfleckig strukturierter Drüsenkörper." in b7.report, b7.report)
+check("Ergebnis ohne Werte diktiert → ACR/BIRADS aus dem Vorbefund + Hinweis", "## Ergebnis\nKein Hinweis auf Malignität."
+      "\nACR: 2\nBIRADS: 2" in b7.report and any("aus dem Vorbefund vom 05.06.2024 übernommen" in h for h in b7.hinweise),
+      f"{b7.report}\n{b7.hinweise}")
+m8 = neu_maske()
+m8.uebernehmen(0)
+m8.gehe_zu(3)
+a_, b_, c_ = m8.reservieren()
+m8.diktat_fertig(a_, b_, c_, "unauffällig BIRADS 1")
+b8 = M.befund_bauen(m8, korrektur=korrektur, ohne_offene=True)
+check("heute diktiertes BIRADS geht vor, fehlendes ACR aus dem Vorbefund", "ACR: 2\nBIRADS: 1" in b8.report
+      and any(h.startswith("ACR aus dem Vorbefund") for h in b8.hinweise), f"{b8.report}\n{b8.hinweise}")
+m9 = neu_maske()
+m9.uebernehmen(0)
+m9.tippen(3, "")
+b9 = M.befund_bauen(m9, korrektur=korrektur, ohne_offene=True)
+check("Ergebnis bewusst gelöscht → keine Vorbefund-Werte", "ACR" not in b9.report, b9.report)
 
 print("\n" + ("✅ MASKE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)
