@@ -76,6 +76,23 @@ check("chirp3_request: Modell chirp_3, de-DE, PhraseSet = phrases.json chirp (Bo
       and {p["boost"] for p in cfg["adaptation"]["phraseSets"][0]["inlinePhraseSet"]["phrases"]} == {10})
 check("chirp3_request: Ergebnisse mit Leerzeichen verbunden", t == "Knie rechts unauffällig.")
 stt.chirp3_request("tok", "global", "", urlopen=urlopen)
+
+# v3.16.8: Ergebnisse ohne „transcript“/„alternatives“ (Stille in einem Maskenfeld) → kein KeyError, leer zählt nicht
+luecken = {"results": [{"alternatives": [{"transcript": "Mammae beidseits"}]}, {"languageCode": "de-de", "resultEndOffset": "3s"},
+                       {"alternatives": []}, {"alternatives": [{"confidence": 0.1}]}, {"alternatives": [{"transcript": "  "}]},
+                       {"alternatives": [{"transcript": "unauffällig."}]}]}
+check("transkript_aus: Stücke ohne transcript/alternatives übersprungen (KeyError 'transcript', Diktat 019)",
+      stt.transkript_aus(luecken) == "Mammae beidseits unauffällig.", stt.transkript_aus(luecken))
+check("transkript_aus: ganz ohne Text → leerer Text, kein Fehler",
+      stt.transkript_aus({}) == "" and stt.transkript_aus({"results": [{}]}) == "" and stt.transkript_aus(None) == "")
+
+
+def urlopen_luecke(req, timeout):
+    return Antwort(luecken)
+
+
+check("chirp3_request: Antwort mit leeren Stücken → nur der Text",
+      stt.chirp3_request("tok", "eu", "QUJD", urlopen=urlopen_luecke) == "Mammae beidseits unauffällig.")
 check("Location global → speech.googleapis.com", gesehen["url"].startswith("https://speech.googleapis.com/v2/projects/rakscribe/locations/global/"))
 
 import subprocess

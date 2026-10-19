@@ -82,9 +82,10 @@ export async function getSttToken(keyJson: SttSchluessel | null, signal?: AbortS
   return data.access_token;
 }
 
-type SttErgebnis = { results?: { alternatives: { transcript: string }[] }[]; error?: { message?: string } };
-const transkriptAus = (data: SttErgebnis): string =>
-  (data.results || []).map(r => r.alternatives[0].transcript).join(' ');
+type SttErgebnis = { results?: { alternatives?: { transcript?: string }[] }[]; error?: { message?: string } };
+// v3.16.8 (wie stt.py transkript_aus): Stücke ohne transcript/alternatives (Stille) zählen als leer statt abzustürzen
+export const transkriptAus = (data: SttErgebnis): string =>
+  (data?.results || []).map(r => (r?.alternatives?.[0]?.transcript || '').trim()).filter(Boolean).join(' ');
 
 // Chunk-Transkription (6-s-Chunks während der Aufnahme, latest_long) — nur Live-Anzeige
 export async function transcribeChunkWithGoogle(wavBlob: Blob, ctx: SttKontext): Promise<string> {

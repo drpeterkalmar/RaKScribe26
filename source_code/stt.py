@@ -61,8 +61,20 @@ def chirp3_request(token, loc, wav_b64, timeout=60, urlopen=None):
         "Content-Type": "application/json"})
     with urlopen(req, timeout=timeout) as resp:
         j = json.loads(resp.read())
-    return " ".join(res["alternatives"][0]["transcript"]
-                    for res in j.get("results", []))
+    return transkript_aus(j)
+
+
+def transkript_aus(j):
+    """v3.16.8 (Peter 19.10., Diktat 20261019019, Mammo-Maske): chirp_3 liefert für stille oder unverständliche Stücke
+    Ergebnisse OHNE „transcript“ (nur languageCode/resultEndOffset) bzw. ohne „alternatives“ — das warf KeyError
+    'transcript' und die Feld-Erkennung fiel aus. Solche Stücke zählen als leer; nur echte Texte werden verbunden."""
+    teile = []
+    for res in (j or {}).get("results") or []:
+        alts = (res or {}).get("alternatives") or []
+        t = (alts[0] or {}).get("transcript") if alts and isinstance(alts[0], dict) else None
+        if isinstance(t, str) and t.strip():
+            teile.append(t.strip())
+    return " ".join(teile)
 
 
 def stitch_overlaps(a, b, window=14):
