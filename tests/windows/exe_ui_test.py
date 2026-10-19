@@ -1078,7 +1078,7 @@ cm("INS → Befund aus den Feldern: Titel Screening, Inspektion übernommen, Mam
    "Sono diktiert, Ergebnis + ACR/BIRADS, Screening-Text BI-RADS 2",
    r.startswith("## Mammographie beidseits – Screening\n\n## Befund\nInspektion und Palpation: Unauffällig.\n\n"
                 "Mammographie: Verglichen mit 05.06.2024 beidseits unverändert vereinzelte insuspekte Verkalkungen")
-   and "Sonographie: Keine suspekten Herde." in r and "## Ergebnis\nMastopathie mit insuspekten Verkalkungen.\nACR: 2\n"
+   and "Sonographie: Verglichen mit 05.06.2024 keine suspekten Herde." in r and "## Ergebnis\nMastopathie mit insuspekten Verkalkungen.\nACR: 2\n"
    "BIRADS: 2\n\n" + SCREENING_12 in r and (MM.get("ins") or {}).get("status") == "KONTROLLE", r[:900])
 cm("EOL → genau dieser Befund an die Brücke („fertig“), Maske zu", (MM.get("antwort1") or {}).get("status") == "fertig"
    and MM.get("ergebnis1") == r and gm("eol", "offen") is False, str(MM.get("antwort1")))
@@ -1112,7 +1112,7 @@ cm("In der Pause tippen → getippt (Felder nicht gesperrt)", (gm("a_tippen_paus
 cm("F3 auf der Tastatur → Ergebnis übernommen", gq("a_kb_f3")[3:] == ["uebernommen"], str(gq("a_kb_f3")))
 ra = str((MM.get("a_ins") or {}).get("result_voll") or "")
 cm("INS → Befund mit eingesetztem Satz und getippter Sonographie", "Mammographie: " + A_MAMMO in ra
-   and "Sonographie: Keine suspekten Herde." in ra and "ACR: 2\nBIRADS: 2" in ra, ra[:900])
+   and "Sonographie: Verglichen mit 05.06.2024 keine suspekten Herde." in ra and "ACR: 2\nBIRADS: 2" in ra, ra[:900])
 cm("F4 auf der Tastatur → Maske aus/an; SpeechMike III/Premium → Hilfezeile wieder F3/F4",
    gm("a_kb_f4_aus", "an") is False and gm("a_kb_f4_an", "an") is True
    and "F3 = übernehmen · F4 = Maske aus" in str(gm("a_premium", "hilfe")), str(gm("a_premium", "hilfe")))
