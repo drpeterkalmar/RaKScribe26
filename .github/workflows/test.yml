@@ -76,6 +76,8 @@ jobs:
         run: python tests/offline/test_deploy_guard.py
       - name: Versionsnummer nur in VERSION, Build-Pakete fest
         run: python tests/offline/test_version_sync.py
+      - name: Produktname KaiScribe (sichtbar), technische Namen unverändert
+        run: python tests/offline/test_produktname.py
       - name: EXE-Ablauf (Aufnahme → Befund → Einfügen, mit Attrappen)
         run: python tests/offline/test_exe_ablauf.py
       - name: EXE-Zwischenablage (Wiederholung, Gegenlesen)

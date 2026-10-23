@@ -1,6 +1,8 @@
-# ⚙️ RaKScribe26 - Installationsanleitung
+# ⚙️ KaiScribe (vormals RaKScribe) – Installationsanleitung
 
-Diese Anleitung führt Sie Schritt für Schritt durch die Einrichtung von **RaKScribe26** für den radiologischen Befundungsalltag.
+> **Name:** Seit Version 3.17.0 (Oktober 2026) heißt das Programm **KaiScribe** (Familie: KaiScribe = Diktat/Befund, KaiView = Viewer, KaiRad = Dachname). Technische Namen bleiben vorerst gleich: Repo `RaKScribe26`, Programmdatei `rakscribe26.exe`, Download-Link `releases/latest/download/rakscribe26.exe`, Ordner `X:\RaKScribe`, `%APPDATA%\RaKScribe` und die Schlüsseldatei `rakscribe-praxis-key.json`.
+
+Diese Anleitung führt Sie Schritt für Schritt durch die Einrichtung von **KaiScribe** für den radiologischen Befundungsalltag.
 
 ---
 

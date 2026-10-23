@@ -650,7 +650,7 @@ def prompt_block(bausteine, vorlage=None):
         zeilen.append("Diese Sätze der Vorlage widersprechen den IB-Lab-Werten – nicht übernehmen (bzw. nur ohne die "
                       "widersprechende Aussage): " + " ".join(f"„{s}“" for s in weg))
     return ("<ibl_messwerte>\n"
-            "Zu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. RaKScribe fügt sie nach dem Befund automatisch "
+            "Zu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch "
             "und wörtlich ein:\n" + "\n".join(zeilen) + "\n"
             "Regeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der "
             "Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat "

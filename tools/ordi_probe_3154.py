@@ -143,7 +143,7 @@ class Lauf:
         st = self.warten("ready", 120)
         self.check("V0", f"EXE startet als Gast-Selbsttest, Version {self.version}, bereit",
                    f"{(st or {}).get('title')} / {(st or {}).get('status')} / {round(time.time() - self.t0, 1)} s",
-                   bool(st) and f"RaKScribe {self.version} " in str(st.get("title")) and st.get("status") == "READY")
+                   bool(st) and any(f"{n} {self.version} " in str(st.get("title")) for n in ("KaiScribe", "RaKScribe")) and st.get("status") == "READY")
         if self.prompt:
             self.check("P1", f"eingebauter Befund-Prompt = {self.prompt}",
                        f"{(st or {}).get('prompt_version')} / {(st or {}).get('prompt_quelle')}",

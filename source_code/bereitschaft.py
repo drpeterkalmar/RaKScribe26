@@ -33,7 +33,7 @@ PROZESS_PRAEFIX = "rakscribe26"           # wie die Brücke (windows.prozesse): 
 MUTEX = "Local\\RaKScribe26-Einzelinstanz"
 SIGNAL = "nach_vorne.json"
 SIGNAL_MAX_ALTER_S = 60
-BESCHREIBUNG = "RaKScribe wartet minimiert auf das nächste CAS-Diktat"
+BESCHREIBUNG = "KaiScribe wartet minimiert auf das nächste CAS-Diktat"
 
 
 def minimiert_gewuenscht(argv):
@@ -298,7 +298,7 @@ class Autostart:
             return False, ("Autostart konnte nicht eingerichtet werden — die Verknüpfung im Autostart-Ordner fehlt "
                            f"(Windows Script Host gesperrt?, Rückgabe {code}{fehler}).")
         self.log(f"[AUTOSTART] an: {self.lnk} → {self.starter} → {exe} {MINIMIERT}")
-        return True, f"Autostart an – nach der Windows-Anmeldung wartet RaKScribe minimiert ({ntpath.basename(exe)})"
+        return True, f"Autostart an – nach der Windows-Anmeldung wartet KaiScribe minimiert ({ntpath.basename(exe)})"
 
     def entfernen(self):
         """Haken aus: Verknüpfung und Starter löschen (ein noch wartender Starter endet beim nächsten Takt)."""
@@ -313,7 +313,7 @@ class Autostart:
         if fehler:
             return False, "Autostart nicht vollständig entfernt: " + "; ".join(fehler)
         self.log("[AUTOSTART] aus: Verknüpfung und Starter entfernt")
-        return True, "Autostart aus – RaKScribe startet nicht mehr mit Windows"
+        return True, "Autostart aus – KaiScribe startet nicht mehr mit Windows"
 
     def nachziehen(self, exe_jetzt):
         """Beim Start, wenn der Autostart an ist: den Starter auf Stand halten. Die gemerkte EXE bleibt das Ziel — außer

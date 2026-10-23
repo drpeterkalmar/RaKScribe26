@@ -986,7 +986,7 @@ class RaKScribeApp(ctk.CTk):
     def __init__(self, minimiert=False):
         super().__init__()
 
-        self.title(f"RaKScribe {app_version()} – Röntgen am Kai")
+        self.title(f"KaiScribe {app_version()} – Röntgen am Kai")
         self.geometry("1240x820")
         self.minsize(900, 600)
         self.configure(fg_color=BGC_MAIN)
@@ -1128,7 +1128,7 @@ class RaKScribeApp(ctk.CTk):
                      text_color="white", font=(UI_FONT, 18, "bold")).pack(side="left")
         names = ctk.CTkFrame(brand, fg_color="transparent")
         names.pack(side="left", padx=(10, 8))
-        ctk.CTkLabel(names, text="RaKScribe", font=(UI_FONT, 16, "bold"), text_color=TEXT_PRIMARY,
+        ctk.CTkLabel(names, text="KaiScribe", font=(UI_FONT, 16, "bold"), text_color=TEXT_PRIMARY,
                      height=18, anchor="w").pack(anchor="w")
         ctk.CTkLabel(names, text="Röntgen am Kai", font=(UI_FONT, 11), text_color=TEXT_FAINT,
                      height=14, anchor="w").pack(anchor="w")
@@ -1930,7 +1930,7 @@ class RaKScribeApp(ctk.CTk):
         init_google_speech()
         self.refresh_key_state()
         if keys_ready():
-            messagebox.showinfo("Schlüssel geladen", "Praxis-Schlüssel gespeichert — RaKScribe ist bereit.\n"
+            messagebox.showinfo("Schlüssel geladen", "Praxis-Schlüssel gespeichert — KaiScribe ist bereit.\n"
                                 "Er bleibt auch nach EXE-Updates erhalten.")
 
     def remove_user_key(self):
@@ -1977,7 +1977,7 @@ class RaKScribeApp(ctk.CTk):
                      fg_color="#1A2640").pack(pady=(28, 10))
         ctk.CTkLabel(box, text="Praxis-Schlüssel laden", font=(UI_FONT, 20, "bold"),
                      text_color=TEXT_PRIMARY).pack()
-        ctk.CTkLabel(box, text="RaKScribe ist gesperrt, bis der Schlüssel geladen ist.\n"
+        ctk.CTkLabel(box, text="KaiScribe ist gesperrt, bis der Schlüssel geladen ist.\n"
                                "Datei: rakscribe-praxis-key.json (Drive-Ordner „RaKScribe“)",
                      font=(UI_FONT, 13), text_color=TEXT_MUTED, justify="center").pack(pady=(8, 18))
         ctk.CTkButton(box, text="Schlüssel-Datei wählen…", height=46, width=320, corner_radius=10,
@@ -4121,7 +4121,7 @@ class RaKScribeApp(ctk.CTk):
         log(f"[START] Zweiter Start ({exe or '?'}, v{bitte.get('version') or '?'}) – dieses Fenster nach vorne.")
         self._cas_nach_vorne()
         if exe and getattr(self, "_exe_pfad", None) and not _bs.gleicher_pfad(exe, self._exe_pfad):
-            self._kurzhinweis(f"RaKScribe {app_version()} läuft schon – für die andere EXE erst dieses Fenster schließen",
+            self._kurzhinweis(f"KaiScribe {app_version()} läuft schon – für die andere EXE erst dieses Fenster schließen",
                               10000)
 
     def _autostart_nachziehen(self):

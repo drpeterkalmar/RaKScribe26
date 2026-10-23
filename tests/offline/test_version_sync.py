@@ -19,9 +19,9 @@ V = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 check(f"VERSION = {V} (Form x.y.z)", bool(re.fullmatch(r"\d+\.\d+\.\d+", V)), V)
 
 exe = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
-check("EXE-Titel und -Badge aus app_version()", 'self.title(f"RaKScribe {app_version()} – Röntgen am Kai")' in exe
+check("EXE-Titel und -Badge aus app_version()", 'self.title(f"KaiScribe {app_version()} – Röntgen am Kai")' in exe
       and 'text=f" v{app_version()} "' in exe)
-check("EXE: keine fest eingetragene Version in Titel/Badge", not re.search(r'title\("RaKScribe \d', exe) and 'text=" v3' not in exe)
+check("EXE: keine fest eingetragene Version in Titel/Badge", not re.search(r'title\("(Rak|Kai)Scribe \d', exe) and 'text=" v3' not in exe)
 import exe_stubs as S  # noqa: E402
 mod = S.lade_rakscribe()
 check("EXE app_version() liefert VERSION", mod.app_version() == V, mod.app_version())
@@ -32,9 +32,9 @@ check("Web-Badge aus VERSION (?raw)", "import appVersionRaw from '../../VERSION?
 html = (ROOT / "web_app" / "index.html").read_text(encoding="utf-8")
 vite = (ROOT / "web_app" / "vite.config.ts").read_text(encoding="utf-8")
 check("Seitentitel: Platzhalter, vite.config.ts setzt VERSION ein",
-      "<title>RaKScribe __RAKSCRIBE_VERSION__ – Befundungsassistent</title>" in html and "'../VERSION'" in vite
+      "<title>KaiScribe __RAKSCRIBE_VERSION__ – Befundungsassistent</title>" in html and "'../VERSION'" in vite
       and "replaceAll('__RAKSCRIBE_VERSION__', VERSION)" in vite and "versionImTitel()" in vite)
-check("… ergibt den Titel „RaKScribe <VERSION>“", f"<title>RaKScribe {V} – Befundungsassistent</title>"
+check("… ergibt den Titel „KaiScribe <VERSION>“", f"<title>KaiScribe {V} – Befundungsassistent</title>"
       in html.replace("__RAKSCRIBE_VERSION__", V))
 
 wf = (ROOT / ".github" / "workflows" / "build-exe.yml").read_text(encoding="utf-8")

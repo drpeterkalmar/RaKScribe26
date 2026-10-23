@@ -73,7 +73,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: RaKScribe26 ${{ steps.version.outputs.tag }}
+          name: KaiScribe ${{ steps.version.outputs.tag }}
           files: release/*
           draft: false
           prerelease: ${{ steps.version.outputs.prerelease }}

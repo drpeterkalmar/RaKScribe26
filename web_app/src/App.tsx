@@ -1071,7 +1071,7 @@ export default function App() {
         <div className="brand">
           <div className="brand-mark" aria-hidden="true"><AudioLines size={18} /></div>
           <div className="brand-text">
-            <span className="brand-name">RaKScribe</span>
+            <span className="brand-name">KaiScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
           </div>
           <span className="version-chip">v{APP_VERSION}</span>
@@ -1128,7 +1128,7 @@ export default function App() {
                 )}
                 {hidVerfuegbar && (
                   <label className="menu-item" role="menuitemcheckbox" aria-checked={smAn}
-                    title="Aus: RaKScribe öffnet das SpeechMike nicht und reagiert auf keine SpeechMike-Taste (F10/F9 bleiben)">
+                    title="Aus: KaiScribe öffnet das SpeechMike nicht und reagiert auf keine SpeechMike-Taste (F10/F9 bleiben)">
                     <input type="checkbox" checked={smAn} onChange={e => {
                       setSmAn(e.target.checked);
                       localStorage.setItem('speechmike', e.target.checked ? '1' : '0');
@@ -1278,7 +1278,7 @@ export default function App() {
         <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
           <div className="gate-card">
             <h1 id="gate-title">Praxis-Schlüssel laden</h1>
-            <p className="gate-text">Die App ist gesperrt, bis der Schlüssel geladen ist.</p>
+            <p className="gate-text">KaiScribe ist gesperrt, bis der Schlüssel geladen ist.</p>
             <div className="gate-drop">
               <KeyRound size={26} />
               <span><strong>rakscribe-praxis-key.json</strong> hierher ziehen</span>

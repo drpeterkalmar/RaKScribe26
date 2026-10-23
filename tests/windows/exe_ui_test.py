@@ -59,7 +59,11 @@ def screen_size():
     return u.GetSystemMetrics(0), u.GetSystemMetrics(1)
 
 
-def rks_windows(title_part="RaKScribe"):
+# Fenstertitel der EXE seit 3.17.0 „KaiScribe <Version> – Röntgen am Kai“ (vorher „RaKScribe …“; Prozess bleibt rakscribe26)
+FENSTER = "KaiScribe"
+
+
+def rks_windows(title_part=FENSTER):
     import win32gui
     hits = []
     win32gui.EnumWindows(lambda h, _: hits.append(h) if win32gui.IsWindowVisible(h) and title_part in win32gui.GetWindowText(h) else None, None)
@@ -627,7 +631,7 @@ def fall_g():
     p = subprocess.Popen([str(exe), bereitschaft.MINIMIERT], cwd=work, env=env1)
     lnk = None
     try:
-        hwnd, t_fenster = find_window("RaKScribe", 90)
+        hwnd, t_fenster = find_window(FENSTER, 90)
         G["start_s"] = round(t_fenster, 1)
         G["start_iconic"] = bool(hwnd and win32gui.IsIconic(hwnd))
         G["ready"] = wait_json(state, "ready", 60)
@@ -717,7 +721,7 @@ def fall_g():
         G["ohne_exe_fenster"] = len(rks_windows())
         t = time.time()
         verschieben(weg / exe.name, exe)
-        hwnd2, _ = find_window("RaKScribe", 120)
+        hwnd2, _ = find_window(FENSTER, 120)
         G["x_da_bis_fenster_s"] = round(time.time() - t, 1)
         G["autostart_iconic"] = bool(hwnd2 and win32gui.IsIconic(hwnd2))
         G["autostart_ready"] = wait_json(state2, "ready", 60)
@@ -741,7 +745,7 @@ def fall_g():
     state3 = work / "g3.json"
     p4 = subprocess.Popen([str(exe)], cwd=work, env=dict(basis, **umg, RAKSCRIBE_SELFTEST=str(state3)))
     try:
-        find_window("RaKScribe", 90)
+        find_window(FENSTER, 90)
         if wait_json(state3, "ready", 60) is not None:
             G["autostart_aus"] = ph(state3, "autostart_aus")
         G["aus_lnk_da"], G["aus_vbs_da"] = lnk.exists(), vbs.exists()
@@ -782,7 +786,7 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
                RAKSCRIBE_SELFTEST_FAKEAUDIO="1" if fake_audio else "0")
     p = subprocess.Popen([str(work / EXE.name)], cwd=work, env=env)
     try:
-        hwnd, t_start = find_window("RaKScribe", 90)
+        hwnd, t_start = find_window(FENSTER, 90)
         check(case, "Fenster erscheint", hwnd is not None, f"{t_start:.1f} s bis zum Fenster")
         if not hwnd:
             return None
@@ -825,7 +829,7 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
         kill_all(p)
 
 
-print(f"RaKScribe EXE-UI-Test {TAG} — Bildschirm {screen_size()}", flush=True)
+print(f"KaiScribe EXE-UI-Test {TAG} — Bildschirm {screen_size()}", flush=True)
 
 # A + B: ohne Schlüssel
 a = run_case("A_gesperrt", with_key=False, demo=False, send_f10=True, sm_gesperrt=True)
@@ -839,6 +843,8 @@ if a:
     else:
         exp_ver = TAG.lstrip("v")
     check("A_gesperrt", f"Titel enthält Version {exp_ver}", exp_ver in s["title"], s["title"])
+    check("A_gesperrt", "Titel heißt KaiScribe (nicht mehr RaKScribe)", s["title"].startswith(f"KaiScribe {exp_ver}")
+          and "RaKScribe" not in s["title"], s["title"])
     check("A_gesperrt", "Sperre sichtbar", s["gate_visible"])
     check("A_gesperrt", "Aufnahme-Button gesperrt", s["record_btn_state"] == "disabled", s["record_btn_state"])
     check("A_gesperrt", "Status = Gesperrt", s["status"] == "LOCKED", s["status"])
@@ -1292,7 +1298,7 @@ cw("INS → Befund zur Kontrolle; EOL ohne CAS-Auftrag fügt nichts ein (kein St
 ok = all(r["ok"] for r in results) and a and c and e_lauf and m_lauf
 (OUT / "results.json").write_text(json.dumps({"tag": TAG, "ok": bool(ok), "results": results, "A": a, "C": c, "E": e_lauf,
                                               "G": G}, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
-lines = [f"## Windows-UI-Test RaKScribe {TAG}", "",
+lines = [f"## Windows-UI-Test KaiScribe {TAG}", "",
          f"Echtes Windows (GitHub Actions, `{os.environ.get('ImageOS', 'windows')}`), Bildschirm {screen_size()[0]}×{screen_size()[1]}, "
          f"getestet {time.strftime('%d.%m.%Y %H:%M')} UTC. Test-Schlüssel ist ein selbst erzeugter Dummy — kein Praxis-Schlüssel, "
          "kein Mikrofon, keine Google-Aufrufe.", "",

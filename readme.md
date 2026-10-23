@@ -1,8 +1,10 @@
-# 🚀 RaKScribe26
+# 🚀 KaiScribe (vormals RaKScribe)
+
+> **Name:** Seit Version 3.17.0 (Oktober 2026) heißt das Programm **KaiScribe** (Familie: KaiScribe = Diktat/Befund, KaiView = Viewer, KaiRad = Dachname). Technische Namen bleiben vorerst gleich: Repo `RaKScribe26`, Programmdatei `rakscribe26.exe`, Download-Link `releases/latest/download/rakscribe26.exe`, Ordner `X:\RaKScribe`, `%APPDATA%\RaKScribe` und die Schlüsseldatei `rakscribe-praxis-key.json`.
 
 **Intelligentes Reporting und strukturiertes radiologisches Befunden** – blitzschnell, hochpräzise und maßgeschneidert für den klinischen Alltag.
 
-RaKScribe26 ist ein hocheffizienter radiologischer Befundungsassistent. Es kombiniert die unglaubliche Geschwindigkeit und Qualität moderner Online-KI-Modelle mit dem bewährten lokalen Workflow, um Diktate in Sekundenschnelle in strukturierte Berichte (mit *Befund* und *Beurteilung*) zu übersetzen und direkt in Ihr RIS oder Word einzufügen.
+KaiScribe ist ein hocheffizienter radiologischer Befundungsassistent. Es kombiniert die unglaubliche Geschwindigkeit und Qualität moderner Online-KI-Modelle mit dem bewährten lokalen Workflow, um Diktate in Sekundenschnelle in strukturierte Berichte (mit *Befund* und *Beurteilung*) zu übersetzen und direkt in Ihr RIS oder Word einzufügen.
 
 > **Neu in v2.8.0:** Erweiterte Nervensonographie-Templates (**N. radialis, N. ischiadicus, N. peroneus, N. tibialis, N. femoralis, N. femoralis cutaneus lateralis, N. pudendus, Nn. iliohypogastricus/ilioinguinalis, Plexus cervicalis**) sowie **Mammasonographie** und **Ultraschall-gezielte Blockade**. Befund-Prompt an die Qualitätsstandards der Web-App angeglichen (Anti-Pattern-Regeln, Konsistenz- und Konfliktregeln, CSA-Regel für Nerven, "Bild wie bei"-Regel).
 
