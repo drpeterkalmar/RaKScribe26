@@ -112,6 +112,7 @@ class Baustein:
     nicht_zugeordnet: List[str] = field(default_factory=list)
     modul_name: str = ""
     aktualisiert: str = ""
+    vorwerte: List[dict] = field(default_factory=list)   # v3.18.0: frühere Werte derselben Messgröße (nur Anzeige)
 
     @property
     def schluessel(self):
@@ -137,6 +138,12 @@ def _texte(x):
     return [s.strip() for s in x if isinstance(s, str) and s.strip()] if isinstance(x, list) else []
 
 
+def _vorwerte(x):
+    """v3.18.0: Vorwerte der Brücke (je Wert u. a. „text“ = „Vorwert 03/2024: 12°, IB Lab“) – nur Einträge mit Text."""
+    return [dict(v) for v in x if isinstance(v, dict) and isinstance(v.get("text"), str) and v["text"].strip()] \
+        if isinstance(x, list) else []
+
+
 def aus_liste(liste):
     """Bausteine aus cas_ibl_<id>.json (Liste von dicts) → [Baustein] — Ungültiges wird still übergangen."""
     out = []
@@ -160,7 +167,8 @@ def aus_liste(liste):
                             ziffer=ziffer, seiten=seiten, befundteil=_texte(d.get("befundteil")),
                             ergebnis=_texte(d.get("ergebnis")), hinweise=_texte(d.get("hinweise")),
                             nicht_zugeordnet=_texte(d.get("nicht_zugeordnet")),
-                            modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or "")))
+                            modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or ""),
+                            vorwerte=_vorwerte(d.get("vorwerte"))))
     out.sort(key=lambda b: (b.ziffer, b.modul))
     return out
 
@@ -700,6 +708,34 @@ def auffaellige_zeilen(bausteine):
             if m and any(m in p for p in b.ergebnis):
                 out.append(z)
         out += [p for p in b.ergebnis if p not in out]
+    return out
+
+
+# v3.18.0: Vorwerte. Der Abholer schreibt den früheren Wert derselben Messgröße in die Quellen-Klammer der Befundzeile
+# („Cobb-Winkel 18° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).“) – er steht damit wörtlich im Gerüst und im Befund (die
+# Zeile bleibt 1:1, messwert()/messung_text() lesen sie unverändert). Neu ist nur die Anzeige: der Vorwert-Teil grau im
+# Befund-Feld, die Liste in den IB-Lab-Details. Ohne Vorwerte bleibt alles bit-gleich.
+_VORWERT = re.compile(r"Vorwert \d{2}/\d{4}: [^;()]+?(?=\)|;|$)")
+
+
+def vorwert_stellen(bausteine):
+    """Vorwert-Teile, die wörtlich in Befundzeilen stehen („Vorwert 03/2024: 12°, IB Lab“) — für die graue Anzeige."""
+    out = []
+    for b in bausteine or []:
+        texte = [v["text"].strip() for v in b.vorwerte] + [m.group(0).strip() for z in b.befundteil
+                                                           for m in _VORWERT.finditer(z)]
+        for t in texte:
+            if t and t not in out and any(t in z for z in b.befundteil):
+                out.append(t)
+    return out
+
+
+def vorwert_zeilen(b):
+    """„Cobb-Winkel 1. Krümmung: Vorwert 03/2024: 12°, IB Lab“ je Vorwert eines Bausteins (IB-Lab-Details)."""
+    out = []
+    for v in b.vorwerte:
+        z = next((m for m in map(messwert, b.befundteil) if m and v["text"] in m.zeile), None)
+        out.append(f"{z.name}: {v['text']}" if z else v["text"])
     return out
 
 

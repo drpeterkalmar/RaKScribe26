@@ -185,6 +185,11 @@ ausgewertet und dürfen gelöscht werden.
 - Menü ☰ **„IB-Lab-Bausteine übernehmen“** (Standard an). Ohne Bausteine bzw. bei „aus“ sind Prompt und Befund bit-gleich
   mit 3.12.0 (726 Diktate). Tests: `tests/offline/test_ibl_bausteine.py`, live `tools/test_all_regions.py --ibl`.
 
+- **Vorwerte (ab v3.18.0):** Liefert der Baustein einen früheren Wert derselben Messgröße, steht er schon in der
+  Quellen-Klammer der Befundzeile („Cobb-Winkel 18° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).“) und kommt so wörtlich
+  ins Gerüst und in den Befund. RaKScribe zeigt den Vorwert-Teil im Befund-Feld grau und listet die Vorwerte beim Klick auf
+  die IB-Lab-Zeile. Ohne Vorwerte bleibt alles bit-gleich (`tests/offline/test_cas_kontext.py`).
+
 ## 🗂️ Kontext aus dem RIS und IB-Lab-Gerüst vor dem Diktat (EXE, ab v3.14.0)
 
 - Die RaKScribe-Brücke (ab 2.0.0, Paket „RaK-Befund“) kann zum CAS-Diktat Angaben aus der Datenbank des RIS nachreichen

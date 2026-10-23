@@ -96,6 +96,31 @@ check("unauffällig: Gerüst ohne „## Ergebnis“, nichts markiert", "## Ergeb
 check("keine Bausteine mit Inhalt → kein Gerüst (kein Platzhalter)",
       I.geruest(I.aus_liste([dict(FROG, befundteil=[], ergebnis=[])]), CAS_DB, T) is None and I.geruest([], CAS_DB, T) is None)
 
+# v3.18.0: Vorwerte – die Befundzeile trägt den früheren Wert in der Quellen-Klammer; das Gerüst übernimmt sie 1:1, die Anzeige
+# kennt den Vorwert-Teil (grau) und listet ihn in den Details. Ohne Vorwerte bit-gleich.
+ZV = "Cobb-Winkel 1. Krümmung (T6-T12, rechtskonvex) 18° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab)."
+SQ = {"accno": "T-0011", "ziffer": 1, "modul": "squirrel", "name": "SQUIRREL", "version": 2, "seiten": [],
+      "befundteil": [ZV, "Coronal Balance 4 mm (IB Lab SQUIRREL)."], "ergebnis": [],
+      "vorwerte": [{"modul": "squirrel", "schluessel": "cobb_1", "seite": "", "aufnahme": 0, "wert": "18°", "vorwert": "12°",
+                    "datum": "2024-03-05", "quelle": "ib_lab", "text": "Vorwert 03/2024: 12°, IB Lab"}, "kaputt", {"x": 1}]}
+bv = I.aus_liste([SQ])
+check("Vorwerte: aus der Datei der Brücke gelesen (nur Einträge mit Text)", len(bv[0].vorwerte) == 1
+      and bv[0].vorwerte[0]["text"] == "Vorwert 03/2024: 12°, IB Lab", bv[0].vorwerte)
+ev = I.geruest(bv, None, T)
+check("Vorwerte: Gerüst zeigt die Zeile mit „(…; Vorwert 03/2024: 12°, IB Lab)“ wörtlich, Gate ok",
+      ZV in ev.report and I.gate(ev.report, ev.zeilen) == [], ev.report)
+check("Vorwerte: grau markierter Teil = „Vorwert 03/2024: 12°, IB Lab“ (auch ohne Feld aus der Zeile)",
+      I.vorwert_stellen(bv) == ["Vorwert 03/2024: 12°, IB Lab"]
+      and I.vorwert_stellen(I.aus_liste([dict(SQ, vorwerte=[])])) == ["Vorwert 03/2024: 12°, IB Lab"],
+      I.vorwert_stellen(bv))
+check("Vorwerte: Details „Cobb-Winkel 1. Krümmung (T6-T12, rechtskonvex): Vorwert 03/2024: 12°, IB Lab“",
+      I.vorwert_zeilen(bv[0]) == ["Cobb-Winkel 1. Krümmung (T6-T12, rechtskonvex): Vorwert 03/2024: 12°, IB Lab"],
+      I.vorwert_zeilen(bv[0]))
+check("Vorwerte: messwert()/messung_text() lesen die Zeile unverändert",
+      I.messwert(ZV).name == "Cobb-Winkel 1. Krümmung (T6-T12, rechtskonvex)" and I.messwert(ZV).wert == "18°"
+      and I.messung_text(ZV) == "Cobb-Winkel 1. Krümmung (T6-T12, rechtskonvex) 18°", (I.messwert(ZV), I.messung_text(ZV)))
+check("ohne Vorwerte: nichts markiert, Baustein ohne Feld", I.vorwert_stellen(b) == [] and b[0].vorwerte == [])
+
 # ───────────────────────────── Teil 3: EXE-Ablauf ─────────────────────────────
 mod = S.lade_rakscribe()
 mod.keys_ready = lambda: True

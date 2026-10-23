@@ -1426,6 +1426,7 @@ class RaKScribeApp(ctk.CTk):
                     "ibl_geruest": bool(self._nur_geruest()),
                     "ibl_geruest_n": int(getattr(self, "_ibl_geruest_n", 0)),
                     "ibl_markiert": int(getattr(self, "_ibl_markiert", 0)),
+                    "ibl_vorwerte_markiert": int(getattr(self, "_ibl_vorwerte_markiert", 0)),
                     "ibl_auto_n": int(getattr(self, "_ibl_auto_n", 0)),
                     "befund_titel": befund_titel(self.result_text.get("1.0", "end-1c"), 400),
                     "result_voll": self.result_text.get("1.0", "end-1c")[:3000],     # v3.15.0 Mammo-Maske
@@ -3069,6 +3070,21 @@ class RaKScribeApp(ctk.CTk):
                     n += 1
                     start = ende
             self._ibl_markiert = n
+            # v3.18.0: Vorwerte („Vorwert 03/2024: 12°, IB Lab“ in der Quellen-Klammer) grau – nur Anzeige
+            tb.tag_configure("ibl_vorwert", foreground=TEXT_MUTED)
+            tb.tag_remove("ibl_vorwert", "1.0", "end")
+            v = 0
+            for t in _ibl.vorwert_stellen(self._ibl_bausteine()):
+                start = "1.0"
+                while True:
+                    pos = tb.search(t, start, stopindex="end", exact=True)
+                    if not pos:
+                        break
+                    ende = f"{pos}+{len(t)}c"
+                    tb.tag_add("ibl_vorwert", pos, ende)
+                    v += 1
+                    start = ende
+            self._ibl_vorwerte_markiert = v
             return n
         except Exception:
             log_exception("[IBL] Markieren")
@@ -3201,6 +3217,7 @@ class RaKScribeApp(ctk.CTk):
                 b.schluessel) != b.version else " (im Befund)"))
             zeilen += [f"   {z}" for z in b.befundteil + b.ergebnis]
             zeilen += [f"   Nicht zugeordnet: {z}" for z in b.nicht_zugeordnet]
+            zeilen += [f"   Vorwert – {z}" for z in _ibl.vorwert_zeilen(b)]          # v3.18.0
         h = getattr(self, "_ibl_hinweise", []) or []
         if h:
             zeilen += ["", "Hinweise (nicht im Befund):"] + [f" • {x}" for x in h]
