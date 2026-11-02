@@ -1,6 +1,6 @@
 {
  "_info": "Ordinations-Textbausteine (Peter 06.10.2026, Quelle Drive: Standardbefunde/Textbausteine Ordi/Blockrtf). Auslösen im Diktat mit 'Baustein <Kürzel>' (z. B. 'Baustein Mammo 1', 'Baustein Ösophagus 2'). Nur der Baustein diktiert → Text wörtlich. Mit Zusatz → Baustein ist die Vorlage, nur das Diktierte wird ergänzt/geändert. art=satz: Satz wird an der Stelle eingesetzt. Grußformeln/Unterschriften entfernt; Kollegen-Altvarianten (Porsch, Oswald, Thimary, Schreibmayer, Peinsith) gelöscht (Peter 06.10.), ausgenommen mam1–mam3 (von Peter ausdrücklich genannt). EINE Datei für EXE (gebündelt) und Web (importiert).",
- "version": "2026-10-06",
+ "version": "2026-11-02",
  "bausteine": {
   "A1": {
    "gruppe": "DEXA",
@@ -1210,6 +1210,21 @@
    "sprich": [
     "videoschluckakt reflux"
    ]
+  },
+  "thilo": {
+   "gruppe": "Röntgen Skelett/Thorax/Schädel",
+   "art": "befund",
+   "titel": "Thorax pa/seitlich",
+   "befund": "Lungenparenchym: Es sind keine großen konfluierenden Verschattungen oder Schwielenbildungen erkennbar. Auch kleine rundliche oder unregelmäßige Abschattungen gelangen nicht zur Darstellung.\nUnauffällige Zwerchfellkuppen. Die Sinus beidseits frei. Der kostophrenische Winkel stellt sich beidseits frei und spitzwinklig dar. Die Lungenfelder von unauffälliger Struktur und Helligkeit. Entlang der lateralen Thoraxwände und des Zwerchfells zeigen sich keine Plaquebildungen. Der Herz-Gefäßschatten im Normbereich.",
+   "ergebnis": "Unauffälliger Befund.\nBeurteilung nach ILO Klassifikation (2022): Bildqualität Grad I. Kein Nachweis pneumokoniotischer Parenchymveränderungen (Streuung 0/0, große Schatten 0). Keine abgrenzbaren Pleuraplaques, keine diffuse Pleuraverdickung, Sinus phrenicocostalis beidseits frei. Keine Zusatzsymbole.",
+   "sprich": [
+    "ilo",
+    "i l o",
+    "thorax ilo",
+    "th ilo",
+    "ilo thorax"
+   ],
+   "quelle": "Peter 02.11.2026, Foto CAS-Befund (ILO-Normalbefund); patientenbezogene Nebenbefunde (Hili, BWS) entfernt"
   }
  }
 }
