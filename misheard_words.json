@@ -7,7 +7,7 @@
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
   "Kandidaten für neue Einträge: /usr/bin/python3 tools/misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 tests/offline/misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
- "version": "2026-10-19a",
+ "version": "2026-11-02a",
  "rules": [
   {
    "hear": [
@@ -853,6 +853,30 @@
    "mean": "blande Narbenverhältnisse",
    "mode": "auto",
    "source": "Peter 19.10.2026 (Mammo, chirp_3: „Blanden-Narben-Verhältnisse“ / „Blanden-Naben-Verhältnisse“)"
+  },
+  {
+   "hear": [
+    "([A-Za-zÄÖÜäöüß]+)sporenbildung(en)?"
+   ],
+   "regex": true,
+   "show": [
+    "Randsporenbildung"
+   ],
+   "mean": "$1spornbildung$2",
+   "mode": "auto",
+   "source": "Peter 02.11.2026 (KaiScribe-Gruppe: „Spornbildung statt Sporenbildung“)"
+  },
+  {
+   "hear": [
+    "sporenbildung(en)?"
+   ],
+   "regex": true,
+   "show": [
+    "Sporenbildung"
+   ],
+   "mean": "Spornbildung$1",
+   "mode": "auto",
+   "source": "Peter 02.11.2026 (KaiScribe-Gruppe: „Spornbildung statt Sporenbildung“)"
   }
  ]
 }

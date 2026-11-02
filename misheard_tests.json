@@ -275,6 +275,28 @@
    "in": "Bei blanden Narbenverhältnissen kein Rezidiv.",
    "keep": true,
    "out": "Bei blanden Narbenverhältnissen kein Rezidiv."
+  },
+  {
+   "in": "Geringe Sporenbildung am Calcaneus.",
+   "out": "Geringe Spornbildung am Calcaneus."
+  },
+  {
+   "in": "Ventrale Sporenbildungen an L3 und L4.",
+   "out": "Ventrale Spornbildungen an L3 und L4."
+  },
+  {
+   "in": "Diskrete Randsporenbildung lateral.",
+   "out": "Diskrete Randspornbildung lateral."
+  },
+  {
+   "in": "Geringe Spornbildung am Calcaneus.",
+   "keep": true,
+   "out": "Geringe Spornbildung am Calcaneus."
+  },
+  {
+   "in": "Plantarer Fersensporn und Fersensporen beidseits.",
+   "keep": true,
+   "out": "Plantarer Fersensporn und Fersensporen beidseits."
   }
  ]
 }
