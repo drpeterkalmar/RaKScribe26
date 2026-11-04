@@ -88,7 +88,7 @@ kbd {
 
 .state-pill {
   display: inline-flex; align-items: center; gap: 8px; max-width: 46vw;
-  height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line);
+  height: 36px; padding: 0 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
   background: var(--bg-panel); font-size: 13px; font-weight: 500;
 }
 .state-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
@@ -97,6 +97,9 @@ kbd {
 .state-recording .state-dot { background: var(--rec); animation: blink 1s ease-in-out infinite; }
 .state-processing { border-color: rgba(229, 165, 75, 0.4); background: var(--warn-soft); }
 .state-processing .state-dot { background: var(--warn); animation: blink 1.2s ease-in-out infinite; }
+.state-error { border-color: rgba(229, 72, 77, 0.4); }
+.state-error .state-dot { background: var(--rec); }
+.state-error .state-detail { color: var(--rec-text); }
 .state-locked { color: var(--text-muted); }
 .state-locked .state-dot { background: var(--text-faint); }
 /* v3.8.0 SpeechMike-Pause: rot, langsam blinkend (wie die Record-LED) */

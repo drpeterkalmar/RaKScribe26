@@ -1063,6 +1063,8 @@ export default function App() {
   // ── v3.0 Render ────────────────────────────────────────────────────────────
   const stateLabel = !keysReady ? 'Gesperrt' : status === 'recording' ? 'Aufnahme' : status === 'paused' ? 'Pause' : status === 'processing' ? 'Verarbeitung' : status === 'copied' ? 'Kopiert' : 'Bereit';
   const partialKey = !keysReady && (!!vertexApiKey || !!sttKeyJson);
+  // Design-Test unslop: nur Anzeige – nach einem Verarbeitungsfehler steht der Status auf „Bereit“, die Lampe zeigt den Fehler rot
+  const fehlerAnzeige = keysReady && status === 'ready' && statusText.startsWith('Fehler');
 
   return (
     <div className={`app ${keysReady ? '' : 'is-locked'}`}>
@@ -1077,7 +1079,7 @@ export default function App() {
           <span className="version-chip">v{APP_VERSION}</span>
         </div>
 
-        <div className={`state-pill state-${keysReady ? status : 'locked'}`} title={statusText}>
+        <div className={`state-pill state-${keysReady ? status : 'locked'}${fehlerAnzeige ? ' state-error' : ''}`} title={statusText}>
           <span className="state-dot" />
           <span className="state-label">{stateLabel}</span>
           {keysReady && statusText && statusText !== 'Bereit' && <span className="state-detail">{statusText}</span>}
