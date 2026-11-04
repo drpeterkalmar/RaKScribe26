@@ -145,6 +145,7 @@ kbd {
 .menu-panel { animation: menu-in .18s var(--ease); }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } }
 .menu-item.danger { color: var(--rec-text); }
+.menu-item input[type=checkbox] { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--accent); }
 .menu-sep { height: 1px; background: var(--line); margin: 4px 8px; }
 .menu-foot { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; font-size: 12px; color: var(--text-faint); }
 .menu-item.menu-static { cursor: default; color: var(--ok); }
@@ -199,6 +200,8 @@ kbd {
 }
 .btn:active:not(:disabled) { transform: scale(0.98); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* gesperrte Hauptknöpfe: graue Fläche statt halb durchsichtigem Hellgrau (sah fast aktiv aus) */
+.btn-primary:disabled, .btn-record:disabled { opacity: 1; background: var(--bg-raised); color: var(--text-faint); }
 .btn-primary { background: var(--primary); color: var(--on-primary); }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 .btn-ghost { background: transparent; border-color: var(--line-strong); color: var(--text); }
