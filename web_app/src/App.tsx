@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLatest } from './useLatest.ts';
 import {
-  Mic, MicOff, Copy, Check, Upload, Download, Sparkles, X, KeyRound, Menu, Trash2,
-  RotateCcw, ShieldCheck, FileKey, LoaderCircle, CircleAlert, AudioLines, WandSparkles, Headset, CirclePause
+  Mic, MicOff, Copy, Check, Upload, Download, FileText, X, KeyRound, Menu, Trash2,
+  RotateCcw, FileKey, LoaderCircle, CircleAlert, AudioLines, FileInput, Headset, CirclePause
 } from 'lucide-react';
 // Umbau Schritt 20 (Gutachten P2-13): Vorlagen nur noch EINMAL im Repo-Root (wie misheard_words.json)
 import templatesData from '../../templates.json';
@@ -1069,7 +1069,7 @@ export default function App() {
       {/* Top bar */}
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true"><AudioLines size={18} /></div>
+          <div className="brand-mark" aria-hidden="true"><AudioLines size={16} /></div>
           <div className="brand-text">
             <span className="brand-name">KaiScribe</span>
             <span className="brand-sub">Röntgen am Kai</span>
@@ -1084,9 +1084,9 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
-          {smVerbunden && <span className="key-chip sm-chip" title={smVerbunden}><Headset size={14} /> SpeechMike verbunden</span>}
+          {smVerbunden && <span className="key-chip sm-chip" title={smVerbunden}><Headset size={16} /> SpeechMike verbunden</span>}
           <span className={`key-chip ${keysReady ? 'ok' : 'missing'}`}>
-            {keysReady ? <ShieldCheck size={14} /> : <KeyRound size={14} />}
+            <span className="status-dot" aria-hidden="true" />
             {keysReady ? 'Schlüssel aktiv' : 'Kein Schlüssel'}
           </span>
 
@@ -1110,7 +1110,7 @@ export default function App() {
 
           <div className="menu" ref={menuRef}>
             <button className="icon-button" onClick={() => setMenuOpen(o => !o)} aria-label="Menü" aria-expanded={menuOpen}>
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
             {menuOpen && (
               <div className="menu-panel" role="menu">
@@ -1177,8 +1177,8 @@ export default function App() {
               </div>
             )}
             {isTranscribingChunk && <LoaderCircle size={16} className="spin muted" />}
-            {repariert === 'laeuft' && <span className="repaired muted"><LoaderCircle size={13} className="spin" /> repariere …</span>}
-            {repariert === 'fertig' && (status === 'recording' || status === 'paused') && <span className="repaired"><Check size={13} /> bis zur Pause repariert</span>}
+            {repariert === 'laeuft' && <span className="repaired muted"><LoaderCircle size={16} className="spin" /> repariere …</span>}
+            {repariert === 'fertig' && (status === 'recording' || status === 'paused') && <span className="repaired"><Check size={16} /> bis zur Pause repariert</span>}
           </div>
           <textarea
             value={transcript + (isTranscribingChunk ? ' [..]' : '')}
@@ -1196,11 +1196,11 @@ export default function App() {
           <div className="panel-foot">
             {status === 'recording' || status === 'paused' ? (
               <button onClick={() => stopRecording()} className="btn btn-record is-recording">
-                {status === 'paused' ? <CirclePause size={18} /> : <MicOff size={18} />} Aufnahme stoppen <kbd>F10</kbd>
+                {status === 'paused' ? <CirclePause size={16} /> : <MicOff size={16} />} Aufnahme stoppen <kbd>F10</kbd>
               </button>
             ) : (
               <button onMouseDown={einfuegeZielMerken} onClick={() => startRecording()} disabled={status === 'processing' || !keysReady} className="btn btn-record">
-                <Mic size={18} /> Aufnahme starten <kbd>F10</kbd>
+                <Mic size={16} /> Aufnahme starten <kbd>F10</kbd>
               </button>
             )}
             <button
@@ -1209,7 +1209,7 @@ export default function App() {
               className="btn btn-ghost"
               title="Getippten oder eingefügten Text zu einem strukturierten Befund machen (Strg+Enter)"
             >
-              <WandSparkles size={16} /> Befund aus Text
+              <FileInput size={16} /> Befund aus Text
             </button>
             <button
               onClick={() => audioUploadRef.current?.click()}
@@ -1239,8 +1239,8 @@ export default function App() {
 
         <section className="panel panel-report">
           <div className="panel-head">
-            <h2><Sparkles size={16} /> Befund</h2>
-            {isCopied && <span className="copied"><Check size={13} /> Kopiert</span>}
+            <h2><FileText size={16} /> Befund</h2>
+            {isCopied && <span className="copied"><Check size={16} /> Kopiert</span>}
             {status === 'processing' && <LoaderCircle size={16} className="spin muted" />}
             <label className="switch" title="Nur die korrigierte Spracherkennung übernehmen, ohne strukturierten Befund">
               <input type="checkbox" checked={nurText} onChange={e => {
@@ -1280,12 +1280,12 @@ export default function App() {
             <h1 id="gate-title">Praxis-Schlüssel laden</h1>
             <p className="gate-text">KaiScribe ist gesperrt, bis der Schlüssel geladen ist.</p>
             <div className="gate-drop">
-              <KeyRound size={26} />
+              <KeyRound size={24} />
               <span><strong>rakscribe-praxis-key.json</strong> hierher ziehen</span>
               <small>aus dem Drive-Ordner „RaKScribe“</small>
             </div>
             <label className="btn btn-primary btn-wide">
-              <FileKey size={18} /> Schlüssel-Datei wählen
+              <FileKey size={16} /> Schlüssel-Datei wählen
               <input ref={keyFileRef} type="file" className="visually-hidden" onChange={handleKeyFile} />
             </label>
             <button className="btn btn-ghost btn-wide" onClick={() => setPasteOpen(true)}>
@@ -1293,10 +1293,10 @@ export default function App() {
             </button>
             {partialKey && !keyError && (
               <div className="gate-note">
-                <CircleAlert size={15} /> Nur ein Teilschlüssel geladen ({vertexApiKey ? 'Spracherkennung' : 'Befund-KI'} fehlt) — bitte die kombinierte praxis-key.json laden.
+                <CircleAlert size={16} /> Nur ein Teilschlüssel geladen ({vertexApiKey ? 'Spracherkennung' : 'Befund-KI'} fehlt) — bitte die kombinierte praxis-key.json laden.
               </div>
             )}
-            {keyError && <div className="gate-error"><CircleAlert size={15} /> {keyError}</div>}
+            {keyError && <div className="gate-error"><CircleAlert size={16} /> {keyError}</div>}
             <p className="gate-foot">Einmal laden genügt — der Schlüssel bleibt in diesem Browser gespeichert.<br />iPhone: im Dateidialog „Durchsuchen → Google Drive“.</p>
           </div>
         </div>
@@ -1306,11 +1306,11 @@ export default function App() {
       {pasteOpen && (
         <div className="gate gate-top" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget) setPasteOpen(false); }}>
           <div className="gate-card">
-            <button className="icon-button gate-close" onClick={() => setPasteOpen(false)} aria-label="Schließen"><X size={18} /></button>
+            <button className="icon-button gate-close" onClick={() => setPasteOpen(false)} aria-label="Schließen"><X size={16} /></button>
             <h1>Schlüssel einfügen</h1>
             <p className="gate-text">Inhalt der praxis-key.json (oder Base64 / AQ.-Key) einfügen.</p>
             <textarea className="paste-area" value={pasteValue} onChange={e => setPasteValue(e.target.value)} placeholder='{"vertex_api_key": …, "stt": {…}}' autoFocus />
-            {keyError && <div className="gate-error"><CircleAlert size={15} /> {keyError}</div>}
+            {keyError && <div className="gate-error"><CircleAlert size={16} /> {keyError}</div>}
             <button className="btn btn-primary btn-wide" disabled={!pasteValue.trim()} onClick={() => applyKeyText(pasteValue)}>
               <Check size={16} /> Übernehmen
             </button>
@@ -1322,7 +1322,7 @@ export default function App() {
       {dragActive && (
         <div className="drop-overlay">
           <div className="drop-box">
-            <Upload size={32} />
+            <Upload size={24} />
             <span>{keysReady ? 'Loslassen — Schlüssel oder Audio-Datei' : 'Loslassen, um den Schlüssel zu laden'}</span>
           </div>
         </div>

@@ -108,10 +108,12 @@ kbd {
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px;
 }
-.key-chip.ok { color: var(--text-muted); }
-.key-chip.ok svg { color: var(--ok); }
+.key-chip.ok, .key-chip.sm-chip { color: var(--text-muted); }
 .key-chip.missing { color: var(--warn); }
-.key-chip.sm-chip { color: var(--text-muted); }  /* v3.8.0: SpeechMike verbunden */
+.key-chip svg { color: var(--text-faint); }
+/* Statuslampe: derselbe 8-px-Punkt wie in der Zustandsanzeige */
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: currentColor; }
+.key-chip.ok .status-dot { background: var(--ok); }  /* v3.8.0: SpeechMike verbunden */
 .mic-select {
   max-width: 232px; min-width: 0; height: 36px; padding: 0 12px;
   background: var(--bg-input); border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -217,10 +219,6 @@ kbd {
   display: flex; flex-direction: column; gap: 12px; text-align: center;
 }
 .gate-card h1 { font-size: 20px; font-weight: 650; }
-.gate-icon {
-  width: 56px; height: 56px; margin: 0 auto 4px; border-radius: 16px; display: grid; place-items: center;
-  background: var(--accent-soft); color: var(--accent);
-}
 .gate-text { color: var(--text-muted); font-size: 14px; margin-bottom: 4px; }
 .gate-text strong { color: var(--text); font-weight: 600; }
 .gate-note, .gate-error {
