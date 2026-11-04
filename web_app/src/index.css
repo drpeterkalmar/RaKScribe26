@@ -271,6 +271,9 @@ kbd {
 }
 @media (max-width: 520px) {
   .key-chip { display: none; }
+  /* Versionsnummer lag auf dem Handy über „KaiScribe“ (schon vor dem Design-Test) */
+  .version-chip { display: none; }
+  .topbar { padding-left: 16px; padding-right: 16px; }
   .mic-select { max-width: 120px; }
   .btn kbd { display: none; }
 }
