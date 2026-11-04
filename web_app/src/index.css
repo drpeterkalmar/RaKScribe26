@@ -287,6 +287,8 @@ kbd {
 }
 .report-view h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 20px 0 4px; }
 .report-view h3:first-child { margin: 0 0 12px; font-size: 18px; line-height: 28px; font-weight: 500; color: var(--text); }
+/* Zeilenlänge wie auf einem Befundblatt: auf breiten Monitoren höchstens ~80 Zeichen je Zeile */
+.report-view > * { max-width: 80ch; }
 .report-view p { margin: 0 0 8px; }
 .report-view ol, .report-view ul { margin: 0 0 8px 24px; }
 .report-view li { margin: 4px 0; padding-left: 4px; }
