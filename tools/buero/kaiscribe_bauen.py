@@ -94,6 +94,8 @@ def main(argv=None):
     version = (q / "VERSION").read_text(encoding="utf-8").strip()
     if not a.tag.startswith("test-") and a.tag != version:
         return ende("fehler", "Tag %s passt nicht zu VERSION %s" % (a.tag, version))
+    print("INFO rakscribe_laeuft=%s autostart_lnk=%s" % ("ja" if laeuft_rakscribe() else "nein",
+                                                         "ja" if autostart_lnk().exists() else "nein"), flush=True)
     if not a.ohne_ui_test:
         if laeuft_rakscribe():
             return ende("belegt", "eine rakscribe26.exe läuft in dieser Sitzung (UI-Test teilt ihren Mutex)")

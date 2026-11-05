@@ -11,7 +11,7 @@ Jeder Befehl mit Frist (Start-Process -PassThru, Ausgabe in Dateien in W, WaitFo
 3. Nachher nur lesen: kein Prozess mehr, dessen Befehlszeile W enthält (sonst nur diesen per PID beenden und melden); %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\RaKScribe.lnk gibt es nicht; kein Dialog offen.
 4. Aufräumen: W\q und W\q.zip löschen (W\lauf mit Protokollen, ui-report und W\ausgabe.txt bleiben).
 
-Antwort im Format von mac-hermes-auftraege, höchstens 15 Zeilen: Exit-Code, alle Zeilen "FAIL ..." aus W\lauf\ui-test.log wörtlich, die letzten 3 Zeilen von W\lauf\pyinstaller.log bei Bau-Fehler, Ergebnis von Schritt 3.
+Antwort im Format von mac-hermes-auftraege, höchstens 15 Zeilen: Exit-Code, die INFO-Zeile aus W\ausgabe.txt wörtlich, alle Zeilen "FAIL ..." aus W\lauf\ui-test.log wörtlich, die letzten 3 Zeilen von W\lauf\pyinstaller.log bei Bau-Fehler, Ergebnis von Schritt 3.
 Die LETZTE Zeile ist genau die KSBAU=-Zeile aus W\ausgabe.txt, unverändert. Bei Abbruch vor Schritt 2 baust du sie selbst:
 KSBAU=<fehler|belegt> COMMIT={COMMIT} TAG={TAG} SHA256=- UITEST=0/0 DAUER=0 GRUND=<ein kurzer Satz>
 Danach nichts weiter tun.
