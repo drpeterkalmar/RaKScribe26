@@ -47,9 +47,9 @@ def autostart_lnk():
 
 
 def laeuft_rakscribe():
-    r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq rakscribe26.exe", "/NH"], capture_output=True, text=True,
-                       timeout=60)
-    return "rakscribe26.exe" in r.stdout.lower()
+    # Bytes statt Text: tasklist schreibt cp850, mit PYTHONUTF8=1 brach das Dekodieren ab (Probe-Bau 05.11.)
+    r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq rakscribe26.exe", "/NH"], capture_output=True, timeout=60)
+    return b"rakscribe26.exe" in (r.stdout or b"").lower()
 
 
 def ui_zaehlen(text):
