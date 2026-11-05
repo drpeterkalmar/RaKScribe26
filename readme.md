@@ -76,14 +76,9 @@ Jede Modalität verfügt über eigene, klinisch präzise Befundvorlagen. Die aut
 
 Eine ausführliche Anleitung zur Einrichtung finden Sie in der **[INSTALL.md](INSTALL.md)**.
 
-### 1. Release herunterladen
-Laden Sie die neueste Version vom [Releases-Tab](https://github.com/drpeterkalmar/RaKScribe26/releases) herunter. Sie benötigen:
-* `rakscribe26.exe` – die fertige Anwendung (kein Python erforderlich)
-* `config.ini` – Konfigurationsdatei
-* `templates.json` – Befundvorlagen
-* `radiology_prompt.txt` – System-Prompt für die KI
-
-Alle Dateien in **denselben Ordner** legen.
+### 1. EXE bekommen
+Die Befund-PCs bekommen `rakscribe26.exe` automatisch über das Praxis-Update (`X:\RaKScribe\`); einen öffentlichen
+Download gibt es nicht mehr (Repo privat). Vorlagen, Prompt und Fehlhör-Liste sind in der EXE eingebaut.
 
 ### 2. Praxis-Key hinterlegen (EIN Key für alles)
 Legen Sie `rakscribe-praxis-key.json` (aus dem Drive-Ordner „RaKScribe") in denselben Ordner wie die EXE. Fertig – diese eine Datei versorgt Spracherkennung **und** Gemini.

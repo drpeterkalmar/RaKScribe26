@@ -67,6 +67,10 @@ const KEY_VERSION = '2';
 // immer direkt aus dem Bundle — der frühere localStorage-Prompt (Editor gibt es seit v3.0 nicht mehr) entfällt.
 const GEN_PROMPT = stripPromptMarker(genPromptRaw);
 const APP_VERSION = appVersionRaw.trim();
+// kaiscribe-privat-n1 (05.11.2026): Download-Ziel beim Bau einstellbar – am neuen Ort (netcup) liegt die EXE neben der
+// Web-App (VITE_EXE_DOWNLOAD=./download/rakscribe26.exe, tools/web_netcup_bauen.sh). Ohne Angabe wie bisher das Release.
+const EXE_DOWNLOAD: string = import.meta.env.VITE_EXE_DOWNLOAD
+  || 'https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe';
 // v3.1: Fehlhör-Liste — auto-Regeln laufen deterministisch VOR Call 0 (auch ohne Gemini),
 // llm-Regeln landen als Tabelle im Call-0-Prompt. Pflege NUR in /misheard_words.json.
 const MISHEARD: MisheardFile = misheardData as MisheardFile;
@@ -1150,7 +1154,7 @@ export default function App() {
                   Diktat in den Befund: Satzanfang groß
                 </label>
                 <div className="menu-sep" />
-                <a className="menu-item" role="menuitem" href="https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe" target="_blank" rel="noopener noreferrer">
+                <a className="menu-item" role="menuitem" href={EXE_DOWNLOAD} target="_blank" rel="noopener noreferrer">
                   <Download size={16} /> Windows-App herunterladen
                 </a>
                 <div className="menu-foot">

@@ -1,0 +1,17 @@
+[Mac-Hermes] Auftrag "KaiScribe-EXE bauen + UI-Test @ {KURZ} ({TAG})" (kaiscribe-privat-n1, 05.11.2026: KaiScribe wird privat, die EXE baut und testet jetzt dein Büro-PC statt GitHub Actions; das Ergebnis geht an den Mac, der daraus das Release macht). Erlaubt: Python-Pakete NUR in die eigene Bau-venv %LOCALAPPDATA%\KaiScribe-Bau\venv (legt das Skript selbst an). Sonst nichts installieren; nichts an X:, M:, C:\RaKScribe-Bruecke, %LOCALAPPDATA%\RaK-Befund, CAS, Registry, geplanten Aufgaben; keine Praxisdaten öffnen. Word, CAS, SpeechMagic, DEXA-Automat, IBL-Abholer, RaKScribe, DB-Dienst nicht anfassen und nicht beenden. KEIN Computer Use, nichts anklicken (auch keinen Sicherheits-/ESET-Dialog: nur Titel lesen und melden).
+Nur 20:10–06:30 oder Sa/So: sonst NICHTS tun, nur die Schlusszeile mit KSBAU=belegt GRUND=Zeitfenster. Läuft gerade ein anderer Auftrag am Büro-PC (anderer Peer-Lauf, Bau, Einspielen, Probelauf): NICHTS tun, nur KSBAU=belegt GRUND=<welcher>.
+
+W = %LOCALAPPDATA%\hermes\work\ksbau\{KURZ} (neu; gibt es W schon, nach W-alt-<HHMM> umbenennen).
+Jeder Befehl mit Frist (Start-Process -PassThru, Ausgabe in Dateien in W, WaitForExit). Nach jedem Schritt eine Zeile "HH:MM Schritt n/4 ... ok|rot" in W\status.txt. Nie rekursive Volltextsuche über Ordner mit EXE-Dateien.
+
+1. Quelle holen: https://mac-mini.taild969f0.ts.net:8451/{PFAD}/kaiscribe/quelle-stand lesen – commit muss {COMMIT} sein (sonst KSBAU=fehler GRUND=Quelle steht auf <commit>). https://mac-mini.taild969f0.ts.net:8451/{PFAD}/kaiscribe/quelle.zip nach W\q.zip laden; SHA256 muss {SHA_ZIP} sein, sonst abbrechen. Nach W\q entpacken → Q = W\q\RaKScribe26. SHA256 von Q\tools\buero\kaiscribe_bauen.py muss {SHA_SKRIPT} sein, sonst abbrechen.
+2. Bau + Test (ein Lauf; beim ersten Mal ~15 min für die venv, danach ~5–10 min). In EINEM cmd:
+     py -3.12 "Q\tools\buero\kaiscribe_bauen.py" --quelle "Q" --arbeit "W\lauf" --commit {COMMIT} --tag {TAG} --abgabe https://mac-mini.taild969f0.ts.net:8451/{PFAD}/kaiscribe/ablage{UI} > "W\ausgabe.txt" 2>&1
+   Frist 75 min. Ist dein Befehls-Zeitlimit kürzer: per Start-Process im Hintergrund starten und W\ausgabe.txt jede Minute lesen, bis die Zeile KSBAU=... da ist. Exit-Code merken (0 ok, 1 fehler, 3 belegt). Das Skript prüft selbst, dass keine echte rakscribe26.exe läuft und keine echte Autostart-Verknüpfung liegt (sonst KSBAU=belegt, nichts gebaut).
+3. Nachher nur lesen: kein Prozess mehr, dessen Befehlszeile W enthält (sonst nur diesen per PID beenden und melden); %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\RaKScribe.lnk gibt es nicht; kein Dialog offen.
+4. Aufräumen: W\q und W\q.zip löschen (W\lauf mit Protokollen, ui-report und W\ausgabe.txt bleiben).
+
+Antwort im Format von mac-hermes-auftraege, höchstens 15 Zeilen: Exit-Code, alle Zeilen "FAIL ..." aus W\lauf\ui-test.log wörtlich, die letzten 3 Zeilen von W\lauf\pyinstaller.log bei Bau-Fehler, Ergebnis von Schritt 3.
+Die LETZTE Zeile ist genau die KSBAU=-Zeile aus W\ausgabe.txt, unverändert. Bei Abbruch vor Schritt 2 baust du sie selbst:
+KSBAU=<fehler|belegt> COMMIT={COMMIT} TAG={TAG} SHA256=- UITEST=0/0 DAUER=0 GRUND=<ein kurzer Satz>
+Danach nichts weiter tun.

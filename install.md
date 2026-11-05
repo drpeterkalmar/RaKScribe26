@@ -17,17 +17,11 @@ Diese Anleitung führt Sie Schritt für Schritt durch die Einrichtung von **KaiS
 
 ## 2. Installation 🚀
 
-### Schritt 1: Release herunterladen
-Öffnen Sie den [Releases-Tab auf GitHub](https://github.com/drpeterkalmar/RaKScribe26/releases) und laden Sie die folgenden Dateien herunter:
-
-| Datei | Beschreibung |
-| :--- | :--- |
-| `rakscribe26.exe` | Die fertige Anwendung – kein Python nötig |
-| `config.ini` | Konfigurationsdatei (LLM-Provider, STT-Engine, etc.) |
-| `templates.json` | Modalitätsspezifische Befundvorlagen |
-| `radiology_prompt.txt` | System-Prompt für die KI-Strukturierung |
-
-Legen Sie **alle Dateien in denselben Ordner** (z. B. `C:\RaKScribe26\`).
+### Schritt 1: EXE bekommen
+Die Befund-PCs bekommen `rakscribe26.exe` automatisch über das Praxis-Update (RaK-Befund-Paket → `X:\RaKScribe\`).
+Seit KaiScribe privat ist (kaiscribe-privat-n1, 11/2026) gibt es keinen öffentlichen Download mehr; am Mac liegt das
+Release im privaten Repo (`gh release download -R drpeterkalmar/RaKScribe26 -p rakscribe26.exe`). Vorlagen, Prompt und
+Fehlhör-Liste sind in der EXE eingebaut, `config.ini` legt sie beim ersten Start selbst an.
 
 ### Schritt 2: Praxis-Key hinterlegen (EIN Key für alles)
 1. Kopieren Sie die Datei `rakscribe-praxis-key.json` (aus dem Drive-Ordner „RaKScribe") **in denselben Ordner** wie die EXE.

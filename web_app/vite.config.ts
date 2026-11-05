@@ -12,5 +12,6 @@ const versionImTitel = (): Plugin => ({
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), versionImTitel()],
-  base: process.env.NODE_ENV === 'production' ? '/RaKScribe26/' : '/',
+  // kaiscribe-privat-n1: eigener Ort (netcup-Subdomain) baut mit KAISCRIBE_BASE=/ ; GitHub Pages wie bisher /RaKScribe26/
+  base: process.env.KAISCRIBE_BASE || (process.env.NODE_ENV === 'production' ? '/RaKScribe26/' : '/'),
 })
