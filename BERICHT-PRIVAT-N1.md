@@ -2,8 +2,10 @@
 
 **Kurz:** Alles für den Umzug ist vorbereitet und am Mac getestet. **Umgestellt ist noch nichts.** Das Repo ist
 weiter öffentlich, kein Befund-PC ist betroffen. Privat stelle ich erst, wenn die Web-App einen neuen Ort hat
-(netcup-Webspace erst ab 07.11.) und der EXE-Bau am Büro-PC einmal mit UI-Test grün war. Der Folgeauftrag liegt bereit:
-`~/.hermes/claude-jobs/briefs/kaiscribe-privat-n2.md`.
+(netcup-Webspace erst ab 07.11.) und der EXE-Bau am Büro-PC einmal mit UI-Test grün war. Der Bau am Büro-PC selbst
+lief heute schon grün. Der Folgeauftrag ist geschrieben, aber **noch nicht eingereiht**:
+`~/.hermes/claude-jobs/briefs/kaiscribe-privat-n2.md`. Einreihen, sobald der netcup-Webspace steht (Ressource Ordi,
+Leicht-Spur).
 
 ## 1. Inventur: wer holt KaiScribe heute anonym von GitHub?
 
@@ -68,7 +70,7 @@ fällt nach dem Privatstellen von selbst weg (404) und wird dann in Teil 2 gelö
   GitHub-Rechner war das egal, am Büro-PC nicht. Deshalb bricht das Skript vorher mit `KSBAU=belegt` ab, wenn eine
   `rakscribe26.exe` läuft oder die Verknüpfung liegt. Es meldet beides immer in einer INFO-Zeile.
 
-Probe-Bau heute Abend: siehe Abschnitt 8.
+Probe-Bau am 05.11. abends: Der Bau ist grün, der UI-Test am Büro-PC ist noch gesperrt (siehe Abschnitt 8).
 
 ## 5. Web-App: neuer Ort
 
@@ -137,12 +139,31 @@ ist ohnehin geplant. Ich empfehle Pro deshalb nicht.
 
 ## 8. Probe-Bau am Büro-PC (05.11. abends)
 
-_wird unten ergänzt_
+Probe über eine eigene Mac-Instanz (Port 9162, Tailnet-Pfad `/quelle-ks`). Danach beendet und den Pfad entfernt. Der
+laufende Dienst auf 9160 blieb unberührt.
+
+1. **20:11 Bau ohne UI-Test** (`kaiscribe_bau.py --pfad quelle-ks --ohne-ui-test`, Commit 96c011c, Tag
+   `test-2611052011`, kein Release):
+   - Ergebnis `KSBAU=ok`, Bau 160 s.
+   - Der Büro-PC hat Quelle und Zip vom Mac geholt und die Prüfsummen von Zip und Skript geprüft. Dann hat er die venv
+     angelegt, `pip install` gemacht und die PyInstaller-EXE gebaut.
+   - Die Abgabe an den Mac kam an: 56.247.118 B, SHA256 `12bb077f…3f81` gleich in Meldung und Ablage.
+   - Prüfprotokoll und Commit-Status `windows/buero-pc` sind gesetzt.
+   - Gefunden: `tasklist` gibt cp850 aus, und mit `PYTHONUTF8=1` brach das Dekodieren ab. Der Ordi-Hermes hat den Lauf
+     mit `chcp 65001` wiederholt. Behoben in `5569edf`: Die Ausgabe wird jetzt als Bytes gelesen.
+2. **20:19 mit UI-Test** (Commit 5569edf): `KSBAU=belegt`, wie vorgesehen.
+   - INFO `rakscribe_laeuft=nein autostart_lnk=ja`: Am Büro-PC liegt die echte `Startup\RaKScribe.lnk` (seit 15.10.).
+   - Nichts gebaut, nichts angefasst. Der tasklist-Fix greift.
+   - **Der UI-Test am Büro-PC braucht noch eine sichere Lösung.** Empfohlen: Im Selbsttest-Modus bekommt der Test einen
+     eigenen Autostart-Ordner. Das braucht eine EXE-Version und kommt in Teil 2, Punkt 2.
+
+Einen Befund-PC hat keiner der Läufe berührt: kein Release, kein Paket, nichts auf X:.
 
 ## Offene Punkte
 
 1. Quell-Dienst 9160 neu starten (Hermes, Teil 2/1). Bis dahin GitHub-Rückfall in den Bauskripten.
-2. Büro-PC-Bau mit UI-Test abnehmen. Echte KaiScribe/Autostart am Büro-PC → sichere Lösung (Teil 2/2).
+2. Büro-PC-Bau mit UI-Test abnehmen. Der Bau selbst ist grün. Die echte `RaKScribe.lnk` am Büro-PC sperrt den UI-Test.
+   Empfohlen: eigener Autostart-Ordner im Selbsttest-Modus, mit einer EXE-Version (Teil 2/2).
 3. netcup-Subdomain + Zugang, Web-App-Umzug, echter STT/Gemini-Test vom neuen Ort (Browser), neuen Link an Peter/Georg (Teil 2/3).
 4. Umstellung nachts, Workflows abschalten, GitHub-Rückfall löschen, Skill `desktop-exe-build.md` + `test_produktname.py` nachziehen, EXE-Hilfelink (Teil 2/4).
 5. Ein Nur-Lese-Blick am Büro-PC, ob dort noch etwas anderes (geplante Aufgabe, eigenes Skript) GitHub anfragt.
