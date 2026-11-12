@@ -29,11 +29,12 @@ Abkürzungen: **P** = `radiology_prompt.txt` (EXE + Web + Harness), **V** = Web-
 | „Ergebnis“ statt „Beurteilung“ | P Formatregel 1, P Stilbeispiele | verify_georg (Few-Shot-Fall mit „Beurteilung“-Beispielen) |
 | Ergebnis: EXAKT diktierte Begriffe (inkl. Grad, Messwert) | P „ERGEBNIS 1:1“, ❌/✅-Paar; V 10 + 11 | verify_georg („Mäßiggradige Tendinosis calcarea“ + „17 mm“), verify_k2k3 (K3) |
 | Kanonische Überschrift mit Seite | P Überschrift-Regel (+ Schulter-Beispiel, Wirbelsäule ohne Seite); V 8; D `titel_mit_seite` (Bypass) | verify_georg, verify_knie, verify_sprunggelenk, befund_regeln_test |
-| K&L-Graduierung Pflicht (nicht AC/ISG/Symphyse) | P K&L-Abschnitt (Adjektiv→Grad, Deskriptor je Grad, Format „(Arthrose Grad X nach Kellgren & Lawrence)“); V 5 | verify_georg (Grad 3 Schulter, Grad 2 Ellbogen), verify_knie |
+| **v3.18.4 Nur Diktiertes (RH 38, Peter 12.11.2026):** krankhafte Einzelbefunde, Diagnosen, Grade/Scores, Messwerte nur aus Diktat oder IB-Lab-Block, nie aus dem Wortlaut („mäßige“ ≠ Grad 3, Gelenkspaltverschmälerung ≠ Gonarthrose); gepaarte Erhalt-Regel (alles Diktierte in Befund UND Ergebnis, Verhörer weiter zum Fachbegriff) | P Abschnitt „NUR DIKTIERTES“ + ❌/✅ RH 38; V 5; D `kl_bereinigen` ≡ `klBereinigen` (nicht gedeckter K&L-Grad weg bzw. auf den einzigen erlaubten) | verify_konfabulation (9 Fälle × 20), test_all_regions (RH 38, K&L diktiert, `--ibl` KOALA KL 1), befund_regeln_test (Fixtures `kl`) |
+| K&L-Graduierung nur, wenn diktiert oder aus IB Lab (KOALA, Seite beachten); Diktat geht vor, IB-Lab-Grad dann nicht zusätzlich; nie AC/ISG/Symphyse | P K&L-Abschnitt (Format „(Arthrose Grad X nach Kellgren & Lawrence)“, Befundtext nur diktierte Merkmale bzw. „[Adjektiv] degenerative Veränderungen …“); V 5/11/13; `ibl_bausteine.prompt_block` (KOALA-Grad), `_kl_pruefen` | verify_georg (Adjektiv bleibt, kein Grad), verify_knie, verify_konfabulation, test_ibl_bausteine (K&L) |
 | Modalität aus Diktat (Gelenk allein = Röntgen) | detect_template (EXE + Web) | test_normalbefunde TEIL 2 (EXE + Web) |
 | Ultraschall = „Sonographie“, Schulter-Sono-Überschrift | P Schreibkonventionen; Templates | diktat_suite |
 | „Nonrezent“, Mid-Portion-Tendinose/Enthesiopathie, transmural ≠ komplett | P Schreibkonventionen | — (Prompt-Regel) |
-| Osteophyten-Grad passt zum K&L-Grad (additional-conventions) | P K&L-Abschnitt | verify_georg (Ellbogen „beginnende Osteophyten“) |
+| ~~Osteophyten-Grad passt zum K&L-Grad~~ (v3.18.4: Osteophyten nur, wenn diktiert) | P Abschnitt „NUR DIKTIERTES“ | verify_konfabulation |
 | RA/SpA-Formulierungen (3f/3g) | P Ergebnis-Regeln | — |
 | Fußfehlstellung mit Schrägstrich | P Konflikt-Regeln | — |
 
