@@ -28,6 +28,10 @@ Dateien (gleiche Namen/Felder wie ris-mods bruecke/auftrag.py — Änderungen im
                               (jedes Mammo-Kürzel) mit werte {acr, birads} der Doppelbefundung → Vorschläge der Mammo-Maske.
                               cas_leistungen kann dann je Leistung „ziffer“ (Accession = Diktatnummer + Ziffer) und
                               „accession“ tragen → exakte Zuordnung der IB-Lab-Bausteine.
+v3.18.4 (Peter 12.11.2026, RH 38 – Fall ohne Rohtext nicht nachvollziehbar): „fertig“ trägt den Block „nachvollzug“
+{stt_roh, diktat, modell, prompt_version, prompt_quelle, vorlagen_stand, vorlagen, ibl_baustein, ibl_module,
+ibl_zeilen, kaiscribe, zeit} (nachvollzug()); die Brücke legt ihn in die Merkdatei <Nr>.rakscribe.json auf X: (bleibt in
+der Praxis, nie ins Protokoll). Ältere Brücken ignorieren das Feld.
 Durch die Dateien wandern nur Diktatnummer und Benutzerkürzel, Leistungskürzel, KI-Messwerte der Untersuchung, ab v3.14.0
 Zuweiser/Info/Vorbefund zur Anzeige (und am Ende der Befund selbst) — alles nur lokal.
 """
@@ -269,8 +273,9 @@ class Kanal:
         liste = d.get("bausteine")
         return [b for b in liste if isinstance(b, dict)] if isinstance(liste, list) else []
 
-    def ergebnis_schreiben(self, a, text, pcm_bytes=None, rate=16000, test=False):
-        """EOL: Befund (+ Aufnahme) ablegen, DANACH „fertig“ melden — die Brücke liest nie eine halbe Datei."""
+    def ergebnis_schreiben(self, a, text, pcm_bytes=None, rate=16000, test=False, nachvollzug=None):
+        """EOL: Befund (+ Aufnahme) ablegen, DANACH „fertig“ melden — die Brücke liest nie eine halbe Datei.
+        v3.18.4: nachvollzug = Block aus nachvollzug() (oder None = ohne, z. B. Testbefund)."""
         os.makedirs(self.ordner, exist_ok=True)
         txt = os.path.join(self.ordner, f"cas_ergebnis_{a.nr}.txt")
         with open(txt, "w", encoding="utf-8", newline="\n") as f:
@@ -280,5 +285,28 @@ class Kanal:
             wav = os.path.join(self.ordner, f"cas_ergebnis_{a.nr}.wav")
             with open(wav, "wb") as f:
                 f.write(wav_aus_pcm(pcm_bytes, rate))
-        self.antworten(a, "fertig", text_datei=txt, wav_datei=wav, zeichen=len(text), test=bool(test))
+        self.antworten(a, "fertig", text_datei=txt, wav_datei=wav, zeichen=len(text), test=bool(test),
+                       nachvollzug=nachvollzug or None)
         return txt, wav
+
+
+NACHVOLLZUG_MAX = 20000   # Zeichen je Text (ein Diktat hat selten > 3000)
+
+
+def nachvollzug(stt_roh, diktat="", modell="", prompt_version="", prompt_quelle="", vorlagen_stand="", vorlagen=None,
+                ibl_module=None, ibl_zeilen=0, kaiscribe="", jetzt=time.time):
+    """v3.18.4 (RH 38): womit ein Befund entstand — STT-Rohtext (vor der Fehlhör-Liste), Diktat nach der Fehlhör-Liste
+    (nur wenn anders), Modell, Prompt-Stand (Marker + Quelle), Vorlagen-Stand (Prüfsumme templates.json) und gewählte
+    Vorlagen, IB-Lab-Baustein ja/nein (+ Module, eingesetzte Zeilen), KaiScribe-Version, Zeit."""
+    roh = str(stt_roh or "")
+    d = str(diktat or "")
+    out = {"stt_roh": roh[:NACHVOLLZUG_MAX], "modell": str(modell or ""), "prompt_version": str(prompt_version or ""),
+           "prompt_quelle": str(prompt_quelle or ""), "vorlagen_stand": str(vorlagen_stand or ""),
+           "vorlagen": [str(v) for v in (vorlagen or []) if v], "ibl_baustein": bool(ibl_module),
+           "ibl_module": [str(m) for m in (ibl_module or []) if m], "ibl_zeilen": int(ibl_zeilen or 0),
+           "kaiscribe": str(kaiscribe or ""), "zeit": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(jetzt()))}
+    if d and d.strip() != roh.strip():
+        out["diktat"] = d[:NACHVOLLZUG_MAX]
+    if len(roh) > NACHVOLLZUG_MAX:
+        out["stt_roh_gekuerzt"] = True
+    return out

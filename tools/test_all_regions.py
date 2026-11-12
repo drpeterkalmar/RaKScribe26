@@ -59,11 +59,19 @@ TEST_CASES = [
 
     ("Knie Gonarthrose", "kniegelenk_in_2_ebenen",
      "Knie rechts, Röntgen, Gonarthrose rechts, medialbetonte Gelenkspaltverschmälerung, subchondrale Sklerosierung, Osteophyten. Ansonsten unauffällig.",
-     ["Gonarthrose", "Kellgren"]),
+     ["Gonarthrose"]),   # v3.18.4 (RH 38): kein K&L-Grad ohne Diktat/IB Lab — „Kellgren“ wäre jetzt erfunden
 
     ("Knie Gonarthrose K&L (Peter 08.09., Screenshot-Case)", "kniegelenk_in_2_ebenen",
      "Kniegelenk links, Röntgen, maßgradige Gonarthrose des medialen Femorotibialkompartiments, geringgradige Retropatellararthrose. Ansonsten unauffällig.",
-     ["Gonarthrose", "Kellgren"]),
+     ["Gonarthrose", "Retropatellararthrose"]),   # v3.18.4: Grad-Adjektive bleiben, K&L nur wenn diktiert
+
+    # v3.18.4 (Peter 12.11.2026, RH 38): nur Deskriptor diktiert → keine Gonarthrose, keine Osteophyten/Sklerose, kein Grad
+    ("Knie Gelenkspaltverschmälerung ohne Diagnose (RH 38, Konfabulation)", "kniegelenk_in_2_ebenen",
+     "Kniegelenk links. Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
+     ["Gelenkspaltverschmälerung", "medial"]),
+    ("Knie Gonarthrose mit diktiertem K&L-Grad", "kniegelenk_in_2_ebenen",
+     "Kniegelenk rechts, Röntgen, Gonarthrose medial betont, Grad 3 nach Kellgren und Lawrence. Ansonsten unauffällig.",
+     ["Gonarthrose", "Grad 3 nach Kellgren"]),
 
     ("Ellbogen Fraktur", "ellbogengelenk_in_2_ebenen",
      "Ellbogen rechts, Röntgen, dislozierte Fraktur des Radiusköpfchens. Ansonsten unauffällig.",
@@ -305,6 +313,13 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
     for inv in invented:
         if inv.lower() in ergebnis.lower():
             issues.append(f"⚠️ Erfundener Begriff '{inv}' im Ergebnis")
+    # 4a. v3.18.4 (RH 38): K&L-Grad bzw. Osteophyten/Sklerose/Diagnose, die nicht diktiert sind = erfunden
+    if "kellgren" in final.lower() and "kellgren" not in diktat.lower():
+        issues.append("❌ K&L-Grad ohne Diktat erfunden")
+    for wort, muster in (("Osteophyten", r"osteophyt"), ("Sklerose", r"skleros"), ("Gonarthrose", r"gonarthros")):
+        if not re.search(muster, diktat, re.I) and re.search(muster, final, re.I) \
+                and not re.search(muster, template_body, re.I) and "gelenkspaltverschmälerung" in diktat.lower():
+            issues.append(f"❌ {wort} nicht diktiert (erfunden)")
     # 4b. "Flachprofil" darf NIE im Report stehen (existiert radiologisch nicht)
     if "flachprofil" in final.lower():
         issues.append(f"❌ 'Flachprofil' im Befund — existiert radiologisch nicht (korrekt: flachbogige Skoliose)")
@@ -446,8 +461,15 @@ _IBL_HIPPO = {"accno": "T-0112", "ziffer": 2, "modul": "hippo", "name": "HIPPO",
                              "LCE-Winkel nach Wiberg links 31° (IB Lab HIPPO).", "CCD-Winkel links 131° (IB Lab HIPPO)."],
               "ergebnis": ["Verminderte laterale Überdachung des Hüftkopfes im Sinne einer Hüftdysplasie rechts "
                            "(LCE-Winkel nach Wiberg 18°)."], "hinweise": [], "nicht_zugeordnet": []}
+_IBL_KOALA_LI = {"accno": "T-0201", "ziffer": 1, "modul": "koala", "name": "KOALA", "modul_name": "IB Lab KOALA",
+                 "version": 1, "seiten": ["links"], "befundteil": ["Kellgren-Lawrence-Grad links 1 (IB Lab KOALA)."],
+                 "ergebnis": [], "hinweise": [], "nicht_zugeordnet": []}
 IBL_FAELLE = [
     # (name, CAS-Leistungen, Bausteine, Diktat, [(Titel-Wort, Modul oder None)])
+    # v3.18.4 (Peter 12.11.2026, RH 38): KL 1 laut IB Lab, Diktat nur Gelenkspaltverschmälerung → kein Grad 3, keine Gonarthrose
+    ("KOALA Knie links KL 1 (RH 38, nur Deskriptor diktiert)",
+     [_cas_l("x-knie-li", "Kniegelenk links", "Röntgen", "kniegelenk_in_2_ebenen", "links")], [_IBL_KOALA_LI],
+     "Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.", [("Kniegelenk", "KOALA")]),
     ("FROG Fuß links (Hallux valgus diktiert, Pes planus von IB Lab)",
      [_cas_l("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")], [_IBL_FROG_LI],
      "Fuß links: Hallux valgus mit Arthrose im Großzehengrundgelenk, sonst unauffällig.", [("Fuß", "FROG")]),
@@ -493,6 +515,10 @@ def run_ibl_fall(name, leistungen, bausteine, diktat, erwartet):
             art, gef = ib.im_text(m, ohne)
             if art in ("gleich", "anders"):
                 issues.append(f"❌ KI nennt selbst {m.name} ({gef})")
+    erlaubt = set(_pp.br.kl_grade(diktat)) or {g for b in bs for z in b.befundteil for g in _pp.br.kl_grade(z)}
+    if set(_pp.br.kl_grade(ohne)) - erlaubt or ("gonarthrose" in erg.report.lower() and "arthrose" not in diktat.lower()
+                                                and any(b.modul == "koala" and not b.ergebnis for b in bs)):
+        issues.append(f"❌ K&L-Grad/Diagnose ohne Diktat oder IB Lab: {_pp.br.kl_grade(ohne)}")
     if any(w in erg.report for w in ("bitte prüfen", "ibl_messwerte", "HKA-Konvention", "nicht doppelt", "IB-Lab-Wert")):
         issues.append("❌ Hinweise/Prompt-Text sind in den Befund geraten")
     for h in (e.hinweise if e else []):

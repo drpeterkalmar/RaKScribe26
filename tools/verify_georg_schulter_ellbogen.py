@@ -75,8 +75,12 @@ def checks(report):
     sb = sch[1] if sch else ""
     eb = ell[1] if ell else ""
     c.append(("Schulter-Ergebnis: 'Mäßiggradige Tendinosis calcarea' + '17 mm'", "mäßiggradige tendinosis calcarea" in se and "17 mm" in se, se))
-    c.append(("Schulter-Ergebnis: Omarthrose K&L Grad 3", "omarthrose" in se and re.search(r"grad 3 nach kellgren", se) is not None, se))
-    c.append(("Ellbogen-Ergebnis: Arthrose K&L Grad 2", "arthrose" in ee and re.search(r"grad 2 nach kellgren", ee) is not None, ee))
+    # v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur, wenn diktiert oder aus IB Lab — nie aus „mäßig/gering“ ableiten.
+    # Früher (05.10.) galt hier „Grad 3/Grad 2“ als Soll; das Grad-Adjektiv bleibt, der Grad fällt weg.
+    c.append(("Schulter-Ergebnis: 'Mäßiggradige Omarthrose', kein erfundener K&L-Grad",
+              "mäßiggradige omarthrose" in se and "kellgren" not in se, se))
+    c.append(("Ellbogen-Ergebnis: 'Geringgradige …arthrose', kein erfundener K&L-Grad",
+              re.search(r"geringgradige \w*arthrose", ee) is not None and "kellgren" not in ee, ee))
     c.append(("Ellbogen-Ergebnis: 'Extensorensehnen'", "extensorensehnen" in ee, ee))
     # Standardtext = Template (Georg: "nimmt einen anderen Standardtext")
     c.append(("Schulter-Befund: Template-Sätze erhalten", all(x in sb for x in (

@@ -281,6 +281,57 @@ check("Pipeline LAMA Ganzbein: HKA/Beinlängendifferenz eingesetzt, Genu varum n
       "HKA-Winkel links 179,1° (IB Lab LAMA)." in erg.report and erg.report.count("Genu varum") == 2
       and "Beinlängendifferenz von 15 mm." in erg.report, erg.report)
 
+# v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus Diktat oder IB Lab, Diktat geht vor, Seite beachten
+KOALA_D = {"accno": "T-0071", "ziffer": 1, "modul": "koala", "name": "KOALA", "modul_name": "IB Lab KOALA", "version": 1,
+           "seiten": ["links", "rechts"], "befundteil": ["Kellgren-Lawrence-Grad links 1 (IB Lab KOALA).",
+                                                         "Kellgren-Lawrence-Grad rechts 3 (IB Lab KOALA)."],
+           "ergebnis": ["Mittelgradige Gonarthrose rechts (Kellgren-Lawrence-Grad 3)."], "hinweise": [],
+           "nicht_zugeordnet": []}
+KOALA_LI = dict(KOALA_D, seiten=["links"], befundteil=["Kellgren-Lawrence-Grad links 1 (IB Lab KOALA)."], ergebnis=[])
+check("K&L: Grade je Seite aus KOALA (links 1, rechts 3, ohne Seite beide)",
+      I.kl_grade(B(KOALA_D), "links") == ["1"] and I.kl_grade(B(KOALA_D), "rechts") == ["3"]
+      and I.kl_grade(B(KOALA_D)) == ["1", "3"] and I.kl_grade(B(FROG_D)) == [])
+KNIE = bericht("Kniegelenk links in 2 Ebenen", "Mäßige Gelenkspaltverschmälerung medial.", "Mäßige Gonarthrose links.")
+e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose, Kellgren-Lawrence Grad 2.")
+check("K&L: diktiert Grad 2, IB Lab 1 → IB-Lab-Zeile nicht angefügt, Hinweis „der diktierte Grad gilt“",
+      "IB Lab KOALA" not in e.report and any("diktierte Grad gilt" in h for h in e.hinweise), e.report + str(e.hinweise))
+e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose Grad 1 nach Kellgren.")
+check("K&L: diktiert Grad 1 = IB Lab 1 → nicht doppelt", "IB Lab KOALA" not in e.report
+      and any("schon diktiert" in h for h in e.hinweise), e.report + str(e.hinweise))
+e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose.")
+check("K&L: ohne diktierten Grad → IB-Lab-Zeile angefügt", "Kellgren-Lawrence-Grad links 1 (IB Lab KOALA)." in e.report)
+blk = I.prompt_block(B(KOALA_LI), T["kniegelenk_in_2_ebenen"]["body"])
+check("K&L: Gen-Prompt nennt den IB-Lab-Grad (nur KOALA) samt Vorrang des Diktats",
+      "Kellgren-&-Lawrence-Grad laut IB Lab: Kellgren-Lawrence-Grad links 1." in blk and "gilt der diktierte Grad" in blk
+      and "Kellgren" not in I.prompt_block(B(FROG_D)), blk)
+
+
+def ki_gonarthrose(prompts):
+    def llm(p):
+        prompts.append(p)
+        titel = p.rsplit("<untersuchung>", 1)[1].split("</untersuchung>")[0]
+        return (f"## {titel}\n\n## Befund\nMäßige degenerative Veränderungen des Kniegelenkes.\n\n## Ergebnis\n"
+                "Mäßige Gonarthrose links (Arthrose Grad 3 nach Kellgren & Lawrence).")
+    return llm
+
+
+def kl_lauf(diktat, ibl=None):
+    ps = []
+    ctx = pl.Kontext(templates=T, display_names=DISPLAY, prompt=PROMPT, llm=ki_gonarthrose(ps), log=lambda *a: None,
+                     ibl=ibl)
+    return pl.befund_aus_diktat(diktat, ctx).report
+
+
+r = kl_lauf("Knie links: Mäßige Gonarthrose.")
+check("K&L-Wächter: KI-Grad 3 ohne Diktat/IB Lab → entfernt, Diagnose bleibt",
+      "Kellgren" not in r and "Mäßige Gonarthrose links." in r, r)
+r = kl_lauf("Knie links: Mäßige Gonarthrose.", I.IblKontext(B(KOALA_D)))
+check("K&L-Wächter: KI-Grad 3, IB Lab links 1 (rechts 3) → Grad 1 (Seite links)",
+      "(Arthrose Grad 1 nach Kellgren & Lawrence)" in r and "Grad 3 nach" not in r, r)
+r = kl_lauf("Knie links: Mäßige Gonarthrose, Grad 3 nach Kellgren.", I.IblKontext(B(KOALA_LI)))
+check("K&L-Wächter: diktierter Grad 3 bleibt trotz IB Lab 1, IB-Lab-Zeile nicht angefügt",
+      "(Arthrose Grad 3 nach Kellgren & Lawrence)" in r and "IB Lab KOALA" not in r, r)
+
 # ohne Bausteine: bit-gleich wie bisher (IBL-Funktionen werden gar nicht aufgerufen)
 gesperrt = {}
 for name in ("einsetzen", "prompt_block", "fuer_abschnitt"):

@@ -8,7 +8,7 @@ Kette A = EXE-Pfad (radiology_prompt.txt + <untersuchung>), Kette B = Web-Pfad (
 """
 import os, re, sys, json, pathlib, urllib.request, urllib.error, time
 
-ROOT = pathlib.Path.home() / "dev" / "RaKScribe26"
+ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (v3.18.4: nicht mehr fest ~/dev)
 API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
 from google.oauth2 import service_account
 import google.auth.transport.requests as _tr

@@ -1043,3 +1043,65 @@ def kurzsaetze_sichern(report, diktat, daten=None):
     else:
         report = "\n".join(zeilen)
     return report, ["Befund ergänzt: " + s for s in neu_bef] + ["Ergebnis ergänzt: " + s for s in neu_erg]
+
+
+# ── v3.18.4 Kellgren-&-Lawrence-Wächter (Peter 12.11.2026, RH 38: „KaiScribe konfabuliert noch zu viel“) ─────────────
+# Ein K&L-Grad steht nur, wenn er diktiert ist oder aus einem IB-Lab-Baustein (KOALA) kommt — nie aus dem Wortlaut
+# („mäßige“ → Grad 3). Nach der KI: Grad-Angaben der KI („(Arthrose Grad X nach Kellgren & Lawrence)“, „Grad X nach
+# Kellgren“), deren Grad weder im Diktat noch in erlaubt (IB Lab) steht → bei genau einem erlaubten Grad wird er
+# eingesetzt, ohne erlaubten Grad fällt die Angabe weg (die Diagnose bleibt). Zeilen mit „(IB Lab …)“ bleiben unberührt.
+# Sync: web_app/src/befundRegeln.ts (klGrade, klBereinigen), Fixtures befund_regeln_fixtures.json „kl“.
+_KL_G = r"(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier)"
+_KL_WERT = {"0": "0", "null": "0", "1": "1", "i": "1", "eins": "1", "2": "2", "ii": "2", "zwei": "2", "3": "3",
+            "iii": "3", "drei": "3", "4": "4", "iv": "4", "vier": "4"}
+_KL_NAME = r"kellgren(?:[\s-]*(?:&|und)?[\s-]*lawrence)?"
+_KL_SEITE = r"(?:\s*(?:links|rechts|beidseits))?"
+_KL_TEXT = re.compile(
+    r"(?<![\wäöüß])grad\s+(" + _KL_G + r")\s+nach\s+" + _KL_NAME +
+    r"|(?<![\wäöüß])" + _KL_NAME + r"(?:[\s-]*(?:grad|grade|score|stadium))?" + _KL_SEITE + r"\s*:?\s*(" + _KL_G +
+    r")(?![\wäöüß])"
+    r"|(?<![\wäöüß])(?:kl|k\s*&\s*l)(?:[\s-]*(?:grad|grade))?" + _KL_SEITE + r"\s*:?\s*(" + _KL_G + r")(?![\wäöüß])",
+    re.I)
+# Grad-Angabe der KI im Befund: Klammer „(Arthrose Grad 3 nach Kellgren & Lawrence)“ bzw. „…, Grad 3 nach Kellgren …“
+_KL_KI = re.compile(r"\s*\(\s*(?:Arthrose\s+)?Grad\s+(" + _KL_G + r")\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?\s*\)"
+                    r"|,?\s*(?:Arthrose\s+)?Grad\s+(" + _KL_G + r")\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?",
+                    re.I)
+
+
+def kl_grade(text):
+    """Alle Kellgren-&-Lawrence-Grade im Text als Ziffern-Strings („Grad 2 nach Kellgren“, „Kellgren-Lawrence 3“,
+    „Kellgren-Lawrence-Grad links 1“, „KL 2“, römisch/als Wort) → sortierte Liste ohne Doppel."""
+    out = set()
+    for m in _KL_TEXT.finditer(text or ""):
+        g = next(x for x in m.groups() if x)
+        out.add(_KL_WERT[g.lower()])
+    return sorted(out)
+
+
+def kl_bereinigen(report, diktat, erlaubt=()):
+    """Nach der KI: nicht diktierte K&L-Grade entfernen bzw. auf den einzigen erlaubten Grad setzen (Diktat geht vor
+    IB Lab: diktiert ist ein Grad, gelten nur die diktierten). → (report, Liste der Änderungen)."""
+    if not report or not re.search(r"kellgren", report, re.I):
+        return report, []
+    ok = kl_grade(diktat) or sorted(set(erlaubt or ()))
+    aend = []
+
+    def ersetzen(m):
+        g = _KL_WERT[(m.group(1) or m.group(2)).lower()]
+        if g in ok:
+            return m.group(0)
+        if len(ok) == 1:
+            aend.append(f"K&L-Grad {g} → {ok[0]}")
+            return re.sub(_KL_G + r"(?=\s+nach)", ok[0], m.group(0), count=1, flags=re.I)
+        if ok:
+            aend.append(f"K&L-Grad {g} nicht diktiert (diktiert/IB Lab: {', '.join(ok)}) – stehen gelassen")
+            return m.group(0)
+        aend.append(f"K&L-Grad {g} ohne Diktat/IB Lab entfernt")
+        return ""
+
+    zeilen = report.split("\n")
+    for i, z in enumerate(zeilen):
+        if "(IB Lab" in z or "kellgren" not in z.lower():
+            continue
+        zeilen[i] = _KL_KI.sub(ersetzen, z)
+    return "\n".join(zeilen), aend

@@ -163,11 +163,15 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         if ctx.protokoll is not None:
             ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
         out = br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
-        return out if woertlich else br.kurzsaetze_sichern(br.widersprueche_bereinigen(out, seg)[0], seg)[0]   # v3.15.5, v3.16.6
+        if woertlich:
+            return out
+        out = br.kurzsaetze_sichern(br.widersprueche_bereinigen(out, seg)[0], seg)[0]   # v3.15.5, v3.16.6
+        return _kl_waechter(out, seg, template_key, ctx)
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
-    if ist_normalbefund(seg, template_key, ctx.display_names):
+    normal = ist_normalbefund(seg, template_key, ctx.display_names)
+    if normal:
         ctx.log(f"[BYPASS] Normalbefund erkannt: {protokoll.diktat(seg)}. Generiere direkt aus Template '{template_key}'.")
         # v3.15.4: Seite aus CAS nur für paarige Regionen (Wirbelsäule/Becken/Thorax/Schädel nie „beidseits“)
         seite = (wahl.leistung.seite if (wahl is not None and wahl.leistung is not None
@@ -198,6 +202,22 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     if bds:
         ctx.log(f"[CAS] beidseits laut CAS ({wahl.leistung.kurz}): Überschrift „beidseits“")
         out = cv.report_beidseits(out)
+    if not normal:   # v3.18.4: Bypass (Vorlage ohne KI) braucht keinen K&L-Wächter
+        seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else ""
+        out = _kl_waechter(out, seg, template_key, ctx, seite)
+    return out
+
+
+def _kl_waechter(out, seg, template_key, ctx, seite=""):
+    """v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus Diktat oder IB-Lab-Baustein (passende Region + Seite) —
+    nicht gedeckte Grade der KI weg bzw. auf den einzigen erlaubten Grad. Sync: pipeline.ts (ohne IB Lab)."""
+    erlaubt = []
+    if ctx.ibl:
+        reg = cv.regionen(cv.vorlagen_text(template_key, ctx.templates) + " " + region_name(seg))
+        erlaubt = iblb.kl_grade(iblb.fuer_abschnitt(ctx.ibl.bausteine, reg), seite or br.diktierte_seite(seg))
+    out, aend = br.kl_bereinigen(out, seg, erlaubt)
+    if aend:
+        ctx.log("[K&L] " + " · ".join(aend))
     return out
 
 

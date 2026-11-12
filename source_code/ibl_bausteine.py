@@ -416,6 +416,37 @@ def _kurz(t, n=60):
     return t if len(t) <= n else t[:n - 1].rstrip() + "…"
 
 
+def kl_grade(bausteine, seite=""):
+    """v3.18.4 (Peter 12.11.2026, RH 38): Kellgren-&-Lawrence-Grade aus den Befundzeilen der Bausteine (KOALA) → Liste.
+    seite „links“/„rechts“: nur Zeilen dieser Seite bzw. ohne Seitenangabe (KL links 1, rechts 3 → links nur „1“)."""
+    out = set()
+    for b in bausteine or []:
+        for z in b.befundteil:
+            if "kellgren" not in z.lower():
+                continue
+            s = {x.lower() for x in _SEITE.findall(z)}
+            if seite in ("links", "rechts") and s and seite not in s and not s & {"beidseits", "beidseitig", "bds"}:
+                continue
+            out.update(br.kl_grade(z))
+    return sorted(out)
+
+
+def _kl_pruefen(b, mw, z, diktat, hinweise):
+    """v3.18.4: K&L-Grad des Bausteins gegen einen DIKTIERTEN Grad (jede Schreibweise, br.kl_grade) → True = nicht
+    anfügen (diktiert gleich: nicht doppelt; diktiert anders: der diktierte Grad gilt, IB-Lab-Wert nicht zusätzlich)."""
+    if "kellgren" not in (mw.name or "").lower():
+        return False
+    diktiert, eigen = br.kl_grade(diktat), br.kl_grade(z)
+    if not diktiert or not eigen:
+        return False
+    if set(eigen) <= set(diktiert):
+        hinweise.append(f"{b.name}: {mw.name} schon diktiert ({', '.join(diktiert)}) – nicht doppelt angefügt")
+    else:
+        hinweise.append(f"{b.name}: {mw.name} diktiert {', '.join(diktiert)}, laut IB Lab {', '.join(eigen)} – der "
+                        "diktierte Grad gilt (IB-Lab-Wert nicht angefügt), bitte prüfen")
+    return True
+
+
 def _befund_pruefen(b, bericht, diktat, hinweise):
     """Befundzeilen gegen Befund (KI-Text) und Diktat prüfen → Zeilen, die eingesetzt werden; Hinweise ergänzt."""
     gesamt = f"{bericht}\n{diktat}"
@@ -432,6 +463,8 @@ def _befund_pruefen(b, bericht, diktat, hinweise):
     out = []
     for z in b.befundteil:
         mw = messwert(z)
+        if mw and _kl_pruefen(b, mw, z, diktat, hinweise):
+            continue
         art, gefunden = im_text(mw, gesamt) if mw else ("fehlt", "")
         if art == "gleich":
             hinweise.append(f"{b.name}: {mw.name} schon im Befund ({gefunden}) – nicht doppelt angefügt")
@@ -654,6 +687,14 @@ def prompt_block(bausteine, vorlage=None):
     for b in bausteine:
         if b.ergebnis and vorlage:
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), b.ergebnis) if s not in weg]
+    kl = [z for b in bausteine for z in b.befundteil if "kellgren" in z.lower() and br.kl_grade(z)]
+    if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
+        zeilen.append("Kellgren-&-Lawrence-Grad laut IB Lab: " + "; ".join(messung_text(z) for z in kl) + ". Gehört ein "
+                      "diktierter Befund im Ergebnis zu diesem Gelenk (gleiche Seite, z. B. Arthrose oder "
+                      "Gelenkspaltverschmälerung) und ist kein eigener Grad diktiert, steht dahinter genau dieser Grad "
+                      "im Format „(Arthrose Grad X nach Kellgren & Lawrence)“ – keinen anderen. Diktiert der Arzt einen "
+                      "anderen Grad, gilt der diktierte Grad und der IB-Lab-Grad wird nicht genannt. Mache aus dem "
+                      "IB-Lab-Grad keine neue Diagnose (kein „Gonarthrose“, wenn sie nicht diktiert ist).")
     if weg:
         zeilen.append("Diese Sätze der Vorlage widersprechen den IB-Lab-Werten – nicht übernehmen (bzw. nur ohne die "
                       "widersprechende Aussage): " + " ".join(f"„{s}“" for s in weg))

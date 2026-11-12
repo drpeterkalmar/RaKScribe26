@@ -851,5 +851,131 @@
     "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Weiterführende Magnetresonanztomographie empfohlen."
    }
   ]
+ },
+ "kl": {
+  "_doc": "v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus Diktat oder IB Lab. grade = kl_grade(in); bereinigen = kl_bereinigen(in, diktat, erlaubt)[0].",
+  "grade": [
+   {
+    "in": "Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
+    "out": []
+   },
+   {
+    "in": "Mäßige Gonarthrose medial betont, Kellgren-Lawrence Grad 2, im Übrigen unauffällig.",
+    "out": [
+     "2"
+    ]
+   },
+   {
+    "in": "Gonarthrose medial betont, Grad 3 nach Kellgren und Lawrence.",
+    "out": [
+     "3"
+    ]
+   },
+   {
+    "in": "Kellgren-Lawrence-Grad links 1 (IB Lab KOALA).",
+    "out": [
+     "1"
+    ]
+   },
+   {
+    "in": "Kellgren-Lawrence-Grad: 3 (IB Lab KOALA).",
+    "out": [
+     "3"
+    ]
+   },
+   {
+    "in": "Coxarthrose rechts KL 4, links K&L 2.",
+    "out": [
+     "2",
+     "4"
+    ]
+   },
+   {
+    "in": "Gonarthrose Grad II nach Kellgren.",
+    "out": [
+     "2"
+    ]
+   },
+   {
+    "in": "Omarthrose, Kellgren Lawrence drei.",
+    "out": [
+     "3"
+    ]
+   },
+   {
+    "in": "Schenkelhalsfraktur Garden I, Grad 2 Stauung.",
+    "out": []
+   },
+   {
+    "in": "Hochgradige Gonarthrose (Arthrose Grad 4 nach Kellgren & Lawrence).",
+    "out": [
+     "4"
+    ]
+   }
+  ],
+  "bereinigen": [
+   {
+    "name": "RH 38: Grad aus „mäßige“ erfunden → weg",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Gonarthrose links medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
+    "erlaubt": [],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Gonarthrose links medial betont."
+   },
+   {
+    "name": "IB Lab KL 1 → KI-Grad 3 wird 1",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Gonarthrose links.",
+    "erlaubt": [
+     "1"
+    ],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 1 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "IB Lab KL 1 = KI-Grad 1 → bleibt",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 1 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Gonarthrose links.",
+    "erlaubt": [
+     "1"
+    ],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 1 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Diktat Grad 2 geht vor IB Lab 1",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 1 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Gonarthrose, Kellgren-Lawrence Grad 2.",
+    "erlaubt": [
+     "1"
+    ],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "diktierter Grad bleibt",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nGonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Gonarthrose medial betont, Grad 3 nach Kellgren und Lawrence.",
+    "erlaubt": [],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\n## Ergebnis\nGonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "ohne Klammer, nummeriert",
+    "in": "## Ergebnis\n1. Gonarthrose links, Grad 3 nach Kellgren.\n2. Klinische Korrelation empfohlen.",
+    "diktat": "Gonarthrose links. Klinische Korrelation empfohlen.",
+    "erlaubt": [],
+    "out": "## Ergebnis\n1. Gonarthrose links.\n2. Klinische Korrelation empfohlen."
+   },
+   {
+    "name": "zwei diktierte Grade: unklarer dritter bleibt stehen",
+    "in": "## Ergebnis\n1. Gonarthrose medial (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Retropatellararthrose (Arthrose Grad 4 nach Kellgren & Lawrence).",
+    "diktat": "Gonarthrose medial Grad 2 nach Kellgren, Retropatellararthrose Grad 3 nach Kellgren.",
+    "erlaubt": [],
+    "out": "## Ergebnis\n1. Gonarthrose medial (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Retropatellararthrose (Arthrose Grad 4 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "IB-Lab-Zeile bleibt unberührt",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\nKellgren-Lawrence-Grad links 1 (IB Lab KOALA).\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.",
+    "diktat": "Mäßige Gelenkspaltverschmälerung.",
+    "erlaubt": [],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\nKellgren-Lawrence-Grad links 1 (IB Lab KOALA).\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links."
+   }
+  ]
  }
 }

@@ -43,7 +43,8 @@ FAELLE = [
         ("Ergebnis ≠ Diktat", nicht_diktat(e, d))]),
     ("Thorax: Kardiomegalie, sonst unauffällig.", lambda t, b, e, d: [
         ("Titel Thorax", "thorax" in t.lower()),
-        ("Ergebnis '1. Kardiomegalie'", e.startswith("1. Kardiomegalie")),
+        # v3.18.3 (Peter 12.11.2026): ein einzelner Ergebnispunkt steht OHNE Nummer
+        ("Ergebnis 'Kardiomegalie.' (einzelner Punkt, unnummeriert)", e.startswith("Kardiomegalie")),
         ("Befund ohne 'Herz-Gefäßschatten normal konfiguriert'", "normal konfiguriert" not in b or "Herz-Gefäßschatten normal" not in b),
         ("Ergebnis ≠ Diktat", nicht_diktat(e, d))]),
     ("Knie rechts unauffällig", lambda t, b, e, d: [

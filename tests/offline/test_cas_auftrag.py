@@ -151,6 +151,11 @@ with wave.open(wavp, "rb") as w:
     n_wav = w.getnframes()
 check("… mit Aufnahme als WAV (ganze Aufnahme)", n_wav == 1600 * len(app._aufnahme.puffer) > 0, f"{n_wav}")
 check("… Antwort „fertig“, kein TEST", an.get("status") == "fertig" and an.get("test") is False, str(an))
+nv = an.get("nachvollzug") or {}
+check("v3.18.4 (RH 38): „fertig“ trägt den Nachvollzug (STT-Rohtext, Modell, Prompt-/Vorlagen-Stand, IB Lab nein)",
+      nv.get("stt_roh") and nv.get("modell", "").startswith("gemini/") and nv.get("prompt_version")
+      and nv.get("vorlagen_stand", "").startswith("sha1:") and nv.get("ibl_baustein") is False
+      and nv.get("ibl_module") == [] and nv.get("kaiscribe") and nv.get("zeit"), str(nv)[:300])
 check("… KEIN Strg+V, Text zusätzlich in der Zwischenablage, Felder leer, Band weg",
       S.AUFZ.tasten == [] and S.CLIPBOARD.data.get(13) == sichtbar and app.result_text.text == ""
       and app.transcript_text.text == "" and app._cas is None and app._job.zustand == "READY")
@@ -165,6 +170,13 @@ app.befund_fertig()
 an = antwort("b2")
 check("EOL: TEST-Text an CAS, Antwort test=true, ohne Aufnahme", ergebnis("20261013008") == cas.TESTBEFUND
       and an.get("test") is True and an.get("wav_datei") is None and app._cas is None, str(an))
+check("… Testbefund ohne Nachvollzug (kein Diktat)", "nachvollzug" not in an, str(an)[:200])
+nv = cas.nachvollzug("Mäßige Gelenkspaltverschmälerung", "Mäßige Gelenkspaltverschmälerung", "gemini/x", "p1", "eingebaut",
+                     "sha1:abc", ["kniegelenk_in_2_ebenen"], ["KOALA links"], 1, "3.18.4", jetzt=lambda: 0)
+check("nachvollzug(): IB Lab ja + Module, Diktat nur wenn anders als der Rohtext, lange Texte gekürzt",
+      nv["ibl_baustein"] is True and nv["ibl_module"] == ["KOALA links"] and "diktat" not in nv
+      and cas.nachvollzug("a" * 30000, "b")["stt_roh_gekuerzt"] is True and cas.nachvollzug("x", "y")["diktat"] == "y",
+      str(nv))
 
 # 3. zweiter Auftrag, während der erste Inhalt hat → abgelehnt; ohne Inhalt → ersetzt
 ablegen("20261013009", "c1")

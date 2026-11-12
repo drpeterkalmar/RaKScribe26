@@ -482,6 +482,21 @@ def _llm_aufruf(prompt):
     return report
 
 
+def _modell_name():
+    """v3.18.4 (RH 38, Nachvollziehbarkeit): Anbieter/Modell, mit dem der Befund entsteht (Gemini: aus dem Endpunkt)."""
+    if LLM_PROVIDER == 'gemini':
+        m = re.search(r"/models/([^:/]+):", getattr(_gem, "VERTEX_ENDPOINT", "") or "")
+        return "gemini/" + (m.group(1) if m else LLM_MODEL)
+    return f"{LLM_PROVIDER}/{LLM_MODEL}"
+
+
+def _vorlagen_stand():
+    """v3.18.4: Prüfsumme der geladenen Vorlagen (templates.json) — zeigt im Nachhinein, welcher Vorlagen-Stand galt."""
+    import hashlib
+    roh = json.dumps(RADIOLOGY_TEMPLATES, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return "sha1:" + hashlib.sha1(roh).hexdigest()[:12]
+
+
 def _rag_beispiele(seg):
     """RAG Few-Shot Beispiele (practice_reports.db) — v3.2: Standard AUS (RAG_BEISPIELE in config.ini)."""
     if RAG_BEISPIELE > 0 and not _nb.is_pure_normal_finding(seg, DISPLAY_NAMES):
@@ -2447,6 +2462,7 @@ class RaKScribeApp(ctk.CTk):
                                                     self.result_text.insert("1.0", r)))
                 self.after(0, lambda: self._lauf_fertig(gen))
                 return
+            stt_roh = self.final_transcript  # v3.18.4: STT-Rohtext dieses Laufs (Nachvollziehbarkeit, nur CAS-Merkdatei)
             cas = self._cas_hinweis_fuer_lauf()  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis (None = wie bisher)
             ibl = self._ibl_fuer_lauf()  # v3.13.0: IB-Lab-Bausteine, nach der KI wörtlich eingesetzt (None = wie bisher)
             erg = _pl.befund_aus_diktat(self.final_transcript, _pipeline_kontext(cas, ibl), beim_start=lambda: self._ui(gen, lambda: (
@@ -2461,6 +2477,7 @@ class RaKScribeApp(ctk.CTk):
                 self._ui(gen, lambda h=erg.cas_hinweise: self._cas_hinweise_zeigen(h))
             if getattr(self, "_cas", None) is not None:  # v3.13.0: Stand der IB-Lab-Werte gehört zu diesem Befund
                 self._ui(gen, lambda e=erg: self._ibl_nach_lauf(e))
+                self._ui(gen, lambda e=erg, r=stt_roh, i=ibl: self._nachvollzug_merken(e, r, i))
 
             if not self._job.aktuell(gen):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
@@ -2986,6 +3003,19 @@ class RaKScribeApp(ctk.CTk):
         k = _ibl.IblKontext(self._ibl_bausteine(), cas_leistungen=list(a.leistungen or []))
         return k if k else None
 
+    def _nachvollzug_merken(self, erg, stt_roh, ibl):
+        """v3.18.4 (Peter 12.11.2026, RH 38): womit dieser Befund entstand — geht bei EOL in „fertig“ an die Brücke
+        (Merkdatei <Nr>.rakscribe.json auf X:), nie ins Protokoll."""
+        try:
+            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
+            zeilen = len(erg.ibl.zeilen) if getattr(erg, "ibl", None) is not None else 0
+            self._cas_nachvollzug = _cas.nachvollzug(
+                stt_roh, erg.raw, _modell_name(), br.prompt_version(INITIAL_PROMPT_CONTENT), PROMPT_QUELLE,
+                _vorlagen_stand(), erg.vorlagen, module, zeilen, app_version())
+        except Exception:
+            log_exception("[CAS] Nachvollzug")
+            self._cas_nachvollzug = None
+
     def _ibl_nach_lauf(self, erg):
         """UI-Thread nach jedem Befund mit offenem Auftrag: Stand der eingesetzten Werte merken (ohne Bausteine bzw.
         Übernahme aus: nichts im Befund), Hinweise zeigen (nur Anzeige), Band/Knopf nachziehen."""
@@ -3281,6 +3311,7 @@ class RaKScribeApp(ctk.CTk):
         self._maske_leeren()             # v3.15.0: die Maske gehört zum Auftrag
         self._ibl_geruest_text = None
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
+        self._cas_nachvollzug = None     # v3.18.4: gehört zum Auftrag
         self._cas_hinweise_zeigen([])
         self._ibl_befund_leeren()
         self._ibl_band_zeigen()
@@ -3467,8 +3498,9 @@ class RaKScribeApp(ctk.CTk):
         pcm = self._cas_pcm()
         self._ibl_eol_pruefen(text)
         try:
-            self._cas_kanal.ergebnis_schreiben(a, text, pcm, self.samplerate,
-                                               test=self._cas_test or text == _cas.TESTBEFUND)
+            test = self._cas_test or text == _cas.TESTBEFUND
+            self._cas_kanal.ergebnis_schreiben(a, text, pcm, self.samplerate, test=test,
+                                               nachvollzug=None if test else getattr(self, "_cas_nachvollzug", None))
         except OSError as e:
             log_exception("[CAS] Ergebnis nicht geschrieben")
             kopiert = self.copy_formatted_report()

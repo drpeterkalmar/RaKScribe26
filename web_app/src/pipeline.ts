@@ -3,7 +3,7 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, kurzsaetzeSichern, type VorrangDaten } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, kurzsaetzeSichern, klBereinigen, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { ORDI_BAUSTEINE, befundBaustein, nurBaustein, bericht as bausteinBericht, vorlage as bausteinVorlage, kiHinweis, saetzeEinsetzen, type Bausteine } from './bausteine.ts';
@@ -41,7 +41,8 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
     const hinweis = [kiHinweis(bKey), widerspruchPrompt(widerspruchBefunde(seg, wid), v.body, wid)].filter(Boolean).join('\n');
     const roh = await callGeminiLLM(seg, v.body, v.display_name, hinweis, v.ergebnis, ctx);
     ctx.status('Validiere Befund-Konsistenz...');
-    return kurzsaetzeSichern(widersprucheBereinigen(nachbearbeiten(await validateReportConsistency(seg, roh, ctx)), seg, wid)[0], seg, ctx.vorrang.kurzsaetze)[0];  // v3.15.5, v3.16.6
+    const out = kurzsaetzeSichern(widersprucheBereinigen(nachbearbeiten(await validateReportConsistency(seg, roh, ctx)), seg, wid)[0], seg, ctx.vorrang.kurzsaetze)[0];  // v3.15.5, v3.16.6
+    return klWaechter(out, seg);
   }
   const detectedKey = detectTemplate(seg, ctx.templates, ctx.vorrang);
   const activeTemplate = ctx.templates[detectedKey] || ctx.templates['allgemein'];  // templates.json enthält „allgemein“
@@ -77,7 +78,15 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
   // v3.16.6 (Peter 18.10.): diktierte Empfehlungs-/Einschränkungssätze, die der KI verloren gingen, wörtlich zurück (Sync: pipeline.py)
   const [gesichert, kurz] = kurzsaetzeSichern(bereinigt, seg, ctx.vorrang.kurzsaetze);
   if (kurz.length) console.log(`[KURZSATZ] ${kurz.length} diktierte(r) Satz/Sätze ergänzt`);
-  return gesichert;
+  return klWaechter(gesichert, seg);
+};
+
+// v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus dem Diktat (die Web-App hat keine IB-Lab-Bausteine) — nicht
+// gedeckte Grade der KI fallen weg. Sync: pipeline.py _kl_waechter.
+const klWaechter = (report: string, seg: string): string => {
+  const [out, aend] = klBereinigen(report, seg);
+  if (aend.length) console.log(`[K&L] ${aend.join(' · ')}`);
+  return out;
 };
 
 export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promise<string> => {

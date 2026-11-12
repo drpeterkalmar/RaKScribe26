@@ -3,13 +3,13 @@
 Diktat: 'Kniegelenk links, Röntgen, maßgradige Gonarthrose des medialen Femorotibialkompartiments,
 geringgradige Retropatellararthrose. Ansonsten unauffällig.'
 Erwartung: Überschrift 'Kniegelenk links in 2 Ebenen' (NICHT nacktes 'Kniegelenk'),
-Ergebnis mit Kellgren-&-Lawrence-Graduierung (Femorotibial + Patellofemoral getrennt).
+Ergebnis mit beiden Kompartimenten und Grad-Adjektiven, ohne erfundenen K&L-Grad (v3.18.4).
 Kette A = EXE-Pfad (radiology_prompt.txt + <untersuchung>), Kette B = Web-Pfad (Call0→Call1→Call2,
 Prompts exakt aus App.tsx extrahiert).
 """
 import os, re, sys, json, pathlib, urllib.request, urllib.error, time
 
-ROOT = pathlib.Path.home() / "dev" / "RaKScribe26"
+ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (v3.18.4: nicht mehr fest ~/dev)
 API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
 from google.oauth2 import service_account
 import google.auth.transport.requests as _tr
@@ -77,7 +77,9 @@ def check_report(final, label):
         ("Überschrift = 'Kniegelenk … in 2 Ebenen'", "kniegelenk" in header.lower() and "in 2 ebenen" in header.lower()),
         ("Überschrift mit diktierter Seite (links)", "links" in header.lower()),
         ("Nackte Kurzform 'Kniegelenk' als Überschrift beseitigt", header.strip() != "Kniegelenk"),
-        ("K&L-Graduierung im Ergebnis", "kellgren" in ergebnis.lower() and "grad" in ergebnis.lower()),
+        # v3.18.4 (Peter 12.11.2026, RH 38): kein K&L-Grad ohne Diktat/IB Lab; Grad-Adjektive bleiben
+        ("Kein erfundener K&L-Grad im Ergebnis", "kellgren" not in ergebnis.lower()),
+        ("Grad-Adjektive bleiben (mäßig/gering)", "geringgradig" in ergebnis.lower() and ("mäßig" in ergebnis.lower() or "maßgradig" in ergebnis.lower())),
         ("Femorotibial + Patellofemoral beide im Ergebnis",
          ("femorotibial" in ergebnis.lower() or "medial" in ergebnis.lower()) and
          ("patellofemoral" in ergebnis.lower() or "retropatellar" in ergebnis.lower() or "patella" in ergebnis.lower())),

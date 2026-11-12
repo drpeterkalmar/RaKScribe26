@@ -84,6 +84,14 @@ for c in F["kurzsaetze"]["sichern"]:
     g = br.kurzsaetze_sichern(c["in"], c["diktat"])[0]
     check(g == c["out"], f"kurzsatz: {c['name']}", g)
 
+print("── PY: K&L-Wächter (v3.18.4, RH 38: Grad nur aus Diktat oder IB Lab)")
+for c in F["kl"]["grade"]:
+    g = br.kl_grade(c["in"])
+    check(g == c["out"], f"kl-grade: {c['in'][:45]!r}", g)
+for c in F["kl"]["bereinigen"]:
+    g = br.kl_bereinigen(c["in"], c["diktat"], c["erlaubt"])[0]
+    check(g == c["out"], f"kl: {c['name']}", g)
+
 print("── PY: EXE-Prompt-Auswahl (waehle_prompt)")
 NEU = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-a -->\nNEU"
 ALT_V4 = "<role>alter v4-Prompt ohne Nummerierung</role>"

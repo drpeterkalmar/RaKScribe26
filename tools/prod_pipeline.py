@@ -117,7 +117,8 @@ def web_segment(seg, log=None):
         rep = c2 if ok and not (bef_in > 0 and bef_out < bef_in * 0.7) else c1
     if log is not None:
         log.append({"segment": seg, "template": key, "call1": c1, "roh": rep})
-    return br.kurzsaetze_sichern(br.widersprueche_bereinigen(br.nachbearbeiten(rep), seg)[0], seg)[0]   # v3.15.5/v3.16.6 wie pipeline.ts
+    out = br.kurzsaetze_sichern(br.widersprueche_bereinigen(br.nachbearbeiten(rep), seg)[0], seg)[0]   # v3.15.5/v3.16.6 wie pipeline.ts
+    return out if rep is c1 and c1 == bypass_report(seg, key) else br.kl_bereinigen(out, seg)[0]   # v3.18.4 wie pipeline.ts
 
 
 def web_kette(diktat, log=None):

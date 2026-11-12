@@ -850,3 +850,55 @@ export function kurzsaetzeSichern(report: string, diktat: string, d: KurzsatzDat
   } else out = zeilen.join('\n');
   return [out, [...neuBef.map(s => 'Befund ergänzt: ' + s), ...neuErg.map(s => 'Ergebnis ergänzt: ' + s)]];
 }
+
+// ── v3.18.4 Kellgren-&-Lawrence-Wächter (Peter 12.11.2026, RH 38: „KaiScribe konfabuliert noch zu viel“) ──────────
+// Ein K&L-Grad steht nur, wenn er diktiert ist oder aus einem IB-Lab-Baustein kommt (nur EXE) — nie aus dem Wortlaut.
+// Nach der KI: Grad-Angaben ohne Deckung → bei genau einem erlaubten Grad eingesetzt, sonst entfernt (Diagnose bleibt).
+// Sync: source_code/befund_regeln.py (kl_grade, kl_bereinigen), Fixtures befund_regeln_fixtures.json „kl“.
+const KL_G = String.raw`(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier)`;
+const KL_WERT: Record<string, string> = { '0': '0', null: '0', '1': '1', i: '1', eins: '1', '2': '2', ii: '2', zwei: '2',
+  '3': '3', iii: '3', drei: '3', '4': '4', iv: '4', vier: '4' };
+const KL_NAME = String.raw`kellgren(?:[\s-]*(?:&|und)?[\s-]*lawrence)?`;
+const KL_SEITE = String.raw`(?:\s*(?:links|rechts|beidseits))?`;
+const KL_TEXT = new RegExp(
+  String.raw`(?<![\wäöüß])grad\s+(` + KL_G + String.raw`)\s+nach\s+` + KL_NAME +
+  String.raw`|(?<![\wäöüß])` + KL_NAME + String.raw`(?:[\s-]*(?:grad|grade|score|stadium))?` + KL_SEITE + String.raw`\s*:?\s*(` + KL_G +
+  String.raw`)(?![\wäöüß])` +
+  String.raw`|(?<![\wäöüß])(?:kl|k\s*&\s*l)(?:[\s-]*(?:grad|grade))?` + KL_SEITE + String.raw`\s*:?\s*(` + KL_G + String.raw`)(?![\wäöüß])`,
+  'gi');
+const KL_KI = new RegExp(
+  String.raw`\s*\(\s*(?:Arthrose\s+)?Grad\s+(` + KL_G + String.raw`)\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?\s*\)` +
+  String.raw`|,?\s*(?:Arthrose\s+)?Grad\s+(` + KL_G + String.raw`)\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?`, 'gi');
+
+export function klGrade(text: string): string[] {
+  const out = new Set<string>();
+  for (const m of (text || '').matchAll(KL_TEXT)) {
+    const g = m.slice(1).find(x => x) as string;
+    out.add(KL_WERT[g.toLowerCase()]);
+  }
+  return [...out].sort();
+}
+
+export function klBereinigen(report: string, diktat: string, erlaubt: string[] = []): [string, string[]] {
+  if (!report || !/kellgren/i.test(report)) return [report, []];
+  const d = klGrade(diktat);
+  const ok = d.length ? d : [...new Set(erlaubt)].sort();
+  const aend: string[] = [];
+  const ersetzen = (m0: string, g1?: string, g2?: string): string => {
+    const g = KL_WERT[(g1 || g2 || '').toLowerCase()];
+    if (ok.includes(g)) return m0;
+    if (ok.length === 1) {
+      aend.push(`K&L-Grad ${g} → ${ok[0]}`);
+      return m0.replace(new RegExp(KL_G + String.raw`(?=\s+nach)`, 'i'), ok[0]);
+    }
+    if (ok.length) {
+      aend.push(`K&L-Grad ${g} nicht diktiert (diktiert/IB Lab: ${ok.join(', ')}) – stehen gelassen`);
+      return m0;
+    }
+    aend.push(`K&L-Grad ${g} ohne Diktat/IB Lab entfernt`);
+    return '';
+  };
+  const zeilen = report.split('\n').map(z =>
+    z.includes('(IB Lab') || !z.toLowerCase().includes('kellgren') ? z : z.replace(KL_KI, ersetzen));
+  return [zeilen.join('\n'), aend];
+}
