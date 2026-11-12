@@ -704,7 +704,9 @@ def prompt_block(bausteine, vorlage=None):
             "Regeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der "
             "Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat "
             "dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie "
-            "diktiert.\n"
+            "diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder "
+            "Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ "
+            "und kein K&L-Grad.\n"
             "</ibl_messwerte>")
 
 

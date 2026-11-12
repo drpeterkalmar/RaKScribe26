@@ -218,6 +218,10 @@ def _kl_waechter(out, seg, template_key, ctx, seite=""):
     out, aend = br.kl_bereinigen(out, seg, erlaubt)
     if aend:
         ctx.log("[K&L] " + " · ".join(aend))
+    # v3.18.5 (Nachtrag RH 99): ohne diktierte Arthrose keine Arthrose-Diagnose im Ergebnis (HIPPO-Messwerte ≠ Arthrose)
+    out, aend = br.arthrose_bereinigen(out, seg)
+    if aend:
+        ctx.log("[ARTHROSE] " + " · ".join(a[:60] for a in aend))
     return out
 
 

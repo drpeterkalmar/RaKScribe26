@@ -27,6 +27,8 @@ def check(name, ok, detail=""):
 
 
 ORDNER = tempfile.mkdtemp(prefix="rks_cas_")
+LAEUFE = os.path.join(tempfile.mkdtemp(prefix="rks_laeufe_"), "laeufe")   # v3.18.5: Lauf-Protokoll statt X:
+mod.CFG.lauf_ordner = LAEUFE
 LEBT = {4242, 5151}
 
 
@@ -139,6 +141,17 @@ bis_ruhe(app)
 check("F10-Stopp mit CAS-Auftrag: Befund rechts zur Kontrolle, KEIN Strg+V, nichts kopiert",
       app.result_text.text.startswith("## Kniegelenk") and app._status_raw == "KONTROLLE" and S.AUFZ.tasten == []
       and S.CLIPBOARD.data.get(13) == "ALTER INHALT", f"{app._status_raw} / {S.AUFZ.tasten}")
+for _ in range(100):   # Lauf-Protokoll schreibt im Hintergrund
+    if os.path.isdir(LAEUFE) and os.listdir(LAEUFE):
+        break
+    time.sleep(0.02)
+lauf = [n for n in (os.listdir(LAEUFE) if os.path.isdir(LAEUFE) else [])]
+ld = json.load(open(os.path.join(LAEUFE, lauf[0]), encoding="utf-8")) if lauf else {}
+check("v3.18.5 (Nachtrag RH 99): Lauf-Protokoll schon VOR EOL – <Nr>_<Zeit>.json mit STT-Text, Vorschlag, Modell, "
+      "Prompt-Stand", len(lauf) == 1 and lauf[0].startswith("20261013007_") and ld.get("stt_roh") == NORMAL
+      and ld.get("ergebnis_vorschlag", "").startswith("## Kniegelenk") and ld.get("modell", "").startswith("gemini/")
+      and ld.get("prompt_version") and ld.get("nr") == "20261013007" and ld.get("vorlagen_stand", "").startswith("sha1:"),
+      f"{lauf} {str(ld)[:300]}")
 check("Aufnahme des Diktats gesammelt", len(app._cas_aufnahmen) == 1 and app._cas_aufnahmen[0] is app._aufnahme)
 app.result_text.text += "\nVon Hand ergänzt."
 sichtbar = app.result_text.text.strip()
@@ -173,6 +186,26 @@ check("EOL: TEST-Text an CAS, Antwort test=true, ohne Aufnahme", ergebnis("20261
 check("… Testbefund ohne Nachvollzug (kein Diktat)", "nachvollzug" not in an, str(an)[:200])
 nv = cas.nachvollzug("Mäßige Gelenkspaltverschmälerung", "Mäßige Gelenkspaltverschmälerung", "gemini/x", "p1", "eingebaut",
                      "sha1:abc", ["kniegelenk_in_2_ebenen"], ["KOALA links"], 1, "3.18.4", jetzt=lambda: 0)
+# v3.18.5: Lauf-Protokoll (Modul)
+lo = os.path.join(tempfile.mkdtemp(prefix="rks_lauf2_"), "l")
+d1 = cas.lauf_daten({"stt_roh": "x"}, "## B", nr="2026/11 12099", benutzer="kp", rechner="CASWS08")
+T0 = int(time.time())   # echte Zeit: das Aufräumen vergleicht mit dem Änderungsdatum der Dateien
+p1 = cas.lauf_schreiben(lo, d1, jetzt=lambda: T0)
+p2 = cas.lauf_schreiben(lo, d1, jetzt=lambda: T0)
+check("lauf_schreiben: Name <Nr>_<Zeit>.json (Nr bereinigt), zweite Datei derselben Sekunde mit -2, Inhalt vollständig",
+      p1 and os.path.basename(p1).startswith("20261112099_") and p2.endswith("-2.json")
+      and json.load(open(p1, encoding="utf-8")) == dict(d1), f"{p1} {p2}")
+check("lauf_schreiben: „aus“ und fehlendes Laufwerk (X: außerhalb von Windows) → nichts",
+      cas.lauf_schreiben("aus", d1) is None and cas.lauf_schreiben("X:\\RaKScribe\\Daten\\laeufe", d1) is None
+      and not os.path.exists("X:\\RaKScribe\\Daten\\laeufe") and cas.lauf_schreiben("", d1) is None)
+fremd = os.path.join(lo, "notiz.json")
+open(fremd, "w").write("{}")
+for f in (p1, p2, fremd):
+    os.utime(f, (T0 - 31 * 86400,) * 2)
+neu = cas.lauf_schreiben(lo, d1, jetzt=lambda: T0 + 86400)   # neuer Tag → aufräumen
+check("Aufräumen: Lauf-Dateien älter als 30 Tage weg, fremde Dateien und die neue bleiben",
+      not os.path.exists(p1) and not os.path.exists(p2) and os.path.exists(fremd) and os.path.exists(neu),
+      str(os.listdir(lo)))
 check("nachvollzug(): IB Lab ja + Module, Diktat nur wenn anders als der Rohtext, lange Texte gekürzt",
       nv["ibl_baustein"] is True and nv["ibl_module"] == ["KOALA links"] and "diktat" not in nv
       and cas.nachvollzug("a" * 30000, "b")["stt_roh_gekuerzt"] is True and cas.nachvollzug("x", "y")["diktat"] == "y",

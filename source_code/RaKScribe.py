@@ -2478,6 +2478,7 @@ class RaKScribeApp(ctk.CTk):
             if getattr(self, "_cas", None) is not None:  # v3.13.0: Stand der IB-Lab-Werte gehört zu diesem Befund
                 self._ui(gen, lambda e=erg: self._ibl_nach_lauf(e))
                 self._ui(gen, lambda e=erg, r=stt_roh, i=ibl: self._nachvollzug_merken(e, r, i))
+            self._lauf_protokollieren(erg, stt_roh, ibl)   # v3.18.5 (Nachtrag RH 99): je Lauf auf X:, auch ohne EOL
 
             if not self._job.aktuell(gen):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
@@ -3015,6 +3016,33 @@ class RaKScribeApp(ctk.CTk):
         except Exception:
             log_exception("[CAS] Nachvollzug")
             self._cas_nachvollzug = None
+
+    def _lauf_protokollieren(self, erg, stt_roh, ibl):
+        """v3.18.5 (Peter 12.11.2026, Nachtrag RH 99: Fenster ohne EOL zu → Vorschlag nicht nachvollziehbar): STT-Text,
+        Ergebnisvorschlag, Modell und Prompt-Stand dieses Laufs als <Nr>_<Zeit>.json in den Lauf-Ordner (X:, 30 Tage) —
+        im Hintergrund (Netzlaufwerk), Fehler nur als Zeile im Log, nie der Inhalt."""
+        try:
+            a = getattr(self, "_cas", None)
+            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
+            zeilen = len(erg.ibl.zeilen) if getattr(erg, "ibl", None) is not None else 0
+            nv = _cas.nachvollzug(stt_roh, erg.raw, _modell_name(), br.prompt_version(INITIAL_PROMPT_CONTENT),
+                                  PROMPT_QUELLE, _vorlagen_stand(), erg.vorlagen, module, zeilen, app_version())
+            daten = _cas.lauf_daten(nv, erg.report, nr=a.nr if a is not None else "",
+                                    benutzer=a.benutzer if a is not None else "",
+                                    rechner=os.environ.get("COMPUTERNAME", ""))
+            ordner = getattr(CFG, "lauf_ordner", _cas.LAUF_ORDNER_STANDARD)
+        except Exception:
+            log_exception("[LAUF] Protokoll vorbereiten")
+            return
+
+        def schreiben():
+            try:
+                pfad = _cas.lauf_schreiben(ordner, daten)
+                if pfad:
+                    log(f"[LAUF] protokolliert: {os.path.basename(pfad)}")
+            except Exception as e:
+                log(f"[LAUF] nicht geschrieben ({type(e).__name__})")
+        threading.Thread(target=schreiben, daemon=True).start()
 
     def _ibl_nach_lauf(self, erg):
         """UI-Thread nach jedem Befund mit offenem Auftrag: Stand der eingesetzten Werte merken (ohne Bausteine bzw.

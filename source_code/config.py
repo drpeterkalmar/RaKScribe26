@@ -33,6 +33,9 @@ class Config:
     llm_model: str = "gemini-3.5-flash"
     api_key: str = ""           # nur für LLM_PROVIDER = openai/ollama (Gemini: Praxis-Schlüssel)
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
+    # v3.18.5 (Nachtrag RH 99): Lauf-Protokoll je Befund (STT-Text, Vorschlag, Modell, Prompt-Stand), auch ohne EOL;
+    # LAUF_ORDNER = aus → nie. Fehlt das Laufwerk, schreibt KaiScribe nichts.
+    lauf_ordner: str = "X:\\RaKScribe\\Daten\\laeufe"
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
     angelegt: bool = False      # Datei fehlte und wurde mit Standardwerten angelegt
@@ -80,6 +83,7 @@ def load_config(path):
     cfg.llm_model = (sek.get("LLM_MODEL", "") or cfg.llm_model).strip()
     cfg.api_key = sek.get("API_KEY", "").strip().replace('"', '')
     cfg.rag_beispiele = _int(sek, "RAG_BEISPIELE", 0, cfg.warnungen)
+    cfg.lauf_ordner = (sek.get("LAUF_ORDNER", "") or cfg.lauf_ordner).strip().strip('"')
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):
         for name in ("NAECHSTES_FELD", "VORIGES_FELD", "UEBERNEHMEN", "MASKE_UMSCHALTEN"):

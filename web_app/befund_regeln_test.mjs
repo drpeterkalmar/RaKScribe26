@@ -2,7 +2,7 @@
 // Pendant zu ../befund_regeln_test.py (das ruft dieses Skript auf).
 //   cd web_app && node --experimental-strip-types befund_regeln_test.mjs
 import { readFileSync } from 'node:fs';
-import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen } from './src/befundRegeln.ts';
+import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen } from './src/befundRegeln.ts';
 
 const F = JSON.parse(readFileSync(new URL('../befund_regeln_fixtures.json', import.meta.url), 'utf8'));
 let fail = 0, n = 0;
@@ -29,6 +29,9 @@ for (const c of F.kurzsaetze.sichern) { const g = kurzsaetzeSichern(c.in, c.dikt
 // v3.18.4: K&L-Wächter (RH 38: Grad nur aus Diktat oder IB Lab)
 for (const c of F.kl.grade) { const g = klGrade(c.in); check(JSON.stringify(g) === JSON.stringify(c.out), 'kl-grade: ' + c.in.slice(0, 45), g); }
 for (const c of F.kl.bereinigen) { const g = klBereinigen(c.in, c.diktat, c.erlaubt)[0]; check(g === c.out, 'kl: ' + c.name, g); }
+// v3.18.5 (Nachtrag RH 99): Grad zum Adjektiv nur bei diktierter Arthrose; keine Arthrose ohne Diktat
+for (const c of F.kl.adjektiv) { const g = klAdjektivGrade(c.in); check(JSON.stringify(g) === JSON.stringify(c.out), 'kl-adjektiv: ' + c.in.slice(0, 45), g); }
+for (const c of F.arthrose.bereinigen) { const g = arthroseBereinigen(c.in, c.diktat)[0]; check(g === c.out, 'arthrose: ' + c.name, g); }
 for (const c of F.prompt_version) { const g = [promptVersion(c.in), stripPromptMarker(c.in)]; check(g[0] === c.version && g[1] === c.stripped, 'version: ' + c.in.slice(0, 40), g); }
 console.log(`${n - fail}/${n} PASS (TS)`);
 process.exit(fail ? 1 : 0);

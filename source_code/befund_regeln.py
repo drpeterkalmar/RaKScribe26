@@ -1052,6 +1052,7 @@ def kurzsaetze_sichern(report, diktat, daten=None):
 # eingesetzt, ohne erlaubten Grad fällt die Angabe weg (die Diagnose bleibt). Zeilen mit „(IB Lab …)“ bleiben unberührt.
 # Sync: web_app/src/befundRegeln.ts (klGrade, klBereinigen), Fixtures befund_regeln_fixtures.json „kl“.
 _KL_G = r"(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier)"
+_KL_G_KI = r"(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier|X)"   # KI-Ausgabe: auch der Prompt-Platzhalter „Grad X“
 _KL_WERT = {"0": "0", "null": "0", "1": "1", "i": "1", "eins": "1", "2": "2", "ii": "2", "zwei": "2", "3": "3",
             "iii": "3", "drei": "3", "4": "4", "iv": "4", "vier": "4"}
 _KL_NAME = r"kellgren(?:[\s-]*(?:&|und)?[\s-]*lawrence)?"
@@ -1063,9 +1064,16 @@ _KL_TEXT = re.compile(
     r"|(?<![\wäöüß])(?:kl|k\s*&\s*l)(?:[\s-]*(?:grad|grade))?" + _KL_SEITE + r"\s*:?\s*(" + _KL_G + r")(?![\wäöüß])",
     re.I)
 # Grad-Angabe der KI im Befund: Klammer „(Arthrose Grad 3 nach Kellgren & Lawrence)“ bzw. „…, Grad 3 nach Kellgren …“
-_KL_KI = re.compile(r"\s*\(\s*(?:Arthrose\s+)?Grad\s+(" + _KL_G + r")\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?\s*\)"
-                    r"|,?\s*(?:Arthrose\s+)?Grad\s+(" + _KL_G + r")\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?",
+_KL_KI = re.compile(r"\s*\(\s*(?:Arthrose\s+)?Grad\s+(" + _KL_G_KI + r")\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?\s*\)"
+                    r"|,?\s*(?:Arthrose\s+)?Grad\s+(" + _KL_G_KI + r")\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?",
                     re.I)
+# v3.18.5 (Nachtrag RH 99): Arthrose-Wort im Diktat, auch als Verhörer („Koxartrose“, „Ommatrose“, „Gonathrose“)
+_ARTHROSE_DIKTAT = re.compile(r"th?ros|rthrot|rtrot", re.I)
+# Grad-Adjektiv direkt vor einer diktierten Arthrose (höchstens zwei Wörter dazwischen, z.B. „mäßige mediale Gonarthrose“)
+_KL_ADJ = [("1", r"beginnend\w*|initial\w*|minimal\w*"), ("2", r"gering\w*|leicht\w*"),
+           ("3", r"m[äa]ß\w*|mittelgradig\w*"), ("4", r"hochgradig\w*|ausgeprägt\w*|schwer\w*")]
+_KL_ADJ_RE = re.compile(r"(?<![\wäöüß])(" + "|".join(r for _g, r in _KL_ADJ) + r")\s+(?:[\wäöüß-]+\s+){0,2}?"
+                        r"[\wäöüß-]*(?:th?ros|rthrot|rtrot)", re.I)
 
 
 def kl_grade(text):
@@ -1078,22 +1086,39 @@ def kl_grade(text):
     return sorted(out)
 
 
+def arthrose_diktiert(diktat):
+    """v3.18.5 (Nachtrag RH 99): nennt das Diktat eine Arthrose (auch als Verhörer)?"""
+    return bool(_ARTHROSE_DIKTAT.search(diktat or ""))
+
+
+def kl_adjektiv_grade(diktat):
+    """v3.18.5 (Peter 12.11.2026, Nachtrag RH 99: „mäßige Coxarthrose beidseits“ → K&L 3 bleibt): Grade zum Grad-Adjektiv
+    einer DIKTIERTEN Arthrose (beginnend 1, gering 2, mäßig 3, hochgradig 4) → sortierte Liste. Ohne Arthrose-Wort leer."""
+    out = set()
+    for m in _KL_ADJ_RE.finditer(diktat or ""):
+        w = m.group(1)
+        out.update(g for g, r in _KL_ADJ if re.fullmatch(r, w, re.I))
+    return sorted(out)
+
+
 def kl_bereinigen(report, diktat, erlaubt=()):
-    """Nach der KI: nicht diktierte K&L-Grade entfernen bzw. auf den einzigen erlaubten Grad setzen (Diktat geht vor
-    IB Lab: diktiert ist ein Grad, gelten nur die diktierten). → (report, Liste der Änderungen)."""
+    """Nach der KI: nicht gedeckte K&L-Grade entfernen bzw. auf den einzigen erlaubten Grad setzen. Gedeckt ist (in
+    dieser Reihenfolge) ein diktierter Grad, sonst ein IB-Lab-Grad (erlaubt), sonst — v3.18.5 — der Grad zum
+    Grad-Adjektiv einer diktierten Arthrose. Der Prompt-Platzhalter „Grad X“ ist nie gedeckt. → (report, Änderungen)."""
     if not report or not re.search(r"kellgren", report, re.I):
         return report, []
-    ok = kl_grade(diktat) or sorted(set(erlaubt or ()))
+    ok = kl_grade(diktat) or sorted(set(erlaubt or ())) or kl_adjektiv_grade(diktat)
     aend = []
 
     def ersetzen(m):
-        g = _KL_WERT[(m.group(1) or m.group(2)).lower()]
+        roh = (m.group(1) or m.group(2)).lower()
+        g = _KL_WERT.get(roh, "X")
         if g in ok:
             return m.group(0)
         if len(ok) == 1:
             aend.append(f"K&L-Grad {g} → {ok[0]}")
-            return re.sub(_KL_G + r"(?=\s+nach)", ok[0], m.group(0), count=1, flags=re.I)
-        if ok:
+            return re.sub(_KL_G_KI + r"(?=\s+nach)", ok[0], m.group(0), count=1, flags=re.I)
+        if ok and g != "X":
             aend.append(f"K&L-Grad {g} nicht diktiert (diktiert/IB Lab: {', '.join(ok)}) – stehen gelassen")
             return m.group(0)
         aend.append(f"K&L-Grad {g} ohne Diktat/IB Lab entfernt")
@@ -1105,3 +1130,37 @@ def kl_bereinigen(report, diktat, erlaubt=()):
             continue
         zeilen[i] = _KL_KI.sub(ersetzen, z)
     return "\n".join(zeilen), aend
+
+
+# ── v3.18.5 Arthrose-Wächter (Peter 12.11.2026, Nachtrag RH 99: Becken stehend + HIPPO-Messwerte, keine Arthrose diktiert →
+# KaiScribe schlug „Coxarthrose (Kellgren & Lawrence Grad 3) beidseits“ vor). Nach der KI: Nennt das Diktat KEINE
+# Arthrose (auch nicht als Verhörer), fällt jeder Ergebnis-Punkt weg, der eine Arthrose positiv nennt („Coxarthrose
+# beidseits.“); verneinte Nennungen („Keine Coxarthrosezeichen.“), IB-Lab-Zeilen und die K&L-Klammer („… (Arthrose Grad 1
+# nach Kellgren & Lawrence)“ hinter einem diktierten Befund, Grad von IB Lab — den prüft kl_bereinigen) bleiben. Fail-open: bei einem
+# Arthrose-Wort im Diktat greift der Wächter nie. Sync: befundRegeln.ts arthroseBereinigen, Fixtures „arthrose“.
+_ARTHROSE_KI = re.compile(r"arthros|arthrot", re.I)
+_VERNEINT = re.compile(r"(?<![\wäöüß])(?:kein\w*|ohne|nicht|frei von)(?![\wäöüß])", re.I)
+
+
+def arthrose_bereinigen(report, diktat):
+    """→ (report, Änderungen). Nur im Abschnitt „## Ergebnis“; die Nummerierung wird danach neu gesetzt."""
+    if not report or "## Ergebnis" not in report or arthrose_diktiert(diktat) or not _ARTHROSE_KI.search(report):
+        return report, []
+    zeilen = report.split("\n")
+    aend, raus, im_erg = [], set(), False
+    for i, z in enumerate(zeilen):
+        if z.strip().startswith("## "):
+            im_erg = z.strip().startswith("## Ergebnis")
+            continue
+        ohne_kl = _KL_KI.sub("", z)   # erlaubte K&L-Klammer (IB Lab) ist keine Arthrose-Diagnose
+        if not im_erg or "(IB Lab" in z or not _ARTHROSE_KI.search(ohne_kl):
+            continue
+        vor = ohne_kl[:_ARTHROSE_KI.search(ohne_kl).start()]
+        if _VERNEINT.search(vor):
+            continue
+        raus.add(i)
+        aend.append("Arthrose ohne Diktat entfernt: " + re.sub(r"^\s*\d+\.\s*", "", z).strip())
+    if not raus:
+        return report, []
+    neu = [z for i, z in enumerate(zeilen) if i not in raus]
+    return ergebnis_nummerieren("\n".join(neu)), aend

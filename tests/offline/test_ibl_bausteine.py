@@ -322,9 +322,15 @@ def kl_lauf(diktat, ibl=None):
     return pl.befund_aus_diktat(diktat, ctx).report
 
 
-r = kl_lauf("Knie links: Mäßige Gonarthrose.")
-check("K&L-Wächter: KI-Grad 3 ohne Diktat/IB Lab → entfernt, Diagnose bleibt",
+r = kl_lauf("Knie links: Gonarthrose.")
+check("K&L-Wächter: KI-Grad 3 ohne Diktat/IB Lab/Grad-Adjektiv → entfernt, Diagnose bleibt",
       "Kellgren" not in r and "Mäßige Gonarthrose links." in r, r)
+r = kl_lauf("Knie links: Mäßige Gonarthrose.")
+check("K&L-Wächter v3.18.5 (Nachtrag RH 99): diktierte „mäßige Gonarthrose“ → KI-Grad 3 bleibt (Grad zum Adjektiv)",
+      "(Arthrose Grad 3 nach Kellgren & Lawrence)" in r, r)
+r = kl_lauf("Knie links: Geringe Gonarthrose.")
+check("K&L-Wächter v3.18.5: diktierte „geringe Gonarthrose“ → KI-Grad 3 wird 2",
+      "(Arthrose Grad 2 nach Kellgren & Lawrence)" in r and "Grad 3 nach" not in r, r)
 r = kl_lauf("Knie links: Mäßige Gonarthrose.", I.IblKontext(B(KOALA_D)))
 check("K&L-Wächter: KI-Grad 3, IB Lab links 1 (rechts 3) → Grad 1 (Seite links)",
       "(Arthrose Grad 1 nach Kellgren & Lawrence)" in r and "Grad 3 nach" not in r, r)

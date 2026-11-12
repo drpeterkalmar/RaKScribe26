@@ -856,6 +856,7 @@ export function kurzsaetzeSichern(report: string, diktat: string, d: KurzsatzDat
 // Nach der KI: Grad-Angaben ohne Deckung → bei genau einem erlaubten Grad eingesetzt, sonst entfernt (Diagnose bleibt).
 // Sync: source_code/befund_regeln.py (kl_grade, kl_bereinigen), Fixtures befund_regeln_fixtures.json „kl“.
 const KL_G = String.raw`(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier)`;
+const KL_G_KI = String.raw`(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier|X)`;  // KI-Ausgabe: auch der Platzhalter „Grad X“
 const KL_WERT: Record<string, string> = { '0': '0', null: '0', '1': '1', i: '1', eins: '1', '2': '2', ii: '2', zwei: '2',
   '3': '3', iii: '3', drei: '3', '4': '4', iv: '4', vier: '4' };
 const KL_NAME = String.raw`kellgren(?:[\s-]*(?:&|und)?[\s-]*lawrence)?`;
@@ -867,8 +868,26 @@ const KL_TEXT = new RegExp(
   String.raw`|(?<![\wäöüß])(?:kl|k\s*&\s*l)(?:[\s-]*(?:grad|grade))?` + KL_SEITE + String.raw`\s*:?\s*(` + KL_G + String.raw`)(?![\wäöüß])`,
   'gi');
 const KL_KI = new RegExp(
-  String.raw`\s*\(\s*(?:Arthrose\s+)?Grad\s+(` + KL_G + String.raw`)\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?\s*\)` +
-  String.raw`|,?\s*(?:Arthrose\s+)?Grad\s+(` + KL_G + String.raw`)\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?`, 'gi');
+  String.raw`\s*\(\s*(?:Arthrose\s+)?Grad\s+(` + KL_G_KI + String.raw`)\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?\s*\)` +
+  String.raw`|,?\s*(?:Arthrose\s+)?Grad\s+(` + KL_G_KI + String.raw`)\s+nach\s+Kellgren(?:\s*(?:&|und)\s*Lawrence)?`, 'gi');
+// v3.18.5 (Nachtrag RH 99): Arthrose-Wort im Diktat, auch als Verhörer; Grad-Adjektiv direkt vor einer diktierten Arthrose
+const ARTHROSE_DIKTAT = /th?ros|rthrot|rtrot/i;
+const KL_ADJ: [string, string][] = [['1', String.raw`beginnend\w*|initial\w*|minimal\w*`], ['2', String.raw`gering\w*|leicht\w*`],
+  ['3', String.raw`m[äa]ß\w*|mittelgradig\w*`], ['4', String.raw`hochgradig\w*|ausgeprägt\w*|schwer\w*`]];
+const KL_ADJ_RE = new RegExp(String.raw`(?<![\wäöüß])(` + KL_ADJ.map(([, r]) => r).join('|') + String.raw`)\s+(?:[\wäöüß-]+\s+){0,2}?` +
+  String.raw`[\wäöüß-]*(?:th?ros|rthrot|rtrot)`, 'gi');
+
+export function arthroseDiktiert(diktat: string): boolean {
+  return ARTHROSE_DIKTAT.test(diktat || '');
+}
+
+export function klAdjektivGrade(diktat: string): string[] {
+  const out = new Set<string>();
+  for (const m of (diktat || '').matchAll(KL_ADJ_RE)) {
+    for (const [g, r] of KL_ADJ) if (new RegExp('^(?:' + r + ')$', 'i').test(m[1])) out.add(g);
+  }
+  return [...out].sort();
+}
 
 export function klGrade(text: string): string[] {
   const out = new Set<string>();
@@ -882,16 +901,17 @@ export function klGrade(text: string): string[] {
 export function klBereinigen(report: string, diktat: string, erlaubt: string[] = []): [string, string[]] {
   if (!report || !/kellgren/i.test(report)) return [report, []];
   const d = klGrade(diktat);
-  const ok = d.length ? d : [...new Set(erlaubt)].sort();
+  const e = [...new Set(erlaubt)].sort();
+  const ok = d.length ? d : e.length ? e : klAdjektivGrade(diktat);
   const aend: string[] = [];
   const ersetzen = (m0: string, g1?: string, g2?: string): string => {
-    const g = KL_WERT[(g1 || g2 || '').toLowerCase()];
+    const g = KL_WERT[(g1 || g2 || '').toLowerCase()] ?? 'X';
     if (ok.includes(g)) return m0;
     if (ok.length === 1) {
       aend.push(`K&L-Grad ${g} → ${ok[0]}`);
-      return m0.replace(new RegExp(KL_G + String.raw`(?=\s+nach)`, 'i'), ok[0]);
+      return m0.replace(new RegExp(KL_G_KI + String.raw`(?=\s+nach)`, 'i'), ok[0]);
     }
-    if (ok.length) {
+    if (ok.length && g !== 'X') {
       aend.push(`K&L-Grad ${g} nicht diktiert (diktiert/IB Lab: ${ok.join(', ')}) – stehen gelassen`);
       return m0;
     }
@@ -901,4 +921,29 @@ export function klBereinigen(report: string, diktat: string, erlaubt: string[] =
   const zeilen = report.split('\n').map(z =>
     z.includes('(IB Lab') || !z.toLowerCase().includes('kellgren') ? z : z.replace(KL_KI, ersetzen));
   return [zeilen.join('\n'), aend];
+}
+
+// ── v3.18.5 Arthrose-Wächter (Peter 12.11.2026, Nachtrag RH 99: Becken + HIPPO-Messwerte, keine Arthrose diktiert →
+// „Coxarthrose (Kellgren & Lawrence Grad 3) beidseits“). Ohne Arthrose-Wort im Diktat fallen Ergebnis-Punkte weg, die eine
+// Arthrose positiv nennen; verneinte Nennungen und IB-Lab-Zeilen bleiben. Sync: befund_regeln.py arthrose_bereinigen.
+const ARTHROSE_KI = /arthros|arthrot/i;
+const VERNEINT = /(?<![\wäöüß])(?:kein\w*|ohne|nicht|frei von)(?![\wäöüß])/i;
+
+export function arthroseBereinigen(report: string, diktat: string): [string, string[]] {
+  if (!report || !report.includes('## Ergebnis') || arthroseDiktiert(diktat) || !ARTHROSE_KI.test(report)) return [report, []];
+  const zeilen = report.split('\n');
+  const aend: string[] = [];
+  const raus = new Set<number>();
+  let imErg = false;
+  zeilen.forEach((z, i) => {
+    if (z.trim().startsWith('## ')) { imErg = z.trim().startsWith('## Ergebnis'); return; }
+    const ohneKl = z.replace(KL_KI, '');   // erlaubte K&L-Klammer (IB Lab) ist keine Arthrose-Diagnose
+    if (!imErg || z.includes('(IB Lab') || !ARTHROSE_KI.test(ohneKl)) return;
+    const vor = ohneKl.slice(0, ohneKl.search(ARTHROSE_KI));
+    if (VERNEINT.test(vor)) return;
+    raus.add(i);
+    aend.push('Arthrose ohne Diktat entfernt: ' + z.replace(/^\s*\d+\.\s*/, '').trim());
+  });
+  if (!raus.size) return [report, []];
+  return [ergebnisNummerieren(zeilen.filter((_, i) => !raus.has(i)).join('\n')), aend];
 }

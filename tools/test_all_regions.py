@@ -63,7 +63,7 @@ TEST_CASES = [
 
     ("Knie Gonarthrose K&L (Peter 08.09., Screenshot-Case)", "kniegelenk_in_2_ebenen",
      "Kniegelenk links, Röntgen, maßgradige Gonarthrose des medialen Femorotibialkompartiments, geringgradige Retropatellararthrose. Ansonsten unauffällig.",
-     ["Gonarthrose", "Retropatellararthrose"]),   # v3.18.4: Grad-Adjektive bleiben, K&L nur wenn diktiert
+     ["Gonarthrose", "Retropatellararthrose", "Kellgren"]),   # v3.18.5: diktierte Arthrose + Adjektiv → K&L zum Adjektiv
 
     # v3.18.4 (Peter 12.11.2026, RH 38): nur Deskriptor diktiert → keine Gonarthrose, keine Osteophyten/Sklerose, kein Grad
     ("Knie Gelenkspaltverschmälerung ohne Diagnose (RH 38, Konfabulation)", "kniegelenk_in_2_ebenen",
@@ -314,7 +314,7 @@ def run_test_case(name, template_key, diktat, expected_pathologies, token):
         if inv.lower() in ergebnis.lower():
             issues.append(f"⚠️ Erfundener Begriff '{inv}' im Ergebnis")
     # 4a. v3.18.4 (RH 38): K&L-Grad bzw. Osteophyten/Sklerose/Diagnose, die nicht diktiert sind = erfunden
-    if "kellgren" in final.lower() and "kellgren" not in diktat.lower():
+    if "kellgren" in final.lower() and "kellgren" not in diktat.lower() and not _pp.br.kl_adjektiv_grade(diktat):
         issues.append("❌ K&L-Grad ohne Diktat erfunden")
     for wort, muster in (("Osteophyten", r"osteophyt"), ("Sklerose", r"skleros"), ("Gonarthrose", r"gonarthros")):
         if not re.search(muster, diktat, re.I) and re.search(muster, final, re.I) \
@@ -470,6 +470,11 @@ IBL_FAELLE = [
     ("KOALA Knie links KL 1 (RH 38, nur Deskriptor diktiert)",
      [_cas_l("x-knie-li", "Kniegelenk links", "Röntgen", "kniegelenk_in_2_ebenen", "links")], [_IBL_KOALA_LI],
      "Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.", [("Kniegelenk", "KOALA")]),
+    # v3.18.5 (Peter 12.11.2026, Nachtrag RH 99): Becken stehend + HIPPO-Messwerte, keine Arthrose diktiert → keine Coxarthrose
+    ("HIPPO Becken stehend (RH 99, Gelenkspaltverschmälerung ohne Arthrose)",
+     [_cas_l("x-becken", "Becken stehend", "Röntgen", "beckenübersicht_stehend")], [_IBL_HIPPO],
+     "Beckenübersicht stehend. Geringe Gelenkspaltverschmälerung beider Hüftgelenke, kein Beckenschiefstand, im Übrigen unauffällig.",
+     [("Becken", "HIPPO")]),
     ("FROG Fuß links (Hallux valgus diktiert, Pes planus von IB Lab)",
      [_cas_l("x-fuss-li", "Fuß links", "Röntgen", "fuß_in_2_ebenen", "links")], [_IBL_FROG_LI],
      "Fuß links: Hallux valgus mit Arthrose im Großzehengrundgelenk, sonst unauffällig.", [("Fuß", "FROG")]),
@@ -515,9 +520,11 @@ def run_ibl_fall(name, leistungen, bausteine, diktat, erwartet):
             art, gef = ib.im_text(m, ohne)
             if art in ("gleich", "anders"):
                 issues.append(f"❌ KI nennt selbst {m.name} ({gef})")
-    erlaubt = set(_pp.br.kl_grade(diktat)) or {g for b in bs for z in b.befundteil for g in _pp.br.kl_grade(z)}
+    erlaubt = (set(_pp.br.kl_grade(diktat)) or {g for b in bs for z in b.befundteil for g in _pp.br.kl_grade(z)}
+               or set(_pp.br.kl_adjektiv_grade(diktat)))   # v3.18.5: Grad zum Adjektiv einer diktierten Arthrose
     if set(_pp.br.kl_grade(ohne)) - erlaubt or ("gonarthrose" in erg.report.lower() and "arthrose" not in diktat.lower()
-                                                and any(b.modul == "koala" and not b.ergebnis for b in bs)):
+                                                and any(b.modul == "koala" and not b.ergebnis for b in bs)) \
+            or _pp.br.arthrose_bereinigen(erg.report, diktat)[1]:   # v3.18.5 RH 99: Arthrose ohne Diktat
         issues.append(f"❌ K&L-Grad/Diagnose ohne Diktat oder IB Lab: {_pp.br.kl_grade(ohne)}")
     if any(w in erg.report for w in ("bitte prüfen", "ibl_messwerte", "HKA-Konvention", "nicht doppelt", "IB-Lab-Wert")):
         issues.append("❌ Hinweise/Prompt-Text sind in den Befund geraten")

@@ -3,7 +3,7 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, kurzsaetzeSichern, klBereinigen, type VorrangDaten } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { ORDI_BAUSTEINE, befundBaustein, nurBaustein, bericht as bausteinBericht, vorlage as bausteinVorlage, kiHinweis, saetzeEinsetzen, type Bausteine } from './bausteine.ts';
@@ -86,7 +86,10 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
 const klWaechter = (report: string, seg: string): string => {
   const [out, aend] = klBereinigen(report, seg);
   if (aend.length) console.log(`[K&L] ${aend.join(' · ')}`);
-  return out;
+  // v3.18.5 (Nachtrag RH 99): ohne diktierte Arthrose keine Arthrose-Diagnose im Ergebnis (Sync: pipeline.py)
+  const [out2, aend2] = arthroseBereinigen(out, seg);
+  if (aend2.length) console.log(`[ARTHROSE] ${aend2.join(' · ')}`);
+  return out2;
 };
 
 export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promise<string> => {

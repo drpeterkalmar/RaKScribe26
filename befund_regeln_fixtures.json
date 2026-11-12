@@ -975,6 +975,169 @@
     "diktat": "Mäßige Gelenkspaltverschmälerung.",
     "erlaubt": [],
     "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Unauffällige Weichteile.\n\nKellgren-Lawrence-Grad links 1 (IB Lab KOALA).\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links."
+   },
+   {
+    "name": "RH 99: mäßige Coxarthrose diktiert → K&L 3 bleibt",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Coxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Beckenübersicht stehend. Mäßige Coxarthrose beidseits, im Übrigen unauffällig.",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Coxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "RH 99: mäßige Coxarthrose, KI-Grad 2 → 3",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Coxarthrose beidseits (Arthrose Grad 2 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Coxarthrose beidseits.",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Coxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Verhörer „maßgradige“ + „Koxartrose“ → 3",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Coxarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "maßgradige Koxartrose rechts",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Coxarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Platzhalter „Grad X“ wörtlich → Adjektiv-Grad",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Coxarthrose links (Arthrose Grad X nach Kellgren & Lawrence).",
+    "diktat": "Geringgradige Coxarthrose links.",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Coxarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Platzhalter „Grad X“ ohne Deckung → weg",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nCoxarthrose links (Arthrose Grad X nach Kellgren & Lawrence).",
+    "diktat": "Coxarthrose links.",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nCoxarthrose links."
+   },
+   {
+    "name": "Arthrose ohne Adjektiv: KI-Grad 3 → weg",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nCoxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Coxarthrose beidseits.",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\nCoxarthrose beidseits."
+   },
+   {
+    "name": "Adjektiv ohne Arthrose-Diagnose → kein Grad",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe Gelenkspaltverschmälerung beider Hüftgelenke (Arthrose Grad 2 nach Kellgren & Lawrence).",
+    "diktat": "Geringe Gelenkspaltverschmälerung beider Hüftgelenke kranial betont.",
+    "erlaubt": [],
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe Gelenkspaltverschmälerung beider Hüftgelenke."
+   },
+   {
+    "name": "Knie: zwei Adjektive, zwei Kompartimente",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nX.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose des medialen Femorotibialkompartiments links (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Geringgradige Retropatellararthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).",
+    "diktat": "Kniegelenk links, maßgradige Gonarthrose des medialen Femorotibialkompartiments, geringgradige Retropatellararthrose.",
+    "erlaubt": [],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nX.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose des medialen Femorotibialkompartiments links (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Geringgradige Retropatellararthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "IB-Lab-Grad geht vor Adjektiv",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nX.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Gonarthrose links.",
+    "erlaubt": [
+     "1"
+    ],
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nX.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 1 nach Kellgren & Lawrence)."
+   }
+  ],
+  "adjektiv": [
+   {
+    "in": "Mäßige Coxarthrose beidseits, im Übrigen unauffällig.",
+    "out": [
+     "3"
+    ]
+   },
+   {
+    "in": "maßgradige Gonarthrose des medialen Femorotibialkompartiments, geringgradige Retropatellararthrose.",
+    "out": [
+     "2",
+     "3"
+    ]
+   },
+   {
+    "in": "Geringe Gelenkspaltverschmälerung beider Hüftgelenke.",
+    "out": []
+   },
+   {
+    "in": "Hochgradige Omarthrose rechts.",
+    "out": [
+     "4"
+    ]
+   },
+   {
+    "in": "Beginnende Coxarthrose rechts.",
+    "out": [
+     "1"
+    ]
+   },
+   {
+    "in": "Coxarthrose beidseits.",
+    "out": []
+   },
+   {
+    "in": "Mäßige degenerative Veränderungen beider Hüftgelenke.",
+    "out": []
+   },
+   {
+    "in": "geringe ommatrose links",
+    "out": [
+     "2"
+    ]
+   },
+   {
+    "in": "Leichte Rhizarthrose rechts.",
+    "out": [
+     "2"
+    ]
+   }
+  ]
+ },
+ "arthrose": {
+  "_doc": "v3.18.5 (Nachtrag RH 99): ohne Arthrose-Wort im Diktat fallen positive Arthrose-Punkte im Ergebnis weg. out = arthrose_bereinigen(in, diktat)[0].",
+  "bereinigen": [
+   {
+    "name": "RH 99: Coxarthrose aus HIPPO-Werten → weg (Ergebnis leer)",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nCoxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Beckenübersicht stehend. Im Übrigen unauffällig.",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis"
+   },
+   {
+    "name": "RH 99: neben diktiertem Punkt → weg, neu nummeriert",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\n1. Geringe Gelenkspaltverschmälerung beider Hüftgelenke kranial betont.\n2. Coxarthrose beidseits.\n3. Steiles Pfannendach rechts (Pfannendachwinkel nach Tönnis (Acetabulumindex) 10,1°).",
+    "diktat": "Geringe Gelenkspaltverschmälerung beider Hüftgelenke kranial betont, im Übrigen unauffällig.",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\n1. Geringe Gelenkspaltverschmälerung beider Hüftgelenke kranial betont.\n2. Steiles Pfannendach rechts (Pfannendachwinkel nach Tönnis (Acetabulumindex) 10,1°)."
+   },
+   {
+    "name": "diktierte Coxarthrose bleibt",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nMäßige Coxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Coxarthrose beidseits.",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nMäßige Coxarthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Verhörer „Koxartrose“ → bleibt (Wächter greift nicht)",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nCoxarthrose rechts.",
+    "diktat": "koxartrose rechts",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nCoxarthrose rechts."
+   },
+   {
+    "name": "verneint im Ergebnis bleibt",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nKeine Coxarthrose. Regelrechte Darstellung des Beckens.",
+    "diktat": "Becken unauffällig.",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form. Keine Coxarthrosezeichen.\n\nLCE-Winkel nach Wiberg rechts 32,3° (IB Lab HIPPO).\n\n## Ergebnis\nKeine Coxarthrose. Regelrechte Darstellung des Beckens."
+   },
+   {
+    "name": "Befundtext unberührt (nur Ergebnis)",
+    "in": "## Becken\n\n## Befund\nArthrotische Veränderungen.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.",
+    "diktat": "Becken unauffällig.",
+    "out": "## Becken\n\n## Befund\nArthrotische Veränderungen.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens."
+   },
+   {
+    "name": "K&L-Klammer von IB Lab am diktierten Befund bleibt (keine Arthrose-Diagnose)",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links (Arthrose Grad 1 nach Kellgren & Lawrence).",
+    "diktat": "Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links (Arthrose Grad 1 nach Kellgren & Lawrence)."
    }
   ]
  }

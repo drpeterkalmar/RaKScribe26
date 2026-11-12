@@ -38,6 +38,7 @@ Zuweiser/Info/Vorbefund zur Anzeige (und am Ende der Befund selbst) — alles nu
 import io
 import json
 import os
+import re
 import time
 import wave
 
@@ -310,3 +311,77 @@ def nachvollzug(stt_roh, diktat="", modell="", prompt_version="", prompt_quelle=
     if len(roh) > NACHVOLLZUG_MAX:
         out["stt_roh_gekuerzt"] = True
     return out
+
+
+# ── v3.18.5 Lauf-Protokoll (Peter 12.11.2026, Nachtrag RH 99: Fenster ohne EOL geschlossen → nichts gespeichert, „warum stand
+# das im Ergebnis?“ war nicht beantwortbar) ─────────────────────────────────────────────────────────────────────────────
+# Je Befund-Lauf eine Datei <Nr>_<JJJJMMTT-HHMMSS>.json im Lauf-Ordner (Standard X:\RaKScribe\Daten\laeufe, config.ini
+# LAUF_ORDNER, „aus“ = nie), unabhängig von EOL: nachvollzug() + ergebnis_vorschlag (Befund, wie KaiScribe ihn vorschlug)
+# + Nr/Benutzer/Rechner. Bleibt in der Praxis (Netzlaufwerk), nie ins Protokoll; Dateien älter als 30 Tage löscht
+# KaiScribe selbst (höchstens einmal je Tag und Prozess). Fehlt das Laufwerk, wird nichts geschrieben (kein Ordner auf C:).
+LAUF_ORDNER_STANDARD = "X:\\RaKScribe\\Daten\\laeufe"
+LAUF_TAGE = 30
+_LAUF_DATEI = re.compile(r"^[\w-]+_\d{8}-\d{6}(?:-\d+)?\.json$")
+_aufgeraeumt = {}
+
+
+def lauf_daten(nachvollzug_block, ergebnis_vorschlag, nr="", benutzer="", rechner=""):
+    """Inhalt einer Lauf-Datei: nachvollzug() + Ergebnisvorschlag + Nr/Benutzer/Rechner."""
+    d = dict(nachvollzug_block or {})
+    d.update({"nr": str(nr or ""), "benutzer": str(benutzer or ""), "rechner": str(rechner or ""),
+              "ergebnis_vorschlag": str(ergebnis_vorschlag or "")[:NACHVOLLZUG_MAX]})
+    return d
+
+
+def _laufwerk_da(ordner):
+    """Laufwerk des Ordners vorhanden? „X:\\…“ wird auch außerhalb von Windows als Laufwerk erkannt (dort nie da)."""
+    m = re.match(r"^([A-Za-z]:)[\\/]", str(ordner))
+    if m:
+        return os.name == "nt" and os.path.isdir(m.group(1) + "\\")
+    lw = os.path.splitdrive(ordner)[0]
+    return not lw or os.path.isdir(lw + os.sep)
+
+
+def laeufe_aufraeumen(ordner, tage=LAUF_TAGE, jetzt=time.time):
+    """Lauf-Dateien (nur eigenes Namensmuster) älter als tage löschen → Anzahl gelöscht."""
+    grenze = jetzt() - tage * 86400
+    n = 0
+    try:
+        namen = os.listdir(ordner)
+    except OSError:
+        return 0
+    for name in namen:
+        if not _LAUF_DATEI.match(name):
+            continue
+        pfad = os.path.join(ordner, name)
+        try:
+            if os.path.getmtime(pfad) < grenze:
+                os.remove(pfad)
+                n += 1
+        except OSError:
+            pass
+    return n
+
+
+def lauf_schreiben(ordner, daten, jetzt=time.time):
+    """Eine Lauf-Datei schreiben → Pfad, oder None (aus / Laufwerk fehlt). Wirft nur bei echten Schreibfehlern."""
+    if not ordner or str(ordner).strip().lower() in ("aus", "0", "nein", "off"):
+        return None
+    if not _laufwerk_da(ordner):
+        return None
+    os.makedirs(ordner, exist_ok=True)
+    t = jetzt()
+    nr = re.sub(r"[^\w-]", "", str(daten.get("nr") or "")) or "ohne-nr"
+    basis = f"{nr}_{time.strftime('%Y%m%d-%H%M%S', time.localtime(t))}"
+    pfad = os.path.join(ordner, basis + ".json")
+    i = 1
+    while os.path.exists(pfad):
+        i += 1
+        pfad = os.path.join(ordner, f"{basis}-{i}.json")
+    _json_schreiben(pfad, daten)
+    tag = time.strftime("%Y%m%d", time.localtime(t))
+    if _aufgeraeumt.get(ordner) != tag:
+        _aufgeraeumt[ordner] = tag
+        laeufe_aufraeumen(ordner, jetzt=jetzt)
+    return pfad
+

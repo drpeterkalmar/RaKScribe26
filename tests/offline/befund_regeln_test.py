@@ -91,6 +91,13 @@ for c in F["kl"]["grade"]:
 for c in F["kl"]["bereinigen"]:
     g = br.kl_bereinigen(c["in"], c["diktat"], c["erlaubt"])[0]
     check(g == c["out"], f"kl: {c['name']}", g)
+for c in F["kl"]["adjektiv"]:   # v3.18.5 (Nachtrag RH 99): Grad zum Adjektiv nur bei diktierter Arthrose
+    g = br.kl_adjektiv_grade(c["in"])
+    check(g == c["out"], f"kl-adjektiv: {c['in'][:45]!r}", g)
+print("── PY: Arthrose-Wächter (v3.18.5, Nachtrag RH 99: keine Arthrose ohne Diktat)")
+for c in F["arthrose"]["bereinigen"]:
+    g = br.arthrose_bereinigen(c["in"], c["diktat"])[0]
+    check(g == c["out"], f"arthrose: {c['name']}", g)
 
 print("── PY: EXE-Prompt-Auswahl (waehle_prompt)")
 NEU = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-a -->\nNEU"

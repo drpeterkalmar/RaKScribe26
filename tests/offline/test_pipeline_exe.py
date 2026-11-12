@@ -33,7 +33,8 @@ def alter_gen_prompt(raw, t):
 
 
 aufrufe = []
-LLM_ANTWORT = "## Untersuchung\n\n## Befund\nBeschreibung der Veränderung mit ausreichend Text.\n\n## Ergebnis\nGonarthrose rechts."
+# v3.18.5: Ergebnis ohne Arthrose (der Arthrose-Wächter nimmt eine nicht diktierte Arthrose sonst heraus)
+LLM_ANTWORT = "## Untersuchung\n\n## Befund\nBeschreibung der Veränderung mit ausreichend Text.\n\n## Ergebnis\nBaker-Zyste rechts."
 
 
 def llm(prompt):

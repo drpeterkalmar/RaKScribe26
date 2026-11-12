@@ -52,7 +52,7 @@ check("Ordner/Schlüssel/Verknüpfung/Mutex bleiben", 'VERKNUEPFUNG = "RaKScribe
 # Testbefund der Brücke (heißt „RaKScribe-Brücke“, ris-mods), WAV-Ablauf-Protokoll.
 ERLAUBT = re.compile(r"Drive-Ordner „?RaKScribe|RaKScribe26|RaKScribe\.lnk|RaKScribe-Starter|RaKScribe-Brücke|"
                      r"RaKScribeLaeuft|^f?[\"']?\[|^f?[\"']?---|^f?[\"']'|Notiz \"RaKScribe|"
-                     r"^[\"']RaKScribe[\"']$|s – RaKScribe wird geschlossen|von RaKScribe an CAS|angelegt von RaKScribe \(Menü")
+                     r"^[\"']RaKScribe[\"']$|X:\\\\RaKScribe\\\\Daten|s – RaKScribe wird geschlossen|von RaKScribe an CAS|angelegt von RaKScribe \(Menü")
 
 
 def texte(pfad):

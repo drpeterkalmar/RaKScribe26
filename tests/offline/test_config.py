@@ -40,6 +40,10 @@ check("alte Schlüssel CHUNK_DURATION/STT_ENGINE/GOOGLE_JSON_FILENAME werden ign
 cfg = c.load_config(datei("[SETTINGS]\nLLM_PROVIDER = OpenAI\nLLM_MODEL = gpt-4o-mini\nAPI_KEY = \"sk-test\"\nRAG_BEISPIELE = 2\n"))
 check("Werte werden übernommen (Provider klein, Anführungszeichen weg)",
       (cfg.llm_provider, cfg.llm_model, cfg.api_key, cfg.rag_beispiele) == ("openai", "gpt-4o-mini", "sk-test", 2))
+check("v3.18.5: LAUF_ORDNER Standard X:\\RaKScribe\\Daten\\laeufe, aus config.ini übernehmbar (auch „aus“)",
+      c.load_config(datei("[SETTINGS]\nLLM_PROVIDER = gemini\n")).lauf_ordner == "X:\\RaKScribe\\Daten\\laeufe"
+      and c.load_config(datei('[SETTINGS]\nLAUF_ORDNER = "Y:\\Protokoll"\n')).lauf_ordner == "Y:\\Protokoll"
+      and c.load_config(datei("[SETTINGS]\nLAUF_ORDNER = aus\n")).lauf_ordner == "aus")
 cfg = c.load_config(datei("﻿[SETTINGS]\nLLM_MODEL = gemini-3.5-flash\n"))
 check("Datei mit BOM (Windows-Editor) wird gelesen", cfg.llm_model == "gemini-3.5-flash" and not cfg.warnungen)
 
