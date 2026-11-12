@@ -180,6 +180,23 @@ for leist, diktat, soll, art in (
     check(f"v3.16.5 Anfang des Abschnitts entscheidet: {diktat[:28]}… → {soll}",
           [x.vorlage for x in w] == [soll] and w[0].art == art, [(x.vorlage, x.art) for x in w])
 
+# v3.18.7 (RH 99/128): kombinierte Vorlage des ganzen Abschnitts bleibt, wenn das Diktat die zusätzliche Region nennt
+BUE = L("bü", "Becken", "Röntgen", "beckenübersicht_stehend", None)
+ZA24 = {"kurz": "za24", "text": "Format 24x30", "ohne_vorlage": True}
+LWSL = L("lws", "LWS", "Röntgen", "lendenwirbelsäule_in_2_ebenen", None)
+for leist, diktat, soll in (
+        ([BUE, ZA24], "Beckenübersicht, Hüftgelenk rechts. Regelrechte Stellung, keine Fraktur. Hüftgelenk rechts mit "
+                      "geringer Gelenkspaltverschmälerung.", ["beckenübersicht_und_hüfte"]),
+        ([BUE], "Beckenübersicht unauffällig. Hüfte rechts in 2 Ebenen: geringe Coxarthrose.", ["beckenübersicht_und_hüfte"]),
+        ([BUE], "Beckenübersicht und Hüften beidseits: regelrecht.", ["beckenübersicht_und_hüfte"]),
+        ([BUE], "Beckenübersicht stehend. Beckenstand gerade, keine Fraktur.", ["beckenübersicht_stehend"]),
+        ([HANDL], "Hand in zwei Ebenen. Keine Fraktur. Arthrose der Fingerendgelenke.", ["hand_in_2_ebenen"]),
+        ([LWSL, BUE], "LWS in 2 Ebenen: Osteochondrose L4/5. Beckenübersicht: unauffällig.",
+         ["lendenwirbelsäule_in_2_ebenen", "beckenübersicht_stehend"])):
+    _, w, h = wahlen(leist, diktat)
+    check(f"v3.18.7 Mehrfach-Region: {diktat[:34]}… → {soll}", [x.vorlage for x in w] == soll,
+          [(x.vorlage, x.art) for x in w])
+
 # ───────────────────────────── Teil 2: Pipeline mit CAS ─────────────────────────────
 PROMPT = (ROOT / "radiology_prompt.txt").read_text(encoding="utf-8")
 

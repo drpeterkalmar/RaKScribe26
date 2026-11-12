@@ -326,6 +326,13 @@ def kopf(satz):
     return " ".join(out)
 
 
+def mehr_regionen(key, leistung, text, templates):
+    """v3.18.7: Regionen der Vorlage key, die die CAS-Leistung nicht hat und die der Diktat-Abschnitt text selbst nennt
+    (Beckenübersicht und Hüfte ↔ CAS „Becken“ + „Hüfte“ im Diktat) → nicht leer. Fingerendgelenke ↔ Hand: gleiche Region."""
+    extra = regionen(vorlagen_text(key, templates)) - leistung.regionen
+    return extra & regionen(text)
+
+
 @dataclass
 class Wahl:
     vorlage: str
@@ -344,7 +351,10 @@ def wahl(seg, cas, templates, erkennen):
         # Arthrose der Fingerendgelenke“ → Titel „Finger …“): nennt der Abschnitt GLEICH AM ANFANG genau die
         # Untersuchung der CAS-Leistung, gilt deren Vorlage – ein Befundwort weiter hinten („Fingerendgelenke“) macht
         # daraus keine andere Untersuchung. Eine genauere Untersuchung am Anfang („Knie-TEP rechts …“) bleibt.
-        if erkennen(kopf(s[0][1])) == l.vorlage:
+        # v3.18.7 (RH 99/128, Peter 12.11.2026: CAS „Becken“, Diktat „Beckenübersicht … Hüftgelenk rechts …“ → nur
+        # „Beckenübersicht stehend“, die Hüfte fiel weg): deckt die Vorlage des ganzen Abschnitts (Beckenübersicht und
+        # Hüfte) zusätzlich eine Region ab, die das Diktat auch nennt, bleibt sie – der Satzanfang stuft nicht herunter.
+        if erkennen(kopf(s[0][1])) == l.vorlage and not mehr_regionen(v, l, seg, templates):
             return Wahl(l.vorlage, "kopf", l, d)
     if l:
         return Wahl(v, "bestaetigt", l, d)
