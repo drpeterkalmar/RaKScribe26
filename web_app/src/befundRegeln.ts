@@ -4,7 +4,7 @@
 // IMMER an beiden Stellen + Fixture.
 //
 //   splitRegionen(text)        Diktat mit ≥2 Regionen → ein Segment je Region (je eigener Befund)
-//   ergebnisNummerieren(rep)   Ergebnis-Zeilen ohne Nummer → "1. 2. 3."; einzelner Normalbefund-Satz unnummeriert
+//   ergebnisNummerieren(rep)   Ergebnis-Zeilen ohne Nummer → "1. 2. 3."; ein einzelner Ergebnispunkt unnummeriert (v3.18.3)
 //   hasPathology(text)         Pathologie-Stichwort ohne Negation (Normalsatz-Check der Nummerierung);
 //                              die Bypass-Entscheidung trifft normalbypass.ts isPureNormalFinding (v3.2)
 //   ergebnisMitSeite(e, raw)   Bypass-Ergebnis = Normal-Ergebnis des Templates + diktierte Seite
@@ -147,8 +147,6 @@ export function splitRegionen(text: string): string[] {
 const NUM_RE = /^\s*(?:\*\*)?\s*\d+\s*[.)]\s*(?:\*\*)?\s*/;
 const BULLET_RE = /^\s*[-*•–]\s+/;
 const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor/i;
-const NORMALSATZ_RE = /(regelrecht|unauffällig|normal|altersentsprechend|ohne pathologisch|kein pathologisch)/i;
-const istNormalsatz = (s: string): boolean => NORMALSATZ_RE.test(s) && !hasPathology(s);
 
 // v3.7.4 (Georg 09.10.): Ergebnis-Punkt beginnt groß und endet mit Punkt. Sync: befund_regeln.py satzform
 const SATZENDE = /[.!?:;]$/;
@@ -173,7 +171,7 @@ function nummeriereBlock(lines: string[]): string[] {
   for (const i of items) texte.set(i, satzanfangGross(lines[i].replace(NUM_RE, '').replace(BULLET_RE, '').trim()));
   const zaehlbar = items.filter(i => !UNNUM_RE.test(texte.get(i)!));
   const out = [...lines];
-  if (zaehlbar.length === 1 && istNormalsatz(texte.get(zaehlbar[0])!)) {
+  if (zaehlbar.length === 1) { // v3.18.3 (Peter 12.11.2026): EIN Ergebnispunkt wird nie nummeriert
     out[zaehlbar[0]] = texte.get(zaehlbar[0])!;
   } else {
     let n = 0;

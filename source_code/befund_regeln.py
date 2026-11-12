@@ -7,7 +7,7 @@ IMMER an beiden Stellen + Fixture.
   split_regionen(text)        Diktat mit ≥2 Regionen ("Schulter rechts … Ellbogen rechts …")
                               → ein Segment je Region (je eigener Befund).
   ergebnis_nummerieren(rep)   Ergebnis-Zeilen ohne Nummer → "1. 2. 3."; ein einzelner
-                              Normalbefund-Satz bleibt unnummeriert.
+                              Ergebnispunkt bleibt unnummeriert (v3.18.3, Peter 12.11.2026).
   has_pathology(text)         Pathologie-Stichwort ohne Negation (für den Normalsatz-Check der Nummerierung).
                               Die Bypass-Entscheidung selbst trifft normalbypass.is_pure_normal_finding (v3.2).
   ergebnis_mit_seite(e, raw)  Bypass-Ergebnis = Normal-Ergebnis des Templates + diktierte Seite.
@@ -227,12 +227,6 @@ def split_regionen(text):
 _NUM_RE = re.compile(r"^\s*(?:\*\*)?\s*\d+\s*[.)]\s*(?:\*\*)?\s*")
 _BULLET_RE = re.compile(r"^\s*[-*•–]\s+")
 _UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor", re.I)
-_NORMALSATZ_RE = re.compile(r"(regelrecht|unauffällig|normal|altersentsprechend|ohne pathologisch|kein pathologisch)", re.I)
-
-
-def _ist_normalsatz(s):
-    return bool(_NORMALSATZ_RE.search(s)) and not has_pathology(s)
-
 
 _SATZENDE = (".", "!", "?", ":", ";")
 
@@ -266,7 +260,7 @@ def _nummeriere_block(lines):
     texte = {i: _satzanfang_gross(_BULLET_RE.sub("", _NUM_RE.sub("", lines[i])).strip()) for i in items}
     zaehlbar = [i for i in items if not _UNNUM_RE.match(texte[i])]
     out = list(lines)
-    if len(zaehlbar) == 1 and _ist_normalsatz(texte[zaehlbar[0]]):
+    if len(zaehlbar) == 1:  # v3.18.3 (Peter 12.11.2026): EIN Ergebnispunkt wird nie nummeriert, auch eine Pathologie
         out[zaehlbar[0]] = texte[zaehlbar[0]]
     else:
         n = 0

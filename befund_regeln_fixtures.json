@@ -192,14 +192,19 @@
    "out": "## Ergebnis\nUnauffälliger Befund."
   },
   {
-   "name": "einzelne Pathologie → 1.",
+   "name": "einzelne Pathologie unnummeriert (v3.18.3, Peter 12.11.2026)",
    "in": "## Ergebnis\nGonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).",
-   "out": "## Ergebnis\n1. Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
+   "out": "## Ergebnis\nGonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
+  },
+  {
+   "name": "einzelne nummerierte Pathologie → unnummeriert",
+   "in": "## Ergebnis\n1. Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).",
+   "out": "## Ergebnis\nGonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
   },
   {
    "name": "Voruntersuchung unnummeriert",
    "in": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\nOmarthrose rechts.",
-   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\n1. Omarthrose rechts."
+   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\nOmarthrose rechts."
   },
   {
    "name": "Fettmarken",
@@ -214,7 +219,7 @@
   {
    "name": "zwei Regionen-Blöcke",
    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nA.\n\n## Ergebnis\nOmarthrose rechts.\nKalkdepot.\n\n\n## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nB.\n\n## Ergebnis\nGeringgradige Ellbogengelenksarthrose rechts.",
-   "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nA.\n\n## Ergebnis\n1. Omarthrose rechts.\n2. Kalkdepot.\n\n\n## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nB.\n\n## Ergebnis\n1. Geringgradige Ellbogengelenksarthrose rechts."
+   "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nA.\n\n## Ergebnis\n1. Omarthrose rechts.\n2. Kalkdepot.\n\n\n## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nB.\n\n## Ergebnis\nGeringgradige Ellbogengelenksarthrose rechts."
   },
   {
    "name": "Leerzeilen zwischen Punkten bleiben",
@@ -249,7 +254,7 @@
   {
    "name": "Vergleich-Zeile mit Doppelpunkt bleibt, Fragezeichen bleibt",
    "in": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026:\nV. a. Fraktur?",
-   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026:\n1. V. a. Fraktur?"
+   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026:\nV. a. Fraktur?"
   },
   {
    "name": "Zahl/Großbuchstabe am Anfang bleibt",
@@ -549,31 +554,31 @@
     "name": "Fersensporn plantar (Calcaneus)",
     "diktat": "Calcaneus rechts: Fersensporn plantar, ansonsten unauffällig",
     "in": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Plantarer Fersensporn. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus rechts.",
-    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\n1. Fersensporn plantar rechts."
+    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nFersensporn plantar rechts."
    },
    {
     "name": "Fibroostose Trochanter major (Hüfte) – Hüftgelenk-Satz bleibt",
     "diktat": "Hüfte links: Fibroostose am Trochanter major, sonst unauffällig",
     "in": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nAnatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne. Der CCD-Winkel ist im Normbereich. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen. Fibroostose am Trochanter major. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Hüftgelenkes links.",
-    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nAnatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne. Der CCD-Winkel ist im Normbereich. Mineralgehalt und Knochenstruktur sind regelrecht. Fibroostose am Trochanter major. Im Übrigen sind die kortikalen Randkonturen normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.\n\n## Ergebnis\n1. Fibroostose am Trochanter major links."
+    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nAnatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne. Der CCD-Winkel ist im Normbereich. Mineralgehalt und Knochenstruktur sind regelrecht. Fibroostose am Trochanter major. Im Übrigen sind die kortikalen Randkonturen normal breit, scharf und glatt abgrenzbar ohne pathologische Konturunterbrechungen. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne. Unauffällige Weichteile.\n\n## Ergebnis\nFibroostose am Trochanter major links."
    },
    {
     "name": "Fibroostose Trochanter major (Becken)",
     "diktat": "Becken: Fibroostose am Trochanter major rechts, sonst unauffällig",
     "in": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Fibroostose am Trochanter major rechts. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.",
-    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Fibroostose am Trochanter major rechts. Im Übrigen sind die kortikalen Randkonturen normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\n1. Fibroostose am Trochanter major rechts."
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Fibroostose am Trochanter major rechts. Im Übrigen sind die kortikalen Randkonturen normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Die artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\nFibroostose am Trochanter major rechts."
    },
    {
     "name": "Enthesiopathie Olecranon (Ellbogen)",
     "diktat": "Ellbogen rechts: Enthesiopathie am Olecranon, ansonsten unauffällig",
     "in": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen. Kompakta und Kortikalis nach Breite und Kontur regelrecht. Enthesiopathie am Olecranon.\n\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\nRegelrechte Darstellung des Ellbogengelenkes rechts.",
-    "out": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen. Enthesiopathie am Olecranon. Im Übrigen Kompakta und Kortikalis nach Breite und Kontur regelrecht.\n\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\n1. Enthesiopathie am Olecranon rechts."
+    "out": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Artikulierende Flächen regelrecht konfiguriert, glatt und scharf begrenzt, allseits normal weit zueinander. Keine intra- oder periartikulären Verkalkungen. Enthesiopathie am Olecranon. Im Übrigen Kompakta und Kortikalis nach Breite und Kontur regelrecht.\n\nUnauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\nEnthesiopathie am Olecranon rechts."
    },
    {
     "name": "Osteophyt Patellaoberpol (Knie), Befund fehlt im Text",
     "diktat": "Knie links: kleiner Osteophyt am Patellaoberpol, sonst unauffällig",
     "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
-    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nKleiner Osteophyt am Patellaoberpol. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Kleiner Osteophyt am Patellaoberpol links."
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nKleiner Osteophyt am Patellaoberpol. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nKleiner Osteophyt am Patellaoberpol links."
    },
    {
     "name": "Gegenprobe: unauffällig → unverändert",
@@ -591,13 +596,13 @@
     "name": "Gegenprobe: KI hat schon eingeschränkt → unverändert",
     "diktat": "Calcaneus rechts: Fersensporn plantar",
     "in": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\n1. Plantarer Fersensporn rechts.",
-    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\n1. Plantarer Fersensporn rechts."
+    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nPlantarer Fersensporn. Im Übrigen normale Form des Calcaneus mit regelrechten Winkelmaßen. Die Stellung zu Talus und Os cuboideum ist normal ohne Hinweis auf Fehlstellung. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Weite der Gelenkspalten bei kongruenten Gelenkflächen. Die übrigen mitdargestellten Fußwurzelknochen sind unauffällig.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nPlantarer Fersensporn rechts."
    },
    {
     "name": "Deskriptoren statt Diagnose: Gonarthrose nicht in den Befundtext",
     "diktat": "Knie rechts mäßiggradige Gonarthrose",
     "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).",
-    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence)."
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence)."
    }
   ],
   "einschraenken": [

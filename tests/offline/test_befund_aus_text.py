@@ -22,6 +22,8 @@ mod._chirp3_worker = lambda *a: CHIRP.append(1) or "darf nicht gerufen werden"
 PROMPTS = []
 BEFUND = ("## Schultergelenk rechts\n\n## Befund\nIm Ansatzbereich der Supraspinatussehne 17 mm messendes Kalkdepot. "
           "Regelrechte Stellung im Glenohumeralgelenk.\n\n## Ergebnis\n1. Tendinosis calcarea der Supraspinatussehne rechts.")
+# v3.18.3 (Peter 12.11.2026): ein einzelner Ergebnispunkt wird ohne Nummer ausgegeben, auch wenn das LLM „1.“ schreibt
+BEFUND_ERWARTET = BEFUND.replace("## Ergebnis\n1. ", "## Ergebnis\n")
 mod._llm_aufruf = lambda p: (PROMPTS.append(p), BEFUND)[1]
 mod._korr.korrigieren = lambda *a, **k: (_ for _ in ()).throw(AssertionError("Call 0 bei getipptem Text"))
 
@@ -42,7 +44,7 @@ DIKTAT = "Schulter rechts Tendinosis calcarea mit 17 mm messendem Kalkdepot"
 app = neue_app(DIKTAT)
 check("Knopf gibt 'break' zurück (Strg+Enter fügt keinen Zeilenumbruch ein)", app.befund_aus_text() == "break")
 fertig(app)
-check("strukturierter Befund rechts", app.result_text.text == BEFUND, repr(app.result_text.text[:80]))
+check("strukturierter Befund rechts", app.result_text.text == BEFUND_ERWARTET, repr(app.result_text.text[:80]))
 check("Gemini bekam den getippten Text", len(PROMPTS) == 1 and DIKTAT in PROMPTS[0])
 check("kein Mikrofon/chirp_3, kein Call 0", CHIRP == [])
 check("kopiert und eingefügt wie nach einer Aufnahme", S.AUFZ.tasten == ["ctrl+v"] and S.CLIPBOARD.data.get(13), str(S.AUFZ.tasten))
@@ -56,7 +58,7 @@ check("Normalbefund aus Text → Bypass ohne Gemini", PROMPTS == [] and "## Erge
 app = neue_app(DIKTAT)
 app.nur_text_var = type("V", (), {"get": lambda self: True})()
 app.befund_aus_text(); fertig(app)
-check("auch bei „Nur Text“ ein strukturierter Befund", app.result_text.text == BEFUND, repr(app.result_text.text[:80]))
+check("auch bei „Nur Text“ ein strukturierter Befund", app.result_text.text == BEFUND_ERWARTET, repr(app.result_text.text[:80]))
 
 app = neue_app("   ")
 app.befund_aus_text()

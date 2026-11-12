@@ -80,9 +80,9 @@ check("auffällig: Messwert, aus dem ein Ergebnispunkt wurde, + der Punkt; ohne 
       I.auffaellige_zeilen(b) == ["Calcaneusneigungswinkel 10° (IB Lab FROG).",
                                   "Pes planus links (Calcaneusneigungswinkel 10°)."], I.auffaellige_zeilen(b))
 e = I.geruest(b, CAS_DB, T)
-check("Gerüst mit CAS-Vorlage: Titel mit Seite, Befundzeilen wörtlich, Ergebnis nummeriert",
+check("Gerüst mit CAS-Vorlage: Titel mit Seite, Befundzeilen wörtlich, einzelner Ergebnispunkt ohne Nummer (v3.18.3)",
       e.report == "## Fuß links in 2 Ebenen\n\n## Befund\nCalcaneusneigungswinkel 10° (IB Lab FROG).\n"
-                  "Hallux-valgus-Winkel 12° (IB Lab FROG).\n\n## Ergebnis\n1. Pes planus links (Calcaneusneigungswinkel 10°).",
+                  "Hallux-valgus-Winkel 12° (IB Lab FROG).\n\n## Ergebnis\nPes planus links (Calcaneusneigungswinkel 10°).",
       e.report)
 check("… Zeilen fürs Messwert-Gate, Stand je Baustein", I.gate(e.report, e.zeilen) == []
       and e.behandelt == {("T-0023", "frog"): 1})
