@@ -287,7 +287,7 @@ check("ohne Auftrag: EOL kopiert wie bisher, schreibt keine CAS-Datei",
       S.CLIPBOARD.data.get(13) == "## Knie\n\n## Befund\nX.\n\n## Ergebnis\nY." and set(os.listdir(ORDNER)) == vorher)
 
 # ───────────────────────────── Teil 3: gegen die echte Brückenseite (nur Mac) ─────────────────────────────
-BR = pathlib.Path.home() / "dev" / "ris-mods" / "bruecke"
+BR = pathlib.Path(os.environ.get("RIS_MODS_BRUECKE") or pathlib.Path.home() / "dev" / "ris-mods" / "bruecke")
 if (BR / "auftrag.py").exists():
     sys.path.insert(0, str(BR))
     import auftrag as br_auftrag  # noqa: E402
@@ -316,6 +316,37 @@ if (BR / "auftrag.py").exists():
           f"{r.status} {r.antwort}")
 else:
     print("(Teil 3 übersprungen: ~/dev/ris-mods/bruecke nicht vorhanden)")
+
+# ───────────── Teil 4: Nachvollzug (v3.18.4) gegen die echte Brückenablage (nur Mac, Brücke ≥ 2.5.11) ─────────────
+# Die Brücke (ris-mods bruecke/ablage.py kaiscribe_block/ablegen) legt den Block „nachvollzug“ aus „fertig“ als „kaiscribe“
+# in die Merkdatei <Nr>.rakscribe.json. Hier: genau der Block, den ergebnis_schreiben() schreibt, kommt dort unverändert an.
+br_ablage = None
+if (BR / "ablage.py").exists():
+    import importlib
+    if str(BR) not in sys.path:
+        sys.path.insert(0, str(BR))
+    br_ablage = importlib.import_module("ablage")
+if br_ablage is not None and hasattr(br_ablage, "kaiscribe_block"):
+    o4 = tempfile.mkdtemp(prefix="rks_cas_nv_")
+    diktate = os.path.join(o4, "Diktate")
+    os.makedirs(diktate)
+    seite4 = cas.Kanal(o4, pid=889, version="3.18.4", prozess_lebt=lambda pid: True)
+    a4 = cas.Auftrag({"protokoll": 1, "auftrag_id": "nv0001", "nr": "20261112901", "benutzer": "kp", "bruecke_pid": 4242,
+                      "zeit": time.time()})
+    nv4 = cas.nachvollzug("Kniegelenk links. Mäßige Gelenkspaltverschmälerung.", "", "gemini/gemini-3.5-flash",
+                          "2026-11-12-v3184-nur-diktiertes", "eingebaut", "sha1:abc", ["kniegelenk_in_2_ebenen"], [], 0,
+                          "3.18.4", jetzt=lambda: 0)
+    seite4.ergebnis_schreiben(a4, "## Kniegelenk links\n\n## Befund\nX.\n\n## Ergebnis\nY.", test=False, nachvollzug=nv4)
+    an4 = json.load(open(os.path.join(o4, "cas_antwort_nv0001.json"), encoding="utf-8"))
+    ks4 = br_ablage.kaiscribe_block(an4.get("nachvollzug"))
+    e4 = br_ablage.ablegen(diktate, "20261112901", "## Kniegelenk links\n\n## Befund\nX.\n\n## Ergebnis\nY.", None,
+                           "keine", kaiscribe=ks4)
+    m4 = br_ablage.meta_lesen(diktate, "20261112901") or {}
+    check("Teil 4: Nachvollzug aus „fertig“ landet unverändert als „kaiscribe“ in der Merkdatei der Brücke",
+          e4.ok and ks4 == nv4 and m4.get("kaiscribe") == nv4, f"{e4.meldung} {str(m4)[:300]}")
+    check("Teil 4: ohne Nachvollzug (Testbefund) kein Block", br_ablage.kaiscribe_block(None) is None)
+else:
+    print("(Teil 4 übersprungen: ris-mods-Brücke ohne kaiscribe_block, erst ab 2.5.11)")
 
 print(f"\nFEHLER: {fails}")
 sys.exit(1 if fails else 0)
