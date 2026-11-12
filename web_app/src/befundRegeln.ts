@@ -352,12 +352,13 @@ export const vorrangVorlage = (text: string, templates: Record<string, { display
 // „widersprueche“. Sync: source_code/befund_regeln.py (widerspruch_befunde, widerspruch_saetze, satz_einschraenken,
 // widersprueche_bereinigen, widerspruch_prompt) — gleiche Ausgabe Zeichen für Zeichen (tests/offline/widerspruch_matrix_test.py).
 export type WiderspruchKategorie = { id: string; name: string; muster: string; ausser?: string; merkmale?: string[];
-  gruppen?: string[]; global?: boolean; ergebnis?: string; befund?: string };
+  gruppen?: string[]; global?: boolean; ergebnis?: string; befund?: string; streichen?: string };
 export type WiderspruchDaten = { kategorien?: WiderspruchKategorie[]; merkmale?: Record<string, { muster: string; ausser?: string }>;
-  strukturen?: Record<string, string>; einschraenkung?: string; verneinung_vor?: string; verneinung_nach?: string; skelett?: string };
+  strukturen?: Record<string, string>; strukturen_vorrang?: Record<string, string[]>; einschraenkung?: string; verneinung_vor?: string;
+  verneinung_nach?: string; skelett?: string };
 export type WiderspruchBefund = { id: string; name: string; phrase: string; gruppen: string[]; global: boolean };
-type WidKat = WiderspruchKategorie & { _re: RegExp; _aus: RegExp | null; _bef: RegExp | null };
-type WidC = { kat: WidKat[]; merk: Record<string, [RegExp, RegExp | null]>; strukt: [string, RegExp][];
+type WidKat = WiderspruchKategorie & { _re: RegExp; _aus: RegExp | null; _bef: RegExp | null; _str: RegExp | null };
+type WidC = { kat: WidKat[]; merk: Record<string, [RegExp, RegExp | null]>; strukt: [string, RegExp][]; vorrang: Record<string, string[]>;
   einschraenkung: RegExp | null; verneinung_vor: RegExp | null; verneinung_nach: RegExp | null; skelett: RegExp | null };
 
 const WID_CACHE = new WeakMap<object, WidC>();
@@ -367,9 +368,9 @@ const widC = (d: WiderspruchDaten = {}): WidC => {
     const rx = (s?: string) => (s ? new RegExp(s, 'u') : null);
     c = {
       kat: (d.kategorien || []).map(k => ({ ...k, _re: new RegExp(k.muster, 'gu'), _aus: rx(k.ausser),
-        _bef: k.befund ? new RegExp(k.befund, 'gu') : null })),
+        _bef: k.befund ? new RegExp(k.befund, 'gu') : null, _str: rx(k.streichen) })),
       merk: Object.fromEntries(Object.entries(d.merkmale || {}).map(([n, m]) => [n, [new RegExp(m.muster, 'u'), rx(m.ausser)]])),
-      strukt: Object.entries(d.strukturen || {}).map(([n, m]) => [n, new RegExp(m, 'u')]),
+      strukt: Object.entries(d.strukturen || {}).map(([n, m]) => [n, new RegExp(m, 'u')]), vorrang: d.strukturen_vorrang || {},
       einschraenkung: rx(d.einschraenkung), verneinung_vor: rx(d.verneinung_vor), verneinung_nach: rx(d.verneinung_nach),
       skelett: rx(d.skelett),
     };
@@ -401,6 +402,11 @@ const widPhrase = (roh: string, start: number): string => {
   return stripZ(roh.slice(ende), ' ,;:');
 };
 const widGruppen = (text: string, c: WidC): Set<string> => new Set(c.strukt.filter(([, rx]) => rx.test(text)).map(([n]) => n));
+// Befund-Lage: genauere Struktur verdrängt die gröbere (strukturen_vorrang: AC-Gelenk statt Schulter). Sync: _wid_vorrang.
+const widVorrang = (g: Set<string>, c: WidC): Set<string> => {
+  for (const [n, weg] of Object.entries(c.vorrang)) if (g.has(n)) for (const x of weg) g.delete(x);
+  return g;
+};
 
 export function widerspruchBefunde(diktat: string, d?: WiderspruchDaten): WiderspruchBefund[] {
   const c = widC(d);
@@ -415,7 +421,7 @@ export function widerspruchBefunde(diktat: string, d?: WiderspruchDaten): Widers
         const i = m.index ?? 0;
         if (c.verneinung_vor && c.verneinung_vor.test(t.slice(0, i))) continue;
         if (c.verneinung_nach && c.verneinung_nach.test(t.slice(i + m[0].length))) continue;
-        const alle = new Set([...widGruppen(t, c), ...(k.gruppen || [])]);
+        const alle = new Set([...widVorrang(widGruppen(t, c), c), ...(k.gruppen || [])]);
         out.push({ id: k.id, name: k.name, phrase: widPhrase(roh, i) || roh, gruppen: [...alle].sort(),
           global: !!k.global || alle.size === 0 });
         break;
@@ -576,6 +582,7 @@ function befundsaetzeDanach(text: string, treffer: [number, number, string[]][],
 
 const satzAusPhrase = (phrase: string, seite = ''): string => {
   let t = stripZ(ws(phrase || ''), ' ,;:.');
+  t = t.replace(/^(?:wie bei|vereinbar mit)\s/iu, 'Bild wie bei ');   // Regel 3q: „Bild wie bei …“
   if (seite && !/(?<![a-zäöüß])(?:rechts|links|beidseits|beidseitig|bds)(?![a-zäöüß])/iu.test(t)) t = `${t} ${seite}`;
   return t ? t.charAt(0).toUpperCase() + t.slice(1) + '.' : '';
 };
@@ -593,11 +600,16 @@ export function widersprucheBereinigen(report: string, diktat: string, d?: Wider
     if (!istSkelettText(text, d)) continue;
     const treffer = widerspruchSaetze(text, befunde, d);
     const vor = befundsaetzeDanach(text, treffer, befunde, kat, c);
+    const weg = new Set(treffer.filter(([x0, x1, ids]) => ids.some(i => {
+      const r = kat.get(i)?._str;
+      return !!r && r.test(text.slice(x0, x1).toLowerCase());
+    })).map(([x0, x1]) => `${x0}:${x1}`));
     const stuecke: [number, number, string][] = [...treffer.map(([x0, x1]): [number, number, string] => [x0, x1, 'e']),
       ...vor.map(([x0, x1]): [number, number, string] => [x0, x1, 'v'])].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
     const neu: string[] = [];
     let pos = 0, erste: number | null = null;
-    for (const [s0, s1, art] of stuecke) {
+    for (const [s0, s1Roh, art] of stuecke) {
+      let s1 = s1Roh;
       const stueck = text.slice(pos, s0);
       if (art === 'v') {                       // Befundsatz: wandert vor den ersten eingeschränkten Satz
         neu.push(stueck.endsWith(' ') ? stueck.slice(0, -1) : stueck);
@@ -608,13 +620,20 @@ export function widersprucheBereinigen(report: string, diktat: string, d?: Wider
           neu.push(vor.map(([x0, x1]) => text.slice(x0, x1) + ' ').join(''));
           erste = neu.reduce((n, x) => n + x.length, 0);
         }
-        neu.push(satzEinschraenken(text.slice(s0, s1)));
-        aenderungen.push(`eingeschränkt: ${text.slice(s0, s1).trim().slice(0, 60)}`);
+        if (weg.has(`${s0}:${s1}`)) {          // verneint den Befund ausdrücklich („keine Luxation“) → streichen
+          aenderungen.push(`gestrichen: ${text.slice(s0, s1).trim().slice(0, 60)}`);
+          if (text.slice(s1, s1 + 1) === ' ') s1 += 1;
+          else if (neu[neu.length - 1].endsWith(' ')) neu[neu.length - 1] = neu[neu.length - 1].slice(0, -1);
+        } else {
+          neu.push(satzEinschraenken(text.slice(s0, s1)));
+          aenderungen.push(`eingeschränkt: ${text.slice(s0, s1).trim().slice(0, 60)}`);
+        }
       }
       pos = s1;
     }
     neu.push(text.slice(pos));
     text = neu.join('');
+    if (weg.size) text = text.replace(/[ \t]+(?=\n|$)/gu, '');   // nach dem Streichen keine Leerzeichen am Zeilenende
     const fehlend = befunde.filter(b => kat.has(b.id) && !widBeschreibt(text.toLowerCase(), kat.get(b.id)!, c));
     if (fehlend.length) {
       const satz = fehlend.map(b => satzAusPhrase(b.phrase)).join(' ');

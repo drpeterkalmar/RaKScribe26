@@ -603,6 +603,18 @@
     "diktat": "Knie rechts mäßiggradige Gonarthrose",
     "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).",
     "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Tossy III AC-Luxation (Peter 12.11.2026): AC-Normalsatz gestrichen, Humeruskopf-Satz bleibt",
+    "diktat": "Schulter rechts: Tossy III Luxation des AC-Gelenkes, sonst unauffällig",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Humeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation. Hochstand der lateralen Clavicula gegenüber dem Acromion wie bei Tossy-III-Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Humeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. Hochstand der lateralen Clavicula gegenüber dem Acromion wie bei Tossy-III-Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\n\n## Ergebnis\nTossy III Luxation des AC-Gelenkes rechts."
+   },
+   {
+    "name": "Tossy 3 ohne Ortsangabe: AC-Normalsatz gestrichen",
+    "diktat": "Schulter rechts Tossy 3",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Humeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation. Hochstand der lateralen Clavicula gegenüber dem Acromion wie bei Tossy-III-Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Humeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. Hochstand der lateralen Clavicula gegenüber dem Acromion wie bei Tossy-III-Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\n\n## Ergebnis\nTossy 3 rechts."
    }
   ],
   "einschraenken": [
@@ -675,6 +687,20 @@
       true
      ]
     ]
+   },
+   {
+    "in": "Schulter rechts Tossy III Luxation des AC-Gelenkes",
+    "out": [
+     [
+      "fehlstellung",
+      "Tossy III Luxation des AC-Gelenkes",
+      false
+     ]
+    ]
+   },
+   {
+    "in": "Schulter links Tossy I",
+    "out": []
    }
   ],
   "prompt": [

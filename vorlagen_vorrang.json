@@ -329,8 +329,8 @@
     }
   ],
   "widersprueche": {
-    "_info": "v3.15.5 (Peter 15.10.2026: „Fibroostosen, Exostosen, Spondylosen usw. können in praktisch jeder Knochenregion auftreten.“): Widerspruchs-Prüfung Pathologie ↔ Normalsatz für alle Skelett-Vorlagen. kategorien = Befund-Katalog (Diktat, verneint zählt nicht), merkmale = Normalsatz-Merkmale, die einer Kategorie widersprechen, strukturen = Strukturgruppen (ein Satz über eine BESTIMMTE andere Struktur widerspricht einem umschriebenen Befund woanders nicht). Interpreter: befund_regeln.widerspruch_* ≡ befundRegeln.ts widerspruch*; Fälle: befund_regeln_fixtures.json „widerspruch“, Matrix: tests/offline/widerspruch_matrix_test.py. Alle Muster gelten für klein geschriebenen Text.",
-    "version": "2026-10-15",
+    "_info": "v3.15.5 (Peter 15.10.2026: „Fibroostosen, Exostosen, Spondylosen usw. können in praktisch jeder Knochenregion auftreten.“): Widerspruchs-Prüfung Pathologie ↔ Normalsatz für alle Skelett-Vorlagen. kategorien = Befund-Katalog (Diktat, verneint zählt nicht), merkmale = Normalsatz-Merkmale, die einer Kategorie widersprechen, strukturen = Strukturgruppen (ein Satz über eine BESTIMMTE andere Struktur widerspricht einem umschriebenen Befund woanders nicht). Interpreter: befund_regeln.widerspruch_* ≡ befundRegeln.ts widerspruch*; Fälle: befund_regeln_fixtures.json „widerspruch“, Matrix: tests/offline/widerspruch_matrix_test.py. Alle Muster gelten für klein geschriebenen Text. strukturen_vorrang: genauere Struktur verdrängt die gröbere (AC-Gelenk statt Schulter). kategorie.streichen: Normalsatz, der den diktierten Befund ausdrücklich verneint („keine Luxation“), wird gestrichen statt eingeschränkt.",
+    "version": "2026-11-12 v3.18.6 (Peter 12.11.2026: Tossy-III-Luxation → kein „AC-Gelenk altersentsprechend, keine Luxation“ daneben)",
     "skelett": "kortikalis|corticalis|knochenstruktur|mineralgehalt|gelenkspalt|gelenksspalt|gelenkfläch|wirbelkörper|hwk|bwk|lwk|skelett|spongiosa|kompakta|randkontur|knöchern|achsenverlauf|bandscheib|medulla ossium|platae terminales|prothesenkomponent|kalotte|achsenverhältnisse|artikulierende",
     "einschraenkung": "(?<![a-zäöüß])(?:im übrigen|übrige[nrsm]?|ansonsten|sonst|abgesehen|bis auf|außer|ausser|mit ausnahme|weiterhin)(?![a-zäöüß])",
     "verneinung_vor": "(?<![a-zäöüß])(?:kein[a-zäöüß0-9_]*|ohne|nicht|ausschluss|ausgeschlossen|frei von|weder|kein anhalt[a-zäöüß0-9_]*|kein hinweis|kein nachweis)(?![a-zäöüß])",
@@ -399,6 +399,9 @@
       },
       "subchondral": {
         "muster": "(?<![a-zäöüß])kein[a-zäöüß0-9_]* subchondral[a-zäöüß0-9_]*"
+      },
+      "luxation_verneint": {
+        "muster": "(?<![a-zäöüß])(?:kein[a-zäöüß]*|ohne)(?:\\s+[a-zäöüß-]+){0,2}\\s+(?:sub)?luxation|(?<![a-zäöüß])(?:kein[a-zäöüß]*|ohne)\\s+fehlstellung"
       }
     },
     "strukturen": {
@@ -417,6 +420,7 @@
       "fibula": "fibula|wadenbein",
       "humerus": "humerus|oberarm|tuberculum majus|tuberculum minus|epicondyl|epikondyl|sulcus",
       "schulter": "schultergelenk|glenoid|ac-gelenk|akromi|acromi|clavicula|klavikula|schlüsselbein|scapula|skapula|coracoid|rotatorenmanschette|schultergürtel|tuberculum majus|tuberculum minus|humeruskopf|supraspinatus|infraspinatus|subscapularis|teres minor|bizepssehne|bursa subacromialis|omarthr",
+      "ac": "ac-gelenk|ac gelenk|akromioklavikular|acromioklavikular|akromioclavicular|acromioclavicular|schultereckgelenk|tossy|tossi|rockwood",
       "ellbogen": "ellbogen|ellenbogen|olecranon|olekranon|capitulum|trochlea|radiusköpfchen|processus coronoideus|canalis cubitalis|epicondyl|epikondyl",
       "unterarm": "unterarm|radius|ulna|elle|speiche|olecranon|olekranon|processus styloideus",
       "hand": "handgelenk|karp|scaphoid|skaphoid|kahnbein|lunatum|mittelhand|metacarp|finger|daumen|nagelkranz|handwurzel|processus styloideus|discus triangularis|rhizarthr|heberden|bouchard",
@@ -663,13 +667,15 @@
       {
         "id": "fehlstellung",
         "name": "Fehlstellung",
-        "muster": "fehlstellung[a-zäöüß0-9_]*|disloz[a-zäöüß0-9_]*|achsenabweich[a-zäöüß0-9_]*|subluxation[a-zäöüß0-9_]*|luxation[a-zäöüß0-9_]*|(?<![a-zäöüß])in fehlstellung",
+        "muster": "fehlstellung[a-zäöüß0-9_]*|disloz[a-zäöüß0-9_]*|achsenabweich[a-zäöüß0-9_]*|subluxation[a-zäöüß0-9_]*|luxation[a-zäöüß0-9_]*|(?<![a-zäöüß])in fehlstellung|(?<![a-zäöüß])toss[iy][- ]?(?:ii|iii|2|3|zwei|drei)(?![a-zäöüß0-9])|(?<![a-zäöüß])rockwood[- ]?(?:ii|iii|iv|v|vi|[2-6]|zwei|drei|vier|fünf|sechs)(?![a-zäöüß0-9])",
         "merkmale": [
-          "stellung"
+          "stellung",
+          "luxation_verneint"
         ],
         "gruppen": [],
-        "befund": "fehlstellung|disloz|achsenabweich|verkipp|luxation|abkippung|versatz",
-        "ergebnis": "fehlstellung|disloz|achsenabweich|luxation"
+        "befund": "fehlstellung|disloz|achsenabweich|verkipp|luxation|abkippung|versatz|toss[iy]|rockwood|hochstand",
+        "ergebnis": "fehlstellung|disloz|achsenabweich|luxation|toss[iy]|rockwood",
+        "streichen": "(?<![a-zäöüß])(?:kein[a-zäöüß]*|ohne)(?:\\s+[a-zäöüß-]+){0,2}\\s+(?:sub)?luxation|(?<![a-zäöüß])(?:kein[a-zäöüß]*|ohne)\\s+fehlstellung"
       },
       {
         "id": "osteopenie",
@@ -711,7 +717,12 @@
         "befund": "skleros|hyperostos|verdicht",
         "ergebnis": "skleros|hyperostos"
       }
-    ]
+    ],
+    "strukturen_vorrang": {
+      "ac": [
+        "schulter"
+      ]
+    }
   },
   "kurzsaetze": {
     "_info": "v3.16.6 (Peter 18.10.2026: „Diktierte Kurzsätze dürfen im Befund nie wegfallen.“): Empfehlungs- und Einschränkungssätze. (1) Vorlagenwahl: ein Empfehlungssatz („Gehaltene Aufnahmen … empfohlen“, „CT Thorax zur weiteren Abklärung“) und eine Einschränkung („die Hüfte ist nicht miterfasst“) lösen KEINE Vorlage und keinen eigenen Regionen-Befund aus — detect_template/detectTemplate und split_regionen/splitRegionen sehen diese Sätze nicht (Satz 1 bleibt, dort nur Teilsätze nach dem ersten Komma). (2) Erhalt nach der KI: fehlt ein diktierter Empfehlungssatz im Befund, kommt er wörtlich als letzter Ergebnis-Punkt dazu; fehlt eine diktierte Einschränkung, kommt sie wörtlich als Befundsatz vor den Weichteil-Satz. „Vorhanden“ = ein Satz des Befunds enthält ≥ 50 % der Inhaltswörter (Wortanfang 5 Zeichen, Synonyme) — bei Einschränkungen zusammen mit einer Verneinung/Einschränkung; ein Empfehlungssatz des Befunds mit einem gemeinsamen Inhaltswort genügt. Interpreter: befund_regeln.ohne_empfehlungen/kurzsaetze_sichern ≡ befundRegeln.ts ohneEmpfehlungen/kurzsaetzeSichern; Fälle: befund_regeln_fixtures.json „kurzsaetze“, vorlagen_vorrang_tests.json. Muster gelten für klein geschriebenen Text.",

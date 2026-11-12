@@ -508,10 +508,11 @@ def _wid(daten=None):
     d = (daten if daten is not None else _vorrang_laden()).get("widersprueche") or {}
     c = _WID_CACHE.get(id(d))
     if c is None:
-        c = {"d": d, "kat": [], "merk": {}, "strukt": {}}
+        c = {"d": d, "kat": [], "merk": {}, "strukt": {}, "vorrang": d.get("strukturen_vorrang") or {}}
         for k in d.get("kategorien") or []:
             c["kat"].append(dict(k, _re=re.compile(k["muster"]), _aus=re.compile(k["ausser"]) if k.get("ausser") else None,
-                                 _bef=re.compile(k["befund"]) if k.get("befund") else None))
+                                 _bef=re.compile(k["befund"]) if k.get("befund") else None,
+                                 _str=re.compile(k["streichen"]) if k.get("streichen") else None))
         for n, m in (d.get("merkmale") or {}).items():
             c["merk"][n] = (re.compile(m["muster"]), re.compile(m["ausser"]) if m.get("ausser") else None)
         for n, m in (d.get("strukturen") or {}).items():
@@ -546,6 +547,16 @@ def _wid_gruppen(text, c):
     return {n for n, rx in c["strukt"].items() if rx.search(text)}
 
 
+def _wid_vorrang(g, c):
+    """Befund-Lage: eine genauere Struktur verdrängt die gröbere (strukturen_vorrang: AC-Gelenk statt Schulter — eine
+    Tossy-Luxation betrifft das AC-Gelenk, nicht „Humeruskopf in regelrechter Artikulation“). Nur für den Befund; ein
+    Normalsatz über AC- UND Schultergelenk bleibt in beiden Gruppen."""
+    for n, weg in c.get("vorrang", {}).items():
+        if n in g:
+            g = g - set(weg)
+    return g
+
+
 def widerspruch_befunde(diktat, daten=None):
     """Diktat → umschriebene/degenerative Befunde aus dem Katalog, nicht verneint („kein Fersensporn“ zählt nicht).
     Je Befund: id, name, phrase (diktierter Teilsatz), gruppen (Strukturen des Teilsatzes + Standard der Kategorie),
@@ -565,7 +576,7 @@ def widerspruch_befunde(diktat, daten=None):
                     continue
                 if c["verneinung_nach"] is not None and c["verneinung_nach"].search(t[m.end():]):
                     continue
-                eigene = _wid_gruppen(t, c)
+                eigene = _wid_vorrang(_wid_gruppen(t, c), c)
                 out.append({"id": k["id"], "name": k["name"], "phrase": _wid_phrase(roh, m.start()) or roh,
                             "gruppen": sorted(eigene | set(k.get("gruppen") or [])),
                             "global": bool(k.get("global")) or not (eigene | set(k.get("gruppen") or []))})
@@ -765,6 +776,8 @@ def widersprueche_bereinigen(report, diktat, daten=None):
             continue
         treffer = widerspruch_saetze(text, befunde, daten)
         vor = _befundsaetze_danach(text, treffer, befunde, kat, c)
+        weg = {(x0, x1) for x0, x1, ids in treffer
+               if any(kat[i].get("_str") is not None and kat[i]["_str"].search(text[x0:x1].lower()) for i in ids)}
         neu, pos, erste = [], 0, None
         for s0, s1, art in sorted([(x[0], x[1], "e") for x in treffer] + [(x[0], x[1], "v") for x in vor]):
             stueck = text[pos:s0]
@@ -776,11 +789,20 @@ def widersprueche_bereinigen(report, diktat, daten=None):
                 if erste is None:
                     neu.append("".join(text[x0:x1] + " " for x0, x1 in vor))
                     erste = sum(len(x) for x in neu)
-                neu.append(satz_einschraenken(text[s0:s1]))
-                aenderungen.append(f"eingeschränkt: {text[s0:s1].strip()[:60]}")
+                if (s0, s1) in weg:                 # verneint den Befund ausdrücklich („keine Luxation“) → streichen
+                    aenderungen.append(f"gestrichen: {text[s0:s1].strip()[:60]}")
+                    if text[s1:s1 + 1] == " ":
+                        s1 += 1
+                    elif neu[-1].endswith(" "):
+                        neu[-1] = neu[-1][:-1]
+                else:
+                    neu.append(satz_einschraenken(text[s0:s1]))
+                    aenderungen.append(f"eingeschränkt: {text[s0:s1].strip()[:60]}")
             pos = s1
         neu.append(text[pos:])
         text = "".join(neu)
+        if weg:                                     # nach dem Streichen keine Leerzeichen am Zeilenende
+            text = re.sub(r"[ \t]+(?=\n|$)", "", text)
         fehlend = [b for b in befunde if b["id"] in kat and not _beschreibt(text.lower(), kat[b["id"]], c)]
         if fehlend:
             satz = " ".join(_satz_aus_phrase(b["phrase"]) for b in fehlend)
@@ -835,6 +857,7 @@ def _befundsaetze_danach(text, treffer, befunde, kat, c):
 
 def _satz_aus_phrase(phrase, seite=""):
     t = " ".join((phrase or "").split()).strip(" ,;:.")
+    t = re.sub(r"^(?:wie bei|vereinbar mit)\s", "Bild wie bei ", t, flags=re.I)   # Regel 3q: „Bild wie bei …“
     if seite and not re.search(r"(?<![a-zäöüß])(?:rechts|links|beidseits|beidseitig|bds)(?![a-zäöüß])", t, re.I):
         t = f"{t} {seite}"
     return (t[:1].upper() + t[1:] + ".") if t else ""
