@@ -31,7 +31,7 @@ for (const c of F.kl.grade) { const g = klGrade(c.in); check(JSON.stringify(g) =
 for (const c of F.kl.bereinigen) { const g = klBereinigen(c.in, c.diktat, c.erlaubt)[0]; check(g === c.out, 'kl: ' + c.name, g); }
 // v3.18.5 (Nachtrag RH 99): Grad zum Adjektiv nur bei diktierter Arthrose; keine Arthrose ohne Diktat
 for (const c of F.kl.adjektiv) { const g = klAdjektivGrade(c.in); check(JSON.stringify(g) === JSON.stringify(c.out), 'kl-adjektiv: ' + c.in.slice(0, 45), g); }
-for (const c of F.arthrose.bereinigen) { const g = arthroseBereinigen(c.in, c.diktat)[0]; check(g === c.out, 'arthrose: ' + c.name, g); }
+for (const c of F.arthrose.bereinigen) { const g = arthroseBereinigen(c.in, c.diktat, WD)[0]; check(g === c.out, 'arthrose: ' + c.name, g); }
 for (const c of F.prompt_version) { const g = [promptVersion(c.in), stripPromptMarker(c.in)]; check(g[0] === c.version && g[1] === c.stripped, 'version: ' + c.in.slice(0, 40), g); }
 console.log(`${n - fail}/${n} PASS (TS)`);
 process.exit(fail ? 1 : 0);

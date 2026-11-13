@@ -1164,6 +1164,18 @@
     "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links (Arthrose Grad 1 nach Kellgren & Lawrence).",
     "diktat": "Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
     "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links (Arthrose Grad 1 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Regress RH 99 (degen2): entfernte Coxarthrose → diktierter degenerativer Befund statt leerem Ergebnis",
+    "in": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Links Gelenkflächen glatt und kongruent. Keine Coxarthrosezeichen links.\n\n## Ergebnis\nBeginnende Coxarthrose rechts.",
+    "diktat": "Becken im Stehen. Beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten, links unauffällig.",
+    "out": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Links Gelenkflächen glatt und kongruent. Keine Coxarthrosezeichen links.\n\n## Ergebnis\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten."
+   },
+   {
+    "name": "Regress RH 99: diktierter Befund steht schon im Ergebnis → nicht doppelt",
+    "in": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Links Gelenkflächen glatt und kongruent. Keine Coxarthrosezeichen links.\n\n## Ergebnis\n1. Beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten.\n2. Beginnende Coxarthrose rechts.",
+    "diktat": "Becken im Stehen. Beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten, links unauffällig.",
+    "out": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Links Gelenkflächen glatt und kongruent. Keine Coxarthrosezeichen links.\n\n## Ergebnis\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten."
    }
   ]
  }

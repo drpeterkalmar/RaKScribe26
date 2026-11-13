@@ -1165,16 +1165,18 @@ _ARTHROSE_KI = re.compile(r"arthros|arthrot", re.I)
 _VERNEINT = re.compile(r"(?<![\wäöüß])(?:kein\w*|ohne|nicht|frei von)(?![\wäöüß])", re.I)
 
 
-def arthrose_bereinigen(report, diktat):
+def arthrose_bereinigen(report, diktat, daten=None):
     """→ (report, Änderungen). Nur im Abschnitt „## Ergebnis“; die Nummerierung wird danach neu gesetzt."""
     if not report or "## Ergebnis" not in report or arthrose_diktiert(diktat) or not _ARTHROSE_KI.search(report):
         return report, []
     zeilen = report.split("\n")
-    aend, raus, im_erg = [], set(), False
+    aend, raus, im_erg, erg = [], set(), False, set()
     for i, z in enumerate(zeilen):
         if z.strip().startswith("## "):
             im_erg = z.strip().startswith("## Ergebnis")
             continue
+        if im_erg:
+            erg.add(i)
         ohne_kl = _KL_KI.sub("", z)   # erlaubte K&L-Klammer (IB Lab) ist keine Arthrose-Diagnose
         if not im_erg or "(IB Lab" in z or not _ARTHROSE_KI.search(ohne_kl):
             continue
@@ -1185,5 +1187,19 @@ def arthrose_bereinigen(report, diktat):
         aend.append("Arthrose ohne Diktat entfernt: " + re.sub(r"^\s*\d+\.\s*", "", z).strip())
     if not raus:
         return report, []
-    neu = [z for i, z in enumerate(zeilen) if i not in raus]
+    # kaiscribe-konfab-regress-n1 (13.11.2026, RH 99 „Beginnende degenerative Veränderungen … mit kleinen Randanbauten“ →
+    # KI „Beginnende Coxarthrose rechts“ → Ergebnis leer): an die Stelle des entfernten Punkts tritt der DIKTIERTE
+    # degenerative Befund (Katalog „arthrose“ der Widerspruchs-Regeln), wenn das Ergebnis ihn nicht schon nennt
+    rest = " ".join(zeilen[i] for i in sorted(erg - raus)).lower()
+    statt = [s for s in dict.fromkeys(_satz_aus_phrase(b["phrase"]) for b in widerspruch_befunde(diktat, daten)
+                                      if b["id"] == "arthrose")
+             if s and s[:-1].lower() not in rest]
+    erste = min(raus)
+    neu = []
+    for i, z in enumerate(zeilen):
+        if i == erste:
+            neu += statt
+        if i not in raus:
+            neu.append(z)
+    aend += [f"diktierter Befund statt Arthrose: {s}" for s in statt]
     return ergebnis_nummerieren("\n".join(neu)), aend

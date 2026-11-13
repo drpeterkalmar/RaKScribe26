@@ -155,10 +155,13 @@ def pruef_ibl_kl1(rep, diktat, zeilen, hinweise):
     """IB-Lab-Grad darf (als K&L-Klammer am diktierten Befund) im Ergebnis stehen — eine neue Diagnose nicht."""
     if re.search(r"gonarthrose", rep, re.I):
         return ["❌ Diagnose „Gonarthrose“ aus dem IB-Lab-Grad abgeleitet"] + pruef_rh38(rep, diktat, zeilen, hinweise)
+    # seit 3.18.8 (KOALA nur auffällige Werte) steht die Zeile „Kellgren-Lawrence-Grad links 1 (IB Lab KOALA).“ bei KL 1
+    # (keine Regel, kein Ergebnispunkt) nicht mehr im Befund — der IB-Lab-Grad steht dann NUR als K&L-Klammer am diktierten
+    # Befund; gezählt werden darum Bericht MIT Klammer + eingesetzte Zeilen (kaiscribe-konfab-regress-n1)
+    g = grade(rep) | grade("\n".join(zeilen))
     rep = re.sub(r"\s*\(Arthrose Grad 1 nach Kellgren & Lawrence\)", "", rep)
     p = pruef_rh38(rep, diktat, zeilen, hinweise)
     p = [x for x in p if "K&L-Grad erfunden" not in x]
-    g = grade(rep) | grade("\n".join(zeilen))
     if g != {"1"}:
         p.append(f"❌ K&L-Grad laut IB Lab 1 erwartet, gefunden {sorted(g) or '–'}")
     return p
@@ -207,8 +210,29 @@ RH99_DEGEN2 = ("Becken im Stehen. Beginnende degenerative Veränderungen am rech
 RH99_KOXA = "Beckenübersicht stehend. Mäßige Coxarthrose beidseits, im Übrigen unauffällig."
 
 
+# Normalsatz der Vorlage „Beckenübersicht und Hüfte“ (seit 3.18.7 bei Becken-CAS + diktierter Hüfte, RH 99/128) — verneint,
+# aus der Vorlage, keine erfundene Arthrose (kaiscribe-konfab-regress-n1). Zählt nur ohne Widerspruch: ohne Seite, wenn das
+# Diktat keinen degenerativen Befund nennt, sonst nur auf die ANDERE Seite eingeschränkt.
+VORLAGE_NEIN = re.compile(r"\s*Keine Coxarthrosezeichen(?:\s+(links|rechts|beidseits))?\.", re.I)
+
+
+def ohne_vorlage_nein(rep, diktat):
+    d = diktat.lower()
+    krank = {s for s, rx in (("rechts", r"recht\w*\s+hüft"), ("links", r"link\w*\s+hüft"),
+                             ("beidseits", r"beid\w*\s+hüft|hüft\w*\s+beid")) if re.search(rx, d)}
+    degen = bool(re.search(r"degenerativ|verschmäler|randanbau|osteophyt", d))
+
+    def f(m):
+        seite = (m.group(1) or "").lower()
+        if not degen or (seite in ("links", "rechts") and not krank & {seite, "beidseits"}):
+            return ""
+        return m.group(0)
+    return VORLAGE_NEIN.sub(f, rep)
+
+
 def pruef_rh99(rep, diktat, zeilen, hinweise):
     """Diktat ohne Arthrose-Wort + HIPPO: 0× „Coxarthrose“/„Arthrose“, 0× „Kellgren“, kein Grad."""
+    rep = ohne_vorlage_nein(rep, diktat)
     t = rep
     for z in zeilen:
         t = t.replace(z, "")

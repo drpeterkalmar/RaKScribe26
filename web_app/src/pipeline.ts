@@ -42,7 +42,7 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
     const roh = await callGeminiLLM(seg, v.body, v.display_name, hinweis, v.ergebnis, ctx);
     ctx.status('Validiere Befund-Konsistenz...');
     const out = kurzsaetzeSichern(widersprucheBereinigen(nachbearbeiten(await validateReportConsistency(seg, roh, ctx)), seg, wid)[0], seg, ctx.vorrang.kurzsaetze)[0];  // v3.15.5, v3.16.6
-    return klWaechter(out, seg);
+    return klWaechter(out, seg, wid);
   }
   const detectedKey = detectTemplate(seg, ctx.templates, ctx.vorrang);
   const activeTemplate = ctx.templates[detectedKey] || ctx.templates['allgemein'];  // templates.json enthält „allgemein“
@@ -78,16 +78,16 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
   // v3.16.6 (Peter 18.10.): diktierte Empfehlungs-/Einschränkungssätze, die der KI verloren gingen, wörtlich zurück (Sync: pipeline.py)
   const [gesichert, kurz] = kurzsaetzeSichern(bereinigt, seg, ctx.vorrang.kurzsaetze);
   if (kurz.length) console.log(`[KURZSATZ] ${kurz.length} diktierte(r) Satz/Sätze ergänzt`);
-  return klWaechter(gesichert, seg);
+  return klWaechter(gesichert, seg, wid);
 };
 
 // v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus dem Diktat (die Web-App hat keine IB-Lab-Bausteine) — nicht
 // gedeckte Grade der KI fallen weg. Sync: pipeline.py _kl_waechter.
-const klWaechter = (report: string, seg: string): string => {
+const klWaechter = (report: string, seg: string, wid?: VorrangDaten['widersprueche']): string => {
   const [out, aend] = klBereinigen(report, seg);
   if (aend.length) console.log(`[K&L] ${aend.join(' · ')}`);
   // v3.18.5 (Nachtrag RH 99): ohne diktierte Arthrose keine Arthrose-Diagnose im Ergebnis (Sync: pipeline.py)
-  const [out2, aend2] = arthroseBereinigen(out, seg);
+  const [out2, aend2] = arthroseBereinigen(out, seg, wid);
   if (aend2.length) console.log(`[ARTHROSE] ${aend2.join(' · ')}`);
   return out2;
 };

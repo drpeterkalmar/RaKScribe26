@@ -948,14 +948,16 @@ export function klBereinigen(report: string, diktat: string, erlaubt: string[] =
 const ARTHROSE_KI = /arthros|arthrot/i;
 const VERNEINT = /(?<![\wäöüß])(?:kein\w*|ohne|nicht|frei von)(?![\wäöüß])/i;
 
-export function arthroseBereinigen(report: string, diktat: string): [string, string[]] {
+export function arthroseBereinigen(report: string, diktat: string, d?: WiderspruchDaten): [string, string[]] {
   if (!report || !report.includes('## Ergebnis') || arthroseDiktiert(diktat) || !ARTHROSE_KI.test(report)) return [report, []];
   const zeilen = report.split('\n');
   const aend: string[] = [];
   const raus = new Set<number>();
+  const erg = new Set<number>();
   let imErg = false;
   zeilen.forEach((z, i) => {
     if (z.trim().startsWith('## ')) { imErg = z.trim().startsWith('## Ergebnis'); return; }
+    if (imErg) erg.add(i);
     const ohneKl = z.replace(KL_KI, '');   // erlaubte K&L-Klammer (IB Lab) ist keine Arthrose-Diagnose
     if (!imErg || z.includes('(IB Lab') || !ARTHROSE_KI.test(ohneKl)) return;
     const vor = ohneKl.slice(0, ohneKl.search(ARTHROSE_KI));
@@ -964,5 +966,18 @@ export function arthroseBereinigen(report: string, diktat: string): [string, str
     aend.push('Arthrose ohne Diktat entfernt: ' + z.replace(/^\s*\d+\.\s*/, '').trim());
   });
   if (!raus.size) return [report, []];
-  return [ergebnisNummerieren(zeilen.filter((_, i) => !raus.has(i)).join('\n')), aend];
+  // kaiscribe-konfab-regress-n1 (13.11.2026, RH 99 „Beginnende degenerative Veränderungen … mit kleinen Randanbauten“ →
+  // KI „Beginnende Coxarthrose rechts“ → Ergebnis leer): an die Stelle des entfernten Punkts tritt der DIKTIERTE
+  // degenerative Befund (Katalog „arthrose“ der Widerspruchs-Regeln), wenn das Ergebnis ihn nicht schon nennt
+  const rest = [...erg].filter(i => !raus.has(i)).sort((a, b) => a - b).map(i => zeilen[i]).join(' ').toLowerCase();
+  const statt = [...new Set(widerspruchBefunde(diktat, d).filter(b => b.id === 'arthrose').map(b => satzAusPhrase(b.phrase)))]
+    .filter(s => s && !rest.includes(s.slice(0, -1).toLowerCase()));
+  const erste = Math.min(...raus);
+  const neu: string[] = [];
+  zeilen.forEach((z, i) => {
+    if (i === erste) neu.push(...statt);
+    if (!raus.has(i)) neu.push(z);
+  });
+  aend.push(...statt.map(s => `diktierter Befund statt Arthrose: ${s}`));
+  return [ergebnisNummerieren(neu.join('\n')), aend];
 }
