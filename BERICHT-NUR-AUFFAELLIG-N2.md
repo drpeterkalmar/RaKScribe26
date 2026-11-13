@@ -23,7 +23,7 @@ Echttest stehen noch aus.
 - Web-App: Sie hat keine IB-Lab-Bausteine, deshalb gibt es keinen Paritätsteil.
 
 ## Tests
-- Neu `tests/offline/test_ibl_nur_auffaellig.py` (31 Prüfungen). Fälle: Peters Foto (Gerüst, nach der KI, Diktat-Abgleich, Prompt),
+- Neu `tests/offline/test_ibl_nur_auffaellig.py` (33 Prüfungen). Fälle: Peters Foto (Gerüst, nach der KI, Diktat-Abgleich, Prompt),
   die ris-mods-Beispiele frog_beidseits/frog_pes_planus, die Hersteller-Fixture FROG d.p., Seite und Aufnahme, FROG ohne Treffer (0 Zeilen),
   HIPPO und KOALA je mit und ohne Treffer. Dazu ein Bit-gleich-Vergleich mit 3.18.7 für SQUIRREL/Rho/LAMA/PANDA
   (Schnappschuss `tests/offline/snapshots/ibl_ohne_filter.json`, erzeugt mit dem Code von 3.18.7).
