@@ -140,5 +140,117 @@ for f in ("verify_knie.py", "verify_sprunggelenk.py", "verify_flachprofil.py", "
     s = (ROOT / "tools" / f).read_text(encoding="utf-8")
     check(f"{f}: Wiederholungen über testkosten.laeufe", "testkosten.laeufe" in s or "testkosten.argv_laeufe" in s)
 
+# 8) Anthropic nur über den Testschlüssel KaiTest / Konto B (kaiscribe-testkosten-n2, 13.11.2026). Der KaiFormat-Schlüssel
+#    (Konto A) ist Betrieb: kein Testskript darf ihn lesen, auch nicht über ANTHROPIC_API_KEY; Anthropic-REST nur in
+#    testkosten.py (dort mit Kostenbuch + Monatsgrenze).
+KAIFORMAT = re.compile("Anthropic API " + "KaiFormat" + r"|ANTHROPIC_API_KEY|KAIFORMAT_[A-Z_]*KEY")
+ANTH_REST = re.compile(r"api\.anthropic\.com|x-api-key")
+DIESE = pathlib.Path(__file__).resolve()
+treffer, rest = [], []
+dateien = [f for d in ("tools", "tests") for e in ("*.py", "*.sh", "*.ps1", "*.js", "*.mjs")
+           for f in (ROOT / d).rglob(e) if "node_modules" not in f.parts]
+dateien += [f for f in ROOT.glob("*.py")]
+for f in sorted(set(dateien)):
+    if f.resolve() == DIESE:
+        continue
+    txt = f.read_text(encoding="utf-8", errors="replace")
+    treffer += [f"{f.relative_to(ROOT)}:{i}" for i, z in enumerate(txt.splitlines(), 1) if KAIFORMAT.search(z)]
+    if f.name != "testkosten.py" and ANTH_REST.search(txt):
+        rest.append(str(f.relative_to(ROOT)))
+check("kein Testskript liest den KaiFormat-Schlüssel (Vaultwarden „…KaiFormat“ / ANTHROPIC_API_KEY)", not treffer,
+      ", ".join(treffer[:12]))
+check("Anthropic-REST nur in tools/testkosten.py", not rest, str(rest))
+check("Vaultwarden-Name des Testschlüssels exakt", tk.VW_TESTSCHLUESSEL == "Anthropic API KaiTest (Konto B)")
+geholt = []
+fake_vw = type(sys)("vw_get")
+fake_vw.get_login = lambda name, cache_ttl=0: (geholt.append(name), ("", "sk-test-B"))[1]
+sys.modules["vw_get"] = fake_vw
+os.environ.pop("KAISCRIBE_GUTACHTER_KEY", None)
+tk._ANTH["key"] = None
+check("_anthropic_key holt „Anthropic API KaiTest (Konto B)“", tk._anthropic_key() == "sk-test-B"
+      and geholt == ["Anthropic API KaiTest (Konto B)"], str(geholt))
+
+# 9) Kostenbuch je Konto + harte Monatsgrenze Konto B (150 $), bestehende Job-/Tagesgrenzen bleiben
+os.environ.update({"KAISCRIBE_TEST_LOGDIR": tempfile.mkdtemp(prefix="testkosten_konto_"), "KAISCRIBE_TEST_LIMIT_USD": "1000",
+                   "KAISCRIBE_TEST_TAG_USD": "1000"})
+gesendet_a = []
+
+
+class _Antwort:
+    def __init__(self, data):
+        self.data = data
+
+    def read(self):
+        return json.dumps(self.data).encode()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def fake_urlopen(req, timeout=None):
+    gesendet_a.append(req)
+    return _Antwort({"content": [{"type": "text", "text": "OK"}],
+                     "usage": {"input_tokens": 1000, "output_tokens": 100}})
+
+
+urlopen_orig = tk.urllib.request.urlopen
+tk.urllib.request.urlopen = fake_urlopen
+try:
+    antwort = tk.sonnet("Synthetischer Testtext.", system="Gutachter")
+finally:
+    tk.urllib.request.urlopen = urlopen_orig
+zeilen = [json.loads(z) for z in open(tk.BUCH.pfad, encoding="utf-8") if z.strip()]
+check("sonnet(): Schlüssel aus Konto B im Header, Buchung mit konto=anthropic-b",
+      antwort == "OK" and gesendet_a[-1].get_header("X-api-key") == "sk-test-B"
+      and zeilen[-1]["konto"] == "anthropic-b" and zeilen[-1]["art"] == "anthropic", str(zeilen[-1:]))
+tk.BUCH.buchen("gemini", "gemini-3.5-flash", 0.01, 1, 0, 1)
+check("Gemini-Buchung → konto=gcp-test", json.loads(open(tk.BUCH.pfad).read().splitlines()[-1])["konto"] == "gcp-test")
+check("Altbuchung ohne Konto-Feld (vor n2) zählt als Konto A, nicht B",
+      tk.konto_von({"art": "anthropic"}) == "anthropic-a" and tk.konto_von({"art": "gemini"}) == "gcp-test")
+os.environ["KAISCRIBE_TEST_KONTO_B_MONAT_USD"] = "500"
+check("Monatsgrenze Konto B per Umgebung nicht über 150 $ anhebbar", tk.grenze_konto_b_usd() == 150.0)
+os.environ["KAISCRIBE_TEST_KONTO_B_MONAT_USD"] = "20"
+check("… aber senkbar", tk.grenze_konto_b_usd() == 20.0)
+os.environ.pop("KAISCRIBE_TEST_KONTO_B_MONAT_USD")
+# anderer Job im selben Monat verbraucht Konto B fast ganz; Vormonat und Konto A zählen nicht
+anderer = pathlib.Path(os.environ["KAISCRIBE_TEST_LOGDIR"]) / "anderer-job.jsonl"
+monat = tk.datetime.date.today().isoformat()[:7]
+anderer.write_text("\n".join(json.dumps(z) for z in [
+    {"ts": monat + "-01T08:00:00", "art": "anthropic", "konto": "anthropic-b", "usd": 149.0},
+    {"ts": "2000-01-01T08:00:00", "art": "anthropic", "konto": "anthropic-b", "usd": 500.0},
+    {"ts": monat + "-01T08:00:00", "art": "anthropic", "usd": 500.0},
+    {"ts": monat + "-01T08:00:00", "art": "gemini", "konto": "gcp-test", "usd": 500.0}]) + "\n")
+b = tk.BUCH.summe_monat("anthropic-b")
+check("Monatssumme Konto B über alle Jobs, ohne Vormonat/Konto A/Gemini", abs(b - (149.0 + zeilen[-1]["usd"])) < 1e-9, b)
+tk.BUCH.gemeldet = False
+try:
+    tk.BUCH.pruefen(0.01, konto="anthropic-b")
+    check("unter 150 $ kein Abbruch", True)
+except SystemExit:
+    check("unter 150 $ kein Abbruch", False)
+try:
+    tk.BUCH.pruefen(1.5, konto="anthropic-b")
+    check("Konto B über 150 $/Monat → Abbruch", False)
+except tk.KostenGrenze as e:
+    check("Konto B über 150 $/Monat → KostenGrenze (Exit 7)", e.code == 7)
+try:
+    tk.BUCH.pruefen(1.5)
+    check("Gemini-Aufrufe hängen nicht an der Konto-B-Grenze", True)
+except SystemExit:
+    check("Gemini-Aufrufe hängen nicht an der Konto-B-Grenze", False)
+with open(anderer, "a") as fh:
+    fh.write(json.dumps({"ts": monat + "-02T08:00:00", "art": "anthropic", "konto": "anthropic-b", "usd": 0.99}) + "\n")
+tk.urllib.request.urlopen = fake_urlopen
+try:
+    tk.sonnet("Synthetischer Testtext.")
+    check("sonnet() über der Monatsgrenze bricht VOR dem Aufruf ab", False)
+except tk.KostenGrenze:
+    check("sonnet() über der Monatsgrenze bricht VOR dem Aufruf ab", len(gesendet_a) == 1)
+finally:
+    tk.urllib.request.urlopen = urlopen_orig
+
 print("\n" + ("✅ TESTKOSTEN PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

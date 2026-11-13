@@ -6,11 +6,13 @@ Anlass: Google-Budgetalarm 13.11. — die Testläufe vom 12.11. (konfabulation-n
 Was das Modul tut
   gemini(prompt, system=…)   Vertex-Aufruf im TESTPROJEKT (Dienstkonto-Schlüssel rakscribe-test-sa-key.json), mit
                              429/5xx-Backoff, Kontext-Cache für den festen Gen-Prompt und Kostenbuchung je Aufruf.
-  sonnet(prompt, system=…)   Gutachter-/Bewerter-Aufrufe über Anthropic (Sonnet 5.5, KaiFormat-Schlüssel). Gemini Pro /
-                             Carbon als Gutachter ist gesperrt (KAISCRIBE_TEST_GEMINI_GUTACHTER=1 hebt das auf).
+  sonnet(prompt, system=…)   Gutachter-/Bewerter-Aufrufe über Anthropic (Sonnet 5.5) mit dem TESTSCHLÜSSEL KaiTest
+                             (Konto B, kaiscribe-testkosten-n2). Der KaiFormat-Schlüssel (Konto A) ist Betrieb und für
+                             Tests tabu. Gemini Pro / Carbon als Gutachter ist gesperrt (KAISCRIBE_TEST_GEMINI_GUTACHTER=1).
   laeufe(n, standard)        Wiederholungen: höchstens 5; bis 20 nur mit --release.
-  Zähler                     Token aus usageMetadata/usage × Listenpreis, Buch je Job (JSONL), harte Obergrenze je Job
-                             (Standard 5 $, KAISCRIBE_TEST_LIMIT_USD) → sauberer Abbruch mit Meldung, Exit-Code 7.
+  Zähler                     Token aus usageMetadata/usage × Listenpreis, Buch je Job (JSONL) mit Konto je Zeile, harte
+                             Obergrenze je Job (Standard 5 $, KAISCRIBE_TEST_LIMIT_USD) und je Tag, dazu Konto B höchstens
+                             150 $ je Kalendermonat über alle Jobs → sauberer Abbruch mit Meldung, Exit-Code 7.
 
 Umgebung
   KAISCRIBE_TEST_JOB          Job-Name fürs Kostenbuch (Standard: CLAUDE_JOB_NAME, sonst manuell-<Datum>)
@@ -23,7 +25,9 @@ Umgebung
   KAISCRIBE_TEST_ALTPROJEKT=1 Notbehelf: altes Projekt rakscribe (vertex-sa-key.json), nur solange das Testprojekt fehlt
   KAISCRIBE_TEST_CACHE=0      Kontext-Cache aus (bit-gleiche Anfrage wie die Produktion)
   KAISCRIBE_TEST_RELEASE=1    wie --release
-  KAISCRIBE_GUTACHTER_KEY     Anthropic-Schlüssel (sonst Vaultwarden „Anthropic API KaiFormat“ per vw_get)
+  KAISCRIBE_GUTACHTER_KEY     Anthropic-Testschlüssel (sonst Vaultwarden „Anthropic API KaiTest (Konto B)“ per vw_get);
+                              nie den KaiFormat-Schlüssel eintragen
+  KAISCRIBE_TEST_KONTO_B_MONAT_USD  Monatsgrenze Konto B, nur SENKEN möglich (hart höchstens 150 $)
 
 Preise: Vertex-Preisseite (abgerufen 13.11.2026), Anthropic-Preisliste; „Non-global“ = Endpunkt eu/europe-west*.
 """
@@ -112,6 +116,28 @@ def grenze_tag_usd():
         return 15.0
 
 
+# ─── Konten (kaiscribe-testkosten-n2, Peter-Go 13.11.2026) ───
+# Anthropic Konto A = KaiFormat-Betrieb (nie aus Tests), Konto B = KaiTest (200 $/Monat Guthaben, Tests).
+KONTO_GCP_TEST = "gcp-test"
+KONTO_ANTHROPIC_B = "anthropic-b"
+KONTO_ANTHROPIC_A_ALT = "anthropic-a"      # nur Altbuchungen vor n2 (art=anthropic ohne Konto-Feld)
+VW_TESTSCHLUESSEL = "Anthropic API KaiTest (Konto B)"
+KONTO_B_MONAT_USD = 150.0                  # harte Grenze je Kalendermonat, per Umgebung nur senkbar
+
+
+def grenze_konto_b_usd():
+    try:
+        return min(KONTO_B_MONAT_USD, float(os.environ.get("KAISCRIBE_TEST_KONTO_B_MONAT_USD", KONTO_B_MONAT_USD)))
+    except ValueError:
+        return KONTO_B_MONAT_USD
+
+
+def konto_von(zeile):
+    if zeile.get("konto"):
+        return zeile["konto"]
+    return KONTO_ANTHROPIC_A_ALT if zeile.get("art") == "anthropic" else KONTO_GCP_TEST
+
+
 def preis(modell, ort):
     ort = "eu" if ort not in ("global", "anthropic") else ort
     return PREISE.get((modell, ort)) or PREISE.get((modell, "global")) or PREIS_UNBEKANNT
@@ -156,20 +182,39 @@ class _Buch:
         except FileNotFoundError:
             return 0.0
 
-    def summe_tag(self):
-        """Heute über alle Kostenbücher (alle Jobs) dieses Rechners."""
-        heute, s = datetime.date.today().isoformat(), 0.0
+    def _summe_alle(self, praefix, konto=None):
+        """Summe über alle Kostenbücher (alle Jobs) dieses Rechners, deren Zeitstempel mit praefix beginnt."""
+        s = 0.0
         for f in _logdir().glob("*.jsonl"):
             try:
                 with open(f, encoding="utf-8") as fh:
                     s += sum(z.get("usd", 0.0) for z in map(json.loads, filter(str.strip, fh))
-                             if z.get("ts", "").startswith(heute))
+                             if z.get("ts", "").startswith(praefix) and (konto is None or konto_von(z) == konto))
             except (OSError, ValueError):
                 pass
         return s
 
-    def pruefen(self, schaetzung=0.0):
-        """Vor jedem Aufruf: Job-Summe bzw. Tagessumme + Schätzung dieses Aufrufs über der Grenze → Abbruch."""
+    def summe_tag(self):
+        """Heute über alle Kostenbücher (alle Jobs) dieses Rechners."""
+        return self._summe_alle(datetime.date.today().isoformat())
+
+    def summe_monat(self, konto):
+        """Laufender Kalendermonat eines Kontos über alle Jobs."""
+        return self._summe_alle(datetime.date.today().isoformat()[:7], konto)
+
+    def pruefen(self, schaetzung=0.0, konto=None):
+        """Vor jedem Aufruf: Job-Summe bzw. Tagessumme + Schätzung dieses Aufrufs über der Grenze → Abbruch.
+        Anthropic-Aufrufe (konto=anthropic-b) zusätzlich gegen die Monatsgrenze von Konto B."""
+        if konto == KONTO_ANTHROPIC_B:
+            monat, gm = self.summe_monat(KONTO_ANTHROPIC_B), grenze_konto_b_usd()
+            if monat + schaetzung > gm:
+                with self.lock:
+                    if not self.gemeldet:
+                        self.gemeldet = True
+                        print(f"\n[testkosten] ABBRUCH: Anthropic Konto B (KaiTest) hat diesen Monat schon {monat:.2f} $ "
+                              f"Testkosten, Monatsgrenze {gm:.2f} $. Kein Ausweichen auf den KaiFormat-Schlüssel "
+                              f"(Konto A = Betrieb) — nächsten Monat weiter oder Peter fragen.", file=sys.stderr, flush=True)
+                raise KostenGrenze(EXIT_GRENZE)
         tag, gt = self.summe_tag(), grenze_tag_usd()
         if tag + schaetzung > gt:
             with self.lock:
@@ -188,10 +233,12 @@ class _Buch:
                           f"Kostenbuch: {self.pfad}", file=sys.stderr, flush=True)
             raise KostenGrenze(EXIT_GRENZE)
 
-    def buchen(self, art, modell, usd, tin, tcache, tout, **extra):
+    def buchen(self, art, modell, usd, tin, tcache, tout, konto=None, **extra):
         self.benutzt = True
+        konto = konto or (KONTO_ANTHROPIC_B if art == "anthropic" else KONTO_GCP_TEST)
         zeile = {"ts": datetime.datetime.now().isoformat(timespec="seconds"), "skript": self.skript, "pid": os.getpid(),
-                 "art": art, "modell": modell, "in": tin, "cache": tcache, "out": tout, "usd": round(usd, 6), **extra}
+                 "art": art, "konto": konto, "modell": modell, "in": tin, "cache": tcache, "out": tout,
+                 "usd": round(usd, 6), **extra}
         with self.lock:
             for k, v in (("aufrufe", 1), ("usd", usd), ("in", tin), ("cache", tcache), ("out", tout)):
                 self.lauf[k] += v
@@ -510,7 +557,7 @@ def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", 
             thinking_budget = int(denk)
     if not ziel and any(w in modell for w in GUTACHTER_MODELLE) and os.environ.get("KAISCRIBE_TEST_GEMINI_GUTACHTER") != "1":
         print(f"[testkosten] ABBRUCH: {modell} ist für Tests gesperrt — Gutachter/Bewerter laufen über "
-              f"testkosten.sonnet() (Anthropic, KaiFormat-Guthaben).", file=sys.stderr)
+              f"testkosten.sonnet() (Anthropic, Testschlüssel KaiTest / Konto B).", file=sys.stderr)
         raise KostenGrenze(EXIT_GRENZE)
     gate_pruefen()
     p_in, _pc, p_out, _ = preis(modell, ort)
@@ -576,10 +623,10 @@ def _anthropic_key():
         k = os.environ.get("KAISCRIBE_GUTACHTER_KEY", "").strip()
         if not k:
             sys.path.insert(0, str(pathlib.Path.home() / ".hermes" / "scripts"))
-            from vw_get import get_login  # Vaultwarden, Eintrag „Anthropic API KaiFormat“
-            k = (get_login("Anthropic API KaiFormat")[1] or "").strip()
+            from vw_get import get_login  # Vaultwarden, Testschlüssel Konto B (nie den KaiFormat-Betriebsschlüssel)
+            k = (get_login(VW_TESTSCHLUESSEL)[1] or "").strip()
         if not k:
-            raise Exception("Anthropic-Schlüssel leer (Vaultwarden „Anthropic API KaiFormat“ / KAISCRIBE_GUTACHTER_KEY)")
+            raise Exception(f"Anthropic-Testschlüssel leer (Vaultwarden „{VW_TESTSCHLUESSEL}“ / KAISCRIBE_GUTACHTER_KEY)")
         _ANTH["key"] = k
         return k
 
@@ -589,7 +636,7 @@ def sonnet_roh(prompt, system=None, max_tokens=2000, modell=SONNET, timeout=180,
     """Gutachter/Bewerter: Anthropic Messages API (nur synthetische Testtexte!) → (Text, Antwort-JSON).
     praefix_cache=True (Modell-Weiche): fester Gen-Prompt-Anfang als Cache-Breakpoint (System + Präfix gecacht)."""
     p_in, _pc, p_out, _ = preis(modell, "anthropic")
-    BUCH.pruefen((len(prompt) / 3.5 * p_in + 1500 * p_out) / 1e6)
+    BUCH.pruefen((len(prompt) / 3.5 * p_in + 1500 * p_out) / 1e6, konto=KONTO_ANTHROPIC_B)
     praefix = _passender_praefix(prompt, system) if praefix_cache else None
     content = ([{"type": "text", "text": praefix, "cache_control": {"type": "ephemeral"}},
                 {"type": "text", "text": prompt[len(praefix):]}] if praefix else prompt)
@@ -646,3 +693,9 @@ if __name__ == "__main__":
     for (sk, m), (n, usd, tin, tc) in sorted(proskript.items(), key=lambda x: -x[1][1]):
         print(f"{sk:34s} {m:22s} {n:5d} Aufrufe {tin:>11,} Token ({tc:,} Cache) {usd:8.3f} $")
     print(f"Job {job_name()}: {sum(z['usd'] for z in zeilen):.3f} $ / Grenze {grenze_usd():.2f} $ ({BUCH.pfad})")
+    jekonto = {}
+    for z in zeilen:
+        jekonto[konto_von(z)] = jekonto.get(konto_von(z), 0.0) + z["usd"]
+    print("  je Konto: " + (", ".join(f"{k} {v:.3f} $" for k, v in sorted(jekonto.items())) or "—"))
+    print(f"Anthropic Konto B (KaiTest) diesen Monat, alle Jobs: {BUCH.summe_monat(KONTO_ANTHROPIC_B):.2f} $ "
+          f"von {grenze_konto_b_usd():.2f} $")
