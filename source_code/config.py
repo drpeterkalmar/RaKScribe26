@@ -20,6 +20,8 @@ STANDARD_INHALT = (
     "# Befund-KI: gemini (Vertex AI, gemini-3.5-flash am EU-Endpoint — Schlüssel aus rakscribe-praxis-key.json)\n"
     "LLM_PROVIDER = gemini\n"
     "LLM_MODEL = gemini-3.5-flash\n"
+    "# Anbieter: gemini (Standard) | anthropic (maskiert, Rückfall Gemini; Schlüssel anthropic_api_key)\n"
+    "LLM_ANBIETER = gemini\n"
 )
 
 
@@ -32,6 +34,12 @@ class Config:
     llm_provider: str = "gemini"
     llm_model: str = "gemini-3.5-flash"
     api_key: str = ""           # nur für LLM_PROVIDER = openai/ollama (Gemini: Praxis-Schlüssel)
+    # kaiscribe-haiku-ab-n1 (13.11.2026): Befund-KI-Anbieter gemini (Standard) | anthropic (maskiert, Rückfall Gemini);
+    # LLM_ANBIETER_KORREKTUR nur für Call 0 (leer = wie LLM_ANBIETER), ANTHROPIC_MODELL, ANTHROPIC_FRIST (s)
+    llm_anbieter: str = "gemini"
+    llm_anbieter_korrektur: str = ""
+    anthropic_modell: str = "claude-haiku-5-5"
+    anthropic_frist: int = 20
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
     # v3.18.5 (Nachtrag RH 99): Lauf-Protokoll je Befund (STT-Text, Vorschlag, Modell, Prompt-Stand), auch ohne EOL;
     # LAUF_ORDNER = aus → nie. Fehlt das Laufwerk, schreibt KaiScribe nichts.
@@ -51,6 +59,19 @@ def _int(sek, name, standard, warnungen):
     except ValueError:
         warnungen.append(f"config.ini: {name} = {roh!r} ist keine Zahl — Standardwert {standard} wird verwendet.")
         return standard
+
+
+ANBIETER = ("gemini", "anthropic")   # später: lokales Modell (VM) als dritter Anbieter
+
+
+def _anbieter(sek, name, standard, warnungen):
+    roh = sek.get(name, "").strip().lower()
+    if not roh:
+        return standard
+    if roh not in ANBIETER:
+        warnungen.append(f"config.ini: {name} = {roh!r} unbekannt (gemini|anthropic) — gemini wird verwendet.")
+        return "gemini"
+    return roh
 
 
 def load_config(path):
@@ -83,6 +104,10 @@ def load_config(path):
     cfg.llm_model = (sek.get("LLM_MODEL", "") or cfg.llm_model).strip()
     cfg.api_key = sek.get("API_KEY", "").strip().replace('"', '')
     cfg.rag_beispiele = _int(sek, "RAG_BEISPIELE", 0, cfg.warnungen)
+    cfg.llm_anbieter = _anbieter(sek, "LLM_ANBIETER", "gemini", cfg.warnungen)
+    cfg.llm_anbieter_korrektur = _anbieter(sek, "LLM_ANBIETER_KORREKTUR", "", cfg.warnungen)
+    cfg.anthropic_modell = (sek.get("ANTHROPIC_MODELL", "") or cfg.anthropic_modell).strip()
+    cfg.anthropic_frist = max(3, _int(sek, "ANTHROPIC_FRIST", 20, cfg.warnungen))
     cfg.lauf_ordner = (sek.get("LAUF_ORDNER", "") or cfg.lauf_ordner).strip().strip('"')
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):

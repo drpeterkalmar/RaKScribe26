@@ -29,6 +29,7 @@ import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschin
 import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt von der Streaming-Live-Anzeige
 import einfuegen as _einf  # v3.5: Diktat an der Cursor-Stelle in den Befund einfügen
 import korrektur as _korr  # v3.4: Nur-Text-Modus (Call 0 wie Web-App)
+import llm_anbieter as _la  # kaiscribe-haiku-ab-n1: LLM_ANBIETER gemini | anthropic (maskiert, Rückfall Gemini)
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import protokoll as _prot  # Umbau Schritt 23: begrenztes Log, Diktatinhalt nur im Debug-Modus
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
@@ -459,10 +460,28 @@ _stitch_overlaps = _stt.stitch_overlaps
 _chirp3_worker = _stt.chirp3_worker
 
 
+def _ki_weiche(anbieter):
+    """kaiscribe-haiku-ab-n1: Anbieter-Weiche (llm_anbieter.py). gemini = wie bisher; anthropic = maskiert, Anthropic-
+    Schlüssel aus rakscribe-praxis-key.json (anthropic_api_key), jedes Problem → dieser Befund über Gemini."""
+    return _la.Weiche(anbieter, CFG.anthropic_modell, log=print, frist=CFG.anthropic_frist,
+                      gemini_fn=lambda p, s: _gem.generate(p, s, _load_vertex_key(), log=print),
+                      sender=_la.anthropic_sender(lambda: _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad())))
+
+
+KI_GEN = KI_KORR = None   # init_runtime() setzt die Weichen aus config.ini (LLM_ANBIETER, LLM_ANBIETER_KORREKTUR)
+
+
+def _korrektur(text):
+    """Call 0 (Nur-Text, Maske, Befund-Kette): Anbieter laut LLM_ANBIETER_KORREKTUR, Gemini-Weg wie bisher."""
+    return _korr.korrigieren_ki(text, KI_KORR, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print)
+
+
 def _llm_aufruf(prompt):
     """Gen-Prompt → Rohbefund. Gemini (Standard): gemini.py; openai/ollama: Chat-Completions (Streaming)."""
     if LLM_PROVIDER == 'gemini':
         # gemini.py: alle Text-parts, Vollständigkeit + finishReason STOP, bis zu 3 Versuche, Abbruch bei 401
+        if KI_GEN is not None and KI_GEN.anbieter != "gemini":
+            return KI_GEN(prompt, SYS_MSG, pruefen=_gem.report_complete, rolle="gen", strip=_gem.strip_fences)
         return _gem.generate(prompt, SYS_MSG, _load_vertex_key(), log=print)
     p_full = prompt
     report = ""
@@ -484,6 +503,8 @@ def _llm_aufruf(prompt):
 
 def _modell_name():
     """v3.18.4 (RH 38, Nachvollziehbarkeit): Anbieter/Modell, mit dem der Befund entsteht (Gemini: aus dem Endpunkt)."""
+    if LLM_PROVIDER == 'gemini' and KI_GEN is not None and KI_GEN.anbieter != "gemini":
+        return KI_GEN.name() + " (Rückfall gemini)"
     if LLM_PROVIDER == 'gemini':
         m = re.search(r"/models/([^:/]+):", getattr(_gem, "VERTEX_ENDPOINT", "") or "")
         return "gemini/" + (m.group(1) if m else LLM_MODEL)
@@ -518,7 +539,7 @@ def _pipeline_kontext(cas=None, ibl=None):
     return _pl.Kontext(templates=RADIOLOGY_TEMPLATES, display_names=DISPLAY_NAMES, prompt=INITIAL_PROMPT_CONTENT,
                        llm=lambda p: _llm_aufruf(p), misheard=apply_misheard, hinweise=MISHEARD_HINTS,
                        beispiele=_rag_beispiele, log=print, ausnahme_log=log_exception,
-                       korrektur=lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print),
+                       korrektur=_korrektur,
                        cas=cas, ibl=ibl)
 
 
@@ -4121,7 +4142,7 @@ class RaKScribeApp(ctk.CTk):
         IB-Lab-Werte wörtlich einsetzen."""
         m = self._maske
         try:
-            korr = lambda t: _korr.korrigieren(t, _load_vertex_key(), MISHEARD_WEB_BLOCK, log=print)  # noqa: E731
+            korr = _korrektur
             n_ki = _mk.vorverarbeiten(m, korrektur=korr)
             b = _mk.befund_bauen(m, korrektur=korr, ohne_offene=ohne_offene)
             report, einsatz = b.report, None
@@ -4275,7 +4296,7 @@ class RaKScribeApp(ctk.CTk):
 def init_runtime():
     """Start der EXE (Umbau Schritt 16): Log-Kopf, Google-Bibliotheken, config.ini, Schlüssel + Speech-Client,
     LLM-Client, Befund-Prompt, Fehlhör-Liste, Vorlagen — in dieser Reihenfolge wie bisher beim Import."""
-    global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY
+    global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY, KI_GEN, KI_KORR
     global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES, MASKEN, MASKE_TASTEN, MASKE_TASTEN_AMBIENT
     log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
     log(f"BASE_DIR: {BASE_DIR}")
@@ -4301,6 +4322,11 @@ def init_runtime():
         print(f"[INIT] WARNUNG: {w}")
     LLM_PROVIDER, LLM_MODEL, API_KEY = CFG.llm_provider, CFG.llm_model, CFG.api_key
     print(f"[INIT] Konfiguration: LLM {LLM_PROVIDER} / {LLM_MODEL}")
+    KI_GEN, KI_KORR = _ki_weiche(CFG.llm_anbieter), _ki_weiche(CFG.llm_anbieter_korrektur or CFG.llm_anbieter)
+    if KI_GEN.anbieter != "gemini" or KI_KORR.anbieter != "gemini":
+        print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, Rückfall Gemini"
+              + ("" if _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad()) else
+                 " (WARNUNG: anthropic_api_key fehlt in rakscribe-praxis-key.json → alles über Gemini)"))
     # Initialisiere die Google Cloud Speech Engine beim Start
     if not init_google_speech():
         print("[INIT] Warnung: Google STT konnte beim Start nicht initialisiert werden.")

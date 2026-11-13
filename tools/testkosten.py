@@ -28,6 +28,9 @@ Umgebung
   KAISCRIBE_GUTACHTER_KEY     Anthropic-Testschlüssel (sonst Vaultwarden „Anthropic API KaiTest (Konto B)“ per vw_get);
                               nie den KaiFormat-Schlüssel eintragen
   KAISCRIBE_TEST_KONTO_B_MONAT_USD  Monatsgrenze Konto B, nur SENKEN möglich (hart höchstens 150 $)
+  KAISCRIBE_TEST_LIMIT_KONTO  Grenze je Konto innerhalb des Jobs, z. B. "anthropic-b=10,gcp-test=5" (kaiscribe-haiku-ab-n1)
+  KAISCRIBE_TEST_LAUF         Kennung je Messlauf (Feld "lauf" im Kostenbuch), z. B. haiku-web
+  KAISCRIBE_TEST_MASKE=0      Claude-Weiche ohne Maskierung (Standard: maskiert wie die Produktion, source_code/llm_anbieter)
 
 Preise: Vertex-Preisseite (abgerufen 13.11.2026), Anthropic-Preisliste; „Non-global“ = Endpunkt eu/europe-west*.
 """
@@ -72,6 +75,7 @@ PREISE = {
     ("gemini-4-carbon", "eu"): (4.40, 0.22, 22.00, 4.50),      # ab 01.12.2026 (vorher 2,20/11,00)
     ("gemini-4-carbon", "global"): (4.00, 0.20, 20.00, 4.50),
     ("claude-sonnet-5-5", "anthropic"): (2.00, 0.20, 10.00, 0.0),   # Cache-Schreiben 2,50
+    ("claude-haiku-5-5", "anthropic"): (0.10, 0.01, 0.50, 0.0),     # bis 100k Prompt; Cache-Schreiben 0,125
     # Preisseite 13.11.2026: Cache-Schreiben 2,0625 (eu) erst ab 12.01.2027; Speicher je Stunde nicht ausgewiesen → wie Flash
     ("gemini-4-hydrogen", "eu"): (1.65, 0.0825, 8.25, 1.00),
     ("gemini-4-hydrogen", "global"): (1.50, 0.075, 7.50, 1.00),
@@ -132,6 +136,18 @@ def grenze_konto_b_usd():
         return KONTO_B_MONAT_USD
 
 
+def grenzen_konto():
+    """{konto: $} aus KAISCRIBE_TEST_LIMIT_KONTO (Grenze je Konto innerhalb dieses Jobs)."""
+    out = {}
+    for teil in filter(None, (t.strip() for t in os.environ.get("KAISCRIBE_TEST_LIMIT_KONTO", "").split(","))):
+        k, _, v = teil.partition("=")
+        try:
+            out[k.strip()] = float(v)
+        except ValueError:
+            pass
+    return out
+
+
 def konto_von(zeile):
     if zeile.get("konto"):
         return zeile["konto"]
@@ -175,10 +191,11 @@ class _Buch:
     def pfad(self):
         return _logdir() / f"{job_name()}.jsonl"
 
-    def summe_job(self):
+    def summe_job(self, konto=None):
         try:
             with open(self.pfad, encoding="utf-8") as f:
-                return sum(json.loads(z).get("usd", 0.0) for z in f if z.strip())
+                return sum(z.get("usd", 0.0) for z in map(json.loads, filter(str.strip, f))
+                           if konto is None or konto_von(z) == konto)
         except FileNotFoundError:
             return 0.0
 
@@ -223,6 +240,16 @@ class _Buch:
                     print(f"\n[testkosten] ABBRUCH: heute schon {tag:.2f} $ Testkosten über alle Jobs, Tagesgrenze "
                           f"{gt:.2f} $ (KAISCRIBE_TEST_TAG_USD). Morgen weiter oder bewusst anheben.", file=sys.stderr, flush=True)
             raise KostenGrenze(EXIT_GRENZE)
+        kg = grenzen_konto().get(konto or KONTO_GCP_TEST)
+        if kg is not None:
+            ks = self.summe_job(konto or KONTO_GCP_TEST)
+            if ks + schaetzung > kg:
+                with self.lock:
+                    if not self.gemeldet:
+                        self.gemeldet = True
+                        print(f"\n[testkosten] ABBRUCH: Job „{job_name()}“ hat auf Konto {konto or KONTO_GCP_TEST} {ks:.2f} $ "
+                              f"verbraucht, Grenze {kg:.2f} $ (KAISCRIBE_TEST_LIMIT_KONTO).", file=sys.stderr, flush=True)
+                raise KostenGrenze(EXIT_GRENZE)
         summe, g = self.summe_job(), grenze_usd()
         if summe + schaetzung > g:
             with self.lock:
@@ -239,6 +266,8 @@ class _Buch:
         zeile = {"ts": datetime.datetime.now().isoformat(timespec="seconds"), "skript": self.skript, "pid": os.getpid(),
                  "art": art, "konto": konto, "modell": modell, "in": tin, "cache": tcache, "out": tout,
                  "usd": round(usd, 6), **extra}
+        if os.environ.get("KAISCRIBE_TEST_LAUF"):
+            zeile["lauf"] = os.environ["KAISCRIBE_TEST_LAUF"]
         with self.lock:
             for k, v in (("aufrufe", 1), ("usd", usd), ("in", tin), ("cache", tcache), ("out", tout)):
                 self.lauf[k] += v
@@ -539,14 +568,16 @@ def route():
 
 
 def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", ort="eu", timeout=120,
-               thinking_budget=0, generation_config=None, parts=None, cache=True):
+               thinking_budget=0, generation_config=None, parts=None, cache=True, ohne_weiche=False):
     """Vertex generateContent im Testprojekt → (Text, Antwort-JSON). Bucht die Kosten, hält die Grenze ein."""
     rolle = rolle_von(prompt, system)
-    weiche = route()
+    weiche = {} if ohne_weiche else route()
     ziel = None if (generation_config or parts) else (weiche.get(rolle) or weiche.get("alle"))
     if ziel:
         modell, ort, denk = ziel
         if modell.startswith("claude"):
+            if os.environ.get("KAISCRIBE_TEST_MASKE", "1") != "0":
+                return claude_maskiert(prompt, system, modell, rolle, temperature)
             return sonnet_roh(prompt, system, max_tokens=6000, modell=modell, timeout=timeout,
                               rolle=rolle, praefix_cache=cache, denk=denk)
         if modell.startswith("gemini-4"):
@@ -606,6 +637,63 @@ def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", 
 
 def gemini(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", ort="eu", timeout=120, **kw):
     return gemini_roh(prompt, system, temperature, modell, ort, timeout, **kw)[0]
+
+
+# ─── Claude maskiert wie die Produktion (kaiscribe-haiku-ab-n1) ───
+# Die Weiche, Maskierung, Rückmaskierung und der Rückfall auf Gemini sind source_code/llm_anbieter.py (die echte
+# Produktionsfunktion); nur der Sender ist hier: KaiTest-Schlüssel (Konto B), Kostenbuch, Grenze, Produktions-Frist.
+def _weiche_protokoll(info):
+    zeile = dict(info, ts=datetime.datetime.now().isoformat(timespec="seconds"), pid=os.getpid(),
+                 lauf=os.environ.get("KAISCRIBE_TEST_LAUF", ""))
+    zeile.pop("usage", None)
+    with BUCH.lock:
+        with open(_logdir() / f"{job_name()}.weiche.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps(zeile, ensure_ascii=False) + "\n")
+
+
+def _anthropic_test_sender(rolle):
+    def senden(body, frist):
+        modell = body["model"]
+        p_in, _pc, p_out, _ = preis(modell, "anthropic")
+        laenge = sum(len(t.get("text", "")) for t in body["messages"][0]["content"])
+        BUCH.pruefen((laenge / 3.5 * p_in * 1.25 + 1500 * p_out) / 1e6, konto=KONTO_ANTHROPIC_B)
+        req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(),
+                                     headers={"x-api-key": _anthropic_key(), "anthropic-version": "2023-06-01",
+                                              "content-type": "application/json"}, method="POST")
+        t0 = time.time()
+        try:
+            with urllib.request.urlopen(req, timeout=frist) as r:   # Produktions-Frist, kein Wiederholen (→ Gemini)
+                data = json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            raise Exception(f"Anthropic HTTP {e.code}: {e.read()[:200].decode(errors='replace')}") from None
+        u = data.get("usage", {})
+        usd, tin, tc, tout = kosten_anthropic(modell, u)
+        BUCH.buchen("anthropic", modell, usd, tin, tc, tout, rolle=rolle, s=round(time.time() - t0, 2),
+                    cache_schreiben=int(u.get("cache_creation_input_tokens", 0) or 0),
+                    denk=int((u.get("output_tokens_details") or {}).get("thinking_tokens", 0) or 0))
+        return data
+    return senden
+
+
+def claude_maskiert(prompt, system, modell, rolle, temperature=0.0):
+    """Ein Aufruf über llm_anbieter.Weiche (anthropic, maskiert) → (Text, Info). Rückfall = Gemini 3.5 Flash eu im
+    Testprojekt (ohne Weiche), genau wie die EXE bei Anthropic-Problemen."""
+    sys.path.insert(0, str(ROOT / "source_code"))
+    import llm_anbieter as la
+    import gemini as _g
+    if rolle == "korr":
+        fest = la.fester_anfang(prompt)
+        roh = prompt[len(fest):].rsplit("\n\nKorrigiert:", 1)[0]
+        pruefen = lambda t: la.korrektur_plausibel(roh, t)   # noqa: E731  wie korrektur.korrigieren_ki
+    else:
+        pruefen = _g.report_complete
+    infos = []
+    w = la.Weiche("anthropic", modell, sender=_anthropic_test_sender(rolle), log=lambda *a: None,
+                  frist=float(os.environ.get("KAISCRIBE_TEST_ANTHROPIC_FRIST", la.ANTHROPIC_FRIST_S)),
+                  beobachter=lambda i: (infos.append(i), _weiche_protokoll(i)),
+                  gemini_fn=lambda p, s: gemini_roh(p, s, temperature, ohne_weiche=True)[0])
+    text = w(prompt, system, pruefen=pruefen, rolle=rolle, strip=_g.strip_fences)
+    return text, {"weiche": infos}
 
 
 # ─── Gutachter über Anthropic ───

@@ -66,6 +66,18 @@ def load_vertex_key(base_dir, user_key_path, log=None):
     return gk
 
 
+def load_anthropic_key(base_dir, user_key_path):
+    """kaiscribe-haiku-ab-n1: optionaler Anthropic-Schlüssel (Feld "anthropic_api_key" in rakscribe-praxis-key.json),
+    nur für LLM_ANBIETER = anthropic. Fehlt er → "" (die EXE bleibt bei Gemini)."""
+    p = praxis_key_path(base_dir, user_key_path)
+    try:
+        if p:
+            return str(json.loads(read_text_robust(p)).get("anthropic_api_key") or "").strip()
+    except Exception:
+        pass
+    return ""
+
+
 def ist_praxis_schluessel(data):
     """Prüfung beim Laden per Menü: kombinierter Schlüssel (Gemini + STT mit private_key)?"""
     return bool(str(data.get("vertex_api_key", "")).strip() and isinstance(data.get("stt"), dict)
