@@ -68,6 +68,9 @@ PREISE = {
     ("gemini-4-carbon", "eu"): (4.40, 0.22, 22.00, 4.50),      # ab 01.12.2026 (vorher 2,20/11,00)
     ("gemini-4-carbon", "global"): (4.00, 0.20, 20.00, 4.50),
     ("claude-sonnet-5-5", "anthropic"): (2.00, 0.20, 10.00, 0.0),   # Cache-Schreiben 2,50
+    # Preisseite 13.11.2026: Cache-Schreiben 2,0625 (eu) erst ab 12.01.2027; Speicher je Stunde nicht ausgewiesen → wie Flash
+    ("gemini-4-hydrogen", "eu"): (1.65, 0.0825, 8.25, 1.00),
+    ("gemini-4-hydrogen", "global"): (1.50, 0.075, 7.50, 1.00),
 }
 PREIS_UNBEKANNT = (4.40, 0.44, 22.00, 4.50)  # vorsichtig hoch → Grenze greift eher zu früh als zu spät
 GUTACHTER_MODELLE = ("pro", "carbon", "argon", "hydrogen")
@@ -185,10 +188,10 @@ class _Buch:
                           f"Kostenbuch: {self.pfad}", file=sys.stderr, flush=True)
             raise KostenGrenze(EXIT_GRENZE)
 
-    def buchen(self, art, modell, usd, tin, tcache, tout):
+    def buchen(self, art, modell, usd, tin, tcache, tout, **extra):
         self.benutzt = True
         zeile = {"ts": datetime.datetime.now().isoformat(timespec="seconds"), "skript": self.skript, "pid": os.getpid(),
-                 "art": art, "modell": modell, "in": tin, "cache": tcache, "out": tout, "usd": round(usd, 6)}
+                 "art": art, "modell": modell, "in": tin, "cache": tcache, "out": tout, "usd": round(usd, 6), **extra}
         with self.lock:
             for k, v in (("aufrufe", 1), ("usd", usd), ("in", tin), ("cache", tcache), ("out", tout)):
                 self.lauf[k] += v
@@ -398,6 +401,7 @@ def vorab(schaetzung_usd=0.01):
 _PRAEFIXE = []          # [(praefix, system)]
 _CACHE_LOCK = threading.Lock()
 CACHE_TTL = 3600
+OHNE_EXPLIZITEN_CACHE = ("gemini-4-hydrogen",)
 CACHE_MIN_ZEICHEN = 8000   # Vertex verlangt ≥ 1.024 Token (Flash); kurze Präfixe lohnen nicht
 
 
@@ -456,10 +460,55 @@ def _text(data):
                    if isinstance(p.get("text"), str) and not p.get("thought")).strip()
 
 
+# ─── Modell-Weiche je Aufrufart (kaiscribe-modellvergleich-n1, nur Messung) ───
+# KAISCRIBE_TEST_ROUTE="korr=gemini-3.5-flash@eu,gen=gemini-4-hydrogen@eu~LOW,val=claude-sonnet-5-5"  (oder alle=…)
+# Rollen: korr = Call 0 (STT-Korrektur), gen = Befund-Generierung (SYS_MSG bzw. fester Gen-Prompt), val = Web-Validator.
+# ~X = Denkstufe: Gemini 4 thinkingLevel (LOW/MEDIUM/HIGH), Gemini 3.x thinkingBudget (Zahl). Ohne Weiche: unverändert.
+_ROLLEN_ANFANG = {"val": "Du bist ein radiologischer Qualitätskontrolleur",
+                  "korr": "Du bist ein medizinischer Lektor für radiologische Diktate"}
+_GEN_SYSTEM = "Du bist ein präziser Radiologie-Assistent"
+
+
+def rolle_von(prompt, system=None):
+    p = (prompt or "").lstrip()
+    for rolle, anfang in _ROLLEN_ANFANG.items():
+        if p.startswith(anfang):
+            return rolle
+    if (system or "").startswith(_GEN_SYSTEM) or any(p.startswith(pr.lstrip()) for pr, _s in _PRAEFIXE):
+        return "gen"
+    return "sonst"
+
+
+def route():
+    """{rolle: (modell, ort, denkstufe)} aus KAISCRIBE_TEST_ROUTE."""
+    r = {}
+    for teil in filter(None, (t.strip() for t in os.environ.get("KAISCRIBE_TEST_ROUTE", "").split(","))):
+        rolle, _, ziel = teil.partition("=")
+        ziel, _, denk = ziel.partition("~")
+        modell, _, ort = ziel.partition("@")
+        r[rolle.strip()] = (modell.strip(), (ort or ("anthropic" if modell.startswith("claude") else "eu")).strip(),
+                            denk.strip() or None)
+    return r
+
+
 def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", ort="eu", timeout=120,
                thinking_budget=0, generation_config=None, parts=None, cache=True):
     """Vertex generateContent im Testprojekt → (Text, Antwort-JSON). Bucht die Kosten, hält die Grenze ein."""
-    if any(w in modell for w in GUTACHTER_MODELLE) and os.environ.get("KAISCRIBE_TEST_GEMINI_GUTACHTER") != "1":
+    rolle = rolle_von(prompt, system)
+    weiche = route()
+    ziel = None if (generation_config or parts) else (weiche.get(rolle) or weiche.get("alle"))
+    if ziel:
+        modell, ort, denk = ziel
+        if modell.startswith("claude"):
+            return sonnet_roh(prompt, system, max_tokens=6000, modell=modell, timeout=timeout,
+                              rolle=rolle, praefix_cache=cache, denk=denk)
+        if modell.startswith("gemini-4"):
+            thinking_budget = None
+            generation_config = {"temperature": temperature,
+                                 "thinkingConfig": {"thinkingLevel": (denk or "LOW").upper()}}
+        elif denk is not None:
+            thinking_budget = int(denk)
+    if not ziel and any(w in modell for w in GUTACHTER_MODELLE) and os.environ.get("KAISCRIBE_TEST_GEMINI_GUTACHTER") != "1":
         print(f"[testkosten] ABBRUCH: {modell} ist für Tests gesperrt — Gutachter/Bewerter laufen über "
               f"testkosten.sonnet() (Anthropic, KaiFormat-Guthaben).", file=sys.stderr)
         raise KostenGrenze(EXIT_GRENZE)
@@ -469,7 +518,8 @@ def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", 
     gc = dict(generation_config) if generation_config else {"temperature": temperature}
     if thinking_budget is not None and "thinkingConfig" not in gc:
         gc["thinkingConfig"] = {"thinkingBudget": thinking_budget}
-    praefix = None if (parts or not cache) else _passender_praefix(prompt, system)
+    # Gemini 4 Hydrogen: „does not support explicit context caching“ (HTTP 400, 13.11.2026) → nur implizites Caching
+    praefix = None if (parts or not cache or modell in OHNE_EXPLIZITEN_CACHE) else _passender_praefix(prompt, system)
     versuche_cache = 0
     retries = 0
     while True:
@@ -482,7 +532,9 @@ def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", 
             if system:
                 body["systemInstruction"] = {"parts": [{"text": system}]}
         try:
+            t0 = time.time()
             data = _post(modell_url(modell, ort), body, timeout=timeout)
+            dauer = time.time() - t0
             break
         except urllib.error.HTTPError as e:
             info = e.read()[:300].decode(errors="replace")
@@ -500,7 +552,8 @@ def gemini_roh(prompt, system=None, temperature=0.0, modell="gemini-3.5-flash", 
     if "error" in data:
         raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
     usd, tin, tc, tout = kosten_gemini(modell, ort, data.get("usageMetadata", {}))
-    BUCH.buchen("gemini", modell, usd, tin, tc, tout)
+    BUCH.buchen("gemini", modell, usd, tin, tc, tout, rolle=rolle, s=round(dauer, 2),
+                denk=int(data.get("usageMetadata", {}).get("thoughtsTokenCount", 0) or 0))
     return _text(data), data
 
 
@@ -513,34 +566,53 @@ _ANTH = {"key": None}
 SONNET = "claude-sonnet-5-5"
 
 
+_ANTH_LOCK = threading.Lock()
+
+
 def _anthropic_key():
-    if _ANTH["key"]:
-        return _ANTH["key"]
-    k = os.environ.get("KAISCRIBE_GUTACHTER_KEY", "").strip()
-    if not k:
-        sys.path.insert(0, str(pathlib.Path.home() / ".hermes" / "scripts"))
-        from vw_get import get_login  # Vaultwarden, Eintrag „Anthropic API KaiFormat“
-        k = (get_login("Anthropic API KaiFormat")[1] or "").strip()
-    _ANTH["key"] = k
-    return k
+    with _ANTH_LOCK:   # mehrere Fäden gleichzeitig → sonst parallele vw-Abrufe, einer liefert leer (HTTP 401)
+        if _ANTH["key"]:
+            return _ANTH["key"]
+        k = os.environ.get("KAISCRIBE_GUTACHTER_KEY", "").strip()
+        if not k:
+            sys.path.insert(0, str(pathlib.Path.home() / ".hermes" / "scripts"))
+            from vw_get import get_login  # Vaultwarden, Eintrag „Anthropic API KaiFormat“
+            k = (get_login("Anthropic API KaiFormat")[1] or "").strip()
+        if not k:
+            raise Exception("Anthropic-Schlüssel leer (Vaultwarden „Anthropic API KaiFormat“ / KAISCRIBE_GUTACHTER_KEY)")
+        _ANTH["key"] = k
+        return k
 
 
-def sonnet_roh(prompt, system=None, max_tokens=2000, modell=SONNET, timeout=180):
-    """Gutachter/Bewerter: Anthropic Messages API (nur synthetische Testtexte!) → (Text, Antwort-JSON)."""
+def sonnet_roh(prompt, system=None, max_tokens=2000, modell=SONNET, timeout=180, rolle="gutachter", praefix_cache=False,
+               denk=None):
+    """Gutachter/Bewerter: Anthropic Messages API (nur synthetische Testtexte!) → (Text, Antwort-JSON).
+    praefix_cache=True (Modell-Weiche): fester Gen-Prompt-Anfang als Cache-Breakpoint (System + Präfix gecacht)."""
     p_in, _pc, p_out, _ = preis(modell, "anthropic")
-    BUCH.pruefen((len(prompt) / 3.5 * p_in + max_tokens * p_out) / 1e6)
+    BUCH.pruefen((len(prompt) / 3.5 * p_in + 1500 * p_out) / 1e6)
+    praefix = _passender_praefix(prompt, system) if praefix_cache else None
+    content = ([{"type": "text", "text": praefix, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": prompt[len(praefix):]}] if praefix else prompt)
     body = {"model": modell, "max_tokens": max_tokens,   # Sonnet 5.5: kein temperature-Parameter mehr (HTTP 400)
-            "messages": [{"role": "user", "content": prompt}]}
+            "messages": [{"role": "user", "content": content}]}
     if system:  # fester Gutachter-Text → Prompt-Cache
         body["system"] = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+    # Denkstufe: Sonnet 5.5 denkt ohne Angabe adaptiv (≈1.500 Denk-Token je Befund). „aus“ = {"type": "between_tools"}
+    # (die API lehnt "disabled" ab), low/medium/high = output_config.effort.
+    if denk and denk.lower() == "aus":
+        body["thinking"] = {"type": "between_tools"}
+    elif denk:
+        body["output_config"] = {"effort": denk.lower()}
     retries = 0
     while True:
         req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(),
                                      headers={"x-api-key": _anthropic_key(), "anthropic-version": "2023-06-01",
                                               "content-type": "application/json"}, method="POST")
         try:
+            t0 = time.time()
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 data = json.loads(r.read())
+            dauer = time.time() - t0
             break
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 529) and retries < 3:
@@ -549,7 +621,9 @@ def sonnet_roh(prompt, system=None, max_tokens=2000, modell=SONNET, timeout=180)
                 continue
             raise Exception(f"Anthropic HTTP {e.code}: {e.read()[:300].decode(errors='replace')}") from None
     usd, tin, tc, tout = kosten_anthropic(modell, data.get("usage", {}))
-    BUCH.buchen("anthropic", modell, usd, tin, tc, tout)
+    BUCH.buchen("anthropic", modell, usd, tin, tc, tout, rolle=rolle, s=round(dauer, 2),
+                cache_schreiben=int(data.get("usage", {}).get("cache_creation_input_tokens", 0) or 0),
+                denk=int((data.get("usage", {}).get("output_tokens_details") or {}).get("thinking_tokens", 0) or 0))
     return "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text").strip(), data
 
 
