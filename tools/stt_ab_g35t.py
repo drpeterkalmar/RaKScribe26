@@ -4,10 +4,10 @@ boost 10) vs. Gemini 3.5 Transcribe (gemini-3.5-transcribe-preview, Vertex `glob
 mit/ohne custom_vocabulary = CHIRP_PHRASES) auf den 6 echten Praxis-Diktaten.
 
 Misst je Engine: Termini-Hits, WER gegen Referenz (4 Diktate), Seiten-Treue (links/rechts,
-n Wiederholungen — LLM-ASR-Pitfall!), Latenz. Zusätzlich: läuft Gemini 3.5 Transcribe mit
-dem Praxis-AQ-Key (x-goog-api-key, EIN-Key-Prinzip) statt SA-Bearer?
+n Wiederholungen — LLM-ASR-Pitfall!), Latenz. (Der frühere Zusatzlauf mit dem Praxis-API-Schlüssel ist seit
+kaiscribe-testkosten-n1 entfernt: Tests laufen nur im Testprojekt.)
 
-Aufruf:  STT_KEY=.praxis-key.tmp.json /usr/bin/python3 tools/stt_ab_g35t.py [runs=3]
+Aufruf:  python3 tools/stt_ab_g35t.py [runs=3]   (Testprojekt rakscribe-test, tools/testkosten.py)
 """
 import base64, difflib, json, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.error
 from google.oauth2 import service_account
@@ -17,18 +17,16 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in
 PUB = ROOT / "web_app" / "public"
 SCRATCH = pathlib.Path(os.environ.get("TMPDIR", str(pathlib.Path.home() / ".hermes/cache/scratch")))
 SCRATCH.mkdir(parents=True, exist_ok=True)
-RUNS = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt, Kostenbuch, Obergrenze)
+RUNS = testkosten.argv_laeufe(1, 3)  # ≤ 5, mehr nur mit --release
 
-SA = pathlib.Path.home() / ".hermes/secrets/vertex-sa-key.json"
-_c = service_account.Credentials.from_service_account_file(str(SA), scopes=["https://www.googleapis.com/auth/cloud-platform"])
-PRAXIS = json.load(open(os.environ["STT_KEY"])) if os.environ.get("STT_KEY") else None
-_stt = service_account.Credentials.from_service_account_info(PRAXIS["stt"], scopes=["https://www.googleapis.com/auth/cloud-platform"]) if PRAXIS else None
-AQ = PRAXIS.get("vertex_api_key") if PRAXIS else None
+# kaiscribe-testkosten-n1: alles im Testprojekt (Dienstkonto mit Vertex + Speech); kein Praxis-/AQ-Schlüssel mehr
+_c = _stt = None
+AQ = None
 
-def tok(c):
-    if not c.valid:
-        c.refresh(gtr.Request())
-    return c.token
+def tok(_c_ignoriert=None):
+    return testkosten.bearer()
 
 CHIRP_PHRASES = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))["chirp"]  # Umbau Schritt 20: phrases.json
 
@@ -72,17 +70,22 @@ def wav(ogg):
     return w
 
 def post(url, body, headers, timeout=120):
+    testkosten.vorab(0.02)
     p = SCRATCH / "stt_ab_g35t_body.json"; p.write_text(json.dumps(body))
     req = urllib.request.Request(url, data=p.read_bytes(), headers={"Content-Type": "application/json", **headers})
     t = time.time()
     with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.loads(r.read())
-    return d, time.time() - t
+    dt = time.time() - t
+    if "aiplatform" in url:  # kaiscribe-testkosten-n1
+        _m = re.search(r"/locations/([^/]+)/publishers/google/models/([^:]+)", url)
+        testkosten.buche_vertex(_m.group(2), _m.group(1), d)
+    else:
+        testkosten.buche_stt(len(body.get("content", "")) * 3 / 4)
+    return d, dt
 
 def chirp3(b64):
-    if _stt is None:
-        raise RuntimeError("STT_KEY (Praxis-Key) nötig — vertex-sa hat kein speech-Recht")
-    d, dt = post("https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize",
+    d, dt = post(testkosten.speech_url("eu"),
                  {"config": {"languageCodes": ["de-DE"], "model": "chirp_3", "autoDecodingConfig": {},
                              "features": {"enableAutomaticPunctuation": True},
                              "adaptation": {"phraseSets": [{"inlinePhraseSet": {"phrases": [{"value": v, "boost": 10} for v in CHIRP_PHRASES]}}]}},
@@ -91,13 +94,13 @@ def chirp3(b64):
 
 def g35t(vocab, auth="sa"):
     def f(b64):
-        url = "https://aiplatform.googleapis.com/v1/projects/rakscribe/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent"
+        url = f"https://aiplatform.googleapis.com/v1/projects/{testkosten.projekt()}/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent"
         cfg = {"languageCodes": ["de-DE"]}
         if vocab:
             cfg["customVocabulary"] = CHIRP_PHRASES
         body = {"contents": [{"role": "user", "parts": [{"inline_data": {"mime_type": "audio/wav", "data": b64}}]}],
                 "generationConfig": {"audioTranscriptionConfig": cfg}}
-        hdr = {"x-goog-api-key": AQ} if auth == "aq" else {"Authorization": "Bearer " + tok(_c)}
+        hdr = {"Authorization": "Bearer " + tok(_c)}
         d, dt = post(url, body, hdr)
         parts = d["candidates"][0]["content"]["parts"]
         return "".join(p.get("text", "") for p in parts if not p.get("thought")).strip(), dt
@@ -112,7 +115,7 @@ if AQ:
     ENGINES["g3.5-transcribe global +Vokabel (AQ-Key)"] = g35t(True, auth="aq")
 
 def main():
-    print(f"CHIRP_PHRASES: {len(CHIRP_PHRASES)} | runs={RUNS} | Praxis-Key: {'ja' if PRAXIS else 'NEIN'}")
+    print(f"CHIRP_PHRASES: {len(CHIRP_PHRASES)} | runs={RUNS} | Projekt: {testkosten.projekt()}")
     res = {}
     for ogg in sorted(PUB.glob("*.ogg")):
         b64 = base64.b64encode(wav(ogg).read_bytes()).decode()

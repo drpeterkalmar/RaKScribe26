@@ -15,7 +15,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in
 sys.path.insert(0, str(ROOT / "tools"))
 import prod_pipeline as pp  # noqa: E402
 
-RUNS = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+import testkosten  # noqa: E402
+RUNS = testkosten.argv_laeufe(1, 3)  # ≤ 5, mehr nur mit --release
 
 
 def teile(rep):

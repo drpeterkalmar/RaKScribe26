@@ -9,7 +9,7 @@ Normalbefund-Bypass = source_code/befund_regeln.py, Template-Erkennung = source_
     pp.web_kette(diktat)          # Web: Call 0 → split → je Region detect → Bypass | Gen → Call 2 → nummerieren
     pp.gen_prompt(raw, key)       # Gen-Prompt wie EXE (für Harness-Einzelcalls)
 
-Live-Calls laufen über test_all_regions.call_gemini (AQ-Key → SA-Bearer-Fallback + 429-Backoff).
+Live-Calls laufen über test_all_regions.call_gemini → tools/testkosten.py (Testprojekt, Kostenbuch, Obergrenze, Cache).
 """
 import json, os, pathlib, re, sys
 from concurrent.futures import ThreadPoolExecutor
@@ -43,6 +43,12 @@ SYS_MSG = _gemini.SYS_MSG
 GEN_PROMPT_RAW = (ROOT / "radiology_prompt.txt").read_text()
 PROMPT_VERSION = br.prompt_version(GEN_PROMPT_RAW)
 GEN_PROMPT = br.strip_prompt_marker(GEN_PROMPT_RAW)
+
+# kaiscribe-testkosten-n1: fester Anfang des Gen-Prompts (Regeln bis vor die Vorlage, ~11.800 Token) als Vertex-
+# Kontext-Cache → Input-Kosten je Gen-Aufruf ≈ −80 %. Abschalten: KAISCRIBE_TEST_CACHE=0.
+import testkosten  # noqa: E402
+GEN_PRAEFIX = GEN_PROMPT[:GEN_PROMPT.index("{template_body}")]
+testkosten.cache_praefix(GEN_PRAEFIX, SYS_MSG)
 
 _mv = re.search(r"export const validationPrompt = \(rawDictation: string, generatedReport: string\): string => `(.*?)`;", _GEMINI_TS, re.S)
 VAL_TEMPLATE = _mv.group(1).replace("\\`", "`").replace('\\"', '"')

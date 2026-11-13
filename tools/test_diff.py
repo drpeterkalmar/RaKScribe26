@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Quick Diff-Test: Call #1 vs Call #2 für 3 repräsentative Fälle."""
 import json
+import sys
 import os
 import urllib.request
 import time
 from pathlib import Path
 
-API_KEY = os.environ.get("VERTEX_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (Testprojekt + Kostenzähler)
+API_KEY = ""  # Praxis-Schlüssel wird in Tests nicht mehr benutzt
 
 TEMPLATES_PATH = Path(__file__).resolve().parents[1] / "templates.json"  # Umbau Schritte 20/24: eine Vorlagen-Datei
 with open(TEMPLATES_PATH) as f:
@@ -19,17 +21,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_all_regions import CONFLICT_RULES, build_gen_prompt, build_val_prompt
 
 def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
-    headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
-    body = json.dumps({
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperature}
-    }).encode()
-    req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        data = json.loads(resp.read())
-    if "error" in data:
-        raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
-    return "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not p.get("thought")).strip()
+    """kaiscribe-testkosten-n1: über tools/testkosten.py (Testprojekt, Kostenbuch, Obergrenze; thinkingBudget 0 wie Produktion)."""
+    return testkosten.gemini(prompt, temperature=temperature, timeout=timeout)
+
 
 CASES = [
     # Die 4 WARN-Fälle aus test_results_v4.txt

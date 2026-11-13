@@ -12,23 +12,10 @@ Call1 Gen (newDefaultPrompt aus App.tsx, per Node evaluiert) → Call2 Validieru
 import os, re, sys, json, pathlib, urllib.request, urllib.error, subprocess, time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (v3.18.4: nicht mehr fest ~/dev)
-API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
-# Bearer-Fallback: Hermes-SA (AQ.-Key in vertex-key.txt ist rotiert/401)
-from google.oauth2 import service_account
-import google.auth.transport.requests as _tr
-_sa_creds = service_account.Credentials.from_service_account_file(
-    str(pathlib.Path.home() / ".hermes" / "secrets" / "vertex-sa-key.json"),
-    scopes=["https://www.googleapis.com/auth/cloud-platform"])
-_sa_creds.refresh(_tr.Request())
+sys.path.insert(0, str(ROOT / "tools"))
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt, Kostenbuch, Obergrenze)
 
-def _sa_token():
-    if not _sa_creds.valid:
-        _sa_creds.refresh(_tr.Request())
-    return _sa_creds.token
 
-VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
-
-os.environ["VERTEX_API_KEY"] = API_KEY
 sys.path.insert(0, str(ROOT / "tools"))
 from test_all_regions import build_gen_prompt, build_val_prompt, call_gemini, TEMPLATES
 
@@ -38,31 +25,7 @@ TEMPLATE_KEY = "halswirbelsäule_in_2_ebenen"
 TEMPLATE_BODY = TEMPLATES[TEMPLATE_KEY]["body"]
 
 def gemini(prompt, temp=0.0, tries=4):
-    body = json.dumps({
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temp, "thinkingConfig": {"thinkingBudget": 0}},
-    }).encode()
-    last = None
-    for attempt in range(tries):
-        try:
-            req = urllib.request.Request(VERTEX_URL, data=body, headers={
-                "Content-Type": "application/json", "x-goog-api-key": API_KEY})
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                data = json.loads(resp.read())
-        except urllib.error.HTTPError as e:
-            if e.code in (401, 403):
-                req = urllib.request.Request(VERTEX_URL, data=body, headers={
-                    "Content-Type": "application/json", "Authorization": "Bearer " + _sa_token()})
-                with urllib.request.urlopen(req, timeout=120) as resp:
-                    data = json.loads(resp.read())
-            elif e.code in (429, 500, 503) and attempt < tries - 1:
-                time.sleep(20 * (attempt + 1)); continue
-            else:
-                raise
-        if "error" in data:
-            raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
-        return "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not p.get("thought")).strip()
-    raise Exception("Gemini: keine Antwort nach Retries")
+    return testkosten.gemini(prompt, temperature=temp)
 
 def check_report(final, label):
     print(f"\n{'='*62}\n{label}\n{'='*62}")
@@ -91,7 +54,7 @@ results = {}
 # Läufe: erstes Argument (Default 1); grün nur, wenn ALLE Läufe je Kette grün sind.
 import prod_pipeline as pp
 assert "Kellgren" in pp.GEN_PROMPT, "K&L-Regel fehlt in radiology_prompt.txt!"
-RUNS = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 1
+RUNS = testkosten.argv_laeufe(1, 1)  # ≤ 5, mehr nur mit --release
 results = {"A": True, "B": True}
 for _run in range(RUNS):
     print(f"\n── Lauf {_run + 1}/{RUNS} ──")

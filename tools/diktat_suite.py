@@ -20,11 +20,10 @@ import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
 PUBLIC = ROOT / "web_app" / "public"
-API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
-VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 sys.path.insert(0, str(ROOT / "tools"))
 import test_all_regions as harness  # noqa: E402
+import testkosten  # noqa: E402
 
 # --- echtes detect_template + derive (source_code/detect.py, Umbau Schritt 12 — kein AST-Extrakt mehr) ---
 import sys as _s3; _s3.path.insert(0, str(ROOT / "source_code"))
@@ -57,39 +56,12 @@ def is_normal_finding_app(text: str) -> bool:
 
 
 def asr(wav: pathlib.Path) -> str:
+    """Test-ASR (nur Hilfsmittel, nicht App-Pfad) über tools/testkosten.py (Testprojekt, Kostenbuch)."""
     b64 = base64.b64encode(wav.read_bytes()).decode()
-    body = {"contents": [{"role": "user", "parts": [
-        {"inline_data": {"mime_type": "audio/wav", "data": b64}},
-        {"text": "Transkribiere dieses deutsche Radiologie-Diktat vollstaendig und "
-                 "woertlich. Nur der Transkript-Text, keine Kommentare, keine "
-                 "Korrekturen."}]}]}
-    tmp = pathlib.Path("/tmp/suite_asr.json")
-    tmp.write_text(json.dumps(body))
-    req = urllib.request.Request(
-        # Test-ASR (nur Hilfsmittel, nicht App-Pfad): 3.8 global hatte am 26.09. wiederholt 18–100 s + Timeouts → 3.5 EU
-        "https://aiplatform.eu.rep.googleapis.com/v1/projects/rakscribe/locations/eu/"
-        "publishers/google/models/gemini-3.5-flash:generateContent",
-        data=tmp.read_bytes(), headers={"Content-Type": "application/json",
-                                        "Authorization": "Bearer " + sa_token()})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        data = json.loads(r.read())
-    return "".join(p.get("text", "") for p in
-                   data["candidates"][0]["content"]["parts"]).strip()
-
-
-_sa = None
-def sa_token() -> str:
-    global _sa
-    if _sa is None:
-        from google.oauth2 import service_account
-        import google.auth.transport.requests as tr
-        _sa = service_account.Credentials.from_service_account_file(
-            str(pathlib.Path.home() / ".hermes" / "secrets" / "vertex-sa-key.json"),
-            scopes=["https://www.googleapis.com/auth/cloud-platform"])
-    if not _sa.valid:
-        import google.auth.transport.requests as tr
-        _sa.refresh(tr.Request())
-    return _sa.token
+    txt = ("Transkribiere dieses deutsche Radiologie-Diktat vollstaendig und "
+           "woertlich. Nur der Transkript-Text, keine Kommentare, keine Korrekturen.")
+    return testkosten.gemini(txt, timeout=180, thinking_budget=None,
+                             parts=[{"inline_data": {"mime_type": "audio/wav", "data": b64}}, {"text": txt}])
 
 
 def ogg_to_wav(ogg: pathlib.Path) -> pathlib.Path:

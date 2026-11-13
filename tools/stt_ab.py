@@ -10,20 +10,12 @@ import google.auth.transport.requests as gtr
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
 PUB = ROOT / "web_app" / "public"
-SA = pathlib.Path.home() / ".hermes/secrets/vertex-sa-key.json"
-_c = service_account.Credentials.from_service_account_file(str(SA), scopes=["https://www.googleapis.com/auth/cloud-platform"])
-import os
-_stt = service_account.Credentials.from_service_account_info(json.load(open(os.environ["STT_KEY"]))["stt"], scopes=["https://www.googleapis.com/auth/cloud-platform"]) if os.environ.get("STT_KEY") else None
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt, Kostenbuch, Obergrenze)
 def stt_tok():
-    if _stt is None:
-        return tok()
-    if not _stt.valid:
-        _stt.refresh(gtr.Request())
-    return _stt.token
+    return testkosten.bearer()
 def tok():
-    if not _c.valid:
-        _c.refresh(gtr.Request())
-    return _c.token
+    return testkosten.bearer()
 
 PHRASES = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))["medical_web"]  # Umbau Schritt 20: phrases.json
 
@@ -41,15 +33,22 @@ def wav(ogg):
     return w
 
 def post(url, body, timeout=120):
+    testkosten.vorab(0.02)
     p = pathlib.Path("/tmp/stt_ab_body.json"); p.write_text(json.dumps(body))
     req = urllib.request.Request(url, data=p.read_bytes(), headers={"Content-Type": "application/json", "Authorization": "Bearer " + (stt_tok() if "speech" in url else tok())})
     t = time.time()
     with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.loads(r.read())
-    return d, time.time() - t
+    dt = time.time() - t
+    if "aiplatform" in url:  # kaiscribe-testkosten-n1
+        _m = re.search(r"/locations/([^/]+)/publishers/google/models/([^:]+)", url)
+        testkosten.buche_vertex(_m.group(2), _m.group(1), d)
+    else:
+        testkosten.buche_stt(len(body.get("content", "")) * 3 / 4)
+    return d, dt
 
 def chirp3(b64):
-    d, dt = post("https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize",
+    d, dt = post(testkosten.speech_url("eu"),
                  {"config": {"languageCodes": ["de-DE"], "model": "chirp_3", "autoDecodingConfig": {},
                              "features": {"enableAutomaticPunctuation": True}}, "content": b64})
     return " ".join(r["alternatives"][0].get("transcript", "") for r in d.get("results", []) if r.get("alternatives")), dt
@@ -63,7 +62,7 @@ def gem(model, loc, prompt):
         host = {"eu": "https://aiplatform.eu.rep.googleapis.com", "global": "https://aiplatform.googleapis.com",
                 "europe-west3": "https://europe-west3-aiplatform.googleapis.com"}[loc]
         gc = {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}}
-        d, dt = post(f"{host}/v1/projects/rakscribe/locations/{loc}/publishers/google/models/{model}:generateContent",
+        d, dt = post(f"{host}/v1/projects/{testkosten.projekt()}/locations/{loc}/publishers/google/models/{model}:generateContent",
                      {"contents": [{"role": "user", "parts": [{"inline_data": {"mime_type": "audio/wav", "data": b64}}, {"text": prompt}]}],
                       "generationConfig": gc})
         return "".join(p.get("text", "") for p in d["candidates"][0]["content"]["parts"] if not p.get("thought")).strip(), dt

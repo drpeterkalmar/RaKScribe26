@@ -5,7 +5,7 @@ A) Langes Diktat (> 5 min): Live-Anzeige muss nach neustart_s neu aufsetzen stat
 B) Verbindungsabbruch der Live-Anzeige nach 20 s (gRPC UNAVAILABLE): Aufnahme läuft weiter, Puffer vollständig,
    chirp_3 liefert den ganzen Text.
 
-Aufruf: /usr/bin/python3 tools/aufnahme_live_test.py [A|B|AB]   PRAXIS_KEY=<rakscribe-praxis-key.json>
+Aufruf: /usr/bin/python3 tools/aufnahme_live_test.py [A|B|AB]   (Testprojekt rakscribe-test, tools/testkosten.py)
 Sprachdatei: macOS `say` (Anna), wird nach $TMPDIR erzeugt. Dauer A ≈ Diktatlänge in Echtzeit.
 """
 import os, pathlib, subprocess, sys, threading, time, wave
@@ -19,10 +19,11 @@ from google.oauth2 import service_account  # noqa: E402
 from google.cloud import speech_v1 as speech  # noqa: E402
 from google.auth.transport.requests import Request  # noqa: E402
 
-# Schlüssel mit Speech-Rechten (chirp_3): Praxis-Schlüssel, Pfad per PRAXIS_KEY (der Hermes-Testschlüssel darf kein STT)
+# kaiscribe-testkosten-n1: Dienstkonto des Testprojekts (Vertex + Speech) statt Praxis-Schlüssel
 import json  # noqa: E402
-creds = service_account.Credentials.from_service_account_info(json.load(open(os.environ["PRAXIS_KEY"]))["stt"],
-                                                              scopes=["https://www.googleapis.com/auth/cloud-platform"])
+sys.path.insert(0, str(ROOT / "tools"))
+import testkosten  # noqa: E402
+creds = testkosten.credentials()
 client = speech.SpeechClient(credentials=creds)
 CFG = speech.StreamingRecognitionConfig(config=speech.RecognitionConfig(
     encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16, sample_rate_hertz=16000, language_code="de-DE",
@@ -111,7 +112,7 @@ def lauf(name, minuten, abbruch_nach=None, neustart_s=af.STREAM_NEUSTART_S):
     aufgenommen = len(pcm) / 16000 if pcm is not None else 0
     creds.refresh(Request())
     t0 = time.time()
-    chirp = stt.chirp3_worker(pcm, 16000, "eu", creds.token) or ""
+    chirp = stt.chirp3_worker(pcm, 16000, "eu", creds.token, request=testkosten.chirp3_test) or ""
     absaetze = sum(f"absatz {i + 1}" in chirp.lower() or f"absatz {i + 1}." in chirp.lower()
                    for i in range(int(minuten * 60 / 22) or 1))
     soll = max(1, int(minuten * 60 / 22))

@@ -13,8 +13,9 @@ import time
 import sys
 from pathlib import Path
 
-API_KEY = os.environ.get("VERTEX_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt + Kostenzähler, nimmt --release aus argv)
+API_KEY = ""  # Praxis-Schlüssel wird in Tests NICHT mehr benutzt
+VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/<testprojekt>/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"  # nur Anzeige, Aufruf über testkosten
 
 # Templates laden
 TEMPLATES_PATH = Path(__file__).resolve().parents[1] / "templates.json"  # Repo-Root
@@ -112,49 +113,15 @@ TEST_CASES = [
 
 
 def _get_sa_token():
-    """Bearer-Fallback: SA-JSON (Hermes-Key, gleiches GCP-Projekt) wenn kein/ungültiger AQ.-Key."""
-    global _SA_TOKEN_CACHE
-    if _SA_TOKEN_CACHE:
-        return _SA_TOKEN_CACHE
-    from google.oauth2 import service_account
-    import google.auth.transport.requests as _tr
-    sa_path = os.environ.get("VERTEX_SA_KEY", str(Path.home() / ".hermes" / "secrets" / "vertex-sa-key.json"))
-    creds = service_account.Credentials.from_service_account_file(sa_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
-    creds.refresh(_tr.Request())
-    _SA_TOKEN_CACHE = creds.token
-    return _SA_TOKEN_CACHE
+    """Bearer des TESTPROJEKTS (tools/testkosten.py) — Name bleibt für ältere Skripte."""
+    return testkosten.bearer()
 
-_SA_TOKEN_CACHE = None
 
 def call_gemini(prompt, token=None, temperature=0.0, timeout=120, system=None):
-    headers = {"Content-Type": "application/json", "x-goog-api-key": API_KEY}
-    payload = {
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperature, "thinkingConfig": {"thinkingBudget": 0}}
-    }
-    if system:
-        payload["systemInstruction"] = {"parts": [{"text": system}]}
-    body = json.dumps(payload).encode()
-    req = urllib.request.Request(VERTEX_URL, data=body, headers=headers, method="POST")
-    _retries = 0
-    while True:
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read())
-            break
-        except urllib.error.HTTPError as e:
-            if e.code in (401, 403):
-                # Fallback: SA-Bearer (AQ.-Key fehlt/rotiert)
-                req = urllib.request.Request(VERTEX_URL, data=body, headers={
-                    "Content-Type": "application/json", "Authorization": "Bearer " + _get_sa_token()}, method="POST")
-            elif e.code in (429, 500, 503) and _retries < 3:
-                _retries += 1
-                time.sleep(30 * _retries)
-            else:
-                raise
-    if "error" in data:
-        raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
-    return "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not p.get("thought")).strip()
+    """Seit kaiscribe-testkosten-n1 (13.11.2026): Live-Aufruf nur über tools/testkosten.py — Testprojekt
+    rakscribe-test, Kostenbuch + Obergrenze je Job, Kontext-Cache für den festen Gen-Prompt. Weder Praxis-Schlüssel
+    noch das alte Hermes-Dienstkonto."""
+    return testkosten.gemini(prompt, system=system, temperature=temperature, timeout=timeout)
 
 
 def derive_titel_harness(raw, display_name):

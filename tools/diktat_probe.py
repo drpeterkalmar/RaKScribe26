@@ -15,20 +15,9 @@ import json, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.erro
 ROOT = pathlib.Path.home() / "dev" / "RaKScribe26"
 OUT = ROOT / "docs" / "benchmarks" / "diktat_probe_results.json"
 PUBLIC = ROOT / "web_app" / "public"
-API_KEY = ""  # v3.2.3: alte vertex-key.txt gelöscht (rotiert) → harness nutzt den Hermes-SA-Bearer (vertex-sa-key.json)
-from google.oauth2 import service_account
-import google.auth.transport.requests as _tr
-# Gemini (ASR + Generation) läuft mit dem Vertex-SA; STT-SA ist post-Rotation
-# ohne speech-Right (403) — die App nutzt ihren Praxis-Login-Key zur Laufzeit.
-_sa = service_account.Credentials.from_service_account_file(
-    str(pathlib.Path.home() / ".hermes" / "secrets" / "vertex-sa-key.json"),
-    scopes=["https://www.googleapis.com/auth/cloud-platform"])
-_sa.refresh(_tr.Request())
-
-def sa_token():
-    if not _sa.valid:
-        _sa.refresh(_tr.Request())
-    return _sa.token
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt, Kostenbuch, Obergrenze)
+API_KEY = ""
 
 # ---------- STT: chirp_3 (Produktion, wie App) ----------
 def chirp3_transcribe(wav_path: str) -> str:
@@ -38,22 +27,11 @@ def chirp3_transcribe(wav_path: str) -> str:
     die App bekommt ihren gueltigen STT-Key zur Laufzeit via Praxis-Login; fuer
     die Normalbefund-/Titel-Probe ist der ASR-Pfad funktional aequivalent."""
     b64 = base64.b64encode(pathlib.Path(wav_path).read_bytes()).decode()
-    body = {"contents": [{"role": "user", "parts": [
-        {"inline_data": {"mime_type": "audio/wav", "data": b64}},
-        {"text": "Transkribiere dieses deutsche Radiologie-Diktat vollstaendig und "
-                 "woertlich. Nur der Transkript-Text, keine Kommentare, keine Korrekturen."}]}]}
-    tmp = pathlib.Path("/tmp/asr_req.json")
-    tmp.write_text(json.dumps(body))
-    req = urllib.request.Request(
-        "https://aiplatform.googleapis.com/v1/projects/rakscribe/locations/global/"
-        "publishers/google/models/gemini-3.8-flash:generateContent",
-        data=tmp.read_bytes(), headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {sa_token()}"})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        data = json.loads(r.read())
-    return "".join(p.get("text", "") for p in
-                   data["candidates"][0]["content"]["parts"]).strip()
+    txt = ("Transkribiere dieses deutsche Radiologie-Diktat vollstaendig und "
+           "woertlich. Nur der Transkript-Text, keine Kommentare, keine Korrekturen.")
+    # kaiscribe-testkosten-n1: Testprojekt + Kostenbuch (vorher vertex-sa im Projekt rakscribe)
+    return testkosten.gemini(txt, modell="gemini-3.8-flash", ort="global", timeout=180, thinking_budget=None,
+                             parts=[{"inline_data": {"mime_type": "audio/wav", "data": b64}}, {"text": txt}])
 
 
 def ogg_to_wav(ogg: pathlib.Path) -> pathlib.Path:
@@ -73,7 +51,6 @@ def extract_call0_table():
 def call0_gemini_correct(stt_text: str, prompt: str) -> str:
     return harness.call_gemini(prompt.replace("{roh_text}", stt_text), temperature=0.0)
 
-VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 def gemini(prompt: str, temp=0.0, tries=4) -> str:
     # harness.call_gemini: AQ-Key mit 401→SA-Bearer-Fallback + 429/5xx-Backoff (v2.10.9+)
@@ -81,7 +58,6 @@ def gemini(prompt: str, temp=0.0, tries=4) -> str:
 
 def main():
     sys.path.insert(0, str(ROOT / "tools"))
-    os.environ.setdefault("VERTEX_API_KEY", API_KEY)
     global harness
     import test_all_regions as harness
 

@@ -10,7 +10,7 @@ Vergleich auf Wortebene (klein, ohne Satzzeichen, difflib): „verloren an der G
 in den Abschnitten fehlen, höchstens 2 Wörter neben einer Schnittstelle. Abweichungen anderswo werden mitgezählt, aber getrennt
 ausgewiesen (chirp_3 schwankt auch beim Ganz-Audio, siehe Spalte „ganz↔ganz“).
 
-  PRAXIS_KEY=<rakscribe-praxis-key.json> /usr/bin/python3 tools/pause_segment_ab.py [RUNS] > ergebnis.txt
+  /usr/bin/python3 tools/pause_segment_ab.py [RUNS] > ergebnis.txt   (Testprojekt rakscribe-test, tools/testkosten.py)
 """
 import difflib
 import hashlib
@@ -32,15 +32,13 @@ from google.oauth2 import service_account  # noqa: E402
 import google.auth.transport.requests as gtr  # noqa: E402
 
 SR = 16000
-RUNS = int(sys.argv[1]) if len(sys.argv) > 1 else 2
-_CRED = service_account.Credentials.from_service_account_info(
-    json.load(open(os.environ["PRAXIS_KEY"]))["stt"], scopes=["https://www.googleapis.com/auth/cloud-platform"])
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt, Kostenbuch, Obergrenze)
+RUNS = testkosten.argv_laeufe(1, 2)  # ≤ 5, mehr nur mit --release
 
 
 def token():
-    if not _CRED.valid:
-        _CRED.refresh(gtr.Request())
-    return _CRED.token
+    return testkosten.bearer()
 
 
 def pcm(ogg):
@@ -85,7 +83,7 @@ def schnitte(x, max_n=3, rand_s=1.5, abstand_s=2.5):
 
 def chirp(x):
     t0 = time.time()
-    txt = stt.chirp3_worker(x, SR, "eu", token())
+    txt = stt.chirp3_worker(x, SR, "eu", token(), request=testkosten.chirp3_test)
     return (txt or "").strip(), time.time() - t0
 
 

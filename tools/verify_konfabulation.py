@@ -37,6 +37,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "source_code"))
 import prod_pipeline as pp  # noqa: E402
+import testkosten  # noqa: E402
 import cas_vorlagen as cv  # noqa: E402
 import ibl_bausteine as ib  # noqa: E402
 import befund_regeln as br  # noqa: E402
@@ -297,7 +298,7 @@ def ein_lauf(name, i):
 
 def main():
     args = sys.argv[1:]
-    n = int(args.pop(0)) if args and args[0].isdigit() else 1
+    n = testkosten.laeufe(int(args.pop(0)) if args and args[0].isdigit() else None, 1)  # ≤ 5, mehr nur mit --release
     namen = args or list(FAELLE)
     jobs = [(f, i) for f in namen for i in range(1, n + 1)]
     with ThreadPoolExecutor(max_workers=4) as ex:

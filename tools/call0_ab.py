@@ -9,9 +9,8 @@ from call0_prompt import build_call0_prompt  # v3.1: Prompt exakt wie Web-App (F
 res = json.load(open(ROOT / "docs" / "benchmarks" / "stt_ab_results.json"))
 raws = [r for r in res["chirp_3 (IST)"] if not r["txt"].startswith("ERR")]
 import stt_ab as S  # TERMS
-HOST = {"europe-west3": "https://europe-west3-aiplatform.googleapis.com", "eu": "https://aiplatform.eu.rep.googleapis.com"}
 for model, loc in (("gemini-2.5-flash", "europe-west3"), ("gemini-3.5-flash", "eu")):
-    M.URL = f"{HOST[loc]}/v1/projects/rakscribe/locations/{loc}/publishers/google/models/{model}:generateContent"
+    M.MODEL, M.LOC = model, loc  # kaiscribe-testkosten-n1: Aufruf über testkosten (Testprojekt)
     M.TIMES.clear(); hits = n = 0
     for r in raws:
         prompt = build_call0_prompt(r["txt"])

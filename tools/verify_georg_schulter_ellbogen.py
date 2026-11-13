@@ -20,7 +20,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in
 sys.path.insert(0, str(ROOT / "tools"))
 import prod_pipeline as pp  # noqa: E402
 
-RUNS = 3
+import testkosten  # noqa: E402
+RUNS = testkosten.laeufe(None, 3)  # mit --release: tools/verify_georg_schulter_ellbogen.py --release (Standard 3)
 DIKTAT = ("Schulter rechts Punkt neue Zeile mäßig gradige Ommatrose Punkt mäßig gradige Tenenosis kakaria mit 17 mm "
           "Messing am Kack Depot Punkt neue Zeile Ellbogen rechts Punkt neue Zeile geringgradige "
           "Ellbogengelenksarthrose Punkt neue Zeile kortikale Unregelmäßigkeiten im Bereich der "

@@ -14,7 +14,7 @@ raus) und Term-Recall (Anteil der `medical_terms_formatted`, die normalisiert im
 vorkommen). WER-Zahlen sind NICHT 1:1 mit ElevenLabs' Tabelle vergleichbar (andere
 Normalisierung) — Term-Recall ist die robustere Vergleichsgröße.
 
-Aufruf:  STT_KEY=.praxis-key.tmp.json /usr/bin/python3 tools/meddictate_bench.py [--only-radiology]
+Aufruf:  python3 tools/meddictate_bench.py [--only-radiology]   (Testprojekt, tools/testkosten.py)
 """
 import base64, difflib, json, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.error
 from google.oauth2 import service_account
@@ -27,15 +27,12 @@ AUD = DATA / "audio"
 ONLY_RAD = "--only-radiology" in sys.argv
 RADIOLOGY = {"sample_3", "sample_7", "sample_8"}
 
-SA = pathlib.Path.home() / ".hermes/secrets/vertex-sa-key.json"
-_c = service_account.Credentials.from_service_account_file(str(SA), scopes=["https://www.googleapis.com/auth/cloud-platform"])
-PR = json.load(open(os.environ["STT_KEY"]))
-_stt = service_account.Credentials.from_service_account_info(PR["stt"], scopes=["https://www.googleapis.com/auth/cloud-platform"])
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (kaiscribe-testkosten-n1: Testprojekt, Kostenbuch, Obergrenze)
+_c = _stt = None  # kaiscribe-testkosten-n1: Testprojekt statt vertex-sa/Praxis-Schlüssel
 
-def tok(c):
-    if not c.valid:
-        c.refresh(gtr.Request())
-    return c.token
+def tok(_c_ignoriert=None):
+    return testkosten.bearer()
 
 CHIRP_PHRASES = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))["chirp"]  # Umbau Schritt 20: phrases.json
 
@@ -79,8 +76,16 @@ def post(url, body, headers, timeout=300):
         req = urllib.request.Request(url, data=p.read_bytes(), headers={"Content-Type": "application/json", **headers})
         t = time.time()
         try:
+            testkosten.vorab(0.05)
             with urllib.request.urlopen(req, timeout=timeout) as r:
-                return json.loads(r.read()), time.time() - t
+                d = json.loads(r.read())
+            dt = time.time() - t
+            if "aiplatform" in url:  # kaiscribe-testkosten-n1
+                _m = re.search(r"/locations/([^/]+)/publishers/google/models/([^:]+)", url)
+                testkosten.buche_vertex(_m.group(2), _m.group(1), d)
+            else:
+                testkosten.buche_stt(len(body.get("content", "")) * 3 / 4)
+            return d, dt
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 503) and attempt < 4:
                 print(f"    … HTTP {e.code}, Retry in {((0, 20, 45, 90, 120)[attempt + 1])} s")
@@ -88,7 +93,7 @@ def post(url, body, headers, timeout=300):
             raise
 
 def chirp3_segment(wav_b64):
-    d, dt = post("https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize",
+    d, dt = post(testkosten.speech_url("eu"),
                  {"config": {"languageCodes": ["de-DE"], "model": "chirp_3", "autoDecodingConfig": {},
                              "features": {"enableAutomaticPunctuation": True},
                              "adaptation": {"phraseSets": [{"inlinePhraseSet": {"phrases": [{"value": v, "boost": 10} for v in CHIRP_PHRASES]}}]}},
@@ -128,7 +133,7 @@ def g35t(wav, vocab):
     cfg = {"languageCodes": ["de-DE"]}
     if vocab:
         cfg["customVocabulary"] = CHIRP_PHRASES
-    d, dt = post("https://aiplatform.googleapis.com/v1/projects/rakscribe/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent",
+    d, dt = post(f"https://aiplatform.googleapis.com/v1/projects/{testkosten.projekt()}/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent",
                  {"contents": [{"role": "user", "parts": [{"inline_data": {"mime_type": "audio/flac", "data": b64}}]}],
                   "generationConfig": {"audioTranscriptionConfig": cfg}}, {"Authorization": "Bearer " + tok(_c)})
     parts = d["candidates"][0]["content"]["parts"]

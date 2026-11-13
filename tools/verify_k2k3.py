@@ -6,7 +6,9 @@ K3: 'Gelenksarthrose C3 bis C5' bleibt wörtlich im Ergebnis (nicht Facetten-/Un
 Aufruf: python3 tools/verify_k2k3.py [runs]"""
 import json, re, sys, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
-RUNS = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+sys.path.insert(0, str(ROOT / "tools"))
+import testkosten  # noqa: E402
+RUNS = testkosten.argv_laeufe(1, 3)  # ≤ 5, mehr nur mit --release
 sys.argv = sys.argv[:1]
 import test_all_regions as H
 assert "gemini-3.5-flash" in H.VERTEX_URL

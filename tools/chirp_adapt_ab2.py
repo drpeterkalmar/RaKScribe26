@@ -51,7 +51,7 @@ def run(b64, phr, boost=10):
            "features": {"enableAutomaticPunctuation": True}}
     if phr:
         cfg["adaptation"] = {"phraseSets": [{"inlinePhraseSet": {"phrases": [{"value": p, "boost": boost} for p in phr]}}]}
-    d, dt = S.post("https://eu-speech.googleapis.com/v2/projects/rakscribe/locations/eu/recognizers/_:recognize",
+    d, dt = S.post(S.testkosten.speech_url("eu"),
                    {"config": cfg, "content": b64})
     return " ".join(r["alternatives"][0].get("transcript", "") for r in d.get("results", []) if r.get("alternatives")), dt
 

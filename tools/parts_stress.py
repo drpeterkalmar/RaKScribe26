@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""tools/parts_stress.py — v2.11.1-Gate: N echte Gemini-3.5-Gen-Aufrufe (EXE-Prompt radiology_prompt.txt,
+"""tools/parts_stress.py — v2.11.1-Gate: N echte Gemini-3.5-Gen-Aufrufe (Standard 20, höchstens 100) (EXE-Prompt radiology_prompt.txt,
 Harness-Fälle rotierend). Pro Antwort: Anzahl parts, alte Lesart (parts[0]) vs. neue (join).
 Rohantworten → parts_stress_raw.json (für den TS-Paritätstest). Exit 1 wenn neue Lesart je leer/unvollständig."""
 import json, sys, time, re, pathlib, urllib.request, urllib.error
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
-sys.argv = [sys.argv[0]] + (sys.argv[1:] or ["50"])
-N = int(sys.argv[1])
+sys.path.insert(0, str(ROOT / "tools"))
+import testkosten  # noqa: E402
+sys.argv = [sys.argv[0]] + (sys.argv[1:] or ["20"])
+N = min(int(sys.argv[1]), 100)
 import test_all_regions as H
-URL = H.VERTEX_URL
-assert "gemini-3.5-flash" in URL and "eu.rep" in URL, URL
 TPL = (ROOT / "radiology_prompt.txt").read_text()
 SYS = "Du bist ein präziser Radiologie-Assistent der Praxis 'Röntgen am Kai'. Nutze ## Befund und ## Ergebnis als einzige Haupttitel."
 
@@ -23,23 +23,10 @@ for i in range(N):
     t = H.TEMPLATES[tk]
     p = TPL.replace("{roh_text}", dk).replace("{template_body}", t["body"]).replace("{region_name}", t["display_name"])
     p = p.replace("{examples}", "") + "\n<untersuchung>" + t["display_name"] + "</untersuchung>\n"
-    body = json.dumps({"contents": [{"role": "user", "parts": [{"text": p}]}],
-                       "systemInstruction": {"parts": [{"text": SYS}]},
-                       "generationConfig": {"temperature": 0.0, "thinkingConfig": {"thinkingBudget": 0}}}).encode()
-    d = None
-    for a in range(4):
-        try:
-            import os
-            hdr = {"Content-Type": "application/json"}
-            if os.environ.get("PRAXIS_KEY"):
-                hdr["x-goog-api-key"] = json.load(open(os.environ["PRAXIS_KEY"]))["vertex_api_key"]  # wie EXE/Web
-            else:
-                hdr["Authorization"] = "Bearer " + H._get_sa_token()
-            req = urllib.request.Request(URL, data=body, headers=hdr)
-            with urllib.request.urlopen(req, timeout=120) as r:
-                d = json.loads(r.read()); break
-        except Exception as e:
-            time.sleep(10 * (a + 1))
+    try:  # kaiscribe-testkosten-n1: über testkosten (Testprojekt, Kostenbuch, Obergrenze), kein Praxis-Schlüssel mehr
+        d = testkosten.gemini_roh(p, system=SYS)[1]
+    except Exception as e:
+        print(i, "ERR", str(e)[:120]); d = None
     if d is None:
         stats["err"] += 1; print(i, "ERR"); continue
     parts = d["candidates"][0]["content"].get("parts", [])

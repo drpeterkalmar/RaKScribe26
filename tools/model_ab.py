@@ -16,12 +16,8 @@ sys.path.insert(0, str(ROOT / "tools"))
 import test_all_regions as H  # noqa
 
 MODEL, LOC = sys.argv[1], sys.argv[2]
-RUNS = int(sys.argv[3]) if len(sys.argv) > 3 else 1
-PROJECT = "rakscribe"
-HOST = {"europe-west3": "https://europe-west3-aiplatform.googleapis.com",
-        "eu": "https://aiplatform.eu.rep.googleapis.com",
-        "global": "https://aiplatform.googleapis.com"}[LOC]
-URL = f"{HOST}/v1/projects/{PROJECT}/locations/{LOC}/publishers/google/models/{MODEL}:generateContent"
+import testkosten  # noqa: E402  (Testprojekt, Kostenbuch; Gemini Pro/Carbon als Gutachter gesperrt)
+RUNS = testkosten.argv_laeufe(3, 1)  # ≤ 5, mehr nur mit --release
 TIMES = []
 OUTS = []
 # Bezug Diktat→Template-Satz: diese Satz-Stämme DÜRFEN bei der Pathologie angepasst werden
@@ -43,35 +39,16 @@ CONFLICT = {
 
 VAL_MODEL = os.environ.get("VAL_MODEL")  # "model@loc" für Hybrid
 VAL_MARK = "Du bist ein radiologischer Qualitätskontrolleur"
-def call(prompt, token=None, temperature=0.0, timeout=120):
-    url = URL
+def call(prompt, token=None, temperature=0.0, timeout=120, system=None):
+    """kaiscribe-testkosten-n1: über tools/testkosten.py (Testprojekt, Kostenbuch, Obergrenze)."""
+    model, loc = MODEL, LOC
     if VAL_MODEL and prompt.lstrip().startswith(VAL_MARK):
-        vm, vl = VAL_MODEL.split("@")
-        vh = {"europe-west3": "https://europe-west3-aiplatform.googleapis.com", "eu": "https://aiplatform.eu.rep.googleapis.com", "global": "https://aiplatform.googleapis.com"}[vl]
-        url = f"{vh}/v1/projects/{PROJECT}/locations/{vl}/publishers/google/models/{vm}:generateContent"
-    gc = {"temperature": temperature, "thinkingConfig": {"thinkingBudget": 0}}
-    body = json.dumps({"contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                       "generationConfig": gc}).encode()
-    for attempt in range(5):
-        req = urllib.request.Request(url, data=body, headers={
-            "Content-Type": "application/json", "Authorization": "Bearer " + H._get_sa_token()})
-        t = time.time()
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                d = json.loads(r.read())
-            TIMES.append(time.time() - t)
-            parts = d.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-            o = "".join(p.get("text", "") for p in parts if not p.get("thought")).strip()
-            OUTS.append(o)
-            return o
-        except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 503) and attempt < 4:
-                time.sleep(15 * (attempt + 1)); continue
-            raise Exception(f"HTTP {e.code} {e.read()[:200]}")
-        except Exception:
-            if attempt < 4:
-                time.sleep(5); continue
-            raise
+        model, loc = VAL_MODEL.split("@")
+    t = time.time()
+    o = testkosten.gemini(prompt, system=system, temperature=temperature, modell=model, ort=loc, timeout=timeout)
+    TIMES.append(time.time() - t)
+    OUTS.append(o)
+    return o
 
 
 H.call_gemini = call  # run_test_case nutzt den Modul-Namen

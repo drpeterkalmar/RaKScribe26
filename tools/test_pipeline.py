@@ -15,9 +15,10 @@ import sys
 from pathlib import Path
 
 # ─── Config ───
-API_KEY = os.environ.get("VERTEX_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import testkosten  # noqa: E402  (Testprojekt + Kostenzähler)
+API_KEY = ""  # Praxis-Schlüssel wird in Tests nicht mehr benutzt
 GEMINI_MODEL = "gemini-3.5-flash"
-VERTEX_URL = "https://aiplatform.eu.rep.googleapis.com/v1/projects/895690562186/locations/eu/publishers/google/models/gemini-3.5-flash:generateContent"
 
 # Peters Roh-Diktat (mit STT-Fehlern, wie es aus der Spracherkennung kommt)
 RAW_DICTATION = (
@@ -140,24 +141,8 @@ def get_bearer_token(key_path=None):
 
 
 def call_gemini(prompt, token=None, temperature=0.0, timeout=120):
-    url = VERTEX_URL
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": API_KEY
-    }
-    body = json.dumps({
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperature}
-    }).encode()
-
-    req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        data = json.loads(resp.read())
-    if "error" in data:
-        raise Exception(f"Gemini API error: {data['error'].get('message', data['error'])}")
-    text = "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not p.get("thought"))
-    return text.strip()
-
+    """kaiscribe-testkosten-n1: über tools/testkosten.py (Testprojekt, Kostenbuch, Obergrenze; thinkingBudget 0 wie Produktion)."""
+    return testkosten.gemini(prompt, temperature=temperature, timeout=timeout)
 
 def run_test(label, use_conflict_rules_gen=False, use_conflict_rules_val=False):
     print(f"\n{'='*70}")

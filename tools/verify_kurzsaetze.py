@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "source_code")]
 import prod_pipeline as pp  # noqa: E402
+import testkosten  # noqa: E402
 
 # (Diktat, [(Kurzsatz, Regex auf den Inhalt – lowercase-Text)])
 FAELLE = [
@@ -106,7 +107,7 @@ def lauf(kette, diktat):
 
 
 def main():
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+    n = testkosten.argv_laeufe(1, 3)  # ≤ 5, mehr nur mit --release
     auftraege = [(k, i, r) for i in range(len(FAELLE)) for k in ("exe", "web") for r in range(n)]
     t0 = time.time()
     with ThreadPoolExecutor(max_workers=8) as ex:
