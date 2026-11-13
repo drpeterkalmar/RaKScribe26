@@ -5,6 +5,7 @@ import { fetchWithRetry, istAbbruch, fehlermeldung } from './net.ts';
 import { applyMisheard, type Compiled } from './misheard.ts';
 import { stripPromptMarker } from './befundRegeln.ts';
 import { diktatLog } from './protokoll.ts';
+import { versucheAnthropic, korrekturPlausibel, type KiAnbieter } from './llmAnbieter.ts';
 
 // Vertex AI endpoint for Gemini 2.5 Flash
 // v2.11.0 (26.09.2026): gemini-3.5-flash am EU-Multi-Region-Endpoint (EU-Datenresidenz + EU-Verarbeitung).
@@ -78,6 +79,7 @@ export type GenKontext = {
   signal?: AbortSignal;
   status: (text: string) => void;
   misheard?: { compiled: Compiled[]; block: string };
+  ki?: KiAnbieter;   // kaiscribe-haiku-ab-n1: Anthropic maskiert (llmAnbieter.ts), fehlt = Gemini wie bisher
 };
 
 // Call 0 — STT-Korrektur. Text unverändert aus App.tsx (tools/call0_prompt.py liest ihn hier per Regex).
@@ -162,6 +164,8 @@ export const correctTranscriptionWithGemini = async (rawTextIn: string, ctx: Gen
   const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': ctx.apiKey };
 
   const correctionPromptText = correctionPrompt(ctx.misheard?.block ?? '', rawText);
+  const anth = await versucheAnthropic('korr', correctionPromptText, undefined, ctx.ki, t => korrekturPlausibel(rawText, t), ctx.signal);
+  if (anth !== null) return anth;
 
   try {
     const response = await fetchWithRetry(url, {
@@ -235,6 +239,8 @@ export const callGeminiLLM = async (rawText: string, templateBody: string, regio
   } else {
     promptText = promptText + "\n\n" + examples;
   }
+  const anth = await versucheAnthropic('gen', promptText, SYS_MSG, ctx.ki, isCompleteReport, ctx.signal);
+  if (anth !== null) return anth;
 
 
   const lastGenBody = JSON.stringify({
@@ -294,23 +300,28 @@ export const validateReportConsistency = async (rawDictation: string, generatedR
 
   try {
     console.log('[VALIDATE] Prüfe Befund-Konsistenz...');
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: validationPrompt(rawDictation, generatedReport) }] }],
-        generationConfig: { temperature: 0.0, thinkingConfig: { thinkingBudget: 0 } }
-      }),
-      signal: ctx.signal,
-    }, 120_000, 3);
+    const anth = await versucheAnthropic('val', validationPrompt(rawDictation, generatedReport), undefined, ctx.ki,
+      isCompleteReport, ctx.signal);
+    let data: GeminiAntwort = {};
+    if (anth === null) {
+      const response = await fetchWithRetry(url, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: validationPrompt(rawDictation, generatedReport) }] }],
+          generationConfig: { temperature: 0.0, thinkingConfig: { thinkingBudget: 0 } }
+        }),
+        signal: ctx.signal,
+      }, 120_000, 3);
 
-    const data = await response.json();
-    if (data.error) {
-      console.warn('[VALIDATE] Validation error:', data.error.message);
-      return generatedReport;
+      data = await response.json();
+      if (data.error) {
+        console.warn('[VALIDATE] Validation error:', data.error.message);
+        return generatedReport;
+      }
     }
 
-    const validated = joinGeminiText(data).trim();
+    const validated = anth ?? joinGeminiText(data).trim();
     // v2.11.1 (Prüfbericht K2): Validator kürzte bei Nervensono 1245 → 152 Zeichen (Normalbefund weg) → verwerfen
     const befLenIn = befundSection(generatedReport).length;
     const befLenOut = befundSection(validated).length;

@@ -35,6 +35,7 @@ import { SpeechMikeVerbindung, webHid, BELEGUNG, ledFuer, sendefaehig } from './
 import { diktatAnzeige, type Abschnitt } from './segmente.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
+import { kiAnbieterAusSpeicher } from './llmAnbieter.ts';  // kaiscribe-haiku-ab-n1: Befund-KI-Anbieter (Standard Gemini)
 
 // Types: Template / TemplatesMap in src/detect.ts
 
@@ -83,7 +84,7 @@ const MISHEARD_PROMPT_BLOCK = misheardPromptBlock(MISHEARD);
 type PraxisFenster = Window & { __praxisSttKey?: SttSchluessel | null; webkitAudioContext?: typeof AudioContext };
 const fenster = window as PraxisFenster;
 const AudioKontextKlasse = (): typeof AudioContext => window.AudioContext || (fenster.webkitAudioContext as typeof AudioContext);
-type PraxisSchluessel = { type?: string; private_key?: string; vertex_api_key?: string; stt?: SttSchluessel };
+type PraxisSchluessel = { type?: string; private_key?: string; vertex_api_key?: string; anthropic_api_key?: string; stt?: SttSchluessel };
 
 // Gespeicherte Schlüssel beim Start (vorher im Mount-Effect). Stale-Key-Schutz: Schlüssel einer älteren
 // Key-Generation verwerfen (Fix für veraltete localStorage-Keys, die den frischen Key blockiert haben).
@@ -164,6 +165,8 @@ async function loadPraxisKey(pw: string): Promise<boolean> {
     if (json.vertex_api_key && json.stt && json.stt.private_key) {
       // Kombinierter Praxis-Key: EIN Login setzt LLM- und STT-Key (Drive: rakscribe-praxis-key.json)
       localStorage.setItem('vertex_api_key', json.vertex_api_key);
+      // kaiscribe-haiku-ab-n1: optionaler Anthropic-Schlüssel — wirkt nur mit localStorage llm_anbieter = anthropic
+      if (json.anthropic_api_key) localStorage.setItem('anthropic_api_key', json.anthropic_api_key);
       localStorage.setItem('key_version', KEY_VERSION);
       fenster.__praxisSttKey = json.stt;
       localStorage.setItem('praxis_stt_key', JSON.stringify(json.stt));
@@ -392,6 +395,7 @@ export default function App() {
   const removeKeys = () => {
     localStorage.removeItem('vertex_api_key');
     localStorage.removeItem('praxis_stt_key');
+    localStorage.removeItem('anthropic_api_key');
     localStorage.removeItem('key_version');
     fenster.__praxisSttKey = null;
     setVertexApiKey('');
@@ -472,7 +476,7 @@ export default function App() {
   const sttKontext = (lauf: Lauf): SttKontext => ({ sttKey: sttKeyJson, phrasen: PHRASEN, signal: lauf.signal, status: lauf.nurAktuell(setStatusText) });
   // Umbau Schritt 18: Kontext für Gemini-Aufrufe (src/gemini.ts) und Befund-Kette (src/pipeline.ts)
   const genKontext = (lauf: Lauf, signal: AbortSignal): PipelineKontext => ({
-    apiKey: vertexApiKey, prompt: GEN_PROMPT, signal, status: lauf.nurAktuell(setStatusText),
+    apiKey: vertexApiKey, prompt: GEN_PROMPT, signal, status: lauf.nurAktuell(setStatusText), ki: kiAnbieterAusSpeicher(),
     misheard: { compiled: MISHEARD_COMPILED, block: MISHEARD_PROMPT_BLOCK },
     templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES,
   });

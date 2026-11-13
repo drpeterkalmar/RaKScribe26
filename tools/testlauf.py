@@ -27,7 +27,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import testkosten as tk  # noqa: E402  (nimmt --release aus argv)
 
-WEB_TESTS = ["befund_regeln", "pipeline", "sync", "audio", "misheard", "normalbypass", "speechmike"]  # detect_test.mjs = Hilfsskript der Python-Gates
+WEB_TESTS = ["befund_regeln", "pipeline", "sync", "audio", "misheard", "normalbypass", "speechmike", "llm_anbieter"]  # detect_test.mjs = Hilfsskript der Python-Gates
 
 # (Skript, Argumente normal, Argumente --release) — Reihenfolge = billig/aussagekräftig zuerst
 LIVE = [

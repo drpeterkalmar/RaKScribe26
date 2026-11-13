@@ -35,6 +35,9 @@ PREISE = {
     "claude-sonnet-5-5": (2.00, 0.20, 2.50, 10.00),
 }
 
+# „Nachdenken aus“ je Modell: Haiku 5.5 nimmt {"type": "disabled"}, Sonnet 5.5 lehnt das ab (HTTP 400) → between_tools
+DENKEN_AUS = {"claude-sonnet-5-5": {"type": "between_tools"}}
+
 _PH = re.compile(ki_maske.KLAMMER_AUF + r"[PDNAE]\d+" + ki_maske.KLAMMER_ZU)
 _KORR_ANFANG = "Du bist ein medizinischer Lektor für radiologische Diktate"
 _VAL_ANFANG = "Du bist ein radiologischer Qualitätskontrolleur"
@@ -105,10 +108,11 @@ def _anthropic_form(prompt, fest):
     return fest, rest
 
 
-def maskieren(prompt):
-    """→ (fest, maskierter Rest, Maske, Pflicht-Platzhalter). Wirft ki_maske.MaskeUnsicher."""
+def maskieren(prompt, namen=(), geburtsdatum=None):
+    """→ (fest, maskierter Rest, Maske, Pflicht-Platzhalter). Wirft ki_maske.MaskeUnsicher.
+    namen/geburtsdatum: bekannte Personendaten (z. B. Zuweiser/Befunder aus dem CAS-Auftrag) → immer ⟦P…⟧ und Restprüfung."""
     fest, rest = _anthropic_form(prompt, fester_anfang(prompt))
-    m = ki_maske.Maske()
+    m = ki_maske.Maske(namen, geburtsdatum)
     rest = m.maskieren(rest)
     m.restpruefung([rest])
     return fest, rest, m, sorted(set(_PH.findall(diktat_teil(rest))))
@@ -133,7 +137,7 @@ def anthropic_body(fest, rest, sys_msg, modell=ANTHROPIC_MODELL, max_tokens=MAX_
     (Haiku/Sonnet 5.5 lehnen temperature ab)."""
     teile = ([{"type": "text", "text": fest, "cache_control": {"type": "ephemeral"}}] if fest else []) + \
         [{"type": "text", "text": rest}]
-    body = {"model": modell, "max_tokens": max_tokens, "thinking": {"type": "disabled"},
+    body = {"model": modell, "max_tokens": max_tokens, "thinking": DENKEN_AUS.get(modell, {"type": "disabled"}),
             "messages": [{"role": "user", "content": teile}]}
     if sys_msg:
         body["system"] = [{"type": "text", "text": sys_msg}]
@@ -158,9 +162,9 @@ def anthropic_sender(key_fn, urlopen=None):
 
 
 def maskiert_anthropic(prompt, sys_msg, sender, modell=ANTHROPIC_MODELL, frist=ANTHROPIC_FRIST_S, pruefen=None,
-                       strip=None):
+                       strip=None, namen=()):
     """Ein maskierter Anthropic-Aufruf → (Text, Info). Wirft Rueckfall/MaskeUnsicher/Netzfehler."""
-    fest, rest, maske, pflicht = maskieren(prompt)
+    fest, rest, maske, pflicht = maskieren(prompt, namen)
     t0 = time.time()
     data = sender(anthropic_body(fest, rest, sys_msg, modell), frist)
     dauer = time.time() - t0
@@ -193,6 +197,7 @@ class Weiche:
         self.log = log or (lambda *a: None)
         self.beobachter = beobachter
         self.zaehler = {"anthropic": 0, "rueckfall": 0}
+        self.namen = []          # bekannte Namen des laufenden Auftrags (CAS: Zuweiser/Befunder) → immer maskiert
 
     def name(self):
         return "gemini/gemini-3.5-flash" if self.anbieter == "gemini" else f"anthropic/{self.modell}"
@@ -207,7 +212,8 @@ class Weiche:
     def __call__(self, prompt, sys_msg=None, pruefen=None, rolle="gen", strip=None, gemini=None):
         if self.anbieter == "anthropic" and self.sender is not None:
             try:
-                text, info = maskiert_anthropic(prompt, sys_msg, self.sender, self.modell, self.frist, pruefen, strip)
+                text, info = maskiert_anthropic(prompt, sys_msg, self.sender, self.modell, self.frist, pruefen, strip,
+                                                self.namen)
                 self.zaehler["anthropic"] += 1
                 self._melden(dict(info, rolle=rolle, rueckfall=None))
                 return text

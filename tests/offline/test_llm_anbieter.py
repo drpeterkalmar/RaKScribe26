@@ -72,6 +72,9 @@ _, rj, mj, pj = la.maskieren(pipeline.gen_prompt("Blockade rechts unauffällig",
 check("Jahreszahl der Vorlage maskiert, aber nicht Pflicht", "2018" not in rj and pj == [], pj)
 
 
+_, rn, mn, pn = la.maskieren(pipeline.gen_prompt("Kniegelenk rechts, Zuweisung Gruber, unauffällig", tj, PROMPT), namen=["Gruber Anna"])
+check("bekannter Name (CAS-Zuweiser) maskiert und Pflicht", "Gruber" not in rn and any(p.startswith("⟦P") for p in pn), pn)
+
 # ── Weiche ──
 def antwort(text, stop="end_turn", usage=None):
     return {"type": "message", "stop_reason": stop, "content": [{"type": "text", "text": text}],
