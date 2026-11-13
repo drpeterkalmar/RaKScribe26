@@ -24,48 +24,8 @@ for f in json.loads((HIER / "snapshots" / "einfuegen_faelle.txt").read_text(enco
 
 
 # 2. EXE: Cursor im Befund + F10 → Diktat wird dort eingefügt, Befund bleibt, kein Befund-LLM, kein Strg+V
-class FakeTb:
-    """Minimaler tk.Text: Indizes als '1.0+Nc', Marken als Offsets."""
-    def __init__(self, box, insert=0, sel=None):
-        self.box, self.marks, self.sel = box, {"insert": insert}, sel
-        self.fokus = False
-
-    def _o(self, i):
-        if isinstance(i, int):
-            return i
-        if i in self.marks:
-            return self.marks[i]
-        if i == "sel.first":
-            return self.sel[0]
-        if i == "sel.last":
-            return self.sel[1]
-        if i.startswith("1.0+") and i.endswith("c"):
-            return int(i[4:-1])
-        return 0 if i == "1.0" else len(self.box.text)
-
-    def tag_ranges(self, tag):
-        return ("a", "b") if tag == "sel" and self.sel else ()
-
-    def index(self, i):
-        return f"1.0+{self._o(i)}c"
-
-    def mark_set(self, name, i):
-        self.marks[name] = self._o(i)
-
-    def mark_gravity(self, *a):
-        pass
-
-    def count(self, a, b, what):
-        return (self._o(b) - self._o(a),)
-
-    def see(self, i):
-        pass
-
-    def focus_set(self):
-        self.fokus = True
-
-
 import exe_stubs as S  # noqa: E402
+FakeTb = S.FakeTb  # v3.18.9: nach exe_stubs verschoben (auch test_speechmike_ablauf)
 mod = S.lade_rakscribe()
 mod.keys_ready = lambda: True
 mod._get_stt_access_token = lambda: "token"
@@ -179,6 +139,76 @@ check("… mit „Nur Text“: Markierung durch den korrigierten Text ersetzt (k
 app, tb = lauf_pause(insert=pos, cas=True)
 check("… mit offenem CAS-Auftrag (blaues Band): ebenso eingefügt, wartet auf EOL", app.result_text.text == erwartet
       and app._status_raw == "KONTROLLE", repr(app.result_text.text))
+
+
+# v3.18.9 (Peter 12.11., kaiscribe-cursor-record-n1: „ins rechte Fenster direkte Ergänzungen dazu diktieren“, Wahl b):
+# Ordi-Protokoll 12.11. 09:36: Peter schaltete „Nur Text“ VOR dem Record ein (und danach wieder aus). Nötig ist das
+# nicht: Cursor/Markierung im Befund + Record (SpeechMike, ohne Pause) → wörtlich dort, Nur Text bleibt AUS,
+# Statuszeile „Ergänzung an Cursor-Stelle“ von der Aufnahme bis zum Einfügen.
+def lauf_direkt(sel=None, insert=0, cas=False, fokus=True):
+    S.AUFZ.tasten.clear()
+    mod._chirp3_worker = lambda pcm, sr, loc, token: "zusätzlich kleiner Gelenkerguss"
+    mod.speech_client = S.FakeSpeechClient(S.streaming_stub())
+    app = S.baue_app(mod)
+    app.result_text.insert("1.0", BEFUND)
+    app.transcript_text.insert("1.0", "Knie rechts unauffällig")
+    tb = FakeTb(app.result_text, insert, sel)
+    app.result_text._textbox = tb
+    app.focus_get = (lambda: tb) if fokus else (lambda: None)
+    app.status_badge = S.FakeWidget()
+    app.repariert_label = S.FakeWidget()
+    nur_text = S_Var(False)
+    app.nur_text_var = nur_text
+    if cas:
+        app._cas = type("A", (), {"nr": "20261112901", "leistungen": None, "kontext": None})()
+        app._cas_aufnahmen, app._cas_hinweise = [], []
+        app._cas_hinweise_zeigen = lambda h: None
+        app._ibl_befund_leeren = lambda: None
+        app._ibl_nach_lauf = lambda e: None
+    stati = []
+    app.sm_record()                                   # Record mit Cursor im Befund
+    stati.append(app.status_badge.cfg.get("text", ""))
+    S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
+    app.sm_ins()
+    stati.append(app.status_badge.cfg.get("text", ""))
+    S.pump(app, lambda: app._job.zustand in ("READY", "ERROR") and app._status_raw != "PROCESSING", 8)
+    S.pump(app, lambda: False, 0.8)
+    app._aufnahme_stoppen()
+    return app, tb, stati, nur_text
+
+
+class S_Var:
+    def __init__(self, v):
+        self.v = v
+
+    def get(self):
+        return self.v
+
+    def set(self, v):
+        self.v = v
+
+
+for cas in (False, True):
+    wo = "im CAS-Band" if cas else "ohne CAS"
+    app, tb, stati, nt = lauf_direkt(insert=pos, cas=cas)
+    check(f"Record direkt mit Cursor im Befund ({wo}), Nur Text AUS → wörtlich an der Stelle, Rest unverändert, "
+          "nichts ins RIS", app.result_text.text == erwartet and S.AUFZ.tasten == [] and app._status_raw == "KONTROLLE",
+          repr(app.result_text.text))
+    check(f"… Statuszeile „Ergänzung an Cursor-Stelle“ bei Aufnahme und Verarbeitung ({wo})",
+          "Ergänzung an Cursor-Stelle · Aufnahme läuft" in stati[0] and "Ergänzung an Cursor-Stelle wird eingefügt" in stati[1],
+          str(stati))
+    check(f"… danach Hinweis „Ergänzung an Cursor-Stelle eingefügt“, Nur Text bleibt aus, Ziel verbraucht ({wo})",
+          app._letzter_hinweis == "Ergänzung an Cursor-Stelle eingefügt" and nt.get() is False
+          and app._einfuegen_ziel is None, f"{app._letzter_hinweis} / {nt.get()} / {app._einfuegen_ziel}")
+    check(f"… Cursor hinter der Ergänzung ({wo})", tb.marks["insert"] == pos + len("Zusätzlich kleiner Gelenkerguss."))
+app, tb, stati, nt = lauf_direkt(sel=(a, a + len("Kein Erguss.")), cas=True)
+check("Record direkt mit Markierung (Nur Text AUS) → Markierung wörtlich ersetzt",
+      app.result_text.text == BEFUND.replace("Kein Erguss.", "Zusätzlich kleiner Gelenkerguss."), repr(app.result_text.text))
+mod._llm_aufruf = lambda p: NEU
+app, tb, stati, nt = lauf_direkt(insert=pos, fokus=False)
+check("Record ohne Cursor im Befund → normaler Befund (Nachdiktat), keine Ergänzungs-Anzeige",
+      "Schultergelenk links" in app.result_text.text and "Ergänzung" not in "".join(stati)
+      and getattr(app, "_letzter_hinweis", "") != "Ergänzung an Cursor-Stelle eingefügt", f"{stati} / {app.result_text.text[:40]!r}")
 
 print("FAILS:", fails)
 sys.exit(1 if fails else 0)

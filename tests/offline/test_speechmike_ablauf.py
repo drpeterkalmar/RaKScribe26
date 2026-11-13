@@ -271,6 +271,44 @@ check("… links das Gesamtdiktat (bisher + neu)", app.transcript_text.text == N
       repr(app.transcript_text.text))
 del app._einfuege_ziel_ermitteln
 
+# 6c. v3.18.9 (Peter 12.11., kaiscribe-cursor-record-n1): ECHTE Cursor-Ermittlung (Fokus im Befund, RaKScribe vorne),
+# Nur Text AUS, Record → Pause → weiter → INS ⇒ Ergänzung wörtlich an der Stelle; danach EOL ⇒ genau der sichtbare
+# Befund per Strg+V ins zuletzt aktive Fremdfenster (Fensterziel unverändert, nicht ins eigene Fenster)
+app = neue_app()
+druecke(app, "RECORD"); audio(app); druecke(app, "INS"); bis_ruhe(app)
+B = app.result_text.text
+tb = S.FakeTb(app.result_text, insert=len(B))
+app.result_text._textbox = tb
+app.focus_get = lambda: tb
+mod._fokus_ist_eigenes_fenster = lambda: True      # Peter hat in KaiScribe rechts in den Befund geklickt
+mod._korr.korrigieren = lambda t, key, block="", log=None: t
+CHIRP["antworten"] = ["Zusätzlich kleiner Gelenkerguss."]
+n_llm = len(LLM["prompts"])
+druecke(app, "RECORD")
+check("6c Cursor im Befund + Record (Nur Text aus): Statuszeile „Ergänzung an Cursor-Stelle“",
+      app._einfuegen_ziel == (len(B), len(B)) and "Ergänzung an Cursor-Stelle · Aufnahme läuft" in app.status_badge.cfg["text"]
+      and app.nur_text_var.get() is False, f"{app._einfuegen_ziel} / {app.status_badge.cfg.get('text')}")
+audio(app); druecke(app, "RECORD")
+check("6c … Pause zeigt weiter „Ergänzung an Cursor-Stelle“", "Ergänzung an Cursor-Stelle · Pause" in app.status_badge.cfg["text"],
+      app.status_badge.cfg.get("text"))
+druecke(app, "RECORD"); audio(app); druecke(app, "INS"); bis_ruhe(app)
+neu = app.result_text.text[len(B):]
+check("6c INS: Ergänzung wörtlich am Befund-Ende, alter Befund unverändert, keine Befund-KI, nichts eingefügt",
+      app.result_text.text.startswith(B) and neu.strip() == "Zusätzlich kleiner Gelenkerguss." and len(LLM["prompts"]) == n_llm
+      and S.AUFZ.tasten == [] and app._status_raw == "KONTROLLE" and app._einfuegen_ziel is None, repr(neu))
+mod._fokus_ist_eigenes_fenster = lambda: False
+SICHTBAR = app.result_text.text
+druecke(app, "EOL")
+S.pump(app, lambda: S.AUFZ.tasten, 2)
+check("6c EOL nach der Ergänzung: genau der sichtbare Befund, SpeechMagic aktiviert, genau einmal Strg+V, danach leer",
+      S.CLIPBOARD.data.get(13) == SICHTBAR.strip() and app._api.aktiviert == [42] and S.AUFZ.tasten == ["ctrl+v"]
+      and app.result_text.text == "" and app._einfuegen_ziel is None,
+      f"{app._api.aktiviert} / {S.AUFZ.tasten} / {S.CLIPBOARD.data.get(13, '')[-40:]!r}")
+druecke(app, "RECORD")
+check("6c nächster Patient: Record ohne Befund → normales Diktat, keine Ergänzungs-Anzeige",
+      app._einfuegen_ziel is None and "Ergänzung" not in app.status_badge.cfg["text"], app.status_badge.cfg.get("text"))
+app.reset_dictation()
+
 # 7. „Nur Text“ (Nachtrag 4): INS ⇒ korrigierter Text ohne Überschriften, EOL ⇒ genau dieser Text
 app = neue_app(antworten=["kniegelenk rechts kleiner erguss"])
 mod._korr.korrigieren = lambda t, key, block="", log=None: "Kniegelenk rechts: kleiner Erguss."

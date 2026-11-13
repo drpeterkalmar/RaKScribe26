@@ -580,7 +580,14 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 }
 # v3.8.0 (Peter 11.10., Nachtrag 3/4): Hilfe-Zeilen im Menü — gleicher Text in der Web-App (App.tsx)
 HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig & weiter",
-                    "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)")
+                    "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)",
+                    "In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)")
+# v3.18.9 (Peter 12.11., kaiscribe-cursor-record-n1): Steht der Cursor beim Record im Befund rechts, wird das Diktat
+# wörtlich dort eingefügt (seit v3.5.0, unabhängig von „Nur Text“) — die Statuszeile sagt das jetzt in jedem Schritt.
+ERGAENZUNG = "Ergänzung an Cursor-Stelle"
+ERGAENZUNG_STATUS = {"RECORDING": f"{ERGAENZUNG} · Aufnahme läuft",
+                     "PAUSED": f"{ERGAENZUNG} · Pause – Record: weiter · INS: einfügen",
+                     "PROCESSING": f"{ERGAENZUNG} wird eingefügt…"}
 BESTAETIGUNG_MS = 4500  # v3.12.0 (Peter 13.10.): grünes Band „An CAS übergeben“ nach EOL, nicht zu übersehen
 MINIMIEREN_NACH_EOL_MS = BESTAETIGUNG_MS + 100  # v3.11.0: danach wieder als Symbol in die Taskleiste (erst nach dem Band)
 CAS_GRUEN = "#1E6B43"
@@ -2034,6 +2041,8 @@ class RaKScribeApp(ctk.CTk):
         raw = (text or "").upper()
         self._status_raw = raw
         label, dot, bg = STATUS_STYLE.get(raw, (text, {"busy": WARN_AMBER, "recording": RECORDING_RED}.get(type, READY_GREEN), "#1B2030"))
+        if raw in ERGAENZUNG_STATUS and getattr(self, "_einfuegen_ziel", None) is not None:
+            label = ERGAENZUNG_STATUS[raw]  # v3.18.9: Diktat geht wörtlich an die Cursor-Stelle im Befund
         if raw == "RECORDING" and getattr(self, "_live_aus", False):
             label += " · Live-Anzeige ausgefallen"  # Umbau Schritt 6: Aufnahme läuft trotzdem weiter
         self.status_badge.configure(text=f"   ●  {label}   ", fg_color=bg, text_color=TEXT_PRIMARY)
@@ -2175,7 +2184,8 @@ class RaKScribeApp(ctk.CTk):
             self._maske_abschnitte, self._maske_offen_k = {}, None
             self._einfuegen_ziel = None if self._maske_lauf else self._einfuege_ziel_ermitteln()
             if self._einfuegen_ziel is not None:
-                log(f"[EINFÜGEN] Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt.")
+                log(f"[EINFÜGEN] {ERGAENZUNG}: Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt "
+                    f"(wörtlich, Nur Text {'an' if self.nur_text_aktiv() else 'aus'}).")
             self.final_transcript = ""
             self.stream_transcript = ""
             self.stream_interim = ""
@@ -2192,9 +2202,7 @@ class RaKScribeApp(ctk.CTk):
                 self.result_text.delete("1.0", "end")
             self.is_recording = True
             
-            self.update_status("RECORDING", "recording")
-            if self._einfuegen_ziel is not None:
-                self.status_badge.configure(text="   ●  Diktat wird an der Cursor-Stelle eingefügt   ")
+            self.update_status("RECORDING", "recording")   # v3.18.9: mit Cursor im Befund „Ergänzung an Cursor-Stelle“
             self.record_btn.configure(text=" Aufnahme Stoppen (F10) (0s) ", fg_color=RECORDING_RED)
             self.level_indicator.configure(fg_color=READY_GREEN, width=0)
 
@@ -2383,6 +2391,8 @@ class RaKScribeApp(ctk.CTk):
         neu, cursor = _einf.einfuegen(self.result_text.get("1.0", "end-1c"), ziel[0], ziel[1], text, gross=gross)
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", neu)
+        self._einfuegen_ziel = None  # v3.18.9: verbraucht — die nächsten Statusmeldungen sind wieder die normalen
+        log(f"[EINFÜGEN] {ERGAENZUNG}: {len(text.strip())} Zeichen an Stelle {tuple(ziel)} eingefügt.")
         try:
             tb = self.result_text._textbox
             tb.mark_set("insert", f"1.0+{cursor}c")
@@ -2447,6 +2457,7 @@ class RaKScribeApp(ctk.CTk):
                     return
                 self.after(0, lambda t=erg.report: self._einfuegen_an_ziel(gen, ziel, t))
                 self.after(0, lambda: self._lauf_fertig(gen))
+                self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(f"{ERGAENZUNG} eingefügt", 6000))
                 return
             if self.nur_text_aktiv() and not nur_befund:  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
                 self._ui(gen, lambda: (self.result_text.delete("1.0", "end"),
@@ -2514,6 +2525,7 @@ class RaKScribeApp(ctk.CTk):
     def _ende_kein_text(self, gen):
         if self._job.ereignis("kein_text", gen) is None:
             return
+        self._einfuegen_ziel = None  # v3.18.9: keine „Ergänzung an Cursor-Stelle“-Anzeige über den Lauf hinaus
         messagebox.showinfo("Info", "Kein Text diktiert.")
         self.update_status("READY", "ready")
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
@@ -2523,6 +2535,7 @@ class RaKScribeApp(ctk.CTk):
         """Läuft im UI-Thread: Befund gescheitert → Status Fehler, Knopf wieder frei, ggf. Dialog."""
         if self._job.ereignis("report_failed", gen) is None:
             return
+        self._einfuegen_ziel = None  # v3.18.9 (wie _ende_kein_text)
         if msg:
             messagebox.showerror(titel, msg)
         self.update_status("ERROR", "busy")
@@ -2831,8 +2844,6 @@ class RaKScribeApp(ctk.CTk):
                 log(f"[EINFÜGEN] In der Pause in den Befund geklickt – Diktat wird an Stelle {z} eingefügt.")
         log("[SPEECHMIKE] Weiter diktieren (gleiche Aufnahme).")
         self.update_status("RECORDING", "recording")
-        if self._einfuegen_ziel is not None:
-            self.status_badge.configure(text="   ●  Diktat wird an der Cursor-Stelle eingefügt   ")
         self._repariert_anzeigen()
         self._maske_anzeigen()
 

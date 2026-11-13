@@ -198,5 +198,45 @@
   "gross": true,
   "ergebnis": "Kein Erguss.\nÜbrige Strukturen regelrecht.",
   "cursor": 42
+ },
+ {
+  "name": "Ergänzung am Zeilenende vor dem Ergebnis-Abschnitt",
+  "text": "## Befund\nKein Erguss.\n\n## Ergebnis\nUnauffällig.",
+  "start": 22,
+  "ende": 22,
+  "neu": "kleine Baker-Zyste.",
+  "gross": true,
+  "ergebnis": "## Befund\nKein Erguss. Kleine Baker-Zyste.\n\n## Ergebnis\nUnauffällig.",
+  "cursor": 42
+ },
+ {
+  "name": "Ergänzung nach Abkürzung bleibt klein",
+  "text": "Geringer Erguss bzw.",
+  "start": 20,
+  "ende": 20,
+  "neu": "kleine Flüssigkeitsmenge.",
+  "gross": true,
+  "ergebnis": "Geringer Erguss bzw. kleine Flüssigkeitsmenge.",
+  "cursor": 46
+ },
+ {
+  "name": "Markierter Messwert ersetzt, Komma dahinter",
+  "text": "Erguss von 5 mm, Bänder intakt.",
+  "start": 11,
+  "ende": 15,
+  "neu": "8 mm.",
+  "gross": true,
+  "ergebnis": "Erguss von 8 mm, Bänder intakt.",
+  "cursor": 15
+ },
+ {
+  "name": "Ergänzung in leerer Zeile am Befundende",
+  "text": "## Ergebnis\nUnauffällig.\n",
+  "start": 25,
+  "ende": 25,
+  "neu": "empfehle Verlaufskontrolle.",
+  "gross": true,
+  "ergebnis": "## Ergebnis\nUnauffällig.\nEmpfehle Verlaufskontrolle.",
+  "cursor": 52
  }
 ]

@@ -26,6 +26,8 @@ import { istAbbruch, fehlermeldung } from './net.ts';
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
 import { befundAusDiktat, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
 import { einfuegen, markdownOffset } from './einfuegen.ts';
+// v3.18.9 (Peter 12.11.): Cursor im Befund beim Record → wörtliche Ergänzung dort (wie RaKScribe.py ERGAENZUNG)
+const ERGAENZUNG = 'Ergänzung an Cursor-Stelle';
 import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
 import { LaufVerwaltung, befundLauf, uiAktion, type Lauf, type BefundUi, type AppZustand } from './lauf.ts';
 // v3.8.0 (Peter 11.10.): SpeechMike-Tasten + LEDs direkt über WebHID (Sync: source_code/speechmike.py)
@@ -649,7 +651,7 @@ export default function App() {
       // v3.5.0: an der Cursor-Stelle → Befund bleibt; v3.8.0: Nachdiktat → alter Befund bleibt bis zum nächsten INS
       if (!einfuegeZielRef.current && !basis) setStructuredReport('');
       setStatus('recording');
-      setStatusText(einfuegeZielRef.current ? 'Aufnahme läuft — wird an der Cursor-Stelle im Befund eingefügt' : 'Aufnahme läuft...');
+      setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft` : 'Aufnahme läuft...');
       pufferRef.current = new Int16Puffer();
 
       // Reset chunk refs
@@ -813,7 +815,8 @@ export default function App() {
     abschnitteRef.current = [...abschnitteRef.current, abschnitt];
     laufendVonRef.current = chunkTranscriptsRef.current.length;
     setStatus('paused');
-    setStatusText('Pause – Record: weiter · INS: Befund erstellen');
+    setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Pause – Record: weiter · INS: einfügen`
+      : 'Pause – Record: weiter · INS: Befund erstellen');
     anzeigeAktualisieren();
     if (ende - start < 8000) return;  // unter 0,5 s: nichts zu reparieren
     setRepariert('laeuft');
@@ -834,7 +837,7 @@ export default function App() {
     segStartRef.current = pufferRef.current.laenge;
     pausiertRef.current = false;
     setStatus('recording');
-    setStatusText(einfuegeZielRef.current ? 'Aufnahme läuft — wird an der Cursor-Stelle im Befund eingefügt' : 'Aufnahme läuft...');
+    setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft` : 'Aufnahme läuft...');
   };
 
   // Manual Copy Result
@@ -1163,6 +1166,7 @@ export default function App() {
                   <span><kbd>F10</kbd> Aufnahme · <kbd>F9</kbd> Neu</span>
                   <span>SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig &amp; weiter</span>
                   <span>F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)</span>
+                  <span>In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)</span>
                 </div>
               </div>
             )}

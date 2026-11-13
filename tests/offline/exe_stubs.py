@@ -176,6 +176,47 @@ class FakeText:
         return self.text if b == "end-1c" else self.text + "\n"
 
 
+class FakeTb:
+    """Minimaler tk.Text: Indizes als '1.0+Nc', Marken als Offsets."""
+    def __init__(self, box, insert=0, sel=None):
+        self.box, self.marks, self.sel = box, {"insert": insert}, sel
+        self.fokus = False
+
+    def _o(self, i):
+        if isinstance(i, int):
+            return i
+        if i in self.marks:
+            return self.marks[i]
+        if i == "sel.first":
+            return self.sel[0]
+        if i == "sel.last":
+            return self.sel[1]
+        if i.startswith("1.0+") and i.endswith("c"):
+            return int(i[4:-1])
+        return 0 if i == "1.0" else len(self.box.text)
+
+    def tag_ranges(self, tag):
+        return ("a", "b") if tag == "sel" and self.sel else ()
+
+    def index(self, i):
+        return f"1.0+{self._o(i)}c"
+
+    def mark_set(self, name, i):
+        self.marks[name] = self._o(i)
+
+    def mark_gravity(self, *a):
+        pass
+
+    def count(self, a, b, what):
+        return (self._o(b) - self._o(a),)
+
+    def see(self, i):
+        pass
+
+    def focus_set(self):
+        self.fokus = True
+
+
 class FakeWidget:
     def __init__(self):
         self.cfg = {}
