@@ -464,7 +464,26 @@ _IBL_HIPPO = {"accno": "T-0112", "ziffer": 2, "modul": "hippo", "name": "HIPPO",
 _IBL_KOALA_LI = {"accno": "T-0201", "ziffer": 1, "modul": "koala", "name": "KOALA", "modul_name": "IB Lab KOALA",
                  "version": 1, "seiten": ["links"], "befundteil": ["Kellgren-Lawrence-Grad links 1 (IB Lab KOALA)."],
                  "ergebnis": [], "hinweise": [], "nicht_zugeordnet": []}
+# v3.18.8 (Peter 12.11.2026, Foto „Fuß beidseits in 2 Ebenen“): nur HVA + IMA I/II je Seite in den Befund
+_IBL_FROG_FOTO = {"accno": "T-0121", "ziffer": 1, "modul": "frog", "name": "FROG", "modul_name": "IB Lab FROG",
+                  "version": 1, "seiten": ["rechts", "links"],
+                  "befundteil": ["Fuß d.p.:", "Hallux-valgus-Winkel rechts 19° (IB Lab FROG).",
+                                 "Intermetatarsalwinkel I/II rechts 10° (IB Lab FROG).",
+                                 "Distaler metatarsaler Gelenkflächenwinkel rechts 6° (IB Lab FROG).",
+                                 "Knöcherne Fußbreite rechts 100,4 mm (IB Lab FROG).",
+                                 "Hallux-valgus-Winkel links 24° (IB Lab FROG).",
+                                 "Intermetatarsalwinkel I/II links 10° (IB Lab FROG).",
+                                 "Knöcherne Fußbreite links 98,2 mm (IB Lab FROG).", "Fuß seitlich rechts:",
+                                 "Calcaneusneigungswinkel rechts 27° (IB Lab FROG).", "Meary-Winkel rechts 12° (IB Lab FROG).",
+                                 "Cuboidhöhe rechts 17,6 mm (IB Lab FROG)."],
+                  "ergebnis": ["Fuß d.p.: Geringgradiger Hallux valgus rechts (Hallux-valgus-Winkel 19°).",
+                               "Fuß d.p.: Mittelgradiger Hallux valgus links (Hallux-valgus-Winkel 24°).",
+                               "Fuß d.p.: Vergrößerter Intermetatarsalwinkel I/II (Metatarsus primus varus) beidseits "
+                               "(Intermetatarsalwinkel I/II rechts 10°, links 10°)."], "hinweise": [], "nicht_zugeordnet": []}
 IBL_FAELLE = [
+    ("FROG Fuß beidseits (Peters Foto 12.11.: nur pathologische Maße)",
+     [_cas_l("x-fuss-bds", "Fuß beidseits", "Röntgen", "fuß_in_2_ebenen", "beidseits")], [_IBL_FROG_FOTO],
+     "Fuß beidseits in 2 Ebenen: keine Fraktur, sonst unauffällig.", [("Fuß", "FROG")]),
     # (name, CAS-Leistungen, Bausteine, Diktat, [(Titel-Wort, Modul oder None)])
     # v3.18.4 (Peter 12.11.2026, RH 38): KL 1 laut IB Lab, Diktat nur Gelenkspaltverschmälerung → kein Grad 3, keine Gonarthrose
     ("KOALA Knie links KL 1 (RH 38, nur Deskriptor diktiert)",
@@ -508,8 +527,12 @@ def run_ibl_fall(name, leistungen, bausteine, diktat, erwartet):
             issues.append(f"❌ Titel „{titel}“ ohne „{wort}“")
         for b in bs:
             drin = f"(IB Lab {b.name})" in teil
-            if (b.name == modul) != drin:
-                issues.append(f"❌ {b.name}-Zeilen {'fehlen in' if b.name == modul else 'stehen in'} „{titel}“")
+            soll = b.name == modul and bool(ib.befund_zeilen(b))   # v3.18.8: FROG/HIPPO/KOALA nur Zeilen mit Treffer
+            for z in (b.befundteil if b.name == modul else []):
+                if z not in ib.befund_zeilen(b) and z in teil:
+                    issues.append(f"❌ unauffälliger Wert im Befund: {z}")
+            if soll != drin:
+                issues.append(f"❌ {b.name}-Zeilen {'fehlen in' if soll else 'stehen in'} „{titel}“")
     if e is None or ib.gate(erg.report, e.zeilen):
         issues.append(f"❌ Gate: {ib.gate(erg.report, e.zeilen) if e else 'nichts eingesetzt'}")
     ohne = erg.report

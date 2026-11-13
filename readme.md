@@ -184,6 +184,12 @@ ausgewertet und dürfen gelöscht werden.
   Quellen-Klammer der Befundzeile („Cobb-Winkel 18° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).“) und kommt so wörtlich
   ins Gerüst und in den Befund. RaKScribe zeigt den Vorwert-Teil im Befund-Feld grau und listet die Vorwerte beim Klick auf
   die IB-Lab-Zeile. Ohne Vorwerte bleibt alles bit-gleich (`tests/offline/test_cas_kontext.py`).
+- **Nur auffällige Messwerte (ab v3.18.8, FROG, HIPPO, KOALA):** In den Befund (Gerüst und nach der KI) kommen nur die
+  Messzeilen, aus denen eine aktive Regel des Abholers (ris-mods `ibl/regeln/<modul>.toml`) einen Ergebnispunkt gemacht
+  hat; die Ergebnispunkte bleiben vollständig. Ohne Regeltreffer keine Befundzeile und kein Normalsatz. Alle Werte bleiben
+  beim Klick auf die IB-Lab-Zeile sichtbar; ein diktierter abweichender Wert einer weggelassenen Messgröße wird als Hinweis
+  gemeldet. Schalter: `ibl_bausteine.BEFUND_NUR_AUFFAELLIG`. Übrige Module bit-gleich
+  (`tests/offline/test_ibl_nur_auffaellig.py`). Die Web-App hat keine IB-Lab-Bausteine (kein Paritätsteil).
 
 ## 🗂️ Kontext aus dem RIS und IB-Lab-Gerüst vor dem Diktat (EXE, ab v3.14.0)
 

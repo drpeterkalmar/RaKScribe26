@@ -3171,7 +3171,11 @@ class RaKScribeApp(ctk.CTk):
                 or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)):
             return []
         im = getattr(self, "_ibl_im_befund", {}) or {}
-        return [b for b in self._ibl_bausteine() if (b.befundteil or b.ergebnis) and im.get(b.schluessel) != b.version]
+        da = getattr(self, "_ibl_zeilen", {}) or {}
+        # v3.18.8: FROG/HIPPO/KOALA ohne Regeltreffer bringen nichts in den Befund (ibl_bausteine.befund_zeilen) – nur offen,
+        # wenn eine ältere Fassung Zeilen im Befund hat, die ersetzt werden müssen
+        return [b for b in self._ibl_bausteine() if (_ibl.hat_inhalt(b) or da.get(b.schluessel))
+                and im.get(b.schluessel) != b.version]
 
     def _ibl_band_zeigen(self, hervorheben=False):
         zeile, lbl = getattr(self, "ibl_zeile", None), getattr(self, "ibl_label", None)

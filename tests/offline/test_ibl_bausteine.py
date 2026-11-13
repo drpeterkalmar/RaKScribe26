@@ -292,14 +292,26 @@ check("K&L: Grade je Seite aus KOALA (links 1, rechts 3, ohne Seite beide)",
       I.kl_grade(B(KOALA_D), "links") == ["1"] and I.kl_grade(B(KOALA_D), "rechts") == ["3"]
       and I.kl_grade(B(KOALA_D)) == ["1", "3"] and I.kl_grade(B(FROG_D)) == [])
 KNIE = bericht("Kniegelenk links in 2 Ebenen", "Mäßige Gelenkspaltverschmälerung medial.", "Mäßige Gonarthrose links.")
+# v3.18.8: KOALA bringt nur Zeilen mit Regeltreffer in den Befund – K&L 3 links → „Mittelgradige Gonarthrose links“
+KOALA_LI3 = dict(KOALA_D, seiten=["links"], befundteil=["Kellgren-Lawrence-Grad links 3 (IB Lab KOALA)."],
+                 ergebnis=["Mittelgradige Gonarthrose links (Kellgren-Lawrence-Grad 3)."])
+e = I.einsetzen(KNIE, B(KOALA_LI3), diktat="Knie links: Mäßige Gonarthrose, Kellgren-Lawrence Grad 2.")
+check("K&L: diktiert Grad 2, IB Lab 3 → IB-Lab-Zeile nicht angefügt, Hinweis „der diktierte Grad gilt“",
+      "Kellgren-Lawrence-Grad links 3 (IB Lab KOALA)" not in e.report and any("diktierte Grad gilt" in h for h in e.hinweise),
+      e.report + str(e.hinweise))
+e = I.einsetzen(KNIE, B(KOALA_LI3), diktat="Knie links: Mäßige Gonarthrose Grad 3 nach Kellgren.")
+check("K&L: diktiert Grad 3 = IB Lab 3 → nicht doppelt", "Kellgren-Lawrence-Grad links 3 (IB Lab KOALA)" not in e.report
+      and any("schon diktiert" in h for h in e.hinweise), e.report + str(e.hinweise))
+e = I.einsetzen(KNIE, B(KOALA_LI3), diktat="Knie links: Mäßige Gonarthrose.")
+check("K&L: ohne diktierten Grad → IB-Lab-Zeile angefügt", "Kellgren-Lawrence-Grad links 3 (IB Lab KOALA)." in e.report)
 e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose, Kellgren-Lawrence Grad 2.")
-check("K&L: diktiert Grad 2, IB Lab 1 → IB-Lab-Zeile nicht angefügt, Hinweis „der diktierte Grad gilt“",
+check("K&L v3.18.8: IB Lab 1 ohne Regeltreffer → nicht im Befund; diktiert 2 → Prüf-Hinweis „der diktierte Grad gilt“",
       "IB Lab KOALA" not in e.report and any("diktierte Grad gilt" in h for h in e.hinweise), e.report + str(e.hinweise))
 e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose Grad 1 nach Kellgren.")
-check("K&L: diktiert Grad 1 = IB Lab 1 → nicht doppelt", "IB Lab KOALA" not in e.report
-      and any("schon diktiert" in h for h in e.hinweise), e.report + str(e.hinweise))
+check("K&L v3.18.8: IB Lab 1 ohne Regeltreffer, diktiert 1 → nichts angefügt, kein „schon diktiert“-Hinweis",
+      "IB Lab KOALA" not in e.report and not e.hinweise and e.report == KNIE, e.report + str(e.hinweise))
 e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose.")
-check("K&L: ohne diktierten Grad → IB-Lab-Zeile angefügt", "Kellgren-Lawrence-Grad links 1 (IB Lab KOALA)." in e.report)
+check("K&L v3.18.8: IB Lab 1 ohne Regeltreffer, ohne diktierten Grad → nichts angefügt", e.report == KNIE, e.report)
 blk = I.prompt_block(B(KOALA_LI), T["kniegelenk_in_2_ebenen"]["body"])
 check("K&L: Gen-Prompt nennt den IB-Lab-Grad (nur KOALA) samt Vorrang des Diktats",
       "Kellgren-&-Lawrence-Grad laut IB Lab: Kellgren-Lawrence-Grad links 1." in blk and "gilt der diktierte Grad" in blk
@@ -546,6 +558,29 @@ app._cas_einmal()
 check("Text vom vorigen Auftrag (nach „Abbrechen“ stehen geblieben): kein Knopf – Werte erst beim nächsten INS",
       app.ibl_zeile.sichtbar and not app.ibl_knopf.sichtbar and app.ibl_label.cget("text") == "IB Lab: FROG rechts ✓"
       and app._ibl_offen() == [], app.ibl_label.cget("text"))
+app.cas_abbrechen()
+
+# v3.18.8: FROG ohne Regeltreffer – nichts in den Befund, kein Gerüst, kein „neu, nicht im Befund“, Details zeigen alles
+FROG_UNAUFF = dict(FROG_D, accno="T-0025", befundteil=["Calcaneusneigungswinkel rechts 24,0° (IB Lab FROG).",
+                                                       "Hallux-valgus-Winkel rechts 12,0° (IB Lab FROG)."], ergebnis=[])
+app.reset_dictation()
+ablegen("20261013005", "z4")
+app._cas_einmal()
+ibl_ablegen("z4", "20261013005", [FROG_UNAUFF])
+app._cas_einmal()
+check("v3.18.8 FROG ohne Regeltreffer: kein Gerüst im leeren Befund-Feld, kein Knopf",
+      app.result_text.text == "" and not app.ibl_knopf.sichtbar and app.ibl_label.cget("text") == "IB Lab: FROG rechts ✓",
+      app.result_text.text[:200])
+app.transcript_text.text = "Fuß rechts: Os tibiale externum."
+app.befund_aus_text(kontrolle=True)
+bis_ruhe(app)
+check("… INS: keine FROG-Messzeile im Befund, danach nicht „neu, nicht im Befund“",
+      "(IB Lab FROG)" not in app.result_text.text and app.result_text.text.strip() and app._ibl_offen() == []
+      and "nicht im Befund" not in app.ibl_label.cget("text") and not app.ibl_knopf.sichtbar,
+      app.result_text.text[:300] + app.ibl_label.cget("text"))
+app._ibl_details()
+check("… IB-Lab-Details zeigen weiter alle Werte", "Hallux-valgus-Winkel rechts 12,0° (IB Lab FROG)." in S.AUFZ.dialoge[-1][2]
+      and "Calcaneusneigungswinkel rechts 24,0° (IB Lab FROG)." in S.AUFZ.dialoge[-1][2], str(S.AUFZ.dialoge[-1:])[:300])
 app.cas_abbrechen()
 
 # ───────────────────────────── Teil 4: gegen die echte Brückenseite (nur Mac) ─────────────────────────────

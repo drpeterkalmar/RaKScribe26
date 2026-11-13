@@ -75,14 +75,17 @@ check("Ziffer ohne Datenbank: Stelle in der Liste (wie 3.13)", I._leistung_zur_z
 check("Ziffer aus der Datenbank: exakt die Leistung mit dieser Ziffer (Reihenfolge egal)",
       I._leistung_zur_ziffer(3, CAS_DB)["kurz"] == "c" and I._leistung_zur_ziffer(1, CAS_DB)["kurz"] == "a"
       and I._leistung_zur_ziffer(2, CAS_DB) is None)
+SQ_OHNE = {"accno": "T-0011", "ziffer": 1, "modul": "squirrel", "name": "SQUIRREL", "version": 1, "seiten": [],
+           "befundteil": ["Coronal Balance 4 mm (IB Lab SQUIRREL)."], "ergebnis": []}
 b = I.aus_liste([FROG])
 check("auffällig: Messwert, aus dem ein Ergebnispunkt wurde, + der Punkt; ohne Regel nichts",
       I.auffaellige_zeilen(b) == ["Calcaneusneigungswinkel 10° (IB Lab FROG).",
                                   "Pes planus links (Calcaneusneigungswinkel 10°)."], I.auffaellige_zeilen(b))
 e = I.geruest(b, CAS_DB, T)
-check("Gerüst mit CAS-Vorlage: Titel mit Seite, Befundzeilen wörtlich, einzelner Ergebnispunkt ohne Nummer (v3.18.3)",
+check("Gerüst mit CAS-Vorlage: Titel mit Seite, Befundzeilen wörtlich, einzelner Ergebnispunkt ohne Nummer (v3.18.3); "
+      "v3.18.8: FROG nur der auffällige Messwert (HVA 12° ohne Regeltreffer nicht im Befund)",
       e.report == "## Fuß links in 2 Ebenen\n\n## Befund\nCalcaneusneigungswinkel 10° (IB Lab FROG).\n"
-                  "Hallux-valgus-Winkel 12° (IB Lab FROG).\n\n## Ergebnis\nPes planus links (Calcaneusneigungswinkel 10°).",
+                  "\n## Ergebnis\nPes planus links (Calcaneusneigungswinkel 10°).",
       e.report)
 check("… Zeilen fürs Messwert-Gate, Stand je Baustein", I.gate(e.report, e.zeilen) == []
       and e.behandelt == {("T-0023", "frog"): 1})
@@ -91,8 +94,11 @@ check("Gerüst ohne CAS-Leistungen: Region des Moduls mit Seite", e2.report.star
       e2.report)
 ohne = I.aus_liste([dict(FROG, ergebnis=[], befundteil=["Calcaneusneigungswinkel 24° (IB Lab FROG)."])])
 e3 = I.geruest(ohne, CAS_DB, T)
-check("unauffällig: Gerüst ohne „## Ergebnis“, nichts markiert", "## Ergebnis" not in e3.report
-      and I.auffaellige_zeilen(ohne) == [], e3.report)
+check("unauffällig (v3.18.8): FROG ohne Regeltreffer → kein Gerüst (keine Befundzeile, kein erfundener Normalsatz), "
+      "nichts markiert", e3 is None and I.auffaellige_zeilen(ohne) == [], e3 and e3.report)
+e3 = I.geruest(I.aus_liste([dict(SQ_OHNE, ergebnis=[])]), None, T)
+check("unauffällig, Modul ohne Filter (SQUIRREL): Gerüst ohne „## Ergebnis“ wie bisher", e3 is not None
+      and "## Ergebnis" not in e3.report and "Coronal Balance 4 mm (IB Lab SQUIRREL)." in e3.report, e3 and e3.report)
 check("keine Bausteine mit Inhalt → kein Gerüst (kein Platzhalter)",
       I.geruest(I.aus_liste([dict(FROG, befundteil=[], ergebnis=[])]), CAS_DB, T) is None and I.geruest([], CAS_DB, T) is None)
 

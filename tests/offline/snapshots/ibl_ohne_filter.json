@@ -1,0 +1,349 @@
+[
+ {
+  "name": "squirrel",
+  "bausteine": [
+   {
+    "accno": "T-0011",
+    "ziffer": 1,
+    "modul": "squirrel",
+    "name": "SQUIRREL",
+    "version": 1,
+    "seiten": [],
+    "befundteil": [
+     "Wirbelsäule a.p.:",
+     "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).",
+     "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+     "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+     "Wirbelsäule seitlich:",
+     "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL)."
+    ],
+    "ergebnis": [
+     "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 1. Krümmung 20,9°).",
+     "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 3. Krümmung 31,2°).",
+     "Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel 2. Krümmung 44,5°)."
+    ],
+    "vorwerte": [
+     {
+      "text": "Vorwert 03/2024: 12°, IB Lab"
+     }
+    ]
+   }
+  ],
+  "bericht": "## Brust- und Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nSkoliose. Cobb-Winkel 2. Krümmung 40 Grad.\n\n## Ergebnis\nSkoliose.",
+  "diktat": "Skoliose, Cobb-Winkel 2. Krümmung 40 Grad. Wirbelsäule a.p. unauffällig.",
+  "vorlage": "brustwirbelsäule_in_2_ebenen",
+  "einsetzen": {
+   "report": "## Brust- und Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nSkoliose. Cobb-Winkel 2. Krümmung 40 Grad.\n\nWirbelsäule a.p.:\nCobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).\nCobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).\nCobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).\nWirbelsäule seitlich:\nCoronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL).\n\n## Ergebnis\n1. Skoliose.\n2. Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 1. Krümmung 20,9°).\n3. Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 3. Krümmung 31,2°).\n4. Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel 2. Krümmung 44,5°).",
+   "hinweise": [
+    "SQUIRREL: Wirbelsäule a.p. schon diktiert – IB-Lab-Wert angefügt, bitte prüfen",
+    "SQUIRREL: „Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel…“ angefügt – Befund nennt schon „skolio“, bitte prüfen",
+    "SQUIRREL: „Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel…“ angefügt – Befund nennt schon „skolio“, bitte prüfen"
+   ],
+   "zeilen": [
+    "Wirbelsäule a.p.:",
+    "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).",
+    "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+    "Wirbelsäule seitlich:",
+    "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL).",
+    "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 1. Krümmung 20,9°).",
+    "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 3. Krümmung 31,2°).",
+    "Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel 2. Krümmung 44,5°)."
+   ],
+   "zuordnung": {
+    "squirrel": "Brust- und Lendenwirbelsäule in 2 Ebenen"
+   }
+  },
+  "geruest": {
+   "report": "## Wirbelsäule\n\n## Befund\nWirbelsäule a.p.:\nCobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).\nCobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).\nCobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).\nWirbelsäule seitlich:\nCoronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL).\n\n## Ergebnis\n1. Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 1. Krümmung 20,9°).\n2. Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 3. Krümmung 31,2°).\n3. Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel 2. Krümmung 44,5°).",
+   "zeilen": [
+    "Wirbelsäule a.p.:",
+    "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).",
+    "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+    "Wirbelsäule seitlich:",
+    "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL).",
+    "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 1. Krümmung 20,9°).",
+    "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 3. Krümmung 31,2°).",
+    "Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel 2. Krümmung 44,5°)."
+   ],
+   "zuordnung": {
+    "squirrel": "Wirbelsäule"
+   }
+  },
+  "prompt": "<ibl_messwerte>\nZu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch und wörtlich ein:\n- SQUIRREL: Wirbelsäule a.p., Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex), Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex), Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex), Wirbelsäule seitlich, Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach ) (ersetzt Vorlagen-Sätze zu: Krümmung und Stellung der Wirbelsäule)\nRegeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ und kein K&L-Grad.\n</ibl_messwerte>",
+  "auffaellig": [
+   "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 1. Krümmung 20,9°).",
+   "Skoliotische Krümmung, nach SOSORT mäßiggradig (Cobb-Winkel 3. Krümmung 31,2°).",
+   "Skoliotische Krümmung, nach SOSORT hochgradig (Cobb-Winkel 2. Krümmung 44,5°)."
+  ]
+ },
+ {
+  "name": "squirrel_leer",
+  "bausteine": [
+   {
+    "accno": "T-0011",
+    "ziffer": 1,
+    "modul": "squirrel",
+    "name": "SQUIRREL",
+    "version": 1,
+    "seiten": [],
+    "befundteil": [
+     "Wirbelsäule a.p.:",
+     "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).",
+     "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+     "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+     "Wirbelsäule seitlich:",
+     "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL)."
+    ],
+    "ergebnis": [],
+    "vorwerte": [
+     {
+      "text": "Vorwert 03/2024: 12°, IB Lab"
+     }
+    ]
+   }
+  ],
+  "bericht": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nUnauffällig.\n\n## Ergebnis\nRegelrechte Darstellung.",
+  "diktat": "",
+  "vorlage": null,
+  "einsetzen": {
+   "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nUnauffällig.\n\nWirbelsäule a.p.:\nCobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).\nCobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).\nCobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).\nWirbelsäule seitlich:\nCoronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL).\n\n## Ergebnis\nRegelrechte Darstellung.",
+   "hinweise": [],
+   "zeilen": [
+    "Wirbelsäule a.p.:",
+    "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).",
+    "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+    "Wirbelsäule seitlich:",
+    "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL)."
+   ],
+   "zuordnung": {
+    "squirrel": "Lendenwirbelsäule in 2 Ebenen"
+   }
+  },
+  "geruest": {
+   "report": "## Wirbelsäule\n\n## Befund\nWirbelsäule a.p.:\nCobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).\nCobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).\nCobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).\nWirbelsäule seitlich:\nCoronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL).",
+   "zeilen": [
+    "Wirbelsäule a.p.:",
+    "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).",
+    "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+    "Wirbelsäule seitlich:",
+    "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL)."
+   ],
+   "zuordnung": {
+    "squirrel": "Wirbelsäule"
+   }
+  },
+  "prompt": "<ibl_messwerte>\nZu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch und wörtlich ein:\n- SQUIRREL: Wirbelsäule a.p., Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex), Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex), Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex), Wirbelsäule seitlich, Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach ) (ersetzt Vorlagen-Sätze zu: Krümmung und Stellung der Wirbelsäule)\nRegeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ und kein K&L-Grad.\n</ibl_messwerte>",
+  "auffaellig": []
+ },
+ {
+  "name": "rho",
+  "bausteine": [
+   {
+    "accno": "T-0051",
+    "ziffer": 1,
+    "modul": "rho",
+    "name": "Rho",
+    "modul_name": "16 Bit Rho",
+    "version": 1,
+    "seiten": [],
+    "befundteil": [
+     "Rho-Score 8 von 10 (16 Bit Rho)."
+    ],
+    "ergebnis": [
+     "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+    ]
+   }
+  ],
+  "bericht": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\nOsteochondrose L4/5.",
+  "diktat": "Osteochondrose.",
+  "vorlage": null,
+  "einsetzen": {
+   "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5.\n\nRho-Score 8 von 10 (16 Bit Rho).\n\n## Ergebnis\n1. Osteochondrose L4/5.\n2. Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen.",
+   "hinweise": [],
+   "zeilen": [
+    "Rho-Score 8 von 10 (16 Bit Rho).",
+    "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+   ],
+   "zuordnung": {
+    "rho": "Lendenwirbelsäule in 2 Ebenen"
+   }
+  },
+  "geruest": {
+   "report": "## Knochendichte (opportunistisch)\n\n## Befund\nRho-Score 8 von 10 (16 Bit Rho).\n\n## Ergebnis\nAls Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen.",
+   "zeilen": [
+    "Rho-Score 8 von 10 (16 Bit Rho).",
+    "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+   ],
+   "zuordnung": {
+    "rho": "Knochendichte (opportunistisch)"
+   }
+  },
+  "prompt": "<ibl_messwerte>\nZu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch und wörtlich ein:\n- Rho: Rho-Score\nRegeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ und kein K&L-Grad.\n</ibl_messwerte>",
+  "auffaellig": [
+   "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+  ]
+ },
+ {
+  "name": "rho_doppelt",
+  "bausteine": [
+   {
+    "accno": "T-0051",
+    "ziffer": 1,
+    "modul": "rho",
+    "name": "Rho",
+    "modul_name": "16 Bit Rho",
+    "version": 1,
+    "seiten": [],
+    "befundteil": [
+     "Rho-Score 8 von 10 (16 Bit Rho)."
+    ],
+    "ergebnis": [
+     "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+    ]
+   }
+  ],
+  "bericht": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nKnochendichtescreening (Rho) Score 6.\n\n## Ergebnis\nOsteochondrose.",
+  "diktat": "",
+  "vorlage": null,
+  "einsetzen": {
+   "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nKnochendichtescreening (Rho) Score 6.\n\n## Ergebnis\nOsteochondrose.",
+   "hinweise": [
+    "Rho: Score im Befund 6, laut 16 Bit Rho 8 von 10 – bitte prüfen (nichts angefügt)"
+   ],
+   "zeilen": [],
+   "zuordnung": {}
+  },
+  "geruest": {
+   "report": "## Knochendichte (opportunistisch)\n\n## Befund\nRho-Score 8 von 10 (16 Bit Rho).\n\n## Ergebnis\nAls Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen.",
+   "zeilen": [
+    "Rho-Score 8 von 10 (16 Bit Rho).",
+    "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+   ],
+   "zuordnung": {
+    "rho": "Knochendichte (opportunistisch)"
+   }
+  },
+  "prompt": "<ibl_messwerte>\nZu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch und wörtlich ein:\n- Rho: Rho-Score\nRegeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ und kein K&L-Grad.\n</ibl_messwerte>",
+  "auffaellig": [
+   "Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit Rho, Score 8 von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."
+  ]
+ },
+ {
+  "name": "lama",
+  "bausteine": [
+   {
+    "accno": "T-0031",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "version": 1,
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 92,1 cm (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD, valgisch laut IB Lab) rechts -17,0 mm (IB Lab LAMA).",
+     "mLDFA rechts 83,1° (IB Lab LAMA).",
+     "Beinlänge links 92,2 cm (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD, valgisch laut IB Lab) links -12,4 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 0,1 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Valgische Beinachse beidseits (Klassifikation IB Lab LAMA; Mechanische Achsabweichung (MAD) rechts -17,0 mm, links -12,4 mm)."
+    ]
+   }
+  ],
+  "bericht": "## Ganzbeinaufnahme im Stand\n\n## Befund\nBeinlänge rechts 92,1 cm. Valgus.\n\n## Ergebnis\nValgische Beinachse.",
+  "diktat": "Beinlänge rechts 92,1 cm",
+  "vorlage": "ganzbeinaufnahme_im_stand",
+  "einsetzen": {
+   "report": "## Ganzbeinaufnahme im Stand\n\n## Befund\nBeinlänge rechts 92,1 cm. Valgus.\n\nMechanische Achsabweichung (MAD, valgisch laut IB Lab) rechts -17,0 mm (IB Lab LAMA).\nmLDFA rechts 83,1° (IB Lab LAMA).\nMechanische Achsabweichung (MAD, valgisch laut IB Lab) links -12,4 mm (IB Lab LAMA).\nBeinlängendifferenz 0,1 cm (IB Lab LAMA).\n\n## Ergebnis\nValgische Beinachse.",
+   "hinweise": [
+    "LAMA: Beinlänge schon im Befund (92,1 cm) – nicht doppelt angefügt",
+    "LAMA: Beinlänge im Befund 92,1 cm, laut IB Lab 92,2 cm – bitte prüfen (IB-Lab-Wert nicht angefügt)",
+    "LAMA: „Valgische Beinachse beidseits (Klassifikation IB Lab LAMA;…“ – Diagnose schon im Befund, nicht doppelt angefügt"
+   ],
+   "zeilen": [
+    "Mechanische Achsabweichung (MAD, valgisch laut IB Lab) rechts -17,0 mm (IB Lab LAMA).",
+    "mLDFA rechts 83,1° (IB Lab LAMA).",
+    "Mechanische Achsabweichung (MAD, valgisch laut IB Lab) links -12,4 mm (IB Lab LAMA).",
+    "Beinlängendifferenz 0,1 cm (IB Lab LAMA)."
+   ],
+   "zuordnung": {
+    "lama": "Ganzbeinaufnahme im Stand"
+   }
+  },
+  "geruest": {
+   "report": "## Ganzbeinaufnahme beidseits\n\n## Befund\nBeinlänge rechts 92,1 cm (IB Lab LAMA).\nMechanische Achsabweichung (MAD, valgisch laut IB Lab) rechts -17,0 mm (IB Lab LAMA).\nmLDFA rechts 83,1° (IB Lab LAMA).\nBeinlänge links 92,2 cm (IB Lab LAMA).\nMechanische Achsabweichung (MAD, valgisch laut IB Lab) links -12,4 mm (IB Lab LAMA).\nBeinlängendifferenz 0,1 cm (IB Lab LAMA).\n\n## Ergebnis\nValgische Beinachse beidseits (Klassifikation IB Lab LAMA; Mechanische Achsabweichung (MAD) rechts -17,0 mm, links -12,4 mm).",
+   "zeilen": [
+    "Beinlänge rechts 92,1 cm (IB Lab LAMA).",
+    "Mechanische Achsabweichung (MAD, valgisch laut IB Lab) rechts -17,0 mm (IB Lab LAMA).",
+    "mLDFA rechts 83,1° (IB Lab LAMA).",
+    "Beinlänge links 92,2 cm (IB Lab LAMA).",
+    "Mechanische Achsabweichung (MAD, valgisch laut IB Lab) links -12,4 mm (IB Lab LAMA).",
+    "Beinlängendifferenz 0,1 cm (IB Lab LAMA).",
+    "Valgische Beinachse beidseits (Klassifikation IB Lab LAMA; Mechanische Achsabweichung (MAD) rechts -17,0 mm, links -12,4 mm)."
+   ],
+   "zuordnung": {
+    "lama": "Ganzbeinaufnahme beidseits"
+   }
+  },
+  "prompt": "<ibl_messwerte>\nZu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch und wörtlich ein:\n- LAMA: Beinlänge, Mechanische Achsabweichung (MAD, valgisch laut IB Lab), mLDFA, Beinlängendifferenz (ersetzt Vorlagen-Sätze zu: Beinachse (anatomische/mechanische Achse) und Beinlänge)\nRegeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ und kein K&L-Grad.\n</ibl_messwerte>",
+  "auffaellig": [
+   "Valgische Beinachse beidseits (Klassifikation IB Lab LAMA; Mechanische Achsabweichung (MAD) rechts -17,0 mm, links -12,4 mm)."
+  ]
+ },
+ {
+  "name": "panda",
+  "bausteine": [
+   {
+    "accno": "T-0041",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "version": 1,
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 178,0 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 95,8 % (IB Lab PANDA)."
+    ],
+    "ergebnis": []
+   }
+  ],
+  "bericht": "## Hand links\n\n## Befund\nKnochenalter 15 Jahre.\n\n## Ergebnis\nAltersentsprechend.",
+  "diktat": "Knochenalter nach Greulich & Pyle 170 Monate",
+  "vorlage": null,
+  "einsetzen": {
+   "report": "## Hand links\n\n## Befund\nKnochenalter 15 Jahre.\n\nKnochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).\nErreichtes Wachstumspotenzial 95,8 % (IB Lab PANDA).\n\n## Ergebnis\nAltersentsprechend.",
+   "hinweise": [
+    "PANDA: Knochenalter nach Greulich & Pyle im Befund 170, laut IB Lab 178,0 Monate – bitte prüfen (IB-Lab-Wert nicht angefügt)"
+   ],
+   "zeilen": [
+    "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+    "Erreichtes Wachstumspotenzial 95,8 % (IB Lab PANDA)."
+   ],
+   "zuordnung": {
+    "panda": "Hand links"
+   }
+  },
+  "geruest": {
+   "report": "## Hand\n\n## Befund\nKnochenalter nach Greulich & Pyle 178,0 Monate (IB Lab PANDA).\nKnochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).\nErreichtes Wachstumspotenzial 95,8 % (IB Lab PANDA).",
+   "zeilen": [
+    "Knochenalter nach Greulich & Pyle 178,0 Monate (IB Lab PANDA).",
+    "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+    "Erreichtes Wachstumspotenzial 95,8 % (IB Lab PANDA)."
+   ],
+   "zuordnung": {
+    "panda": "Hand"
+   }
+  },
+  "prompt": "<ibl_messwerte>\nZu dieser Untersuchung liegen KI-Messwerte von IB Lab vor. KaiScribe fügt sie nach dem Befund automatisch und wörtlich ein:\n- PANDA: Knochenalter nach Greulich & Pyle, Knochenalter-Status laut Hersteller, Erreichtes Wachstumspotenzial (ersetzt Vorlagen-Sätze zu: Knochenalter)\nRegeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Widersprich ihnen nicht: Sätze der Vorlage zu den in Klammern genannten Themen lässt du weg (die Messwerte ersetzen sie), außer der Arzt hat dazu etwas diktiert. Was der Arzt selbst an Messwerten oder Diagnosen diktiert hat, übernimmst du genau wie diktiert. Leite aus diesen Messwerten KEINE Diagnose ab: Winkel, Offsets, Überdachung, Beckenschiefstand oder Beinlängendifferenz sind kein Hinweis auf eine Arthrose — ohne diktierte Arthrose kein „Arthrose“/„Coxarthrose“ und kein K&L-Grad.\n</ibl_messwerte>",
+  "auffaellig": []
+ }
+]

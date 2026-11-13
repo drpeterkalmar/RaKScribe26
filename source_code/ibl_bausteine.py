@@ -461,8 +461,16 @@ def _befund_pruefen(b, bericht, diktat, hinweise):
                 hinweise.append(f"{b.name}: Rho-Text schon im Befund – nicht doppelt angefügt")
             return None
     out = []
+    nur = b.modul in BEFUND_NUR_AUFFAELLIG          # v3.18.8: nur Zeilen mit Ergebnispunkt (befund_zeilen)
+    bleibt = befund_zeilen(b)
     for z in b.befundteil:
         mw = messwert(z)
+        if z not in bleibt:
+            _weggefiltert_pruefen(b, mw, z, gesamt, diktat, hinweise)
+            continue
+        if nur and _abschnitt_zeile(z):
+            out.append(z)
+            continue
         if mw and _kl_pruefen(b, mw, z, diktat, hinweise):
             continue
         art, gefunden = im_text(mw, gesamt) if mw else ("fehlt", "")
@@ -475,7 +483,24 @@ def _befund_pruefen(b, bericht, diktat, hinweise):
             out.append(z)
             if mw and im_text(mw, diktat)[0] == "ohne_zahl":    # der Arzt hat die Messgröße ohne Zahl diktiert
                 hinweise.append(f"{b.name}: {mw.name} schon diktiert – IB-Lab-Wert angefügt, bitte prüfen")
-    return out
+    return _ohne_leere_beschriftung(out) if nur else out
+
+
+def _weggefiltert_pruefen(b, mw, z, gesamt, diktat, hinweise):
+    """v3.18.8: Messzeile ohne Ergebnispunkt (kommt nicht in den Befund): kein „schon im Befund“-Hinweis, aber ein
+    diktierter/geschriebener ABWEICHENDER Wert derselben Messgröße bleibt ein Prüf-Hinweis."""
+    if mw is None or _abschnitt_zeile(z):
+        return
+    if "kellgren" in (mw.name or "").lower():
+        diktiert, eigen = br.kl_grade(diktat), br.kl_grade(z)
+        if diktiert and eigen and not set(eigen) <= set(diktiert):
+            hinweise.append(f"{b.name}: {mw.name} diktiert {', '.join(diktiert)}, laut IB Lab {', '.join(eigen)} – "
+                            "der diktierte Grad gilt, bitte prüfen")
+        return
+    art, gefunden = im_text(mw, gesamt)
+    if art == "anders":
+        hinweise.append(f"{b.name}: {mw.name} im Befund {gefunden}, laut IB Lab {mw.wert} – bitte prüfen "
+                        "(unauffälliger IB-Lab-Wert, nicht im Befund)")
 
 
 def _ergebnis_pruefen(b, bericht, diktat, erg_zeilen, hinweise):
@@ -669,6 +694,16 @@ def gate(report, zeilen):
 
 
 # ───────────────────────────── Gen-Prompt ─────────────────────────────
+def _kl_satz(kl):
+    """K&L-Satz des Gen-Prompts (v3.18.4, RH 38) aus den K&L-Befundzeilen der Bausteine."""
+    return ("Kellgren-&-Lawrence-Grad laut IB Lab: " + "; ".join(messung_text(z) for z in kl) + ". Gehört ein "
+            "diktierter Befund im Ergebnis zu diesem Gelenk (gleiche Seite, z. B. Arthrose oder "
+            "Gelenkspaltverschmälerung) und ist kein eigener Grad diktiert, steht dahinter genau dieser Grad "
+            "im Format „(Arthrose Grad X nach Kellgren & Lawrence)“ – keinen anderen. Diktiert der Arzt einen "
+            "anderen Grad, gilt der diktierte Grad und der IB-Lab-Grad wird nicht genannt. Mache aus dem "
+            "IB-Lab-Grad keine neue Diagnose (kein „Gonarthrose“, wenn sie nicht diktiert ist).")
+
+
 def prompt_block(bausteine, vorlage=None):
     """<ibl_messwerte> für den Gen-Prompt — nur mit Bausteinen (sonst bleibt der Prompt bit-gleich). Ohne Zahlen und
     ohne Diagnosen: die KI soll nichts davon selbst schreiben, nur wissen, dass es ergänzt wird. vorlage = Text der
@@ -677,24 +712,32 @@ def prompt_block(bausteine, vorlage=None):
     nennen reichte der KI beim Becken nicht)."""
     zeilen = []
     for b in bausteine or []:
-        namen = list(dict.fromkeys(m.name for m in map(messwert, b.befundteil) if m))
+        nur = b.modul in BEFUND_NUR_AUFFAELLIG
+        namen = list(dict.fromkeys(m.name for m in map(messwert, befund_zeilen(b))
+                                   if m and not (nur and _abschnitt_zeile(m.zeile))))
         if namen:
-            thema = THEMEN.get(b.modul)
+            # v3.18.8: bei „nur auffällige Werte“ ersetzen die Zeilen keine Vorlagen-Sätze zum ganzen Thema (die übrigen
+            # Werte sind unauffällig und kommen nicht in den Befund); widersprechende Sätze nennt „weg“ unten wörtlich
+            thema = None if nur else THEMEN.get(b.modul)
             zeilen.append(f"- {b.name}: " + ", ".join(namen) + (f" (ersetzt Vorlagen-Sätze zu: {thema})" if thema else ""))
+    kl = [z for b in bausteine or [] for z in b.befundteil if "kellgren" in z.lower() and br.kl_grade(z)]
+    if not zeilen and kl:
+        # v3.18.8: KOALA ohne Regeltreffer – kein Messwert kommt in den Befund, den K&L-Grad muss die KI trotzdem kennen
+        # (Grad zu einer DIKTIERTEN Arthrose, Regel ab 3.18.5)
+        return ("<ibl_messwerte>\n"
+                "Zu dieser Untersuchung liegen KI-Messwerte von IB Lab vor; sie sind unauffällig und kommen nicht in den "
+                "Befund.\n" + _kl_satz(kl) + "\n"
+                "Regeln: Nenne diese Messwerte nicht selbst und erfinde keine Zahlen. Leite aus ihnen KEINE Diagnose ab: "
+                "ohne diktierte Arthrose kein „Arthrose“/„Gonarthrose“ und kein K&L-Grad.\n"
+                "</ibl_messwerte>")
     if not zeilen:
         return ""
     weg = []
     for b in bausteine:
         if b.ergebnis and vorlage:
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), b.ergebnis) if s not in weg]
-    kl = [z for b in bausteine for z in b.befundteil if "kellgren" in z.lower() and br.kl_grade(z)]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
-        zeilen.append("Kellgren-&-Lawrence-Grad laut IB Lab: " + "; ".join(messung_text(z) for z in kl) + ". Gehört ein "
-                      "diktierter Befund im Ergebnis zu diesem Gelenk (gleiche Seite, z. B. Arthrose oder "
-                      "Gelenkspaltverschmälerung) und ist kein eigener Grad diktiert, steht dahinter genau dieser Grad "
-                      "im Format „(Arthrose Grad X nach Kellgren & Lawrence)“ – keinen anderen. Diktiert der Arzt einen "
-                      "anderen Grad, gilt der diktierte Grad und der IB-Lab-Grad wird nicht genannt. Mache aus dem "
-                      "IB-Lab-Grad keine neue Diagnose (kein „Gonarthrose“, wenn sie nicht diktiert ist).")
+        zeilen.append(_kl_satz(kl))
     if weg:
         zeilen.append("Diese Sätze der Vorlage widersprechen den IB-Lab-Werten – nicht übernehmen (bzw. nur ohne die "
                       "widersprechende Aussage): " + " ".join(f"„{s}“" for s in weg))
@@ -742,13 +785,120 @@ def messung_text(zeile):
     return _QUELLE_ZEILE.sub("", (zeile or "").strip()).rstrip(" .")
 
 
+def _abschnitt_zeile(z):
+    """„Fuß d.p.:“ / „Fuß seitlich rechts:“ — Abschnitts-Beschriftung des Abholers bei mehreren Aufnahmen eines Moduls."""
+    z = (z or "").strip()
+    return z.endswith(":") and "(" not in z and not re.search(r"\d", z)
+
+
+def _punkt_traf(z, abschnitt, punkte, beschriftungen=()):
+    """v3.18.8: Ist aus der Befundzeile z (unter der Beschriftung abschnitt) ein Ergebnispunkt geworden? Erst wörtlich
+    (wie bis 3.18.7: „Calcaneusneigungswinkel 10°“ steht im Punkt), sonst Messgröße + Wert mit passender Seite – der
+    Abholer schreibt im Punkt die Seite nicht in die Klammer („Mittelgradiger Hallux valgus rechts (Hallux-valgus-Winkel
+    24,3°).“) bzw. fasst beide Seiten zusammen („… beidseits (Intermetatarsalwinkel I/II rechts 10°, links 10°).“).
+    Bei mehreren Aufnahmen trägt der Punkt die Beschriftung („Fuß d.p.: …“) – dann nur Zeilen dieser Aufnahme."""
+    m = messung_text(z)
+    if not m or _abschnitt_zeile(z):
+        return False
+    mw = messwert(z)
+    seiten = {s.lower() for s in _SEITE.findall(re.sub(r"\([^()]*\)\.?\s*$", "", z))}
+    for p in punkte or []:
+        titel, sep, rest = p.partition(": ")
+        if sep and titel.strip() in beschriftungen:
+            if titel.strip() != abschnitt:
+                continue
+            p = rest
+        if m in p:
+            return True
+        if mw is None or not mw.wert or len(mw.name) < 3:
+            continue
+        i = p.find(mw.name)
+        while i >= 0:
+            nach = p[i + len(mw.name):]
+            if nach[:1].isspace():
+                teil = re.split(r"[;)]", nach, 1)[0]
+                for f in _PUNKT_WERT.finditer(teil):
+                    if not _wert_gleich(mw, f.group(2), f.group(3)):
+                        continue
+                    s = (f.group(1) or "").lower()
+                    if s:
+                        ok = not seiten or s in seiten or s == "beidseits"
+                    else:                      # Seite steht vor der Klammer („… links (Hallux-valgus-Winkel 24°)“)
+                        ps = {x.lower() for x in _SEITE.findall(p.split("(", 1)[0])}
+                        ok = not seiten or not ps or bool(ps & (seiten | {"beidseits", "beidseitig", "bds"}))
+                    if ok:
+                        return True
+            i = p.find(mw.name, i + 1)
+    return False
+
+
+_PUNKT_WERT = re.compile(r"(?:(rechts|links|beidseits)\s+)?(?<![\d,.])([+\-−]?\d+(?:[.,]\d+)?)(?![\d])\s*(°|mm|cm|%)?")
+
+
+def _wert_gleich(mw, zahl, einheit):
+    """Wert im Ergebnispunkt = Wert der Befundzeile? Zahlen numerisch (10° = 10,0°), Einheiten nur, wenn beide eine haben."""
+    if mw.zahl is None:
+        return mw.wert.strip() == f"{zahl}{einheit or ''}".strip()
+    z = _zahl(zahl)
+    if z is None:
+        return False
+    if mw.einheit and einheit and mw.einheit != einheit:
+        return mw.einheit in _MM and einheit in _MM and _gleich(z, einheit, mw.zahl, mw.einheit)
+    return z == mw.zahl
+
+
+def _treffer(b):
+    """Je Befundzeile des Bausteins: hat eine Regel daraus einen Ergebnispunkt gemacht? (Beschriftungen: False)"""
+    out, abschnitt = [], None
+    titel = {z.strip()[:-1].strip() for z in b.befundteil if _abschnitt_zeile(z)}
+    for z in b.befundteil:
+        if _abschnitt_zeile(z):
+            abschnitt = z.strip()[:-1].strip()
+            out.append(False)
+        else:
+            out.append(_punkt_traf(z, abschnitt, b.ergebnis, titel))
+    return out
+
+
+# v3.18.8 (Peter 12.11.2026, Foto „Fuß beidseits in 2 Ebenen“: „Das ist viel zu viel für den Befund. Bitte nur die
+# pathologischen Maße in den Befund eintragen.“ – Nachtrag: HIPPO und KOALA ebenso): Für diese Module kommen nur die
+# Messzeilen in den Befund (Gerüst und Einsetzen nach der KI), aus denen eine aktive Regel des Abholers (ris-mods
+# ibl/regeln/<modul>.toml) einen Ergebnispunkt gemacht hat. Ergebnispunkte unverändert und vollständig; alle Werte
+# bleiben in den IB-Lab-Details sichtbar. Kein Treffer → keine Befundzeile und kein erfundener Normalsatz (die Regeln
+# decken nicht alle Messgrößen ab). IB Labs eigene „Abnormally High/Low“-Flags zählen hier NICHT. Weitere Module: hier
+# eintragen.
+BEFUND_NUR_AUFFAELLIG = {"frog", "hippo", "koala"}
+
+
+def befund_zeilen(b):
+    """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
+    wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
+    Zeile steht."""
+    if b.modul not in BEFUND_NUR_AUFFAELLIG:
+        return list(b.befundteil)
+    out = []
+    for z, t in zip(b.befundteil, _treffer(b)):
+        if _abschnitt_zeile(z) or t:
+            out.append(z)
+    return _ohne_leere_beschriftung(out)
+
+
+def _ohne_leere_beschriftung(zeilen):
+    return [z for i, z in enumerate(zeilen)
+            if not _abschnitt_zeile(z) or (i + 1 < len(zeilen) and not _abschnitt_zeile(zeilen[i + 1]))]
+
+
+def hat_inhalt(b):
+    """Kommt von Baustein b etwas in den Befund (Befundzeilen nach dem Filter oder Ergebnispunkte)?"""
+    return bool(befund_zeilen(b) or b.ergebnis)
+
+
 def auffaellige_zeilen(bausteine):
     """Befundzeilen, aus deren Messwert ein Ergebnispunkt wurde, und die Ergebnispunkte selbst (in Baustein-Reihenfolge)."""
     out = []
     for b in bausteine or []:
-        for z in b.befundteil:
-            m = messung_text(z)
-            if m and any(m in p for p in b.ergebnis):
+        for z, t in zip(b.befundteil, _treffer(b)):
+            if t:
                 out.append(z)
         out += [p for p in b.ergebnis if p not in out]
     return out
@@ -814,7 +964,7 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     Je Untersuchung ein Abschnitt „## <Titel>“ / „## Befund“ / „## Ergebnis“ (nummeriert wie nach der KI); Titel = Vorlage
     der zugeordneten CAS-Leistung (mit Seite), sonst Region des Moduls (mit Seite), sonst „IB Lab <Modul>“. Messwerte und
     Ergebnispunkte wörtlich; leere Überschriften gibt es nicht."""
-    mit_inhalt = [b for b in bausteine or [] if b.befundteil or b.ergebnis]
+    mit_inhalt = [b for b in bausteine or [] if hat_inhalt(b)]     # v3.18.8: nach dem Filter (befund_zeilen)
     if not mit_inhalt:
         return None
     templates = templates or {}
@@ -835,7 +985,7 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     e = Einsatz(report="")
     teile = []
     for titel, bs in gruppen:
-        befund = [z for b in bs for z in b.befundteil]
+        befund = [z for b in bs for z in befund_zeilen(b)]
         punkte = [p for b in bs for p in b.ergebnis]
         block = [f"## {titel}"]
         if befund:
@@ -845,7 +995,7 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
         teile.append("\n".join(block))
         for b in bs:
             e.behandelt[b.schluessel] = b.version
-            e.eingesetzt[b.schluessel] = list(b.befundteil) + list(b.ergebnis)
+            e.eingesetzt[b.schluessel] = befund_zeilen(b) + list(b.ergebnis)
             e.zuordnung[b.modul] = titel
     e.report = "\n\n".join(teile).strip()
     e.zeilen = [z for zs in e.eingesetzt.values() for z in zs]
