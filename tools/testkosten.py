@@ -28,6 +28,8 @@ Umgebung
   KAISCRIBE_GUTACHTER_KEY     Anthropic-Testschlüssel (sonst Vaultwarden „Anthropic API KaiTest (Konto B)“ per vw_get);
                               nie den KaiFormat-Schlüssel eintragen
   KAISCRIBE_TEST_KONTO_B_MONAT_USD  Monatsgrenze Konto B, nur SENKEN möglich (hart höchstens 150 $)
+  KAISCRIBE_TEST_GCP_MONAT_USD      Monatsgrenze Google (Vertex/Chirp), nur SENKEN möglich (hart höchstens 5 $;
+                                    Guthaben 20 $/Monat gehört der Praxis, Peter 14.11.2026)
   KAISCRIBE_TEST_LIMIT_KONTO  Grenze je Konto innerhalb des Jobs, z. B. "anthropic-b=10,gcp-test=5" (kaiscribe-haiku-ab-n1)
   KAISCRIBE_TEST_LAUF         Kennung je Messlauf (Feld "lauf" im Kostenbuch), z. B. haiku-web
   KAISCRIBE_TEST_MASKE=0      Claude-Weiche ohne Maskierung (Standard: maskiert wie die Produktion, source_code/llm_anbieter)
@@ -127,6 +129,16 @@ KONTO_ANTHROPIC_B = "anthropic-b"
 KONTO_ANTHROPIC_A_ALT = "anthropic-a"      # nur Altbuchungen vor n2 (art=anthropic ohne Konto-Feld)
 VW_TESTSCHLUESSEL = "Anthropic API KaiTest (Konto B)"
 KONTO_B_MONAT_USD = 150.0                  # harte Grenze je Kalendermonat, per Umgebung nur senkbar
+# Peter 14.11.2026: Google-Guthaben (Vertex) nur 20 $/Monat, das braucht die Praxis. Tests auf Google höchstens 5 $
+# je Kalendermonat über alle Jobs — vorher gab es nur Job (5 $) und Tag (15 $), also bis ~450 $/Monat möglich.
+GCP_MONAT_USD = 5.0                        # harte Grenze, per Umgebung nur senkbar
+
+
+def grenze_gcp_monat_usd():
+    try:
+        return min(GCP_MONAT_USD, float(os.environ.get("KAISCRIBE_TEST_GCP_MONAT_USD", GCP_MONAT_USD)))
+    except ValueError:
+        return GCP_MONAT_USD
 
 
 def grenze_konto_b_usd():
@@ -231,6 +243,16 @@ class _Buch:
                         print(f"\n[testkosten] ABBRUCH: Anthropic Konto B (KaiTest) hat diesen Monat schon {monat:.2f} $ "
                               f"Testkosten, Monatsgrenze {gm:.2f} $. Kein Ausweichen auf den KaiFormat-Schlüssel "
                               f"(Konto A = Betrieb) — nächsten Monat weiter oder Peter fragen.", file=sys.stderr, flush=True)
+                raise KostenGrenze(EXIT_GRENZE)
+        else:
+            monat, gm = self.summe_monat(konto or KONTO_GCP_TEST), grenze_gcp_monat_usd()
+            if monat + schaetzung > gm:
+                with self.lock:
+                    if not self.gemeldet:
+                        self.gemeldet = True
+                        print(f"\n[testkosten] ABBRUCH: Google-Testkosten diesen Monat schon {monat:.2f} $, Monatsgrenze "
+                              f"{gm:.2f} $ — das Vertex-Guthaben (20 $/Monat) gehört der Praxis. Nächsten Monat weiter "
+                              f"oder Peter fragen.", file=sys.stderr, flush=True)
                 raise KostenGrenze(EXIT_GRENZE)
         tag, gt = self.summe_tag(), grenze_tag_usd()
         if tag + schaetzung > gt:

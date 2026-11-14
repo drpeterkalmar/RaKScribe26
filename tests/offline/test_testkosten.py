@@ -236,11 +236,27 @@ try:
     check("Konto B über 150 $/Monat → Abbruch", False)
 except tk.KostenGrenze as e:
     check("Konto B über 150 $/Monat → KostenGrenze (Exit 7)", e.code == 7)
+_gcp_alt = tk.GCP_MONAT_USD
+tk.GCP_MONAT_USD = 1000.0  # nur für diese Prüfung: Google-Monatsgrenze ausblenden
 try:
     tk.BUCH.pruefen(1.5)
     check("Gemini-Aufrufe hängen nicht an der Konto-B-Grenze", True)
 except SystemExit:
     check("Gemini-Aufrufe hängen nicht an der Konto-B-Grenze", False)
+tk.GCP_MONAT_USD = _gcp_alt
+
+# Peter 14.11.2026: Google-Testkosten höchstens 5 $/Monat (Vertex-Guthaben 20 $ gehört der Praxis)
+os.environ["KAISCRIBE_TEST_GCP_MONAT_USD"] = "50"
+check("Google-Monatsgrenze per Umgebung nicht über 5 $ anhebbar", tk.grenze_gcp_monat_usd() == 5.0)
+os.environ["KAISCRIBE_TEST_GCP_MONAT_USD"] = "2"
+check("… aber senkbar", tk.grenze_gcp_monat_usd() == 2.0)
+del os.environ["KAISCRIBE_TEST_GCP_MONAT_USD"]
+_gm = tk.BUCH.summe_monat("gcp-test")
+try:
+    tk.BUCH.pruefen(5.0 - _gm + 0.01)
+    check("Google über 5 $/Monat → Abbruch", False)
+except tk.KostenGrenze as e:
+    check("Google über 5 $/Monat → KostenGrenze (Exit 7)", e.code == 7)
 with open(anderer, "a") as fh:
     fh.write(json.dumps({"ts": monat + "-02T08:00:00", "art": "anthropic", "konto": "anthropic-b", "usd": 0.99}) + "\n")
 tk.urllib.request.urlopen = fake_urlopen
