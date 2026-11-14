@@ -408,10 +408,29 @@ const widVorrang = (g: Set<string>, c: WidC): Set<string> => {
   return g;
 };
 
+// v3.18.11 (Echttest 14.11.2026): Chirp-Marken „{Punkt}“, „{Komma}“ … → Satzzeichen, bevor Diktat-Teilsätze wörtlich ins
+// Ergebnis kommen (Arthrose-Wächter, Kurzsätze). Ohne „{“/„}“ unverändert. Sync: stt_satzzeichen, Fixtures „stt_satzzeichen“.
+const STT_ZEICHEN: Record<string, string> = {
+  punkt: '.', komma: ',', doppelpunkt: ':', semikolon: ';', fragezeichen: '?', ausrufezeichen: '!',
+  'klammer auf': '(', 'klammer zu': ')', bindestrich: '-', 'schrägstrich': '/',
+};
+const STT_MARKE = /[ \t]*\{[ \t]*([^{}\n]*?)[ \t]*\}([ \t]*)/g;
+export function sttSatzzeichen(text: string): string {
+  if (!text || (!text.includes('{') && !text.includes('}'))) return text;
+  const t = text.replace(STT_MARKE, (_m, wort: string, nach: string) => {
+    const w = ws(wort.replace(/-/g, ' '));
+    const z = STT_ZEICHEN[w.toLowerCase()];
+    if (z === undefined) return (w ? ' ' + w : '') + nach;
+    if (z === '(' || z === '/') return z === '(' ? ' (' : '/';
+    return (z === '-' ? ' -' : z) + nach;
+  }).replace(/[{}]/g, '');
+  return t.replace(/([.,;:!?])\1+/g, '$1');
+}
+
 export function widerspruchBefunde(diktat: string, d?: WiderspruchDaten): WiderspruchBefund[] {
   const c = widC(d);
   const out: WiderspruchBefund[] = [];
-  for (const teil of (diktat || '').split(WID_TRENNER)) {
+  for (const teil of (sttSatzzeichen(diktat) || '').split(WID_TRENNER)) {
     const roh = ws(teil).replace(WID_VORSPANN, '');
     const t = roh.toLowerCase();
     if (!t) continue;
@@ -830,7 +849,7 @@ const ergebnisZeile = (zeilen: string[]): number => zeilen.findIndex(z => z.trim
 export function kurzsaetzeSichern(report: string, diktat: string, d: KurzsatzDaten = KURZSAETZE): [string, string[]] {
   if (!report || !report.includes('## Ergebnis')) return [report, []];
   const c = kurzC(d);
-  const dk = diktat || '';
+  const dk = sttSatzzeichen(diktat || '');   // v3.18.11: Chirp-Marken nie wörtlich ins Ergebnis
   const treffer = kurzTreffer(dk, c);
   if (!treffer.length) return [report, []];
   const zeilen = report.split('\n');

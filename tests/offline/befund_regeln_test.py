@@ -98,6 +98,10 @@ print("── PY: Arthrose-Wächter (v3.18.5, Nachtrag RH 99: keine Arthrose ohn
 for c in F["arthrose"]["bereinigen"]:
     g = br.arthrose_bereinigen(c["in"], c["diktat"])[0]
     check(g == c["out"], f"arthrose: {c['name']}", g)
+print("── PY: Chirp-Satzzeichen-Marken (v3.18.11, Echttest 14.11.)")
+for c in F["stt_satzzeichen"]["faelle"]:
+    g = br.stt_satzzeichen(c["in"])
+    check(g == c["out"], f"stt-marken: {c['in'][:45]!r}", g)
 
 print("── PY: EXE-Prompt-Auswahl (waehle_prompt)")
 NEU = "<!-- RAKSCRIBE_PROMPT_VERSION: 2026-10-05-a -->\nNEU"

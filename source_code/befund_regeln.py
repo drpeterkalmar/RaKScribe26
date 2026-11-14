@@ -557,13 +557,41 @@ def _wid_vorrang(g, c):
     return g
 
 
+# v3.18.11 (kaiscribe-3187-echttest-n1b, Echttest 14.11.2026 „Becken im Stehen …“): Chirp 3 schreibt gesprochene
+# Satzzeichen als Marken („Randanbauten {Komma} links unauffällig {Punkt}“, auch „{ Punkt}“, „{Klammer-auf}“).
+# Wörtlich übernommene Diktat-Teilsätze (Arthrose-Wächter 3.18.10, Kurzsätze 3.16.6) hatten sonst „} … {Komma} … {.“
+# im Ergebnis. Vor dem Zerlegen werden die Marken zu Satzzeichen. Ohne „{“/„}“ bleibt der Text unverändert.
+# Sync: befundRegeln.ts sttSatzzeichen, Fixtures „stt_satzzeichen“.
+_STT_ZEICHEN = {"punkt": ".", "komma": ",", "doppelpunkt": ":", "semikolon": ";", "fragezeichen": "?",
+                "ausrufezeichen": "!", "klammer auf": "(", "klammer zu": ")", "bindestrich": "-", "schrägstrich": "/"}
+_STT_MARKE = re.compile(r"[ \t]*\{[ \t]*([^{}\n]*?)[ \t]*\}([ \t]*)")
+
+
+def _stt_marke(m):
+    w = " ".join(m.group(1).replace("-", " ").split())
+    z = _STT_ZEICHEN.get(w.lower())
+    if z is None:                                   # unbekannte Marke → ihr Wort
+        return (" " + w if w else "") + m.group(2)
+    if z in "(/":
+        return (" (" if z == "(" else "/")
+    return (" -" if z == "-" else z) + m.group(2)
+
+
+def stt_satzzeichen(text):
+    """Chirp-Marken „{Punkt}“, „{Komma}“ … → Satzzeichen; übrige „{“/„}“ weg, doppelte Satzzeichen einfach."""
+    if not text or ("{" not in text and "}" not in text):
+        return text
+    t = _STT_MARKE.sub(_stt_marke, text).replace("{", "").replace("}", "")
+    return re.sub(r"([.,;:!?])\1+", r"\1", t)
+
+
 def widerspruch_befunde(diktat, daten=None):
     """Diktat → umschriebene/degenerative Befunde aus dem Katalog, nicht verneint („kein Fersensporn“ zählt nicht).
     Je Befund: id, name, phrase (diktierter Teilsatz), gruppen (Strukturen des Teilsatzes + Standard der Kategorie),
     global (Lage unbekannt bzw. die ganze Region, z. B. Osteopenie)."""
     c = _wid(daten)
     out = []
-    for teil in _WID_TRENNER.split(diktat or ""):
+    for teil in _WID_TRENNER.split(stt_satzzeichen(diktat) or ""):
         roh = _WID_VORSPANN.sub("", " ".join(teil.split()))
         t = roh.lower()
         if not t:
@@ -1024,7 +1052,7 @@ def kurzsaetze_sichern(report, diktat, daten=None):
     if not report or "## Ergebnis" not in report:
         return report, []
     c = _kurz(daten)
-    d = diktat or ""
+    d = stt_satzzeichen(diktat or "")              # v3.18.11: Chirp-Marken nie wörtlich ins Ergebnis
     treffer = _kurz_treffer(d, c)
     if not treffer:
         return report, []

@@ -875,6 +875,12 @@
     "diktat": "Knie rechts. Gonarthrose. MRT empfohlen.",
     "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Weiterführende Magnetresonanztomographie empfohlen.",
     "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGelenkspaltverschmälerung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Weiterführende Magnetresonanztomographie empfohlen."
+   },
+   {
+    "name": "Chirp-Marken: Empfehlung ohne „{Punkt}“ als Ergebnis-Punkt",
+    "diktat": "Knie links {Punkt} unauffällig {Punkt} Kontrolle in sechs Wochen empfohlen {Punkt}",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nUnauffällige Darstellung.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nUnauffällige Darstellung.\n\n## Ergebnis\n1. Regelrechte Darstellung des Kniegelenkes links.\n2. Kontrolle in sechs Wochen empfohlen."
    }
   ]
  },
@@ -1176,6 +1182,49 @@
     "in": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Links Gelenkflächen glatt und kongruent. Keine Coxarthrosezeichen links.\n\n## Ergebnis\n1. Beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten.\n2. Beginnende Coxarthrose rechts.",
     "diktat": "Becken im Stehen. Beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten, links unauffällig.",
     "out": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Links Gelenkflächen glatt und kongruent. Keine Coxarthrosezeichen links.\n\n## Ergebnis\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten."
+   },
+   {
+    "name": "Echttest e 14.11. (Chirp-Marken): diktierter degenerativer Befund ohne „{Komma}“/„{Punkt}“ im Ergebnis",
+    "in": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Keine Coxarthrosezeichen links.\n\n## Ergebnis\nBeginnende Coxarthrose rechts.",
+    "diktat": "Becken im Stehen {Punkt} beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten {Komma} links unauffällig {Punkt}",
+    "out": "## Beckenübersicht und Hüfte\n\n## Befund\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten. Keine Coxarthrosezeichen links.\n\n## Ergebnis\nBeginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten."
+   }
+  ]
+ },
+ "stt_satzzeichen": {
+  "_doc": "v3.18.11 (Echttest 14.11.2026): Chirp-3-Marken für gesprochene Satzzeichen → Satzzeichen (unbekannte Marke → ihr Wort, übrige Klammern weg). out = stt_satzzeichen(in).",
+  "faelle": [
+   {
+    "in": "Becken im Stehen {Punkt} beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten {Komma} links unauffällig {Punkt}",
+    "out": "Becken im Stehen. beginnende degenerative Veränderungen am rechten Hüftgelenk mit kleinen Randanbauten, links unauffällig."
+   },
+   {
+    "in": "Hand rechts {Punkt} unauffällig {Punkt}",
+    "out": "Hand rechts. unauffällig."
+   },
+   {
+    "in": "Natrium 138 Millimol pro Liter { Punkt} Kalium 4,7",
+    "out": "Natrium 138 Millimol pro Liter. Kalium 4,7"
+   },
+   {
+    "in": "akutes Koronarsyndrom {Klammer-auf} ACS {Klammer-zu} neue Zeile {Bindestrich} schlecht eingestellt",
+    "out": "akutes Koronarsyndrom (ACS) neue Zeile - schlecht eingestellt"
+   },
+   {
+    "in": "HNO {Schrägstrich} Augen {Doppelpunkt} frei",
+    "out": "HNO/Augen: frei"
+   },
+   {
+    "in": "Gonarthrose {Punkt}.",
+    "out": "Gonarthrose."
+   },
+   {
+    "in": "Knie links. Kein Erguss.",
+    "out": "Knie links. Kein Erguss."
+   },
+   {
+    "in": "Rest } ohne {Marke",
+    "out": "Rest  ohne Marke"
    }
   ]
  }
