@@ -4,6 +4,8 @@ Engines: chirp_3 (IST-Produktion, STT v2 eu) vs. Gemini-Audio-ASR (EU-Endpoint
 gemini-3.5-flash, mit/ohne Vokabel-Priming aus der Produktions-MEDICAL_PHRASES-Liste)
 vs. gemini-3.8-flash (global, Referenz aus 06.09.). Termini-Hits + Latenz.
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import base64, json, pathlib, re, subprocess, sys, time, urllib.request, urllib.error
 from google.oauth2 import service_account
 import google.auth.transport.requests as gtr

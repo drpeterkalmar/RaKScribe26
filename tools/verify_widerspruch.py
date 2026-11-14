@@ -7,6 +7,8 @@ die deterministische Nachprüfung (widersprueche_bereinigen) eingreifen musste.
 Ergebnis: docs/benchmarks/widerspruch_live_3.15.5.json
   python3 tools/verify_widerspruch.py
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import sys, json, pathlib, re, time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "source_code")]

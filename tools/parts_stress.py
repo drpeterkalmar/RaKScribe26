@@ -2,6 +2,8 @@
 """tools/parts_stress.py — v2.11.1-Gate: N echte Gemini-3.5-Gen-Aufrufe (Standard 20, höchstens 100) (EXE-Prompt radiology_prompt.txt,
 Harness-Fälle rotierend). Pro Antwort: Anzahl parts, alte Lesart (parts[0]) vs. neue (join).
 Rohantworten → parts_stress_raw.json (für den TS-Paritätstest). Exit 1 wenn neue Lesart je leer/unvollständig."""
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, sys, time, re, pathlib, urllib.request, urllib.error
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
 sys.path.insert(0, str(ROOT / "tools"))

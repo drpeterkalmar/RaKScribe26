@@ -14,6 +14,8 @@ ignorieren) und alte unnummerierte Praxisbefunde als Few-Shot-Beispiele (dürfen
   /usr/bin/python3 tools/verify_georg_schulter_ellbogen.py          # Gate (3× A, 3× B, 2 Zusatzfälle)
   /usr/bin/python3 tools/verify_georg_schulter_ellbogen.py --ab     # zusätzlich A/B Few-Shots an/aus (je 3×)
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, pathlib, re, subprocess, sys, time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)

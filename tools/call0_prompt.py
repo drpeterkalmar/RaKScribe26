@@ -7,6 +7,8 @@ Harness-/Verify-Skripte dürfen den Prompt daher nicht mehr per Regex + rawText-
     from call0_prompt import build_call0_prompt
     prompt = build_call0_prompt(roh_text)   # auto-Regeln angewandt + Block eingesetzt + rawText gefüllt
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import pathlib, re, sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)

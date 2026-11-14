@@ -9,6 +9,8 @@ kaiscribe-testkosten-n1 entfernt: Tests laufen nur im Testprojekt.)
 
 Aufruf:  python3 tools/stt_ab_g35t.py [runs=3]   (Testprojekt rakscribe-test, tools/testkosten.py)
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import base64, difflib, json, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.error
 from google.oauth2 import service_account
 import google.auth.transport.requests as gtr

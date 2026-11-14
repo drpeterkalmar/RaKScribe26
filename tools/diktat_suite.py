@@ -9,6 +9,8 @@ Pflichtlauf bei JEDEM detect_template-Trigger-/Prompt-Templates-Change:
   3. Detector-Asserts (Röntgen/Sono-Disambiguierung).
 Exit 1 bei FAIL. Laufzeit ~3-4 min (Gemini live, serial wegen Rate-Limit).
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import base64
 import json
 import pathlib

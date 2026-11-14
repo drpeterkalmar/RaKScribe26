@@ -10,6 +10,8 @@ unangetastet, wo das Diktat nichts sagt?'
 
 Aufruf: python3 tools/model_ab.py <model> <location> [runs]  → ab_<model>_<loc>.json
 """
+import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
+import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, re, sys, time, os, urllib.request, urllib.error, pathlib, statistics
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
 sys.path.insert(0, str(ROOT / "tools"))
