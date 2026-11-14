@@ -12,8 +12,6 @@ chirp_3, Gemini) ist per page.route gemockt; Mikrofon = Chromium-Testgerät. Lok
   (requestDevice mit SpeechMike-Filtern); ohne WebHID: kein Menüpunkt.
   /usr/bin/python3 tools/e2e_speechmike_web.py      (vorher: cd web_app && npm run build)
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, os, pathlib, re, signal, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 from cryptography.hazmat.primitives.asymmetric import rsa

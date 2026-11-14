@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """tools/chirp_adapt_ab2.py — finale kuratierte chirp_3-PhraseSet-Liste (CHIRP_PHRASES) vs. ohne,
 auf den 6 echten Diktaten + 4 say/Anna-Synthesen mit Fachtermini (Regressions-Check)."""
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import sys, base64, json, re, subprocess, pathlib, urllib.error
 sys.argv = ['x']
 import stt_ab as S

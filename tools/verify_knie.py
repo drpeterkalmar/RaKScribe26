@@ -7,8 +7,6 @@ Ergebnis mit beiden Kompartimenten, Grad-Adjektiven und K&L zum Adjektiv (v3.18.
 Kette A = EXE-Pfad (radiology_prompt.txt + <untersuchung>), Kette B = Web-Pfad (Call0→Call1→Call2,
 Prompts exakt aus App.tsx extrahiert).
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import os, re, sys, json, pathlib, urllib.request, urllib.error, time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (v3.18.4: nicht mehr fest ~/dev)

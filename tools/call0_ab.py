@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """tools/call0_ab.py — STT-Korrektur-Call (App.tsx correctionPrompt, echt extrahiert) auf den
 chirp_3-Rohtranskripten der echten Diktate: 2.5-flash (IST) vs 3.5-flash eu."""
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, re, sys, time, statistics, pathlib
 sys.argv = [sys.argv[0], "gemini-2.5-flash", "europe-west3", "1"]
 import model_ab as M

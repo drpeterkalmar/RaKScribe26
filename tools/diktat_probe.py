@@ -10,8 +10,6 @@ Bewertet wird: Titel (##-Zeile vor ## Befund), Normalbefund-Treue (Template-Sät
 erhalten/erwartbar gekürzt), kein (Allgemein)-Leak, Messwerte exakt.
 Ergebnis als JSON/Markdown → K3 bewertet gegen die Referenztexte.
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.error, base64
 
 ROOT = pathlib.Path.home() / "dev" / "RaKScribe26"

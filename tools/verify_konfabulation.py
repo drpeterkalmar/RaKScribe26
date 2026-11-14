@@ -25,8 +25,6 @@ Fälle (synthetisch, keine Patientendaten — nur der Diktat-Wortlaut):
 Aufruf: tools/verify_konfabulation.py [Läufe je Fall, Standard 1] [Fall …]   (z. B. „20 rh38_cas rh38_web“)
 Ergebnis: docs/benchmarks/konfabulation_<datum>.json (Berichte + Befunde je Lauf).
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import datetime
 import json
 import pathlib

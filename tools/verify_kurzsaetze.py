@@ -14,8 +14,6 @@ echtes Gemini, je N Läufe (Standard 3; temp 0 ist nicht deterministisch).
   python3 tools/verify_kurzsaetze.py [läufe]
 Ergebnis: docs/benchmarks/kurzsaetze_live_<VERSION>.json, Exit 1 bei jedem fehlenden Kurzsatz.
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json
 import pathlib
 import re

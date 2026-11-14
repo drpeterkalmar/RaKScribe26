@@ -8,8 +8,6 @@ B) Verbindungsabbruch der Live-Anzeige nach 20 s (gRPC UNAVAILABLE): Aufnahme l�
 Aufruf: /usr/bin/python3 tools/aufnahme_live_test.py [A|B|AB]   (Testprojekt rakscribe-test, tools/testkosten.py)
 Sprachdatei: macOS `say` (Anna), wird nach $TMPDIR erzeugt. Dauer A ≈ Diktatlänge in Echtzeit.
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import os, pathlib, subprocess, sys, threading, time, wave
 import numpy as np
 

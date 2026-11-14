@@ -4,8 +4,6 @@ gemini-3.5-flash @ EU). App-Guard wird nachgebildet: Befundteil nach Call2 < 70 
 K2: Nervensono (N. medianus / N. ulnaris) — Normalbefund bleibt, 'Bild wie bei' bleibt, keine CSA im Ergebnis.
 K3: 'Gelenksarthrose C3 bis C5' bleibt wörtlich im Ergebnis (nicht Facetten-/Uncovertebral-).
 Aufruf: python3 tools/verify_k2k3.py [runs]"""
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import json, re, sys, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (Skript liegt in tools/)
 sys.path.insert(0, str(ROOT / "tools"))

@@ -9,8 +9,6 @@ Kette A (EXE-Pfad): radiology_prompt.txt → Call1 Gen. Erwartung: KEIN 'Flachpr
 Kette B (Web-Pfad): Call0 STT-Korrektur (Prompt exakt aus App.tsx, mit Flachprofil-Fixes) →
 Call1 Gen (newDefaultPrompt aus App.tsx, per Node evaluiert) → Call2 Validierung (Prompt exakt aus App.tsx).
 """
-import sys as _kb_sys, pathlib as _kb_pl; _kb_sys.path.insert(0, str(_kb_pl.Path(__file__).resolve().parent))
-import kosten_bremse  # noqa: F401,E402  Test-Budget ≤5 $/Monat, Vertex-Guthaben 20 $ (Peter 14.11.2026)
 import os, re, sys, json, pathlib, urllib.request, urllib.error, subprocess, time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]  # Repo-Root (v3.18.4: nicht mehr fest ~/dev)
