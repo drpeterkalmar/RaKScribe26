@@ -9,6 +9,9 @@ os.environ.update({"KAISCRIBE_TEST_LOGDIR": TMP, "KAISCRIBE_TEST_JOB": "offline-
 os.environ.pop("KAISCRIBE_TEST_RELEASE", None)
 import testkosten as tk  # noqa: E402
 
+_GCP_ECHT = tk.GCP_MONAT_USD
+tk.GCP_MONAT_USD = 1000.0  # Logik-Prüfungen ohne Google-Monatsgrenze; die echte Grenze (0 $) prüft der eigene Abschnitt unten
+
 fails = 0
 
 
@@ -245,18 +248,18 @@ except SystemExit:
     check("Gemini-Aufrufe hängen nicht an der Konto-B-Grenze", False)
 tk.GCP_MONAT_USD = _gcp_alt
 
-# Peter 14.11.2026: Google-Testkosten höchstens 5 $/Monat (Vertex-Guthaben 20 $ gehört der Praxis)
+# Peter 14.11.2026: keine Google-Testkosten mehr (Grenze 0 $, nicht anhebbar)
+check("Google-Testgrenze ist 0 $", _GCP_ECHT == 0.0)
+tk.GCP_MONAT_USD = _GCP_ECHT
 os.environ["KAISCRIBE_TEST_GCP_MONAT_USD"] = "50"
-check("Google-Monatsgrenze per Umgebung nicht über 5 $ anhebbar", tk.grenze_gcp_monat_usd() == 5.0)
-os.environ["KAISCRIBE_TEST_GCP_MONAT_USD"] = "2"
-check("… aber senkbar", tk.grenze_gcp_monat_usd() == 2.0)
+check("Google-Monatsgrenze per Umgebung nicht anhebbar", tk.grenze_gcp_monat_usd() == 0.0)
 del os.environ["KAISCRIBE_TEST_GCP_MONAT_USD"]
-_gm = tk.BUCH.summe_monat("gcp-test")
 try:
-    tk.BUCH.pruefen(5.0 - _gm + 0.01)
-    check("Google über 5 $/Monat → Abbruch", False)
+    tk.BUCH.pruefen(0.001)
+    check("jeder Google-Testaufruf → Abbruch", False)
 except tk.KostenGrenze as e:
-    check("Google über 5 $/Monat → KostenGrenze (Exit 7)", e.code == 7)
+    check("jeder Google-Testaufruf → KostenGrenze (Exit 7)", e.code == 7)
+tk.GCP_MONAT_USD = 1000.0
 with open(anderer, "a") as fh:
     fh.write(json.dumps({"ts": monat + "-02T08:00:00", "art": "anthropic", "konto": "anthropic-b", "usd": 0.99}) + "\n")
 tk.urllib.request.urlopen = fake_urlopen

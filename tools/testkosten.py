@@ -129,9 +129,9 @@ KONTO_ANTHROPIC_B = "anthropic-b"
 KONTO_ANTHROPIC_A_ALT = "anthropic-a"      # nur Altbuchungen vor n2 (art=anthropic ohne Konto-Feld)
 VW_TESTSCHLUESSEL = "Anthropic API KaiTest (Konto B)"
 KONTO_B_MONAT_USD = 150.0                  # harte Grenze je Kalendermonat, per Umgebung nur senkbar
-# Peter 14.11.2026: Google-Guthaben (Vertex) nur 20 $/Monat, das braucht die Praxis. Tests auf Google höchstens 5 $
-# je Kalendermonat über alle Jobs — vorher gab es nur Job (5 $) und Tag (15 $), also bis ~450 $/Monat möglich.
-GCP_MONAT_USD = 5.0                        # harte Grenze, per Umgebung nur senkbar
+# Peter 14.11.2026 (Budgetalarm 20 € gesprengt durch Testläufe 12.11.): KEINE Google-Kosten für Tests mehr.
+# Tests laufen über Anthropic Konto B (maskiert). Google-Guthaben (~9 €/Monat) gehört ausschließlich dem Praxisbetrieb.
+GCP_MONAT_USD = 0.0                        # harte Grenze, per Umgebung nur senkbar – jeder Google-Testaufruf bricht ab
 
 
 def grenze_gcp_monat_usd():
@@ -251,8 +251,7 @@ class _Buch:
                     if not self.gemeldet:
                         self.gemeldet = True
                         print(f"\n[testkosten] ABBRUCH: Google-Testkosten diesen Monat schon {monat:.2f} $, Monatsgrenze "
-                              f"{gm:.2f} $ — das Vertex-Guthaben (20 $/Monat) gehört der Praxis. Nächsten Monat weiter "
-                              f"oder Peter fragen.", file=sys.stderr, flush=True)
+                              f"{gm:.2f} $ — Google-Tests sind gesperrt (Peter 14.11.2026) – Tests über testkosten.sonnet() / Anthropic Konto B.", file=sys.stderr, flush=True)
                 raise KostenGrenze(EXIT_GRENZE)
         tag, gt = self.summe_tag(), grenze_tag_usd()
         if tag + schaetzung > gt:
