@@ -20,8 +20,11 @@ STANDARD_INHALT = (
     "# Befund-KI: gemini (Vertex AI, gemini-3.5-flash am EU-Endpoint — Schlüssel aus rakscribe-praxis-key.json)\n"
     "LLM_PROVIDER = gemini\n"
     "LLM_MODEL = gemini-3.5-flash\n"
-    "# Anbieter: gemini (Standard) | anthropic (maskiert, Rückfall Gemini; Schlüssel anthropic_api_key)\n"
-    "LLM_ANBIETER = gemini\n"
+    "# Anbieter: anthropic (Standard seit 16.11.2026: Claude Sonnet 5.5, Text maskiert; jedes Problem → Gemini als\n"
+    "# Rückfall; Schlüssel anthropic_api_key in rakscribe-praxis-key.json) | gemini\n"
+    "LLM_ANBIETER = anthropic\n"
+    "ANTHROPIC_MODELL = claude-sonnet-5-5\n"
+    "ANTHROPIC_FRIST = 20\n"
 )
 
 
@@ -35,10 +38,11 @@ class Config:
     llm_model: str = "gemini-3.5-flash"
     api_key: str = ""           # nur für LLM_PROVIDER = openai/ollama (Gemini: Praxis-Schlüssel)
     # kaiscribe-haiku-ab-n1 (13.11.2026): Befund-KI-Anbieter gemini (Standard) | anthropic (maskiert, Rückfall Gemini);
-    # LLM_ANBIETER_KORREKTUR nur für Call 0 (leer = wie LLM_ANBIETER), ANTHROPIC_MODELL, ANTHROPIC_FRIST (s)
-    llm_anbieter: str = "gemini"
+    # LLM_ANBIETER_KORREKTUR nur für Call 0 (leer = wie LLM_ANBIETER), ANTHROPIC_MODELL, ANTHROPIC_FRIST (s).
+    # kaiscribe-sonnet-n2 (Peter 14.11.2026 „go“): Standard anthropic + Claude Sonnet 5.5, Gemini nur noch Rückfall.
+    llm_anbieter: str = "anthropic"
     llm_anbieter_korrektur: str = ""
-    anthropic_modell: str = "claude-haiku-5-5"
+    anthropic_modell: str = "claude-sonnet-5-5"
     anthropic_frist: int = 20
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
     # v3.18.5 (Nachtrag RH 99): Lauf-Protokoll je Befund (STT-Text, Vorschlag, Modell, Prompt-Stand), auch ohne EOL;
@@ -104,7 +108,7 @@ def load_config(path):
     cfg.llm_model = (sek.get("LLM_MODEL", "") or cfg.llm_model).strip()
     cfg.api_key = sek.get("API_KEY", "").strip().replace('"', '')
     cfg.rag_beispiele = _int(sek, "RAG_BEISPIELE", 0, cfg.warnungen)
-    cfg.llm_anbieter = _anbieter(sek, "LLM_ANBIETER", "gemini", cfg.warnungen)
+    cfg.llm_anbieter = _anbieter(sek, "LLM_ANBIETER", "anthropic", cfg.warnungen)
     cfg.llm_anbieter_korrektur = _anbieter(sek, "LLM_ANBIETER_KORREKTUR", "", cfg.warnungen)
     cfg.anthropic_modell = (sek.get("ANTHROPIC_MODELL", "") or cfg.anthropic_modell).strip()
     cfg.anthropic_frist = max(3, _int(sek, "ANTHROPIC_FRIST", 20, cfg.warnungen))

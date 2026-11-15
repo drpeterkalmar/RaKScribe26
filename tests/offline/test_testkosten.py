@@ -158,7 +158,9 @@ for f in sorted(set(dateien)):
         continue
     txt = f.read_text(encoding="utf-8", errors="replace")
     treffer += [f"{f.relative_to(ROOT)}:{i}" for i, z in enumerate(txt.splitlines(), 1) if KAIFORMAT.search(z)]
-    if f.name != "testkosten.py" and ANTH_REST.search(txt):
+    # sonnet-n2: tools/buero/kaiscribe_anthropic.py ist BETRIEB am Büro-PC (Schlüssel Konto A aus der Windows-
+    # Anmeldeinformation, nur ein 5-Token-Prüfaufruf beim Umstellen) – kein Testskript, liest nie Vaultwarden/Umgebung
+    if f.name not in ("testkosten.py", "kaiscribe_anthropic.py") and ANTH_REST.search(txt):
         rest.append(str(f.relative_to(ROOT)))
 check("kein Testskript liest den KaiFormat-Schlüssel (Vaultwarden „…KaiFormat“ / ANTHROPIC_API_KEY)", not treffer,
       ", ".join(treffer[:12]))

@@ -1,6 +1,7 @@
 """Befund-KI-Anbieter der EXE (kaiscribe-haiku-ab-n1, 13.11.2026) — ohne Tk/Windows importierbar, Netz austauschbar.
 
-Einstellung LLM_ANBIETER (config.ini) = gemini (Standard, unverändert) | anthropic. Später kann ein dritter Anbieter
+Einstellung LLM_ANBIETER (config.ini) = anthropic (Standard seit kaiscribe-sonnet-n2, 16.11.2026: Claude Sonnet 5.5
+maskiert, Peter 14.11. „go“ + „ich will nicht noch extra google zahlen“) | gemini (nur noch Rückfall bzw. von Hand). Später kann ein dritter Anbieter
 (lokales Modell in der VM) dazukommen: eigener Zweig in Weiche._anbieter_aufruf, Maskierung/Rückfall bleiben gleich.
 
 Anthropic-Weg (Peters Entscheid 03.11.2026: Claude direkt bei Anthropic NUR mit maskiertem Text)
@@ -9,9 +10,11 @@ Anthropic-Weg (Peters Entscheid 03.11.2026: Claude direkt bei Anthropic NUR mit 
   2. Der Rest (Vorlage, Beispiele/Widerspruch-Block, CAS-/IB-Lab-Block, Diktat) wird mit ki_maske.Maske maskiert
      (Namen, Daten, Nummern, Adressen, E-Mail → ⟦P1⟧ …) und unabhängig nachgeprüft (restpruefung).
   3. Antwort lokal zurücksetzen. Rückfall auf Gemini (und Protokollzeile, nur Kategorie, nie der Wert), wenn:
-     Maske unsicher (Merkmal im Ausgang), ein Platzhalter des Diktats fehlt in der Antwort, ein unbekannter/
-     kaputter Platzhalter übrig bleibt, die Antwort unvollständig ist, Anthropic ausfällt oder die Frist überschreitet.
-  Nie ein Befund mit fehlendem Namen/Datum — dann lieber Gemini.
+     Maske unsicher (Merkmal im Ausgang), ein DATUM des Diktats fehlt in der Antwort, ein unbekannter/kaputter
+     Platzhalter übrig bleibt, die Antwort unvollständig ist, Anthropic ausfällt oder die Frist überschreitet.
+  Platzhalter-Regel (sonnet-n2, 16.11.2026): Pflicht sind nur die Daten (⟦D…⟧) des Diktats. Zuweiser-/Personennamen,
+  Nummern, Adressen darf der Befund weglassen wie bei Gemini (das lässt sie selbst weg, Messung 13.11.: 0/5 bzw. 1/5) —
+  sonst ginge jeder Befund mit Zuweiser im Diktat doppelt (erst Claude, dann Gemini auf Google-Kosten).
 
 ki_maske.py ist eine KOPIE von ~/dev/ris-mods/bruecke/ki_maske.py (KaiFormat); tests/offline/test_llm_anbieter.py
 prüft die Gleichheit, solange ris-mods daneben liegt.
@@ -25,15 +28,22 @@ import ki_maske
 
 ANBIETER = ("gemini", "anthropic")
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
-ANTHROPIC_MODELL = "claude-haiku-5-5"
+ANTHROPIC_MODELL = "claude-sonnet-5-5"   # Standard seit sonnet-n2 (vorher Haiku nur Messung)
 ANTHROPIC_FRIST_S = 20          # Live-Diktat darf nicht hängen: danach Gemini
 MAX_TOKENS = 4000
 
-# $ je 1 Mio Token (Input, Cache-Lesen, Cache-Schreiben 5 min, Output) — Anthropic-Preisliste; Haiku 5.5 bis 100k Prompt
+# $ je 1 Mio Token (Input, Cache-Lesen, Cache-Schreiben 5 min, Output) — Anthropic-Preisliste; Haiku 5.5 bis 100k Prompt.
+# Cache-Schreiben 1 h = 2 × Input (statt 1,25 × für 5 min).
 PREISE = {
     "claude-haiku-5-5": (0.10, 0.01, 0.125, 0.50),
     "claude-sonnet-5-5": (2.00, 0.20, 2.50, 10.00),
 }
+
+# sonnet-n2: fester Prompt-Anfang 1 Stunde im Cache (Schreiben 2 × Input statt 1,25 ×, Lesen 0,1 ×). Im Ordi liegen
+# zwischen zwei Befunden oft > 5 min (Pausen, Ultraschall) — mit 5 min würde der ~11k-Token-Anfang dann jedes Mal neu
+# geschrieben. Messung + Rechnung: docs/benchmarks/BERICHT-sonnet-n2.md.
+CACHE = {"type": "ephemeral", "ttl": "1h"}
+PFLICHT_ARTEN = "D"     # Platzhalter-Arten, die in der Antwort wiederkommen MÜSSEN (Daten), siehe Kopf
 
 # „Nachdenken aus“ je Modell: Haiku 5.5 nimmt {"type": "disabled"}, Sonnet 5.5 lehnt das ab (HTTP 400) → between_tools
 DENKEN_AUS = {"claude-sonnet-5-5": {"type": "between_tools"}}
@@ -50,8 +60,13 @@ class Rueckfall(Exception):
 def kosten_usd(modell, usage):
     p_in, p_cr, p_cw, p_out = PREISE.get(modell, PREISE["claude-sonnet-5-5"])
     u = usage or {}
+    cw = int(u.get("cache_creation_input_tokens", 0) or 0) * p_cw
+    teil = u.get("cache_creation") if isinstance(u.get("cache_creation"), dict) else None
+    if teil:     # Aufschlüsselung 5 min / 1 h (Antwort der API) → 1 h zum 2-fachen Input-Preis
+        cw = (int(teil.get("ephemeral_5m_input_tokens", 0) or 0) * p_cw
+              + int(teil.get("ephemeral_1h_input_tokens", 0) or 0) * 2 * p_in)
     return (int(u.get("input_tokens", 0) or 0) * p_in + int(u.get("cache_read_input_tokens", 0) or 0) * p_cr
-            + int(u.get("cache_creation_input_tokens", 0) or 0) * p_cw + int(u.get("output_tokens", 0) or 0) * p_out) / 1e6
+            + cw + int(u.get("output_tokens", 0) or 0) * p_out) / 1e6
 
 
 def fester_anfang(prompt):
@@ -115,11 +130,13 @@ def maskieren(prompt, namen=(), geburtsdatum=None):
     m = ki_maske.Maske(namen, geburtsdatum)
     rest = m.maskieren(rest)
     m.restpruefung([rest])
-    return fest, rest, m, sorted(set(_PH.findall(diktat_teil(rest))))
+    pflicht = sorted(p for p in set(_PH.findall(diktat_teil(rest))) if p[1] in PFLICHT_ARTEN)
+    return fest, rest, m, pflicht
 
 
 def zuruecksetzen(antwort, maske, pflicht):
-    """Platzhalter zurück; Rueckfall, wenn einer des Diktats fehlt oder ein unbekannter/kaputter übrig bleibt."""
+    """Platzhalter zurück; Rueckfall, wenn ein Pflicht-Platzhalter (Datum) des Diktats fehlt oder ein unbekannter/kaputter
+    übrig bleibt."""
     fehlt = [p for p in pflicht if p not in antwort]
     if fehlt:
         raise Rueckfall(f"Platzhalter fehlt in der Antwort ({len(fehlt)} von {len(pflicht)})")
@@ -133,9 +150,9 @@ def zuruecksetzen(antwort, maske, pflicht):
 
 
 def anthropic_body(fest, rest, sys_msg, modell=ANTHROPIC_MODELL, max_tokens=MAX_TOKENS):
-    """Messages-Body: fester Anfang als Cache-Breakpoint (System + Anfang gecacht), Nachdenken aus, kein temperature
+    """Messages-Body: fester Anfang als Cache-Breakpoint (System + Anfang 1 h gecacht), Nachdenken aus, kein temperature
     (Haiku/Sonnet 5.5 lehnen temperature ab)."""
-    teile = ([{"type": "text", "text": fest, "cache_control": {"type": "ephemeral"}}] if fest else []) + \
+    teile = ([{"type": "text", "text": fest, "cache_control": dict(CACHE)}] if fest else []) + \
         [{"type": "text", "text": rest}]
     body = {"model": modell, "max_tokens": max_tokens, "thinking": DENKEN_AUS.get(modell, {"type": "disabled"}),
             "messages": [{"role": "user", "content": teile}]}
@@ -187,9 +204,9 @@ class Weiche:
     """LLM-Aufruf je Anbieter mit Rückfall. gemini_fn(prompt, sys_msg) → Text (wirft bei Fehler).
     beobachter(info) bekommt je Aufruf {rolle, anbieter, modell, s, usage, usd, rueckfall, platzhalter, pflicht}."""
 
-    def __init__(self, anbieter="gemini", modell=ANTHROPIC_MODELL, gemini_fn=None, sender=None, log=None,
+    def __init__(self, anbieter="anthropic", modell=ANTHROPIC_MODELL, gemini_fn=None, sender=None, log=None,
                  frist=ANTHROPIC_FRIST_S, beobachter=None):
-        self.anbieter = (anbieter or "gemini").strip().lower()
+        self.anbieter = (anbieter or "anthropic").strip().lower()
         if self.anbieter not in ANBIETER:
             self.anbieter = "gemini"
         self.modell = modell or ANTHROPIC_MODELL
@@ -198,6 +215,7 @@ class Weiche:
         self.beobachter = beobachter
         self.zaehler = {"anthropic": 0, "rueckfall": 0}
         self.namen = []          # bekannte Namen des laufenden Auftrags (CAS: Zuweiser/Befunder) → immer maskiert
+        self.zuletzt = ""        # sonnet-n2: wer den letzten Text wirklich geschrieben hat (Lauf-Protokoll „modell“)
 
     def name(self):
         return "gemini/gemini-3.5-flash" if self.anbieter == "gemini" else f"anthropic/{self.modell}"
@@ -215,6 +233,9 @@ class Weiche:
                 text, info = maskiert_anthropic(prompt, sys_msg, self.sender, self.modell, self.frist, pruefen, strip,
                                                 self.namen)
                 self.zaehler["anthropic"] += 1
+                self.zuletzt = f"anthropic/{self.modell}"
+                self.log(f"[KI] {rolle}: Anbieter=anthropic {self.modell} maskiert ({info['s']:.1f} s, "
+                         f"{info['platzhalter']} Platzhalter)")
                 self._melden(dict(info, rolle=rolle, rueckfall=None))
                 return text
             except Exception as e:
@@ -222,10 +243,11 @@ class Weiche:
                     raise
                 grund = str(e) if isinstance(e, (Rueckfall, ki_maske.MaskeUnsicher)) else f"Anthropic-Ausfall ({type(e).__name__})"
                 self.zaehler["rueckfall"] += 1
-                self.log(f"[KI] {rolle}: Anthropic nicht verwendet — {grund} → Gemini")
+                self.log(f"[KI] {rolle}: Anthropic nicht verwendet — {grund} → Gemini (Rückfall)")
                 self._melden({"rolle": rolle, "anbieter": "gemini", "rueckfall": grund})
         t0 = time.time()
         text = (gemini or self.gemini_fn)(prompt, sys_msg)
+        self.zuletzt = "gemini/gemini-3.5-flash" + (" (Rückfall)" if self.anbieter != "gemini" else "")
         if self.anbieter == "gemini":
             self._melden({"rolle": rolle, "anbieter": "gemini", "s": round(time.time() - t0, 2), "rueckfall": None})
         return text

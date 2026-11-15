@@ -98,6 +98,10 @@ def wav_b64(pcm_int16, samplerate):
     return base64.b64encode(buf.getvalue()).decode()
 
 
+# kaiscribe-sonnet-n2: Zähler für die an Chirp geschickten Audiosekunden (nutzung.Zaehler.stt), von der EXE gesetzt
+ZAEHLER = None
+
+
 def chirp3_worker(pcm_int16, samplerate, loc, token, request=None):
     """Komplettes Diktat (int16-Array) → Text. 50-s-Segmente mit 4 s Rückhören (chirp_3: max. 60 s je Request)."""
     request = request or chirp3_request
@@ -108,6 +112,11 @@ def chirp3_worker(pcm_int16, samplerate, loc, token, request=None):
     while start < len(pcm_int16):
         end = min(start + SEG, len(pcm_int16))
         txt = request(token, loc, wav_b64(pcm_int16[start:end], samplerate))
+        if ZAEHLER is not None:          # auch ein leeres/fehlgeschlagenes Stück hat Google bekommen
+            try:
+                ZAEHLER((end - start) / float(samplerate))
+            except Exception:
+                pass
         if txt is None:
             return None
         texts.append(txt)

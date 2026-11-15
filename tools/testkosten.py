@@ -696,6 +696,18 @@ def _anthropic_test_sender(rolle):
     return senden
 
 
+RUECKFALL_GESPERRT = "## Rückfall\n\n## Befund\nRÜCKFALL (Gemini für Tests gesperrt).\n\n## Ergebnis\n1. RÜCKFALL."
+
+
+def _test_rueckfall(prompt, system, temperature):
+    """Rückfall der Weiche in Tests: Gemini nur, solange die Google-Testgrenze > 0 $ ist. Seit 14.11.2026 (0 $) kommt ein
+    deutlich erkennbarer Ersatztext zurück — der Fall wird im Prüfskript rot und in .weiche.jsonl gezählt, statt dass
+    der ganze Lauf mit Exit 7 abbricht (sonnet-n2)."""
+    if grenze_gcp_monat_usd() <= 0:
+        return RUECKFALL_GESPERRT
+    return gemini_roh(prompt, system, temperature, ohne_weiche=True)[0]
+
+
 def claude_maskiert(prompt, system, modell, rolle, temperature=0.0):
     """Ein Aufruf über llm_anbieter.Weiche (anthropic, maskiert) → (Text, Info). Rückfall = Gemini 3.5 Flash eu im
     Testprojekt (ohne Weiche), genau wie die EXE bei Anthropic-Problemen."""
@@ -712,7 +724,7 @@ def claude_maskiert(prompt, system, modell, rolle, temperature=0.0):
     w = la.Weiche("anthropic", modell, sender=_anthropic_test_sender(rolle), log=lambda *a: None,
                   frist=float(os.environ.get("KAISCRIBE_TEST_ANTHROPIC_FRIST", la.ANTHROPIC_FRIST_S)),
                   beobachter=lambda i: (infos.append(i), _weiche_protokoll(i)),
-                  gemini_fn=lambda p, s: gemini_roh(p, s, temperature, ohne_weiche=True)[0])
+                  gemini_fn=lambda p, s: _test_rueckfall(p, s, temperature))
     text = w(prompt, system, pruefen=pruefen, rolle=rolle, strip=_g.strip_fences)
     return text, {"weiche": infos}
 

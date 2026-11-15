@@ -1,8 +1,9 @@
 // Befund-KI-Anbieter der Web-App (kaiscribe-haiku-ab-n1, 13.11.2026) — Gegenstück zu source_code/llm_anbieter.py.
-// Standard: Gemini wie bisher. Anthropic nur, wenn im Browser eingestellt (localStorage 'llm_anbieter' = 'anthropic'
-// und ein Anthropic-Schlüssel aus rakscribe-praxis-key.json → 'anthropic_api_key'). Text vor dem Senden maskiert
-// (kiMaske.ts = KaiFormat-Maske), Antwort lokal zurückgesetzt; jedes Problem (Maske unsicher, Platzhalter fehlt,
-// unvollständig, Ausfall, Frist) → der Aufrufer nimmt Gemini. Feste Prompt-Anfänge gehen als Prompt-Cache hinaus.
+// Standard seit kaiscribe-sonnet-n2 (16.11.2026, Peters Go 14.11.): Anthropic (Claude Sonnet 5.5), sobald ein
+// Anthropic-Schlüssel aus rakscribe-praxis-key.json geladen ist ('anthropic_api_key'); localStorage 'llm_anbieter' =
+// 'gemini' schaltet von Hand zurück. Text vor dem Senden maskiert (kiMaske.ts = KaiFormat-Maske), Antwort lokal
+// zurückgesetzt; jedes Problem (Maske unsicher, Datum fehlt, unvollständig, Ausfall, Frist) → der Aufrufer nimmt Gemini.
+// Feste Prompt-Anfänge gehen als 1-Stunden-Prompt-Cache hinaus. Pflicht-Platzhalter = nur Daten (⟦D…⟧), wie in Python.
 // tests/offline/test_ki_maske_web.py vergleicht festerAnfang/maskieren/korrekturPlausibel mit Python.
 import { Maske, PLATZHALTER, KLAMMER_AUF, KLAMMER_ZU } from './kiMaske.ts';
 
@@ -10,7 +11,7 @@ export type Anbieter = 'gemini' | 'anthropic';
 export type KiAnbieter = { anbieter: Anbieter; korrektur: Anbieter; modell: string; anthropicKey: string; fristMs: number };
 
 export const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-export const ANTHROPIC_MODELL = 'claude-haiku-5-5';
+export const ANTHROPIC_MODELL = 'claude-sonnet-5-5';
 const DENKEN_AUS: Record<string, { type: string }> = { 'claude-sonnet-5-5': { type: 'between_tools' } };
 const KORR_ANFANG = 'Du bist ein medizinischer Lektor für radiologische Diktate';
 const VAL_ANFANG = 'Du bist ein radiologischer Qualitätskontrolleur';
@@ -55,7 +56,7 @@ export const maskieren = (prompt: string, namen: string[] = []): { fest: string;
   const maske = new Maske(namen);
   const rest = maske.maskieren(roh);
   maske.restpruefung([rest]);
-  const pflicht = [...new Set(diktatTeil(rest).match(PLATZHALTER) || [])].sort();
+  const pflicht = [...new Set(diktatTeil(rest).match(PLATZHALTER) || [])].filter(p => p[1] === 'D').sort();
   return { fest, rest, maske, pflicht };
 };
 
@@ -80,7 +81,7 @@ export const korrekturPlausibel = (roh: string, text: string): boolean => {
 export const anthropicBody = (fest: string, rest: string, sysMsg: string | undefined, modell: string) => ({
   model: modell, max_tokens: 4000, thinking: DENKEN_AUS[modell] ?? { type: 'disabled' },
   messages: [{ role: 'user', content: [
-    ...(fest ? [{ type: 'text', text: fest, cache_control: { type: 'ephemeral' } }] : []),
+    ...(fest ? [{ type: 'text', text: fest, cache_control: { type: 'ephemeral', ttl: '1h' } }] : []),
     { type: 'text', text: rest }] }],
   ...(sysMsg ? { system: [{ type: 'text', text: sysMsg }] } : {}),
 });
@@ -126,17 +127,33 @@ export async function versucheAnthropic(rolle: 'korr' | 'gen' | 'val', prompt: s
   ki: KiAnbieter | undefined, pruefen?: (t: string) => boolean, signal?: AbortSignal): Promise<string | null> {
   if (!ki || (rolle === 'korr' ? ki.korrektur : ki.anbieter) !== 'anthropic') return null;
   try {
-    return await maskiertAnthropic(prompt, sysMsg, ki, pruefen, signal);
+    const text = await maskiertAnthropic(prompt, sysMsg, ki, pruefen, signal);
+    zaehlen('anthropic');
+    return text;
   } catch (e) {
     if (signal?.aborted) throw e;
     console.warn(`[KI] ${rolle}: Anthropic nicht verwendet — ${e instanceof Error ? e.message : String(e)} → Gemini`);
+    zaehlen('rueckfall');
     return null;
   }
 }
 
-/** Einstellung aus dem Browser (Standard: keine → Gemini). */
+/** sonnet-n2: Zähler je Tag im Browser (localStorage 'ki_nutzung' = {JJJJ-MM-TT: {anthropic, rueckfall}}, ohne Inhalte). */
+export const zaehlen = (art: 'anthropic' | 'rueckfall', speicher: Pick<Storage, 'getItem' | 'setItem'> | undefined =
+  typeof localStorage === 'undefined' ? undefined : localStorage, tag = new Date().toISOString().slice(0, 10)): void => {
+  if (!speicher) return;
+  try {
+    const d = JSON.parse(speicher.getItem('ki_nutzung') || '{}') as Record<string, Record<string, number>>;
+    const t = d[tag] || (d[tag] = {});
+    t[art] = (t[art] || 0) + 1;
+    for (const k of Object.keys(d).sort().slice(0, -62)) delete d[k];
+    speicher.setItem('ki_nutzung', JSON.stringify(d));
+  } catch { /* Zähler nie fatal */ }
+};
+
+/** Einstellung aus dem Browser (Standard seit sonnet-n2: anthropic, sobald ein Schlüssel da ist; ohne → Gemini). */
 export const kiAnbieterAusSpeicher = (speicher: Pick<Storage, 'getItem'> = localStorage): KiAnbieter | undefined => {
-  const a = (speicher.getItem('llm_anbieter') || 'gemini').toLowerCase() === 'anthropic' ? 'anthropic' : 'gemini';
+  const a = (speicher.getItem('llm_anbieter') || 'anthropic').toLowerCase() === 'gemini' ? 'gemini' : 'anthropic';
   const k = (speicher.getItem('llm_anbieter_korrektur') || a).toLowerCase() === 'anthropic' ? 'anthropic' : 'gemini';
   const key = speicher.getItem('anthropic_api_key') || '';
   if ((a === 'gemini' && k === 'gemini') || !key) return undefined;

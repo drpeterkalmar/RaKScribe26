@@ -30,6 +30,7 @@ import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt vo
 import einfuegen as _einf  # v3.5: Diktat an der Cursor-Stelle in den Befund einfügen
 import korrektur as _korr  # v3.4: Nur-Text-Modus (Call 0 wie Web-App)
 import llm_anbieter as _la  # kaiscribe-haiku-ab-n1: LLM_ANBIETER gemini | anthropic (maskiert, Rückfall Gemini)
+import nutzung as _nutz  # kaiscribe-sonnet-n2: Zähler Claude/Rückfall/Chirp-Sekunden + Tagesbericht (ohne Patientendaten)
 import pipeline as _pl  # Umbau Schritt 5: Mehr-Regionen-Befund zusammensetzen (Gutachten P2-6)
 import protokoll as _prot  # Umbau Schritt 23: begrenztes Log, Diktatinhalt nur im Debug-Modus
 import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiederholung + Gegenlesen
@@ -464,11 +465,13 @@ def _ki_weiche(anbieter):
     """kaiscribe-haiku-ab-n1: Anbieter-Weiche (llm_anbieter.py). gemini = wie bisher; anthropic = maskiert, Anthropic-
     Schlüssel aus rakscribe-praxis-key.json (anthropic_api_key), jedes Problem → dieser Befund über Gemini."""
     return _la.Weiche(anbieter, CFG.anthropic_modell, log=print, frist=CFG.anthropic_frist,
+                      beobachter=lambda info: NUTZUNG is not None and NUTZUNG.ki(info),
                       gemini_fn=lambda p, s: _gem.generate(p, s, _load_vertex_key(), log=print),
                       sender=_la.anthropic_sender(lambda: _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad())))
 
 
 KI_GEN = KI_KORR = None   # init_runtime() setzt die Weichen aus config.ini (LLM_ANBIETER, LLM_ANBIETER_KORREKTUR)
+NUTZUNG = None            # kaiscribe-sonnet-n2: nutzung.Zaehler (X:\RaKScribe\Daten\nutzung), im Selbsttest aus
 
 
 def _korrektur(text):
@@ -504,7 +507,7 @@ def _llm_aufruf(prompt):
 def _modell_name():
     """v3.18.4 (RH 38, Nachvollziehbarkeit): Anbieter/Modell, mit dem der Befund entsteht (Gemini: aus dem Endpunkt)."""
     if LLM_PROVIDER == 'gemini' and KI_GEN is not None and KI_GEN.anbieter != "gemini":
-        return KI_GEN.name() + " (Rückfall gemini)"
+        return KI_GEN.zuletzt or KI_GEN.name()     # sonnet-n2: wer den Befund wirklich schrieb (Claude oder Rückfall)
     if LLM_PROVIDER == 'gemini':
         m = re.search(r"/models/([^:/]+):", getattr(_gem, "VERTEX_ENDPOINT", "") or "")
         return "gemini/" + (m.group(1) if m else LLM_MODEL)
@@ -4296,7 +4299,7 @@ class RaKScribeApp(ctk.CTk):
 def init_runtime():
     """Start der EXE (Umbau Schritt 16): Log-Kopf, Google-Bibliotheken, config.ini, Schlüssel + Speech-Client,
     LLM-Client, Befund-Prompt, Fehlhör-Liste, Vorlagen — in dieser Reihenfolge wie bisher beim Import."""
-    global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY, KI_GEN, KI_KORR
+    global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY, KI_GEN, KI_KORR, NUTZUNG
     global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES, MASKEN, MASKE_TASTEN, MASKE_TASTEN_AMBIENT
     log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
     log(f"BASE_DIR: {BASE_DIR}")
@@ -4323,6 +4326,12 @@ def init_runtime():
     LLM_PROVIDER, LLM_MODEL, API_KEY = CFG.llm_provider, CFG.llm_model, CFG.api_key
     print(f"[INIT] Konfiguration: LLM {LLM_PROVIDER} / {LLM_MODEL}")
     KI_GEN, KI_KORR = _ki_weiche(CFG.llm_anbieter), _ki_weiche(CFG.llm_anbieter_korrektur or CFG.llm_anbieter)
+    # kaiscribe-sonnet-n2: Zähler je PC/Monat neben dem Lauf-Protokoll; Selbsttest/WAV-Modus und Tests (nicht Windows)
+    # zählen nie
+    if os.name == "nt" and not os.environ.get("RAKSCRIBE_SELFTEST"):
+        NUTZUNG = _nutz.Zaehler(_nutz.ordner_aus(CFG.lauf_ordner))
+        _stt.ZAEHLER = NUTZUNG.stt
+        print(f"[INIT] Nutzungszähler: {NUTZUNG.ordner} ({NUTZUNG.pc})")
     if KI_GEN.anbieter != "gemini" or KI_KORR.anbieter != "gemini":
         print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, Rückfall Gemini"
               + ("" if _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad()) else

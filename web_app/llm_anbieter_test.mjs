@@ -2,7 +2,7 @@
 // (fetch-Attrappe). Standard Gemini unverändert; anthropic = maskiert, Antwort zurückgesetzt; Rückfall auf Gemini.
 //   cd web_app && node --experimental-strip-types llm_anbieter_test.mjs
 import { callGeminiLLM, correctTranscriptionWithGemini, validateReportConsistency } from './src/gemini.ts';
-import { kiAnbieterAusSpeicher, maskieren, KORR_KOPF } from './src/llmAnbieter.ts';
+import { kiAnbieterAusSpeicher, maskieren, KORR_KOPF, zaehlen } from './src/llmAnbieter.ts';
 
 let fail = 0, n = 0;
 const check = (ok, label, got) => { n++; if (!ok) fail++; console.log(ok ? 'PASS' : 'FAIL', '|', label, ok ? '' : `\n      got ${JSON.stringify(got)?.slice(0, 400)}`); };
@@ -25,7 +25,7 @@ globalThis.fetch = async (url, opt) => {
 console.warn = () => {};
 console.log = ((log) => (...a) => { if (String(a[0]).startsWith('PASS') || String(a[0]).startsWith('FAIL') || /PASS \(/.test(a[0])) log(...a); })(console.log);
 const ctx = (ki) => ({ apiKey: 'AQ.test', prompt: PROMPT, status: () => {}, ki });
-const KI = { anbieter: 'anthropic', korrektur: 'anthropic', modell: 'claude-haiku-5-5', anthropicKey: 'sk-test', fristMs: 5000 };
+const KI = { anbieter: 'anthropic', korrektur: 'anthropic', modell: 'claude-sonnet-5-5', anthropicKey: 'sk-test', fristMs: 5000 };
 
 aufrufe = [];
 let t = await callGeminiLLM(DIKTAT, 'Normalbefund.', 'Kniegelenk', '', 'Unauffällig.', ctx(undefined));
@@ -36,8 +36,8 @@ t = await callGeminiLLM(DIKTAT, 'Normalbefund.', 'Kniegelenk', '', 'Unauffällig
 const a0 = aufrufe[0];
 check(aufrufe.length === 1 && a0.url.includes('anthropic') && t.includes('12.03.2025') && !t.includes('⟦'), 'anthropic: ein Aufruf, Datum zurückgesetzt', t);
 check(!JSON.stringify(a0.body).includes('12.03.2025'), 'Ausgang ohne Datum');
-check(a0.body.messages[0].content[0].cache_control?.type === 'ephemeral' && a0.body.messages[0].content[0].text.endsWith('<normalbefund_template>\n')
-  && a0.body.thinking.type === 'disabled' && !('temperature' in a0.body) && a0.body.system[0].text.startsWith('Du bist ein präziser'),
+check(a0.body.messages[0].content[0].cache_control?.type === 'ephemeral' && a0.body.messages[0].content[0].cache_control?.ttl === '1h' && a0.body.messages[0].content[0].text.endsWith('<normalbefund_template>\n')
+  && a0.body.thinking.type === 'between_tools' && !('temperature' in a0.body) && a0.body.system[0].text.startsWith('Du bist ein präziser'),
   'Body: Cache-Breakpoint, Nachdenken aus, System', a0.body);
 check(a0.headers['anthropic-dangerous-direct-browser-access'] === 'true' && a0.headers['x-api-key'] === 'sk-test', 'Header Browser-Zugriff + Schlüssel');
 
@@ -72,13 +72,24 @@ t = await validateReportConsistency(DIKTAT, BEFUND(''), ctx(KI));
 check(aufrufe.length === 1 && aufrufe[0].url.includes('anthropic') && t.includes('12.03.2025'), 'Validator anthropic', t);
 
 // Einstellung
-check(kiAnbieterAusSpeicher({ getItem: () => null }) === undefined, 'Einstellung fehlt → Gemini');
+check(kiAnbieterAusSpeicher({ getItem: () => null }) === undefined, 'ohne Schlüssel → Gemini');
+const sd = kiAnbieterAusSpeicher({ getItem: (k) => (k === 'anthropic_api_key' ? 'sk' : null) });
+check(sd?.anbieter === 'anthropic' && sd?.korrektur === 'anthropic' && sd?.modell === 'claude-sonnet-5-5',
+  'sonnet-n2: Standard = anthropic/Sonnet 5.5, sobald der Schlüssel geladen ist', sd);
+check(kiAnbieterAusSpeicher({ getItem: (k) => ({ anthropic_api_key: 'sk', llm_anbieter: 'gemini' })[k] ?? null }) === undefined,
+  'llm_anbieter = gemini schaltet von Hand zurück');
 const sp = (o) => ({ getItem: (k) => o[k] ?? null });
 check(kiAnbieterAusSpeicher(sp({ llm_anbieter: 'anthropic' })) === undefined, 'anthropic ohne Schlüssel → Gemini');
 const k = kiAnbieterAusSpeicher(sp({ llm_anbieter: 'anthropic', anthropic_api_key: 'sk' }));
-check(k?.anbieter === 'anthropic' && k?.korrektur === 'anthropic' && k?.modell === 'claude-haiku-5-5', 'anthropic + Schlüssel → Haiku 5.5', k);
-const h = kiAnbieterAusSpeicher(sp({ llm_anbieter_korrektur: 'anthropic', anthropic_api_key: 'sk' }));
+check(k?.anbieter === 'anthropic' && k?.korrektur === 'anthropic' && k?.modell === 'claude-sonnet-5-5', 'anthropic + Schlüssel → Sonnet 5.5', k);
+const h = kiAnbieterAusSpeicher(sp({ llm_anbieter: 'gemini', llm_anbieter_korrektur: 'anthropic', anthropic_api_key: 'sk' }));
 check(h?.anbieter === 'gemini' && h?.korrektur === 'anthropic', 'Hybrid: nur Call 0 anthropic', h);
-check(maskieren('x\n<normalbefund_template>\nT\n</normalbefund_template>\n<diktat>\nDr. Huber 12.3.2025\n</diktat>').pflicht.length === 2, 'maskieren: Pflicht aus <diktat>');
+check(maskieren('x\n<normalbefund_template>\nT\n</normalbefund_template>\n<diktat>\nDr. Huber 12.3.2025\n</diktat>').pflicht.length === 1, 'maskieren: Pflicht = nur das Datum aus <diktat> (Name darf fehlen)');
+{
+  const m = new Map(); const st = { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
+  zaehlen('anthropic', st, '2026-11-16'); zaehlen('anthropic', st, '2026-11-16'); zaehlen('rueckfall', st, '2026-11-16');
+  check(JSON.parse(m.get('ki_nutzung'))['2026-11-16'].anthropic === 2 && JSON.parse(m.get('ki_nutzung'))['2026-11-16'].rueckfall === 1,
+    'Zähler je Tag (anthropic/rueckfall)', m.get('ki_nutzung'));
+}
 console.log(`${n - fail}/${n} PASS (llm_anbieter)`);
 process.exit(fail ? 1 : 0);
