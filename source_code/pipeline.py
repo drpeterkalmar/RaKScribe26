@@ -165,7 +165,8 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         out = br.nachbearbeiten(roh, nummerieren=not woertlich)  # v3.7.2: wörtlich = Layout der Ordi unverändert
         if woertlich:
             return out
-        out = br.kurzsaetze_sichern(br.widersprueche_bereinigen(out, seg)[0], seg)[0]   # v3.15.5, v3.16.6
+        out = br.widersprueche_bereinigen(out, seg)[0]                                    # v3.15.5
+        out = br.kurzsaetze_sichern(br.abschnitte_bereinigen(out, seg, ctx.templates)[0], seg)[0]   # v3.18.13, v3.16.6
         return _kl_waechter(out, seg, template_key, ctx)
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
@@ -195,6 +196,12 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     out, aend = br.widersprueche_bereinigen(out, seg)
     if aend:
         ctx.log(f"[WIDERSPRUCH] {len(aend)} Korrektur(en) nach der KI: " + " · ".join(a[:50] for a in aend))
+    # v3.18.13 (Peter 14.11.2026, #314): Abschnitt nennt selbst einen Befund ↔ Normalsatz daneben, fremder Vorlagensatz weg
+    # (nicht beim Bypass: der ist die Vorlage selbst; Web gleich)
+    if not normal:
+        out, abschn = br.abschnitte_bereinigen(out, seg, ctx.templates)
+        if abschn:
+            ctx.log(f"[ABSCHNITT] {len(abschn)} Korrektur(en): " + " · ".join(a[:50] for a in abschn))
     # v3.16.6 (Peter 18.10.): diktierte Empfehlungs-/Einschränkungssätze, die der KI verloren gingen, wörtlich zurück
     out, kurz = br.kurzsaetze_sichern(out, seg)
     if kurz:

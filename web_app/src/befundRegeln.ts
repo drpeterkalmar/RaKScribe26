@@ -699,6 +699,110 @@ export function widersprucheBereinigen(report: string, diktat: string, d?: Wider
   return [zeilen.join('\n'), aenderungen];
 }
 
+// ── v3.18.13 Abschnittsprüfung (Peter 14.11.2026: „er hat einen pathologischen befund und einen normalbefund gemeinsam
+// geschrieben“, Kanban #314). Je Region: (1) Befunde, die der Abschnitt selbst nennt (Befundteil + Ergebnis) ↔ Normalsätze
+// desselben Befundteils (einschränken/streichen, nichts ergänzen); (2) Normalsatz einer fremden Vorlage mit einer Struktur,
+// die sonst weder im Titel, Abschnitt noch Diktat vorkommt → weg. Sync: befund_regeln.py abschnitte_bereinigen,
+// Fixtures „abschnitte“.
+type VorlagenMap = Record<string, { body?: string; display_name?: string } | undefined>;
+const VORLAGEN_SAETZE = new WeakMap<object, [Map<string, Set<string>>, Map<string, Set<string>>]>();
+const vorlagenSaetze = (templates: VorlagenMap, d?: WiderspruchDaten): [Map<string, Set<string>>, Map<string, Set<string>>] => {
+  let v = VORLAGEN_SAETZE.get(templates);
+  if (!v) {
+    const w = new Map<string, Set<string>>(), gruppen = new Map<string, Set<string>>();
+    const c = widC(d);
+    for (const [key, t] of Object.entries(templates)) {
+      const body = t?.body || '';
+      for (const [a, b] of saetzeMitLage(body)) {
+        const n = vorlageNormalisieren(body.slice(a, b));
+        if (n) { if (!w.has(n)) w.set(n, new Set()); w.get(n)!.add(key); }
+      }
+      gruppen.set(key, widGruppen((t?.display_name || key).toLowerCase(), c));
+    }
+    v = [w, gruppen];
+    VORLAGEN_SAETZE.set(templates, v);
+  }
+  return v;
+};
+const ohneGenerisch = (g: Set<string>): Set<string> => new Set([...g].filter(x => !WID_GENERISCH.has(x)));
+const schnitt = (a: Set<string>, b: Set<string>): boolean => [...a].some(x => b.has(x));
+
+const regionenBloecke = (zeilen: string[]): [number, number | null, number | null, number | null, number | null][] => {
+  const out: { t: number; b: number | null; e: number | null }[] = [];
+  zeilen.forEach((z, i) => {
+    if (!z.trimStart().startsWith('## ')) return;
+    const s = z.trim().toLowerCase().replace(/:+$/u, '');
+    if (s === '## befund') { if (out.length) out[out.length - 1].b = i + 1; }
+    else if (s === '## ergebnis') { if (out.length) out[out.length - 1].e = i + 1; }
+    else out.push({ t: i, b: null, e: null });
+  });
+  return out.map((x, n) => {
+    const ende = n + 1 < out.length ? out[n + 1].t : zeilen.length;
+    const be = x.b === null ? null : (x.e !== null && x.e > x.b ? x.e - 1 : ende);
+    return [x.t, x.b, be, x.e, x.e === null ? null : ende];
+  });
+};
+
+export function abschnitteBereinigen(report: string, diktat = '', templates?: VorlagenMap, d?: WiderspruchDaten): [string, string[]] {
+  if (!report || !report.includes('## Befund')) return [report, []];
+  const c = widC(d);
+  const kat = new Map(c.kat.map(k => [k.id, k]));
+  const zeilen = report.split('\n');
+  const aenderungen: string[] = [];
+  const dGruppen = ohneGenerisch(widGruppen(sttSatzzeichen(diktat || '').toLowerCase(), c));
+  const [w, vGruppen] = templates ? vorlagenSaetze(templates, d) : [new Map<string, Set<string>>(), new Map<string, Set<string>>()];
+  for (const [tI, ba, be, ea, ee] of regionenBloecke(zeilen).reverse()) {
+    if (ba === null || be === null) continue;
+    let text = zeilen.slice(ba, be).join('\n');
+    if (!istSkelettText(text, d)) continue;
+    const ergebnis = ea !== null && ee !== null ? zeilen.slice(ea, ee).join('\n') : '';
+    const stellen: [number, number, string][] = [];
+    // Befunde nur aus Sätzen, die nicht wörtlich aus einer Vorlage stammen (Sync: befund_regeln.py)
+    const eigen = !w.size ? text : saetzeMitLage(text).filter(([a, b]) => !w.has(vorlageNormalisieren(text.slice(a, b))))
+      .map(([a, b]) => text.slice(a, b)).join(' ');
+    const befunde = widerspruchBefunde(eigen + '\n' + ergebnis, d);
+    for (const [x0, x1, ids] of widerspruchSaetze(text, befunde, d)) {
+      const weg = ids.some(i => { const r = kat.get(i)?._str; return !!r && r.test(text.slice(x0, x1).toLowerCase()); });
+      stellen.push([x0, x1, weg ? 's' : 'e']);
+    }
+    const tGruppen = ohneGenerisch(widGruppen(zeilen[tI].trim().slice(3).toLowerCase(), c));
+    if (w.size && tGruppen.size) {
+      const saetze = saetzeMitLage(text);
+      const belegt = new Set([...tGruppen, ...dGruppen, ...ohneGenerisch(widGruppen(ergebnis.toLowerCase(), c))]);
+      for (const [a, b] of saetze) {
+        const keys = w.get(vorlageNormalisieren(text.slice(a, b)));
+        if (!keys || [...keys].some(k => schnitt(vGruppen.get(k) || new Set(), tGruppen))) continue;
+        const sg = ohneGenerisch(widGruppen(text.slice(a, b).toLowerCase(), c));
+        const rest = new Set<string>();
+        for (const [a2, b2] of saetze) if (a2 !== a || b2 !== b) for (const x of ohneGenerisch(widGruppen(text.slice(a2, b2).toLowerCase(), c))) rest.add(x);
+        if (sg.size && !schnitt(sg, new Set([...belegt, ...rest])) && !stellen.some(([x0, x1]) => x0 <= a && a < x1)) stellen.push([a, b, 'f']);
+      }
+    }
+    if (!stellen.length) continue;
+    const neu: string[] = [];
+    let pos = 0;
+    for (const [s0, s1Roh, art] of [...stellen].sort((x, y) => x[0] - y[0] || x[1] - y[1] || (x[2] < y[2] ? -1 : x[2] > y[2] ? 1 : 0))) {
+      let s1 = s1Roh;
+      if (s0 < pos) continue;
+      neu.push(text.slice(pos, s0));
+      if (art === 'e') {
+        neu.push(satzEinschraenken(text.slice(s0, s1)));
+        aenderungen.push(`eingeschränkt: ${text.slice(s0, s1).trim().slice(0, 60)}`);
+      } else {
+        aenderungen.push((art === 's' ? 'gestrichen: ' : 'fremder Vorlagensatz weg: ') + text.slice(s0, s1).trim().slice(0, 60));
+        if (text.slice(s1, s1 + 1) === ' ') s1 += 1;
+        else if (neu[neu.length - 1].endsWith(' ')) neu[neu.length - 1] = neu[neu.length - 1].slice(0, -1);
+      }
+      pos = s1;
+    }
+    neu.push(text.slice(pos));
+    text = neu.join('');
+    if (stellen.some(([, , art]) => art !== 'e')) text = text.replace(/[ \t]+(?=\n|$)/gu, '');
+    zeilen.splice(ba, be - ba, ...text.split('\n'));
+  }
+  return [zeilen.join('\n'), aenderungen];
+}
+
 // ── v3.16.6 Kurzsätze (Peter 18.10.2026: „Diktierte Kurzsätze dürfen im Befund nie wegfallen.“) ─────────────────────
 // Empfehlungs- und Einschränkungssätze, Muster in vorlagen_vorrang.json „kurzsaetze“ (EINE Quelle für EXE + Web).
 // (1) ohneEmpfehlungen: Text für die Vorlagenwahl ohne diese Sätze — „Gehaltene Aufnahmen … empfohlen“ löst nicht die

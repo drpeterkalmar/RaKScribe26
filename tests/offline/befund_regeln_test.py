@@ -76,6 +76,9 @@ for c in W["befunde"]:
 for c in W["prompt"]:
     g = br.widerspruch_prompt(br.widerspruch_befunde(c["diktat"]), TPL[c["vorlage"]]["body"])
     check(g == c["out"], f"wid-prompt: {c['diktat']!r}", g)
+for c in F["abschnitte"]["faelle"]:   # v3.18.13 (Peter 14.11.2026, #314): Abschnittsprüfung
+    g = br.abschnitte_bereinigen(c["in"], c["diktat"], TPL)[0]
+    check(g == c["out"], f"abschnitte: {c['name']}", g)
 print("── PY: Kurzsätze (v3.16.6: Empfehlungen wählen keine Vorlage, diktierte Kurzsätze bleiben erhalten)")
 for c in F["kurzsaetze"]["ohne"]:
     g = br.ohne_empfehlungen(c["in"])

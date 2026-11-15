@@ -869,6 +869,128 @@ def widersprueche_bereinigen(report, diktat, daten=None):
     return "\n".join(zeilen), aenderungen
 
 
+# ── v3.18.13 Abschnittsprüfung (Peter 14.11.2026: „er hat einen pathologischen befund und einen normalbefund gemeinsam
+# geschrieben“ – Kanban #314, Echtfälle 12.11.: Erguss im Ergebnis neben „Unauffällige Weichteile.“, Schulter-Normalsatz
+# „Humeruskopf in regelrechter Artikulation.“ im Hüftbefund). Nach widersprueche_bereinigen, je Region (## Titel … ## Befund
+# … ## Ergebnis), ohne die Diktat-Erkennung zu brauchen:
+#  (1) Befunde, die der Abschnitt SELBST nennt (Befundteil + Ergebnis, nicht verneint), gegen die Normalsätze desselben
+#      Befundteils: einschränken („Im Übrigen …“) bzw. streichen (verneint ihn ausdrücklich) – fängt Befunde, die die
+#      Diktat-Erkennung nicht als Befund sah. Nichts wird ergänzt, das Ergebnis bleibt.
+#  (2) Normalsatz einer FREMDEN Vorlage (wörtlich aus templates.json, aus keiner zum Titel passenden Vorlage), der eine
+#      Struktur nennt, die weder im Titel noch sonst im Abschnitt noch im Diktat vorkommt → weg.
+# Ohne Treffer bleibt alles Zeichen für Zeichen gleich. Sync: befundRegeln.ts abschnitteBereinigen, Fixtures
+# „abschnitte“ in befund_regeln_fixtures.json.
+_VORLAGEN_SAETZE = {}
+
+
+def _vorlagen_saetze(templates):
+    """templates.json → ({normalisierter Satz: {Vorlagen-Keys}}, {Key: Strukturgruppen des Anzeigenamens})."""
+    c = _VORLAGEN_SAETZE.get(id(templates))
+    if c is None:
+        w, gruppen = {}, {}
+        cc = _wid()
+        for key, t in (templates or {}).items():
+            body = (t or {}).get("body") or ""
+            for a, b in saetze_mit_lage(body):
+                n = vorlage_normalisieren(body[a:b])
+                if n:
+                    w.setdefault(n, set()).add(key)
+            gruppen[key] = _wid_gruppen(((t or {}).get("display_name") or key).lower(), cc)
+        c = _VORLAGEN_SAETZE[id(templates)] = (w, gruppen)
+    return c
+
+
+def _regionen_bloecke(zeilen):
+    """[(Titelzeile, Befund von, bis, Ergebnis von, bis)] je Region („## Titel“); fehlende Teile = None."""
+    out = []
+    for i, z in enumerate(zeilen):
+        if not z.lstrip().startswith("## "):
+            continue
+        s = z.strip().lower().rstrip(":")
+        if s == "## befund":
+            if out:
+                out[-1]["b"] = i + 1
+        elif s == "## ergebnis":
+            if out:
+                out[-1]["e"] = i + 1
+        else:
+            out.append({"t": i, "b": None, "e": None})
+    bloecke = []
+    for n, x in enumerate(out):
+        ende = out[n + 1]["t"] if n + 1 < len(out) else len(zeilen)
+        ba, ea = x["b"], x["e"]
+        be = None if ba is None else ((ea - 1) if ea is not None and ea > ba else ende)
+        bloecke.append((x["t"], ba, be, ea, None if ea is None else ende))
+    return bloecke
+
+
+def abschnitte_bereinigen(report, diktat="", templates=None, daten=None):
+    """v3.18.13 → (report, Liste der Änderungen); siehe Kommentar oben."""
+    if not report or "## Befund" not in report:
+        return report, []
+    c = _wid(daten)
+    kat = {k["id"]: k for k in c["kat"]}
+    zeilen = report.split("\n")
+    aenderungen = []
+    d_gruppen = _wid_gruppen(stt_satzzeichen(diktat or "").lower(), c) - _WID_GENERISCH
+    w, v_gruppen = _vorlagen_saetze(templates) if templates else ({}, {})
+    for t_i, ba, be, ea, ee in reversed(_regionen_bloecke(zeilen)):
+        if ba is None:
+            continue
+        text = "\n".join(zeilen[ba:be])
+        if not ist_skelett_text(text, daten):
+            continue
+        ergebnis = "\n".join(zeilen[ea:ee]) if ea is not None else ""
+        stellen = []                            # (start, ende, art) im Befundteil: e einschränken, s streichen, f fremd
+        # Befunde nur aus Sätzen, die nicht wörtlich aus einer Vorlage stammen („Fissura orbitalis“ der Orbita-Vorlage
+        # ist keine Fraktur, „… -konvexe Skoliose“ der Ganzaufnahme kein Befund)
+        eigen = text if not w else " ".join(text[a:b] for a, b in saetze_mit_lage(text)
+                                            if vorlage_normalisieren(text[a:b]) not in w)
+        befunde = widerspruch_befunde(eigen + "\n" + ergebnis, daten)
+        for x0, x1, ids in widerspruch_saetze(text, befunde, daten):
+            weg = any(kat[i].get("_str") is not None and kat[i]["_str"].search(text[x0:x1].lower()) for i in ids)
+            stellen.append((x0, x1, "s" if weg else "e"))
+        t_gruppen = _wid_gruppen(zeilen[t_i].strip()[3:].lower(), c) - _WID_GENERISCH
+        if w and t_gruppen:
+            saetze = saetze_mit_lage(text)
+            belegt = t_gruppen | d_gruppen | (_wid_gruppen(ergebnis.lower(), c) - _WID_GENERISCH)
+            for a, b in saetze:
+                keys = w.get(vorlage_normalisieren(text[a:b]))
+                if not keys or any(v_gruppen.get(k, set()) & t_gruppen for k in keys):
+                    continue
+                sg = _wid_gruppen(text[a:b].lower(), c) - _WID_GENERISCH
+                rest = set()
+                for a2, b2 in saetze:
+                    if (a2, b2) != (a, b):
+                        rest |= _wid_gruppen(text[a2:b2].lower(), c) - _WID_GENERISCH
+                if sg and not sg & (belegt | rest) and not any(x0 <= a < x1 for x0, x1, _ in stellen):
+                    stellen.append((a, b, "f"))
+        if not stellen:
+            continue
+        neu, pos = [], 0
+        for s0, s1, art in sorted(stellen):
+            if s0 < pos:
+                continue
+            neu.append(text[pos:s0])
+            if art == "e":
+                neu.append(satz_einschraenken(text[s0:s1]))
+                aenderungen.append(f"eingeschränkt: {text[s0:s1].strip()[:60]}")
+            else:
+                aenderungen.append(("gestrichen: " if art == "s" else "fremder Vorlagensatz weg: ")
+                                   + text[s0:s1].strip()[:60])
+                if text[s1:s1 + 1] == " ":
+                    s1 += 1
+                elif neu[-1].endswith(" "):
+                    neu[-1] = neu[-1][:-1]
+            pos = s1
+        neu.append(text[pos:])
+        text = "".join(neu)
+        if any(art != "e" for _, _, art in stellen):
+            text = re.sub(r"[ \t]+(?=\n|$)", "", text)
+        zeilen[ba:be] = text.split("\n")
+    return "\n".join(zeilen), aenderungen
+
+
 def _befundsaetze_danach(text, treffer, befunde, kat, c):
     """Sätze, die den diktierten Befund nennen/beschreiben und in derselben Zeile NACH dem ersten eingeschränkten
     Normalsatz stehen — die stellt widersprueche_bereinigen vor ihn („Plantarer Fersensporn. Im Übrigen normale Form

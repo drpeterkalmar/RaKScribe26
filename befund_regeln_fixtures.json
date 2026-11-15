@@ -1227,5 +1227,70 @@
     "out": "Rest  ohne Marke"
    }
   ]
+ },
+ "abschnitte": {
+  "_doc": "v3.18.13 Abschnittsprüfung (Peter 14.11.2026, Kanban #314): abschnitte_bereinigen ≡ abschnitteBereinigen (templates = templates.json). Befund des Abschnitts (Befundteil + Ergebnis) ↔ Normalsatz desselben Befundteils; fremder Vorlagensatz mit einer Struktur, die sonst nirgends im Abschnitt/Titel/Diktat vorkommt, fällt weg. Sätze erfunden (Formen der Echtfälle 12.11.).",
+  "faelle": [
+   {
+    "name": "Knie: Erguss im Ergebnis ↔ „Unauffällige Weichteile.“",
+    "diktat": "",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGeringe Osteophyten am medialen Tibiaplateau. Mineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\n1. Beginnende Gonarthrose rechts.\n2. Mäßiger Kniegelenkserguss.\n",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGeringe Osteophyten am medialen Tibiaplateau. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen unauffällige Weichteile.\n\n## Ergebnis\n1. Beginnende Gonarthrose rechts.\n2. Mäßiger Kniegelenkserguss.\n"
+   },
+   {
+    "name": "Knie: „Kein Gelenkerguss.“ neben diktiertem Erguss → gestrichen",
+    "diktat": "",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Kein Gelenkerguss. Weichteilverdichtung im Recessus suprapatellaris bei Gelenkerguss.\n\n## Ergebnis\nGelenkerguss links.\n",
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Weichteilverdichtung im Recessus suprapatellaris bei Gelenkerguss.\n\n## Ergebnis\nGelenkerguss links.\n"
+   },
+   {
+    "name": "Hüfte: Schulter-Normalsatz „Humeruskopf …“ → weg",
+    "diktat": "",
+    "in": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nHumeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind regelrecht. Mäßige Gelenkspaltverschmälerung. Im Übrigen glatte Konturen.\n\n## Ergebnis\nMäßige Coxarthrose links.\n",
+    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Mäßige Gelenkspaltverschmälerung. Im Übrigen glatte Konturen.\n\n## Ergebnis\nMäßige Coxarthrose links.\n"
+   },
+   {
+    "name": "Schulter: „Humeruskopf …“ bleibt (eigene Vorlage)",
+    "diktat": "",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nHumeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.\n",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nHumeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.\n"
+   },
+   {
+    "name": "Hüfte: Humeruskopf diktiert → bleibt",
+    "diktat": "Hüfte links, Humeruskopf in regelrechter Artikulation",
+    "in": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nHumeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nUnauffälliger Befund.\n",
+    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nHumeruskopf in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nUnauffälliger Befund.\n"
+   },
+   {
+    "name": "Schulter: Tossy im Abschnitt ↔ „AC-Gelenk altersentsprechend, keine Luxation.“ → gestrichen",
+    "diktat": "",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. AC-Gelenk altersentsprechend, keine Luxation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n"
+   },
+   {
+    "name": "Zwei Regionen: nur die betroffene ändert sich",
+    "diktat": "",
+    "in": "## Halswirbelsäule in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nUnauffälliger Befund.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nKniegelenkserguss rechts.\n",
+    "out": "## Halswirbelsäule in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nUnauffälliger Befund.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen unauffällige Weichteile.\n\n## Ergebnis\nKniegelenkserguss rechts.\n"
+   },
+   {
+    "name": "Normalbefund ohne Pathologie: unverändert",
+    "diktat": "",
+    "in": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Unauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\nRegelrechte Darstellung des Ellbogengelenkes rechts.\n",
+    "out": "## Ellbogengelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Unauffällige Darstellung des Weichteilmantels.\n\n## Ergebnis\nRegelrechte Darstellung des Ellbogengelenkes rechts.\n"
+   },
+   {
+    "name": "Sonographie (kein Skelett-Text): unverändert",
+    "diktat": "",
+    "in": "## Sonographie des Kniegelenkes rechts\n\n## Befund\nGeringer Gelenkerguss im Recessus suprapatellaris. Unauffällige Weichteile.\n\n## Ergebnis\nGeringer Gelenkerguss.\n",
+    "out": "## Sonographie des Kniegelenkes rechts\n\n## Befund\nGeringer Gelenkerguss im Recessus suprapatellaris. Unauffällige Weichteile.\n\n## Ergebnis\nGeringer Gelenkerguss.\n"
+   },
+   {
+    "name": "„Bluterguss“ ist kein Gelenkerguss: unverändert",
+    "diktat": "",
+    "in": "## Unterschenkel rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nKlinisch Bluterguss, radiologisch unauffällig.\n",
+    "out": "## Unterschenkel rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nKlinisch Bluterguss, radiologisch unauffällig.\n"
+   }
+  ]
  }
 }
