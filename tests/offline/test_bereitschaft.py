@@ -38,14 +38,48 @@ check("--minimiert erkannt (auch groß/mit Leerzeichen), sonst nicht",
 st = bs.starter_vbs(X_EXE)
 check("Starter: wartet auf genau diese EXE (Const EXE)", 'Const EXE = "X:\\RaKScribe\\rakscribe26.exe"' in st)
 check("Starter: Takt 10 s, Frist 4 h", "Const TAKT_S = 10\r\n" in st and "Const FRIST_S = 14400\r\n" in st
-      and "WScript.Sleep TAKT_S * 1000" in st and 'DateDiff("s", beginn, Now) >= FRIST_S' in st)
+      and "WScript.Sleep TAKT_S * 1000" in st and 'DateDiff("s", runde, Now) >= FRIST_S' in st)
 check("Starter: startet minimiert ohne Fokus (--minimiert, Fensterstil 7, nicht warten)",
       'sh.Run """" & EXE & """ --minimiert", 7, False' in st)
 check("Starter: prüft vor dem Start, ob RaKScribe schon läuft (Name wie die Brücke, nur eigener Benutzer)",
       "If RaKScribeLaeuft() Then" in st and "Name LIKE 'rakscribe26%' OR Name = 'rakscribe26.exe'" in st
       and "p.GetOwner(benutzer, domaene)" in st and 'CreateObject("WScript.Network").UserName' in st)
 check("Starter: endet, wenn der Haken aus ist (Skript gelöscht)", "If Not fso.FileExists(WScript.ScriptFullName) Then" in st)
-check("Starter: keine Kopie der EXE, kein anderes Programm", "CopyFile" not in st and st.count("sh.Run") == 1)
+check("Starter: keine Kopie der EXE, außer der EXE nur die CAS-Abfrage (PowerShell, unsichtbar, wartet)",
+      "CopyFile" not in st and st.count("sh.Run") == 2 and "rc = sh.Run(CAS_PS, 0, True)" in st
+      and 'Const CAS_PS = "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden' in st)
+# v3.18.12 Starter 2 (Büro-PC-Neustart 14.11.: X: wurde 1 s nach dem Start neu verbunden, KaiScribe war weg)
+check("Starter 2: Kennung, CAS höchstens 120 s, 15 s Ruhe, Prüfung nach 90 s, bis 3 Nachstarts",
+      st.startswith("' RaKScribe-Starter 2 ") and "Const CAS_MAX_S = 120\r\n" in st and "Const RUHE_S = 15\r\n" in st
+      and "Const PRUEF_S = 90\r\n" in st and "Const NACHSTARTS = 3\r\n" in st)
+ps = bs._cas_ps()
+check("CAS-Abfrage: nur eigene Sitzung, CasMed/Cas, Hauptfenster „CAS - *“, Rückgabe 0/1/2, ohne doppelte Anführungszeichen",
+      '"' not in ps and "Get-Process -Name CasMed,Cas" in ps and "$_.SessionId -eq $s" in ps
+      and "-like 'CAS - *'" in ps and "{exit 0}" in ps and "{exit 2}" in ps and ps.endswith("exit 1")
+      and 'Const CAS_PS = "' + bs._vbs("powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden "
+                                        '-Command "' + ps + '"') + '"' in st)
+check("Starter 2: Ablauf EXE da → läuft schon? → CAS abwarten → Ruhe → EXE noch da? → Start → Prüfung",
+      re.search(r"Do\r\n  WarteAufExe\r\n  If RaKScribeLaeuft\(\) Then\r\n.*?  WarteAufCas\r\n  WScript\.Sleep RUHE_S \* 1000\r\n"
+                r"  WarteAufExe\r\n  If RaKScribeLaeuft\(\) Then\r\n.*?sh\.Run .*?WScript\.Sleep PRUEF_S \* 1000\r\n"
+                r"  If RaKScribeLaeuft\(\) Then\r\n.*?versuch = versuch \+ 1\r\n  If versuch > NACHSTARTS Then", st, re.S)
+      is not None)
+check("Starter 2: Protokollzeilen für CAS-Warten, Prüfung, Nachstart, Aufgeben",
+      all(t in st for t in ('"CAS meldet sich gerade an – warte auf das Hauptfenster (höchstens " & CAS_MAX_S & " s)"',
+                            '"CAS-Hauptfenster nach " & CAS_MAX_S & " s nicht da – starte trotzdem"',
+                            '"CAS angemeldet nach "', '"läuft " & PRUEF_S & " s nach dem Start" & Versuchstext()',
+                            '" s nach dem Start nicht – Nachstart " & versuch & "/" & NACHSTARTS',
+                            '"aufgegeben: läuft auch nach " & NACHSTARTS & " Nachstarts nicht"',
+                            '"RaKScribe läuft schon – nichts zu tun"', '"RaKScribe läuft inzwischen – nichts zu tun"')))
+check("Starter 2: Frist je Runde (X: kann nach dem Start wieder fehlen), Haken-aus-Prüfung in der Warterunde",
+      "Sub WarteAufExe()" in st and 'If DateDiff("s", runde, Now) >= FRIST_S Then' in st
+      and st.count("If Not fso.FileExists(WScript.ScriptFullName) Then") == 1
+      and st.index("If Not fso.FileExists(WScript.ScriptFullName) Then") > st.index("Sub WarteAufExe()"))
+check("Starter 2: PowerShell fehlt/gesperrt → CAS gilt als nicht da (kein Blockieren)",
+      re.search(r"Function CasZustand\(\)\r\n.*?CasZustand = 0\r\n  On Error Resume Next\r\n  rc = sh\.Run\(CAS_PS, 0, True\)"
+                r"\r\n  If Err\.Number = 0 Then\r\n    If rc = 1 Or rc = 2 Then CasZustand = rc", st, re.S) is not None)
+check("Starter 2: Zeiten für Tests einstellbar",
+      all(f"Const {k} = {v}\r\n" in bs.starter_vbs(X_EXE, cas_max_s=10, ruhe_s=1, pruef_s=45, nachstarts=2)
+          for k, v in (("CAS_MAX_S", 10), ("RUHE_S", 1), ("PRUEF_S", 45), ("NACHSTARTS", 2))))
 check("Starter: nur Windows-Zeilenenden", "\n" not in st.replace("\r\n", ""))
 check("Starter: gleicher Pfad = gleicher Text, anderer Pfad = anderer Text",
       bs.starter_vbs(X_EXE) == st and bs.starter_vbs("C:\\RaKScribe\\rakscribe26.exe") != st)

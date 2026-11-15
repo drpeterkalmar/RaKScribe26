@@ -728,6 +728,12 @@ def fall_g():
         G["autostart_vorne"] = bool(hwnd2) and win32gui.GetForegroundWindow() == hwnd2
         time.sleep(2)
         G["starter_nach_start"] = len(starter_prozesse(bereitschaft.STARTER))
+        # Starter 2 (v3.18.12): prüft PRUEF_S nach dem Start, ob RaKScribe noch läuft, und endet erst dann
+        t = time.time()
+        while starter_prozesse(bereitschaft.STARTER) and time.time() - t < bereitschaft.PRUEF_S + 60:
+            time.sleep(1)
+        G["starter_ende_s"] = round(time.time() - t, 1)
+        G["starter_nach_pruefung"] = len(starter_prozesse(bereitschaft.STARTER))
         G["starter_log"] = lies_log(starter_log)
         # G8: Starter, während RaKScribe läuft → endet still, keine zweite Instanz
         mit_umgebung(dict(umg, RAKSCRIBE_SELFTEST=str(work / "g2b.json")), lambda: os.startfile(str(lnk)))
@@ -764,6 +770,39 @@ def fall_g():
     G["frist_s"] = round(time.time() - t, 1)
     G["frist_log"] = lies_log(kurz.parent / bereitschaft.STARTER_LOG)
     G["frist_fenster"] = len(rks_windows())
+    # G11 (v3.18.12, Büro-PC-Neustart 14.11.): CAS meldet sich gerade an (Attrappe „Cas.exe“ ohne Fenster) → Starter wartet
+    # höchstens cas_max_s; RaKScribe verschwindet nach dem Start (wie beim Neuverbinden von X:) → Nachstart, läuft wieder
+    nach = work / "nachstart"
+    nach.mkdir()
+    cas = nach / "Cas.exe"
+    shutil.copy(pathlib.Path(os.environ.get("SystemRoot", "C:\\Windows")) / "System32" / "PING.EXE", cas)
+    pc = subprocess.Popen([str(cas), "-n", "600", "127.0.0.1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    skript = nach / "nachstart.vbs"
+    bereitschaft.vbs_schreiben(str(skript), bereitschaft.starter_vbs(str(exe), takt_s=2, cas_max_s=10, ruhe_s=1,
+                                                                     pruef_s=45, nachstarts=2))
+    ps = None
+    try:
+        t = time.time()
+        ps = mit_umgebung(dict(umg, RAKSCRIBE_SELFTEST=str(work / "g11.json")), lambda: subprocess.Popen(
+            [bereitschaft.wscript_pfad(), "//B", "//Nologo", str(skript)]))
+        h, _ = find_window(FENSTER, 120)
+        G["nach_erster_start_s"] = round(time.time() - t, 1) if h else None
+        kill_all(None)   # „X: neu verbunden“: KaiScribe ist weg, der Starter merkt es bei der Prüfung
+        G["nach_weg_fenster"] = len(rks_windows())
+        h2, _ = find_window(FENSTER, 150)
+        G["nach_zweiter_start_s"] = round(time.time() - t, 1) if h2 else None
+        try:
+            G["nach_rc"] = ps.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            G["nach_rc"] = "hängt"
+        G["nach_log"] = lies_log(nach / bereitschaft.STARTER_LOG)
+        G["nach_fenster"] = len(rks_windows())
+    finally:
+        if ps is not None and ps.poll() is None:
+            ps.kill()
+        pc.kill()
+        kill_all(None)
     if lnk.exists():  # Aufräumen (echter Autostart-Ordner des Testrechners)
         lnk.unlink()
     return G
@@ -1197,11 +1236,12 @@ cg("Menü „Mit Windows starten“: Verknüpfung im Autostart → wscript.exe �
 cg("Anmeldung ohne erreichbare EXE (X: fehlt): Starter wartet unsichtbar, startet nichts",
    G.get("starter_laeuft", 0) >= 1 and G.get("ohne_exe_fenster") == 0,
    f"Starter-Prozesse {G.get('starter_laeuft')}, Fenster {G.get('ohne_exe_fenster')}")
-cg("EXE nach 30 s erreichbar → Starter startet sie minimiert, nicht im Vordergrund, und endet",
-   G.get("autostart_iconic") is True and G.get("autostart_vorne") is False and G.get("starter_nach_start") == 0
-   and "gestartet (minimiert)" in G.get("starter_log", "") and gg("autostart_ready", "minimiert_gestartet") is True,
-   f"{G.get('x_da_bis_fenster_s')} s vom Erscheinen der EXE bis zum Symbol; Protokoll: "
-   f"{G.get('starter_log', '').strip().splitlines()[-1:] }")
+cg("EXE nach 30 s erreichbar → Starter startet sie minimiert, nicht im Vordergrund, prüft nach 90 s und endet",
+   G.get("autostart_iconic") is True and G.get("autostart_vorne") is False and G.get("starter_nach_pruefung") == 0
+   and "gestartet (minimiert)" in G.get("starter_log", "") and gg("autostart_ready", "minimiert_gestartet") is True
+   and "läuft 90 s nach dem Start" in G.get("starter_log", ""),
+   f"{G.get('x_da_bis_fenster_s')} s vom Erscheinen der EXE bis zum Symbol, Starter-Ende nach {G.get('starter_ende_s')} s; "
+   f"Protokoll: {G.get('starter_log', '').strip().splitlines()[-2:] }")
 cg("Starter bei laufender RaKScribe: endet still, keine zweite Instanz",
    G.get("starter_bei_laufendem_rest") == 0 and G.get("starter_bei_laufendem_fenster") == 1
    and "läuft schon" in G.get("starter_log2", ""), f"{G.get('starter_bei_laufendem_s')} s")
@@ -1211,6 +1251,14 @@ cg("Haken aus: Verknüpfung und Starter entfernt", gg("autostart_aus", "autostar
 cg("Starter-Frist: EXE nie erreichbar → endet still nach der Frist (Test 12 s statt 4 h)",
    G.get("frist_rc") == 0 and 11 <= (G.get("frist_s") or 0) <= 40 and "aufgegeben" in G.get("frist_log", "")
    and G.get("frist_fenster") == 0, f"{G.get('frist_s')} s, Rückgabe {G.get('frist_rc')}")
+cg("CAS meldet sich an → Starter wartet (Test 10 s); KaiScribe nach dem Start weg → Nachstart 1/2, läuft wieder",
+   G.get("nach_erster_start_s") is not None and G.get("nach_weg_fenster") == 0
+   and G.get("nach_zweiter_start_s") is not None and G.get("nach_rc") == 0
+   and "CAS meldet sich gerade an" in G.get("nach_log", "")
+   and "CAS-Hauptfenster nach 10 s nicht da" in G.get("nach_log", "")
+   and "Nachstart 1/2" in G.get("nach_log", "") and "läuft 45 s nach dem Start (Nachstart 1/2)" in G.get("nach_log", ""),
+   f"erster Start {G.get('nach_erster_start_s')} s, zweiter {G.get('nach_zweiter_start_s')} s, Rückgabe {G.get('nach_rc')}; "
+   f"Protokoll: {G.get('nach_log', '').strip().splitlines()[-4:]}")
 
 
 # H (v3.13.0): Selbsttest endet von selbst (RAKSCRIBE_SELFTEST_ENDE) — für den Ordi-Probelauf am Büro-PC

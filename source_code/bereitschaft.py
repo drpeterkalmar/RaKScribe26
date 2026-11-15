@@ -9,6 +9,9 @@ Symbol in der Taskleiste wartet, bis der nächste Befund diktiert werden soll.�
                  erreichbar ist, und startet sie dann mit --minimiert; läuft RaKScribe schon (z. B. von der Brücke
                  gestartet), tut er nichts; nach 4 h gibt er still auf. Er merkt sich den Pfad der EXE, aus der der Haken
                  gesetzt wurde — keine lokale Kopie der EXE (Updates bleiben „eine Datei auf X: tauschen“).
+                 v3.18.12 (Starter 2): meldet sich CAS gerade an, wartet er auf das CAS-Hauptfenster (höchstens 120 s),
+                 dann 15 s Ruhe (CasmedNeu.bat verbindet X: beim CAS-Start neu); läuft RaKScribe 90 s nach dem Start
+                 nicht, startet er sie bis zu 3× neu. Jeder Schritt steht in starter.log.
   Einzelinstanz  Benannter Mutex je Windows-Sitzung. Ein zweiter Start holt die laufende RaKScribe nach vorne (Datei
                  nach_vorne.json, die Oberfläche prüft sie im CAS-Takt) und beendet sich; mit --minimiert endet er still.
 Wahrheit für „Autostart an“ ist die Verknüpfung im Autostart-Ordner (was dort liegt, startet Windows).
@@ -26,9 +29,18 @@ STARTER = "warte_auf_x.vbs"
 VERKNUEPFUNG = "RaKScribe.lnk"
 HILFSSKRIPT = "verknuepfung_anlegen.vbs"
 STARTER_LOG = "starter.log"
-STARTER_KENNUNG = "RaKScribe-Starter 1"   # Vorlagen-Stand: ändert sich die Vorlage, zieht RaKScribe den Starter nach
+STARTER_KENNUNG = "RaKScribe-Starter 2"   # Vorlagen-Stand: ändert sich die Vorlage, zieht RaKScribe den Starter nach
 TAKT_S = 10
 FRIST_S = 4 * 3600
+# v3.18.12 (Starter 2, Büro-PC-Neustart 14.11.2026): rakscribe26 startete 13:40:23 von X:, eine Sekunde danach verband der
+# CAS-Start X: neu (CasmedNeu.bat: net use x: /d /y) – KaiScribe war ohne Fehler weg. Darum: CAS-Anmeldung abwarten,
+# Ruhe, nach dem Start prüfen und bis NACHSTARTS-mal neu starten.
+CAS_PROZESSE = ("CasMed", "Cas")
+CAS_FENSTER = "CAS - *"                   # Hauptfenster nach der Anmeldung („CAS - Med“); davor heißt es „Login“
+CAS_MAX_S = 120
+RUHE_S = 15
+PRUEF_S = 90
+NACHSTARTS = 3
 PROZESS_PRAEFIX = "rakscribe26"           # wie die Brücke (windows.prozesse): trifft auch „rakscribe26 (1).exe“
 MUTEX = "Local\\RaKScribe26-Einzelinstanz"
 SIGNAL = "nach_vorne.json"
@@ -107,50 +119,145 @@ def _dauer(s):
     return f"{s // 3600} h" if s >= 3600 and s % 3600 == 0 else f"{s} s"
 
 
-def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S):
-    """Der lokale Starter. Nur der EXE-Pfad (+ Takt/Frist für Tests) ist veränderlich — gleicher Pfad = gleicher Text."""
+def _cas_ps():
+    """PowerShell-Einzeiler für den Starter (nur einfache Anführungszeichen): Rückgabe 0 = kein CAS in dieser Sitzung,
+    1 = CAS läuft ohne Hauptfenster (Anmeldung), 2 = Hauptfenster „CAS - …“ da."""
+    return ("$s=(Get-Process -Id $PID).SessionId; "
+            f"$c=@(Get-Process -Name {','.join(CAS_PROZESSE)} -ErrorAction SilentlyContinue | "
+            "Where-Object {$_.SessionId -eq $s}); "
+            "if(-not $c){exit 0}; "
+            f"if($c | Where-Object {{$_.MainWindowTitle -like '{CAS_FENSTER}'}}){{exit 2}}; exit 1")
+
+
+def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s=RUHE_S, pruef_s=PRUEF_S,
+                nachstarts=NACHSTARTS):
+    """Der lokale Starter. Nur der EXE-Pfad (+ Zeiten für Tests) ist veränderlich — gleicher Pfad = gleicher Text."""
     wql = (f"SELECT * FROM Win32_Process WHERE Name LIKE '{PROZESS_PRAEFIX}%' "
            f"OR Name = '{_wql(ntpath.basename(exe))}'")
+    ps = ("powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -Command "
+          f'"{_cas_ps()}"')
     zeilen = [
         f"' {STARTER_KENNUNG} – angelegt von RaKScribe (Menü ☰ „Mit Windows starten (wartet minimiert)“).",
         "' Nicht von Hand ändern: Haken im Menü aus = diese Datei und die Verknüpfung im Autostart werden gelöscht.",
         "' Wartet nach der Windows-Anmeldung, bis die RaKScribe-EXE erreichbar ist (X: gibt es erst nach dem CAS-Login),",
         "' und startet sie dann minimiert (nur Symbol in der Taskleiste). Läuft RaKScribe schon: nichts tun.",
+        f"' Meldet sich CAS gerade an (CAS läuft, Hauptfenster „{CAS_FENSTER}“ noch nicht da): bis {_dauer(cas_max_s)} warten,",
+        f"' danach {_dauer(ruhe_s)} Ruhe – CasmedNeu.bat trennt X: beim CAS-Start und verbindet neu (net use x: /d /y).",
+        f"' Läuft KaiScribe {_dauer(pruef_s)} nach dem Start nicht: bis {nachstarts}× neu starten.",
         f"' Gibt nach {_dauer(frist_s)} still auf. Protokoll: {STARTER_LOG} im selben Ordner.",
         "Option Explicit",
         f'Const EXE = "{_vbs(exe)}"',
         f"Const TAKT_S = {int(takt_s)}",
         f"Const FRIST_S = {int(frist_s)}",
+        f"Const CAS_MAX_S = {int(cas_max_s)}",
+        f"Const RUHE_S = {int(ruhe_s)}",
+        f"Const PRUEF_S = {int(pruef_s)}",
+        f"Const NACHSTARTS = {int(nachstarts)}",
         f'Const WQL = "{_vbs(wql)}"',
-        "Dim fso, sh, beginn",
+        f'Const CAS_PS = "{_vbs(ps)}"',
+        "Dim fso, sh, beginn, versuch",
         'Set fso = CreateObject("Scripting.FileSystemObject")',
         'Set sh = CreateObject("WScript.Shell")',
         "beginn = Now",
+        "versuch = 0",
         "Do",
-        "  If Not fso.FileExists(WScript.ScriptFullName) Then",
-        '    Notiz "Autostart im Menü ausgeschaltet – Starter beendet"',
-        "    WScript.Quit 0",
-        "  End If",
-        "  If fso.FileExists(EXE) Then",
-        "    If RaKScribeLaeuft() Then",
+        "  WarteAufExe",
+        "  If RaKScribeLaeuft() Then",
+        "    If versuch = 0 Then",
         '      Notiz "RaKScribe läuft schon – nichts zu tun"',
         "    Else",
-        "      On Error Resume Next",
-        '      sh.Run """" & EXE & """ ' + MINIMIERT + '", 7, False',
-        "      If Err.Number <> 0 Then",
-        '        Notiz "Start fehlgeschlagen: " & EXE & " (" & Err.Description & ")"',
-        "      Else",
-        '        Notiz "gestartet (minimiert): " & EXE & " – " & DateDiff("s", beginn, Now) & " s nach dem Start"',
-        "      End If",
+        '      Notiz "RaKScribe läuft inzwischen – nichts zu tun"',
         "    End If",
         "    WScript.Quit 0",
         "  End If",
-        '  If DateDiff("s", beginn, Now) >= FRIST_S Then',
-        '    Notiz "aufgegeben: " & EXE & " nach " & FRIST_S & " s nicht erreichbar"',
+        "  WarteAufCas",
+        "  WScript.Sleep RUHE_S * 1000",
+        "  WarteAufExe",
+        "  If RaKScribeLaeuft() Then",
+        '    Notiz "RaKScribe läuft inzwischen – nichts zu tun"',
         "    WScript.Quit 0",
         "  End If",
-        "  WScript.Sleep TAKT_S * 1000",
+        "  On Error Resume Next",
+        "  Err.Clear",
+        '  sh.Run """" & EXE & """ ' + MINIMIERT + '", 7, False',
+        "  If Err.Number <> 0 Then",
+        '    Notiz "Start fehlgeschlagen: " & EXE & " (" & Err.Description & ")"',
+        "  Else",
+        '    Notiz "gestartet (minimiert): " & EXE & " – " & DateDiff("s", beginn, Now) & " s nach dem Start"'
+        ' & Versuchstext()',
+        "  End If",
+        "  On Error GoTo 0",
+        "  WScript.Sleep PRUEF_S * 1000",
+        "  If RaKScribeLaeuft() Then",
+        '    Notiz "läuft " & PRUEF_S & " s nach dem Start" & Versuchstext()',
+        "    WScript.Quit 0",
+        "  End If",
+        "  versuch = versuch + 1",
+        "  If versuch > NACHSTARTS Then",
+        '    Notiz "aufgegeben: läuft auch nach " & NACHSTARTS & " Nachstarts nicht"',
+        "    WScript.Quit 0",
+        "  End If",
+        '  Notiz "läuft " & PRUEF_S & " s nach dem Start nicht – Nachstart " & versuch & "/" & NACHSTARTS',
         "Loop",
+        "",
+        "Sub WarteAufExe()",
+        "  ' X: kann nach dem Start wieder fehlen (CAS verbindet neu) → Frist je Runde",
+        "  Dim runde",
+        "  runde = Now",
+        "  Do",
+        "    If Not fso.FileExists(WScript.ScriptFullName) Then",
+        '      Notiz "Autostart im Menü ausgeschaltet – Starter beendet"',
+        "      WScript.Quit 0",
+        "    End If",
+        "    If fso.FileExists(EXE) Then Exit Sub",
+        '    If DateDiff("s", runde, Now) >= FRIST_S Then',
+        '      Notiz "aufgegeben: " & EXE & " nach " & FRIST_S & " s nicht erreichbar"',
+        "      WScript.Quit 0",
+        "    End If",
+        "    WScript.Sleep TAKT_S * 1000",
+        "  Loop",
+        "End Sub",
+        "",
+        "Sub WarteAufCas()",
+        "  ' kein CAS → sofort weiter; CAS ohne Hauptfenster (Anmeldung läuft) → bis CAS_MAX_S warten",
+        "  Dim t, z",
+        "  t = Now",
+        "  z = CasZustand()",
+        "  If z <> 1 Then Exit Sub",
+        '  Notiz "CAS meldet sich gerade an – warte auf das Hauptfenster (höchstens " & CAS_MAX_S & " s)"',
+        "  Do",
+        '    If DateDiff("s", t, Now) >= CAS_MAX_S Then',
+        '      Notiz "CAS-Hauptfenster nach " & CAS_MAX_S & " s nicht da – starte trotzdem"',
+        "      Exit Sub",
+        "    End If",
+        "    WScript.Sleep 3000",
+        "    z = CasZustand()",
+        "    If z <> 1 Then",
+        "      If z = 2 Then",
+        '        Notiz "CAS angemeldet nach " & DateDiff("s", t, Now) & " s – noch " & RUHE_S & " s Ruhe"',
+        "      Else",
+        '        Notiz "CAS beendet nach " & DateDiff("s", t, Now) & " s"',
+        "      End If",
+        "      Exit Sub",
+        "    End If",
+        "  Loop",
+        "End Sub",
+        "",
+        "Function CasZustand()",
+        "  ' 0 = kein CAS, 1 = CAS ohne Hauptfenster, 2 = Hauptfenster da; PowerShell fehlt/gesperrt → 0 (nicht blockieren)",
+        "  Dim rc",
+        "  CasZustand = 0",
+        "  On Error Resume Next",
+        "  rc = sh.Run(CAS_PS, 0, True)",
+        "  If Err.Number = 0 Then",
+        "    If rc = 1 Or rc = 2 Then CasZustand = rc",
+        "  End If",
+        "End Function",
+        "",
+        "Function Versuchstext()",
+        '  Versuchstext = ""',
+        '  If versuch > 0 Then Versuchstext = " (Nachstart " & versuch & "/" & NACHSTARTS & ")"',
+        "End Function",
         "",
         "Function RaKScribeLaeuft()",
         "  ' nur Prozesse dieses Benutzers; im Zweifel False — dann verhindert die EXE selbst eine zweite Instanz",
