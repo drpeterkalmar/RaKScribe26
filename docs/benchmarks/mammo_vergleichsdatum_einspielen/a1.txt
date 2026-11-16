@@ -1,0 +1,14 @@
+[Mac-Hermes] Auftrag "A1: KaiScribe 3.19.4 vom GitHub-Release auf X: einspielen" (Job kaiscribe-mammo-vergleichsdatum-n1-einspielen, Mo 16.11.2026 ab ~23:05, ~15 min, nur nach 20:10). 3.19.4 enthaelt 3.19.3 = Mammo-Maske: im grauen Vorschlag steht das Datum des Vorbefunds statt des alten Datums, plus 3.19.2 (Schulter) und 3.19.4 (Knie + Patella axial). Sonst keine Aenderung; config.ini und Schluesseldatei bleiben. GitHub-Tests, Bau und Windows-UI-Test gruen. Eigener Mac-RDP-Client (rdp-tcp#8 / rdp_ordi.sh) zaehlt NICHT als "jemand verbunden". Laeuft gerade ein anderer Mac-Auftrag am Buero-PC: nur "KSV1=belegt". Ist jemand anderes am Buero-PC verbunden / CAS oder Word offen / laeuft eine Aufnahme: nichts tun, "KSV1=peter".
+
+LEITPLANKEN: nichts in CAS anklicken, nichts vidieren, keine Patientendaten in die Antwort. KaiScribe nur die Live-Instanz. CASSpeechMagic, Formatierer, DB-Dienst, bruecke.ini, benutzer.txt, config.ini, Schluesseldatei nicht anfassen. Auf X: aendert nur kaiscribe_x_tauschen.ps1 etwas.
+
+W = %LOCALAPPDATA%\hermes\work\ks_tausch. GH = https://github.com/drpeterkalmar/RaKScribe26/releases/download/3.19.4/rakscribe26.exe . SHA = 5e1308dc46a5a7640f7217876b6f82d4a20fc471264da894df7b721cc8a4b2d0 (Release-Digest, 56.811.184 Bytes).
+
+0. Lage (nur lesen): Uhrzeit; rakscribe26 (PIDs, Fenstertitel, Version vorher, minimiert ja/nein); letzte [RECORD]-Zeile im rakscribe.log; WINWORD 0; RaKScribe-Bruecke 0; MammoDoppel 0. Abbruch (nur Antwort): Word offen, Aufnahme laeuft, andere Sitzung als der Mac-Client verbunden.
+1. GH nach W\v3.19.4\rakscribe26.exe (Frist 10 min), Groesse 56811184 und SHA256 = SHA pruefen, sonst Datei loeschen + STOPP.
+2. kaiscribe_x_tauschen.ps1 aus dem neuesten W\q_*\ris-mods\ordi-hermes\ (SHA256 der Skriptdatei nennen) -Schritt exe -Tag 3.19.4 -Sha SHA (Frist 5 min). Erwartet KS_TAUSCH=ok + Sicherung rakscribe26.exe.vor3.19.4-<Zeit>.alt. Schlusszeile woertlich.
+3. 60 s nach dem Neustart: Fenstertitel (erwartet "KaiScribe 3.19.4 - Roentgen am Kai"), minimiert ja/nein; aus dem rakscribe.log seit dem Neustart die "[INIT]"-Zeile woertlich und die Anzahl Zeilen mit WinError, 10013, Firewall, Netz, Fehler (nur Anzahl + Zeitstempel + Kurztext); neuer Dialog der Sicherheitssoftware ja/nein. Zusaetzlich: welche bruecke_<PC>.log in X:\RaKScribe\Daten\protokolle gibt es, mit Datum der letzten Zeile.
+   Scheitert 2 oder 3 sichtbar: kaiscribe_x_tauschen.ps1 -Schritt zurueck, Schlusszeile woertlich.
+4. Antwort: STATUS ok|rot; Schritte kurz. Letzte Zeile genau so:
+   KSV1=<ok|rot|belegt|peter> TITEL=<Titel> TAUSCH=<Schlusszeile kurz> INIT=<INIT-Zeile kurz> NETZFEHLER=<n> DIALOG=<ja|nein>
+Danach nichts weiter tun.
