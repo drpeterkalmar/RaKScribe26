@@ -1,0 +1,12 @@
+STATUS ok. Ich habe nur gelesen und nichts geändert.
+
+1. Lage um 23:12: Neben dem Mac-mini (rdp-tcp#13) ist keine andere Sitzung verbunden. Der Titel ist wie erwartet „KaiScribe 3.19.4 - Röntgen am Kai“, und X:\RaKScribe\rakscribe26.exe stimmt in SHA256 (5e1308dc…b2d0) und Größe (56.811.184 Bytes). Es läuft keine Aufnahme, die letzte [RECORD]-Zeile ist 20:18:56 „Mikrofon geschlossen“.
+2. Textdateien in X:\RaKScribe (ohne Daten\laeufe und Logs): Der alte Satz ohne „Der … steht“ kommt in einer Datei vor, X:\RaKScribe\Bruecke\original\20261108014.json, mit 2 Treffern. Den neuen Satz „Der Humeruskopf steht in regelrechter Artikulation“ gibt es in keiner Textdatei. Das passt dazu, dass der neue Befund-Prompt fest in der EXE steckt: Die [INIT]-Zeile von 23:07:49 meldet „Befund-Prompt 2026-11-16-humeruskopf-artikel aus eingebaut“.
+3. Läufe: Seit 23:07 gibt es keine Datei mit „Humeruskopf“, das ist also mit 3.19.4 noch nicht belegt. Insgesamt sind es 8 Treffer, die letzten 5:
+- 20261114039_20261114-153340.json, 14.11. 15:33, Version 3.18.11, prompt_version 2026-11-12-v3185-kl-nur-diagnose, „Der Humeruskopf steht“: nein
+- 20261114039_20261114-153341.json, 14.11. 15:33, Version 3.18.11, gleiche prompt_version, „Der Humeruskopf steht“: nein
+- 20261116116_20261116-130706.json, 16.11. 13:07, Version 3.19.1, gleiche prompt_version, „Der Humeruskopf steht“: nein
+- 20261116148_20261116-154353.json, 16.11. 15:43, Version 3.19.1, gleiche prompt_version, „Der Humeruskopf steht“: nein
+- 20261116169_20261116-154438.json, 16.11. 15:44, Version 3.19.1, gleiche prompt_version, „Der Humeruskopf steht“: nein
+
+HK1=ok TITEL=KaiScribe 3.19.4 - Röntgen am Kai SHA=ok AUFNAHME=nein ALTSATZ_DATEIEN=1 NEUSATZ_DATEIEN=0 LAEUFE_NEU=0

@@ -1,0 +1,7 @@
+[Hetzner-Job] Auftrag "HK1: nur lesen, Humeruskopf-Satz auf X:" (Job kaiscribe-humeruskopf-artikel-n1-einspielen, Mo 16.11.2026 ~23:20, ~5 min). Nichts aendern, nichts anklicken, nichts tauschen, keine Patientendaten in die Antwort. Niemand ausser dem Mac-RDP-Client darf verbunden sein, sonst nur "HK1=peter".
+
+1. Lage: Uhrzeit; rakscribe26-Titel (erwartet "KaiScribe 3.19.4 - Roentgen am Kai"), SHA256 + Groesse von X:\RaKScribe\rakscribe26.exe (erwartet 5e1308dc46a5a7640f7217876b6f82d4a20fc471264da894df7b721cc8a4b2d0, 56811184 Bytes); laeuft eine Aufnahme (letzte [RECORD]-Zeile)?
+2. Pruefe in X:\RaKScribe\ (rekursiv, nur Textdateien *.json *.txt *.ini *.md *.cfg ausser Daten\laeufe und Logs; Dateinamen + Trefferzahl, keine Inhalte): kommt der Text "Humeruskopf in regelrechter Artikulation" (ohne "Der ... steht") irgendwo vor? Welche Dateien? Kommt "Der Humeruskopf steht in regelrechter Artikulation" vor (Dateien)?
+3. Pruefe in X:\RaKScribe\Daten\laeufe\*.json: Anzahl Dateien seit 16.11.2026 23:07, deren ergebnis_vorschlag oder stt_roh "Humeruskopf" enthaelt (nur Anzahl + Dateinamen + prompt_version-Wert). Ebenso insgesamt die letzten 5 Dateien mit "Humeruskopf" (Dateiname, Datum, kaiscribe-Version, prompt_version, ob "Der Humeruskopf steht" vorkommt ja/nein).
+4. Antwort: STATUS ok|rot, kurz; letzte Zeile: HK1=<ok|peter|rot> TITEL=<..> SHA=<ok|abweichend> AUFNAHME=<ja|nein> ALTSATZ_DATEIEN=<n> NEUSATZ_DATEIEN=<n> LAEUFE_NEU=<n>
+Danach nichts weiter tun.
