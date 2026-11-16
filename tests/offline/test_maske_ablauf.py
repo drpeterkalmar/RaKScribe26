@@ -44,6 +44,8 @@ mod._chirp3_worker = chirp
 mod._korr.korrigieren = korr
 mod._llm_aufruf = lambda p: LLM.append(p) or "## X\n\n## Befund\nx\n\n## Ergebnis\nx"
 ORDNER = tempfile.mkdtemp(prefix="rks_maske_exe_")
+LAEUFE = os.path.join(tempfile.mkdtemp(prefix="rks_maske_lauf_"), "laeufe")
+mod.CFG.lauf_ordner = LAEUFE
 
 
 class FakeBand:
@@ -245,6 +247,14 @@ check("INS → Befund aus den Feldern rechts zur Kontrolle (Titel, Labels, Ergeb
 check("KI (Korrektur) nur fürs frei diktierte Sono-Feld, nie mit dem Vorbefund; kein Befund-Prompt",
       KORR == ["keine suspekten Herde"] and not any(GEHEIM in k for k in KORR) and LLM == [], f"{KORR} / {len(LLM)}")
 check("eine Aufnahme für den CAS-Auftrag (WAV)", len(app._cas_aufnahmen) == 1)
+warte(lambda: os.path.isdir(LAEUFE) and os.listdir(LAEUFE), 5)
+lauf = sorted(os.listdir(LAEUFE)) if os.path.isdir(LAEUFE) else []
+ld = json.load(open(os.path.join(LAEUFE, lauf[0]), encoding="utf-8")) if lauf else {}
+check("v3.19.1 INS mit Maske → Lauf-Datei <Nr>_<Zeit>.json wie im Diktat-Weg (ergebnis_vorschlag = Befund, Nr, Benutzer, "
+      "Modell/Prompt-Stand, maske=screening, STT je Feld)", len(lauf) == 1 and lauf[0].startswith("20261015001_")
+      and ld.get("ergebnis_vorschlag") == r and ld.get("nr") == "20261015001" and ld.get("benutzer") == "kp"
+      and ld.get("maske") == "screening" and "Sonographie: keine suspekten Herde" in ld.get("stt_roh", "")
+      and "prompt_version" in ld and "modell" in ld and ld.get("kaiscribe") == mod.app_version(), f"{lauf} {str(ld)[:400]}")
 app.befund_fertig()
 S.pump(app, lambda: False, 0.2)
 a1 = antwort("m1")

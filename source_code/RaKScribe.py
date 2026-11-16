@@ -3052,10 +3052,11 @@ class RaKScribeApp(ctk.CTk):
             log_exception("[CAS] Nachvollzug")
             self._cas_nachvollzug = None
 
-    def _lauf_protokollieren(self, erg, stt_roh, ibl):
+    def _lauf_protokollieren(self, erg, stt_roh, ibl, maske=None):
         """v3.18.5 (Peter 12.11.2026, Nachtrag RH 99: Fenster ohne EOL zu → Vorschlag nicht nachvollziehbar): STT-Text,
         Ergebnisvorschlag, Modell und Prompt-Stand dieses Laufs als <Nr>_<Zeit>.json in den Lauf-Ordner (X:, 30 Tage) —
-        im Hintergrund (Netzlaufwerk), Fehler nur als Zeile im Log, nie der Inhalt."""
+        im Hintergrund (Netzlaufwerk), Fehler nur als Zeile im Log, nie der Inhalt. v3.19.1 (kaiscribe-mammo-lauf-n1):
+        auch nach dem Masken-Befund (INS), dann mit „maske“ = Art (screening/…), sonst gleiches Format."""
         try:
             a = getattr(self, "_cas", None)
             module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
@@ -3065,6 +3066,8 @@ class RaKScribeApp(ctk.CTk):
             daten = _cas.lauf_daten(nv, erg.report, nr=a.nr if a is not None else "",
                                     benutzer=a.benutzer if a is not None else "",
                                     rechner=os.environ.get("COMPUTERNAME", ""))
+            if maske:
+                daten["maske"] = str(maske)
             ordner = getattr(CFG, "lauf_ordner", _cas.LAUF_ORDNER_STANDARD)
         except Exception:
             log_exception("[LAUF] Protokoll vorbereiten")
@@ -4160,6 +4163,10 @@ class RaKScribeApp(ctk.CTk):
             log_exception("[MASKE] Befund aus der Maske")
             self.after(0, lambda m_=f"Befund aus der Maske nicht erstellt:\n{e}": self._ende_fehler(gen, m_))
             return
+        # v3.19.1 (kaiscribe-mammo-lauf-n1, Hermi-Vergleich): Lauf-Datei wie im Diktat-Weg, STT je Feld mit Label
+        stt_roh = "\n".join(f"{f.label}: {f.roh}" for f in m.felder if f.roh)
+        self._lauf_protokollieren(type("Erg", (), {"raw": "", "report": report, "ibl": einsatz, "vorlagen": []})(),
+                                  stt_roh, ibl, maske=m.art or "maske")
         if not self._job.aktuell(gen):
             log("[MASKE] Lauf abgebrochen — Befund verworfen.")
             return
