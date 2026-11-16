@@ -52,7 +52,7 @@ Auftrag Georg 16.11. (Telegram Homepage): „bei ‚Im Vergleich zur Voruntersuc
 - Ergebnis: `test_maske.py` 208/208 ✅. Alle 38 Gates aus `.github/workflows/test.yml` und die 6 übrigen `tests/offline/test_*.py` grün.
 
 ## Version
-3.19.3 (VERSION auf main, beim Zusammenführen vergeben).
+3.19.3 (VERSION auf main, beim Zusammenführen vergeben; 3.19.2 hatte parallel kaiscribe-humeruskopf-artikel-n1 belegt, 3.19.3 enthält beides).
 
 ## Offen → Folgejob `kaiscribe-mammo-vergleichsdatum-n1-einspielen`
 - Bau + Release über `kaiscribe_bau.py --release` am Büro-PC (ab 20:10), UI-Test, Tausch auf X:.

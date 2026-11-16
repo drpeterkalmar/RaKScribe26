@@ -409,7 +409,7 @@ def _kopf_datum_neu(t, d):
 
 
 def vorschlag_mit_datum(text, datum):
-    """v3.19.2 (Georg 16.11.): GRAUER Vorschlag eines Vergleichs-Felds aus dem Vorbefund — das alte Vergleichsdatum im
+    """v3.19.3 (Georg 16.11.): GRAUER Vorschlag eines Vergleichs-Felds aus dem Vorbefund — das alte Vergleichsdatum im
     Kopf wird schon im Vorschlag das Untersuchungsdatum des Vorbefunds. Sonst stand „Verglichen zur Voruntersuchung vom
     14.11. 2019“ (Datum der Mammo VOR dem Vorbefund) in der Maske, und wer hineinklickte, markierte, drüberdiktierte oder
     tippte, arbeitete auf dem alten Datum (getippt bleibt wie getippt, vergleich() greift dann nie mehr). Ohne
@@ -643,7 +643,7 @@ class Maske:
             f.vorschlag, f.vorschlag_art, f.vorschlag_werte = "", "", {}
             t = self.zerlegung.felder.get(f.id, "").strip()
             if t:
-                # v3.19.2: Vergleichs-Feld → altes Vergleichsdatum im Kopf schon im Vorschlag = Datum des Vorbefunds
+                # v3.19.3: Vergleichs-Feld → altes Vergleichsdatum im Kopf schon im Vorschlag = Datum des Vorbefunds
                 f.vorschlag, f.vorschlag_art = (vorschlag_mit_datum(t, self.datum) if f.vergleich else t), VORBEFUND
             elif self._normal.felder.get(f.id, "").strip():
                 f.vorschlag, f.vorschlag_art = ohne_platzhalter(self._normal.felder[f.id], self.datum), VORLAGE
@@ -679,7 +679,7 @@ class Maske:
         return "Vorbefund: " + ", ".join(f"{_WERT_LABEL[k]} im Brief {text[k]}, Doppelbefundung {db[k]}" for k in diff)
 
     def datum_hinweis(self):
-        """v3.19.2: Hinweis für die Hilfezeile, wenn der Vorbefund in einem Vergleichs-Feld, das noch den Vorbefund zeigt
+        """v3.19.3: Hinweis für die Hilfezeile, wenn der Vorbefund in einem Vergleichs-Feld, das noch den Vorbefund zeigt
         (Vorschlag bzw. übernommen), mitten im Text ein weiteres Datum nennt — das ändert KaiScribe nie still."""
         teile = []
         for f in self.felder:

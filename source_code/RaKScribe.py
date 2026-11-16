@@ -3796,7 +3796,7 @@ class RaKScribeApp(ctk.CTk):
         if getattr(self, "_maske_ins_warnung", False) and self._maske is not None:
             teile.append(_mk.offene_meldung(self._maske, self._maske_tastenname("uebernehmen")))
         teile.append(getattr(self, "_maske_warnung", "") or "")
-        if getattr(self, "_maske", None) is not None:     # v3.19.2: weiteres Datum mitten im Vorbefund-Text → „bitte prüfen“ (nie still ändern)
+        if getattr(self, "_maske", None) is not None:     # v3.19.3: weiteres Datum mitten im Vorbefund-Text → „bitte prüfen“ (nie still ändern)
             teile.append(self._maske.datum_hinweis())
         return "\n".join(t for t in teile if t)
 

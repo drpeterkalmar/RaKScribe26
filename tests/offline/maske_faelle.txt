@@ -548,7 +548,7 @@
    "feld": "ergebnis", "vorbefund": true, "vorher": [{"tippen": "Zyste links."}], "diktat": null,
    "soll": {"quelle": "getippt", "werte": {}}}
  ],
- "_vorschlag_datum": "v3.19.2 (Georg 16.11.2026): grauer Vorschlag eines Vergleichs-Felds aus dem Vorbefund – altes Vergleichsdatum im Kopf = Untersuchungsdatum des Vorbefunds (nicht Briefdatum), ohne „unverändert“; Daten mitten im Text bleiben (Hinweis „bitte prüfen“). Synthetisch.",
+ "_vorschlag_datum": "v3.19.3 (Georg 16.11.2026): grauer Vorschlag eines Vergleichs-Felds aus dem Vorbefund – altes Vergleichsdatum im Kopf = Untersuchungsdatum des Vorbefunds (nicht Briefdatum), ohne „unverändert“; Daten mitten im Text bleiben (Hinweis „bitte prüfen“). Synthetisch.",
  "vorschlag_datum": [
   {"name": "Georg 16.11. (Fall 20261116124, synthetisch): Verglichen zur Voruntersuchung vom 14.11. 2019 → Datum des Vorbefunds", "text": "Verglichen zur Voruntersuchung vom 14.11. 2019 beidseits unverändert vereinzelte insuspekte Verkalkungen.", "datum": "2024-10-18", "soll": "Verglichen zur Voruntersuchung vom 18.10.2024 beidseits unverändert vereinzelte insuspekte Verkalkungen.", "weitere": []},
   {"name": "Im Vergleich zur Voruntersuchung vom …", "text": "Im Vergleich zur Voruntersuchung vom 12.03.2022 kleinfleckig strukturierter Drüsenkörper.", "datum": "2024-10-18", "soll": "Im Vergleich zur Voruntersuchung vom 18.10.2024 kleinfleckig strukturierter Drüsenkörper.", "weitere": []},

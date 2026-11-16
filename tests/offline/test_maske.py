@@ -418,7 +418,7 @@ m9.tippen(3, "")
 b9 = M.befund_bauen(m9, korrektur=korrektur, ohne_offene=True)
 check("Ergebnis bewusst gelöscht → keine Vorbefund-Werte", "ACR" not in b9.report, b9.report)
 
-# ───────────── v3.19.2 (Georg 16.11.2026): altes Vergleichsdatum aus dem Vorbefund nie stehen lassen ─────────────
+# ───────────── v3.19.3 (Georg 16.11.2026): altes Vergleichsdatum aus dem Vorbefund nie stehen lassen ─────────────
 for fall in F["vorschlag_datum"]:
     ist = M.vorschlag_mit_datum(fall["text"], fall["datum"])
     check(f"Vorschlag mit Datum: {fall['name']}", ist == fall["soll"], f"\n   IST  {ist!r}\n   SOLL {fall['soll']!r}")

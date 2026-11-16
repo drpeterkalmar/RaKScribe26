@@ -14,7 +14,9 @@ ZUERST LESEN: `docs/benchmarks/BERICHT-mammo-vergleichsdatum-n1.md` (Ursache, Ä
 
 ## Schritt 0 – Tore (nur lesen)
 1. main enthält die Änderung: `source_code/maske.py` hat `vorschlag_mit_datum`, `weitere_daten` und `Maske.datum_hinweis`. In
-   `VERSION` steht die Version aus Teil 1 (3.19.2 bzw. die Nummer im Bericht). Für diese Version gibt es noch kein Release.
+   `VERSION` steht mindestens **3.19.3** (Teil 1). 3.19.3 enthält auch 3.19.2 (Schulter-Normalsatz, Job
+   kaiscribe-humeruskopf-artikel-n1). Baut dessen Folgejob am selben Abend 3.19.2, kommt 3.19.3 danach dran; zwei Bauten
+   dürfen nicht gleichzeitig laufen. Für die Version auf main gibt es noch kein Release.
    Hat inzwischen ein anderer Job eine höhere Version mit dieser Änderung gebaut, nimmst du die.
 2. Offline-Gates grün (alle Dateien aus `.github/workflows/test.yml`, am Hetzner mit dem tkinter-venv, siehe Memory „Release vom Hetzner“).
 3. Live-Stand lesen: welche KaiScribe-Version auf X: liegt (Titel bzw. `[INIT]`-Zeile in `X:\RaKScribe\rakscribe.log`) und
