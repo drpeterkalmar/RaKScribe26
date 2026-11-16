@@ -11,7 +11,7 @@ Einspielen und Abnahme macht der Folgeauftrag `kaiscribe-kniepat-titel-n1-einspi
 2. Alle anderen Titel bleiben gleich, auch bei kniel/knier/knie2 („Kniegelenk links in 2 Ebenen“).
 3. Dafür gibt es eine neue Vorlage „Kniegelenk in 2 Ebenen mit Patella axial“: der Knie-Normalbefund plus ein Satz zur axialen Aufnahme.
 4. Der Formatierer am Büro-PC braucht keine Änderung, er übernimmt den neuen Titel so, wie er ist.
-5. Version __VERSION__. Eingespielt wird heute Nacht vom Folgeauftrag, abgenommen am Testpatienten.
+5. Version 3.19.4. Eingespielt wird heute Nacht vom Folgeauftrag, abgenommen am Testpatienten.
 
 👉 Bitte den neuen Normalsatz der Vorlage kurz ansehen (Abschnitt 1), bis Fr 20.11. Passt er nicht, schreiben Sie den Wortlaut dazu, er wird 1:1 übernommen.
 
@@ -73,7 +73,7 @@ Der Testfall steht in den KaiScribe-Tests (Auftrag: „test_titel_regel_c.py bzw
 
 ## 4. Version und Einspielen
 
-- Version **__VERSION__** (VERSION-Datei, vergeben beim Zusammenführen). Die Release-EXE baut GitHub (`build-exe.yml`), danach läuft der Windows-UI-Test.
+- Version **3.19.4** (VERSION-Datei, vergeben beim Zusammenführen). Die Release-EXE baut GitHub (`build-exe.yml`), danach läuft der Windows-UI-Test.
 - Einspielen (Teil 2): wie 3.19.1/3.19.2 mit ris-mods `ordi-hermes/kaiscribe_x_tauschen.ps1 -Schritt exe` am Büro-PC.
   **Rückweg:** `kaiscribe_x_tauschen.ps1 -Schritt zurueck` (jüngste `.alt`, nur außerhalb Mo–Fr 06:30–20:10).
   Ein Rückweg nur für diese Änderung ohne EXE-Tausch geht nicht, weil die Vorlagen in der EXE gebündelt sind.

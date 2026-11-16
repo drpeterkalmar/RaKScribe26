@@ -1,4 +1,4 @@
-# kaiscribe-kniepat-titel-n1-einspielen – Knie + Patella axial: KaiScribe __VERSION__ einspielen, Abnahme 451898, Kanban #344 (ab Mo 16.11.2026 abends)
+# kaiscribe-kniepat-titel-n1-einspielen – Knie + Patella axial: KaiScribe 3.19.4 einspielen, Abnahme 451898, Kanban #344 (ab Mo 16.11.2026 abends)
 
 Eingereiht von `kaiscribe-kniepat-titel-n1` (Teil 1, Mo 16.11. ~22:45, Mac). Repo RaKScribe26 (Ordi-Werkzeuge in ris-mods).
 Ressourcen: ordi + automaten-vm. Büro-PC-Regeln: Mo–Fr 06:30–17:20 nichts klicken, Mo 06:30–09:30 nichts einspielen, EXE-Tausch
@@ -12,9 +12,9 @@ ZUERST LESEN: `BERICHT-KNIEPAT-TITEL-N1.md` (Teil 1: Ursache, Änderung, Tests).
 
 ## Was eingespielt wird
 - Leistungen kniepatl/kniepatr/kniepat2 → KaiScribe-Titel „Kniegelenk links/rechts/beidseits in 2 Ebenen mit Patella axial“
-  (neue Vorlage `kniegelenk_in_2_ebenen_mit_patella_axial`, `cas_vorlagen.zusatz_vorlage`). Commit/Release: **__VERSION__** auf main
+  (neue Vorlage `kniegelenk_in_2_ebenen_mit_patella_axial`, `cas_vorlagen.zusatz_vorlage`). Commit/Release: **3.19.4** auf main
   (`git log --oneline --grep kniepat-titel-n1`).
-- Einspielen: das **neueste grüne Release, das den Commit von __VERSION__ enthält** (`git merge-base --is-ancestor <commit> <tag>`,
+- Einspielen: das **neueste grüne Release, das den Commit von 3.19.4 enthält** (`git merge-base --is-ancestor <commit> <tag>`,
   Build + Windows-UI-Test grün). Läuft auf X: schon ein solches Release: NICHT nochmals tauschen, nur Abnahme. Nie zurück auf ein älteres.
 - ris-mods/Formatierer: keine Änderung (Bericht Abschnitt 2) → keine Windows-Prüfung nötig. Ist bis zum Start doch etwas aus ris-mods
   mit einzuspielen (anderer Job), gilt dessen eigene Windows-Prüfung.
