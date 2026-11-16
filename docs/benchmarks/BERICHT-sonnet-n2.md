@@ -3,7 +3,9 @@
 **Kurz:** KaiScribe 3.19.0 schreibt den Befundtext standardmäßig über **Claude Sonnet 5.5** (Text vorher maskiert),
 Gemini springt nur noch bei einem Anthropic-Problem ein. Die zwei Satzverluste aus dem 13.11. sind mit Sonnet weg
 (Kurzsätze 5/5, Georg 6/6). In 1049 Test-Aufrufen gab es **0 Rückfälle** auf Gemini und 0 $ Google-Kosten.
-Einspielen: siehe Abschnitt „Einspielen“.
+**Eingespielt Mo 16.11. 01:37** (X:\RaKScribe, gilt für alle Befund-PCs); Büro-PC CASWS14 belegt. Die anderen
+Befund-PCs (CASWS08, CASWS10, RAKCLIENT04) nehmen 3.19.0 beim nächsten Start von KaiScribe; Beleg je PC macht der
+Folgejob `kaiscribe-sonnet-n3-beleg` heute ab 20:20 aus den Lauf-Protokollen.
 
 ## Vorher/nachher je Prüfskript (Sonnet 5.5 maskiert, Testschlüssel Konto B)
 
@@ -91,9 +93,39 @@ haiku-ab-n1 ≥ 70 $ frei). Google zahlt nur noch Chirp (Spracherkennung) und di
   `testkosten`: Rückfall in Tests ohne Google (Ersatztext statt Exit 7).
 - Web-CORS geprüft: `api.anthropic.com` erlaubt den Browser-Aufruf von `drpeterkalmar.github.io` (Preflight 200).
 
-## Einspielen
+## Einspielen (Ordi-Hermes, Büro-PC CASWS14, Mo 16.11. 01:27–01:39, Ordi zu)
 
-(wird nach dem Ordi-Lauf ergänzt)
+| Schritt | Ergebnis |
+|---|---|
+| Release 3.19.0 (GitHub Actions, öffentliches Repo) | `rakscribe26.exe` 56.806.948 B, sha256 `c7fcd46a5f26…`; Windows-UI-Test **115/115** |
+| Schlüssel Konto A → `X:\RaKScribe\rakscribe-praxis-key.json` | `ANTHKEY=ok`, Felder `anthropic_api_key, stt, vertex_api_key` (alte zurückgelesen gleich), Prüfaufruf **HTTP 200**; Sicherung `X:\RaKScribe\_alt\rakscribe-praxis-key.json.vor-sonnet-20261116-012834` |
+| Probe EXE-Kopie (WAV-Modus, Gast, getippter Kniesatz) | 1. Lauf: technisch ok (`[KI] gen: Anbieter=anthropic claude-sonnet-5-5 maskiert (4.2 s)`), aber rot, weil mein Skript nur die ersten 600 Zeichen las → Helfer korrigiert (bc5fa93). 2. Lauf **`KSPROBE=ok ANBIETER=anthropic`** (3,5 s), Ergebnis „1. Mäßige Gonarthrose links medial (Arthrose Grad 3 nach Kellgren & Lawrence). 2. Kleiner Gelenkerguss links.“ |
+| `X:\RaKScribe\config.ini` | `LLM_ANBIETER = anthropic`, `ANTHROPIC_MODELL = claude-sonnet-5-5`, `ANTHROPIC_FRIST = 20`; Sicherung `_alt\config.ini.vor-sonnet-20261116-013714` |
+| EXE-Tausch (`kaiscribe_x_tauschen.ps1 -Schritt exe`) | `KS_TAUSCH=ok neu=c7fcd46a5f26 alt=9491dc65a776` (3.18.13), Sicherung `rakscribe26.exe.vor3.19.0-20261116-013726.alt`, KaiScribe am Büro-PC neu gestartet |
+| Nach 60 s | Titel „KaiScribe 3.19.0 - Röntgen am Kai“, `[INIT] Befund-KI: anthropic/claude-sonnet-5-5, Korrektur: anthropic/claude-sonnet-5-5 - maskiert, Rückfall Gemini`, `[INIT] Nutzungszähler: X:\RaKScribe\Daten\nutzung (CASWS14)`, 0 Fehlerzeilen, kein Dialog der Sicherheitssoftware |
+| Andere PCs | keine gesperrte alte EXE auf X: gefunden; ob dort eine alte KaiScribe noch aus dem Speicher läuft, ist vom Büro-PC nicht sichtbar → Folgejob prüft je `rechner` im Lauf-Protokoll |
+
+Kein Testpatient nötig: die Probe lief ohne CAS (Gast-Modus, getippter synthetischer Satz), nichts vidiert.
+Der K&L-Grad 3 im Probebefund ist die Regel seit 3.18.5 (Grad zum Adjektiv einer **diktierten** Arthrose, „mäßige“ = 3,
+Nachtrag RH 99; Prüffall `erhalt_knie`), keine Erfindung.
+
+**Rückweg (Notschalter):** am Büro-PC `py -3.12 kaiscribe_anthropic.py config --anbieter gemini` (oder in
+`X:\RaKScribe\config.ini` `LLM_ANBIETER = gemini`) und KaiScribe neu starten; EXE zurück mit
+`kaiscribe_x_tauschen.ps1 -Schritt zurueck` (nur außerhalb 06:30–20:10).
+
+## Offen / Folgepunkte
+
+- **Beleg je Befund-PC** (CASWS08, CASWS10, RAKCLIENT04: 1 Befund mit `modell = anthropic/claude-sonnet-5-5`) → Job
+  `kaiscribe-sonnet-n3-beleg` (heute ab 20:20, Ressource ordi). Er liest auch den ersten echten Tagesbericht.
+- **Chirp-Warnung als Kanban-Karte:** Die EXE schreibt Warnzeile + `warnung_<Monat>.txt` auf X:. Der Mac-Weg dahin (täglicher
+  Abruf, eine Karte je Monat) baut derselbe Folgejob; heute gibt es ihn noch nicht.
+- **Web-App:** schreibt erst über Claude, wenn die Schlüsseldatei mit `anthropic_api_key` im Browser geladen ist (Kanban #351).
+- **20× Konfabulation** nicht gefahren (Kostengrenze, siehe oben); 3 komplette Läufe ohne Erfundenes.
+- `ibl_kl1` (IB-Lab-Grad 1 fehlt im Ergebnis) bleibt rot wie bei allen Modellen (#261).
+- Platzhalter-Regel: hier gelockert (nur Daten Pflicht). Will Peter es streng (jeder Name/jede Nummer muss zurückkommen),
+  ist das `PFLICHT_ARTEN` in `llm_anbieter.py` bzw. der Filter in `llmAnbieter.ts` – kostet dann Gemini-Rückfälle.
+
+👉 Peter + Georg: Schlüsseldatei mit Claude-Schlüssel nach Drive „RaKScribe“ und in der Web-App neu laden, bis 20.11. (Kanban #351).
 
 ## Kosten dieses Jobs
 
