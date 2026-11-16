@@ -391,6 +391,56 @@ _VERGLEICH_KOPF = re.compile(
     r"\(?\s*" + _DATUM_ALT + r"(?:\s*(?:und|,|bzw\.?|sowie)\s*" + _DATUM_ALT + r")*(?:\s*\))?", re.I)
 
 
+def _kopf_datum_neu(t, d):
+    """Beginnt t (Leerraum schon zusammengezogen) mit einem Vergleichskopf MIT alter Datumsangabe („Verglichen zur
+    Voruntersuchung vom 14.11. 2019“, „Im Vergleich zur Voruntersuchung (12.03.2022)“, „von 2022“, zwei Daten …)?
+    → (t mit Datum d statt der alten Angabe, Rest nach dem Kopf), sonst None. Nur der Kopf, nie „unverändert“ dazu."""
+    m = _VERGLEICH_DATUM.match(t)
+    k = _VERGLEICH_KOPF.match(t)
+    if k and (not m or k.end() > m.end()):           # 3.15.3: alte Angabe weiter hinten → der ganze Kopf wird neu
+        rest = t[k.end():].lstrip()
+        return f"Verglichen mit {d}" + ("" if not rest or rest[0] in ".,;:" else " ") + rest, rest
+    if m:
+        praefix = m.group("praefix")
+        if re.search(r"\bvom\s+$", praefix, re.I) is None and re.search(r"\bVor\w+\s+$", praefix, re.I):
+            praefix += "vom "
+        return praefix + d + t[m.end():], t[m.end():]
+    return None
+
+
+def vorschlag_mit_datum(text, datum):
+    """v3.19.2 (Georg 16.11.): GRAUER Vorschlag eines Vergleichs-Felds aus dem Vorbefund — das alte Vergleichsdatum im
+    Kopf wird schon im Vorschlag das Untersuchungsdatum des Vorbefunds. Sonst stand „Verglichen zur Voruntersuchung vom
+    14.11. 2019“ (Datum der Mammo VOR dem Vorbefund) in der Maske, und wer hineinklickte, markierte, drüberdiktierte oder
+    tippte, arbeitete auf dem alten Datum (getippt bleibt wie getippt, vergleich() greift dann nie mehr). Ohne
+    Vergleichskopf mit Datum bleibt der Text wie er ist; nie „unverändert“ dazu (das bleibt Übernehmen/„unverändert“)."""
+    d = datum_kurz(datum)
+    t = " ".join(str(text or "").split())
+    if not t or not d:
+        return str(text or "").strip()
+    neu = _kopf_datum_neu(t, d)
+    return neu[0] if neu is not None else str(text or "").strip()
+
+
+_DATUM_WEITER = re.compile(r"(?<![\d.])" + _DATUM_ALT)
+
+
+def weitere_daten(text, datum):
+    """Datumsangaben MITTEN im Vorbefund-Text (nach einem allfälligen Vergleichskopf), z. B. „… seit 2019
+    größenkonstant“ — die ändert KaiScribe nie still, sie kommen als Hinweis „bitte prüfen“. Ohne das Vorbefund-Datum
+    selbst, jede Angabe einmal."""
+    d = datum_kurz(datum)
+    t = " ".join(str(text or "").split())
+    neu = _kopf_datum_neu(t, d or "x") if t else None
+    rest = neu[1] if neu is not None else t
+    gesehen = []
+    for m in _DATUM_WEITER.finditer(rest):
+        a = " ".join(m.group(0).split())
+        if a != d and a not in gesehen:
+            gesehen.append(a)
+    return gesehen
+
+
 def ist_unveraendert(text, maske_def):
     """Ist das Diktat eines Felds nur „unverändert“ (oder eine Variante aus masken.json)?"""
     n = _norm(text)
@@ -410,16 +460,9 @@ def vergleich(text, datum, maske_def):
         return ""
     if not d:
         return satz(t)
-    m = _VERGLEICH_DATUM.match(t)
-    k = _VERGLEICH_KOPF.match(t)
-    if k and (not m or k.end() > m.end()):           # 3.15.3: alte Angabe weiter hinten → der ganze Kopf wird neu
-        rest = t[k.end():].lstrip()
-        return satz(f"Verglichen mit {d}" + ("" if not rest or rest[0] in ".,;:" else " ") + rest)
-    if m:
-        praefix = m.group("praefix")
-        if re.search(r"\bvom\s+$", praefix, re.I) is None and re.search(r"\bVor\w+\s+$", praefix, re.I):
-            praefix += "vom "
-        return satz(praefix + d + t[m.end():])
+    neu = _kopf_datum_neu(t, d)
+    if neu is not None:
+        return satz(neu[0])
     m = _VERGLEICH_OHNE.match(t)
     if m:
         return satz(f"Verglichen mit {d}" + t[m.end():])
@@ -600,7 +643,8 @@ class Maske:
             f.vorschlag, f.vorschlag_art, f.vorschlag_werte = "", "", {}
             t = self.zerlegung.felder.get(f.id, "").strip()
             if t:
-                f.vorschlag, f.vorschlag_art = t, VORBEFUND
+                # v3.19.2: Vergleichs-Feld → altes Vergleichsdatum im Kopf schon im Vorschlag = Datum des Vorbefunds
+                f.vorschlag, f.vorschlag_art = (vorschlag_mit_datum(t, self.datum) if f.vergleich else t), VORBEFUND
             elif self._normal.felder.get(f.id, "").strip():
                 f.vorschlag, f.vorschlag_art = ohne_platzhalter(self._normal.felder[f.id], self.datum), VORLAGE
             if f.typ == "ergebnis" and self.vorbefund:
@@ -633,6 +677,18 @@ class Maske:
         if not diff:
             return ""
         return "Vorbefund: " + ", ".join(f"{_WERT_LABEL[k]} im Brief {text[k]}, Doppelbefundung {db[k]}" for k in diff)
+
+    def datum_hinweis(self):
+        """v3.19.2: Hinweis für die Hilfezeile, wenn der Vorbefund in einem Vergleichs-Feld, das noch den Vorbefund zeigt
+        (Vorschlag bzw. übernommen), mitten im Text ein weiteres Datum nennt — das ändert KaiScribe nie still."""
+        teile = []
+        for f in self.felder:
+            if not (f.vergleich and f.sichtbar and f.vorschlag_art == VORBEFUND and f.quelle in VORSCHLAG + (UEBERNOMMEN,)):
+                continue
+            daten = weitere_daten(f.vorschlag, self.datum)
+            if daten:
+                teile.append(f"{f.label}: Vorbefund nennt weiteres Datum ({', '.join(daten)}) – bitte prüfen")
+        return "\n".join(teile)
 
     # Navigation ───────────────────────────────────────────────────────────────
     @property

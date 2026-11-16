@@ -418,5 +418,82 @@ m9.tippen(3, "")
 b9 = M.befund_bauen(m9, korrektur=korrektur, ohne_offene=True)
 check("Ergebnis bewusst gelöscht → keine Vorbefund-Werte", "ACR" not in b9.report, b9.report)
 
+# ───────────── v3.19.2 (Georg 16.11.2026): altes Vergleichsdatum aus dem Vorbefund nie stehen lassen ─────────────
+for fall in F["vorschlag_datum"]:
+    ist = M.vorschlag_mit_datum(fall["text"], fall["datum"])
+    check(f"Vorschlag mit Datum: {fall['name']}", ist == fall["soll"], f"\n   IST  {ist!r}\n   SOLL {fall['soll']!r}")
+    check(f"… weitere Daten mitten im Text: {fall['name']}", M.weitere_daten(fall["text"], fall["datum"]) == fall["weitere"],
+          repr(M.weitere_daten(fall["text"], fall["datum"])))
+check("Vorschlag ohne bekanntes Datum bleibt wie im Vorbefund",
+      M.vorschlag_mit_datum("Verglichen mit 14.11.2019 unverändert.", "") == "Verglichen mit 14.11.2019 unverändert.")
+
+ALT = "Verglichen mit 05.06.2024 beidseits"
+NEU_KOPF = "Verglichen zur Voruntersuchung vom 18.10.2024 beidseits"
+assert ALT in VB_TEXT
+# Datum = UNTERSUCHUNGSdatum der letzten fertigen Mammo (Bridge casdb mammo_vb „datum“), nie das Briefdatum (fertig 4 Tage
+# später, Fall 20261116124: Untersuchung 18.10.2024, Brief 22.10.2024) — ein Briefdatum im Kontext wird nicht verwendet.
+VB_G = dict(VB, nr="20241018078", datum="2024-10-18", brief_datum="2024-10-22", fertig="2024-10-22",
+            text=VB_TEXT.replace(ALT, "Verglichen zur Voruntersuchung vom 14.11. 2019 beidseits"))
+mg = neu_maske(vorbefund=VB_G)
+fg = mg.felder[1]
+check("Georg: grauer Vorschlag Mammographie zeigt schon das Datum des Vorbefunds (18.10.2024), nicht 14.11. 2019",
+      M.vorschau(fg, mg).startswith(NEU_KOPF) and "2019" not in M.vorschau(fg, mg) and fg.quelle == "vorbefund"
+      and fg.offen, M.vorschau(fg, mg))
+check("… Untersuchungsdatum, nicht Briefdatum (22.10.2024)", mg.datum == "18.10.2024" and "22.10" not in M.vorschau(fg, mg))
+check("… im Vorschlag kein „unverändert“ dazu (Text sonst wie im Vorbefund)",
+      M.vorschau(fg, mg) == VB_G["text"].split("\nMammographie: ", 1)[1].split("\n")[0].replace("14.11. 2019", "18.10.2024"),
+      M.vorschau(fg, mg))
+check("… Inspektion (kein Vergleichs-Feld) bleibt wie im Vorbefund", mg.felder[0].vorschlag == "Unauffällig.")
+mg.uebernehmen(1)
+check("Übernehmen → „Verglichen zur Voruntersuchung vom 18.10.2024 …“", fg.quelle == "uebernommen"
+      and fg.text.startswith(NEU_KOPF) and "2019" not in fg.text, fg.text)
+bg = M.befund_bauen(mg, korrektur=korrektur, ohne_offene=True)
+check("… so im Befund", "Mammographie: " + NEU_KOPF in bg.report and "2019" not in bg.report, bg.report)
+
+mn = M.Maske(D, art="screening", sono=True, vorbefund=None, normal=NORMAL)       # Fall 20261116124: Vorbefund 1 s später
+mn.vorbefund_setzen(VB_G)
+check("Vorbefund kommt nach (nachgekommen 4/4): Vorschlag ebenso mit 18.10.2024",
+      M.vorschau(mn.felder[1], mn).startswith(NEU_KOPF) and "2019" not in M.vorschau(mn.felder[1], mn),
+      M.vorschau(mn.felder[1], mn))
+
+mz = neu_maske(vorbefund=VB_G)                    # in den Vorschlag geklickt, Teil markiert und drüberdiktiert
+basis = M.vorschau(mz.felder[1], mz)
+von = basis.index("vereinzelte")
+mz.gehe_zu(1)
+a_, b_, c_ = mz.reservieren(ziel=(von, von + len("vereinzelte insuspekte")))
+mz.diktat_fertig(a_, b_, c_, "einzelne gutartige")
+check("Markieren + Drüberdiktieren im Vorschlag → getippt, mit 18.10.2024 (nicht 14.11. 2019)",
+      mz.felder[1].quelle == "getippt" and mz.felder[1].text.startswith(NEU_KOPF) and "einzelne gutartige" in mz.felder[1].text
+      and "2019" not in mz.felder[1].text, mz.felder[1].text)
+mt = neu_maske(vorbefund=VB_G)                    # hineingeklickt und getippt
+mt.tippen(1, M.vorschau(mt.felder[1], mt) + " Zusatz.")
+check("Hineintippen in den Vorschlag → getippt mit 18.10.2024", mt.felder[1].quelle == "getippt"
+      and mt.felder[1].text.startswith(NEU_KOPF) and "2019" not in mt.felder[1].text, mt.felder[1].text)
+md = neu_maske(vorbefund=VB_G)                    # Arzt diktiert selbst ein anderes Datum → seines gilt
+basis = M.vorschau(md.felder[1], md)
+von = basis.index("18.10.2024")
+md.gehe_zu(1)
+a_, b_, c_ = md.reservieren(ziel=(von, von + len("18.10.2024")))
+md.diktat_fertig(a_, b_, c_, "03.05.2023")
+check("Datum markiert und selbst diktiert (03.05.2023) → seines bleibt (getippt, wie getippt)",
+      md.felder[1].quelle == "getippt" and "vom 03.05.2023 beidseits" in md.felder[1].text
+      and "03.05.2023" in M.befund_bauen(md, korrektur=korrektur, ohne_offene=True).report, md.felder[1].text)
+check("ganz neu diktiert mit eigenem Datum → seines gilt", M.vergleich_diktat("Verglichen mit 2022 neuer Herd.", "2024-10-18", D)
+      == "Verglichen mit 2022 neuer Herd.")
+
+VB_W = dict(VB_G, text=VB_G["text"].replace("Cutis und Subcutis unauffällig.",
+                                             "Herdbefund links seit 2014 größenkonstant. Cutis und Subcutis unauffällig."))
+mw = neu_maske(vorbefund=VB_W)
+check("weiteres Datum mitten im Vorbefund-Text: bleibt stehen (nie still geändert)",
+      "seit 2014 größenkonstant" in M.vorschau(mw.felder[1], mw) and M.vorschau(mw.felder[1], mw).startswith(NEU_KOPF))
+check("… Hinweis in der Hilfezeile „bitte prüfen“",
+      mw.datum_hinweis() == "Mammographie: Vorbefund nennt weiteres Datum (2014) – bitte prüfen", repr(mw.datum_hinweis()))
+mw.uebernehmen(1)
+check("… auch übernommen noch der Hinweis", "(2014)" in mw.datum_hinweis(), repr(mw.datum_hinweis()))
+mw.tippen(1, "Kleinfleckig strukturierter Drüsenkörper.")
+check("… heute selbst getippt/diktiert → kein Hinweis mehr", mw.datum_hinweis() == "", repr(mw.datum_hinweis()))
+check("ohne weiteres Datum kein Hinweis (auch ohne Vorbefund)", mg.datum_hinweis() == ""
+      and M.Maske(D, vorbefund=None, normal=NORMAL).datum_hinweis() == "")
+
 print("\n" + ("✅ MASKE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

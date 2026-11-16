@@ -547,5 +547,17 @@
   {"name": "Ergebnis-Vorschlag getippt: Vorschlag-Werte werden NICHT still übernommen",
    "feld": "ergebnis", "vorbefund": true, "vorher": [{"tippen": "Zyste links."}], "diktat": null,
    "soll": {"quelle": "getippt", "werte": {}}}
+ ],
+ "_vorschlag_datum": "v3.19.2 (Georg 16.11.2026): grauer Vorschlag eines Vergleichs-Felds aus dem Vorbefund – altes Vergleichsdatum im Kopf = Untersuchungsdatum des Vorbefunds (nicht Briefdatum), ohne „unverändert“; Daten mitten im Text bleiben (Hinweis „bitte prüfen“). Synthetisch.",
+ "vorschlag_datum": [
+  {"name": "Georg 16.11. (Fall 20261116124, synthetisch): Verglichen zur Voruntersuchung vom 14.11. 2019 → Datum des Vorbefunds", "text": "Verglichen zur Voruntersuchung vom 14.11. 2019 beidseits unverändert vereinzelte insuspekte Verkalkungen.", "datum": "2024-10-18", "soll": "Verglichen zur Voruntersuchung vom 18.10.2024 beidseits unverändert vereinzelte insuspekte Verkalkungen.", "weitere": []},
+  {"name": "Im Vergleich zur Voruntersuchung vom …", "text": "Im Vergleich zur Voruntersuchung vom 12.03.2022 kleinfleckig strukturierter Drüsenkörper.", "datum": "2024-10-18", "soll": "Im Vergleich zur Voruntersuchung vom 18.10.2024 kleinfleckig strukturierter Drüsenkörper.", "weitere": []},
+  {"name": "Datum in Klammern", "text": "Verglichen mit der Voruntersuchung (12.03.2022) unverändert kleinfleckig strukturierter Drüsenkörper.", "datum": "2024-10-18", "soll": "Verglichen mit 18.10.2024 unverändert kleinfleckig strukturierter Drüsenkörper.", "weitere": []},
+  {"name": "nur Jahr: „von 2022“", "text": "Verglichen mit der Voruntersuchung von 2022 unverändert kleinfleckig strukturierter Drüsenkörper.", "datum": "2024-10-18", "soll": "Verglichen mit 18.10.2024 unverändert kleinfleckig strukturierter Drüsenkörper.", "weitere": []},
+  {"name": "zwei Daten im Kopf → nur noch eines", "text": "Verglichen mit 12.03.2022 und 01.02.2020 unverändert involutiver Drüsenkörper.", "datum": "2024-10-18", "soll": "Verglichen mit 18.10.2024 unverändert involutiver Drüsenkörper.", "weitere": []},
+  {"name": "Verglichen zu <Datum>", "text": "Verglichen zu 14.11.2019 unverändert involutiver Drüsenkörper.", "datum": "2024-10-18", "soll": "Verglichen zu 18.10.2024 unverändert involutiver Drüsenkörper.", "weitere": []},
+  {"name": "Datum nur mitten im Text: nie still ändern, Hinweis", "text": "Kleinfleckig strukturierter Drüsenkörper. Herdbefund links seit 2019 größenkonstant.", "datum": "2024-10-18", "soll": "Kleinfleckig strukturierter Drüsenkörper. Herdbefund links seit 2019 größenkonstant.", "weitere": ["2019"]},
+  {"name": "Kopf neu, weitere Daten mitten im Text bleiben + Hinweis", "text": "Verglichen zur Voruntersuchung vom 14.11. 2019 unverändert. Herdbefund links seit 14.04.2014 größenkonstant, Narbe von 2012.", "datum": "2024-10-18", "soll": "Verglichen zur Voruntersuchung vom 18.10.2024 unverändert. Herdbefund links seit 14.04.2014 größenkonstant, Narbe von 2012.", "weitere": ["14.04.2014", "2012"]},
+  {"name": "Kopf ohne Datum bleibt (Datum erst beim Übernehmen), nie „unverändert“ dazu", "text": "Kleinfleckig strukturierter Drüsenkörper.", "datum": "2024-10-18", "soll": "Kleinfleckig strukturierter Drüsenkörper.", "weitere": []}
  ]
 }
