@@ -193,6 +193,13 @@ def cmd_config(a):
     return 0
 
 
+def befund_aus_zustand(z):
+    """Voller Befundtext aus dem Selbsttest-Zustand (result_voll; „result“ ist nach 600 Zeichen abgeschnitten – daran
+    scheiterte die erste Probe am 16.11.: „Gonarthrose“ stand im Ergebnis hinter Zeichen 600)."""
+    m = (z or {}).get("befund") or {}
+    return (m.get("result_voll") or m.get("result") or "").strip()
+
+
 def ist_produktions_exe(pfad):
     import ntpath
     return ntpath.normcase(ntpath.normpath(pfad)) == ntpath.normcase(ntpath.join(X, "rakscribe26.exe"))
@@ -228,11 +235,10 @@ def cmd_probe(a):
     print("\n".join(zeilen[-25:]))
     try:
         with open(zustand, encoding="utf-8") as f:
-            z = json.load(f)
-        befund = ((z.get("befund") or {}).get("result") or "").strip()
+            befund = befund_aus_zustand(json.load(f))
     except Exception:
         befund = ""
-    print("Befund (synthetischer Testsatz):\n" + befund[:600])
+    print("Befund (synthetischer Testsatz):\n" + befund)
     anbieter = "anthropic" if any("Anbieter=anthropic" in z for z in zeilen) else \
         ("rueckfall" if any("Anthropic nicht verwendet" in z for z in zeilen) else "unklar")
     ok = anbieter == "anthropic" and "## Befund" in befund and "Gonarthrose" in befund

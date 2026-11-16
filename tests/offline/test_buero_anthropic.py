@@ -71,6 +71,9 @@ with contextlib.redirect_stdout(out):
     rc = ka.cmd_probe({"--exe": "x:\\rakscribe\\RAKSCRIBE26.exe"})
 check("Probe weigert sich bei der Produktions-EXE auf X:", rc == 1 and "nur_mit_kopie" in out.getvalue(), out.getvalue())
 check("Probe mit Kopie erlaubt", not ka.ist_produktions_exe("C:\\Users\\cas\\AppData\\Local\\hermes\\work\\ks_tausch\\v3.19.0\\rakscribe26.exe"))
+lang = "## Knie\n\n## Befund\n" + "Normalsatz. " * 60 + "\n\n## Ergebnis\n1. Mäßige Gonarthrose links medial."
+check("Probe liest den vollen Befund (result_voll), nicht die ersten 600 Zeichen",
+      "Gonarthrose" in ka.befund_aus_zustand({"befund": {"result": lang[:600], "result_voll": lang}}))
 quelle = (ROOT / "tools" / "buero" / "kaiscribe_anthropic.py").read_text(encoding="utf-8")
 check("Helfer gibt den Schlüssel nie aus (kein print mit key)", "print(key" not in quelle and "len(key" not in quelle)
 
