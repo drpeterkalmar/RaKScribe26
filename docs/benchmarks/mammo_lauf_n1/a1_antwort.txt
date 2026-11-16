@@ -1,0 +1,14 @@
+KSM1 PETER: Ich habe nichts gemacht, weil jemand am Büro-PC verbunden ist.
+
+Lage um 04:49 (nur gelesen):
+- quser: cas ist über eine neue RDP-Verbindung rdp-tcp#8 aktiv. Um 01:37 war es noch rdp-tcp#6. Die Sitzung wurde also neu verbunden, die letzte Eingabe war vor 1 h 45 min (etwa 03:04).
+- KaiScribe läuft als PID 2244 mit dem Titel "KaiScribe 3.19.0 - Röntgen am Kai" (minimiert), dazu PID 12172 ohne Fenster.
+- Letzte [RECORD]-Zeile ist vom 14.11. 17:01 ("Mikrofon geschlossen"), es läuft also keine Aufnahme.
+- Word, RaKScribe-Brücke und MammoDoppel sind nicht offen. CasMed läuft als PID 13764, dazu der CASLoginService.
+- Kein anderer Mac-Auftrag lief.
+
+Schritte 1 bis 3 habe ich nicht ausgeführt: kein Download, kein Tausch. Auf X: und an config.ini oder der Schlüsseldatei ist nichts verändert. Sobald du klärst, dass die RDP-Verbindung keine Arbeitssitzung ist (zum Beispiel deine eigene), kann ich den Auftrag vor 06:20 nachholen.
+
+KSM1=peter TITEL=KaiScribe 3.19.0 - Röntgen am Kai TAUSCH=nicht ausgeführt INIT=- NETZFEHLER=- DIALOG=nein
+
+#STATUS completed run_dd1fbfc6ae2a451abc6af13636eca21c

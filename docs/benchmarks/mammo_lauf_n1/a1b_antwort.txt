@@ -1,0 +1,14 @@
+STATUS ok: KaiScribe 3.19.1 ist auf X: eingespielt und läuft.
+
+0 Lage um 04:50: Nur die Sitzung rdp-tcp#8 ist da (dein Mac-Client), letzte Eingabe vor 1 h 47 min. KaiScribe lief als PID 2244 mit "KaiScribe 3.19.0 - Röntgen am Kai" (minimiert), dazu PID 12172 ohne Fenster. Letzte [RECORD]-Zeile ist vom 14.11. 17:01, es lief also keine Aufnahme. Word, RaKScribe-Brücke und MammoDoppel sind nicht offen. Kein anderer Mac-Auftrag lief. CasMed lief im Hintergrund weiter (PID 13764), wie beim Tausch um 01:37.
+1 Download: 18 s, 56805713 Bytes, SHA256 stimmt. kaiscribe_x_tauschen.ps1 beginnt mit 9e4d1188b0e6.
+2 Tausch, Schlusszeile: KS_TAUSCH=ok SCHRITT=exe neu=3dd3f3a04ef2 alt=c7fcd46a5f26 sicherung=rakscribe26.exe.vor3.19.1-20261116-045124.alt neu_gestartet=True. Neustart um 04:51:25 über die Autostart-Verknüpfung.
+3 60 s nach dem Neustart: KaiScribe läuft als PID 13616 mit "KaiScribe 3.19.1 - Röntgen am Kai" (minimiert), dazu PID 3352 ohne Fenster.
+  [2026-11-16 04:51:48] [INIT] Befund-KI: anthropic/claude-sonnet-5-5, Korrektur: anthropic/claude-sonnet-5-5 - maskiert, Rückfall Gemini
+  In 22 Logzeilen seit dem Neustart gibt es 0 Treffer zu WinError, 10013, Firewall, Netz oder Fehler. Es ist kein neuer Dialog der Sicherheitssoftware aufgetaucht. Ein Zurückrollen war nicht nötig.
+
+config.ini, Schlüsseldatei, CAS, CASSpeech, Formatierer, DB-Dienst und bruecke.ini habe ich nicht angefasst. Der Tausch ist in aenderungen.log eingetragen.
+
+KSM1B=ok TITEL=KaiScribe 3.19.1 - Röntgen am Kai TAUSCH=KS_TAUSCH=ok neu=3dd3f3a04ef2 sicherung=…vor3.19.1-20261116-045124.alt INIT=Befund-KI: anthropic/claude-sonnet-5-5 maskiert, Rückfall Gemini NETZFEHLER=0 DIALOG=nein
+
+#STATUS completed run_54f71ab9fdc34387b4088d0c08897629
