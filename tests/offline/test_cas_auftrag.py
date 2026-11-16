@@ -149,7 +149,7 @@ lauf = [n for n in (os.listdir(LAEUFE) if os.path.isdir(LAEUFE) else [])]
 ld = json.load(open(os.path.join(LAEUFE, lauf[0]), encoding="utf-8")) if lauf else {}
 check("v3.18.5 (Nachtrag RH 99): Lauf-Protokoll schon VOR EOL – <Nr>_<Zeit>.json mit STT-Text, Vorschlag, Modell, "
       "Prompt-Stand", len(lauf) == 1 and lauf[0].startswith("20261013007_") and ld.get("stt_roh") == NORMAL
-      and ld.get("ergebnis_vorschlag", "").startswith("## Kniegelenk") and ld.get("modell", "").startswith("gemini/")
+      and ld.get("ergebnis_vorschlag", "").startswith("## Kniegelenk") and ld.get("modell", "").startswith(("anthropic/", "gemini/"))
       and ld.get("prompt_version") and ld.get("nr") == "20261013007" and ld.get("vorlagen_stand", "").startswith("sha1:"),
       f"{lauf} {str(ld)[:300]}")
 check("Aufnahme des Diktats gesammelt", len(app._cas_aufnahmen) == 1 and app._cas_aufnahmen[0] is app._aufnahme)
@@ -166,7 +166,7 @@ check("… mit Aufnahme als WAV (ganze Aufnahme)", n_wav == 1600 * len(app._aufn
 check("… Antwort „fertig“, kein TEST", an.get("status") == "fertig" and an.get("test") is False, str(an))
 nv = an.get("nachvollzug") or {}
 check("v3.18.4 (RH 38): „fertig“ trägt den Nachvollzug (STT-Rohtext, Modell, Prompt-/Vorlagen-Stand, IB Lab nein)",
-      nv.get("stt_roh") and nv.get("modell", "").startswith("gemini/") and nv.get("prompt_version")
+      nv.get("stt_roh") and nv.get("modell", "").startswith(("anthropic/", "gemini/")) and nv.get("prompt_version")
       and nv.get("vorlagen_stand", "").startswith("sha1:") and nv.get("ibl_baustein") is False
       and nv.get("ibl_module") == [] and nv.get("kaiscribe") and nv.get("zeit"), str(nv)[:300])
 check("… KEIN Strg+V, Text zusätzlich in der Zwischenablage, Felder leer, Band weg",
