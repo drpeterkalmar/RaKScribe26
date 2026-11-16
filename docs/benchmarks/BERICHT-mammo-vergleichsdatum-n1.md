@@ -1,4 +1,4 @@
-# kaiscribe-mammo-vergleichsdatum-n1 – Mammo-Maske: altes Vergleichsdatum aus dem Vorbefund nie stehen lassen (KaiScribe @@VERSION@@)
+# kaiscribe-mammo-vergleichsdatum-n1 – Mammo-Maske: altes Vergleichsdatum aus dem Vorbefund nie stehen lassen (KaiScribe 3.19.3)
 
 Mo 16.11.2026 nachmittags, Hetzner, Teil 1 (Ursache, Code, Offline-Tests, Version). Am Büro-PC und an den Befund-PCs habe ich nichts gemacht.
 Bau, Einspielen, Abnahme am 451898 und die Meldung an Georg macht der Folgejob **kaiscribe-mammo-vergleichsdatum-n1-einspielen**
@@ -52,7 +52,7 @@ Auftrag Georg 16.11. (Telegram Homepage): „bei ‚Im Vergleich zur Voruntersuc
 - Ergebnis: `test_maske.py` 208/208 ✅. Alle 38 Gates aus `.github/workflows/test.yml` und die 6 übrigen `tests/offline/test_*.py` grün.
 
 ## Version
-@@VERSION@@ (VERSION auf main, beim Zusammenführen vergeben).
+3.19.3 (VERSION auf main, beim Zusammenführen vergeben).
 
 ## Offen → Folgejob `kaiscribe-mammo-vergleichsdatum-n1-einspielen`
 - Bau + Release über `kaiscribe_bau.py --release` am Büro-PC (ab 20:10), UI-Test, Tausch auf X:.
