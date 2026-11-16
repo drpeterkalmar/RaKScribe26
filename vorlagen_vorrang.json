@@ -265,6 +265,17 @@
       ]
     },
     {
+      "key": "kniegelenk_in_2_ebenen_mit_patella_axial",
+      "bereich": "text",
+      "alle": [
+        "knie",
+        "(patella\\w* (ax|tang)|(axial|tangential)\\w* patella)"
+      ],
+      "keins": [
+        "(defile|(^| )tep( |$)|prothes|(^| )mrt?( |$)|sono|ultraschall)"
+      ]
+    },
+    {
       "key": "defileeaufnahmen_der_patella_in_30°_60°_und_90°",
       "alle": [
         "(defile|patella\\w* (in )?30)"

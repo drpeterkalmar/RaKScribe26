@@ -290,6 +290,44 @@ check("Titel: Seite ersetzt bzw. ergänzt", [cv.titel_beidseits(t) for t in ("Ha
       str([cv.titel_beidseits(t) for t in ("Handgelenk links in 2 Ebenen", "Sonographie des Schultergelenkes rechts",
                                             "Hüftgelenk re. in 2 Ebenen", "Kniegelenk in 2 Ebenen")]))
 
+# #344 (kniepatl/kniepatr/kniepat2, Fall 1112-036): Die Brücke liefert die Grund-Vorlage „Kniegelenk in 2 Ebenen“, der
+# Leistungstext nennt „Patella axial“ → Vorlage und Titel „Kniegelenk links in 2 Ebenen mit Patella axial“
+KPAT = "kniegelenk_in_2_ebenen_mit_patella_axial"
+KNIEPATL = L("kniepatl", "Knie li mit Patella axial", "Röntgen", "kniegelenk_in_2_ebenen", "links")
+KNIEPATR = L("kniepatr", "Knie re mit Patella axial", "Röntgen", "kniegelenk_in_2_ebenen", "rechts")
+KNIEPAT2 = L("kniepat2", "Kniegelenk bds.mit Patella ax.", "Röntgen", "kniegelenk_in_2_ebenen", None)
+KNIEL = L("kniel", "Kniegelenk links", "Röntgen", "kniegelenk_in_2_ebenen", "links")
+check("#344 Leistungstext mit Patella axial → erweiterte Vorlage, ohne Zusatz/fremde Grund-Vorlage → unverändert",
+      [l.vorlage for l in cv.CasHinweis([KNIEPATL, KNIEPATR, KNIEPAT2, KNIEL,
+                                         L("x", "Hüfte mit Patella axial", "Röntgen", "hüftgelenk_in_2_ebenen")], T).alle]
+      == [KPAT, KPAT, KPAT, "kniegelenk_in_2_ebenen", "hüftgelenk_in_2_ebenen"])
+for leist, diktat, soll in (
+        ([KNIEPATL], "Kniegelenk links: Erguss im Recessus suprapatellaris.", [KPAT]),
+        ([KNIEPATL], "Knie links unauffällig", [KPAT]),
+        ([KNIEPATL], "Unauffällig.", [KPAT]),
+        ([KNIEPATR], "Knie rechts mit Patella axial: Gonarthrose.", [KPAT]),
+        ([KNIEPATL], "Knie-TEP links: regelrechter Sitz der Prothese.", ["knieprothese"]),
+        ([KNIEL], "Kniegelenk links: Erguss.", ["kniegelenk_in_2_ebenen"]),
+        ([KNIEPATL, FUSSL], "Knie links: Gonarthrose. Fuß links: Hallux valgus.", [KPAT, "fuß_in_2_ebenen"])):
+    _, w, h = wahlen(leist, diktat)
+    check(f"#344 Vorlagenwahl: {diktat[:36]}… → {soll}", [x.vorlage for x in w] == soll and h == [],
+          [(x.vorlage, x.art) for x in w] + h)
+for leist, diktat, soll, ki in (
+        (KNIEPATL, "Kniegelenk links: Erguss im Recessus suprapatellaris.",
+         "Kniegelenk links in 2 Ebenen mit Patella axial", True),
+        (KNIEPATL, "Knie links unauffällig", "Kniegelenk links in 2 Ebenen mit Patella axial", False),
+        (KNIEPATR, "Unauffällig.", "Kniegelenk rechts in 2 Ebenen mit Patella axial", False),
+        (KNIEPAT2, "Knie links geringgradige Gonarthrose, ansonsten unauffällig",
+         "Kniegelenk beidseits in 2 Ebenen mit Patella axial", True),
+        (KNIEPAT2, "Knie beidseits unauffällig", "Kniegelenk beidseits in 2 Ebenen mit Patella axial", False),
+        (KNIEL, "Knie links unauffällig", "Kniegelenk links in 2 Ebenen", False)):
+    prompts = []
+    erg = pl.befund_aus_diktat(diktat, kontext_seite(cv.CasHinweis([leist], T), prompts))
+    titel = erg.report.splitlines()[0]
+    check(f"#344 Titel {leist['kurz']} ({'KI' if ki else 'Normalbefund'}): „{soll}“", titel == "## " + soll
+          and bool(prompts) == ki and (not ki or "<untersuchung>Kniegelenk in 2 Ebenen mit Patella axial</untersuchung>"
+                                        in prompts[0] or leist is KNIEL), titel)
+
 # keine CAS-Datei: bit-gleich wie bisher (CAS-Funktionen werden gar nicht aufgerufen)
 gesperrt = {}
 for name in ("aufteilen", "wahl", "hinweise", "prompt_block", "CasHinweis"):

@@ -168,6 +168,23 @@ PAARIG = {"schulter", "oberarm", "ellbogen", "unterarm", "hand", "huefte", "ober
           "sprunggelenk", "fuss"}
 
 
+# #344 (kniepatl/kniepatr/kniepat2 „Knie li mit Patella axial“): Die Brücke ordnet der Leistung die Grund-
+# Vorlage zu (kniegelenk_in_2_ebenen) → Titel ohne „Patella axial“. Nennt der Leistungstext den Zusatz, gilt die genauere
+# Vorlage (erweitert → Grund-Vorlage, Muster im CAS-Text); das Diktat mit der Grund-Vorlage bestätigt sie (abgleich).
+ZUSATZ_VORLAGEN = {
+    "kniegelenk_in_2_ebenen_mit_patella_axial": ("kniegelenk_in_2_ebenen",
+                                                 re.compile(r"patella\w*\.?\s*(?:ax|tang)|(?:axial|tangential)\w*\s+patella", re.I)),
+}
+
+
+def zusatz_vorlage(v, text, templates):
+    """CAS-Vorlage v mit Zusatz aus dem Leistungstext („mit Patella axial“) → erweiterte Vorlage, sonst v."""
+    for erweitert, (grund, muster) in ZUSATZ_VORLAGEN.items():
+        if v == grund and erweitert in templates and muster.search(text or ""):
+            return erweitert
+    return v
+
+
 def beidseits(w):
     """v3.15.4 (Peter 15.10., „Handgelenk bds.“ + Diktat „SL-Spalt links“ → nur „Handgelenk links“): Vorlagenwahl mit
     beidseitiger CAS-Leistung einer paarigen Region → der Befund ist IMMER beidseitig (deterministisch, nicht der KI
@@ -236,9 +253,10 @@ class CasHinweis:
             v = d.get("vorlage")
             if v is not None and v not in templates:
                 v = None                     # Key aus einer neueren Zuordnung, den diese RaKScribe nicht kennt
+            text = d.get("text") or ""
+            v = zusatz_vorlage(v, text, templates)
             mod = modalitaet_key(v, templates) if v and not generisch(v, templates) else None
             mod = mod or d.get("modalitaet")
-            text = d.get("text") or ""
             self.alle.append(Leistung(
                 kurz=str(d.get("kurz") or ""), label=label(text, d.get("kurz"), mod), vorlage=v, modalitaet=mod,
                 seite=d.get("seite") or seite_aus_text(text),
@@ -283,6 +301,9 @@ def abgleich(key, text, cas, templates):
     for l in cas.alle:
         if l.vorlage and l.vorlage == key:
             return l, key
+    for l in cas.alle:   # #344: Diktat „Knie links …“ ↔ CAS „Knie li mit Patella axial“ → die erweiterte CAS-Vorlage
+        if l.vorlage in ZUSATZ_VORLAGEN and ZUSATZ_VORLAGEN[l.vorlage][0] == key:
+            return l, l.vorlage
     reg = regionen(vorlagen_text(key, templates))
     if not reg:
         return None, None

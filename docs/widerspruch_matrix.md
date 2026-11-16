@@ -2,7 +2,7 @@
 
 Automatisch erzeugt von `tests/offline/widerspruch_matrix_test.py`. ✓ = widersprechender Normalsatz der Vorlage erkannt und nach der KI eingeschränkt (Befund im Befundtext, Ergebnis nennt ihn), – = die Vorlage hat für diesen Befund keinen widersprechenden Normalsatz (Ergebnis trotzdem geprüft), ✗ = Fehler, leer = Kategorie passt nicht zur Region. Gegenprobe je Vorlage (ohne bzw. mit verneintem Befund): Text Zeichen für Zeichen unverändert.
 
-**98 Vorlagen/Bausteine · 1062 Kombinationen · ✓ 716 · – 346 · ✗ 0 · Gegenproben 200/200 unverändert · Web = EXE: ja**
+**99 Vorlagen/Bausteine · 1074 Kombinationen · ✓ 728 · – 346 · ✗ 0 · Gegenproben 202/202 unverändert · Web = EXE: ja**
 
 | Vorlage | fibroostose | exostose | osteophyt | arthrose | spondylose | osteochondrose | spondylarthrose | unkovertebralarthrose | baastrup | dish | verkalkung | chondrokalzinose | accessorium | enostose | zyste | fraktur | fehlstellung | osteopenie | skoliose | sklerose |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -42,6 +42,7 @@ Automatisch erzeugt von `tests/offline/widerspruch_matrix_test.py`. ✓ = widers
 | konturaufnahmen_des_femurkopfes | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  | – | – |  | ✓ | ✓ | ✓ | ✓ | – |  | ✓ |
 | oberschenkel_in_2_ebenen | ✓ | ✓ |  |  |  |  |  |  |  |  | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
 | kniegelenk_in_2_ebenen | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
+| kniegelenk_in_2_ebenen_mit_patella_axial | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
 | defileeaufnahmen_der_patella_in_30°_60°_und_90° | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
 | unterschenkel_in_2_ebenen | ✓ | ✓ |  |  |  |  |  |  |  |  | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
 | sprunggelenk_in_2_ebenen | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  | ✓ |  | – | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
