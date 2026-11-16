@@ -74,11 +74,18 @@ Der Testfall steht in den KaiScribe-Tests (Auftrag: „test_titel_regel_c.py bzw
 ## 4. Version und Einspielen
 
 - Version **3.19.4** (VERSION-Datei, vergeben beim Zusammenführen). Die Release-EXE baut GitHub (`build-exe.yml`), danach läuft der Windows-UI-Test.
+- Stand 16.11. 23:00: main **1a3512d** (Code d142156). GitHub „Tests“ grün (Lauf 43962220624), Build 3.19.4 (Lauf 43962992275),
+  **Release 3.19.4**: `rakscribe26.exe` 56.811.184 B, sha256 `5e1308dc46a5a7640f7217876b6f82d4a20fc471264da894df7b721cc8a4b2d0`.
+  Windows-UI-Test **115/115** (Lauf 43963359467). 3.19.4 enthält auch 3.19.2 (Humeruskopf) und 3.19.3 (Mammo-Vergleichsdatum, bisher ohne
+  eigenes Release). Ein Tausch auf 3.19.4 spielt also alle drei ein.
 - Einspielen (Teil 2): wie 3.19.1/3.19.2 mit ris-mods `ordi-hermes/kaiscribe_x_tauschen.ps1 -Schritt exe` am Büro-PC.
   **Rückweg:** `kaiscribe_x_tauschen.ps1 -Schritt zurueck` (jüngste `.alt`, nur außerhalb Mo–Fr 06:30–20:10).
   Ein Rückweg nur für diese Änderung ohne EXE-Tausch geht nicht, weil die Vorlagen in der EXE gebündelt sind.
 
 ## Offen (Teil 2 bzw. später)
+
+- Teil 2 ist eingereiht: `kaiscribe-kniepat-titel-n1-einspielen` (ordi + automaten-vm, prio 6, ohne Startzeit, weil es schon nach 20:10 war).
+  Es gab keinen wartenden Einspiel-Auftrag für KaiScribe, an den man hätte anhängen können. Kanban #344 hat eine Notiz bekommen, #364 (Peter: Normalsatz) ist angelegt.
 
 - Einspielen und Abnahme am Testpatienten 451898 mit der Leistung kniepatl, danach `kanban.py fertig 344` → Folgeauftrag.
 - Lücke aus Teil 1: Es ist nicht belegt, dass die Teststrecke einen Testeintrag mit **kniepatl** anlegen kann. Bisher hat sie nur
