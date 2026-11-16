@@ -130,5 +130,14 @@ abw = [(d, e[:80], w[:80]) for d, e, w in zip(nur_bypass, exe_reports, web_repor
 check(f"Normalbefund-Kette Web = EXE ({len(nur_bypass)} Diktate, inkl. Mehr-Regionen)",
       len(web_reports) == len(nur_bypass) >= 15 and not abw, str(abw[:2]) + r.stderr[-300:])
 
+# Regression kaiscribe-humeruskopf-artikel-n1 (Georg 16.11.2026 „Der Humeruskopf. Bitte ändern“): der Schulter-Normalbefund
+# schreibt den Humeruskopf-Satz mit Artikel, EXE wie Web (gleiche Kette oben).
+import re  # noqa: E402
+_hk = pl.befund_aus_diktat("Schulter rechts unauffällig", k_bypass).report
+_hk_web = dict(zip(nur_bypass, web_reports)).get("Schulter rechts unauffällig. Ellbogen rechts unauffällig.", "")
+check("Schulter-Normalbefund: Satz beginnt mit „Der Humeruskopf steht in regelrechter Artikulation.“ (EXE + Web)",
+      all(re.search(r"(?:^|[.\n] ?)Der Humeruskopf steht in regelrechter Artikulation\.", t)
+          and not re.search(r"(?<!Der )Humeruskopf in regelrechter", t) for t in (_hk, _hk_web)), _hk[:300])
+
 print("\n" + ("✅ PIPELINE EXE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

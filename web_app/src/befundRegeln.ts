@@ -705,6 +705,11 @@ export function widersprucheBereinigen(report: string, diktat: string, d?: Wider
 // die sonst weder im Titel, Abschnitt noch Diktat vorkommt → weg. Sync: befund_regeln.py abschnitte_bereinigen,
 // Fixtures „abschnitte“.
 type VorlagenMap = Record<string, { body?: string; display_name?: string } | undefined>;
+// Frühere Wortlaute von Vorlagensätzen zählen wie der heutige Satz (kaiscribe-humeruskopf-artikel-n1, Georg 16.11.2026).
+// Sync: befund_regeln.py VORLAGEN_ALTFORMEN.
+export const VORLAGEN_ALTFORMEN: Record<string, string[]> = {
+  'Der Humeruskopf steht in regelrechter Artikulation.': ['Humeruskopf in regelrechter Artikulation.'],
+};
 const VORLAGEN_SAETZE = new WeakMap<object, [Map<string, Set<string>>, Map<string, Set<string>>]>();
 const vorlagenSaetze = (templates: VorlagenMap, d?: WiderspruchDaten): [Map<string, Set<string>>, Map<string, Set<string>>] => {
   let v = VORLAGEN_SAETZE.get(templates);
@@ -718,6 +723,15 @@ const vorlagenSaetze = (templates: VorlagenMap, d?: WiderspruchDaten): [Map<stri
         if (n) { if (!w.has(n)) w.set(n, new Set()); w.get(n)!.add(key); }
       }
       gruppen.set(key, widGruppen((t?.display_name || key).toLowerCase(), c));
+    }
+    for (const [neu, alte] of Object.entries(VORLAGEN_ALTFORMEN)) {
+      const keys = w.get(vorlageNormalisieren(neu));
+      if (!keys) continue;
+      for (const alt of alte) {
+        const n = vorlageNormalisieren(alt);
+        if (!w.has(n)) w.set(n, new Set());
+        for (const k of keys) w.get(n)!.add(k);
+      }
     }
     v = [w, gruppen];
     VORLAGEN_SAETZE.set(templates, v);

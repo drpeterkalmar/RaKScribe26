@@ -549,7 +549,7 @@ def _wid_gruppen(text, c):
 
 def _wid_vorrang(g, c):
     """Befund-Lage: eine genauere Struktur verdrängt die gröbere (strukturen_vorrang: AC-Gelenk statt Schulter — eine
-    Tossy-Luxation betrifft das AC-Gelenk, nicht „Humeruskopf in regelrechter Artikulation“). Nur für den Befund; ein
+    Tossy-Luxation betrifft das AC-Gelenk, nicht „Der Humeruskopf steht in regelrechter Artikulation“). Nur für den Befund; ein
     Normalsatz über AC- UND Schultergelenk bleibt in beiden Gruppen."""
     for n, weg in c.get("vorrang", {}).items():
         if n in g:
@@ -881,6 +881,11 @@ def widersprueche_bereinigen(report, diktat, daten=None):
 # Ohne Treffer bleibt alles Zeichen für Zeichen gleich. Sync: befundRegeln.ts abschnitteBereinigen, Fixtures
 # „abschnitte“ in befund_regeln_fixtures.json.
 _VORLAGEN_SAETZE = {}
+# Frühere Wortlaute von Vorlagensätzen (alte Briefe, Diktate, KI mit altem Stand): zählen wie der heutige Satz.
+# kaiscribe-humeruskopf-artikel-n1 (Georg 16.11.2026 „Der Humeruskopf. Bitte ändern“). Sync: befundRegeln.ts VORLAGEN_ALTFORMEN.
+VORLAGEN_ALTFORMEN = {
+    "Der Humeruskopf steht in regelrechter Artikulation.": ("Humeruskopf in regelrechter Artikulation.",),
+}
 
 
 def _vorlagen_saetze(templates):
@@ -896,6 +901,10 @@ def _vorlagen_saetze(templates):
                 if n:
                     w.setdefault(n, set()).add(key)
             gruppen[key] = _wid_gruppen(((t or {}).get("display_name") or key).lower(), cc)
+        for neu, alte in VORLAGEN_ALTFORMEN.items():
+            keys = w.get(vorlage_normalisieren(neu))
+            for alt in alte if keys else ():
+                w.setdefault(vorlage_normalisieren(alt), set()).update(keys)
         c = _VORLAGEN_SAETZE[id(templates)] = (w, gruppen)
     return c
 
