@@ -55,17 +55,19 @@ async function signJwt(payload: object, privateKeyPem: string): Promise<string> 
 }
 
 const SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
-const tokenCache: { [clientEmail: string]: { token: string; expiry: number } } = {};
+const tokenCache: { [emailUndBereich: string]: { token: string; expiry: number } } = {};
 
-// Gültiges Bearer-Token für den STT-Service-Account (gecacht, Erneuerung 2 min vor Ablauf)
-export async function getSttToken(keyJson: SttSchluessel | null, signal?: AbortSignal): Promise<string> {
+// Gültiges Bearer-Token für den STT-Service-Account (gecacht je Bereich, Erneuerung 2 min vor Ablauf).
+// kaiscribe-webapp-schluessel-n1: zweiter Bereich drive.readonly für das Nachladen des Claude-Schlüssels aus Drive.
+export async function getSttToken(keyJson: SttSchluessel | null, signal?: AbortSignal, scope: string = SCOPE): Promise<string> {
   if (!keyJson) throw new Error('STT-Schluessel nicht geladen.');
   const now = Math.floor(Date.now() / 1000);
-  const cached = tokenCache[keyJson.client_email];
+  const fach = `${keyJson.client_email} ${scope}`;
+  const cached = tokenCache[fach];
   if (cached && cached.expiry > now + 120) return cached.token;
   const jwt = await signJwt({
     iss: keyJson.client_email,
-    scope: SCOPE,
+    scope,
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600,
@@ -78,7 +80,7 @@ export async function getSttToken(keyJson: SttSchluessel | null, signal?: AbortS
   }, 30_000, 3);
   const data = await resp.json();
   if (!data.access_token) throw new Error('Google OAuth Fehler: ' + JSON.stringify(data));
-  tokenCache[keyJson.client_email] = { token: data.access_token, expiry: now + (data.expires_in || 3600) };
+  tokenCache[fach] = { token: data.access_token, expiry: now + (data.expires_in || 3600) };
   return data.access_token;
 }
 

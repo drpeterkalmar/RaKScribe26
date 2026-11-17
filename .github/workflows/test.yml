@@ -121,6 +121,9 @@ jobs:
       - name: Web-Audio (16 kHz im Callback = alter Weg, Byte für Byte)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings audio_test.mjs
+      - name: Web-Befund-KI (Claude maskiert, gezählter Rückfall, Schlüssel aus Drive nachladen)
+        working-directory: web_app
+        run: node --experimental-strip-types --no-warnings llm_anbieter_test.mjs
       - name: Typprüfung Web
         working-directory: web_app
         run: npx tsc -p tsconfig.app.json --noEmit

@@ -28,14 +28,14 @@ import { befundAusDiktat, nurTextAusDiktat, type PipelineKontext } from './pipel
 import { einfuegen, markdownOffset } from './einfuegen.ts';
 // v3.18.9 (Peter 12.11.): Cursor im Befund beim Record → wörtliche Ergänzung dort (wie RaKScribe.py ERGAENZUNG)
 const ERGAENZUNG = 'Ergänzung an Cursor-Stelle';
-import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
+import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, getSttToken, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
 import { LaufVerwaltung, befundLauf, uiAktion, type Lauf, type BefundUi, type AppZustand } from './lauf.ts';
 // v3.8.0 (Peter 11.10.): SpeechMike-Tasten + LEDs direkt über WebHID (Sync: source_code/speechmike.py)
 import { SpeechMikeVerbindung, webHid, BELEGUNG, ledFuer, sendefaehig } from './speechmike.ts';
 import { diktatAnzeige, type Abschnitt } from './segmente.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
-import { kiAnbieterAusSpeicher } from './llmAnbieter.ts';  // kaiscribe-haiku-ab-n1: Befund-KI-Anbieter (Standard Gemini)
+import { kiAnbieterAusSpeicher, anthropicSchluesselNachladen } from './llmAnbieter.ts';  // Befund-KI-Anbieter (Standard Claude seit sonnet-n2)
 
 // Types: Template / TemplatesMap in src/detect.ts
 
@@ -233,6 +233,16 @@ export default function App() {
       });
     return () => { aktiv = false; };
   }, [vertexApiKey]);
+  // kaiscribe-webapp-schluessel-n1 (Kanban #351): fehlt der Claude-Schlüssel (alte praxis-key.json geladen), holt die
+  // App ihn mit dem STT-Dienstkonto selbst aus Drive. Scheitert das, bleibt Gemini (gezählter Rückfall), nächster Start erneut.
+  useEffect(() => {
+    if (!vertexApiKey || !sttKeyJson?.private_key) return;
+    const ab = new AbortController();
+    anthropicSchluesselNachladen(bereich => getSttToken(sttKeyJson, ab.signal, bereich), localStorage, ab.signal)
+      .then(e => { if (e === 'geladen') console.log('[KEY] Claude-Schlüssel aus Drive nachgeladen'); })
+      .catch((e: Error) => { if (!ab.signal.aborted) console.warn('[KEY] Claude-Schlüssel aus Drive nicht geladen:', e.message); });
+    return () => ab.abort();
+  }, [vertexApiKey, sttKeyJson]);
   const keysReadyRef = useLatest(keysReady);
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const keyFileRef = useRef<HTMLInputElement>(null);

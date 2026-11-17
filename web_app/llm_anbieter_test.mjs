@@ -2,7 +2,7 @@
 // (fetch-Attrappe). Standard Gemini unverändert; anthropic = maskiert, Antwort zurückgesetzt; Rückfall auf Gemini.
 //   cd web_app && node --experimental-strip-types llm_anbieter_test.mjs
 import { callGeminiLLM, correctTranscriptionWithGemini, validateReportConsistency } from './src/gemini.ts';
-import { kiAnbieterAusSpeicher, maskieren, KORR_KOPF, zaehlen } from './src/llmAnbieter.ts';
+import { kiAnbieterAusSpeicher, maskieren, KORR_KOPF, zaehlen, anthropicSchluesselNachladen, DRIVE_BEREICH } from './src/llmAnbieter.ts';
 
 let fail = 0, n = 0;
 const check = (ok, label, got) => { n++; if (!ok) fail++; console.log(ok ? 'PASS' : 'FAIL', '|', label, ok ? '' : `\n      got ${JSON.stringify(got)?.slice(0, 400)}`); };
@@ -72,14 +72,14 @@ t = await validateReportConsistency(DIKTAT, BEFUND(''), ctx(KI));
 check(aufrufe.length === 1 && aufrufe[0].url.includes('anthropic') && t.includes('12.03.2025'), 'Validator anthropic', t);
 
 // Einstellung
-check(kiAnbieterAusSpeicher({ getItem: () => null }) === undefined, 'ohne Schlüssel → Gemini');
+check(kiAnbieterAusSpeicher({ getItem: () => null })?.anthropicKey === '', 'webapp-schluessel-n1: ohne Schlüssel → Anbieter ohne Schlüssel (gezählter Rückfall)');
 const sd = kiAnbieterAusSpeicher({ getItem: (k) => (k === 'anthropic_api_key' ? 'sk' : null) });
 check(sd?.anbieter === 'anthropic' && sd?.korrektur === 'anthropic' && sd?.modell === 'claude-sonnet-5-5',
   'sonnet-n2: Standard = anthropic/Sonnet 5.5, sobald der Schlüssel geladen ist', sd);
 check(kiAnbieterAusSpeicher({ getItem: (k) => ({ anthropic_api_key: 'sk', llm_anbieter: 'gemini' })[k] ?? null }) === undefined,
   'llm_anbieter = gemini schaltet von Hand zurück');
 const sp = (o) => ({ getItem: (k) => o[k] ?? null });
-check(kiAnbieterAusSpeicher(sp({ llm_anbieter: 'anthropic' })) === undefined, 'anthropic ohne Schlüssel → Gemini');
+check(kiAnbieterAusSpeicher(sp({ llm_anbieter: 'anthropic' }))?.anthropicKey === '', 'anthropic ohne Schlüssel → Anbieter ohne Schlüssel');
 const k = kiAnbieterAusSpeicher(sp({ llm_anbieter: 'anthropic', anthropic_api_key: 'sk' }));
 check(k?.anbieter === 'anthropic' && k?.korrektur === 'anthropic' && k?.modell === 'claude-sonnet-5-5', 'anthropic + Schlüssel → Sonnet 5.5', k);
 const h = kiAnbieterAusSpeicher(sp({ llm_anbieter: 'gemini', llm_anbieter_korrektur: 'anthropic', anthropic_api_key: 'sk' }));
@@ -90,6 +90,45 @@ check(maskieren('x\n<normalbefund_template>\nT\n</normalbefund_template>\n<dikta
   zaehlen('anthropic', st, '2026-11-16'); zaehlen('anthropic', st, '2026-11-16'); zaehlen('rueckfall', st, '2026-11-16');
   check(JSON.parse(m.get('ki_nutzung'))['2026-11-16'].anthropic === 2 && JSON.parse(m.get('ki_nutzung'))['2026-11-16'].rueckfall === 1,
     'Zähler je Tag (anthropic/rueckfall)', m.get('ki_nutzung'));
+}
+// webapp-schluessel-n1: ohne Schlüssel → Gemini, aber als Rückfall gezählt
+{
+  const m = new Map(); globalThis.localStorage = { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
+  aufrufe = [];
+  const t0 = await callGeminiLLM(DIKTAT, 'Normalbefund.', 'Kniegelenk', '', 'Unauffällig.', ctx(kiAnbieterAusSpeicher(sp({}))));
+  const heute = Object.values(JSON.parse(m.get('ki_nutzung') || '{}'))[0] || {};
+  check(aufrufe.length === 1 && aufrufe[0].url.includes('aiplatform') && t0.includes('(Gemini)') && heute.rueckfall === 1 && !heute.anthropic,
+    'ohne Schlüssel: Gemini, gezählter Rückfall', { urls: aufrufe.map(a => a.url), heute });
+  delete globalThis.localStorage;
+}
+// webapp-schluessel-n1: Claude-Schlüssel beim Start aus Drive nachladen (fetch-Attrappe für die Drive-API)
+{
+  const alt = globalThis.fetch;
+  const drv = []; let antwort = { anthropic_api_key: 'sk-ant-drive' }; let liste = [{ id: 'neu' }, { id: 'alt' }];
+  globalThis.fetch = async (url, opt) => {
+    drv.push({ url, auth: opt?.headers?.authorization });
+    if (url.includes('?q=')) return { ok: true, status: 200, json: async () => ({ files: liste }) };
+    return { ok: true, status: 200, text: async () => JSON.stringify(antwort) };
+  };
+  const st = (o) => { const m = new Map(Object.entries(o)); return { m, getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
+  const bereiche = []; const tok = async (b) => { bereiche.push(b); return 'tok'; };
+  let s = st({});
+  check(await anthropicSchluesselNachladen(tok, s) === 'geladen' && s.m.get('anthropic_api_key') === 'sk-ant-drive'
+    && bereiche[0] === DRIVE_BEREICH && drv.length === 2 && drv.every(d => d.auth === 'Bearer tok')
+    && decodeURIComponent(drv[0].url).includes("name = 'rakscribe-praxis-key.json' and trashed = false") && drv[1].url.endsWith('/neu?alt=media'),
+    'Nachladen: neueste Drive-Datei, Schlüssel gespeichert', drv);
+  drv.length = 0; s = st({ anthropic_api_key: 'sk-schon' });
+  check(await anthropicSchluesselNachladen(tok, s) === 'da' && drv.length === 0 && s.m.get('anthropic_api_key') === 'sk-schon', 'Schlüssel schon da → kein Drive-Aufruf');
+  drv.length = 0; s = st({ llm_anbieter: 'gemini' });
+  check(await anthropicSchluesselNachladen(tok, s) === 'aus' && drv.length === 0, 'llm_anbieter = gemini → kein Nachladen');
+  antwort = { vertex_api_key: 'AQ.x' }; s = st({});
+  let fehler = '';
+  try { await anthropicSchluesselNachladen(tok, s); } catch (e) { fehler = e.message; }
+  check(fehler === 'Drive-Datei ohne anthropic_api_key' && !s.m.has('anthropic_api_key'), 'Drive-Datei ohne Claude-Schlüssel → Fehler, nichts gespeichert', fehler);
+  liste = []; fehler = '';
+  try { await anthropicSchluesselNachladen(tok, st({})); } catch (e) { fehler = e.message; }
+  check(fehler.startsWith('Drive-Datei nicht gefunden'), 'nicht freigegeben → Fehler', fehler);
+  globalThis.fetch = alt;
 }
 console.log(`${n - fail}/${n} PASS (llm_anbieter)`);
 process.exit(fail ? 1 : 0);

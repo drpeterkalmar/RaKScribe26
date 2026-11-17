@@ -151,12 +151,53 @@ export const zaehlen = (art: 'anthropic' | 'rueckfall', speicher: Pick<Storage, 
   } catch { /* Zähler nie fatal */ }
 };
 
-/** Einstellung aus dem Browser (Standard seit sonnet-n2: anthropic, sobald ein Schlüssel da ist; ohne → Gemini). */
-export const kiAnbieterAusSpeicher = (speicher: Pick<Storage, 'getItem'> = localStorage): KiAnbieter | undefined => {
+const eingestellt = (speicher: Pick<Storage, 'getItem'>): [Anbieter, Anbieter] => {
   const a = (speicher.getItem('llm_anbieter') || 'anthropic').toLowerCase() === 'gemini' ? 'gemini' : 'anthropic';
   const k = (speicher.getItem('llm_anbieter_korrektur') || a).toLowerCase() === 'anthropic' ? 'anthropic' : 'gemini';
-  const key = speicher.getItem('anthropic_api_key') || '';
-  if ((a === 'gemini' && k === 'gemini') || !key) return undefined;
-  return { anbieter: a, korrektur: k, modell: speicher.getItem('anthropic_modell') || ANTHROPIC_MODELL, anthropicKey: key,
-    fristMs: 20_000 };
+  return [a, k];
 };
+
+/** Einstellung aus dem Browser (Standard seit sonnet-n2: anthropic). Nur llm_anbieter = gemini schaltet ganz ab
+ *  (undefined). webapp-schluessel-n1: fehlt der Schlüssel noch, kommt ein Anbieter ohne Schlüssel zurück → jeder Aufruf
+ *  ist ein gezählter Rückfall auf Gemini (vorher ungezählt). */
+export const kiAnbieterAusSpeicher = (speicher: Pick<Storage, 'getItem'> = localStorage): KiAnbieter | undefined => {
+  const [a, k] = eingestellt(speicher);
+  if (a === 'gemini' && k === 'gemini') return undefined;
+  return { anbieter: a, korrektur: k, modell: speicher.getItem('anthropic_modell') || ANTHROPIC_MODELL,
+    anthropicKey: speicher.getItem('anthropic_api_key') || '', fristMs: 20_000 };
+};
+
+// kaiscribe-webapp-schluessel-n1 (17.11.2026, Kanban #351): fehlt der Anthropic-Schlüssel im Browser, holt die Web-App
+// ihn beim Start selbst aus rakscribe-praxis-key.json in Drive — mit dem schon geladenen STT-Dienstkonto (Bereich
+// drive.readonly; die Datei ist nur für dieses Konto lesend freigegeben). Kein erneutes „Schlüssel laden“ nötig.
+export const DRIVE_SCHLUESSEL_DATEI = 'rakscribe-praxis-key.json';
+export const DRIVE_BEREICH = 'https://www.googleapis.com/auth/drive.readonly';
+const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
+
+/** Anthropic-Schlüssel aus der neuesten freigegebenen rakscribe-praxis-key.json (wirft bei Fehlen/HTTP-Fehler). */
+export async function anthropicSchluesselAusDrive(token: string, signal?: AbortSignal): Promise<string> {
+  const kopf = { authorization: `Bearer ${token}` };
+  const q = encodeURIComponent(`name = '${DRIVE_SCHLUESSEL_DATEI}' and trashed = false`);
+  const l = await fetch(`${DRIVE_API}?q=${q}&orderBy=modifiedTime%20desc&pageSize=5&fields=files(id)`, { headers: kopf, signal });
+  if (!l.ok) throw new Error(`Drive-Liste HTTP ${l.status}`);
+  const dateien = ((await l.json()) as { files?: { id: string }[] }).files || [];
+  for (const d of dateien) {
+    const r = await fetch(`${DRIVE_API}/${encodeURIComponent(d.id)}?alt=media`, { headers: kopf, signal });
+    if (!r.ok) continue;
+    try {
+      const key = (JSON.parse(await r.text()) as { anthropic_api_key?: unknown }).anthropic_api_key;
+      if (typeof key === 'string' && key.startsWith('sk-')) return key;
+    } catch { /* kein JSON — nächste Datei */ }
+  }
+  throw new Error(dateien.length ? 'Drive-Datei ohne anthropic_api_key' : 'Drive-Datei nicht gefunden/nicht freigegeben');
+}
+
+/** Beim Start: Schlüssel da → 'da'; Claude ganz abgeschaltet → 'aus'; sonst aus Drive holen und speichern → 'geladen'. */
+export async function anthropicSchluesselNachladen(holeToken: (bereich: string) => Promise<string>,
+  speicher: Pick<Storage, 'getItem' | 'setItem'> = localStorage, signal?: AbortSignal): Promise<'da' | 'aus' | 'geladen'> {
+  if (speicher.getItem('anthropic_api_key')) return 'da';
+  if (!kiAnbieterAusSpeicher(speicher)) return 'aus';
+  const key = await anthropicSchluesselAusDrive(await holeToken(DRIVE_BEREICH), signal);
+  speicher.setItem('anthropic_api_key', key);
+  return 'geladen';
+}
