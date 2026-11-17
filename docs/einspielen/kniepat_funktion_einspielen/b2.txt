@@ -1,0 +1,12 @@
+[Hetzner-Job] Auftrag "KF2: KaiScribe 3.19.8 auf X: tauschen" (Job kaiscribe-kniepat-titel-n1-einspielen-f1, Di 17.11.2026 ~23:55, ~10 min). Freigegeben von Peter (Wiederholung des Abendtauschs; Zeitfenster 20:10-06:30 ist erfuellt). Keine Patientendaten in die Antwort. Nie hart beenden, keine Registry, keine CAS-Datenbank.
+
+Lage vorher (KF1): X:\RaKScribe\rakscribe26.exe = 3.19.4, sha 5e1308dc46a5..., keine Aufnahme, letztes Diktat vor ueber 6 h.
+
+1. Neuer Ordner %LOCALAPPDATA%\hermes\work\ks_tausch\v3.19.8\ ; dorthin die EXE DIREKT von github.com laden (NICHT -Schritt holen):
+   https://github.com/drpeterkalmar/RaKScribe26/releases/download/3.19.8/rakscribe26.exe  -> rakscribe26.exe
+   SHA256 muss exakt efd31f9ac8fde8eb58ac4261526afd79cb571436e40c09f7db5bb5cbe46ab96f sein. Stimmt sie nicht: loeschen, NICHTS tauschen, "KF2=rot SHA".
+2. Dann ris-mods\ordi-hermes\kaiscribe_x_tauschen.ps1 -Schritt exe -Tag 3.19.8 -Sha efd31f9ac8fde8eb58ac4261526afd79cb571436e40c09f7db5bb5cbe46ab96f
+   (Mo-Fr 06:30-20:10 ist gesperrt, jetzt ist es Nacht, kein -Trotzdem.) Schlusszeile KS_TAUSCH=... wortwoertlich wiedergeben.
+3. Nachher lesend: SHA/Groesse von X:\RaKScribe\rakscribe26.exe, Name der neuen .alt-Sicherung (erwartet rakscribe26.exe.vor3.19.8-*.alt), KaiScribe-Prozesse + Fenstertitel (erwartet "KaiScribe 3.19.8 - Roentgen am Kai"), die neuen Zeilen in X:\RaKScribe\rakscribe.log nach dem Start (nur [INIT]/Fehler/Netz-Zeilen, ohne Patientendaten; steht ein Prompt-Marker/Version drin: nennen).
+4. Letzte Zeile: KF2=<ok|schon|rot|belegt|gesperrt> TITEL=<..> SHA=<12 Zeichen> ALT=<dateiname>
+Danach nichts weiter tun, keine Abnahme.

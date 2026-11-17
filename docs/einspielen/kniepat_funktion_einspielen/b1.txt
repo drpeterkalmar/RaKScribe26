@@ -1,0 +1,7 @@
+[Hetzner-Job] Auftrag "KF1: nur lesen, Lage vor KaiScribe-Tausch" (Job kaiscribe-kniepat-titel-n1-einspielen-f1, Di 17.11.2026 ~23:50, ~5 min). Nichts aendern, nichts anklicken, nichts tauschen, keine Patientendaten in die Antwort.
+
+1. Uhrzeit; wer ist am Buero-PC angemeldet/verbunden (nur Anzahl + ob nur der Mac-RDP-Client; sonst "KF1=peter").
+2. Fuehre aus: powershell -File kaiscribe_x_tauschen.ps1 -Schritt lage (aus ris-mods\ordi-hermes, Stand main). Gib die Ausgabe (SHA, Titel, .alt-Dateien, Prozesse, Schlusszeile) wieder.
+3. X:\RaKScribe\rakscribe.log: die letzten 3 [INIT]-Zeilen und die letzte [RECORD]-Zeile (Uhrzeit, Version; laeuft aktuell eine Aufnahme ja/nein).
+4. Letzte Zeile: KF1=<ok|peter|rot> SHA=<12 Zeichen> TITEL=<..> AUFNAHME=<ja|nein>
+Danach nichts weiter tun.
