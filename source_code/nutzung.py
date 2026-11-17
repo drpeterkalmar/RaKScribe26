@@ -9,7 +9,8 @@ Rückfall. Jeder Rückfall wird gezählt, und die an Chirp (Google-Spracherkennu
   Gezählt werden nur Zahlen und Kategorien (Rolle, Anbieter, Rückfall-Grund ohne Werte) — nie Text, Namen, Nummern.
 - tagesbericht(ordner, tag) fasst alle PC-Dateien des Monats zusammen → Text; schreibe_tagesbericht() legt ihn als
   tagesbericht_<JJJJ-MM-TT>.txt daneben. Hochrechnung Chirp (Monat bisher / Tage × Monatstage) > WARN_EUR → Warnzeile
-  „WARNUNG“ und warnung_<JJJJ-MM>.txt (für die Kanban-Karte am Mac).
+  „WARNUNG“ und warnung_<JJJJ-MM>.txt (für die Kanban-Karte am Mac, tools/mac/kaiscribe_chirp_warnung.py). Seit
+  sonnet-n3-beleg: gezählt ab dem ersten Tag mit Daten im Monat, Warnung erst ab MIN_TAGE gezählten Tagen.
 - Fehler beim Schreiben sind nie fatal (Laufwerk weg → still nichts).
 """
 import calendar
@@ -23,6 +24,7 @@ import threading
 CHIRP_USD_MIN = 0.016     # Speech-to-Text v2 Standard (chirp_3), Listenpreis $ je Audiominute
 USD_EUR = 0.87            # Richtwert für die €-Anzeige (Warnung), kein Abrechnungskurs
 WARN_EUR = 6.0            # Peter 14.11.: Google-Guthaben ~9 €/Monat → Warnung ab hochgerechnet 6 €
+MIN_TAGE = 3              # Warnung erst ab 3 gezählten Kalendertagen (ein einzelner Tag ist zu zufällig)
 
 _sperre = threading.Lock()
 
@@ -152,11 +154,38 @@ def chirp_eur(sekunden):
     return sekunden / 60.0 * CHIRP_USD_MIN * USD_EUR
 
 
-def hochrechnung_eur(chirp_s_monat, tag):
-    """Chirp-€ des Monats bisher, auf den ganzen Monat hochgerechnet (bisher / Tag des Monats × Monatstage)."""
+def hochrechnung_eur(chirp_s_monat, tag, erster_tag=None):
+    """Chirp-€ des Monats bisher, auf den ganzen Monat hochgerechnet (bisher / gezählte Tage × Monatstage).
+    Gezählte Tage = ab erster_tag (erster Tag mit Zählerdaten im Monat), sonst ab dem 1. — v3.19.x (sonnet-n3-beleg):
+    der Zähler kam am 16.11. dazu, „bisher / 16“ rechnete den November um das 16-Fache zu niedrig."""
+    return chirp_eur(chirp_s_monat) / gezaehlte_tage(tag, erster_tag) * _monatstage(tag)
+
+
+def _monatstage(tag):
     t = datetime.date.fromisoformat(tag)
-    tage = calendar.monthrange(t.year, t.month)[1]
-    return chirp_eur(chirp_s_monat) / max(1, t.day) * tage
+    return calendar.monthrange(t.year, t.month)[1]
+
+
+def gezaehlte_tage(tag, erster_tag=None):
+    t = datetime.date.fromisoformat(tag)
+    start = t.replace(day=1)
+    try:
+        e = datetime.date.fromisoformat(erster_tag) if erster_tag else start
+    except ValueError:
+        e = start
+    if e.year == t.year and e.month == t.month and start <= e <= t:
+        start = e
+    return (t - start).days + 1
+
+
+def erster_tag(alle):
+    """Frühester Tag mit Zählerdaten über alle PC-Dateien eines Monats (oder None)."""
+    tage = [k for d in (alle or {}).values() for k in (d.get("tage") or {}) if re.match(r"^\d{4}-\d\d-\d\d$", str(k))]
+    return min(tage) if tage else None
+
+
+def warnung_noetig(hoch_eur, tag, erster=None):
+    return hoch_eur > WARN_EUR and gezaehlte_tage(tag, erster) >= MIN_TAGE
 
 
 def tagesbericht(ordner, tag):
@@ -174,7 +203,8 @@ def tagesbericht(ordner, tag):
         for g, n in v["gruende"].items():
             gruende[g] = gruende.get(g, 0) + n
     chirp_m = ges(mon, "chirp_s")
-    hoch = hochrechnung_eur(chirp_m, tag)
+    erster = erster_tag(alle)
+    hoch, n_tage = hochrechnung_eur(chirp_m, tag, erster), gezaehlte_tage(tag, erster)
     z = [f"KaiScribe Tagesbericht {tag} (alle PCs, ohne Patientendaten)",
          f"Befund-KI heute: {ges(heute, 'befunde')} Befunde, Aufrufe Claude {ges(heute, 'anthropic')}, "
          f"Rückfälle auf Gemini {h_rf}" + (" (" + ", ".join(f"{g}: {n}" for g, n in sorted(gruende.items())) + ")"
@@ -182,12 +212,13 @@ def tagesbericht(ordner, tag):
          f"Befund-KI Monat {monat}: Aufrufe Claude {ges(mon, 'anthropic')}, Rückfälle auf Gemini {m_rf}, "
          f"Anthropic {ges(mon, 'usd'):.2f} $ (heute {ges(heute, 'usd'):.2f} $)",
          f"Spracherkennung Chirp: heute {ges(heute, 'chirp_s') / 60:.1f} min, Monat {chirp_m / 60:.1f} min "
-         f"≈ {chirp_eur(chirp_m):.2f} € (× {CHIRP_USD_MIN} $/min), hochgerechnet {hoch:.2f} €/Monat"]
+         f"≈ {chirp_eur(chirp_m):.2f} € (× {CHIRP_USD_MIN} $/min), hochgerechnet {hoch:.2f} €/Monat "
+         f"(aus {n_tage} Tag{'en' if n_tage != 1 else ''})"]
     for pc in sorted(alle):
         h = heute[pc]
         z.append(f"  {pc}: heute Befunde {h['befunde']}, Claude {h['anthropic']}, Rückfall {h['rueckfall']}, "
                  f"Gemini {h['gemini']}, Chirp {h['chirp_s'] / 60:.1f} min")
-    warnung = hoch > WARN_EUR
+    warnung = warnung_noetig(hoch, tag, erster)
     if warnung:
         z.append(f"WARNUNG: Chirp hochgerechnet {hoch:.2f} €/Monat > {WARN_EUR:.0f} € (Google-Guthaben ~9 €)")
     return "\n".join(z) + "\n", warnung

@@ -72,13 +72,25 @@ check("Tagesbericht: Befunde, Claude, Rückfälle, je PC", "3 Befunde" in text a
 check("Tagesbericht: Chirp-Minuten + €", "Monat 1.6 min" in text and "€" in text and not warn, text)
 check("Tagesbericht-Datei geschrieben", pathlib.Path(d, "tagesbericht_2026-11-16.txt").exists())
 
-# Warnung: 16 Tage, hochgerechnet > 6 € → ~ 6 € / 0.016 $/min / 0.87 = 431 min im Monat ≈ 230 min bis zum 16.
-z8.stt(240 * 60)
+# sonnet-n3-beleg: Zähler erst ab 16.11. → nicht „bisher / 16“, sondern ab dem ersten Tag mit Daten; Warnung erst ab 3 Tagen.
+z8.stt(50 * 60)        # 1 Tag: hochgerechnet ≈ 52 min × 30 ≈ 21 € > 6 €, aber nur 1 gezählter Tag → noch keine Warnung
 text, warn = nutzung.tagesbericht(d, "2026-11-16")
-check("Warnung ab hochgerechnet > 6 €/Monat + warnung-Datei", warn and "WARNUNG" in text
+check("Zählstart Mitte Monat: Hochrechnung aus 1 Tag, Warnung erst ab 3 Tagen", not warn and "(aus 1 Tag)" in text
+      and "hochgerechnet 21.54 €/Monat" in text and not pathlib.Path(d, "warnung_2026-11.txt").exists(), text)
+nutzung.Zaehler(d, "CASWS10", jetzt=lambda: T - datetime.timedelta(days=2)).stt(1.0)   # erster Tag 14.11.
+# 3 Tage, hochgerechnet > 6 € → 6 € / 0.016 $/min / 0.87 = 431 min im Monat ≈ 43 min in 3 Tagen (hier 52 min)
+text, warn = nutzung.tagesbericht(d, "2026-11-16")
+nutzung.schreibe_tagesbericht(d, "2026-11-16")
+check("Warnung ab hochgerechnet > 6 €/Monat + warnung-Datei", warn and "WARNUNG" in text and "(aus 3 Tagen)" in text
       and pathlib.Path(d, "warnung_2026-11.txt").exists(), text)
 check("Hochrechnung: 1 Tag × 30 = Monat", abs(nutzung.hochrechnung_eur(60, "2026-11-01")
                                               - nutzung.chirp_eur(60) * 30) < 1e-9)
+check("Hochrechnung ohne ersten Tag: wie bisher ab dem 1.", abs(nutzung.hochrechnung_eur(60, "2026-11-16")
+                                                               - nutzung.chirp_eur(60) / 16 * 30) < 1e-9)
+check("Hochrechnung ab erstem Tag 16.11.", abs(nutzung.hochrechnung_eur(60, "2026-11-17", "2026-11-16")
+                                              - nutzung.chirp_eur(60) / 2 * 30) < 1e-9)
+check("erster Tag aus anderem Monat/kaputt → ab dem 1.", nutzung.gezaehlte_tage("2026-11-17", "2026-10-30") == 17
+      and nutzung.gezaehlte_tage("2026-11-17", "x") == 17 and nutzung.gezaehlte_tage("2026-11-17", "2026-11-20") == 17)
 
 # Chirp-Worker zählt jedes Stück (inkl. Rückhören)
 gezaehlt = []
