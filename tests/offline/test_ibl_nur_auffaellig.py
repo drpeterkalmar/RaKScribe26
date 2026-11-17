@@ -5,7 +5,7 @@ dem Diktat und Einsetzen nach der KI) kommen nur Messzeilen, aus denen eine akti
 ibl/regeln/<modul>.toml) einen Ergebnispunkt gemacht hat; Ergebnispunkte unverändert und vollständig.
 Fälle: Peters Foto (Werte ohne Patientendaten, Texte wie ris-mods ibl/vorbefund.py sie bildet), ris-mods ibl/beispiele
 frog_beidseits/frog_pes_planus, Hersteller-Fixtures FROG d.p./seitlich, HIPPO und KOALA je mit und ohne Regeltreffer,
-Diktat-Abgleich weggefilterter Werte, Gen-Prompt, Modul ohne Filter (SQUIRREL/Rho/LAMA/PANDA) bit-gleich zu 3.18.7
+Diktat-Abgleich weggefilterter Werte, Gen-Prompt, Modul ohne Filter (SQUIRREL/Rho/PANDA; LAMA seit 17.11.2026 eigener Weg) bit-gleich zu 3.18.7
 (Schnappschuss tests/offline/snapshots/ibl_ohne_filter.json, erzeugt mit dem Code von 3.18.7).
 Aufruf: python3 tests/offline/test_ibl_nur_auffaellig.py"""
 import json, pathlib, sys
@@ -213,6 +213,8 @@ check("KOALA ohne Treffer, Gen-Prompt: K&L-Grad bekannt (für eine diktierte Art
 # ───────────────────────────── Module ohne Filter: bit-gleich zu 3.18.7 ─────────────────────────────
 snap = json.loads((ROOT / "tests" / "offline" / "snapshots" / "ibl_ohne_filter.json").read_text(encoding="utf-8"))
 for f in snap:
+    if f["name"] in I.ERGEBNIS_ZUERST:
+        continue   # LAMA seit Georg 17.11.2026 fester Ergebnistext statt Befundzeilen (test_ibl_bausteine: „LAMA …“)
     b = I.aus_liste(f["bausteine"])
     e = I.einsetzen(f["bericht"], b, diktat=f["diktat"], templates=T)
     g = I.geruest(b, None, T)

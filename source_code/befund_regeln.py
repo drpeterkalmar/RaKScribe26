@@ -226,7 +226,9 @@ def split_regionen(text):
 # ── Ergebnis-Nummerierung ────────────────────────────────────────────────────
 _NUM_RE = re.compile(r"^\s*(?:\*\*)?\s*\d+\s*[.)]\s*(?:\*\*)?\s*")
 _BULLET_RE = re.compile(r"^\s*[-*•–]\s+")
-_UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor", re.I)
+# v3.19.x (Georg 17.11.2026, IB Lab LAMA): die LAMA-Schlussanmerkung „HKA = Hüft-Knie-Sprunggelenk-Winkel, …“ steht
+# ohne Nummer unter dem Ergebnis (zählt nicht mit: ein einzelner LAMA-Punkt bleibt unnummeriert). Sync: befundRegeln.ts
+_UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel", re.I)
 
 _SATZENDE = (".", "!", "?", ":", ";")
 

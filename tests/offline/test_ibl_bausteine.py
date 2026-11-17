@@ -44,13 +44,18 @@ FROG_BDS = dict(FROG_D, seiten=["rechts", "links"], version=2, aktualisiert="202
                             "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)."],
                 ergebnis=["Pes planus beidseits (Calcaneusneigungswinkel rechts 10,0°, links 12,4°)."],
                 nicht_zugeordnet=["IB Lab FROG links: Unbekannter Winkel = 3.1 deg"])
+# LAMA seit Georg 17.11.2026: fertiger Ergebnistext vom Abholer (ris-mods ibl/lama_ergebnis.py), Befundzeilen nur Details
+LAMA_SCHLUSS = ("HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere "
+                "Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.")
 LAMA_D = {"accno": "T-0023", "ziffer": 3, "modul": "lama", "name": "LAMA", "modul_name": "IB Lab LAMA",
           "version": 1, "aktualisiert": "2026-10-13T18:01:00", "seiten": ["rechts", "links"],
-          "befundteil": ["HKA-Winkel rechts 174,2° (IB Lab LAMA).", "HKA-Winkel links 179,1° (IB Lab LAMA).",
+          "befundteil": ["Beinlänge rechts 86,4 cm (IB Lab LAMA).", "HKA-Winkel rechts 174,2° (IB Lab LAMA).",
+                         "Beinlänge links 84,9 cm (IB Lab LAMA).", "HKA-Winkel links 179,1° (IB Lab LAMA).",
                          "Beinlängendifferenz 15 mm (IB Lab LAMA)."],
-          "ergebnis": ["Genu varum rechts (HKA-Winkel 174,2°).", "Beinlängendifferenz von 15 mm."],
-          "hinweise": ["LAMA: HKA-Konvention (< 180° = Varus) noch nicht an echtem SR bestätigt – Varus/Valgus bitte am "
-                       "Bild prüfen."], "nicht_zugeordnet": []}
+          "ergebnis": ["Beinlängendifferenz von 15 mm, links kürzer.",
+                       "Varusfehlstellung rechts (HKA 5,8° [−2 bis 4°]). Regelrechte Beinachse links (HKA 0,9° [−2 bis 4°]).",
+                       LAMA_SCHLUSS],
+          "hinweise": [], "nicht_zugeordnet": []}
 RHO_D = {"accno": "T-0051", "ziffer": 1, "modul": "rho", "name": "Rho", "modul_name": "16 Bit Rho", "version": 1,
          "seiten": [], "befundteil": ["Rho-Score 8 von 10 (16 Bit Rho)."],
          "ergebnis": ["Als Zufallsbefund KI-gestützter Hinweis auf eine wahrscheinlich verminderte Knochendichte (16 Bit "
@@ -126,9 +131,10 @@ zwei = "\n\n\n".join([bericht("Fuß rechts in 2 Ebenen", "Arthrose im Großzehen
 e = I.einsetzen(zwei, B(LAMA_D, FROG_D), segmente=["Fuß rechts: Arthrose MTP I.", "Ganzbein: Genu varum rechts."])
 fuss, bein = abschnitt_von(e.report, "Fuß"), abschnitt_von(e.report, "Ganzbein")
 check("b) zwei Module/zwei Untersuchungen: FROG → Fuß, LAMA → Ganzbein (Region), je am richtigen Ort",
-      "Calcaneusneigungswinkel rechts 10,0° (IB Lab FROG)." in fuss and "HKA-Winkel" not in fuss
-      and "HKA-Winkel rechts 174,2° (IB Lab LAMA)." in bein and "Calcaneus" not in bein
-      and "2. Beinlängendifferenz von 15 mm." in bein and "Genu varum rechts (HKA" not in bein
+      "Calcaneusneigungswinkel rechts 10,0° (IB Lab FROG)." in fuss and "HKA" not in fuss
+      and "HKA-Winkel" not in bein and "Calcaneus" not in bein
+      and "1. Beinlängendifferenz von 15 mm, links kürzer.\n2. Varusfehlstellung rechts (HKA 5,8°" in bein
+      and "3. Genu varum rechts.\n" + LAMA_SCHLUSS in bein
       and e.zuordnung == {"frog": "Fuß rechts in 2 Ebenen", "lama": "Ganzbeinaufnahme im Stand"}, e.report)
 check("   … Abschnitte bleiben durch zwei Leerzeilen getrennt, Gate ok", e.report.count("\n\n\n") == 1
       and I.gate(e.report, e.zeilen) == [])
@@ -227,7 +233,9 @@ check("m) wörtlicher Ordi-Baustein (mehrere unnummerierte Punkte) bleibt unnumm
       "\nPunkt eins\nPunkt zwei\nAls Zufallsbefund" in e.report, e.report)
 blk = I.prompt_block(B(FROG_D, LAMA_D, RBF_D))
 check("n) Gen-Prompt <ibl_messwerte>: nur Messgrößen-Namen, keine Zahlen, keine Diagnosen, Regeln",
-      "- FROG: Calcaneusneigungswinkel, Hallux-valgus-Winkel" in blk and "- LAMA: HKA-Winkel, Beinlängendifferenz" in blk
+      "- FROG: Calcaneusneigungswinkel, Hallux-valgus-Winkel" in blk
+      and "- LAMA: Ergebnispunkte zu Beinlängendifferenz und Beinachse" in blk and I.LAMA_PROMPT in blk
+      and "Varusfehlstellung" not in blk and "HKA" not in blk
       and "RBfracture" not in blk and not any(c.isdigit() for c in blk.replace("ibl_messwerte", ""))
       and "Pes planus" not in blk and "Nenne diese Messwerte nicht selbst" in blk and I.prompt_block(B(RBF_D)) == "", blk)
 blk = I.prompt_block(B(FROG_D), T["fuß_in_2_ebenen"]["body"])
@@ -276,10 +284,65 @@ check("Pipeline Normalbefund (ohne KI): Messwerte drin, Diagnosen nicht, Hinweis
       and "Hallux-valgus-Winkel rechts 24,3° (IB Lab FROG)." in erg.report and "Pes planus" not in erg.report
       and any("Ergebnis unauffällig" in h for h in erg.ibl.hinweise))
 prompts = []
-erg = pl.befund_aus_diktat("Ganzbein: Genu varum rechts.", kontext(prompts, I.IblKontext(B(LAMA_D))))
-check("Pipeline LAMA Ganzbein: HKA/Beinlängendifferenz eingesetzt, Genu varum nicht doppelt",
-      "HKA-Winkel links 179,1° (IB Lab LAMA)." in erg.report and erg.report.count("Genu varum") == 2
-      and "Beinlängendifferenz von 15 mm." in erg.report, erg.report)
+GANZBEIN_CAS = cv.CasHinweis([L("x-gb", "Ganzbein", "Röntgen", "ganzbeinaufnahme_im_stand")], T)
+erg = pl.befund_aus_diktat("Ganzbein: Genu varum rechts.", kontext(prompts, I.IblKontext(B(LAMA_D)), GANZBEIN_CAS))
+check("Pipeline LAMA Ganzbein: LAMA-Ergebnis zuerst, Diktat als nächster Punkt, Schlussanmerkung, keine Befundzeilen",
+      "HKA-Winkel" not in erg.report and "1. Beinlängendifferenz von 15 mm, links kürzer." in erg.report
+      and "\n3. Genu varum rechts" in erg.report and erg.report.rstrip().endswith(LAMA_SCHLUSS), erg.report)
+
+# ── LAMA-Ergebnistext (Georg Riegler 17.11.2026, Brief kaiscribe-lama-ergebnistext-n1) ──
+# Beispielbild (echtes LAMA-Bild V3.0.2) – Text genau so, wie ris-mods ibl/lama_ergebnis.py ihn bildet
+LAMA_BSP = dict(LAMA_D, accno="T-0031", ziffer=1, befundteil=[
+    "Beinlänge rechts 82,3 cm (IB Lab LAMA).", "HKA-Winkel rechts 2,1° (IB Lab LAMA).",
+    "Mechanische Achsabweichung (MAD) rechts 8,3 mm (IB Lab LAMA).", "Beinlänge links 83,0 cm (IB Lab LAMA).",
+    "HKA-Winkel links -0,6° (IB Lab LAMA).", "Mechanische Achsabweichung (MAD) links -2,1 mm (IB Lab LAMA).",
+    "Beinlängendifferenz 0,7 cm (IB Lab LAMA)."],
+    ergebnis=["Beinlängendifferenz von 7 mm, rechts kürzer.",
+              "Regelrechte Beinachse rechts (HKA 2,1° [−2 bis 4°], MAD 8,3 mm [3 bis 17 mm]). Valgusfehlstellung links "
+              "(HKA −0,6° [−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).", LAMA_SCHLUSS])
+GB = "Ganzbeinaufnahme im Stand"
+g = I.geruest(B(LAMA_BSP), [L("x-gb", "Ganzbein", "Röntgen", "ganzbeinaufnahme_im_stand")], T)
+check("LAMA Gerüst (sofort EOL = fertiger Befund): nur Ergebnis, nummeriert, Schlussanmerkung ohne Nummer, keine Werte-Zeilen",
+      g is not None and g.report == f"## {GB}\n\n## Ergebnis\n1. Beinlängendifferenz von 7 mm, rechts kürzer.\n"
+      "2. Regelrechte Beinachse rechts (HKA 2,1° [−2 bis 4°], MAD 8,3 mm [3 bis 17 mm]). Valgusfehlstellung links "
+      "(HKA −0,6° [−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).\n" + LAMA_SCHLUSS and I.gate(g.report, g.zeilen) == [],
+      g.report if g else None)
+EIN = dict(LAMA_BSP, seiten=["rechts"], befundteil=["HKA-Winkel rechts 3,0° (IB Lab LAMA)."],
+           ergebnis=["Regelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).", LAMA_SCHLUSS])
+g = I.geruest(B(EIN), None, T)
+check("LAMA nur ein Bein: Einzelpunkt ohne Nummer, Schlussanmerkung darunter",
+      g.report.endswith("## Ergebnis\nRegelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).\n"
+                        + LAMA_SCHLUSS), g.report)
+ki = bericht(GB, "Extremität: Regelrechte Form und Stellung des Beines.\nGelenke: Regelrechte Artikulation.",
+             "1. Regelrechte Darstellung der Beinachsen.\n2. Kein Hinweis auf eine Fraktur.")
+e = I.einsetzen(ki, B(LAMA_BSP), diktat="Ganzbein, keine Fraktur.")
+erg_teil = e.report.split("## Ergebnis\n", 1)[1]
+check("LAMA mit Diktat: LAMA-Punkte zuerst, diktierter Punkt als nächster, KI-Normalsatz zur Achse ersetzt, "
+      "Schlussanmerkung ganz unten", erg_teil == "1. Beinlängendifferenz von 7 mm, rechts kürzer.\n2. Regelrechte "
+      "Beinachse rechts (HKA 2,1° [−2 bis 4°], MAD 8,3 mm [3 bis 17 mm]). Valgusfehlstellung links (HKA −0,6° "
+      "[−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).\n3. Kein Hinweis auf eine Fraktur.\n" + LAMA_SCHLUSS
+      and "IB Lab LAMA" not in e.report and any("durch das IB-Lab-Ergebnis ersetzt" in h for h in e.hinweise)
+      and I.gate(e.report, e.zeilen) == [], e.report)
+e2 = I.einsetzen(e.report, B(LAMA_BSP), diktat="Ganzbein, keine Fraktur.")
+check("   … dieselbe Fassung noch einmal → nichts doppelt", e2.report == e.report, e2.report)
+e3 = I.einsetzen(e.report, B(dict(LAMA_BSP, version=2)), diktat="Ganzbein, keine Fraktur.", entfernen=e.zeilen)
+check("   … neue Fassung ersetzt die alte (Schlussanmerkung nur einmal)", e3.report == e.report
+      and e3.report.count(LAMA_SCHLUSS) == 1, e3.report)
+e = I.einsetzen(bericht(GB, "Text.", "Regelrechte Darstellung der Beinachsen."), B(LAMA_BSP),
+                diktat="Ganzbein: Beinachse beidseits regelrecht.")
+check("LAMA: diktierte Achse bleibt (nichts ersetzt), LAMA-Punkte trotzdem vorne",
+      "1. Beinlängendifferenz" in e.report and "3. Regelrechte Darstellung der Beinachsen." in e.report, e.report)
+WID = dict(LAMA_BSP, ergebnis=["Regelrechte Beinachse links (HKA 1,0° [−2 bis 4°], MAD 8,0 mm [3 bis 17 mm]).",
+                               LAMA_SCHLUSS],
+           hinweise=["IB Lab LAMA rechts: HKA und MAD weisen in verschiedene Richtungen (HKA 5,0° [−2 bis 4°], MAD "
+                     "−8,0 mm [3 bis 17 mm]) – keine Beinachse ins Ergebnis, bitte am KI-Bild beurteilen."])
+g = I.geruest(B(WID), None, T)
+check("LAMA Widerspruch HKA/MAD: Hinweis nur in der Anzeige, nie im Befund",
+      "verschiedene Richtungen" not in g.report and any("verschiedene Richtungen" in h for h in I.anzeige_hinweise(B(WID)))
+      and LAMA_SCHLUSS not in I.auffaellige_zeilen(B(WID)), g.report)
+blk = I.prompt_block(B(LAMA_BSP), T["ganzbeinaufnahme_im_stand"]["body"])
+check("LAMA Gen-Prompt: keine Zahlen/Diagnosen, Achs-Normalsatz der Vorlage als „nicht übernehmen“",
+      I.LAMA_PROMPT in blk and "Valgus" not in blk and "anatomische und mechanische Achse normal" in blk, blk)
 
 # v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus Diktat oder IB Lab, Diktat geht vor, Seite beachten
 KOALA_D = {"accno": "T-0071", "ziffer": 1, "modul": "koala", "name": "KOALA", "modul_name": "IB Lab KOALA", "version": 1,
@@ -504,9 +567,11 @@ app.ibl_einfuegen()
 check("… v1-Zeilen ersetzt, v2 drin, LAMA ohne Ganzbein-Abschnitt → Absatz am Ende + Hinweis (Knopf danach ohne Wirkung)",
       "Hallux-valgus-Winkel rechts 24,3°" not in app.result_text.text
       and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in app.result_text.text
-      and app.result_text.text.rstrip().endswith("Beinlängendifferenz von 15 mm.") and not app.ibl_knopf.sichtbar
+      and app.result_text.text.rstrip().endswith("Beinlängendifferenz von 15 mm, links kürzer.\nVarusfehlstellung rechts "
+                                                 "(HKA 5,8° [−2 bis 4°]). Regelrechte Beinachse links (HKA 0,9° [−2 bis "
+                                                 "4°]).\n" + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
       and any("LAMA beidseits: keiner Untersuchung eindeutig zuzuordnen" in h for h in app._ibl_hinweise)
-      and any("Katalog ergänzen" in h for h in app._ibl_hinweise) and any("HKA-Konvention" in h for h in app._ibl_hinweise),
+      and any("Katalog ergänzen" in h for h in app._ibl_hinweise),
       app.result_text.text[-400:])
 app._ibl_details()
 check("Klick auf die IB-Lab-Zeile zeigt alle Werte und Hinweise", S.AUFZ.dialoge and S.AUFZ.dialoge[-1][0] == "showinfo"

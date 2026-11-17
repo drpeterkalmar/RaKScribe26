@@ -39,7 +39,7 @@ MODULE = {"frog": {"fuss"}, "lama": {"unterschenkel"}, "hippo": {"becken", "huef
 BEZUG = [
     (("pes planus", "pes cavus", "längsgewölbe"), ("fußgewölbe", "längsgewölbe")),
     (("hallux valgus", "intermetatarsalwinkel", "metatarsus"), ("gelenkwinkel",)),
-    (("genu varum", "genu valgum"), ("achse", "beinachse")),
+    (("genu varum", "genu valgum", "varusfehlstellung", "valgusfehlstellung"), ("achse", "beinachse")),
     (("beinlängendifferenz",), ("beinlänge",)),
     (("überdachung", "hüftdysplasie", "pfannendach"), ("überdachung", "deckung", "pfannendach", "pfannendäch")),
     (("coxa vara", "coxa valga"), ("ccd winkel",)),
@@ -461,7 +461,7 @@ def _befund_pruefen(b, bericht, diktat, hinweise):
                 hinweise.append(f"{b.name}: Rho-Text schon im Befund – nicht doppelt angefügt")
             return None
     out = []
-    nur = b.modul in BEFUND_NUR_AUFFAELLIG          # v3.18.8: nur Zeilen mit Ergebnispunkt (befund_zeilen)
+    nur = b.modul in BEFUND_NUR_AUFFAELLIG | BEFUND_OHNE_ZEILEN   # v3.18.8: nur Zeilen mit Ergebnispunkt (befund_zeilen)
     bleibt = befund_zeilen(b)
     for z in b.befundteil:
         mw = messwert(z)
@@ -508,6 +508,8 @@ def _ergebnis_pruefen(b, bericht, diktat, erg_zeilen, hinweise):
     vom Diktat verneint → nicht, Hinweis; nur verwandtes Wort → anhängen + Hinweis."""
     if not b.ergebnis:
         return []
+    if b.modul in ERGEBNIS_ZUERST:
+        return _lama_ergebnis_pruefen(b, bericht, diktat, hinweise)
     if b.modul != "rho" and ergebnis_normal(erg_zeilen):
         for p in b.ergebnis:
             hinweise.append(f"{b.name}: „{_kurz(p)}“ nicht ins Ergebnis übernommen – Ergebnis unauffällig, bitte prüfen")
@@ -660,11 +662,14 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
         ergebnis = _ergebnis_pruefen(b, bericht, a.segment, zeilen[a.ergebnis + 1:a.ende] if a.ergebnis >= 0 else [],
                                      e.hinweise)
         if ergebnis:
-            for satz in _normalsaetze(b, zeilen[a.start:a.ergebnis if a.ergebnis >= 0 else a.ende], ergebnis):
+            for satz in _normalsaetze(b, zeilen[a.start:a.ergebnis if a.ergebnis >= 0 else a.ende],
+                                      _pathologische_punkte(b, ergebnis)):
                 e.hinweise.append(f"{b.name}: Befundtext „{_kurz(satz, 50)}“ widerspricht IB Lab – bitte prüfen")
         if befund:
             _verschieben(teile, i, _befund_anfuegen(zeilen, a, befund))
-        if ergebnis:
+        if ergebnis and b.modul in ERGEBNIS_ZUERST:
+            _verschieben(teile, i, _ergebnis_vorne(zeilen, a, ergebnis, a.segment, b, e.hinweise), nur_ende=True)
+        elif ergebnis:
             _verschieben(teile, i, _ergebnis_anfuegen(zeilen, a, ergebnis), nur_ende=True)
         if befund or ergebnis:
             e.eingesetzt[b.schluessel] = befund + ergebnis
@@ -712,9 +717,13 @@ def prompt_block(bausteine, vorlage=None):
     nennen reichte der KI beim Becken nicht)."""
     zeilen = []
     for b in bausteine or []:
-        nur = b.modul in BEFUND_NUR_AUFFAELLIG
+        nur = b.modul in BEFUND_NUR_AUFFAELLIG | BEFUND_OHNE_ZEILEN
         namen = list(dict.fromkeys(m.name for m in map(messwert, befund_zeilen(b))
                                    if m and not (nur and _abschnitt_zeile(m.zeile))))
+        if b.modul in ERGEBNIS_ZUERST and b.ergebnis:
+            zeilen.append(f"- {b.name}: Ergebnispunkte zu Beinlängendifferenz und Beinachse (ersetzt Vorlagen-Sätze zu: "
+                          f"{THEMEN.get(b.modul)})")
+            continue
         if namen:
             # v3.18.8: bei „nur auffällige Werte“ ersetzen die Zeilen keine Vorlagen-Sätze zum ganzen Thema (die übrigen
             # Werte sind unauffällig und kommen nicht in den Befund); widersprechende Sätze nennt „weg“ unten wörtlich
@@ -735,9 +744,11 @@ def prompt_block(bausteine, vorlage=None):
     weg = []
     for b in bausteine:
         if b.ergebnis and vorlage:
-            weg += [s for s in _normalsaetze(b, vorlage.split("\n"), b.ergebnis) if s not in weg]
+            weg += [s for s in _normalsaetze(b, vorlage.split("\n"), _pathologische_punkte(b, b.ergebnis)) if s not in weg]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
         zeilen.append(_kl_satz(kl))
+    if any(b.modul in ERGEBNIS_ZUERST and b.ergebnis for b in bausteine):
+        zeilen.append(LAMA_PROMPT)
     if weg:
         zeilen.append("Diese Sätze der Vorlage widersprechen den IB-Lab-Werten – nicht übernehmen (bzw. nur ohne die "
                       "widersprechende Aussage): " + " ".join(f"„{s}“" for s in weg))
@@ -869,11 +880,100 @@ def _treffer(b):
 # eintragen.
 BEFUND_NUR_AUFFAELLIG = {"frog", "hippo", "koala"}
 
+# IB Lab LAMA (Georg Riegler 17.11.2026, Brief kaiscribe-lama-ergebnistext-n1): der Abholer (ris-mods ibl/lama_ergebnis.py)
+# liefert einen FERTIGEN Ergebnistext – nur Ergebnis, keine Beschreibung. Darum: keine LAMA-Befundzeilen in den Befund
+# (alle Werte bleiben in den IB-Lab-Details), die LAMA-Punkte stehen als ERSTE Punkte im Ergebnis, diktierte Befunde
+# folgen als nächste Punkte, die Schlussanmerkung („HKA = Hüft-Knie-Sprunggelenk-Winkel, …“) steht ohne Nummer ganz
+# unten (befund_regeln._UNNUM_RE). Ein Normalsatz der KI/Vorlage zur Beinachse („Regelrechte Darstellung der
+# Beinachsen.“) wird durch das LAMA-Ergebnis ersetzt, außer der Arzt hat zur Achse/Beinlänge etwas diktiert. Ohne Diktat
+# (sofort EOL) ist das Gerüst damit der fertige Befund.
+BEFUND_OHNE_ZEILEN = {"lama"}
+ERGEBNIS_ZUERST = {"lama"}
+LAMA_SCHLUSS = "HKA = Hüft-Knie-Sprunggelenk-Winkel"
+LAMA_PROMPT = ("LAMA: Schreibe zu Beinachse und Beinlänge weder im Befund noch im Ergebnis etwas – auch keinen Normalsatz "
+               "wie „Regelrechte Darstellung der Beinachsen.“ –, außer der Arzt hat dazu etwas diktiert. KaiScribe setzt "
+               "das IB-Lab-Ergebnis als erste Ergebnispunkte ein; diktierte Befunde folgen danach.")
+_LAMA_THEMA = re.compile(r"achse|beinläng|beinlaeng|darstellung", re.I)
+_LAMA_DIKTAT = re.compile(r"achse|beinläng|beinlaeng|varus|valgus|varisch|valgisch|x-bein|o-bein|genu", re.I)
+_LAMA_NORMAL = re.compile(r"^(?:Keine Beinlängendifferenz|Regelrechte Beinachse|Beidseits regelrechte Beinachse)")
+
+
+def ist_lama_schluss(punkt):
+    return _NUM.sub("", (punkt or "").strip()).startswith(LAMA_SCHLUSS)
+
+
+def _pathologische_punkte(b, punkte):
+    """Ergebnispunkte, gegen die Normalsätze im Befund als Widerspruch gelten (LAMA: ohne Normal-Punkte und
+    Schlussanmerkung – „Regelrechte Beinachse rechts …“ widerspricht keinem Normalsatz)."""
+    if b.modul not in ERGEBNIS_ZUERST:
+        return punkte
+    out = []
+    for p in punkte:
+        if ist_lama_schluss(p):
+            continue
+        saetze = [s for s in re.split(r"(?<=\))\.\s+", p) if s.strip()]
+        if not all(_LAMA_NORMAL.match(s.strip()) for s in saetze):
+            out.append(p)
+    return out
+
+
+def _lama_ergebnis_pruefen(b, bericht, diktat, hinweise):
+    """LAMA: alle Punkte kommen (auch wenn das KI-Ergebnis unauffällig ist); Doppelung/Widerspruch nur gegen das Diktat
+    (der KI-Text zur Achse wird ersetzt); ein Punkt, der wörtlich schon dasteht (dieselbe Fassung noch einmal), kommt nicht
+    doppelt. Die Schlussanmerkung kommt immer mit, wenn ein Punkt kommt."""
+    out = []
+    for p in b.ergebnis:
+        if ist_lama_schluss(p) or p in (bericht or ""):
+            continue
+        art, wort = _diagnose_im_text(p, "", diktat)
+        if art == "doppelt":
+            hinweise.append(f"{b.name}: „{_kurz(p)}“ – schon diktiert, nicht doppelt angefügt")
+        elif art == "widerspruch":
+            hinweise.append(f"{b.name}: „{_kurz(p)}“ – Diktat verneint „{wort}“, bitte prüfen (nicht angefügt)")
+        else:
+            if art == "verwandt":
+                hinweise.append(f"{b.name}: „{_kurz(p)}“ angefügt – Diktat nennt schon „{wort}“, bitte prüfen")
+            out.append(p)
+    if out:
+        out += [p for p in b.ergebnis if ist_lama_schluss(p)]
+    return out
+
+
+def _ergebnis_vorne(zeilen, a, punkte, diktat, b, hinweise):
+    """LAMA: IB-Lab-Punkte als ERSTE Punkte des Ergebnisses von a, die übrigen (diktierten) danach, Schlussanmerkung
+    ganz unten ohne Nummer; neu durchgezählt (ein Punkt: ohne Nummer). Ein KI-Normalsatz zu Beinachse/Beinlänge
+    („Regelrechte Darstellung der Beinachsen.“) entfällt, wenn das Diktat nichts dazu sagt. → Zeilen mehr."""
+    schluss = [p for p in punkte if ist_lama_schluss(p)]
+    vorne = [p for p in punkte if not ist_lama_schluss(p)]
+    if a.ergebnis < 0:
+        return _ergebnis_anfuegen(zeilen, a, vorne + schluss)
+    s, k = a.ergebnis + 1, a.ende
+    while k > s and not zeilen[k - 1].strip():
+        k -= 1
+    inhalt = zeilen[s:k]
+    rest = []
+    for z in inhalt:
+        if not z.strip():
+            continue
+        t = _NUM.sub("", z).strip()
+        if ist_lama_schluss(t):
+            continue
+        if z[:1] not in (" ", "\t") and ergebnis_normal([t]) and _LAMA_THEMA.search(t) \
+                and not _LAMA_DIKTAT.search(diktat or ""):
+            hinweise.append(f"{b.name}: „{_kurz(t)}“ durch das IB-Lab-Ergebnis ersetzt")
+            continue
+        rest.append(z)
+    neu = br.ergebnis_nummerieren("## Ergebnis\n" + "\n".join(vorne + rest + schluss)).split("\n")[1:]
+    zeilen[s:k] = neu
+    return len(neu) - len(inhalt)
+
 
 def befund_zeilen(b):
     """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
     wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
     Zeile steht."""
+    if b.modul in BEFUND_OHNE_ZEILEN:
+        return []
     if b.modul not in BEFUND_NUR_AUFFAELLIG:
         return list(b.befundteil)
     out = []
@@ -900,7 +1000,7 @@ def auffaellige_zeilen(bausteine):
         for z, t in zip(b.befundteil, _treffer(b)):
             if t:
                 out.append(z)
-        out += [p for p in b.ergebnis if p not in out]
+        out += [p for p in b.ergebnis if p not in out and not ist_lama_schluss(p)]
     return out
 
 
@@ -987,6 +1087,7 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     for titel, bs in gruppen:
         befund = [z for b in bs for z in befund_zeilen(b)]
         punkte = [p for b in bs for p in b.ergebnis]
+        punkte = [p for p in punkte if not ist_lama_schluss(p)] + [p for p in punkte if ist_lama_schluss(p)]
         block = [f"## {titel}"]
         if befund:
             block += ["", "## Befund"] + befund

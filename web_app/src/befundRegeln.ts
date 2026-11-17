@@ -146,7 +146,8 @@ export function splitRegionen(text: string): string[] {
 // ── Ergebnis-Nummerierung ────────────────────────────────────────────────────
 const NUM_RE = /^\s*(?:\*\*)?\s*\d+\s*[.)]\s*(?:\*\*)?\s*/;
 const BULLET_RE = /^\s*[-*•–]\s+/;
-const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor/i;
+// v3.19.x (Georg 17.11.2026, IB Lab LAMA): Schlussanmerkung „HKA = Hüft-Knie-Sprunggelenk-Winkel, …“ ohne Nummer. Sync: befund_regeln.py
+const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel/i;
 
 // v3.7.4 (Georg 09.10.): Ergebnis-Punkt beginnt groß und endet mit Punkt. Sync: befund_regeln.py satzform
 const SATZENDE = /[.!?:;]$/;
