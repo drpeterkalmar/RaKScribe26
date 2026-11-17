@@ -5,11 +5,11 @@ Rückfall. Jeder Rückfall wird gezählt, und die an Chirp (Google-Spracherkennu
 
 - Datei je PC und Monat: <ordner>/<JJJJ-MM>_<PC>.json (jeder PC schreibt nur seine eigene Datei → keine Konflikte auf X:)
   {"pc": …, "tage": {"JJJJ-MM-TT": {"ki": {"anthropic": n, "gemini": n, "rueckfall": n}, "rueckfall_grund": {…},
-   "anthropic_usd": x, "stt_s": {"chirp": s}}}}
+   "anthropic_usd": x, "stt_s": {"chirp": s, "streaming": s}}}}
   Gezählt werden nur Zahlen und Kategorien (Rolle, Anbieter, Rückfall-Grund ohne Werte) — nie Text, Namen, Nummern.
 - tagesbericht(ordner, tag) fasst alle PC-Dateien des Monats zusammen → Text; schreibe_tagesbericht() legt ihn als
   tagesbericht_<JJJJ-MM-TT>.txt daneben. Hochrechnung Chirp (Monat bisher / Tage × Monatstage) > WARN_EUR → Warnzeile
-  „WARNUNG“ und warnung_<JJJJ-MM>.txt (für die Kanban-Karte am Mac, tools/mac/kaiscribe_chirp_warnung.py). Seit
+  „WARNUNG“ und warnung_<JJJJ-MM>.txt (seit sonnet-n3-beleg inkl. Live-Anzeige/Streaming, die kostet bei Google auch) (für die Kanban-Karte am Mac, tools/mac/kaiscribe_chirp_warnung.py). Seit
   sonnet-n3-beleg: gezählt ab dem ersten Tag mit Daten im Monat, Warnung erst ab MIN_TAGE gezählten Tagen.
 - Fehler beim Schreiben sind nie fatal (Laufwerk weg → still nichts).
 """
@@ -22,6 +22,7 @@ import re
 import threading
 
 CHIRP_USD_MIN = 0.016     # Speech-to-Text v2 Standard (chirp_3), Listenpreis $ je Audiominute
+STREAM_USD_MIN = 0.024    # Speech-to-Text v1 latest_long (Live-Anzeige, Streaming), Listenpreis ohne Datenprotokoll
 USD_EUR = 0.87            # Richtwert für die €-Anzeige (Warnung), kein Abrechnungskurs
 WARN_EUR = 6.0            # Peter 14.11.: Google-Guthaben ~9 €/Monat → Warnung ab hochgerechnet 6 €
 MIN_TAGE = 3              # Warnung erst ab 3 gezählten Kalendertagen (ein einzelner Tag ist zu zufällig)
@@ -114,7 +115,7 @@ class Zaehler:
         self._aendern(fn)
 
     def stt(self, sekunden, art="chirp"):
-        """An Google geschickte Audiosekunden (art = chirp: chirp_3-Volltranskript)."""
+        """An Google geschickte Audiosekunden (art = chirp: chirp_3-Volltranskript, streaming: Live-Anzeige v1)."""
         if not sekunden or sekunden <= 0:
             return
 
@@ -135,7 +136,8 @@ def monat_summen(ordner, monat):
 
 
 def _summe(tage, nur_tag=None):
-    s = {"anthropic": 0, "gemini": 0, "rueckfall": 0, "befunde": 0, "usd": 0.0, "chirp_s": 0.0, "gruende": {}}
+    s = {"anthropic": 0, "gemini": 0, "rueckfall": 0, "befunde": 0, "usd": 0.0, "chirp_s": 0.0, "stream_s": 0.0,
+         "gruende": {}}
     for tag, td in (tage or {}).items():
         if nur_tag and tag != nur_tag:
             continue
@@ -145,6 +147,7 @@ def _summe(tage, nur_tag=None):
         s["befunde"] += int(td.get("befunde", 0) or 0)
         s["usd"] += float(td.get("anthropic_usd", 0) or 0)
         s["chirp_s"] += float((td.get("stt_s") or {}).get("chirp", 0) or 0)
+        s["stream_s"] += float((td.get("stt_s") or {}).get("streaming", 0) or 0)
         for g, n in (td.get("rueckfall_grund") or {}).items():
             s["gruende"][g] = s["gruende"].get(g, 0) + int(n or 0)
     return s
@@ -154,11 +157,15 @@ def chirp_eur(sekunden):
     return sekunden / 60.0 * CHIRP_USD_MIN * USD_EUR
 
 
-def hochrechnung_eur(chirp_s_monat, tag, erster_tag=None):
+def stream_eur(sekunden):
+    return sekunden / 60.0 * STREAM_USD_MIN * USD_EUR
+
+
+def hochrechnung_eur(chirp_s_monat, tag, erster_tag=None, stream_s_monat=0.0):
     """Chirp-€ des Monats bisher, auf den ganzen Monat hochgerechnet (bisher / gezählte Tage × Monatstage).
     Gezählte Tage = ab erster_tag (erster Tag mit Zählerdaten im Monat), sonst ab dem 1. — v3.19.x (sonnet-n3-beleg):
     der Zähler kam am 16.11. dazu, „bisher / 16“ rechnete den November um das 16-Fache zu niedrig."""
-    return chirp_eur(chirp_s_monat) / gezaehlte_tage(tag, erster_tag) * _monatstage(tag)
+    return (chirp_eur(chirp_s_monat) + stream_eur(stream_s_monat)) / gezaehlte_tage(tag, erster_tag) * _monatstage(tag)
 
 
 def _monatstage(tag):
@@ -204,7 +211,8 @@ def tagesbericht(ordner, tag):
             gruende[g] = gruende.get(g, 0) + n
     chirp_m = ges(mon, "chirp_s")
     erster = erster_tag(alle)
-    hoch, n_tage = hochrechnung_eur(chirp_m, tag, erster), gezaehlte_tage(tag, erster)
+    stream_m = ges(mon, "stream_s")
+    hoch, n_tage = hochrechnung_eur(chirp_m, tag, erster, stream_m), gezaehlte_tage(tag, erster)
     z = [f"KaiScribe Tagesbericht {tag} (alle PCs, ohne Patientendaten)",
          f"Befund-KI heute: {ges(heute, 'befunde')} Befunde, Aufrufe Claude {ges(heute, 'anthropic')}, "
          f"Rückfälle auf Gemini {h_rf}" + (" (" + ", ".join(f"{g}: {n}" for g, n in sorted(gruende.items())) + ")"
@@ -212,15 +220,17 @@ def tagesbericht(ordner, tag):
          f"Befund-KI Monat {monat}: Aufrufe Claude {ges(mon, 'anthropic')}, Rückfälle auf Gemini {m_rf}, "
          f"Anthropic {ges(mon, 'usd'):.2f} $ (heute {ges(heute, 'usd'):.2f} $)",
          f"Spracherkennung Chirp: heute {ges(heute, 'chirp_s') / 60:.1f} min, Monat {chirp_m / 60:.1f} min "
-         f"≈ {chirp_eur(chirp_m):.2f} € (× {CHIRP_USD_MIN} $/min), hochgerechnet {hoch:.2f} €/Monat "
-         f"(aus {n_tage} Tag{'en' if n_tage != 1 else ''})"]
+         f"≈ {chirp_eur(chirp_m):.2f} € (× {CHIRP_USD_MIN} $/min)",
+         f"Live-Anzeige (Google-Streaming): heute {ges(heute, 'stream_s') / 60:.1f} min, Monat {stream_m / 60:.1f} min "
+         f"≈ {stream_eur(stream_m):.2f} € (× {STREAM_USD_MIN} $/min)",
+         f"Google-Spracherkennung gesamt hochgerechnet {hoch:.2f} €/Monat (aus {n_tage} Tag{'en' if n_tage != 1 else ''})"]
     for pc in sorted(alle):
         h = heute[pc]
         z.append(f"  {pc}: heute Befunde {h['befunde']}, Claude {h['anthropic']}, Rückfall {h['rueckfall']}, "
-                 f"Gemini {h['gemini']}, Chirp {h['chirp_s'] / 60:.1f} min")
+                 f"Gemini {h['gemini']}, Chirp {h['chirp_s'] / 60:.1f} min, Live {h['stream_s'] / 60:.1f} min")
     warnung = warnung_noetig(hoch, tag, erster)
     if warnung:
-        z.append(f"WARNUNG: Chirp hochgerechnet {hoch:.2f} €/Monat > {WARN_EUR:.0f} € (Google-Guthaben ~9 €)")
+        z.append(f"WARNUNG: Google-Spracherkennung (Chirp + Live) hochgerechnet {hoch:.2f} €/Monat > {WARN_EUR:.0f} € (Google-Guthaben ~9 €)")
     return "\n".join(z) + "\n", warnung
 
 

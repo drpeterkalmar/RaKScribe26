@@ -7,7 +7,8 @@ Lädt tools/vm/kaiscribe_nutzung_lesen.py auf die Automaten-VM, startet es dort 
 C:\\RaK\\tmp\\n10_interaktiv.ps1 wie ks_kontrolle.ps1) und bekommt nur Zähler zurück (Tagesbericht, Monatszähler je PC,
 Lauf-Dateien je Rechner/Modell/Version). Warnung, wenn
   - der Tagesbericht der EXE die Zeile „WARNUNG“ hat oder X:\\RaKScribe\\Daten\\nutzung\\warnung_<JJJJ-MM>.txt da ist, oder
-  - die eigene Hochrechnung aus den Monatszählern (source_code/nutzung.py, ab dem ersten Tag mit Daten) > 6 € liegt
+  - die eigene Hochrechnung aus den Monatszählern (source_code/nutzung.py, ab dem ersten Tag mit Daten, Chirp + Live-
+    Anzeige/Streaming, sobald die EXE die Live-Sekunden zählt) > 6 € liegt
     (die EXE bis 3.19.4 teilt durch den Tag des Monats und rechnet den November viel zu niedrig).
 Dann genau EINE Kanban-Karte je Monat (Spalte peter). Dazu je Rechner der letzte Lauf (Modell, KaiScribe-Version) in den
 Zustand; schreibt ein Rechner noch über Gemini (ohne „Rückfall“) oder mit KaiScribe < 3.19.0, einmal je Rechner und
@@ -35,8 +36,8 @@ VM_DIR = "C:\\RaK\\einrichtung\\ks_nutzung"
 KANBAN = os.path.expanduser("~/.hermes/scripts/kanban.py")
 KARTEI = os.path.expanduser("~/.hermes/work/kanban/karten.json")
 ZUSTAND = os.path.expanduser("~/.hermes/work/kaiscribe-chirp/zustand.json")
-TITEL = "KaiScribe: Chirp-Spracherkennung hochgerechnet {eur} €/Monat ({monat}, > 6 €)"
-TITEL_MARKE = "KaiScribe: Chirp-Spracherkennung hochgerechnet"
+TITEL = "KaiScribe: Google-Spracherkennung hochgerechnet {eur} €/Monat ({monat}, > 6 €)"
+TITEL_MARKE = "KaiScribe: Google-Spracherkennung hochgerechnet"
 
 HUELLE = r"""param([string]$A = '')
 if ($A -notmatch '^[A-Za-z0-9 _:,\-]*$') { 'NUTZUNG_LESEN=fehler GRUND=Argumente'; exit 1 }
@@ -77,7 +78,7 @@ def auswerten(aus, tag):
         if m and m.group(1) == monat:
             w = dict(x.split("=", 1) for x in m.group(4).split() if "=" in x)
             td = {"befunde": int(w.get("befunde", 0)), "ki": {k: int(w.get(k, 0)) for k in ("anthropic", "gemini", "rueckfall")},
-                  "anthropic_usd": float(w.get("usd", 0)), "stt_s": {"chirp": float(w.get("chirp_s", 0))}, "rueckfall_grund": {}}
+                  "anthropic_usd": float(w.get("usd", 0)), "stt_s": {"chirp": float(w.get("chirp_s", 0)), "streaming": float(w.get("stream_s", 0))}, "rueckfall_grund": {}}
             for g in (w.get("gruende") or "-").split(";"):
                 if ":" in g:
                     k, n = g.rsplit(":", 1)
@@ -100,9 +101,11 @@ def auswerten(aus, tag):
         elif not z.startswith("| "):
             im_bericht = None
     chirp_s = sum(td["stt_s"]["chirp"] for d in alle.values() for t_, td in d["tage"].items() if t_ <= tag)
+    stream_s = sum(td["stt_s"]["streaming"] for d in alle.values() for t_, td in d["tage"].items() if t_ <= tag)
     erster = nutzung.erster_tag(alle)
-    hoch = nutzung.hochrechnung_eur(chirp_s, tag, erster)
-    return {"monat": monat, "tag": tag, "chirp_min": chirp_s / 60.0, "eur": nutzung.chirp_eur(chirp_s), "hoch_eur": hoch,
+    hoch = nutzung.hochrechnung_eur(chirp_s, tag, erster, stream_s)
+    return {"monat": monat, "tag": tag, "chirp_min": chirp_s / 60.0, "stream_min": stream_s / 60.0,
+            "eur": nutzung.chirp_eur(chirp_s) + nutzung.stream_eur(stream_s), "hoch_eur": hoch,
             "tage": nutzung.gezaehlte_tage(tag, erster), "erster": erster, "pcs": alle, "laeufe": laeufe,
             "bericht": bericht, "warn_exe": warn_datei or any(b.startswith("WARNUNG") for b in bericht),
             "warn_eigen": nutzung.warnung_noetig(hoch, tag, erster)}
@@ -111,14 +114,14 @@ def auswerten(aus, tag):
 def karte_text(e):
     befunde = sum(td["befunde"] for d in e["pcs"].values() for td in d["tage"].values())
     rf = sum(td["ki"]["rueckfall"] for d in e["pcs"].values() for td in d["tage"].values())
-    je_pc = ", ".join("%s %.0f min" % (pc, sum(td["stt_s"]["chirp"] for td in d["tage"].values()) / 60)
-                      for pc, d in sorted(e["pcs"].items()))
-    return ("Chirp (Google-Spracherkennung, 0,016 $/min) %s bis %s: %.1f min ≈ %.2f €, hochgerechnet %.2f €/Monat aus %d "
-            "Tagen (Grenze 6 €, Google-Gutschrift ~9 €/Monat). Je PC: %s. Befund-KI im Monat: %d Befunde über Claude, %d "
+    je_pc = ", ".join("%s %.0f min" % (pc, sum(td["stt_s"]["chirp"] + td["stt_s"]["streaming"]
+                                               for td in d["tage"].values()) / 60) for pc, d in sorted(e["pcs"].items()))
+    return ("Google-Spracherkennung %s bis %s: Chirp %.1f min (0,016 $/min) + Live-Anzeige %.1f min (0,024 $/min) ≈ "
+            "%.2f €, hochgerechnet %.2f €/Monat aus %d Tagen (Grenze 6 €, Google-Gutschrift ~9 €/Monat). Je PC: %s. Befund-KI im Monat: %d Befunde über Claude, %d "
             "Rückfälle auf Gemini. Quelle: X:\\RaKScribe\\Daten\\nutzung (Tagesbericht %s%s). Entscheiden: a) so lassen "
             "(Mehrkosten zahlen) b) Budget/Gutschrift prüfen c) Spracherkennung billiger (Folgejob). Keine automatische "
-            "Quota-Änderung." % (e["erster"] or e["monat"] + "-01", e["tag"], e["chirp_min"], e["eur"], e["hoch_eur"],
-                                 e["tage"], je_pc or "–", befunde, rf, e["tag"],
+            "Quota-Änderung." % (e["erster"] or e["monat"] + "-01", e["tag"], e["chirp_min"], e["stream_min"], e["eur"],
+                                 e["hoch_eur"], e["tage"], je_pc or "–", befunde, rf, e["tag"],
                                  ", EXE-Zeile WARNUNG" if e["warn_exe"] else ", eigene Hochrechnung"))
 
 
@@ -145,7 +148,7 @@ def karte_schon_da(monat, kartei=None):
 def karte_anlegen(e):
     titel = TITEL.format(eur=("%.2f" % e["hoch_eur"]).replace(".", ","), monat=e["monat"])
     r = subprocess.run([sys.executable, KANBAN, "neu", titel, "--peter", "--was", karte_text(e),
-                        "--kurz", "KaiScribe Chirp > 6 €/Monat: a/b/c", "--auftrag", "kaiscribe-chirp-warnung"],
+                        "--kurz", "KaiScribe Spracherkennung > 6 €/Monat: a/b/c", "--auftrag", "kaiscribe-chirp-warnung"],
                        capture_output=True, text=True, timeout=60)
     if r.returncode:
         raise RuntimeError("kanban.py neu: " + (r.stdout + r.stderr).strip()[-300:])
@@ -228,8 +231,8 @@ def main(argv=None):
         print(beleg_tabelle(e))
     warn = e["warn_exe"] or e["warn_eigen"]
     if a.trocken or a.beleg:
-        print("CHIRP %s: %.1f min ≈ %.2f €, hochgerechnet %.2f €/Monat aus %d Tagen, warn_exe=%s warn_eigen=%s karte_da=%s"
-              % (e["tag"], e["chirp_min"], e["eur"], e["hoch_eur"], e["tage"], e["warn_exe"], e["warn_eigen"],
+        print("CHIRP %s: Chirp %.1f min + Live %.1f min ≈ %.2f €, hochgerechnet %.2f €/Monat aus %d Tagen, warn_exe=%s warn_eigen=%s karte_da=%s"
+              % (e["tag"], e["chirp_min"], e["stream_min"], e["eur"], e["hoch_eur"], e["tage"], e["warn_exe"], e["warn_eigen"],
                  karte_schon_da(e["monat"])))
         if warn:
             print("KARTE (trocken): " + karte_text(e))

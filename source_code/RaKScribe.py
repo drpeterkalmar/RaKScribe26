@@ -4340,6 +4340,7 @@ def init_runtime():
     if os.name == "nt" and not os.environ.get("RAKSCRIBE_SELFTEST"):
         NUTZUNG = _nutz.Zaehler(_nutz.ordner_aus(CFG.lauf_ordner))
         _stt.ZAEHLER = NUTZUNG.stt
+        _af.ZAEHLER = lambda s: NUTZUNG.stt(s, "streaming")   # sonnet-n3-beleg: Live-Anzeige kostet bei Google auch
         print(f"[INIT] Nutzungszähler: {NUTZUNG.ordner} ({NUTZUNG.pc})")
     if KI_GEN.anbieter != "gemini" or KI_KORR.anbieter != "gemini":
         print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, Rückfall Gemini"

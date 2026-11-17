@@ -21,6 +21,9 @@ import time
 import numpy as np
 
 STREAM_NEUSTART_S = 240
+# kaiscribe-sonnet-n3-beleg: an den Google-Streaming-Dienst geschickte Audiosekunden (Live-Anzeige, Speech v1 latest_long)
+# → nutzung.Zaehler.stt(s, "streaming"); kostet wie Chirp, wurde bis dahin nicht gezählt
+ZAEHLER = None
 
 
 class Aufnahme:
@@ -125,7 +128,7 @@ class Aufnahme:
     def _requests(self, ende, abschnitt=0):
         """Pakete EINES Abschnitts. Ende: Zeitlimit (Rest geht in die nächste Sitzung), Stopp oder Pause (eigener Rest
         ist verschickt). Blöcke eines späteren Abschnitts bleiben für dessen Sitzung in der Warteschlange."""
-        n = 0
+        n = proben = 0
         while True:
             aktiv = self.laeuft and not self.pausiert and self.abschnitt == abschnitt
             if aktiv and time.time() >= ende:
@@ -138,12 +141,19 @@ class Aufnahme:
                 del self._queue[:i]
             if bloecke:
                 n += 1
-                yield self.request_bauen(np.concatenate(bloecke, axis=0).tobytes())
+                stueck = np.concatenate(bloecke, axis=0)
+                proben += len(stueck)
+                yield self.request_bauen(stueck.tobytes())
             elif not aktiv:
                 break
             else:
                 time.sleep(0.02)
         self.log(f"[GOOGLE] Streaming-Request beendet ({n} Pakete).")
+        if ZAEHLER is not None and proben:
+            try:
+                ZAEHLER(proben / float(self.samplerate or 16000))
+            except Exception:
+                pass
 
     def _streaming(self):
         while self.streaming_aktiv and (self.laeuft or self._queue):

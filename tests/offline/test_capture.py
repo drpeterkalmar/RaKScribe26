@@ -66,12 +66,17 @@ check("samples() = alle Blöcke in Reihenfolge", pcm is not None and np.array_eq
 check("nach Fehler keine Live-Pakete mehr gesammelt", a._queue == [] and not a.streaming_aktiv)
 
 # 2. ohne Fehler: alles geht an die Live-Anzeige, Rest wird nach dem Stopp noch geschickt
+gezaehlt = []
+af.ZAEHLER = gezaehlt.append      # sonnet-n3-beleg: Streaming-Sekunden für den Nutzungszähler
 a, ev = baue(S.streaming_stub())
 a.start()
 warte(lambda: len(a.puffer) >= 30)
 a.stop(); a.warten()
+af.ZAEHLER = None
 check("ohne Fehler: jedes Sample an die Live-Anzeige", sum(ev["pakete"]) == 1600 * len(a.puffer) > 0,
       f"{sum(ev['pakete'])} vs {1600 * len(a.puffer)}")
+check("Streaming-Sekunden gezählt (= geschickte Samples / 16000)", abs(sum(gezaehlt) - sum(ev["pakete"]) / 16000.0) < 1e-9
+      and gezaehlt, gezaehlt)
 check("Streaming-Thread beendet sich nach dem Stopp", not a.stream_thread.is_alive() and not a.capture_thread.is_alive())
 
 # 3. Neu-Aufsetzen nach Zeitlimit (Google ~5 min; hier 50 ms)

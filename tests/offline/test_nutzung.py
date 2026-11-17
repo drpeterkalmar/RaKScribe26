@@ -83,6 +83,11 @@ text, warn = nutzung.tagesbericht(d, "2026-11-16")
 nutzung.schreibe_tagesbericht(d, "2026-11-16")
 check("Warnung ab hochgerechnet > 6 €/Monat + warnung-Datei", warn and "WARNUNG" in text and "(aus 3 Tagen)" in text
       and pathlib.Path(d, "warnung_2026-11.txt").exists(), text)
+z10.stt(600, "streaming")   # Live-Anzeige 10 min
+text, warn = nutzung.tagesbericht(d, "2026-11-16")
+check("Live-Anzeige (Streaming) gezählt + in der Hochrechnung", "Live-Anzeige (Google-Streaming): heute 10.0 min" in text
+      and "Live 10.0 min" in text and abs(nutzung.hochrechnung_eur(0, "2026-11-16", "2026-11-14", 600)
+                                          - 10 * 0.024 * 0.87 / 3 * 30) < 1e-9, text)
 check("Hochrechnung: 1 Tag × 30 = Monat", abs(nutzung.hochrechnung_eur(60, "2026-11-01")
                                               - nutzung.chirp_eur(60) * 30) < 1e-9)
 check("Hochrechnung ohne ersten Tag: wie bisher ab dem 1.", abs(nutzung.hochrechnung_eur(60, "2026-11-16")

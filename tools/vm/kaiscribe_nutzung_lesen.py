@@ -4,7 +4,7 @@
 
 Gibt nur Zähler aus, nie Befundtext, Nr oder Benutzer:
   LAUF <tag> rechner=<PC> modell=<…> kaiscribe=<Version> maske=<ja|nein> anzahl=<n> von=<HH:MM> bis=<HH:MM>
-  NUTZUNG <monat> <PC> <tag> befunde=… anthropic=… gemini=… rueckfall=… usd=… chirp_s=… gruende=<Kat:n;…>
+  NUTZUNG <monat> <PC> <tag> befunde=… anthropic=… gemini=… rueckfall=… usd=… chirp_s=… stream_s=… gruende=<Kat:n;…>
   TAGESBERICHT <tag> (danach die Datei wörtlich, je Zeile mit „| “ davor; sie enthält nur Zahlen/Kategorien)
   WARNDATEI <monat> ja|nein
   NUTZUNG_LESEN=fertig
@@ -66,11 +66,11 @@ def nutzung(ordner, tage):
             for tag, td in sorted((d.get("tage") or {}).items()):
                 ki = td.get("ki") or {}
                 gr = ";".join("%s:%s" % (s(g), int(n or 0)) for g, n in sorted((td.get("rueckfall_grund") or {}).items()))
-                print("NUTZUNG %s %s %s befunde=%s anthropic=%s gemini=%s rueckfall=%s usd=%.4f chirp_s=%.1f gruende=%s"
+                print("NUTZUNG %s %s %s befunde=%s anthropic=%s gemini=%s rueckfall=%s usd=%.4f chirp_s=%.1f stream_s=%.1f gruende=%s"
                       % (monat, pc, s(tag, 10), int(td.get("befunde", 0) or 0), int(ki.get("anthropic", 0) or 0),
                          int(ki.get("gemini", 0) or 0), int(ki.get("rueckfall", 0) or 0),
                          float(td.get("anthropic_usd", 0) or 0), float((td.get("stt_s") or {}).get("chirp", 0) or 0),
-                         gr or "-"))
+                         float((td.get("stt_s") or {}).get("streaming", 0) or 0), gr or "-"))
         print("WARNDATEI %s %s" % (monat, "ja" if os.path.exists(os.path.join(ordner, "warnung_%s.txt" % monat)) else "nein"))
     for tag in tage:
         pfad = os.path.join(ordner, "tagesbericht_%s.txt" % tag)
