@@ -228,7 +228,9 @@ _NUM_RE = re.compile(r"^\s*(?:\*\*)?\s*\d+\s*[.)]\s*(?:\*\*)?\s*")
 _BULLET_RE = re.compile(r"^\s*[-*•–]\s+")
 # v3.19.x (Georg 17.11.2026, IB Lab LAMA): die LAMA-Schlussanmerkung „HKA = Hüft-Knie-Sprunggelenk-Winkel, …“ steht
 # ohne Nummer unter dem Ergebnis (zählt nicht mit: ein einzelner LAMA-Punkt bleibt unnummeriert). Sync: befundRegeln.ts
-_UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel", re.I)
+# v3.19.8 (Georg 17.11.2026, IB Lab FROG): ebenso „Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS …“.
+_UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel"
+                       r"|^Weitere Winkelmessungen sind den KI-Auswertungsbildern", re.I)
 
 _SATZENDE = (".", "!", "?", ":", ";")
 

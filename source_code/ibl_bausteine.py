@@ -113,6 +113,7 @@ class Baustein:
     modul_name: str = ""
     aktualisiert: str = ""
     vorwerte: List[dict] = field(default_factory=list)   # v3.18.0: frühere Werte derselben Messgröße (nur Anzeige)
+    befundtext: Optional[dict] = None   # v3.19.8: FROG – fertige Sätze + Begriffe des Abholers ≥ 1.3.7 (Georg 17.11.2026)
 
     @property
     def schluessel(self):
@@ -144,6 +145,22 @@ def _vorwerte(x):
         if isinstance(x, list) else []
 
 
+def _befundtext(modul, x):
+    """v3.19.8 (FROG, Georg Riegler 17.11.2026): Feld „befundtext“ der Brücke (Abholer ≥ 1.3.7, ris-mods
+    ibl/frog_ergebnis.py) – nur Fassung 1 mit Inhalt; sonst None (dann gilt das Verhalten bis 3.19.7)."""
+    if modul != "frog" or not isinstance(x, dict) or x.get("format") != 1:
+        return None
+    begriffe = [{"art": str(g.get("art") or ""), "text": str(g.get("text") or "").strip(),
+                 "seite": str(g.get("seite") or "").strip()}
+                for g in (x.get("begriffe") if isinstance(x.get("begriffe"), list) else [])
+                if isinstance(g, dict) and str(g.get("text") or "").strip()]
+    bt = {"stellung": _texte(x.get("stellung")), "gewoelbe": _texte(x.get("gewoelbe")),
+          "gewoelbe_weg": bool(x.get("gewoelbe_weg")), "gewoelbe_pathologisch": bool(x.get("gewoelbe_pathologisch")),
+          "phalangen": bool(x.get("phalangen")), "ein_fuss": bool(x.get("ein_fuss")), "begriffe": begriffe,
+          "schluss": str(x.get("schluss") or "").strip()}
+    return bt if begriffe and (bt["stellung"] or bt["gewoelbe"]) else None
+
+
 def aus_liste(liste):
     """Bausteine aus cas_ibl_<id>.json (Liste von dicts) → [Baustein] — Ungültiges wird still übergangen."""
     out = []
@@ -168,7 +185,7 @@ def aus_liste(liste):
                             ergebnis=_texte(d.get("ergebnis")), hinweise=_texte(d.get("hinweise")),
                             nicht_zugeordnet=_texte(d.get("nicht_zugeordnet")),
                             modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or ""),
-                            vorwerte=_vorwerte(d.get("vorwerte"))))
+                            vorwerte=_vorwerte(d.get("vorwerte")), befundtext=_befundtext(modul, d.get("befundtext"))))
     out.sort(key=lambda b: (b.ziffer, b.modul))
     return out
 
@@ -641,6 +658,20 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
         if not b.befundteil and not b.ergebnis:
             continue
         i, _art = zuordnen(b, teile, cas_leistungen, templates)
+        if _frog_text(b):                  # v3.19.8: fertige Sätze statt Messzeilen (Georg 17.11.2026)
+            if i is not None:
+                _frog_einsetzen(zeilen, teile, i, b, e)
+                continue
+            bericht = "\n".join(zeilen + ende_zeilen)
+            plan = _frog_plan(b, "", "", ganz, e.hinweise)
+            neu = [z for z in (_frog_zeilen(plan) if plan else []) if z not in bericht]
+            if neu:
+                ende_zeilen += neu
+                e.eingesetzt[b.schluessel] = neu
+                e.zuordnung[b.modul] = ENDE
+                e.hinweise.append(f"{b.label}: keiner Untersuchung eindeutig zuzuordnen – Text als eigener Absatz am "
+                                  "Ende, bitte prüfen")
+            continue
         if i is None:
             bericht = "\n".join(zeilen + ende_zeilen)
             befund = _befund_pruefen(b, bericht, ganz, e.hinweise)
@@ -717,6 +748,9 @@ def prompt_block(bausteine, vorlage=None):
     nennen reichte der KI beim Becken nicht)."""
     zeilen = []
     for b in bausteine or []:
+        if _frog_text(b):                  # v3.19.8: KaiScribe ersetzt Stellungs- und Gewölbesatz der Vorlage selbst
+            zeilen.append(f"- {b.name}: Sätze zu Zehenstellung und Fußgewölbe und die zugehörigen Diagnosen im Ergebnis")
+            continue
         nur = b.modul in BEFUND_NUR_AUFFAELLIG | BEFUND_OHNE_ZEILEN
         namen = list(dict.fromkeys(m.name for m in map(messwert, befund_zeilen(b))
                                    if m and not (nur and _abschnitt_zeile(m.zeile))))
@@ -743,12 +777,14 @@ def prompt_block(bausteine, vorlage=None):
         return ""
     weg = []
     for b in bausteine:
-        if b.ergebnis and vorlage:
+        if b.ergebnis and vorlage and not _frog_text(b):
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), _pathologische_punkte(b, b.ergebnis)) if s not in weg]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
         zeilen.append(_kl_satz(kl))
     if any(b.modul in ERGEBNIS_ZUERST and b.ergebnis for b in bausteine):
         zeilen.append(LAMA_PROMPT)
+    if any(_frog_text(b) for b in bausteine):
+        zeilen.append(FROG_PROMPT)
     if weg:
         zeilen.append("Diese Sätze der Vorlage widersprechen den IB-Lab-Werten – nicht übernehmen (bzw. nur ohne die "
                       "widersprechende Aussage): " + " ".join(f"„{s}“" for s in weg))
@@ -902,6 +938,11 @@ def ist_lama_schluss(punkt):
     return _NUM.sub("", (punkt or "").strip()).startswith(LAMA_SCHLUSS)
 
 
+def ist_schluss(punkt):
+    """Schlussanmerkung von LAMA oder FROG – steht ohne Nummer ganz unten im Ergebnis (befund_regeln._UNNUM_RE)."""
+    return ist_lama_schluss(punkt) or _NUM.sub("", (punkt or "").strip()).startswith(FROG_SCHLUSS)
+
+
 def _pathologische_punkte(b, punkte):
     """Ergebnispunkte, gegen die Normalsätze im Befund als Widerspruch gelten (LAMA: ohne Normal-Punkte und
     Schlussanmerkung – „Regelrechte Beinachse rechts …“ widerspricht keinem Normalsatz)."""
@@ -943,8 +984,9 @@ def _ergebnis_vorne(zeilen, a, punkte, diktat, b, hinweise):
     """LAMA: IB-Lab-Punkte als ERSTE Punkte des Ergebnisses von a, die übrigen (diktierten) danach, Schlussanmerkung
     ganz unten ohne Nummer; neu durchgezählt (ein Punkt: ohne Nummer). Ein KI-Normalsatz zu Beinachse/Beinlänge
     („Regelrechte Darstellung der Beinachsen.“) entfällt, wenn das Diktat nichts dazu sagt. → Zeilen mehr."""
-    schluss = [p for p in punkte if ist_lama_schluss(p)]
-    vorne = [p for p in punkte if not ist_lama_schluss(p)]
+    schluss = [p for p in punkte if ist_schluss(p)]
+    vorne = [p for p in punkte if not ist_schluss(p)]
+    frog = _frog_text(b)
     if a.ergebnis < 0:
         return _ergebnis_anfuegen(zeilen, a, vorne + schluss)
     s, k = a.ergebnis + 1, a.ende
@@ -956,7 +998,23 @@ def _ergebnis_vorne(zeilen, a, punkte, diktat, b, hinweise):
         if not z.strip():
             continue
         t = _NUM.sub("", z).strip()
-        if ist_lama_schluss(t):
+        if ist_schluss(t):
+            continue
+        if frog:
+            # FROG (Georg 17.11.2026): derselbe Punkt nie doppelt; der Standard-Ergebnissatz zum Fuß entfällt, sobald ein
+            # Begriff eingesetzt wird („… des oberen Sprunggelenkes und des Fußskeletts.“ behält das Sprunggelenk)
+            if t in vorne:
+                continue
+            if vorne and z[:1] not in (" ", "\t"):
+                m = _FROG_ERG_UND.match(t)
+                if m:
+                    hinweise.append(f"{b.name}: „{_kurz(t)}“ gekürzt – Fuß laut IB Lab auffällig")
+                    rest.append(m.group(1) + m.group(2) + ".")
+                    continue
+                if ergebnis_normal([t]) and _FROG_ERG_NORMAL.search(t):
+                    hinweise.append(f"{b.name}: „{_kurz(t)}“ durch das IB-Lab-Ergebnis ersetzt")
+                    continue
+            rest.append(z)
             continue
         if z[:1] not in (" ", "\t") and ergebnis_normal([t]) and _LAMA_THEMA.search(t) \
                 and not _LAMA_DIKTAT.search(diktat or ""):
@@ -968,11 +1026,193 @@ def _ergebnis_vorne(zeilen, a, punkte, diktat, b, hinweise):
     return len(neu) - len(inhalt)
 
 
+# IB Lab FROG (Georg Riegler 17.11.2026, Brief kaiscribe-frog-fusstext-n1): der Abholer ≥ 1.3.7 (ris-mods
+# ibl/frog_ergebnis.py) liefert im Feld „befundtext“ fertige Sätze für die Beschreibung und die lateinischen Begriffe fürs
+# Ergebnis – nur wenn mindestens eine Größe pathologisch ist. KaiScribe setzt sie in den Standardbefund ein:
+#   Fuß / Sprunggelenk mit Fuß: der Stellungssatz („Das Fußskelett ist nach Form, Größe, Anzahl und Stellung … normal.“)
+#     entfällt, an seiner Stelle stehen die Stellungs-Sätze; der Gewölbesatz („Das Fußgewölbe ist regulär ausgebildet bei
+#     ordnungsgemäßen Gelenkwinkeln.“) wird durch die Gewölbe-Sätze ersetzt (Gewölbe normal: „Das Fußgewölbe ist regulär
+#     ausgebildet.“, widersprüchliche Winkel: ersatzlos gestrichen).
+#   Vorfuß: nur d.p. – der Phalangen-Satz („Die Stellung der Phalangen … ist ordnungsgemäß.“) entfällt bei Hallux valgus
+#     oder Digitus quintus varus; sonst stehen die Sätze dahinter. Kein Gewölbe-Text, keine Gewölbe-Begriffe.
+#   Ergebnis: die Begriffe als ERSTER Punkt („Hochgradiger Hallux valgus links. Pes cavus links.“), der Standardsatz
+#     („Regelrechte Darstellung des Fußskeletts.“) entfällt, Diktiertes folgt als nächster Punkt, die Schlussanmerkung
+#     („Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.“) steht ohne Nummer ganz unten.
+#   Keine Messzeilen mehr („… (IB Lab FROG).“) – alle Werte bleiben in den IB-Lab-Details und KI-Bildern.
+# Am Diktat wird nichts geändert: ein schon diktierter Begriff kommt nicht doppelt, verneint das Diktat einen Begriff,
+# kommt aus dieser Projektion nichts (Hinweis nur in der Anzeige). Findet sich der Satz der Vorlage nicht mehr (der Arzt
+# hat dazu diktiert), stehen die FROG-Sätze als eigener Absatz am Ende der Beschreibung + Hinweis. Ohne „befundtext“
+# (Abholer < 1.3.7, nichts pathologisch) bleibt alles wie bis 3.19.7.
+FROG_SCHLUSS = "Weitere Winkelmessungen sind den KI-Auswertungsbildern"
+FROG_PROMPT = ("FROG: Übernimm die Vorlagen-Sätze „Das Fußskelett ist nach Form, Größe, Anzahl und Stellung … normal.“, „Die "
+               "Stellung der Phalangen … ist ordnungsgemäß.“ und „Das Fußgewölbe ist regulär ausgebildet bei "
+               "ordnungsgemäßen Gelenkwinkeln.“ wörtlich und unverändert, außer der Arzt hat dazu etwas diktiert – "
+               "KaiScribe ersetzt sie nach dem Befund durch die IB-Lab-Sätze. Schreibe selbst keinen Satz und keine "
+               "Diagnose zur Stellung der Groß- und Kleinzehe oder zum Längsgewölbe, außer der Arzt hat es diktiert.")
+_FROG_STELLUNG = re.compile(r"Das Fu(?:ß|ss)skelett ist nach Form[^.\n]*?Stellung[^.\n]*\.")
+_FROG_PHALANGEN = re.compile(r"Die Stellung der Phalangen[^.\n]*?ist ordnungsgemäß\.")
+_FROG_GEWOELBE = re.compile(r"Das Fu(?:ß|ss)gewölbe ist regulär ausgebildet(?: bei ordnungsgemäßen Gelenkwinkeln)?\.")
+_FROG_GEW_NORMAL = re.compile(r"^Das Fu(?:ß|ss)gewölbe (?:(?:rechts|links) )?ist regulär ausgebildet\.$")
+_FROG_GEW_SATZ = re.compile(r"(?:Erhöhtes|Abgeflachtes) Längsgewölbe|Das Fu(?:ß|ss)gewölbe")
+_FROG_ERG_UND = re.compile(r"^(Regelrechte Darstellung\b.*?) und des Fu(?:ß|ss)skeletts"
+                           r"((?:\s+(?:rechts|links|beidseits))?)\.?$")
+_FROG_ERG_NORMAL = re.compile(r"darstellung\b.*fu(?:ß|ss)|^(?:(?:unauffälliger|regelrechter|altersentsprechender)\s+)?"
+                              r"(?:normalbefund|befund)\.?$", re.I)
+_VORFUSS = re.compile(r"vorfu(?:ß|ss)", re.I)
+_FROG_MARKE = {"s": "\x01FROG-S\x01", "g": "\x01FROG-G\x01"}
+
+
+def _frog_text(b):
+    """FROG-Baustein mit fertigem Text des Abholers (≥ 1.3.7)?"""
+    return b.modul == "frog" and b.befundtext is not None
+
+
+def _frog_plan(b, titel, seite, diktat, hinweise):
+    """FROG-Text für EINE Untersuchung → (Stellungs-Sätze, Gewölbe-Sätze, Gewölbesatz streichen, Ergebnispunkt,
+    Schlussanmerkung) oder None (nichts einsetzen). Vorfuß: nur d.p. Ein Fuß ohne Seite im Begriff: Seite aus dem Titel
+    der Untersuchung. Diktat: ein schon diktierter Begriff kommt nicht doppelt ins Ergebnis (die Sätze mit den Winkeln
+    kommen trotzdem); verneint das Diktat einen Begriff, kommt aus dieser Projektion nichts (Hinweis)."""
+    bt = b.befundtext
+    vorfuss = bool(_VORFUSS.search(titel or ""))
+    if seite not in ("rechts", "links"):     # Titel ohne Seite: die Seite des Bausteins (genau ein Fuß)
+        seite = b.seiten[0] if len(b.seiten) == 1 else ""
+    texte, aktiv, verneint = [], set(), set()
+    for x in bt["begriffe"]:
+        if vorfuss and x["art"] != "dp":
+            continue
+        s = x["seite"] or (seite if bt["ein_fuss"] and seite in ("rechts", "links") else "")
+        t = f"{x['text']} {s}".strip()
+        art, wort = _diagnose_im_text(x["text"], "", diktat or "")
+        if art == "widerspruch":
+            hinweise.append(f"{b.name}: „{_kurz(t)}“ – Diktat verneint „{wort}“, bitte prüfen (nicht eingesetzt)")
+            verneint.add(x["art"])
+            continue
+        aktiv.add(x["art"])
+        if art == "doppelt":
+            hinweise.append(f"{b.name}: „{_kurz(t)}“ – schon diktiert, nicht doppelt angefügt")
+            continue
+        if art == "verwandt":
+            hinweise.append(f"{b.name}: „{_kurz(t)}“ angefügt – Diktat nennt schon „{wort}“, bitte prüfen")
+        texte.append((x["art"], t))
+    aktiv -= verneint
+    if not aktiv:
+        return None
+    stellung = list(bt["stellung"]) if "dp" in aktiv else []
+    if vorfuss or "gewoelbe" in verneint:
+        gewoelbe, weg = [], False
+    elif "gewoelbe" in aktiv or not bt["gewoelbe_weg"]:
+        gewoelbe, weg = list(bt["gewoelbe"]), False
+    else:
+        gewoelbe, weg = [], True
+    return stellung, gewoelbe, weg, " ".join(t + "." for art, t in texte if art in aktiv), bt["schluss"]
+
+
+def _frog_punkte(plan):
+    return ([plan[3]] if plan[3] else []) + ([plan[4]] if plan[4] else [])
+
+
+def _frog_zeilen(plan, punkte=True):
+    """Sätze je Zeile (Gerüst, Absatz am Ende): die Stellungs-Sätze und – nur wenn das Gewölbe pathologisch ist – die
+    Gewölbe-Sätze; mit punkte=True dazu Ergebnispunkt und Schlussanmerkung."""
+    gw = plan[1] if any(not _FROG_GEW_NORMAL.match(s) for s in plan[1]) else []
+    return plan[0] + gw + (_frog_punkte(plan) if punkte else [])
+
+
+def _satz_raus(text, start, ende, neu=""):
+    """text[start:ende] durch neu ersetzen bzw. samt einem Leerzeichen (und einer dadurch leeren Zeile) herausnehmen."""
+    if neu:
+        return text[:start] + neu + text[ende:]
+    vor, nach = text[:start], text[ende:]
+    if nach[:1] == " ":
+        nach = nach[1:]
+    elif vor[-1:] == " ":
+        vor = vor[:-1]
+    if (not vor or vor.endswith("\n")) and nach[:1] == "\n":
+        nach = nach[1:]
+    elif not nach and vor.endswith("\n"):
+        vor = vor[:-1]
+    return vor + nach
+
+
+def _frog_befund(block, st, gw, weg, phalangen, alte):
+    """Beschreibung einer Untersuchung (Text ohne Überschriften) → (neuer Text, Sätze ohne Platz in der Vorlage).
+    alte: Sätze einer früheren Fassung bzw. derselben (noch einmal eingesetzt) – ihre Stelle gilt wie der Vorlagensatz."""
+    for satz in dict.fromkeys(alte):
+        art = "g" if _FROG_GEW_SATZ.match(satz) else "s"
+        while satz and satz in block:
+            i = block.index(satz)
+            block = _satz_raus(block, i, i + len(satz), "" if _FROG_MARKE[art] in block else _FROG_MARKE[art])
+    rest, neu_st, neu_gw = [], " ".join(st), " ".join(gw)
+    m = _FROG_STELLUNG.search(block)
+    p = _FROG_PHALANGEN.search(block) if m is None else None
+    if m:
+        block = _satz_raus(block, m.start(), m.end(), neu_st)
+    elif p and phalangen:
+        block = _satz_raus(block, p.start(), p.end(), neu_st)
+    elif p and neu_st:
+        block = block[:p.end()] + " " + neu_st + block[p.end():]
+    elif _FROG_MARKE["s"] in block:
+        i = block.index(_FROG_MARKE["s"])
+        block = _satz_raus(block, i, i + len(_FROG_MARKE["s"]), neu_st)
+    else:
+        rest += st
+    m = _FROG_GEWOELBE.search(block)
+    if m:
+        if weg or neu_gw:
+            block = _satz_raus(block, m.start(), m.end(), "" if weg else neu_gw)
+    elif _FROG_MARKE["g"] in block:
+        i = block.index(_FROG_MARKE["g"])
+        block = _satz_raus(block, i, i + len(_FROG_MARKE["g"]), "" if weg else neu_gw)
+    elif any(not _FROG_GEW_NORMAL.match(s) for s in gw):
+        rest += gw
+    for marke in _FROG_MARKE.values():
+        while marke in block:
+            i = block.index(marke)
+            block = _satz_raus(block, i, i + len(marke))
+    return block, rest
+
+
+def _frog_einsetzen(zeilen, teile, i, b, e):
+    """FROG-Text in die Untersuchung teile[i] einsetzen (Beschreibung: Sätze an die Stelle der Vorlagensätze, Ergebnis:
+    Begriffe zuerst, Schlussanmerkung unten). Hinweise, eingesetzte Zeilen und Zuordnung nach e."""
+    a = teile[i]
+    plan = _frog_plan(b, a.titel, a.seite, a.segment, e.hinweise)
+    for mw in map(messwert, b.befundteil):   # ein abweichend DIKTIERTER Winkel bleibt ein Hinweis (nichts wird geändert)
+        if mw is not None and not _abschnitt_zeile(mw.zeile):
+            art, gefunden = im_text(mw, a.segment or "")
+            if art == "anders":
+                e.hinweise.append(f"{b.name}: {mw.name} diktiert {gefunden}, laut IB Lab {mw.wert} – bitte prüfen")
+    if plan is None:
+        return
+    st, gw, weg, _punkt, _schluss = plan
+    punkte = _frog_punkte(plan)
+    bs = (a.befund if a.befund >= 0 else a.start) + 1
+    be = a.ergebnis if a.ergebnis >= 0 else a.ende
+    alt = "\n".join(zeilen[bs:be])
+    ersetzt = [z for z in e.nicht_entfernt if z and z in alt]        # Sätze einer älteren Fassung (mitten im Absatz)
+    block, rest = _frog_befund(alt, st, gw, weg, b.befundtext["phalangen"], ersetzt + st + gw)
+    e.nicht_entfernt = [z for z in e.nicht_entfernt if z not in ersetzt]
+    if block != alt:
+        neu = block.split("\n")
+        zeilen[bs:be] = neu
+        _verschieben(teile, i, len(neu) - (be - bs))
+    if rest:
+        if block.strip():
+            e.hinweise.append(f"{b.name}: Satz der Vorlage zu Zehenstellung/Fußgewölbe nicht gefunden – IB-Lab-Sätze "
+                              "am Ende der Beschreibung, bitte prüfen")
+        _verschieben(teile, i, _befund_anfuegen(zeilen, a, rest))
+    if punkte:
+        _verschieben(teile, i, _ergebnis_vorne(zeilen, a, punkte, a.segment, b, e.hinweise), nur_ende=True)
+    da = "\n".join(zeilen[a.start:a.ende])
+    e.eingesetzt[b.schluessel] = [s for s in dict.fromkeys(st + gw) if s in da] + punkte
+    e.zuordnung[b.modul] = a.titel or "Befund"
+
+
 def befund_zeilen(b):
     """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
     wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
     Zeile steht."""
-    if b.modul in BEFUND_OHNE_ZEILEN:
+    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b):
         return []
     if b.modul not in BEFUND_NUR_AUFFAELLIG:
         return list(b.befundteil)
@@ -997,10 +1237,15 @@ def auffaellige_zeilen(bausteine):
     """Befundzeilen, aus deren Messwert ein Ergebnispunkt wurde, und die Ergebnispunkte selbst (in Baustein-Reihenfolge)."""
     out = []
     for b in bausteine or []:
+        if _frog_text(b):                  # v3.19.8: die pathologischen Sätze und die lateinischen Begriffe
+            bt = b.befundtext
+            out += [s for s in bt["stellung"] + bt["gewoelbe"] if not _FROG_GEW_NORMAL.match(s) and s not in out]
+            out += [t for t in (f"{x['text']} {x['seite']}".strip() for x in bt["begriffe"]) if t not in out]
+            continue
         for z, t in zip(b.befundteil, _treffer(b)):
             if t:
                 out.append(z)
-        out += [p for p in b.ergebnis if p not in out and not ist_lama_schluss(p)]
+        out += [p for p in b.ergebnis if p not in out and not ist_schluss(p)]
     return out
 
 
@@ -1085,9 +1330,19 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     e = Einsatz(report="")
     teile = []
     for titel, bs in gruppen:
-        befund = [z for b in bs for z in befund_zeilen(b)]
-        punkte = [p for b in bs for p in b.ergebnis]
-        punkte = [p for p in punkte if not ist_lama_schluss(p)] + [p for p in punkte if ist_lama_schluss(p)]
+        je = {}                                  # Baustein → (Befundzeilen, Ergebnispunkte)
+        for b in bs:
+            if _frog_text(b):                    # v3.19.8: nur die FROG-Sätze (ohne Vorlagentext) + Begriffe + Schluss
+                plan = _frog_plan(b, titel, Abschnitt(titel, 0, 0).seite, "", [])
+                je[b.schluessel] = (_frog_zeilen(plan, punkte=False), _frog_punkte(plan)) if plan else ([], [])
+            else:
+                je[b.schluessel] = (befund_zeilen(b), list(b.ergebnis))
+            e.behandelt[b.schluessel] = b.version
+        befund = [z for b in bs for z in je[b.schluessel][0]]
+        punkte = [p for b in bs for p in je[b.schluessel][1]]
+        punkte = [p for p in punkte if not ist_schluss(p)] + [p for p in punkte if ist_schluss(p)]
+        if not befund and not punkte:            # z. B. Vorfuß mit FROG nur seitlich auffällig: nichts für diese Untersuchung
+            continue
         block = [f"## {titel}"]
         if befund:
             block += ["", "## Befund"] + befund
@@ -1095,9 +1350,10 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
             block += ["", br.ergebnis_nummerieren("## Ergebnis\n" + "\n".join(punkte))]
         teile.append("\n".join(block))
         for b in bs:
-            e.behandelt[b.schluessel] = b.version
-            e.eingesetzt[b.schluessel] = befund_zeilen(b) + list(b.ergebnis)
+            e.eingesetzt[b.schluessel] = je[b.schluessel][0] + je[b.schluessel][1]
             e.zuordnung[b.modul] = titel
+    if not teile:
+        return None
     e.report = "\n\n".join(teile).strip()
     e.zeilen = [z for zs in e.eingesetzt.values() for z in zs]
     return e

@@ -1,0 +1,771 @@
+{
+ "quelle": "ris-mods ibl/tests/fixtures_frog/letzte10_20261117.json + Beispielbild; erzeugt mit vorbefund.erstelle_vorbefund + bruecke.baustein_lesen (Abholer 1.3.7)",
+ "faelle": [
+  {
+   "nr": 1,
+   "untersuchung": "Vorfuß",
+   "cas_code": "vofu2",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170011",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Hallux-valgus-Winkel rechts 17,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II rechts 7,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel rechts 14,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V rechts 25,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V rechts 8,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V rechts 5,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite rechts 80,6 mm (IB Lab FROG).",
+     "Hallux-valgus-Winkel links 27,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II links 11,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel links 14,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V links 27,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V links 8,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V links 7,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite links 86,6 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Mittelgradiger Hallux valgus links.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Valgusstellung der Großzehe links mit einem Hallux-valgus-Winkel von 27° (Norm 0–15°)."
+     ],
+     "gewoelbe": [
+      "Das Fußgewölbe ist regulär ausgebildet."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": false,
+     "phalangen": true,
+     "ein_fuss": false,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Mittelgradiger Hallux valgus",
+       "seite": "links"
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 2,
+   "untersuchung": "Fuß",
+   "cas_code": "fussl",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170021",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 22,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 8,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 13,0° (IB Lab FROG).",
+     "Talocalcanealwinkel d.p. 25,0° (IB Lab FROG).",
+     "Vorfußadduktionswinkel 17,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 25,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 5,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V -5,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 82,7 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 23,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 116,0° (IB Lab FROG).",
+     "Meary-Winkel 4,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 47,0° (IB Lab FROG).",
+     "Talusneigungswinkel 25,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 29,0° (IB Lab FROG).",
+     "Cuboidhöhe 17,1 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 104,1 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Mittelgradiger Hallux valgus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22° (Norm 0–15°)."
+     ],
+     "gewoelbe": [
+      "Das Fußgewölbe ist regulär ausgebildet."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": false,
+     "phalangen": true,
+     "ein_fuss": true,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Mittelgradiger Hallux valgus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 3,
+   "untersuchung": "Fuß",
+   "cas_code": "fuss2",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170031",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 23,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 9,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 19,0° (IB Lab FROG).",
+     "Talocalcanealwinkel d.p. 22,0° (IB Lab FROG).",
+     "Vorfußadduktionswinkel 6,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 35,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 10,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 16,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 110,7 mm (IB Lab FROG).",
+     "Fuß d.p. (Aufnahme 2, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 29,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 10,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 19,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 39,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 11,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 8,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 106,2 mm (IB Lab FROG).",
+     "Fuß d.p. (Aufnahme 3, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 17,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 10,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 11,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 24,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 8,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 24,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 99,5 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 4, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 21,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 118,0° (IB Lab FROG).",
+     "Meary-Winkel 4,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 47,0° (IB Lab FROG).",
+     "Talusneigungswinkel 26,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 30,0° (IB Lab FROG).",
+     "Cuboidhöhe 12,8 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 109,1 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 5, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 15,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 128,0° (IB Lab FROG).",
+     "Meary-Winkel -6,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 47,0° (IB Lab FROG).",
+     "Talusneigungswinkel 32,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 26,0° (IB Lab FROG).",
+     "Cuboidhöhe 10,4 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 110,4 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Pes planus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [
+     "IB Lab FROG: 3 d.p. Aufnahme(n) ohne Seitenangabe nicht sicher zuzuordnen – nicht in den Text übernommen (auffällig: Hallux-valgus-Winkel 23°, Metatarsophalangealwinkel V 16°, Hallux-valgus-Winkel 29°, Metatarsophalangealwinkel V 24°), Winkel an den KI-Bildern ablesen.",
+     "IB Lab FROG: Seite der seitlichen Aufnahme nicht sicher (SR ohne Seite) – Text ohne Seite, die Seite am Bild ablesen und ergänzen."
+    ],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [],
+     "gewoelbe": [
+      "Abgeflachtes Längsgewölbe mit einer Calcaneusneigung von 15° (Norm 20–30°)."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": true,
+     "phalangen": false,
+     "ein_fuss": false,
+     "begriffe": [
+      {
+       "art": "gewoelbe",
+       "text": "Pes planus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 4,
+   "untersuchung": "Fuß",
+   "cas_code": "fussr",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170041",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 16,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 9,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 8,0° (IB Lab FROG).",
+     "Talocalcanealwinkel d.p. 14,0° (IB Lab FROG).",
+     "Vorfußadduktionswinkel 17,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 22,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 7,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 2,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 99,0 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 22,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 121,0° (IB Lab FROG).",
+     "Meary-Winkel 9,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 46,0° (IB Lab FROG).",
+     "Talusneigungswinkel 24,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 33,0° (IB Lab FROG).",
+     "Cuboidhöhe 12,3 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 105,6 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 5,
+   "untersuchung": "Fuß",
+   "cas_code": "fuss2",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170051",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Fuß seitlich (Aufnahme 1, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 26,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 113,0° (IB Lab FROG).",
+     "Meary-Winkel 10,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 45,0° (IB Lab FROG).",
+     "Talusneigungswinkel 19,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 29,0° (IB Lab FROG).",
+     "Cuboidhöhe 17,5 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 105,4 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 22,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 118,0° (IB Lab FROG).",
+     "Meary-Winkel 7,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 42,0° (IB Lab FROG).",
+     "Talusneigungswinkel 20,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 27,0° (IB Lab FROG).",
+     "Cuboidhöhe 12,7 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 102,6 mm (IB Lab FROG).",
+     "Fuß d.p.:",
+     "Hallux-valgus-Winkel rechts 18,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II rechts 10,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel rechts 12,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V rechts 28,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V rechts 10,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V rechts 9,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite rechts 94,2 mm (IB Lab FROG).",
+     "Hallux-valgus-Winkel links 27,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II links 12,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel links 22,0° (IB Lab FROG).",
+     "Talocalcanealwinkel d.p. links 33,0° (IB Lab FROG).",
+     "Vorfußadduktionswinkel links 11,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V links 26,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V links 6,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V links 7,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite links 97,9 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Geringgradiger Hallux valgus rechts. Mittelgradiger Hallux valgus links.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 18° und links 27° (Norm 0–15°)."
+     ],
+     "gewoelbe": [
+      "Das Fußgewölbe ist regulär ausgebildet."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": false,
+     "phalangen": true,
+     "ein_fuss": false,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Geringgradiger Hallux valgus",
+       "seite": "rechts"
+      },
+      {
+       "art": "dp",
+       "text": "Mittelgradiger Hallux valgus",
+       "seite": "links"
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 6,
+   "untersuchung": "OSG mit Fuß",
+   "cas_code": "spruful",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170061",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 11,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 12,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 9,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 30,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 11,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 14,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 88,8 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 26,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 109,0° (IB Lab FROG).",
+     "Meary-Winkel 10,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 48,0° (IB Lab FROG).",
+     "Talusneigungswinkel 21,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 31,0° (IB Lab FROG).",
+     "Cuboidhöhe 17,5 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 88,8 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Digitus quintus varus. Pes cavus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Varusstellung der Kleinzehe mit einem Metatarsophalangealwinkel V von 14° (Norm 0–10°)."
+     ],
+     "gewoelbe": [
+      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 109° (Norm 115–135°)."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": true,
+     "phalangen": true,
+     "ein_fuss": true,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Digitus quintus varus",
+       "seite": ""
+      },
+      {
+       "art": "gewoelbe",
+       "text": "Pes cavus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 7,
+   "untersuchung": "Fuß",
+   "cas_code": "fuss2",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170071",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Fuß seitlich (Aufnahme 1, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 30,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 116,0° (IB Lab FROG).",
+     "Meary-Winkel -2,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 58,0° (IB Lab FROG).",
+     "Talusneigungswinkel 28,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 26,0° (IB Lab FROG).",
+     "Cuboidhöhe 19,8 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 93,5 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 34,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 115,0° (IB Lab FROG).",
+     "Meary-Winkel -3,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 61,0° (IB Lab FROG).",
+     "Talusneigungswinkel 28,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 24,0° (IB Lab FROG).",
+     "Cuboidhöhe 18,6 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 94,7 mm (IB Lab FROG).",
+     "Fuß d.p.:",
+     "Hallux-valgus-Winkel rechts 31,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II rechts 16,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel rechts 23,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V rechts 36,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V rechts 7,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V rechts 11,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite rechts 98,2 mm (IB Lab FROG).",
+     "Hallux-valgus-Winkel links 30,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II links 16,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel links 21,0° (IB Lab FROG).",
+     "Talocalcanealwinkel d.p. links 21,0° (IB Lab FROG).",
+     "Vorfußadduktionswinkel links 0,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V links 34,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V links 6,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V links 11,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite links 94,1 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Mittelgradiger Hallux valgus beidseits. Metatarsus primus varus beidseits. Pes cavus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [
+     "IB Lab FROG: Seite der seitlichen Aufnahme nicht sicher (SR ohne Seite) – Text ohne Seite, die Seite am Bild ablesen und ergänzen."
+    ],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 31° und links 30° (Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von rechts 16° und links 16° (Norm 0–10°)."
+     ],
+     "gewoelbe": [
+      "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 34° (Norm 20–30°)."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": true,
+     "phalangen": true,
+     "ein_fuss": false,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Mittelgradiger Hallux valgus",
+       "seite": "beidseits"
+      },
+      {
+       "art": "dp",
+       "text": "Metatarsus primus varus",
+       "seite": "beidseits"
+      },
+      {
+       "art": "gewoelbe",
+       "text": "Pes cavus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 8,
+   "untersuchung": "OSG mit Fuß",
+   "cas_code": "sprufu2",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170081",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 1,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 7,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel -2,0° (IB Lab FROG).",
+     "Talocalcanealwinkel d.p. 31,0° (IB Lab FROG).",
+     "Vorfußadduktionswinkel 11,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 20,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 6,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 9,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 85,8 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 29,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 110,0° (IB Lab FROG).",
+     "Meary-Winkel 2,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 61,0° (IB Lab FROG).",
+     "Talusneigungswinkel 32,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 33,0° (IB Lab FROG).",
+     "Cuboidhöhe 18,0 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 102,2 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Pes cavus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [],
+     "gewoelbe": [
+      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 110° (Norm 115–135°)."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": true,
+     "phalangen": false,
+     "ein_fuss": true,
+     "begriffe": [
+      {
+       "art": "gewoelbe",
+       "text": "Pes cavus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 9,
+   "untersuchung": "Fuß",
+   "cas_code": "fussr",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170091",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 7,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 9,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 4,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 22,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 7,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V 11,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 85,7 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 18,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 131,0° (IB Lab FROG).",
+     "Meary-Winkel -12,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 55,0° (IB Lab FROG).",
+     "Talusneigungswinkel 37,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 25,0° (IB Lab FROG).",
+     "Cuboidhöhe 9,7 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 97,0 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Pes planus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [],
+     "gewoelbe": [
+      "Abgeflachtes Längsgewölbe mit einem Meary-Winkel von −12° (Norm −4 bis 4°)."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": true,
+     "phalangen": false,
+     "ein_fuss": true,
+     "begriffe": [
+      {
+       "art": "gewoelbe",
+       "text": "Pes planus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 10,
+   "untersuchung": "Fuß",
+   "cas_code": "fussl",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170101",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Fuß d.p. (Aufnahme 1, Seite am Bild prüfen):",
+     "Hallux-valgus-Winkel 19,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II 7,0° (IB Lab FROG).",
+     "Distaler metatarsaler Gelenkflächenwinkel 16,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/V 26,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel IV/V 10,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V -2,0° (IB Lab FROG).",
+     "Knöcherne Fußbreite 81,0 mm (IB Lab FROG).",
+     "Fuß seitlich (Aufnahme 2, Seite am Bild prüfen):",
+     "Calcaneusneigungswinkel 19,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier 123,0° (IB Lab FROG).",
+     "Meary-Winkel -5,0° (IB Lab FROG).",
+     "Talocalcanealwinkel seitlich 49,0° (IB Lab FROG).",
+     "Talusneigungswinkel 29,0° (IB Lab FROG).",
+     "Neigungswinkel Metatarsale I 25,0° (IB Lab FROG).",
+     "Cuboidhöhe 10,7 mm (IB Lab FROG).",
+     "Länge des 1. Strahls (sagittal) 93,9 mm (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Geringgradiger Hallux valgus.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 19° (Norm 0–15°)."
+     ],
+     "gewoelbe": [
+      "Das Fußgewölbe ist regulär ausgebildet."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": false,
+     "phalangen": true,
+     "ein_fuss": true,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Geringgradiger Hallux valgus",
+       "seite": ""
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  },
+  {
+   "nr": 11,
+   "untersuchung": "Fuß",
+   "cas_code": "fussl",
+   "beschreibung": "Beispielbild FROG V1.1.3 (Brief)",
+   "baustein": {
+    "accno": "202611170111",
+    "ziffer": 1,
+    "modul": "frog",
+    "name": "FROG",
+    "modul_name": "IB Lab FROG",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "links"
+    ],
+    "befundteil": [
+     "Fuß d.p. links:",
+     "Hallux-valgus-Winkel links 42,0° (IB Lab FROG).",
+     "Intermetatarsalwinkel I/II links 19,0° (IB Lab FROG).",
+     "Metatarsophalangealwinkel V links 6,0° (IB Lab FROG).",
+     "Fuß seitlich links:",
+     "Calcaneusneigungswinkel links 37,0° (IB Lab FROG).",
+     "Längsgewölbewinkel nach Djian-Annonier links 101,0° (IB Lab FROG).",
+     "Meary-Winkel links 6,0° (IB Lab FROG)."
+    ],
+    "ergebnis": [
+     "Hochgradiger Hallux valgus links. Metatarsus primus varus links. Pes cavus links.",
+     "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": [],
+    "befundtext": {
+     "format": 1,
+     "stellung": [
+      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 42° (Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von 19° (Norm 0–10°)."
+     ],
+     "gewoelbe": [
+      "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 37° (Norm 20–30°) und einem Längsgewölbewinkel von 101° (Norm 115–135°)."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": true,
+     "phalangen": true,
+     "ein_fuss": true,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Hochgradiger Hallux valgus",
+       "seite": "links"
+      },
+      {
+       "art": "dp",
+       "text": "Metatarsus primus varus",
+       "seite": "links"
+      },
+      {
+       "art": "gewoelbe",
+       "text": "Pes cavus",
+       "seite": "links"
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   }
+  }
+ ]
+}

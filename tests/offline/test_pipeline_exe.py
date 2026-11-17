@@ -76,7 +76,10 @@ erg = pl.befund_aus_diktat("Schulter rechts Punkt Omarthrose Punkt Ellbogen rech
 check("Mehr-Regionen: Schulter (LLM) + Ellbogen (Bypass), zusammengefügt",
       len(erg.segmente) == 2 and len(aufrufe) == 1 and erg.vollstaendig and erg.report.count("## Ergebnis") == 2
       and "Ellbogengelenk rechts in 2 Ebenen" in erg.report, erg.report[:300])
-check("Protokoll je Segment (Mess-Harness)", [p["template"] for p in prot] == ["schultergelenk_in_2_ebenen", "ellbogengelenk_in_2_ebenen"],
+# Die Segmente laufen parallel (ThreadPoolExecutor) → die Reihenfolge der Protokolleinträge ist zufällig (Wackeltest);
+# geprüft wird je Segment genau ein Eintrag.
+check("Protokoll je Segment (Mess-Harness)",
+      sorted(p["template"] for p in prot) == ["ellbogengelenk_in_2_ebenen", "schultergelenk_in_2_ebenen"],
       str([p["template"] for p in prot]))
 gestartet = []
 pl.befund_aus_diktat("Knie rechts unauffällig", ctx(), beim_start=lambda: gestartet.append(1))

@@ -217,6 +217,16 @@
    "out": "## Ergebnis\nRegelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
   },
   {
+   "name": "FROG-Schlussanmerkung unnummeriert, zwei Punkte nummeriert (Georg 17.11.2026)",
+   "in": "## Ergebnis\nHochgradiger Hallux valgus links. Pes cavus links.\nArthrose im Großzehengrundgelenk links.\nWeitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+   "out": "## Ergebnis\n1. Hochgradiger Hallux valgus links. Pes cavus links.\n2. Arthrose im Großzehengrundgelenk links.\nWeitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+  },
+  {
+   "name": "FROG: ein Punkt + Schlussanmerkung → beide ohne Nummer",
+   "in": "## Ergebnis\n1. Pes planus rechts.\nWeitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+   "out": "## Ergebnis\nPes planus rechts.\nWeitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+  },
+  {
    "name": "Fettmarken",
    "in": "## Ergebnis\n**1.** Fraktur des Radiusköpfchens.\n**2.** Gelenkserguss.",
    "out": "## Ergebnis\n1. Fraktur des Radiusköpfchens.\n2. Gelenkserguss."

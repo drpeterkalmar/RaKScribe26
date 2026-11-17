@@ -1,0 +1,69 @@
+IB Lab FROG – fester Fuß-Text (Georg Riegler 17.11.2026): 10 echte anonyme Fälle + Beispielbild.
+Je Fall: geänderter Teil der Beschreibung und das Ergebnis, wie KaiScribe 3.19.8 sie in den Normalbefund setzt.
+
+### Fall 1 – Vorfuß beidseits in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Valgusstellung der Großzehe links mit einem Hallux-valgus-Winkel von 27° (Norm 0–15°).
+Ergebnis:
+Mittelgradiger Hallux valgus links.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 2 – Fuß links in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22° (Norm 0–15°). Das Fußgewölbe ist regulär ausgebildet.
+Ergebnis:
+Mittelgradiger Hallux valgus links.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 3 – Fuß beidseits in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Abgeflachtes Längsgewölbe mit einer Calcaneusneigung von 15° (Norm 20–30°).
+Ergebnis:
+Pes planus.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 4 – Fuß rechts in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: (unverändert)
+Ergebnis:
+Regelrechte Darstellung des Fußskeletts rechts.
+
+### Fall 5 – Fuß beidseits in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 18° und links 27° (Norm 0–15°). Das Fußgewölbe ist regulär ausgebildet.
+Ergebnis:
+Geringgradiger Hallux valgus rechts. Mittelgradiger Hallux valgus links.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 6 – Sprunggelenk links in 2 Ebenen mit Fuß (echter Fall, anonym (17.11.2026))
+Beschreibung: Varusstellung der Kleinzehe mit einem Metatarsophalangealwinkel V von 14° (Norm 0–10°). Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 109° (Norm 115–135°).
+Ergebnis:
+1. Digitus quintus varus links. Pes cavus links.
+2. Regelrechte Darstellung des oberen Sprunggelenkes links.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 7 – Fuß beidseits in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 31° und links 30° (Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von rechts 16° und links 16° (Norm 0–10°). Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 34° (Norm 20–30°).
+Ergebnis:
+Mittelgradiger Hallux valgus beidseits. Metatarsus primus varus beidseits. Pes cavus.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 8 – Sprunggelenk beidseits in 2 Ebenen mit Fuß (echter Fall, anonym (17.11.2026))
+Beschreibung: Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 110° (Norm 115–135°).
+Ergebnis:
+1. Pes cavus.
+2. Regelrechte Darstellung des oberen Sprunggelenkes beidseits.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 9 – Fuß rechts in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Abgeflachtes Längsgewölbe mit einem Meary-Winkel von −12° (Norm −4 bis 4°).
+Ergebnis:
+Pes planus rechts.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 10 – Fuß links in 2 Ebenen (echter Fall, anonym (17.11.2026))
+Beschreibung: Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 19° (Norm 0–15°). Das Fußgewölbe ist regulär ausgebildet.
+Ergebnis:
+Geringgradiger Hallux valgus links.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+
+### Fall 11 – Fuß links in 2 Ebenen (Beispielbild FROG V1.1.3 (Brief))
+Beschreibung: Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 42° (Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von 19° (Norm 0–10°). Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 37° (Norm 20–30°) und einem Längsgewölbewinkel von 101° (Norm 115–135°).
+Ergebnis:
+Hochgradiger Hallux valgus links. Metatarsus primus varus links. Pes cavus links.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.

@@ -236,9 +236,12 @@ check("Pipeline c): Diktat gewinnt, Hinweise im Ergebnis (nicht im Befundtext)",
 prompts = []
 erg = pl.befund_aus_diktat("HWS: Steilstellung. Schulter rechts: Bursitis subacromialis.",
                            kontext(cv.CasHinweis([HWS, SOSUR], T), prompts))
+# Die beiden Befunde entstehen parallel (pipeline: ThreadPoolExecutor) → die Reihenfolge der KI-Aufrufe ist zufällig
+# (Test war dadurch etwa jedes 8. Mal rot); geprüft wird deshalb die Menge der Aufrufe und die feste Reihenfolge im Ergebnis.
 check("Pipeline f): HWS Röntgen + Schulter Sono → zwei Befunde, Schulter mit Sono-Titel",
-      [p.rsplit("<untersuchung>", 1)[1].split("</untersuchung>")[0] for p in prompts]
-      == ["Halswirbelsäule in 2 Ebenen", "Sonographie des Schultergelenkes"], str(erg.vorlagen))
+      sorted(p.rsplit("<untersuchung>", 1)[1].split("</untersuchung>")[0] for p in prompts)
+      == ["Halswirbelsäule in 2 Ebenen", "Sonographie des Schultergelenkes"]
+      and erg.vorlagen == ["halswirbelsäule_in_2_ebenen", "sonografie_schultergelenk"], str(erg.vorlagen))
 
 # v3.15.4 (Peter 15.10., Ordi-Probelauf: Leistung „Handgelenk bds.“, Diktat „SL-Spalt links, ansonsten unauffällig“ →
 # 1. Versuch nur „Handgelenk links in 2 Ebenen“): beidseitige CAS-Leistung → IMMER beidseitiger Befund (deterministisch)
