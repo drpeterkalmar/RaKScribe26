@@ -148,6 +148,7 @@ class Leistung:
     modalitaet: Optional[str]
     seite: Optional[str]
     regionen: set = field(default_factory=set)
+    funktion_grund: Optional[str] = None   # kaiscribe-funktion-n1: Funktionsaufnahmen-Leistung → Grund-Vorlage (HWS/LWS in 2 Ebenen)
 
     @property
     def spezifisch(self):
@@ -183,6 +184,37 @@ def zusatz_vorlage(v, text, templates):
         if v == grund and erweitert in templates and muster.search(text or ""):
             return erweitert
     return v
+
+
+# kaiscribe-funktion-n1 (RH 97, Peter 17.11.2026: „KaiScribe hat Funktion vergessen“): Die Brücke ordnet „HWS ap u. seitl.
+# incl.Funktion“ (auch „HWS + Funktion“, „LWS mit Funktionaufnahmen“) der Funktions-Vorlage zu. Das Diktat „HWS …“ erkennt
+# die Grund-Vorlage, abgleich nahm sie als die genauere – die Funktionsaufnahmen fielen still weg (Titel + Befund).
+# Jetzt: Leistungstext mit Grund-Untersuchung UND „Funktion“ = zwei Untersuchungen (Grund-Vorlage + Funktions-Vorlage),
+# je ein eigener Abschnitt. Nur „Funktionsaufnahmen HWS“ (keine Grund-Untersuchung) = nur die Funktions-Vorlage, das
+# Diktat „HWS …“ bestätigt sie (wie #344 Patella axial). Nur der Leistungstext zählt, nie das Diktat („Funktionsaufnahmen
+# empfohlen“ macht keinen Abschnitt). BWS hat keine Funktions-Vorlage → unverändert.
+FUNKTION_VORLAGEN = {"hws": ("halswirbelsäule_in_2_ebenen", "funktionsaufnahmen_der_halswirbelsäule"),
+                     "lws": ("lendenwirbelsäule_in_2_ebenen", "funktionsaufnahmen_der_lendenwirbelsäule")}
+FUNKTION_LABEL = {"hws": "Funktion HWS", "lws": "Funktion LWS"}
+_FUNKTION_TEXT = re.compile(r"funktion", re.I)
+_NUR_FUNKTION = re.compile(r"^\W*funktion", re.I)
+# diktierte Sätze über die Funktionsaufnahmen (Beuge-/Streckaufnahmen)
+_FUNKTION_DIKTAT = re.compile(r"funktion|flexion|inklination|reklination|beugeaufnahme|bewegungsdiagramm", re.I)
+
+
+def funktion_region(text, v, templates):
+    """„hws“/„lws“, wenn der Leistungstext Funktionsaufnahmen nennt und die Brücke die Grund- oder Funktions-Vorlage
+    dieser Region zuordnete (bzw. keine), sonst None."""
+    if not _FUNKTION_TEXT.search(text or ""):
+        return None
+    reg = regionen(text) & set(FUNKTION_VORLAGEN)
+    if len(reg) != 1:
+        return None
+    r = reg.pop()
+    grund, funk = FUNKTION_VORLAGEN[r]
+    if grund not in templates or funk not in templates or v not in (None, grund, funk):
+        return None
+    return r
 
 
 def beidseits(w):
@@ -255,12 +287,23 @@ class CasHinweis:
                 v = None                     # Key aus einer neueren Zuordnung, den diese RaKScribe nicht kennt
             text = d.get("text") or ""
             v = zusatz_vorlage(v, text, templates)
-            mod = modalitaet_key(v, templates) if v and not generisch(v, templates) else None
-            mod = mod or d.get("modalitaet")
-            self.alle.append(Leistung(
-                kurz=str(d.get("kurz") or ""), label=label(text, d.get("kurz"), mod), vorlage=v, modalitaet=mod,
-                seite=d.get("seite") or seite_aus_text(text),
-                regionen=regionen(text + " " + (vorlagen_text(v, templates) if v else ""))))
+            fr = funktion_region(text, v, templates)
+            if fr:                           # kaiscribe-funktion-n1: Grund-Untersuchung + Funktionsaufnahmen
+                grund, funk = FUNKTION_VORLAGEN[fr]
+                if not _NUR_FUNKTION.match(text):
+                    self._neu(d, text, grund, templates)
+                self._neu(d, text, funk, templates, funktion_grund=grund,
+                          anzeige=None if _NUR_FUNKTION.match(text) else FUNKTION_LABEL[fr])
+                continue
+            self._neu(d, text, v, templates)
+
+    def _neu(self, d, text, v, templates, funktion_grund=None, anzeige=None):
+        mod = modalitaet_key(v, templates) if v and not generisch(v, templates) else None
+        mod = mod or d.get("modalitaet")
+        self.alle.append(Leistung(
+            kurz=str(d.get("kurz") or ""), label=anzeige or label(text, d.get("kurz"), mod), vorlage=v, modalitaet=mod,
+            seite=d.get("seite") or seite_aus_text(text),
+            regionen=regionen(text + " " + (vorlagen_text(v, templates) if v else "")), funktion_grund=funktion_grund))
 
     def __bool__(self):
         return bool(self.alle)
@@ -303,6 +346,9 @@ def abgleich(key, text, cas, templates):
             return l, key
     for l in cas.alle:   # #344: Diktat „Knie links …“ ↔ CAS „Knie li mit Patella axial“ → die erweiterte CAS-Vorlage
         if l.vorlage in ZUSATZ_VORLAGEN and ZUSATZ_VORLAGEN[l.vorlage][0] == key:
+            return l, l.vorlage
+    for l in cas.alle:   # kaiscribe-funktion-n1: Diktat „HWS …“ ↔ nur „Funktionsaufnahmen HWS“ laut CAS → Funktions-Vorlage
+        if l.funktion_grund and l.funktion_grund == key:
             return l, l.vorlage
     reg = regionen(vorlagen_text(key, templates))
     if not reg:
@@ -387,7 +433,9 @@ def wahl(seg, cas, templates, erkennen):
                 return Wahl(v, "kopf", l, d)
     if generisch(d, templates):
         mod_d = modalitaet_key(d, templates) or modalitaet_text(seg)
-        kandidaten = [l for l in cas.mit_vorlage if mod_d is None or l.modalitaet == mod_d]
+        # kaiscribe-funktion-n1: der Funktions-Teil von „HWS + Funktion“ zählt nicht als eigene Kandidatin (er folgt der
+        # Grund-Untersuchung, funktion_ergaenzen)
+        kandidaten = [l for l in cas.mit_vorlage if (mod_d is None or l.modalitaet == mod_d) and not _funktion_teil(l, cas)]
         if len({l.vorlage for l in kandidaten}) == 1:
             return Wahl(kandidaten[0].vorlage, "cas", kandidaten[0], d)
         for _, satz in s[1:]:
@@ -444,7 +492,7 @@ def aufteilen(segmente, cas, templates, erkennen):
     """Mehrere CAS-Untersuchungen: Abschnitte zusätzlich an Satzanfängen teilen, die eine ANDERE, noch nicht befundete
     CAS-Untersuchung nennen — seit v3.13.1 auch mitten im Satz, wenn das Diktat ohne Satzzeichen ankommt (siehe
     _innen_starts). Eine Untersuchung beginnt nur einmal (Rückbezug trennt nicht). Text bleibt unverändert."""
-    if len(set(l.vorlage or l.kurz for l in cas.alle if l.spezifisch or l.regionen)) < 2:
+    if len(set(l.vorlage or l.kurz for l in cas.alle if (l.spezifisch or l.regionen) and not _funktion_teil(l, cas))) < 2:
         return list(segmente)
     out, benutzt = [], set()
     for seg in segmente:
@@ -487,6 +535,8 @@ def hinweise(segmente, wahlen, cas, templates):
     for l in cas.alle:
         if not (l.vorlage or l.regionen):
             continue
+        if _funktion_teil(l, cas):
+            continue                     # kaiscribe-funktion-n1: folgt der Grund-Untersuchung (funktion_ergaenzen)
         diktiert = erwaehnt = False
         for seg, w in zip(segmente, wahlen):
             if w.leistung is l or (l.vorlage and w.vorlage == l.vorlage) or \
@@ -511,6 +561,87 @@ def hinweise(segmente, wahlen, cas, templates):
         elif beidseits(w) and br.diktierte_seite(seg) in _SEITE_GEGEN:
             out.append(f"Laut CAS beidseits ({w.leistung.label}): Befund beidseits, diktiert nur {br.diktierte_seite(seg)}")
     return out
+
+
+def _funktion_teil(l, cas):
+    """Funktions-Teil einer Leistung mit Grund-Untersuchung („HWS ap u. seitl. incl.Funktion“)?"""
+    return bool(l.funktion_grund) and any(x is not l and x.kurz == l.kurz and x.vorlage == l.funktion_grund
+                                          for x in cas.alle)
+
+
+def _empfehlung(satz):
+    rx = br._kurz()["empf"]
+    return bool(rx is not None and rx.search(satz.lower()))
+
+
+def funktion_saetze(seg):
+    """Diktierte Sätze über die Funktionsaufnahmen in einem Abschnitt → (Funktions-Text, Rest) bzw. (None, seg).
+    „Funktionsaufnahmen: Instabilität C4/5“ – der Satz nach dem Doppelpunkt gehört dazu. Empfehlungssätze („Funktions-
+    aufnahmen empfohlen“) zählen nicht (EMPFOHLEN ≠ GEMACHT). Der erste Satz nennt die Untersuchung und bleibt auch im Rest."""
+    s = saetze(seg)
+    funk, k = [], 0
+    while k < len(s):
+        a, t = s[k]
+        if _FUNKTION_DIKTAT.search(t) and not _empfehlung(t):
+            b = a + len(t)
+            while k + 1 < len(s) and seg[b:s[k + 1][0]].strip() == ":":
+                k += 1
+                b = s[k][0] + len(s[k][1])
+            funk.append((k == 0 or a == s[0][0], a, b))
+        k += 1
+    if not funk:
+        return None, seg
+    teil = ". ".join(seg[a:b].strip(" ,;") for _, a, b in funk).strip() + "."
+    rest, pos = [], 0
+    for erster, a, b in funk:
+        if not erster:
+            rest.append(seg[pos:a])
+            pos = b
+    rest.append(seg[pos:])
+    return teil, re.sub(r"(?:\s*[.;:]){2,}", ".", "".join(rest)).strip(" ,;\n")
+
+
+def funktion_ergaenzen(segmente, wahlen, cas, templates):
+    """kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS, aber kein eigener Abschnitt → einer direkt nach dem
+    Abschnitt der Grund-Untersuchung (HWS/LWS in 2 Ebenen). Diktierte Sätze über die Funktion („In Funktion keine
+    Instabilität“, „Funktionsaufnahmen: …“) gehen in diesen Abschnitt (Vorrang vor dem Normaltext, siehe
+    funktion_saetze). Ohne diktierte Funktion: Normalbefund der Funktions-Vorlage (Titel + Normaltext, ohne KI).
+    Hat bei „HWS … incl.Funktion“ der ganze Abschnitt die Funktions-Vorlage bekommen (Diktat nennt „Funktionsaufnahmen“),
+    wird er geteilt: Rest → Grund-Vorlage, Funktions-Sätze → Funktions-Abschnitt dahinter.
+    Grund-Untersuchung nicht diktiert → nichts (Hinweis „laut CAS, nicht diktiert“ wie bisher).
+    → (segmente, wahlen, [Log-Zeilen]); ohne Funktions-Leistung unverändert."""
+    segmente, wahlen, log = list(segmente), list(wahlen), []
+    for l in cas.alle:
+        if not l.funktion_grund:
+            continue
+        name = _anzeige(l.vorlage, templates)
+        i_f = next((j for j, w in enumerate(wahlen) if w.vorlage == l.vorlage), None)
+        i_g = next((j for j, w in enumerate(wahlen) if w.vorlage == l.funktion_grund), None)
+        if i_f is not None:
+            grund = next((x for x in cas.alle if x is not l and x.kurz == l.kurz and x.vorlage == l.funktion_grund), None)
+            if i_g is not None or grund is None:
+                continue                 # beide Abschnitte da bzw. nur Funktionsaufnahmen bestellt
+            teil, rest = funktion_saetze(segmente[i_f])
+            if not teil or not rest or teil.rstrip(". ") == rest.rstrip(". "):
+                continue                 # nur über die Funktion diktiert → ein Abschnitt
+            segmente[i_f] = rest
+            wahlen[i_f] = Wahl(grund.vorlage, "bestaetigt", grund, wahlen[i_f].erkannt)
+            i = i_f
+            log.append(f"{name}: Abschnitt geteilt, Grund-Untersuchung + diktierte Funktion")
+        elif i_g is not None:
+            i = i_g
+            teil, rest = funktion_saetze(segmente[i])
+            if teil:
+                segmente[i] = rest or segmente[i]
+                log.append(f"{name}: diktierte Funktion als eigener Abschnitt")
+            else:
+                teil = f"{name} unauffällig."
+                log.append(f"{name}: laut CAS ({l.kurz}), nichts Abweichendes diktiert → Normalbefund der Vorlage")
+        else:
+            continue
+        segmente.insert(i + 1, teil)
+        wahlen.insert(i + 1, Wahl(l.vorlage, "funktion", l, l.vorlage))
+    return segmente, wahlen, log
 
 
 def prompt_block(cas, templates):

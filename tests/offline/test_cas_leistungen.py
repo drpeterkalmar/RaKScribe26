@@ -328,6 +328,92 @@ for leist, diktat, soll, ki in (
           and bool(prompts) == ki and (not ki or "<untersuchung>Kniegelenk in 2 Ebenen mit Patella axial</untersuchung>"
                                         in prompts[0] or leist is KNIEL), titel)
 
+# kaiscribe-funktion-n1 (Echtfehler RH 97, 17.11.2026, KaiScribe 3.19.4, maskiert): CAS „HWS ap u. seitl. incl.Funktion“
+# (Brücke: Funktions-Vorlage) + „Schultergelenk rechts“, Diktat Schulter + HWS → die Funktionsaufnahmen fehlten komplett
+# (Titel und Befund), weil das Diktat „HWS …“ die Grund-Vorlage als die genauere durchsetzte.
+FHWS = "funktionsaufnahmen_der_halswirbelsäule"
+FLWS = "funktionsaufnahmen_der_lendenwirbelsäule"
+HWSMF = L("x-hws-funktion", "HWS ap u. seitl. incl.Funktion", "Röntgen", FHWS)
+HWSF = L("x-hws-plus-f", "HWS + Funktion", "Röntgen", FHWS)
+HWSINKL = L("x-hws-inkl", "HWS inkl. Funktion", "Röntgen", "halswirbelsäule_in_2_ebenen")
+LWSMF = L("x-lws-funktion", "LWS mit Funktionaufnahmen", "Röntgen", FLWS)
+NURF = L("x-nur-funktion", "Funktionsaufnahmen HWS", "Röntgen", FHWS)
+BWSF = L("x-bws-funktion", "Brustwirbelsäule + Funktion", "Röntgen", "brustwirbelsäule_in_2_ebenen")
+SCHULTERR = L("x-schulter-re", "Schultergelenk rechts", "Röntgen", "schultergelenk_in_2_ebenen", "rechts")
+RH97 = ("Rechte Schulter deszendierendes lateral deszendierendes Akromion ansonsten unauffällig. HWS flachbogig "
+        "rechtskonvexe Skoliose, Streckhaltung ansonsten unauffällig.")
+check("Funktion: Leistung mit Grund-Untersuchung → zwei Vorlagen, nur „Funktionsaufnahmen HWS“ → eine, BWS unverändert",
+      [[l.vorlage for l in cv.CasHinweis([x], T).alle] for x in (HWSMF, HWSF, HWSINKL, LWSMF, NURF, BWSF, HWS)]
+      == [["halswirbelsäule_in_2_ebenen", FHWS]] * 3 + [["lendenwirbelsäule_in_2_ebenen", FLWS], [FHWS],
+                                                       ["brustwirbelsäule_in_2_ebenen"], ["halswirbelsäule_in_2_ebenen"]])
+
+
+def titel_von(report):
+    return [z[3:] for z in report.splitlines() if z.startswith("## ") and z[3:] not in ("Befund", "Ergebnis")]
+
+
+prompts = []
+erg = pl.befund_aus_diktat(RH97, kontext(cv.CasHinweis([HWSMF, SCHULTERR], T), prompts))
+funk_block = erg.report.split("## Funktionsaufnahmen der Halswirbelsäule", 1)[-1]
+check("RH 97: Schulter + HWS in 2 Ebenen + Funktionsaufnahmen (eigener Abschnitt NACH der HWS, Normaltext ohne KI)",
+      titel_von(erg.report) == ["Schultergelenk in 2 Ebenen", "Halswirbelsäule in 2 Ebenen",
+                                "Funktionsaufnahmen der Halswirbelsäule"]
+      and erg.vorlagen == ["schultergelenk_in_2_ebenen", "halswirbelsäule_in_2_ebenen", FHWS]
+      and "Regelrechte Stellung in maximaler Ante- und Retroflexion" in funk_block
+      and "Kein Hinweis auf eine segmentale Instabilität" in funk_block
+      and len(prompts) == 2 and not any(f"<untersuchung>{T[FHWS]['display_name']}" in p for p in prompts)
+      and erg.cas_hinweise == [], f"{titel_von(erg.report)} {erg.vorlagen} {erg.cas_hinweise} {len(prompts)}")
+check("RH 97: Skoliose/Streckhaltung bleiben im HWS-Abschnitt (KI-Prompt), nicht im Funktions-Abschnitt",
+      any("<untersuchung>Halswirbelsäule in 2 Ebenen" in p and "rechtskonvexe Skoliose" in p for p in prompts)
+      and "Skoliose" not in funk_block)
+
+for leist, diktat, soll, ki_funk in (
+        ([HWSMF], "HWS unauffällig.", ["halswirbelsäule_in_2_ebenen", FHWS], False),
+        ([HWSF], "Unauffällig.", ["halswirbelsäule_in_2_ebenen", FHWS], False),
+        ([HWSINKL], "HWS: Osteochondrose C5/6.", ["halswirbelsäule_in_2_ebenen", FHWS], False),
+        ([LWSMF], "LWS: Osteochondrose L4/5.", ["lendenwirbelsäule_in_2_ebenen", FLWS], False),
+        # diktierte Funktion hat Vorrang vor dem Normaltext → eigener KI-Abschnitt mit genau diesen Sätzen
+        ([HWSMF], "HWS flachbogig. Funktionsaufnahmen: Instabilität C4/5. Sonst unauffällig.",
+         ["halswirbelsäule_in_2_ebenen", FHWS], True),
+        ([HWSMF, SCHULTERR], "Schulter rechts unauffällig. HWS Streckhaltung. In Inklination und Reklination keine "
+         "Instabilität.", ["schultergelenk_in_2_ebenen", "halswirbelsäule_in_2_ebenen", FHWS], True),
+        # EMPFOHLEN ≠ GEMACHT: Empfehlungssatz macht keinen diktierten Funktionsbefund (Normaltext laut CAS)
+        ([HWSMF], "HWS Streckhaltung. Funktionsaufnahmen empfohlen.", ["halswirbelsäule_in_2_ebenen", FHWS], False),
+        # Funktion nur im Diktat (Empfehlung), Leistung ohne Funktion → KEIN Funktions-Abschnitt
+        ([HWS], "HWS Streckhaltung. Funktionsaufnahmen empfohlen.", ["halswirbelsäule_in_2_ebenen"], False),
+        # nur Funktionsaufnahmen bestellt → EIN Abschnitt mit dem Titel der Leistung
+        ([NURF], "HWS Streckhaltung.", [FHWS], True),
+        # HWS nicht diktiert → kein Funktions-Abschnitt (Hinweis wie bisher, nur einmal)
+        ([HWSMF, SCHULTERR], "Schulter rechts: Omarthrose.", ["schultergelenk_in_2_ebenen"], False),
+        ([BWSF], "BWS unauffällig.", ["brustwirbelsäule_in_2_ebenen"], False)):
+    prompts = []
+    erg = pl.befund_aus_diktat(diktat, kontext(cv.CasHinweis(leist, T), prompts))
+    funk_prompts = [p for p in prompts if f"<untersuchung>{T.get(FHWS)['display_name']}" in p
+                    or f"<untersuchung>{T.get(FLWS)['display_name']}" in p]
+    soll_titel = [T[k]["display_name"] for k in soll]
+    titel = [t.replace(" rechts", "") for t in titel_von(erg.report)]
+    hinweis_ok = (erg.cas_hinweise == ["HWS ap u. seitl. incl.Funktion laut CAS, nicht diktiert"]
+                  if diktat.startswith("Schulter rechts: Omarthrose") else erg.cas_hinweise == [])
+    check(f"Funktion: {leist[0]['kurz']} + „{diktat[:40]}…“ → {soll}", erg.vorlagen == soll and titel == soll_titel
+          and bool(funk_prompts) == ki_funk and hinweis_ok,
+          f"{erg.vorlagen} {titel} KI-Funktion={bool(funk_prompts)} {erg.cas_hinweise}")
+    if diktat.startswith("HWS flachbogig. Funktionsaufnahmen"):
+        check("… diktierte Funktion nur im Funktions-Abschnitt, Rest im HWS-Abschnitt",
+              "Instabilität C4/5" in funk_prompts[0] and len(prompts) == 2
+              and not any("Instabilität C4/5" in p for p in prompts if p is not funk_prompts[0])
+              and erg.segmente == ["HWS flachbogig. Sonst unauffällig.", "Funktionsaufnahmen: Instabilität C4/5."],
+              str(erg.segmente))
+    if "empfohlen" in diktat:
+        check("… „Funktionsaufnahmen empfohlen“ bleibt im HWS-Abschnitt", "Funktionsaufnahmen empfohlen" in erg.segmente[0]
+              and all("empfohlen" not in s for s in erg.segmente[1:]), str(erg.segmente))
+check("Funktion: Sätze aufteilen (Doppelpunkt, Empfehlung, erster Satz bleibt)", [cv.funktion_saetze(s) for s in (
+    "HWS flachbogig. Funktionsaufnahmen: Instabilität C4/5. Sonst unauffällig.",
+    "HWS Streckhaltung. Funktionsaufnahmen empfohlen.",
+    "HWS in Funktion unauffällig.")] == [
+    ("Funktionsaufnahmen: Instabilität C4/5.", "HWS flachbogig. Sonst unauffällig."),
+    (None, "HWS Streckhaltung. Funktionsaufnahmen empfohlen."),
+    ("HWS in Funktion unauffällig.", "HWS in Funktion unauffällig.")])
+
 # keine CAS-Datei: bit-gleich wie bisher (CAS-Funktionen werden gar nicht aufgerufen)
 gesperrt = {}
 for name in ("aufteilen", "wahl", "hinweise", "prompt_block", "CasHinweis"):

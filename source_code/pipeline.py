@@ -271,11 +271,16 @@ def cas_wahlen(segmente, ctx):
             wahlen.append(cv.Wahl("baustein", "baustein"))
         else:
             wahlen.append(cv.wahl(ohne_rho, ctx.cas, ctx.templates, erkennen))
+    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates)
+    # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
+    segmente, wahlen, f_log = cv.funktion_ergaenzen(segmente, wahlen, ctx.cas, ctx.templates)
+    for z in f_log:
+        ctx.log("[CAS] " + z)
     for i, w in enumerate(wahlen, 1):
         ctx.log(f"[CAS] Abschnitt {i}/{len(wahlen)}: Vorlage {w.vorlage} ({w.art}"
                 + (f", Diktat allein: {w.erkannt}" if w.erkannt and w.erkannt != w.vorlage else "")
                 + (f", CAS {w.leistung.kurz}" if w.leistung else "") + ")")
-    return segmente, wahlen, cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates)
+    return segmente, wahlen, hinweise
 
 
 def befund_aus_diktat(diktat, ctx, beim_start=None):
