@@ -177,6 +177,9 @@ def _befundtext(modul, x):
     return bt if begriffe and (bt["stellung"] or bt["gewoelbe"]) else None
 
 
+NUR_ANZEIGE = {"rho"}               # v3.19.10: Module, von denen KaiScribe nie Text einsetzt (nur Hinweise in der Anzeige)
+
+
 def aus_liste(liste):
     """Bausteine aus cas_ibl_<id>.json (Liste von dicts) → [Baustein] — Ungültiges wird still übergangen."""
     out = []
@@ -199,8 +202,16 @@ def aus_liste(liste):
         ergebnis, hinweise = _texte(d.get("ergebnis")), _texte(d.get("hinweise"))
         if modul in OHNE_NORM:                                   # v3.19.9: nie ein Normbereich (Georg 18.11.2026)
             ergebnis, hinweise = [ohne_norm(t) for t in ergebnis], [ohne_norm(t) for t in hinweise]
+        befundteil = _texte(d.get("befundteil"))
+        if modul in NUR_ANZEIGE:
+            # v3.19.10 (Georg 18.11.2026, RH 57): KaiScribe setzt von Rho nichts ein – weder „Rho-Score N von 10“ noch den
+            # Entwurf des Abholers. Ein Rho-Text kommt nur bei Score ≥ 7, ohne DEXA in den letzten 2 Jahren und nur für
+            # die LWS; das prüft allein der Formatierer (ris-mods ibl_einfuegen, Screening-Baustein mit Georgs Wortlaut),
+            # KaiScribe kennt die DEXA-Vorgeschichte nicht. Die Hinweise bleiben (nur Anzeige). Ab Brücke 2.5.21 kommt Rho
+            # schon ohne Text an; das hier deckt ältere Brücken ab.
+            befundteil, ergebnis = [], []
         out.append(Baustein(accno=accno, modul=modul, name=str(d.get("name") or modul.upper()), version=version,
-                            ziffer=ziffer, seiten=seiten, befundteil=_texte(d.get("befundteil")),
+                            ziffer=ziffer, seiten=seiten, befundteil=befundteil,
                             ergebnis=ergebnis, hinweise=hinweise,
                             nicht_zugeordnet=_texte(d.get("nicht_zugeordnet")),
                             modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or ""),

@@ -198,16 +198,22 @@ check("i) Vorlagensatz „Fußgewölbe … regulär“ neben IB-Lab-Diagnose →
       str(e.hinweise))
 thorax = pl.br.rho_einfuegen(bericht("Thorax in 2 Ebenen", "Unauffällig.", "Unauffälliger Befund."), "8")
 e = I.einsetzen(thorax, B(RHO_D), diktat="Thorax unauffällig. Rho 8.")
-check("j) Rho: RaKScribes eigener Rho-Baustein steht schon da → IB-Lab-Rho nicht doppelt",
-      e.report == thorax and e.hinweise == ["Rho: Rho-Text schon im Befund – nicht doppelt angefügt"], str(e.hinweise))
-e = I.einsetzen(pl.br.rho_einfuegen(bericht("Thorax in 2 Ebenen", "Unauffällig.", "Unauffälliger Befund."), "6"),
-                B(RHO_D), diktat="Thorax unauffällig. Rho 6.")
-check("   … anderer Score diktiert (6 ≠ 8) → Widerspruch-Hinweis, nichts angefügt",
-      any("Score im Befund 6, laut 16 Bit Rho 8 von 10" in h for h in e.hinweise), str(e.hinweise))
+check("j) Rho: diktierter Rho-Baustein bleibt, IB-Lab-Rho setzt nichts dazu (v3.19.10)", e.report == thorax, e.report)
 e = I.einsetzen(bericht("Thorax in 2 Ebenen", "Unauffällig.", "Unauffälliger Befund."), B(RHO_D), diktat="Thorax unauffällig.")
-check("   … ohne eigenen Rho-Text: Score in den Befund, Ergebnis auch bei unauffälligem Ergebnis (wie Georgs Baustein)",
-      "Rho-Score 8 von 10 (16 Bit Rho)." in e.report and "2. Als Zufallsbefund KI-gestützter Hinweis" in e.report
-      and "1. Unauffälliger Befund." in e.report, e.report)
+check("   … v3.19.10 (Georg 18.11.2026, RH 57): ohne eigenen Rho-Text kommt NICHTS von Rho in den Befund",
+      "Rho" not in e.report and "Knochendichte" not in e.report and "DXA" not in e.report
+      and e.report == bericht("Thorax in 2 Ebenen", "Unauffällig.", "Unauffälliger Befund.") and not e.eingesetzt, e.report)
+for s, region in ((6, "Thorax"), (7, "LWS"), (9, "LWS")):
+    d = dict(RHO_D, befundteil=[f"Rho-Score {s} von 10 (16 Bit Rho)."],
+             ergebnis=[f"Als Zufallsbefund KI-gestützter Hinweis auf eine verminderte Knochendichte (16 Bit Rho, Score {s} "
+                       "von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."],
+             hinweise=[f"Rho analysierte: {region} – bitte prüfen, ob das zur Aufnahme passt."])
+    rep = bericht(f"{region} in 2 Ebenen", "Unauffällig.", "Unauffälliger Befund.")
+    e = I.einsetzen(rep, B(d), diktat="Unauffällig.")
+    g = I.geruest(B(d))
+    check(f"   … Score {s} ({region}): kein Text, kein Gerüst, kein Prompt-Eintrag, Hinweis bleibt in der Anzeige",
+          e.report == rep and g is None and I.prompt_block(B(d)) == "" and not I.hat_inhalt(B(d)[0])
+          and I.anzeige_hinweise(B(d)) == d["hinweise"], (e.report, I.anzeige_hinweise(B(d))))
 e = I.einsetzen(bericht("Handgelenk links in 2 Ebenen", "Distale Radiusfraktur.", "Distale Radiusfraktur."),
                 B(RBF_D))
 check("k) Hinweise des Bausteins (RBfracture, Entwürfe) nie im Befund, nur Anzeige",
@@ -228,9 +234,10 @@ check("l) neue Fassung ersetzt die alte wörtlich (v1 raus, v2 rein, Ergebnis ne
 e3 = I.einsetzen(e1.report, B(FROG_D), diktat="Hallux valgus.")
 check("   … dieselbe Fassung noch einmal → nichts doppelt (idempotent)", e3.report == e1.report, e3.report)
 ordi = "## Mammographie beidseits\n\n## Befund\nText.\n\n## Ergebnis\nPunkt eins\nPunkt zwei"
-e = I.einsetzen(ordi, B(dict(RHO_D, accno="1")), diktat="Baustein Mammo.")
+e = I.einsetzen(ordi, B(dict(RBF_D, accno="1", ergebnis=["KI-Verdacht auf Fraktur (RBfracture) – bitte am Bild prüfen."])),
+                diktat="Baustein Mammo.")
 check("m) wörtlicher Ordi-Baustein (mehrere unnummerierte Punkte) bleibt unnummeriert",
-      "\nPunkt eins\nPunkt zwei\nAls Zufallsbefund" in e.report, e.report)
+      "\nPunkt eins\nPunkt zwei\nKI-Verdacht auf Fraktur" in e.report, e.report)
 blk = I.prompt_block(B(FROG_D, LAMA_D, RBF_D))
 check("n) Gen-Prompt <ibl_messwerte>: nur Messgrößen-Namen, keine Zahlen, keine Diagnosen, Regeln",
       "- FROG: Calcaneusneigungswinkel, Hallux-valgus-Winkel" in blk

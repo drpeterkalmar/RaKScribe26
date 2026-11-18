@@ -216,6 +216,13 @@ for f in snap:
     if f["name"] in I.ERGEBNIS_ZUERST:
         continue   # LAMA seit Georg 17.11.2026 fester Ergebnistext statt Befundzeilen (test_ibl_bausteine: „LAMA …“)
     b = I.aus_liste(f["bausteine"])
+    if f["name"] in ("rho", "rho_doppelt"):
+        # v3.19.10 (Georg 18.11.2026, RH 57): von Rho setzt KaiScribe nichts mehr ein (Text nur über den Formatierer)
+        e = I.einsetzen(f["bericht"], b, diktat=f["diktat"], templates=T)
+        check(f"v3.19.10: {f['name']} – nichts von Rho eingesetzt, kein Gerüst, kein Prompt",
+              e.report == f["bericht"] and not e.zeilen and I.geruest(b, None, T) is None and I.prompt_block(b) == ""
+              and I.auffaellige_zeilen(b) == [], e.report)
+        continue
     e = I.einsetzen(f["bericht"], b, diktat=f["diktat"], templates=T)
     g = I.geruest(b, None, T)
     ist = {"einsetzen": {"report": e.report, "hinweise": e.hinweise, "zeilen": e.zeilen, "zuordnung": e.zuordnung},
