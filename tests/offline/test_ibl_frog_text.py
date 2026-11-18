@@ -2,7 +2,7 @@
 Der Abholer ≥ 1.3.7 (ris-mods ibl/frog_ergebnis.py) liefert im Baustein das Feld „befundtext“: fertige Sätze für die
 Beschreibung und die lateinischen Begriffe fürs Ergebnis – nur wenn mindestens eine Größe pathologisch ist. KaiScribe
 setzt sie in den Standardbefund ein (ibl_bausteine.py, Abschnitt „IB Lab FROG“):
-  Stellungssatz der Vorlage raus → Sätze mit Winkel und Norm; Gewölbesatz ersetzt („… regulär ausgebildet.“ ohne „bei
+  Stellungssatz der Vorlage raus → Sätze mit Winkel (seit 3.19.9 ohne Norm, Georg 18.11.2026); Gewölbesatz ersetzt („… regulär ausgebildet.“ ohne „bei
   ordnungsgemäßen Gelenkwinkeln“ bzw. der pathologische Satz); Vorfuß nur d.p.; Ergebnis: Begriffe als erster Punkt,
   Standardsatz weg, Diktiertes danach, Schlussanmerkung ohne Nummer; keine Messzeilen „… (IB Lab FROG).“ mehr.
 Teil 1: die 10 echten (anonymen) Fälle vom 17.11.2026 + das Beispielbild – Bausteine genau so, wie die Brücke sie liefert
@@ -86,8 +86,9 @@ check("Vorlagen enthalten die Sätze, die FROG ersetzt (Fuß, Sprunggelenk mit F
       and "Regelrechte Darstellung des Fußskeletts links." in FUSS_L, FUSS_L)
 
 # ───────────────────────────── Teil 1: die 10 echten Fälle + Beispielbild ─────────────────────────────
-zeilen = ["IB Lab FROG – fester Fuß-Text (Georg Riegler 17.11.2026): 10 echte anonyme Fälle + Beispielbild.",
-          "Je Fall: geänderter Teil der Beschreibung und das Ergebnis, wie KaiScribe 3.19.8 sie in den Normalbefund setzt.",
+zeilen = ["IB Lab FROG – fester Fuß-Text (Georg Riegler 17.11.2026, ohne Normbereiche seit 18.11.2026): 10 echte "
+          "anonyme Fälle + Beispielbild.",
+          "Je Fall: geänderter Teil der Beschreibung und das Ergebnis, wie KaiScribe 3.19.9 sie in den Normalbefund setzt.",
           ""]
 for f in FAELLE:
     vorlage, diktat = CAS[f["cas_code"]]
@@ -119,10 +120,10 @@ check("Snapshot der 11 Texte unverändert (snapshots/frog10_befunde.txt)",
       snap_datei.exists() and snap_datei.read_text(encoding="utf-8") == snap, snap)
 
 # ───────────────────────────── Teil 2: Einzelfälle wörtlich ─────────────────────────────
-BILD_ST = ("Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 42° (Norm 0–15°) bei vergrößertem "
-           "Intermetatarsalwinkel I/II von 19° (Norm 0–10°).")
-BILD_GW = ("Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 37° (Norm 20–30°) und einem Längsgewölbewinkel von "
-           "101° (Norm 115–135°).")
+BILD_ST = ("Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 42° bei vergrößertem "
+           "Intermetatarsalwinkel I/II von 19°.")
+BILD_GW = ("Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 37° und einem Längsgewölbewinkel von "
+           "101°.")
 BILD_ERG = "Hochgradiger Hallux valgus links. Metatarsus primus varus links. Pes cavus links."
 e = I.einsetzen(FUSS_L, B(11), diktat="Fuß links unauffällig.")
 soll = FUSS_L.replace(STELLUNG, BILD_ST).replace(GEWOELBE, BILD_GW).replace(
@@ -140,21 +141,21 @@ e = I.einsetzen(FUSS_L, B(2), diktat="Fuß links unauffällig.")
 b, erg = teile(e.report)
 check("nur Hallux (Fall 2, ein Fuß, Seite nur aus dem CAS-Code): Gewölbe „… regulär ausgebildet.“ ohne Zusatz, die "
       "Seite im Ergebnis kommt aus dem Titel",
-      b.startswith("Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22° (Norm 0–15°). Das Fußgewölbe "
+      b.startswith("Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22°. Das Fußgewölbe "
                    "ist regulär ausgebildet. Mineralgehalt")
       and erg == "Mittelgradiger Hallux valgus links.\n" + SCHLUSS, e.report)
 e = I.einsetzen(normal("fuß_in_2_ebenen", "Fuß rechts unauffällig."), B(9), diktat="Fuß rechts unauffällig.")
 b, erg = teile(e.report)
 check("nur Gewölbe (Fall 9, Pes planus): Stellungssatz entfällt ersatzlos, Gewölbesatz ersetzt",
-      b.startswith("Abgeflachtes Längsgewölbe mit einem Meary-Winkel von −12° (Norm −4 bis 4°). Mineralgehalt")
+      b.startswith("Abgeflachtes Längsgewölbe mit einem Meary-Winkel von −12°. Mineralgehalt")
       and erg == "Pes planus rechts.\n" + SCHLUSS, e.report)
 e = I.einsetzen(FUSS_B, B(7), diktat="Fuß beidseits unauffällig.")
 b, erg = teile(e.report)
 check("beidseits gleich (Fall 7): ein Satz „beidseits“ mit den Werten je Seite, Begriffe „beidseits“; Gewölbe ohne "
       "sichere Seite bleibt ohne Seite",
       b.startswith("Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 31° und links 30° "
-                   "(Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von rechts 16° und links 16° (Norm 0–10°). "
-                   "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 34° (Norm 20–30°). Mineralgehalt")
+                   "bei vergrößertem Intermetatarsalwinkel I/II von rechts 16° und links 16°. "
+                   "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 34°. Mineralgehalt")
       and erg == "Mittelgradiger Hallux valgus beidseits. Metatarsus primus varus beidseits. Pes cavus.\n" + SCHLUSS,
       e.report)
 e = I.einsetzen(FUSS_B, B(5), diktat="Fuß beidseits unauffällig.")
@@ -173,19 +174,19 @@ e = I.einsetzen(VORFUSS_B, B(9), diktat="Vorfuß beidseits unauffällig.")
 check("Vorfuß, FROG nur am Gewölbe auffällig: nichts eingesetzt, Befund unverändert", e.report == VORFUSS_B
       and e.zeilen == [], e.report)
 mpv = copy.deepcopy(F[11]["baustein"])
-mpv["befundtext"].update(stellung=["Vergrößerter Intermetatarsalwinkel I/II von 19° (Norm 0–10°)."], phalangen=False,
+mpv["befundtext"].update(stellung=["Vergrößerter Intermetatarsalwinkel I/II von 19°."], phalangen=False,
                          begriffe=[{"art": "dp", "text": "Metatarsus primus varus", "seite": "links"}])
 e = I.einsetzen(VORFUSS_L, I.aus_liste([mpv]), diktat="Vorfuß links unauffällig.")
 check("Vorfuß, nur Metatarsus primus varus: der Phalangen-Satz bleibt, der FROG-Satz steht dahinter",
-      PHALANGEN + " Vergrößerter Intermetatarsalwinkel I/II von 19° (Norm 0–10°). Mineralgehalt" in e.report
+      PHALANGEN + " Vergrößerter Intermetatarsalwinkel I/II von 19°. Mineralgehalt" in e.report
       and teile(e.report)[1] == "Metatarsus primus varus links.\n" + SCHLUSS, e.report)
 
 # Sprunggelenk mit Fuß
 e = I.einsetzen(OSG_L, B(6), diktat="Sprunggelenk links mit Fuß unauffällig.")
 b, erg = teile(e.report)
 check("Sprunggelenk mit Fuß (Fall 6): Sätze an der Stelle der Fuß-Sätze, vom Standard-Ergebnis bleibt das Sprunggelenk",
-      "Normal weiter Gelenkspalt. Varusstellung der Kleinzehe mit einem Metatarsophalangealwinkel V von 14° (Norm 0–10°). "
-      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 109° (Norm 115–135°). Die mitdargestellten" in b
+      "Normal weiter Gelenkspalt. Varusstellung der Kleinzehe mit einem Metatarsophalangealwinkel V von 14°. "
+      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 109°. Die mitdargestellten" in b
       and erg == ("1. Digitus quintus varus links. Pes cavus links.\n2. Regelrechte Darstellung des oberen "
                   "Sprunggelenkes links.\n" + SCHLUSS), e.report)
 
@@ -195,7 +196,7 @@ w["befundtext"].update(gewoelbe=[], gewoelbe_weg=True)
 e = I.einsetzen(FUSS_L, I.aus_liste([w]), diktat="Fuß links unauffällig.")
 check("Gewölbewinkel widersprüchlich: Gewölbesatz ersatzlos gestrichen (auch nicht „regulär“)",
       "gewölbe" not in e.report.lower() and teile(e.report)[0].startswith(
-          "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22° (Norm 0–15°). Mineralgehalt"), e.report)
+          "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22°. Mineralgehalt"), e.report)
 
 # mit Diktat: die KI hat die Vorlagensätze übernommen und Diktiertes ergänzt
 KI = FUSS_L.replace("Keine intra- und periartikulären Verkalkungen.",
@@ -245,7 +246,7 @@ check("abweichend diktierter Winkel: Hinweis nur in der Anzeige", any("Hallux-va
 # neue Fassung (Knopf „＋ IB Lab einfügen“) und noch einmal dieselbe
 neu = copy.deepcopy(F[11]["baustein"])
 neu["version"] = 2
-NEU_ST = "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 44° (Norm 0–15°)."
+NEU_ST = "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 44°."
 neu["befundtext"]["stellung"] = [NEU_ST]
 neu["befundtext"]["begriffe"] = [x for x in neu["befundtext"]["begriffe"] if "Metatarsus" not in x["text"]]
 neu["ergebnis"] = ["Hochgradiger Hallux valgus links. Pes cavus links.", SCHLUSS]
@@ -289,7 +290,7 @@ check("Prompt: keine Zahl, kein Begriff aus dem Ergebnis; die KI lässt die Vorl
 check("Prompt ohne Bausteine bzw. ohne Pathologie: leer (bit-gleich wie bisher)", I.prompt_block([]) == ""
       and I.prompt_block(B(4)) == "", I.prompt_block(B(4)))
 check("Hervorhebung: die pathologischen Sätze und die Begriffe, nicht der Normalsatz und nicht die Schlussanmerkung",
-      I.auffaellige_zeilen(B(2)) == ["Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22° (Norm 0–15°).",
+      I.auffaellige_zeilen(B(2)) == ["Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22°.",
                                      "Mittelgradiger Hallux valgus"]
       and I.auffaellige_zeilen(B(11)) == [BILD_ST, BILD_GW, "Hochgradiger Hallux valgus links",
                                           "Metatarsus primus varus links", "Pes cavus links"],

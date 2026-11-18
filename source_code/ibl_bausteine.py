@@ -139,6 +139,21 @@ def _texte(x):
     return [s.strip() for s in x if isinstance(s, str) and s.strip()] if isinstance(x, list) else []
 
 
+# v3.19.9 (Georg Riegler 18.11.2026, Brief kaiscribe-ibl-ohne-norm-n1): „Die Normalwerte kommen nicht in den Befund und das
+# Ergebnis.“ Der Abholer (ris-mods ibl/lama_ergebnis.py, ibl/frog_ergebnis.py) schreibt seit 18.11. keine Normbereiche mehr;
+# Bausteine eines älteren Abholers („(Norm 0–15°)“, „[−2 bis 4°]“, „[3 bis 17 mm]“) werden hier beim Lesen bereinigt –
+# Messwerte bleiben. Gleiche Regel: ris-mods bruecke/ibl_einfuegen.ohne_norm.
+_ZAHL = r"[−-]?\d+(?:[.,]\d+)?"
+_NORM_KLAMMER = re.compile(rf"\s*(?:\(Norm\s+{_ZAHL}\s*(?:–|-|bis)\s*{_ZAHL}\s*°\)|"
+                           rf"\[{_ZAHL}\s*(?:bis|–)\s*{_ZAHL}\s*(?:°|mm)\])")
+OHNE_NORM = ("lama", "frog")
+
+
+def ohne_norm(t):
+    """„HKA 5,0° [−2 bis 4°]“ → „HKA 5,0°“, „von 42° (Norm 0–15°)“ → „von 42°“; sonst unverändert."""
+    return _NORM_KLAMMER.sub("", t) if isinstance(t, str) else t
+
+
 def _vorwerte(x):
     """v3.18.0: Vorwerte der Brücke (je Wert u. a. „text“ = „Vorwert 03/2024: 12°, IB Lab“) – nur Einträge mit Text."""
     return [dict(v) for v in x if isinstance(v, dict) and isinstance(v.get("text"), str) and v["text"].strip()] \
@@ -154,7 +169,8 @@ def _befundtext(modul, x):
                  "seite": str(g.get("seite") or "").strip()}
                 for g in (x.get("begriffe") if isinstance(x.get("begriffe"), list) else [])
                 if isinstance(g, dict) and str(g.get("text") or "").strip()]
-    bt = {"stellung": _texte(x.get("stellung")), "gewoelbe": _texte(x.get("gewoelbe")),
+    bt = {"stellung": [ohne_norm(t) for t in _texte(x.get("stellung"))],
+          "gewoelbe": [ohne_norm(t) for t in _texte(x.get("gewoelbe"))],
           "gewoelbe_weg": bool(x.get("gewoelbe_weg")), "gewoelbe_pathologisch": bool(x.get("gewoelbe_pathologisch")),
           "phalangen": bool(x.get("phalangen")), "ein_fuss": bool(x.get("ein_fuss")), "begriffe": begriffe,
           "schluss": str(x.get("schluss") or "").strip()}
@@ -180,9 +196,12 @@ def aus_liste(liste):
         except (TypeError, ValueError):
             ziffer = int(accno[-1]) if accno[-1:].isdigit() else 0
         seiten = [s for s in ("rechts", "links") if s in (d.get("seiten") or [])]
+        ergebnis, hinweise = _texte(d.get("ergebnis")), _texte(d.get("hinweise"))
+        if modul in OHNE_NORM:                                   # v3.19.9: nie ein Normbereich (Georg 18.11.2026)
+            ergebnis, hinweise = [ohne_norm(t) for t in ergebnis], [ohne_norm(t) for t in hinweise]
         out.append(Baustein(accno=accno, modul=modul, name=str(d.get("name") or modul.upper()), version=version,
                             ziffer=ziffer, seiten=seiten, befundteil=_texte(d.get("befundteil")),
-                            ergebnis=_texte(d.get("ergebnis")), hinweise=_texte(d.get("hinweise")),
+                            ergebnis=ergebnis, hinweise=hinweise,
                             nicht_zugeordnet=_texte(d.get("nicht_zugeordnet")),
                             modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or ""),
                             vorwerte=_vorwerte(d.get("vorwerte")), befundtext=_befundtext(modul, d.get("befundtext"))))

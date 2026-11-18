@@ -1,5 +1,5 @@
 {
- "quelle": "ris-mods ibl/tests/fixtures_frog/letzte10_20261117.json + Beispielbild; erzeugt mit vorbefund.erstelle_vorbefund + bruecke.baustein_lesen (Abholer 1.3.7)",
+ "quelle": "ris-mods ibl/tests/fixtures_frog/letzte10_20261117.json + Beispielbild; erzeugt mit vorbefund.erstelle_vorbefund + bruecke.baustein_lesen (Abholer 1.3.7; Texte ohne Normbereiche wie der Abholer ab 18.11.2026, gegengeprüft mit ibl/frog_ergebnis.py)",
  "faelle": [
   {
    "nr": 1,
@@ -44,7 +44,7 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Valgusstellung der Großzehe links mit einem Hallux-valgus-Winkel von 27° (Norm 0–15°)."
+      "Valgusstellung der Großzehe links mit einem Hallux-valgus-Winkel von 27°."
      ],
      "gewoelbe": [
       "Das Fußgewölbe ist regulär ausgebildet."
@@ -109,7 +109,7 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22° (Norm 0–15°)."
+      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 22°."
      ],
      "gewoelbe": [
       "Das Fußgewölbe ist regulär ausgebildet."
@@ -203,7 +203,7 @@
      "format": 1,
      "stellung": [],
      "gewoelbe": [
-      "Abgeflachtes Längsgewölbe mit einer Calcaneusneigung von 15° (Norm 20–30°)."
+      "Abgeflachtes Längsgewölbe mit einer Calcaneusneigung von 15°."
      ],
      "gewoelbe_weg": false,
      "gewoelbe_pathologisch": true,
@@ -325,7 +325,7 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 18° und links 27° (Norm 0–15°)."
+      "Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 18° und links 27°."
      ],
      "gewoelbe": [
       "Das Fußgewölbe ist regulär ausgebildet."
@@ -393,10 +393,10 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Varusstellung der Kleinzehe mit einem Metatarsophalangealwinkel V von 14° (Norm 0–10°)."
+      "Varusstellung der Kleinzehe mit einem Metatarsophalangealwinkel V von 14°."
      ],
      "gewoelbe": [
-      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 109° (Norm 115–135°)."
+      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 109°."
      ],
      "gewoelbe_weg": false,
      "gewoelbe_pathologisch": true,
@@ -484,10 +484,10 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 31° und links 30° (Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von rechts 16° und links 16° (Norm 0–10°)."
+      "Valgusstellung der Großzehe beidseits mit einem Hallux-valgus-Winkel von rechts 31° und links 30° bei vergrößertem Intermetatarsalwinkel I/II von rechts 16° und links 16°."
      ],
      "gewoelbe": [
-      "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 34° (Norm 20–30°)."
+      "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 34°."
      ],
      "gewoelbe_weg": false,
      "gewoelbe_pathologisch": true,
@@ -560,7 +560,7 @@
      "format": 1,
      "stellung": [],
      "gewoelbe": [
-      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 110° (Norm 115–135°)."
+      "Erhöhtes Längsgewölbe mit einem Längsgewölbewinkel von 110°."
      ],
      "gewoelbe_weg": false,
      "gewoelbe_pathologisch": true,
@@ -621,7 +621,7 @@
      "format": 1,
      "stellung": [],
      "gewoelbe": [
-      "Abgeflachtes Längsgewölbe mit einem Meary-Winkel von −12° (Norm −4 bis 4°)."
+      "Abgeflachtes Längsgewölbe mit einem Meary-Winkel von −12°."
      ],
      "gewoelbe_weg": false,
      "gewoelbe_pathologisch": true,
@@ -681,7 +681,7 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 19° (Norm 0–15°)."
+      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 19°."
      ],
      "gewoelbe": [
       "Das Fußgewölbe ist regulär ausgebildet."
@@ -737,10 +737,10 @@
     "befundtext": {
      "format": 1,
      "stellung": [
-      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 42° (Norm 0–15°) bei vergrößertem Intermetatarsalwinkel I/II von 19° (Norm 0–10°)."
+      "Valgusstellung der Großzehe mit einem Hallux-valgus-Winkel von 42° bei vergrößertem Intermetatarsalwinkel I/II von 19°."
      ],
      "gewoelbe": [
-      "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 37° (Norm 20–30°) und einem Längsgewölbewinkel von 101° (Norm 115–135°)."
+      "Erhöhtes Längsgewölbe mit einer Calcaneusneigung von 37° und einem Längsgewölbewinkel von 101°."
      ],
      "gewoelbe_weg": false,
      "gewoelbe_pathologisch": true,

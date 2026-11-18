@@ -208,13 +208,13 @@
   },
   {
    "name": "LAMA-Schlussanmerkung unnummeriert, zwei Punkte nummeriert (Georg 17.11.2026)",
-   "in": "## Ergebnis\nBeinlängendifferenz von 7 mm, rechts kürzer.\nValgusfehlstellung links (HKA −0,6° [−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
-   "out": "## Ergebnis\n1. Beinlängendifferenz von 7 mm, rechts kürzer.\n2. Valgusfehlstellung links (HKA −0,6° [−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   "in": "## Ergebnis\nBeinlängendifferenz von 7 mm, rechts kürzer.\nValgusfehlstellung links (HKA −0,6°, MAD −2,1 mm).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+   "out": "## Ergebnis\n1. Beinlängendifferenz von 7 mm, rechts kürzer.\n2. Valgusfehlstellung links (HKA −0,6°, MAD −2,1 mm).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
   },
   {
    "name": "LAMA: ein Punkt + Schlussanmerkung → beide ohne Nummer",
-   "in": "## Ergebnis\n1. Regelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
-   "out": "## Ergebnis\nRegelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   "in": "## Ergebnis\n1. Regelrechte Beinachse rechts (HKA 3,0°, MAD 9,7 mm).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+   "out": "## Ergebnis\nRegelrechte Beinachse rechts (HKA 3,0°, MAD 9,7 mm).\nHKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
   },
   {
    "name": "FROG-Schlussanmerkung unnummeriert, zwei Punkte nummeriert (Georg 17.11.2026)",

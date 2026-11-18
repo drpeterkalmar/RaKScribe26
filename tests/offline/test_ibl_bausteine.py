@@ -53,7 +53,7 @@ LAMA_D = {"accno": "T-0023", "ziffer": 3, "modul": "lama", "name": "LAMA", "modu
                          "Beinlänge links 84,9 cm (IB Lab LAMA).", "HKA-Winkel links 179,1° (IB Lab LAMA).",
                          "Beinlängendifferenz 15 mm (IB Lab LAMA)."],
           "ergebnis": ["Beinlängendifferenz von 15 mm, links kürzer.",
-                       "Varusfehlstellung rechts (HKA 5,8° [−2 bis 4°]). Regelrechte Beinachse links (HKA 0,9° [−2 bis 4°]).",
+                       "Varusfehlstellung rechts (HKA 5,8°). Regelrechte Beinachse links (HKA 0,9°).",
                        LAMA_SCHLUSS],
           "hinweise": [], "nicht_zugeordnet": []}
 RHO_D = {"accno": "T-0051", "ziffer": 1, "modul": "rho", "name": "Rho", "modul_name": "16 Bit Rho", "version": 1,
@@ -298,20 +298,20 @@ LAMA_BSP = dict(LAMA_D, accno="T-0031", ziffer=1, befundteil=[
     "HKA-Winkel links -0,6° (IB Lab LAMA).", "Mechanische Achsabweichung (MAD) links -2,1 mm (IB Lab LAMA).",
     "Beinlängendifferenz 0,7 cm (IB Lab LAMA)."],
     ergebnis=["Beinlängendifferenz von 7 mm, rechts kürzer.",
-              "Regelrechte Beinachse rechts (HKA 2,1° [−2 bis 4°], MAD 8,3 mm [3 bis 17 mm]). Valgusfehlstellung links "
-              "(HKA −0,6° [−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).", LAMA_SCHLUSS])
+              "Regelrechte Beinachse rechts (HKA 2,1°, MAD 8,3 mm). Valgusfehlstellung links "
+              "(HKA −0,6°, MAD −2,1 mm).", LAMA_SCHLUSS])
 GB = "Ganzbeinaufnahme im Stand"
 g = I.geruest(B(LAMA_BSP), [L("x-gb", "Ganzbein", "Röntgen", "ganzbeinaufnahme_im_stand")], T)
 check("LAMA Gerüst (sofort EOL = fertiger Befund): nur Ergebnis, nummeriert, Schlussanmerkung ohne Nummer, keine Werte-Zeilen",
       g is not None and g.report == f"## {GB}\n\n## Ergebnis\n1. Beinlängendifferenz von 7 mm, rechts kürzer.\n"
-      "2. Regelrechte Beinachse rechts (HKA 2,1° [−2 bis 4°], MAD 8,3 mm [3 bis 17 mm]). Valgusfehlstellung links "
-      "(HKA −0,6° [−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).\n" + LAMA_SCHLUSS and I.gate(g.report, g.zeilen) == [],
+      "2. Regelrechte Beinachse rechts (HKA 2,1°, MAD 8,3 mm). Valgusfehlstellung links "
+      "(HKA −0,6°, MAD −2,1 mm).\n" + LAMA_SCHLUSS and I.gate(g.report, g.zeilen) == [],
       g.report if g else None)
 EIN = dict(LAMA_BSP, seiten=["rechts"], befundteil=["HKA-Winkel rechts 3,0° (IB Lab LAMA)."],
-           ergebnis=["Regelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).", LAMA_SCHLUSS])
+           ergebnis=["Regelrechte Beinachse rechts (HKA 3,0°, MAD 9,7 mm).", LAMA_SCHLUSS])
 g = I.geruest(B(EIN), None, T)
 check("LAMA nur ein Bein: Einzelpunkt ohne Nummer, Schlussanmerkung darunter",
-      g.report.endswith("## Ergebnis\nRegelrechte Beinachse rechts (HKA 3,0° [−2 bis 4°], MAD 9,7 mm [3 bis 17 mm]).\n"
+      g.report.endswith("## Ergebnis\nRegelrechte Beinachse rechts (HKA 3,0°, MAD 9,7 mm).\n"
                         + LAMA_SCHLUSS), g.report)
 ki = bericht(GB, "Extremität: Regelrechte Form und Stellung des Beines.\nGelenke: Regelrechte Artikulation.",
              "1. Regelrechte Darstellung der Beinachsen.\n2. Kein Hinweis auf eine Fraktur.")
@@ -319,8 +319,8 @@ e = I.einsetzen(ki, B(LAMA_BSP), diktat="Ganzbein, keine Fraktur.")
 erg_teil = e.report.split("## Ergebnis\n", 1)[1]
 check("LAMA mit Diktat: LAMA-Punkte zuerst, diktierter Punkt als nächster, KI-Normalsatz zur Achse ersetzt, "
       "Schlussanmerkung ganz unten", erg_teil == "1. Beinlängendifferenz von 7 mm, rechts kürzer.\n2. Regelrechte "
-      "Beinachse rechts (HKA 2,1° [−2 bis 4°], MAD 8,3 mm [3 bis 17 mm]). Valgusfehlstellung links (HKA −0,6° "
-      "[−2 bis 4°], MAD −2,1 mm [3 bis 17 mm]).\n3. Kein Hinweis auf eine Fraktur.\n" + LAMA_SCHLUSS
+      "Beinachse rechts (HKA 2,1°, MAD 8,3 mm). Valgusfehlstellung links (HKA −0,6°, "
+      "MAD −2,1 mm).\n3. Kein Hinweis auf eine Fraktur.\n" + LAMA_SCHLUSS
       and "IB Lab LAMA" not in e.report and any("durch das IB-Lab-Ergebnis ersetzt" in h for h in e.hinweise)
       and I.gate(e.report, e.zeilen) == [], e.report)
 e2 = I.einsetzen(e.report, B(LAMA_BSP), diktat="Ganzbein, keine Fraktur.")
@@ -332,10 +332,10 @@ e = I.einsetzen(bericht(GB, "Text.", "Regelrechte Darstellung der Beinachsen."),
                 diktat="Ganzbein: Beinachse beidseits regelrecht.")
 check("LAMA: diktierte Achse bleibt (nichts ersetzt), LAMA-Punkte trotzdem vorne",
       "1. Beinlängendifferenz" in e.report and "3. Regelrechte Darstellung der Beinachsen." in e.report, e.report)
-WID = dict(LAMA_BSP, ergebnis=["Regelrechte Beinachse links (HKA 1,0° [−2 bis 4°], MAD 8,0 mm [3 bis 17 mm]).",
+WID = dict(LAMA_BSP, ergebnis=["Regelrechte Beinachse links (HKA 1,0°, MAD 8,0 mm).",
                                LAMA_SCHLUSS],
-           hinweise=["IB Lab LAMA rechts: HKA und MAD weisen in verschiedene Richtungen (HKA 5,0° [−2 bis 4°], MAD "
-                     "−8,0 mm [3 bis 17 mm]) – keine Beinachse ins Ergebnis, bitte am KI-Bild beurteilen."])
+           hinweise=["IB Lab LAMA rechts: HKA und MAD weisen in verschiedene Richtungen (HKA 5,0°, MAD "
+                     "−8,0 mm) – keine Beinachse ins Ergebnis, bitte am KI-Bild beurteilen."])
 g = I.geruest(B(WID), None, T)
 check("LAMA Widerspruch HKA/MAD: Hinweis nur in der Anzeige, nie im Befund",
       "verschiedene Richtungen" not in g.report and any("verschiedene Richtungen" in h for h in I.anzeige_hinweise(B(WID)))
@@ -568,8 +568,8 @@ check("… v1-Zeilen ersetzt, v2 drin, LAMA ohne Ganzbein-Abschnitt → Absatz a
       "Hallux-valgus-Winkel rechts 24,3°" not in app.result_text.text
       and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in app.result_text.text
       and app.result_text.text.rstrip().endswith("Beinlängendifferenz von 15 mm, links kürzer.\nVarusfehlstellung rechts "
-                                                 "(HKA 5,8° [−2 bis 4°]). Regelrechte Beinachse links (HKA 0,9° [−2 bis "
-                                                 "4°]).\n" + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
+                                                 "(HKA 5,8°). Regelrechte Beinachse links (HKA 0,9°)"
+                                                 ".\n" + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
       and any("LAMA beidseits: keiner Untersuchung eindeutig zuzuordnen" in h for h in app._ibl_hinweise)
       and any("Katalog ergänzen" in h for h in app._ibl_hinweise),
       app.result_text.text[-400:])
