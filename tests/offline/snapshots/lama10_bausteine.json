@@ -1,0 +1,361 @@
+{
+ "quelle": "ris-mods ibl/tests/fixtures_lama/letzte10_20261117.json; erzeugt mit vorbefund.erstelle_vorbefund + bruecke.baustein_lesen (Abholer ohne Normbereiche, Georg 18.11.2026)",
+ "faelle": [
+  {
+   "nr": 1,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170011",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 79,6 cm (IB Lab LAMA).",
+     "Femurlänge rechts 45,0 cm (IB Lab LAMA).",
+     "Tibialänge rechts 34,9 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts -1,2° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts -4,4 mm (IB Lab LAMA).",
+     "Beinlänge links 79,2 cm (IB Lab LAMA).",
+     "Femurlänge links 44,5 cm (IB Lab LAMA).",
+     "Tibialänge links 34,8 cm (IB Lab LAMA).",
+     "HKA-Winkel links 0,5° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links -1,9 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 0,4 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Beinlängendifferenz von 4 mm, links kürzer.",
+     "Valgusfehlstellung rechts (HKA −1,2°, MAD −4,4 mm). Regelrechte Beinachse links (HKA 0,5°, MAD −1,9 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 2,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170021",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 79,8 cm (IB Lab LAMA).",
+     "Femurlänge rechts 45,8 cm (IB Lab LAMA).",
+     "Tibialänge rechts 34,0 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts 3,0° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts 9,7 mm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Regelrechte Beinachse rechts (HKA 3,0°, MAD 9,7 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 3,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170031",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 94,2 cm (IB Lab LAMA).",
+     "Femurlänge rechts 54,2 cm (IB Lab LAMA).",
+     "Tibialänge rechts 40,1 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts 3,5° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts 13,2 mm (IB Lab LAMA).",
+     "Beinlänge links 94,8 cm (IB Lab LAMA).",
+     "Femurlänge links 54,5 cm (IB Lab LAMA).",
+     "Tibialänge links 40,3 cm (IB Lab LAMA).",
+     "HKA-Winkel links 4,0° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links 15,4 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 0,6 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Beinlängendifferenz von 6 mm, rechts kürzer.",
+     "Beidseits regelrechte Beinachse (rechts HKA 3,5°, MAD 13,2 mm; links HKA 4,0°, MAD 15,4 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 4,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170041",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 93,4 cm (IB Lab LAMA).",
+     "Femurlänge rechts 53,2 cm (IB Lab LAMA).",
+     "Tibialänge rechts 40,5 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts -2,3° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts -8,8 mm (IB Lab LAMA).",
+     "Beinlänge links 95,1 cm (IB Lab LAMA).",
+     "Femurlänge links 53,9 cm (IB Lab LAMA).",
+     "Tibialänge links 41,7 cm (IB Lab LAMA).",
+     "HKA-Winkel links -5,4° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links -21,5 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 1,7 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Beinlängendifferenz von 17 mm, rechts kürzer.",
+     "Beidseits Valgusfehlstellung (rechts HKA −2,3°, MAD −8,8 mm; links HKA −5,4°, MAD −21,5 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 5,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170051",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 93,8 cm (IB Lab LAMA).",
+     "Femurlänge rechts 52,9 cm (IB Lab LAMA).",
+     "Tibialänge rechts 41,0 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts 0,4° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts -2,0 mm (IB Lab LAMA).",
+     "Beinlänge links 92,7 cm (IB Lab LAMA).",
+     "Femurlänge links 52,7 cm (IB Lab LAMA).",
+     "Tibialänge links 40,1 cm (IB Lab LAMA).",
+     "HKA-Winkel links 0,7° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links 3,1 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 1,1 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Beinlängendifferenz von 11 mm, links kürzer.",
+     "Beidseits regelrechte Beinachse (rechts HKA 0,4°, MAD −2,0 mm; links HKA 0,7°, MAD 3,1 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 6,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170061",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 92,6 cm (IB Lab LAMA).",
+     "Femurlänge rechts 52,3 cm (IB Lab LAMA).",
+     "Tibialänge rechts 40,3 cm (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts 12,4 mm (IB Lab LAMA).",
+     "Beinlänge links 91,2 cm (IB Lab LAMA).",
+     "Femurlänge links 51,7 cm (IB Lab LAMA).",
+     "Tibialänge links 39,7 cm (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links -1,1 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 1,4 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Beinlängendifferenz von 14 mm, links kürzer.",
+     "Beidseits regelrechte Beinachse (rechts MAD 12,4 mm; links MAD −1,1 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 7,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170071",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge links 88,9 cm (IB Lab LAMA).",
+     "Femurlänge links 49,9 cm (IB Lab LAMA).",
+     "Tibialänge links 39,1 cm (IB Lab LAMA).",
+     "HKA-Winkel links 2,5° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links 9,2 mm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Regelrechte Beinachse links (HKA 2,5°, MAD 9,2 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 8,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170081",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge links 81,4 cm (IB Lab LAMA).",
+     "Femurlänge links 45,7 cm (IB Lab LAMA).",
+     "Tibialänge links 36,6 cm (IB Lab LAMA).",
+     "HKA-Winkel links -10,3° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links -34,6 mm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Valgusfehlstellung links (HKA −10,3°, MAD −34,6 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 9,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170091",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 79,2 cm (IB Lab LAMA).",
+     "Femurlänge rechts 46,0 cm (IB Lab LAMA).",
+     "Tibialänge rechts 33,4 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts 0,4° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts 1,2 mm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Regelrechte Beinachse rechts (HKA 0,4°, MAD 1,2 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 10,
+   "untersuchung": "Ganzbeinaufnahme",
+   "beschreibung": "echter Fall, anonym (17.11.2026)",
+   "baustein": {
+    "accno": "202611170101",
+    "ziffer": 1,
+    "modul": "lama",
+    "name": "LAMA",
+    "modul_name": "IB Lab LAMA",
+    "version": 1,
+    "aktualisiert": "2026-11-17T12:00:00",
+    "seiten": [
+     "rechts",
+     "links"
+    ],
+    "befundteil": [
+     "Beinlänge rechts 98,4 cm (IB Lab LAMA).",
+     "Femurlänge rechts 55,6 cm (IB Lab LAMA).",
+     "Tibialänge rechts 42,9 cm (IB Lab LAMA).",
+     "HKA-Winkel rechts 5,0° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) rechts 20,3 mm (IB Lab LAMA).",
+     "Beinlänge links 98,8 cm (IB Lab LAMA).",
+     "Femurlänge links 55,5 cm (IB Lab LAMA).",
+     "Tibialänge links 43,4 cm (IB Lab LAMA).",
+     "HKA-Winkel links 3,0° (IB Lab LAMA).",
+     "Mechanische Achsabweichung (MAD) links 12,0 mm (IB Lab LAMA).",
+     "Beinlängendifferenz 0,4 cm (IB Lab LAMA)."
+    ],
+    "ergebnis": [
+     "Beinlängendifferenz von 4 mm, rechts kürzer.",
+     "Varusfehlstellung rechts (HKA 5,0°, MAD 20,3 mm). Regelrechte Beinachse links (HKA 3,0°, MAD 12,0 mm).",
+     "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  }
+ ]
+}
