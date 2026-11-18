@@ -912,6 +912,47 @@
      "Steht ein Kellgren-&-Lawrence-Grad fest"
     ]
    }
+  },
+  {
+   "id": "panda-text",
+   "titel": "IB Lab PANDA: Knochenalter als Ergebnisbefund (Wortlaut, ohne Körper-/Endgröße, Einzelpunkt)",
+   "quelle": "Georg Riegler 18.11.2026 (kaiscribe-panda-knochenalter-n1)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "PANDA_ANFANG = \"Zum Zeitpunkt der Untersuchung beträgt das Alter des \"",
+     "KEINEN Befundteil"
+    ],
+    "tests/offline/test_ibl_panda_text.py": [
+     "und ist damit altersentsprechend. Nach Bayley und Pinneau sind \"\n       \"89,0 % des Wachstumspotenzials erreicht."
+    ]
+   }
+  },
+  {
+   "id": "panda-2sd",
+   "titel": "IB Lab PANDA: retardiert/akzeleriert nach ±2 SD (Knochenalter − Lebensalter), nicht Herstellerstatus",
+   "quelle": "Georg Riegler 18.11.2026 (kaiscribe-panda-knochenalter-n1)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "tests/offline/test_ibl_panda_text.py": [
+     "und ist damit um 2 Jahre und 4 Monate retardiert.",
+     "und ist damit um 2 Jahre und 1 Monat akzeleriert."
+    ]
+   }
+  },
+  {
+   "id": "panda-ifu",
+   "titel": "IB Lab PANDA: CAS-Leistung nicht Knochenalter/handl → kein Text, „PANDA außerhalb Auftrag/IFU“",
+   "quelle": "Georg Riegler 18.11.2026 (kaiscribe-panda-knochenalter-n1)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "PANDA_IFU = \"PANDA außerhalb Auftrag/IFU\""
+    ]
+   }
   }
  ]
 }

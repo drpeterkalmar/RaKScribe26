@@ -701,6 +701,14 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
         if not b.befundteil and not b.ergebnis:
             continue
         i, _art = zuordnen(b, teile, cas_leistungen, templates)
+        if b.modul == "panda":             # 19.11.2026: Knochenalter als fertiger Ergebnisbefund (Georg 18.11.2026)
+            t = panda_text(b, cas_leistungen, e.hinweise)
+            if t and i is not None:
+                _panda_einsetzen(zeilen, teile, i, b, t, e)
+            elif t:
+                e.hinweise.append(f"{b.label}: keiner Hand-Untersuchung eindeutig zuzuordnen – Knochenalter-Text nicht "
+                                  "eingesetzt, bitte prüfen")
+            continue
         if b.modul == "koala":             # 18.11.2026: fester Kniebefund nach K&L-Tabelle statt Messzeilen (Georg)
             if i is not None:
                 _koala_einsetzen(zeilen, teile, i, b, e)
@@ -798,6 +806,11 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
     nennen reichte der KI beim Becken nicht)."""
     zeilen, koala = [], []
     for b in bausteine or []:
+        if b.modul == "panda":             # 19.11.2026: KaiScribe setzt den Knochenalter-Ergebnisbefund selbst ein
+            if panda_text(b):
+                zeilen += [f"- {b.name}: Knochenalter-Ergebnisbefund (ersetzt Vorlagen-Sätze zu: {THEMEN['panda']}, Alter, "
+                           "Körpergröße, Endgröße, Wachstumspotenzial)", PANDA_PROMPT]
+            continue
         if b.modul == "koala":             # 18.11.2026: KaiScribe schreibt den femorotibialen Satz + Gonarthrose-Punkt selbst
             titel = (vorlage or "").split("\n")[0]
             if _koala_plan(b, titel, br.diktierte_seite(diktat), diktat, [], vorlage or "") is not None:
@@ -835,7 +848,7 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
         return ""
     weg = []
     for b in bausteine:
-        if b.ergebnis and vorlage and not _frog_text(b) and b.modul != "koala":   # KOALA: KaiScribe gleicht selbst an
+        if b.ergebnis and vorlage and not _frog_text(b) and b.modul not in ("koala", "panda"):   # gleicht selbst an
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), _pathologische_punkte(b, b.ergebnis)) if s not in weg]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
         zeilen.append(_kl_satz(kl))
@@ -1591,11 +1604,107 @@ def _koala_geruest(b, titel, vorlage=None):
     return [" ".join(saetze)], punkte
 
 
+# IB Lab PANDA (Georg Riegler 18.11.2026, Brief kaiscribe-panda-knochenalter-n1): der Abholer ≥ 1.3.10 (ris-mods
+# ibl/panda_ergebnis.py) liefert den FERTIGEN Knochenalter-Text als einzigen Ergebnispunkt („Zum Zeitpunkt der Untersuchung
+# beträgt das Alter des Jungen 13 Jahre und 6 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt … und ist
+# damit altersentsprechend. Nach Bayley und Pinneau sind 89,0 % des Wachstumspotenzials erreicht.“; Wertung ±2·SD, Lebensalter
+# lokal aus dem DICOM-Kopf). KaiScribe setzt ihn als ERGEBNISBEFUND ein: kein Befundteil (Vorlagen-Sätze zu Alter,
+# Körpergröße, Knochenalter, Endgröße und Normalsätze der Hand-Vorlage entfallen), keine Zusatzzeile wie „Unauffälliger
+# Befund.“, keine Messzeilen; der Text ist der erste Punkt, Diktiertes (Nebenbefunde) folgt, ein Punkt ohne Nummer.
+# Kein Text (nur Anzeige): Sonderfälle des Abholers (NaN, mehrere Bilder, Geburtsdatum fehlt, IFU – dort als Hinweis) und
+# eine CAS-Leistung, die nicht „Knochenalter“/handl ist (handgel, kahn, hand2 …) → „PANDA außerhalb Auftrag/IFU“.
+PANDA_ANFANG = "Zum Zeitpunkt der Untersuchung beträgt das Alter des "   # = ris-mods ibl/panda_ergebnis.ANFANG
+PANDA_IFU = "PANDA außerhalb Auftrag/IFU"
+PANDA_TITEL = "Hand links, Knochenalterbestimmung"
+PANDA_PROMPT = ("PANDA: Schreibe zur Knochenalterbestimmung KEINEN Befundteil – keinen Satz zu Lebensalter, Körpergröße, "
+                "Knochenalter, Endgröße oder Wachstumspotenzial, keine Lücken („…“) und keine Ergebniszeile wie "
+                "„Unauffälliger Befund.“. KaiScribe setzt den IB-Lab-Text als Ergebnisbefund ein; nur was der Arzt "
+                "zusätzlich diktiert hat (z. B. Nebenbefunde), schreibst du als Ergebnispunkte.")
+_PANDA_VORLAGE = re.compile(r"zum zeitpunkt der untersuchung|knochenalter|skelettalter|körpergröße|koerpergroesse|"
+                            r"endkörpergröße|endgröße|endgroesse|wachstumspotenzial|greulich|bayley|…|\.\.\.", re.I)
+_PANDA_ERG_NORMAL = re.compile(r"^(?:(?:unauffälliger|regelrechter|altersentsprechender)\s+)?(?:normal)?befund\.?$|"
+                               r"^(?:regelrechte|unauffällige) darstellung\b", re.I)
+_PANDA_AUFTRAG = re.compile(r"knochenalter|skelettalter", re.I)
+
+
+def panda_auftrag_passt(b, cas_leistungen):
+    """CAS-Leistung des PANDA-Bausteins: „Knochenalter“ bzw. Kürzel handl → True; andere Hand-Leistung (handgel, kahn,
+    hand2 …) → False; ohne Leistung/Kürzel → None (unbekannt – die Weiche schickt PANDA nur bei handl)."""
+    l = _leistung_zur_ziffer(b.ziffer, cas_leistungen) if cas_leistungen else None
+    if not isinstance(l, dict):
+        return None
+    kurz = str(l.get("kurz") or "").strip().lower()
+    if kurz == "handl" or _PANDA_AUFTRAG.search(f"{l.get('text') or ''} {l.get('vorlage') or ''}"):
+        return True
+    return False if kurz else None
+
+
+def panda_text(b, cas_leistungen=None, hinweise=None):
+    """Fertiger Knochenalter-Text des Abholers (oder „“); CAS-Leistung nicht Knochenalter → „“ + Hinweis."""
+    if b.modul != "panda":
+        return ""
+    t = next((p for p in b.ergebnis if p.startswith(PANDA_ANFANG)), "")
+    if t and panda_auftrag_passt(b, cas_leistungen) is False:
+        if hinweise is not None:
+            hinweise.append(f"{b.name}: {PANDA_IFU} (CAS-Leistung nicht Knochenalter/handl) – kein Text")
+        return ""
+    return t
+
+
+def _panda_einsetzen(zeilen, teile, i, b, text, e):
+    """Knochenalter-Text als Ergebnisbefund in teile[i]: Befundteil ohne Vorlagen-/Normalsätze (leer → weg), Text als
+    erster Ergebnispunkt, Diktiertes danach, „Unauffälliger Befund.“ u. ä. entfallen; neu durchgezählt."""
+    a = teile[i]
+    kopf_ende = min(x for x in (a.befund, a.ergebnis, a.ende) if x >= 0)
+    kopf = list(zeilen[a.start:kopf_ende])
+    while kopf and not kopf[-1].strip():
+        kopf.pop()
+    rest_befund = []
+    if a.befund >= 0:
+        for z in zeilen[a.befund + 1:(a.ergebnis if a.ergebnis > a.befund else a.ende)]:
+            saetze = [x for x in re.split(r"(?<=[.!?])\s+", z.strip()) if x]
+            bleib = [x for x in saetze if not _PANDA_VORLAGE.search(x)
+                     and not (_NORMAL.search(x) and not br.has_pathology(x))]
+            if bleib:
+                rest_befund.append(" ".join(bleib))
+    rest_erg = []
+    if a.ergebnis >= 0:
+        for z in zeilen[a.ergebnis + 1:a.ende]:
+            t = _NUM.sub("", z).strip()
+            if not t or t == text:
+                continue
+            if _PANDA_VORLAGE.search(t) or (z[:1] not in (" ", "\t") and _PANDA_ERG_NORMAL.search(t)):
+                e.hinweise.append(f"{b.name}: „{_kurz(t)}“ durch das IB-Lab-Ergebnis ersetzt")
+                continue
+            rest_erg.append(z)
+    if rest_befund:
+        e.hinweise.append(f"{b.name}: Befundteil mit diktiertem Text stehen gelassen („{_kurz(rest_befund[0], 50)}“) – "
+                          "Knochenalter ist ein Ergebnisbefund, bitte prüfen")
+    hinten = 0
+    k = a.ende
+    while k > a.start and not zeilen[k - 1].strip():
+        hinten, k = hinten + 1, k - 1
+    neu = kopf + ((["", "## Befund"] + rest_befund) if rest_befund else []) + ["", "## Ergebnis"]
+    neu += br.ergebnis_nummerieren("## Ergebnis\n" + "\n".join([text] + rest_erg)).split("\n")[1:]
+    neu += [""] * hinten
+    d = len(neu) - (a.ende - a.start)
+    zeilen[a.start:a.ende] = neu
+    a.befund = a.start + neu.index("## Befund") if rest_befund else -1
+    a.ergebnis = a.start + len(neu) - 1 - neu[::-1].index("## Ergebnis")
+    a.ende = a.start + len(neu)
+    for t in teile[i + 1:]:
+        t.start, t.ende = t.start + d, t.ende + d
+        t.befund += d if t.befund >= 0 else 0
+        t.ergebnis += d if t.ergebnis >= 0 else 0
+    e.eingesetzt[b.schluessel] = [text]
+    e.zuordnung[b.modul] = a.titel or "Befund"
+
+
 def befund_zeilen(b):
     """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
     wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
     Zeile steht."""
-    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b) or b.modul == "koala":
+    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b) or b.modul in ("koala", "panda"):
         return []
     if b.modul not in BEFUND_NUR_AUFFAELLIG:
         return list(b.befundteil)
@@ -1615,6 +1724,8 @@ def hat_inhalt(b):
     """Kommt von Baustein b etwas in den Befund (Befundzeilen nach dem Filter oder Ergebnispunkte)?"""
     if b.modul == "koala":
         return koala_hat_text(b)
+    if b.modul == "panda":
+        return bool(panda_text(b))
     return bool(befund_zeilen(b) or b.ergebnis)
 
 
@@ -1626,6 +1737,11 @@ def auffaellige_zeilen(bausteine):
             bt = b.befundtext
             out += [s for s in bt["stellung"] + bt["gewoelbe"] if not _FROG_GEW_NORMAL.match(s) and s not in out]
             out += [t for t in (f"{x['text']} {x['seite']}".strip() for x in bt["begriffe"]) if t not in out]
+            continue
+        if b.modul == "panda":             # 19.11.2026: der Knochenalter-Text nur, wenn retardiert/akzeleriert
+            t = panda_text(b)
+            if t and re.search(r"\b(?:retardiert|akzeleriert)\.", t) and t not in out:
+                out.append(t)
             continue
         if b.modul == "koala":             # 18.11.2026: der KOALA-Text (Sätze der K&L-Tabelle + Gonarthrose-Punkt)
             plan = _koala_plan(b, "", "", "", [])
@@ -1709,6 +1825,10 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
         name = (templates.get(l.get("vorlage")) or {}).get("display_name") if l and l.get("vorlage") else None
         if name:
             vorlagen[b.schluessel] = (templates.get(l.get("vorlage")) or {}).get("body")
+        if b.modul == "panda":
+            if not panda_text(b, cas_leistungen):
+                continue
+            name, l = PANDA_TITEL, {}       # Titel wie die Knochenalter-Befunde der Ordination
         if name:
             titel = _titel_mit_seite(name, l.get("seite") or "")
         else:
@@ -1724,7 +1844,9 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     for titel, bs in gruppen:
         je = {}                                  # Baustein → (Befundzeilen, Ergebnispunkte)
         for b in bs:
-            if b.modul == "koala":               # 18.11.2026: Knie-Vorlage mit KOALA-Text (bzw. nur die Sätze)
+            if b.modul == "panda":               # 19.11.2026: nur der Knochenalter-Text als Ergebnisbefund
+                je[b.schluessel] = ([], [panda_text(b, cas_leistungen)])
+            elif b.modul == "koala":             # 18.11.2026: Knie-Vorlage mit KOALA-Text (bzw. nur die Sätze)
                 je[b.schluessel] = _koala_geruest(b, titel, vorlagen.get(b.schluessel))
             elif _frog_text(b):                  # v3.19.8: nur die FROG-Sätze (ohne Vorlagentext) + Begriffe + Schluss
                 plan = _frog_plan(b, titel, Abschnitt(titel, 0, 0).seite, "", [])

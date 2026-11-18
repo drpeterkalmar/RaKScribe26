@@ -1,0 +1,234 @@
+{
+ "quelle": "ris-mods ibl/panda_ergebnis.py (Abholer 1.3.10) über vorbefund.erstelle_vorbefund + bruecke.ibl_bausteine.baustein_lesen; Werte der echten Fälle anonym aus der VM-Auswertung 18.11.2026 (panda_run)",
+ "faelle": [
+  {
+   "nr": 1,
+   "beschreibung": "echter Fall 11.11.2026 (anonym): m, 162 Mon., KA 159, SD 10,44, 89,0 %",
+   "baustein": {
+    "accno": "202611190011",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 159 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 89,0 % (IB Lab PANDA)."
+    ],
+    "ergebnis": [
+     "Zum Zeitpunkt der Untersuchung beträgt das Alter des Jungen 13 Jahre und 6 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt 13 Jahre und 3 Monate und ist damit altersentsprechend. Nach Bayley und Pinneau sind 89,0 % des Wachstumspotenzials erreicht."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 2,
+   "beschreibung": "echter Fall 16.11.2026 (anonym): m, 118 Mon., KA 128, SD 9,00, 80,0 %",
+   "baustein": {
+    "accno": "202611190021",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 128 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 80,0 % (IB Lab PANDA)."
+    ],
+    "ergebnis": [
+     "Zum Zeitpunkt der Untersuchung beträgt das Alter des Jungen 9 Jahre und 10 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt 10 Jahre und 8 Monate und ist damit altersentsprechend. Nach Bayley und Pinneau sind 80,0 % des Wachstumspotenzials erreicht."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 3,
+   "beschreibung": "echter Fall 12.11.2026 (anonym): w, 142 Mon., KA 140, SD 11,94, 91,8 %",
+   "baustein": {
+    "accno": "202611190031",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 140 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 91,8 % (IB Lab PANDA)."
+    ],
+    "ergebnis": [
+     "Zum Zeitpunkt der Untersuchung beträgt das Alter des Mädchens 11 Jahre und 10 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt 11 Jahre und 8 Monate und ist damit altersentsprechend. Nach Bayley und Pinneau sind 91,8 % des Wachstumspotenzials erreicht."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 4,
+   "beschreibung": "konstruiert retardiert: m, 138 Mon., KA 110, SD 9,0, 78,4 %",
+   "baustein": {
+    "accno": "202611190041",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 110 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 78,4 % (IB Lab PANDA)."
+    ],
+    "ergebnis": [
+     "Zum Zeitpunkt der Untersuchung beträgt das Alter des Jungen 11 Jahre und 6 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt 9 Jahre und 2 Monate und ist damit um 2 Jahre und 4 Monate retardiert. Nach Bayley und Pinneau sind 78,4 % des Wachstumspotenzials erreicht."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 5,
+   "beschreibung": "konstruiert akzeleriert: w, 120 Mon., KA 145, SD 10,0, 92,3 %",
+   "baustein": {
+    "accno": "202611190051",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 145 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 92,3 % (IB Lab PANDA)."
+    ],
+    "ergebnis": [
+     "Zum Zeitpunkt der Untersuchung beträgt das Alter des Mädchens 10 Jahre. Das ermittelte Knochenalter nach Greulich und Pyle beträgt 12 Jahre und 1 Monat und ist damit um 2 Jahre und 1 Monat akzeleriert. Nach Bayley und Pinneau sind 92,3 % des Wachstumspotenzials erreicht."
+    ],
+    "hinweise": [],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 6,
+   "beschreibung": "konstruiert NaN-%: m, 80 Mon., KA 66, SD 8,0, Wachstumspotenzial NaN",
+   "baustein": {
+    "accno": "202611190061",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 66 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA)."
+    ],
+    "ergebnis": [
+     "Zum Zeitpunkt der Untersuchung beträgt das Alter des Jungen 6 Jahre und 8 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt 5 Jahre und 6 Monate und ist damit altersentsprechend."
+    ],
+    "hinweise": [
+     "IB Lab PANDA: Wachstumspotenzial bei diesem Knochenalter nicht tabelliert."
+    ],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 7,
+   "beschreibung": "hand2 (wie 17.11.2026): w, 162 Mon., 2 Bilder KA 96 / 27",
+   "baustein": {
+    "accno": "202611190071",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Hand (Aufnahme 1):",
+     "Knochenalter nach Greulich & Pyle 96 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 80,4 % (IB Lab PANDA).",
+     "Hand (Aufnahme 2):",
+     "Knochenalter nach Greulich & Pyle 27 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA)."
+    ],
+    "ergebnis": [],
+    "hinweise": [
+     "IB Lab PANDA: 2 Ergebnisse (Knochenalter 8 Jahre / 2 Jahre und 3 Monate) – kein Text, Knochenalter nur bei genau einer Aufnahme der linken Hand, bitte prüfen."
+    ],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 8,
+   "beschreibung": "Geburtsdatum fehlt",
+   "baustein": {
+    "accno": "202611190081",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter nach Greulich & Pyle 159 Monate (IB Lab PANDA).",
+     "Knochenalter-Status laut Hersteller: im Normbereich (IB Lab PANDA).",
+     "Erreichtes Wachstumspotenzial 89,0 % (IB Lab PANDA)."
+    ],
+    "ergebnis": [],
+    "hinweise": [
+     "IB Lab PANDA: Geburtsdatum fehlt – Lebensalter unbekannt, kein Text, bitte prüfen."
+    ],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  },
+  {
+   "nr": 9,
+   "beschreibung": "Knochenalter NaN (Bone age calculation not possible)",
+   "baustein": {
+    "accno": "202611190091",
+    "ziffer": 1,
+    "modul": "panda",
+    "name": "PANDA",
+    "modul_name": "IB Lab PANDA",
+    "version": 1,
+    "aktualisiert": "2026-11-19T08:00:00",
+    "seiten": [],
+    "befundteil": [
+     "Knochenalter-Status laut Hersteller: Bone age calculation not possible (IB Lab PANDA)."
+    ],
+    "ergebnis": [],
+    "hinweise": [
+     "IB Lab PANDA: Knochenalter-Status laut Hersteller mit unbekanntem Wert „Bone age calculation not possible“ – keine Schlussfolgerung.",
+     "IB Lab PANDA: Knochenalter nicht berechnet (Bone age calculation not possible) – kein Text, bitte prüfen."
+    ],
+    "nicht_zugeordnet": [],
+    "vorwerte": []
+   }
+  }
+ ]
+}
