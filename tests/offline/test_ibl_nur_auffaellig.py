@@ -191,11 +191,15 @@ KOALA_BT = ["Kellgren-Lawrence-Grad rechts 3 (IB Lab KOALA).", "Minimale Gelenks
             "Gelenkspaltverschmälerung (OARSI-Grad) links 0 (IB Lab KOALA)."]
 KOALA_ERG = ["Mittelgradige Gonarthrose rechts (Kellgren-Lawrence-Grad 3)."]
 ko = baustein("koala", KOALA_BT, KOALA_ERG)
-check("KOALA mit Treffer: nur K&L rechts 3 (links 1 und Gelenkspalt/OARSI raus)",
-      I.befund_zeilen(ko[0]) == ["Kellgren-Lawrence-Grad rechts 3 (IB Lab KOALA)."], I.befund_zeilen(ko[0]))
+# 18.11.2026 (Georg, kaiscribe-kl-tabelle-zurueck-n1): KOALA bringt statt Messzeilen den Satz der K&L-Tabelle
+# (tests/offline/test_ibl_koala_text.py) – keine Messzeile, keine mm-Werte
+check("KOALA mit Treffer: keine Messzeilen mehr (K&L-Text statt Zeilen)", I.befund_zeilen(ko[0]) == [], I.befund_zeilen(ko[0]))
 g = I.geruest(ko, None, T)
-check("KOALA mit Treffer, Gerüst: eine Messzeile + Punkt", g.zeilen == ["Kellgren-Lawrence-Grad rechts 3 (IB Lab KOALA)."]
-      + KOALA_ERG and "Gelenkspaltweite" not in g.report, g.report)
+check("KOALA mit Treffer, Gerüst: K&L-Satz rechts medial + Gonarthrose-Punkt, keine Messwerte",
+      g.zeilen == ["Rechts medial mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler "
+                   "Sklerosierung. Lateral rechts normal weiter Gelenkspalt. Links normal weiter Gelenkspalt.",
+                   "Mäßiggradige Gonarthrose rechts medial (Arthrose Grad 3 nach Kellgren & Lawrence)."]
+      and "Gelenkspaltweite" not in g.report and " mm" not in g.report, g.report)
 check("KOALA: K&L-Grade fürs Diktat/den Wächter bleiben vollständig (links 1, rechts 3)",
       I.kl_grade(ko, "links") == ["1"] and I.kl_grade(ko, "rechts") == ["3"])
 ko0 = baustein("koala", ["Kellgren-Lawrence-Grad 1 (IB Lab KOALA).", "Minimale Gelenkspaltweite medial 4,5 mm (IB Lab KOALA).",

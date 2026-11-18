@@ -959,7 +959,7 @@ def abschnitte_bereinigen(report, diktat="", templates=None, daten=None):
         # ist keine Fraktur, „… -konvexe Skoliose“ der Ganzaufnahme kein Befund)
         eigen = text if not w else " ".join(text[a:b] for a, b in saetze_mit_lage(text)
                                             if vorlage_normalisieren(text[a:b]) not in w)
-        befunde = widerspruch_befunde(eigen + "\n" + ergebnis, daten)
+        befunde = widerspruch_befunde(kl_deskriptor_neutral(eigen) + "\n" + ergebnis, daten)
         for x0, x1, ids in widerspruch_saetze(text, befunde, daten):
             weg = any(kat[i].get("_str") is not None and kat[i]["_str"].search(text[x0:x1].lower()) for i in ids)
             stellen.append((x0, x1, "s" if weg else "e"))
@@ -1262,6 +1262,37 @@ _KL_ADJ_RE = re.compile(r"(?<![\wäöüß])(" + "|".join(r for _g, r in _KL_ADJ)
                         r"[\wäöüß-]*(?:th?ros|rthrot|rtrot)", re.I)
 
 
+# K&L-Deskriptor-Tabelle (freigegeben Georg Riegler/Peter Kalmar; Skill radiology-shoulder-dictation; im Gen-Prompt
+# radiology_prompt.txt Abschnitt ARTHROSE; 80a36ae hatte sie gestrichen, zurück seit kaiscribe-kl-tabelle-zurueck-n1
+# 18.11.2026). Gelenkunabhängig, gilt auch für den IB-Lab-Grad (KOALA). Wächter: tests/regel_register.
+KL_TABELLE = {
+    0: "Unauffälliger Gelenksspalt, keine Osteophyten.",
+    1: "Geringe Osteophytenbildung, fragliche Gelenksspaltverschmälerung.",
+    2: "Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung.",
+    3: "Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung.",
+    4: "Aufgehobener Gelenksspalt mit ausgeprägter subchondraler Sklerosierung, Zystenbildung und ausgeprägten Osteophyten.",
+}
+# Grad-Adjektiv der Diagnose im Ergebnis (Georg 18.11.2026: „Mäßiggradige Gonarthrose links medial (Arthrose Grad 3 …)“)
+KL_ADJEKTIV = {2: "Geringgradige", 3: "Mäßiggradige", 4: "Hochgradige"}
+
+
+# Für die Befund-Erkennung der Widerspruchs-Wächter ist ein Tabellensatz die Arthrose selbst: seine Osteophyten, Zysten
+# und Sklerose sind kein umschriebener Befund, der Kortikalis-/Knochenstruktur-Normalsätze einschränkt (Georg 18.11.2026,
+# Nr. 34: „Glatte und scharfe Kontur der Kortikalis …“ bleibt neben „… mit multiplen Osteophyten …“). Sync: befundRegeln.ts
+_KL_TAB_RE = re.compile("|".join(re.escape(s[:-1]) for g, s in sorted(KL_TABELLE.items(), key=lambda x: -len(x[1])) if g),
+                        re.I)
+
+
+def kl_deskriptor_neutral(text):
+    """K&L-Tabellensätze (Grad 1–4, auch klein weitergeschrieben) → „Gelenkspaltverschmälerung“."""
+    return _KL_TAB_RE.sub("Gelenkspaltverschmälerung", text or "")
+
+
+def kl_klammer(grad):
+    """„(Arthrose Grad 3 nach Kellgren & Lawrence)“ — Ergebnisformat (Regel-Register)."""
+    return f"(Arthrose Grad {grad} nach Kellgren & Lawrence)"
+
+
 def kl_grade(text):
     """Alle Kellgren-&-Lawrence-Grade im Text als Ziffern-Strings („Grad 2 nach Kellgren“, „Kellgren-Lawrence 3“,
     „Kellgren-Lawrence-Grad links 1“, „KL 2“, römisch/als Wort) → sortierte Liste ohne Doppel."""
@@ -1277,11 +1308,17 @@ def arthrose_diktiert(diktat):
     return bool(_ARTHROSE_DIKTAT.search(diktat or ""))
 
 
-def kl_adjektiv_grade(diktat):
+_FEMOROPATELLAR = re.compile(r"patell|femoropat", re.I)
+
+
+def kl_adjektiv_grade(diktat, femoropatellar=False):
     """v3.18.5 (Peter 12.11.2026, Nachtrag RH 99: „mäßige Coxarthrose beidseits“ → K&L 3 bleibt): Grade zum Grad-Adjektiv
-    einer DIKTIERTEN Arthrose (beginnend 1, gering 2, mäßig 3, hochgradig 4) → sortierte Liste. Ohne Arthrose-Wort leer."""
+    einer DIKTIERTEN Arthrose (beginnend 1, gering 2, mäßig 3, hochgradig 4) → sortierte Liste. Ohne Arthrose-Wort leer.
+    femoropatellar=True: nur Femoropatellar-/Retropatellar-/patellofemorale Arthrosen (18.11.2026, neben KOALA)."""
     out = set()
     for m in _KL_ADJ_RE.finditer(diktat or ""):
+        if femoropatellar and not _FEMOROPATELLAR.search(m.group(0)):
+            continue
         w = m.group(1)
         out.update(g for g, r in _KL_ADJ if re.fullmatch(r, w, re.I))
     return sorted(out)
@@ -1289,11 +1326,15 @@ def kl_adjektiv_grade(diktat):
 
 def kl_bereinigen(report, diktat, erlaubt=()):
     """Nach der KI: nicht gedeckte K&L-Grade entfernen bzw. auf den einzigen erlaubten Grad setzen. Gedeckt ist (in
-    dieser Reihenfolge) ein diktierter Grad, sonst ein IB-Lab-Grad (erlaubt), sonst — v3.18.5 — der Grad zum
-    Grad-Adjektiv einer diktierten Arthrose. Der Prompt-Platzhalter „Grad X“ ist nie gedeckt. → (report, Änderungen)."""
+    dieser Reihenfolge) ein diktierter Grad, sonst ein IB-Lab-Grad (erlaubt) und — v3.18.5 — der Grad zum
+    Grad-Adjektiv einer diktierten Arthrose (seit 18.11.2026 beide zusammen: KOALA femorotibial, Adjektiv femoropatellar). Der Prompt-Platzhalter „Grad X“ ist nie gedeckt. → (report, Änderungen)."""
     if not report or not re.search(r"kellgren", report, re.I):
         return report, []
-    ok = kl_grade(diktat) or sorted(set(erlaubt or ())) or kl_adjektiv_grade(diktat)
+    # kaiscribe-kl-tabelle-zurueck-n1 (Georg 18.11.2026, Nr. 50: KOALA KL 2 femorotibial + diktierte „mäßige patellofemorale
+    # Arthrose“ = Grad 3): der IB-Lab-Grad (KOALA = femorotibial) geht im selben Kompartiment weiter vor, der Adjektiv-Grad
+    # einer diktierten FEMOROPATELLAR-Arthrose gilt daneben
+    ok = kl_grade(diktat) or (sorted(set(erlaubt) | set(kl_adjektiv_grade(diktat, femoropatellar=True))) if erlaubt
+                              else kl_adjektiv_grade(diktat))
     aend = []
 
     def ersetzen(m):
@@ -1328,8 +1369,9 @@ _ARTHROSE_KI = re.compile(r"arthros|arthrot", re.I)
 _VERNEINT = re.compile(r"(?<![\wäöüß])(?:kein\w*|ohne|nicht|frei von)(?![\wäöüß])", re.I)
 
 
-def arthrose_bereinigen(report, diktat, daten=None):
-    """→ (report, Änderungen). Nur im Abschnitt „## Ergebnis“; die Nummerierung wird danach neu gesetzt."""
+def arthrose_bereinigen(report, diktat, daten=None, behalten=()):
+    """→ (report, Änderungen). Nur im Abschnitt „## Ergebnis“; die Nummerierung wird danach neu gesetzt.
+    behalten: Ergebnispunkte, die KaiScribe selbst aus IB Lab eingesetzt hat (KOALA, 18.11.2026) – bleiben stehen."""
     if not report or "## Ergebnis" not in report or arthrose_diktiert(diktat) or not _ARTHROSE_KI.search(report):
         return report, []
     zeilen = report.split("\n")
@@ -1341,7 +1383,8 @@ def arthrose_bereinigen(report, diktat, daten=None):
         if im_erg:
             erg.add(i)
         ohne_kl = _KL_KI.sub("", z)   # erlaubte K&L-Klammer (IB Lab) ist keine Arthrose-Diagnose
-        if not im_erg or "(IB Lab" in z or not _ARTHROSE_KI.search(ohne_kl):
+        if not im_erg or "(IB Lab" in z or not _ARTHROSE_KI.search(ohne_kl) \
+                or re.sub(r"^\s*\d+\.\s*", "", z).strip() in behalten:
             continue
         vor = ohne_kl[:_ARTHROSE_KI.search(ohne_kl).start()]
         if _VERNEINT.search(vor):

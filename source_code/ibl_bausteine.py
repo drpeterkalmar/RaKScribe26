@@ -114,6 +114,7 @@ class Baustein:
     aktualisiert: str = ""
     vorwerte: List[dict] = field(default_factory=list)   # v3.18.0: frühere Werte derselben Messgröße (nur Anzeige)
     befundtext: Optional[dict] = None   # v3.19.8: FROG – fertige Sätze + Begriffe des Abholers ≥ 1.3.7 (Georg 17.11.2026)
+    alter: Optional[int] = None         # 18.11.2026: Alter des Patienten in Jahren, wenn die Brücke es liefert (KOALA < 18)
 
     @property
     def schluessel(self):
@@ -177,6 +178,17 @@ def _befundtext(modul, x):
     return bt if begriffe and (bt["stellung"] or bt["gewoelbe"]) else None
 
 
+def _alter(d):
+    """Alter in Jahren aus dem Baustein („alter“ bzw. „patient_alter“) – sonst None (unbekannt)."""
+    for k in ("alter", "patient_alter"):
+        try:
+            if d.get(k) is not None and str(d.get(k)).strip() != "":
+                return int(float(str(d.get(k)).replace(",", ".")))
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
 NUR_ANZEIGE = {"rho"}               # v3.19.10: Module, von denen KaiScribe nie Text einsetzt (nur Hinweise in der Anzeige)
 
 
@@ -215,7 +227,8 @@ def aus_liste(liste):
                             ergebnis=ergebnis, hinweise=hinweise,
                             nicht_zugeordnet=_texte(d.get("nicht_zugeordnet")),
                             modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or ""),
-                            vorwerte=_vorwerte(d.get("vorwerte")), befundtext=_befundtext(modul, d.get("befundtext"))))
+                            vorwerte=_vorwerte(d.get("vorwerte")), befundtext=_befundtext(modul, d.get("befundtext")),
+                            alter=_alter(d)))
     out.sort(key=lambda b: (b.ziffer, b.modul))
     return out
 
@@ -688,6 +701,13 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
         if not b.befundteil and not b.ergebnis:
             continue
         i, _art = zuordnen(b, teile, cas_leistungen, templates)
+        if b.modul == "koala":             # 18.11.2026: fester Kniebefund nach K&L-Tabelle statt Messzeilen (Georg)
+            if i is not None:
+                _koala_einsetzen(zeilen, teile, i, b, e)
+            elif koala_hat_text(b):
+                e.hinweise.append(f"{b.label}: keiner Knie-Untersuchung eindeutig zuzuordnen – KOALA-Text nicht "
+                                  "eingesetzt, bitte prüfen")
+            continue
         if _frog_text(b):                  # v3.19.8: fertige Sätze statt Messzeilen (Georg 17.11.2026)
             if i is not None:
                 _frog_einsetzen(zeilen, teile, i, b, e)
@@ -770,14 +790,21 @@ def _kl_satz(kl):
             "IB-Lab-Grad keine neue Diagnose (kein „Gonarthrose“, wenn sie nicht diktiert ist).")
 
 
-def prompt_block(bausteine, vorlage=None):
+def prompt_block(bausteine, vorlage=None, diktat=""):
     """<ibl_messwerte> für den Gen-Prompt — nur mit Bausteinen (sonst bleibt der Prompt bit-gleich). Ohne Zahlen und
     ohne Diagnosen: die KI soll nichts davon selbst schreiben, nur wissen, dass es ergänzt wird. vorlage = Text der
     Vorlage dieses Abschnitts: Sätze daraus, die einer IB-Lab-Diagnose widersprechen („Regelrechte Abbildung beider
     Pfannendächer.“ neben einer Hüftdysplasie), werden wörtlich als „weglassen“ genannt (live 13.10.: nur die Themen zu
     nennen reichte der KI beim Becken nicht)."""
-    zeilen = []
+    zeilen, koala = [], []
     for b in bausteine or []:
+        if b.modul == "koala":             # 18.11.2026: KaiScribe schreibt den femorotibialen Satz + Gonarthrose-Punkt selbst
+            titel = (vorlage or "").split("\n")[0]
+            if _koala_plan(b, titel, br.diktierte_seite(diktat), diktat, [], vorlage or "") is not None:
+                koala.append(b)
+                zeilen.append(f"- {b.name}: Satz zum femorotibialen Gelenkspalt (Kellgren & Lawrence, Kompartiment) und "
+                              "Ergebnispunkt zur Gonarthrose")
+            continue
         if _frog_text(b):                  # v3.19.8: KaiScribe ersetzt Stellungs- und Gewölbesatz der Vorlage selbst
             zeilen.append(f"- {b.name}: Sätze zu Zehenstellung und Fußgewölbe und die zugehörigen Diagnosen im Ergebnis")
             continue
@@ -793,7 +820,8 @@ def prompt_block(bausteine, vorlage=None):
             # Werte sind unauffällig und kommen nicht in den Befund); widersprechende Sätze nennt „weg“ unten wörtlich
             thema = None if nur else THEMEN.get(b.modul)
             zeilen.append(f"- {b.name}: " + ", ".join(namen) + (f" (ersetzt Vorlagen-Sätze zu: {thema})" if thema else ""))
-    kl = [z for b in bausteine or [] for z in b.befundteil if "kellgren" in z.lower() and br.kl_grade(z)]
+    kl = [z for b in bausteine or [] if b not in koala for z in b.befundteil
+          if "kellgren" in z.lower() and br.kl_grade(z)]
     if not zeilen and kl:
         # v3.18.8: KOALA ohne Regeltreffer – kein Messwert kommt in den Befund, den K&L-Grad muss die KI trotzdem kennen
         # (Grad zu einer DIKTIERTEN Arthrose, Regel ab 3.18.5)
@@ -807,7 +835,7 @@ def prompt_block(bausteine, vorlage=None):
         return ""
     weg = []
     for b in bausteine:
-        if b.ergebnis and vorlage and not _frog_text(b):
+        if b.ergebnis and vorlage and not _frog_text(b) and b.modul != "koala":   # KOALA: KaiScribe gleicht selbst an
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), _pathologische_punkte(b, b.ergebnis)) if s not in weg]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
         zeilen.append(_kl_satz(kl))
@@ -815,6 +843,8 @@ def prompt_block(bausteine, vorlage=None):
         zeilen.append(LAMA_PROMPT)
     if any(_frog_text(b) for b in bausteine):
         zeilen.append(FROG_PROMPT)
+    if koala:
+        zeilen.append(KOALA_PROMPT)
     if weg:
         zeilen.append("Diese Sätze der Vorlage widersprechen den IB-Lab-Werten – nicht übernehmen (bzw. nur ohne die "
                       "widersprechende Aussage): " + " ".join(f"„{s}“" for s in weg))
@@ -1238,11 +1268,334 @@ def _frog_einsetzen(zeilen, teile, i, b, e):
     e.zuordnung[b.modul] = a.titel or "Befund"
 
 
+# ───────────────────────────── IB Lab KOALA: Kniebefund nach der K&L-Tabelle ─────────────────────────────
+# Georg Riegler 18.11.2026 (GO, Brief kaiscribe-kl-tabelle-zurueck-n1): KOALA → Knie-Vorlage (kniegelenk_in_2_ebenen /
+# _mit_patella_axial), nur das a.p.-Ergebnis (der Abholer liefert nur a.p./p.a.-Werte, je Seite aus einer Aufnahme),
+# Seite aus Bild/Messlage. Keine Messzeilen und keine mm-Werte im Text.
+#   - Kein KOALA-Text: Alter < 18, Prothese (Vorlage/Überschrift/Diktat), seitliche/axiale Bilder, KL 0/1 (Vorlage bleibt),
+#     Diktat nennt selbst eine Gonarthrose bzw. einen K&L-Grad (Diktat geht immer vor – Hinweis bei anderem Grad).
+#   - KL 2–4: Kompartiment = das mit dem engeren Gelenkspalt (minimale Gelenkspaltweite medial vs. lateral); es bekommt den
+#     Satz der K&L-Tabelle (befund_regeln.KL_TABELLE) mit vorangestelltem „Medial“/„Lateral“, das andere „Lateral normal
+#     weiter Gelenkspalt.“ bzw. „Medial …“ – an der Stelle von „Der Gelenkspalt ist allseits normal weit.“. Nie „betont“.
+#     „Die Gelenkflächen sind normal geformt und kongruent.“ entfällt, „Normale Form und Stellung der dargestellten
+#     Skelettabschnitte.“ → „Normale Stellung der dargestellten Skelettabschnitte.“ (Regel 2).
+#   - Ergebnis: ERSTER Punkt „Mäßiggradige Gonarthrose links medial (Arthrose Grad 3 nach Kellgren & Lawrence).“; beide
+#     Seiten gleich → „… beidseits medial …“; das Normal-Ergebnis des Knies entfällt. Diktiertes (Femoropatellararthrose,
+#     Erguss) schreibt die KI nach den Prompt-Regeln.
+#   - Mehrere a.p.-Bilder einer Seite mit verschiedenen Graden → kein Text, Prüf-Hinweis.
+KOALA_STELLUNG = "Normale Stellung der dargestellten Skelettabschnitte."
+KOALA_PROMPT = ("KOALA: KaiScribe setzt nach dem Befund selbst den Satz zum femorotibialen Gelenkspalt (Grad und Kompartiment "
+                "laut IB Lab, Wortlaut der K&L-Tabelle) und den Ergebnispunkt zur Gonarthrose ein und gleicht „Normale Form "
+                "und Stellung der dargestellten Skelettabschnitte.“ und „Die Gelenkflächen sind normal geformt und "
+                "kongruent.“ an. Übernimm „Der Gelenkspalt ist allseits normal weit.“ wörtlich und schreibe selbst KEINEN "
+                "Satz, KEINE Diagnose und KEINEN Kellgren-&-Lawrence-Grad zur Gonarthrose bzw. zum femorotibialen "
+                "Gelenkspalt. Der IB-Lab-Grad gilt nur femorotibial: eine diktierte Femoropatellararthrose bekommt den Grad "
+                "zu ihrem diktierten Grad-Adjektiv. Andere diktierte Befunde (z.B. Femoropatellararthrose, Gelenkerguss) "
+                "schreibst du wie gewohnt; ohne weitere diktierte Pathologie steht im Ergebnis das Normal-Ergebnis "
+                "(KaiScribe ersetzt es).")
+_KOALA_KL = re.compile(r"kellgren", re.I)
+_KOALA_JSW = re.compile(r"gelenkspaltweite\s+(medial|lateral)", re.I)
+_KOALA_NICHT_AP = re.compile(r"seitl|axial", re.I)
+_PROTHESE = re.compile(r"prothes|\btep\b|endoprothes|schlittenprothes", re.I)
+_KNIE_TITEL = re.compile(r"\bknie", re.I)
+_DEFILEE = re.compile(r"defilee|patella\s+in\s+\d", re.I)
+_KOALA_DIKTAT_ARTHROSE = re.compile(r"[\wäöüß-]*(?:th?ros|rthrot|rtrot)[\wäöüß]*", re.I)
+_KNIE_SPALT = re.compile(r"(?:Der Gelenkspalt ist |(?:Im Übrigen|Ansonsten),? ist der Gelenkspalt )"
+                         r"(?:(?:im Übrigen|ansonsten|sonst|femorotibial|beidseits|allseits)\s+){0,3}normal weit\.")
+# Femoropatellar-Satz der KI (Tabellensatz): steht in Georgs Wortlaut HINTER dem femorotibialen Satz
+_FP_SATZ = re.compile(r"(?:Femoropatellar (?:(beidseits|rechts|links) )?|(Beidseits|Rechts|Links) femoropatellar )"
+                      r"((?:geringe|mäßiggradige|aufgehobener)[^.]*\.)\s?")
+
+
+def _fp_form(m):
+    """„Beidseits femoropatellar …“ → Georgs Form „Femoropatellar beidseits …“."""
+    s = (m.group(1) or m.group(2) or "").lower()
+    return f"Femoropatellar {s + ' ' if s else ''}{m.group(3)}"
+_KNIE_FLAECHEN = re.compile(r"(?:Die Gelenkflächen sind (?:im Übrigen |ansonsten )?|(?:Im Übrigen|Ansonsten) sind die "
+                            r"Gelenkflächen )normal geformt und kongruent\.")
+# Weichteil-/Erguss-Satz, den die KI als eigenen Absatz setzt – die Knie-Vorlage ist EIN Absatz (Georg Nr. 34)
+_KNIE_WT_ABSATZ = re.compile(r"\n\s*\n((?:[^.\n]*Gelenkergu(?:ss|ß)[^.\n]*\.\s*)?(?:Ansonsten u|U)nauffällige Weichteile\.)\s*$")
+_KNIE_FORM = re.compile(r"(?:Im Übrigen n|Ansonsten n|N)ormale (?:Form und )?Stellung der dargestellten "
+                        r"Skelettabschnitte(?: (?:beidseits|rechts|links))?\.")
+# Femoropatellar-Punkt der KI („Mäßige patellofemorale Arthrose beidseits (Arthrose Grad 3 …)“) → Georgs Form
+# „Mäßiggradige Femoropatellararthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).“ (Fixture Nr. 34/50)
+_FP_PUNKT = re.compile(r"^(?:[A-Za-zÄÖÜäöüß-]+\s+)?(?:(?:patellofemoral|femoropatellar)(?:e|er|en)?\s+arthrose|"
+                       r"femoropatellararthrose|patellofemoralarthrose)(?=\s)", re.I)
+_KNIE_ANKER = [re.compile(r"Femoropatellar(?:er)?\s"), re.compile(r"Kein Hinweis auf freie Gelenkkörper\."),
+               re.compile(r"Keine intra- oder periartikulären Verkalkungen\.")]
+_ANDERES = {"medial": "Lateral", "lateral": "Medial"}
+
+
+def _koala_werte(b):
+    """KOALA-Befundzeilen → {Seite: {"kl": {Grad, …}, "medial": mm, "lateral": mm}} („“ = ohne Seite). Zeilen unter einer
+    Beschriftung „… seitlich:“/„… axial:“ zählen nie (nur a.p.)."""
+    out, abschnitt = {}, ""
+    for z in b.befundteil:
+        if _abschnitt_zeile(z):
+            abschnitt = z
+            continue
+        if _KOALA_NICHT_AP.search(abschnitt):
+            continue
+        rumpf = re.sub(r"\s*\([^()]*\)\.?\s*$", "", z)
+        s = {x.lower() for x in _SEITE.findall(rumpf)}
+        seite = "rechts" if s == {"rechts"} else "links" if s == {"links"} else ""
+        w = out.setdefault(seite, {"kl": set(), "medial": None, "lateral": None})
+        if _KOALA_KL.search(rumpf):
+            w["kl"].update(int(g) for g in br.kl_grade(rumpf))
+            continue
+        m = _KOALA_JSW.search(rumpf)
+        mw = messwert(z)
+        if m and mw is not None and mw.zahl is not None:
+            k = m.group(1).lower()
+            w[k] = mw.zahl if w[k] is None else min(w[k], mw.zahl)
+    return out
+
+
+def _koala_gonarthrose_diktiert(diktat):
+    """Nennt das Diktat selbst eine femorotibiale Gonarthrose/Kniearthrose oder einen K&L-Grad? (Femoropatellar-,
+    Retropatellar- und patellofemorale Arthrose zählen nicht – die schreibt die KI daneben.)"""
+    if br.kl_grade(diktat):
+        return True
+    for m in _KOALA_DIKTAT_ARTHROSE.finditer(diktat or ""):
+        davor = (diktat or "")[max(0, m.start() - 25):m.start()]
+        if br._FEMOROPATELLAR.search(m.group(0)) or re.search(r"(?:patell|femoropat)\w*\s*$", davor, re.I):
+            continue
+        return True
+    return False
+
+
+def _koala_sperre(b, titel, diktat, vorlage=""):
+    """Grund, warum kein KOALA-Text kommt (Alter, Prothese, keine Knie-Untersuchung) – sonst ""."""
+    if b.alter is not None and b.alter < 18:
+        return f"Patient {b.alter} Jahre (unter 18)"
+    if _PROTHESE.search(f"{titel or ''}\n{vorlage or ''}\n{diktat or ''}"):
+        return "Knieprothese"
+    if titel and (not _KNIE_TITEL.search(titel) or _DEFILEE.search(titel)):
+        return f"Untersuchung „{_kurz(titel, 40)}“ ist kein Kniegelenk a.p."
+    return ""
+
+
+def _koala_plan(b, titel, seite, diktat, hinweise, vorlage=""):
+    """KOALA-Text für EINE Knie-Untersuchung → (Befundsätze, Ergebnispunkte) oder None (nichts einsetzen, ggf. Hinweis)."""
+    if b.modul != "koala":
+        return None
+    werte = _koala_werte(b)
+    if not any(w["kl"] for w in werte.values()):
+        return None
+    sperre = _koala_sperre(b, titel, diktat, vorlage)
+    if sperre:
+        if any(g >= 2 for w in werte.values() for g in w["kl"]):
+            hinweise.append(f"{b.label}: kein KOALA-Text ({sperre})")
+        return None
+    if seite == "beidseits" or (seite not in ("rechts", "links") and set(b.seiten) == {"rechts", "links"}):
+        seiten = ["rechts", "links"]
+    elif seite in ("rechts", "links"):
+        seiten = [seite]
+    else:
+        seiten = list(b.seiten) or [""]
+    je = []
+    for s in seiten:
+        w = werte.get(s) or (werte.get("") if len(seiten) == 1 else None)
+        if w is None and s == "" and len(werte) == 1:
+            w = next(iter(werte.values()))
+        if not w or not w["kl"]:
+            je.append((s, None, None))
+            continue
+        if len(w["kl"]) > 1:
+            hinweise.append(f"⚠ {b.name} {s}: verschiedene Kellgren-Lawrence-Grade ({', '.join(map(str, sorted(w['kl'])))}) "
+                            "aus mehreren a.p.-Aufnahmen – kein KOALA-Text, bitte am Bild prüfen".replace("  ", " "))
+            return None
+        g = next(iter(w["kl"]))
+        k = None
+        if g >= 2:
+            med, lat = w["medial"], w["lateral"]
+            if med is not None and lat is not None and med != lat:
+                k = "medial" if med < lat else "lateral"
+            else:
+                hinweise.append(f"{b.name} {s}: Kompartiment aus dem Gelenkspalt nicht bestimmbar – KOALA-Text ohne "
+                                "medial/lateral, bitte prüfen".replace("  ", " "))
+        je.append((s, g, k))
+    if _koala_gonarthrose_diktiert(diktat):     # Diktat geht immer vor
+        kl = sorted({str(g) for _s, g, _k in je if g is not None})
+        diktiert = br.kl_grade(diktat) or br.kl_adjektiv_grade(diktat)
+        if diktiert and kl and set(diktiert) != set(kl):
+            hinweise.append(f"{b.name}: Kellgren-Lawrence-Grad diktiert {', '.join(diktiert)}, laut IB Lab "
+                            f"{', '.join(kl)} – der diktierte Grad gilt (kein KOALA-Text), bitte prüfen")
+        elif any(g is not None and g >= 2 for _s, g, _k in je):
+            hinweise.append(f"{b.name}: Gonarthrose schon diktiert – KOALA-Text nicht eingesetzt (Diktat geht vor)")
+        return None
+    if not any(g is not None and g >= 2 for _s, g, _k in je):
+        return None                             # KL 0/1: Vorlage unverändert
+    return _koala_saetze(je)
+
+
+def _klein(satz):
+    return satz[:1].lower() + satz[1:]
+
+
+def _koala_saetze(je):
+    """[(Seite, Grad|None, Kompartiment|None)] → (Befundsätze, Ergebnispunkte)."""
+    tab, adj = br.KL_TABELLE, br.KL_ADJEKTIV
+    aktiv = [x for x in je if x[1] is not None and x[1] >= 2]
+    if len(je) == 2 and len(aktiv) == 2 and aktiv[0][1:] == aktiv[1][1:]:
+        g, k = aktiv[0][1], aktiv[0][2]
+        befund = [f"Beidseits {k} {_klein(tab[g])}" if k else f"Beidseits {_klein(tab[g])}"]
+        if k:
+            befund.append(f"{_ANDERES[k]} beidseits normal weiter Gelenkspalt.")
+        return befund, [f"{adj[g]} Gonarthrose beidseits{' ' + k if k else ''} {br.kl_klammer(g)}."]
+    befund, punkte, mehrere = [], [], len(je) > 1
+    for s, g, k in je:
+        if g is None or g < 2:
+            if mehrere and s:
+                befund.append(f"{s.capitalize()} normal weiter Gelenkspalt.")
+            continue
+        if mehrere and s:
+            befund.append(f"{s.capitalize()} {k + ' ' if k else ''}{_klein(tab[g])}")
+            if k:
+                befund.append(f"{_ANDERES[k]} {s} normal weiter Gelenkspalt.")
+        else:
+            befund.append(f"{k.capitalize()} {_klein(tab[g])}" if k else tab[g])
+            if k:
+                befund.append(f"{_ANDERES[k]} normal weiter Gelenkspalt.")
+        punkte.append(f"{adj[g]} Gonarthrose{' ' + s if s else ''}{' ' + k if k else ''} {br.kl_klammer(g)}.")
+    return befund, punkte
+
+
+def koala_hat_text(b):
+    """Bringt Baustein b (ohne Diktat, ohne bekannte Untersuchung) einen KOALA-Text? (Gerüst, Band)"""
+    return b.modul == "koala" and _koala_plan(b, "", "", "", []) is not None
+
+
+def _koala_befund(block, saetze, alte=()):
+    """Beschreibung einer Knie-Untersuchung (Text ohne Überschriften) → (neuer Text, ohne Platz eingesetzt?)."""
+    ende = len(block) - len(block.rstrip())
+    m = _KNIE_WT_ABSATZ.search(block.rstrip())
+    if m:
+        block = block.rstrip()[:m.start()].rstrip() + " " + m.group(1) + block[len(block) - ende:]
+    for satz in dict.fromkeys(alte):              # eine frühere Fassung (bzw. dieselbe) zuerst herausnehmen
+        while satz and satz in block and satz not in saetze:
+            i = block.index(satz)
+            block = _satz_raus(block, i, i + len(satz))
+    m = _KNIE_FORM.search(block)
+    if m and m.group(0) != KOALA_STELLUNG:
+        block = _satz_raus(block, m.start(), m.end(), KOALA_STELLUNG)
+    if all(s in block for s in saetze):
+        return block, False
+    neu = " ".join(saetze)
+    m = _KNIE_FORM.search(block)
+    if m and m.group(0) == KOALA_STELLUNG:
+        pass
+    elif m:
+        block = _satz_raus(block, m.start(), m.end(), KOALA_STELLUNG)
+    elif "Stellung" not in block and block.strip():
+        i = len(block) - len(block.lstrip())
+        block = block[:i] + KOALA_STELLUNG + " " + block[i:]
+    m = _KNIE_FLAECHEN.search(block)
+    if m:
+        block = _satz_raus(block, m.start(), m.end())
+    m = _KNIE_SPALT.search(block)
+    if m:
+        return _fp_nach(_satz_raus(block, m.start(), m.end(), neu), neu), False
+    for anker in _KNIE_ANKER:
+        m = anker.search(block)
+        if m:
+            return _fp_nach(block[:m.start()] + neu + " " + block[m.start():], neu), False
+    return block, True
+
+
+def _fp_nach(block, neu):
+    """Femoropatellar-Satz, der VOR dem femorotibialen KOALA-Text steht, direkt dahinter (Georg: Medial – Lateral –
+    Femoropatellar)."""
+    i = block.find(neu)
+    if i < 0:
+        return block
+    vor = [m for m in _FP_SATZ.finditer(block[:i])]
+    saetze = [_fp_form(m) for m in vor]
+    for m in reversed(vor):
+        block = block[:m.start()] + block[m.end():]
+    if saetze:
+        i = block.find(neu) + len(neu)
+        block = block[:i] + " " + " ".join(saetze) + block[i:]
+    i = block.find(neu) + len(neu)
+    return block[:i] + _FP_SATZ.sub(lambda m: _fp_form(m) + (" " if m.group(0).endswith(" ") else ""), block[i:])
+
+
+def _koala_ergebnis(zeilen, a, punkte, b, hinweise):
+    """KOALA-Punkte als ERSTE Punkte des Ergebnisses von a; das Normal-Ergebnis des Knies entfällt, derselbe Punkt nie
+    doppelt; neu durchgezählt. → Zeilen mehr."""
+    if a.ergebnis < 0:
+        return _ergebnis_anfuegen(zeilen, a, punkte)
+    s, k = a.ergebnis + 1, a.ende
+    while k > s and not zeilen[k - 1].strip():
+        k -= 1
+    inhalt = zeilen[s:k]
+    rest = []
+    for z in inhalt:
+        t = _NUM.sub("", z).strip()
+        if not t or t in punkte:
+            continue
+        g = br.kl_grade(t)
+        m = _FP_PUNKT.match(t)
+        if m and len(g) == 1 and int(g[0]) in br.KL_ADJEKTIV:
+            neu_t = f"{br.KL_ADJEKTIV[int(g[0])]} Femoropatellararthrose" + t[m.end():]
+            if neu_t != t:
+                hinweise.append(f"{b.name}: „{_kurz(t, 40)}“ → „{_kurz(neu_t, 40)}“ (Form der K&L-Tabelle)")
+                z = z.replace(t, neu_t)
+        if z[:1] not in (" ", "\t") and ergebnis_normal([t]) and re.search(r"knie", t, re.I):
+            hinweise.append(f"{b.name}: „{_kurz(t)}“ durch das IB-Lab-Ergebnis ersetzt")
+            continue
+        rest.append(z)
+    neu = br.ergebnis_nummerieren("## Ergebnis\n" + "\n".join(list(punkte) + rest)).split("\n")[1:]
+    zeilen[s:k] = neu
+    return len(neu) - len(inhalt)
+
+
+def _koala_einsetzen(zeilen, teile, i, b, e):
+    """KOALA-Text in die Knie-Untersuchung teile[i] einsetzen (Beschreibung + erster Ergebnispunkt)."""
+    a = teile[i]
+    plan = _koala_plan(b, a.titel, a.seite, a.segment or "", e.hinweise)
+    if plan is None:
+        return
+    saetze, punkte = plan
+    bs = (a.befund if a.befund >= 0 else a.start) + 1
+    be = a.ergebnis if a.ergebnis >= 0 else a.ende
+    alt = "\n".join(zeilen[bs:be])
+    ersetzt = [z for z in e.nicht_entfernt if z and z in alt]
+    block, ohne_platz = _koala_befund(alt, saetze, ersetzt)
+    e.nicht_entfernt = [z for z in e.nicht_entfernt if z not in ersetzt]
+    if block != alt:
+        neu = block.split("\n")
+        zeilen[bs:be] = neu
+        _verschieben(teile, i, len(neu) - (be - bs))
+    if ohne_platz:
+        e.hinweise.append(f"{b.name}: Satz der Vorlage zum Gelenkspalt nicht gefunden – KOALA-Text am Ende der "
+                          "Beschreibung, bitte prüfen")
+        _verschieben(teile, i, _befund_anfuegen(zeilen, a, [" ".join(saetze)]))
+    _verschieben(teile, i, _koala_ergebnis(zeilen, a, punkte, b, e.hinweise), nur_ende=True)
+    e.eingesetzt[b.schluessel] = list(saetze) + list(punkte)
+    e.zuordnung[b.modul] = a.titel or "Befund"
+
+
+def _koala_geruest(b, titel, vorlage=None):
+    """Gerüst vor dem Diktat: Vorlage der Knie-Leistung mit KOALA-Text (bzw. ohne bekannte Vorlage nur die Sätze) →
+    (Befundzeilen, Ergebnispunkte)."""
+    plan = _koala_plan(b, titel, Abschnitt(titel, 0, 0).seite, "", [], vorlage or "")
+    if plan is None:
+        return [], []
+    saetze, punkte = plan
+    if vorlage and _KNIE_SPALT.search(vorlage):
+        rumpf = "\n".join(vorlage.split("\n")[1:]).strip("\n")
+        block, ohne_platz = _koala_befund(rumpf, saetze)
+        if not ohne_platz:
+            return block.split("\n"), punkte
+    return [" ".join(saetze)], punkte
+
+
 def befund_zeilen(b):
     """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
     wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
     Zeile steht."""
-    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b):
+    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b) or b.modul == "koala":
         return []
     if b.modul not in BEFUND_NUR_AUFFAELLIG:
         return list(b.befundteil)
@@ -1260,6 +1613,8 @@ def _ohne_leere_beschriftung(zeilen):
 
 def hat_inhalt(b):
     """Kommt von Baustein b etwas in den Befund (Befundzeilen nach dem Filter oder Ergebnispunkte)?"""
+    if b.modul == "koala":
+        return koala_hat_text(b)
     return bool(befund_zeilen(b) or b.ergebnis)
 
 
@@ -1271,6 +1626,10 @@ def auffaellige_zeilen(bausteine):
             bt = b.befundtext
             out += [s for s in bt["stellung"] + bt["gewoelbe"] if not _FROG_GEW_NORMAL.match(s) and s not in out]
             out += [t for t in (f"{x['text']} {x['seite']}".strip() for x in bt["begriffe"]) if t not in out]
+            continue
+        if b.modul == "koala":             # 18.11.2026: der KOALA-Text (Sätze der K&L-Tabelle + Gonarthrose-Punkt)
+            plan = _koala_plan(b, "", "", "", [])
+            out += [s for s in (plan[0] + plan[1] if plan else []) if s not in out]
             continue
         for z, t in zip(b.befundteil, _treffer(b)):
             if t:
@@ -1344,9 +1703,12 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
         return None
     templates = templates or {}
     gruppen = []                                 # [(titel, [Bausteine])] in Reihenfolge
+    vorlagen = {}                                # Baustein → Text der Vorlage seiner CAS-Leistung (KOALA)
     for b in mit_inhalt:
         l = _leistung_fuer(b, cas_leistungen, templates)
         name = (templates.get(l.get("vorlage")) or {}).get("display_name") if l and l.get("vorlage") else None
+        if name:
+            vorlagen[b.schluessel] = (templates.get(l.get("vorlage")) or {}).get("body")
         if name:
             titel = _titel_mit_seite(name, l.get("seite") or "")
         else:
@@ -1362,7 +1724,9 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     for titel, bs in gruppen:
         je = {}                                  # Baustein → (Befundzeilen, Ergebnispunkte)
         for b in bs:
-            if _frog_text(b):                    # v3.19.8: nur die FROG-Sätze (ohne Vorlagentext) + Begriffe + Schluss
+            if b.modul == "koala":               # 18.11.2026: Knie-Vorlage mit KOALA-Text (bzw. nur die Sätze)
+                je[b.schluessel] = _koala_geruest(b, titel, vorlagen.get(b.schluessel))
+            elif _frog_text(b):                  # v3.19.8: nur die FROG-Sätze (ohne Vorlagentext) + Begriffe + Schluss
                 plan = _frog_plan(b, titel, Abschnitt(titel, 0, 0).seite, "", [])
                 je[b.schluessel] = (_frog_zeilen(plan, punkte=False), _frog_punkte(plan)) if plan else ([], [])
             else:

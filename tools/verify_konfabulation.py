@@ -81,8 +81,12 @@ def erfunden(rep, diktat, ibl_zeilen=()):
     t = rep
     for z in ibl_zeilen:
         t = t.replace(z, "")
-    t = t.lower()
     d = (diktat or "").lower()
+    # kaiscribe-kl-tabelle-zurueck-n1 (18.11.2026): steht ein K&L-Grad fest (diktiert, Adjektiv einer diktierten Arthrose,
+    # IB Lab), ist der Satz der K&L-Tabelle die freigegebene Beschreibung – seine Osteophyten/Sklerose sind nicht erfunden
+    if br.kl_grade(d) or br.kl_adjektiv_grade(d) or any("kellgren" in z.lower() for z in ibl_zeilen):
+        t = br.kl_deskriptor_neutral(t)
+    t = t.lower()
     pos, neg = [], []
     for name, rx in PATHO:
         if re.search(rx, d):
@@ -277,6 +281,57 @@ def pruef_rh99_koxa(rep, diktat, zeilen, hinweise):
 
 ERHALT_KNIE = ("Kniegelenk rechts: Mäßige Gonarthrose medial betont mit Osteophyten und subchondraler Sklerosierung, "
                "kein Erguss.")
+# kaiscribe-kl-tabelle-zurueck-n1 (Georg 18.11.2026): KOALA → Kniebefund nach K&L-Tabelle, Abnahme-Fixtures Nr. 34 / Nr. 50
+NR34_DIKTAT = "Mäßige patellofemorale Arthrose, geringer Gelenkserguss."
+KOALA_34 = {"accno": "T-0234", "ziffer": 1, "modul": "koala", "name": "KOALA", "modul_name": "IB Lab KOALA", "version": 1,
+            "seiten": ["links"], "befundteil": ["Kellgren-Lawrence-Grad links 3 (IB Lab KOALA).",
+                                                "Minimale Gelenkspaltweite medial links 3,50 mm (IB Lab KOALA).",
+                                                "Minimale Gelenkspaltweite lateral links 6,10 mm (IB Lab KOALA)."],
+            "ergebnis": ["Mittelgradige Gonarthrose links (Kellgren-Lawrence-Grad 3)."], "hinweise": [], "nicht_zugeordnet": [],
+            "alter": 66}
+NR34 = ("## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in "
+        "regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne "
+        "pathologische Konturunterbrechung. Normale Breite der Kompakta. Medial mäßiggradige Gelenksspaltverschmälerung mit "
+        "multiplen Osteophyten und subchondraler Sklerosierung. Lateral normal weiter Gelenkspalt. Femoropatellar mäßiggradige "
+        "Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Kein Hinweis auf freie "
+        "Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Geringer Gelenkerguss. Ansonsten unauffällige "
+        "Weichteile.\n\n## Ergebnis\n1. Mäßiggradige Gonarthrose links medial (Arthrose Grad 3 nach Kellgren & Lawrence).\n"
+        "2. Mäßiggradige Femoropatellararthrose links (Arthrose Grad 3 nach Kellgren & Lawrence).\n3. Geringer Gelenkerguss links.")
+KNIE_BDS = dict(KNIE_LI, kurz="x-knie-bds", text="Kniegelenk beidseits", seite="beidseits")
+KOALA_50 = dict(KOALA_34, accno="T-0250", seiten=["rechts", "links"], alter=68, befundteil=[
+    "Kellgren-Lawrence-Grad rechts 2 (IB Lab KOALA).", "Minimale Gelenkspaltweite medial rechts 4,70 mm (IB Lab KOALA).",
+    "Minimale Gelenkspaltweite lateral rechts 6,10 mm (IB Lab KOALA).", "Kellgren-Lawrence-Grad links 2 (IB Lab KOALA).",
+    "Minimale Gelenkspaltweite medial links 4,70 mm (IB Lab KOALA).", "Minimale Gelenkspaltweite lateral links 6,30 mm (IB Lab KOALA)."],
+    ergebnis=["Geringgradige Gonarthrose beidseits (Kellgren-Lawrence-Grad 2)."])
+NR50_DIKTAT = "Mäßige patellofemorale Arthrose beidseits, geringer Gelenkserguss beidseits."
+KOALA_3R = dict(KOALA_34, accno="T-0203", seiten=["rechts"], alter=70, befundteil=[
+    "Kellgren-Lawrence-Grad rechts 3 (IB Lab KOALA).", "Minimale Gelenkspaltweite medial rechts 2,20 mm (IB Lab KOALA).",
+    "Minimale Gelenkspaltweite lateral rechts 5,40 mm (IB Lab KOALA)."], ergebnis=["Mittelgradige Gonarthrose rechts (Kellgren-Lawrence-Grad 3)."])
+
+
+def pruef_genau(soll_teile, ergebnis_soll=None):
+    """KOALA-Fälle: die Sätze (deterministisch + nach Prompt-Regel) stehen wörtlich da, Ergebnis wörtlich; nichts erfunden."""
+    def f(rep, diktat, zeilen, hinweise):
+        p = []
+        befund, ergebnis = teile(rep)
+        for s in soll_teile:
+            if s not in befund:
+                p.append(f"❌ fehlt im Befund: {s[:90]}")
+        if ergebnis_soll is not None and ergebnis.strip() != ergebnis_soll:
+            p.append("❌ Ergebnis ≠ Georgs Fixture: " + ergebnis.strip().replace("\n", " / ")[:300])
+        for w in ("betont", " mm", "IB Lab KOALA", "allseits normal weit", "normal geformt und kongruent", "Normale Form und"):
+            if w in rep:
+                p.append(f"❌ „{w.strip()}“ im Befund")
+        pos, _neg, _kl = erfunden(rep, diktat, zeilen)
+        if pos:
+            p.append("❌ erfunden: " + ", ".join(pos))
+        return p
+    return f
+
+
+def lauf_koala(diktat, cas=None, ibl=None):
+    """KOALA: die eingesetzten Sätze/Punkte (mit „Kellgren“) kommen als IB-Lab-Zeilen zurück → Tabellensatz erlaubt."""
+    return lauf_exe(diktat, cas, ibl)
 FAELLE = {
     "rh38_cas": (lauf_exe, RH38, [KNIE_LI], None, pruef_rh38),
     "rh38_exe": (lauf_exe, "Kniegelenk links. " + RH38, None, None, pruef_rh38),
@@ -304,6 +359,29 @@ FAELLE = {
     "rh99_degen": (lauf_exe, RH99_DEGEN, [BECKEN], [HIPPO_26], pruef_rh99),
     "rh99_koxa": (lauf_exe, RH99_KOXA, [BECKEN], [HIPPO_26], pruef_rh99_koxa),
     "rh99_koxa_web": (lauf_web, RH99_KOXA, None, None, pruef_rh99_koxa),
+    # kaiscribe-kl-tabelle-zurueck-n1 (Georg 18.11.2026): K&L-Tabelle + KOALA
+    "tabelle_schulter": (lauf_exe, "Schulter rechts, Röntgen, mäßiggradige Omarthrose, ansonsten unauffällig.", None, None,
+                         pruef_erhalt([r"Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler "
+                                       r"Sklerosierung\."], [r"Mäßiggradige Omarthrose rechts \(Arthrose Grad 3 nach Kellgren "
+                                                             r"& Lawrence\)"], kl="3")),
+    "tabelle_schulter_web": (lauf_web, "Schulter rechts, Röntgen, mäßiggradige Omarthrose, ansonsten unauffällig.", None, None,
+                             pruef_erhalt([r"Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und "
+                                           r"subchondraler Sklerosierung\."], [r"Mäßiggradige Omarthrose rechts"], kl="3")),
+    "koala_nr34": (lauf_koala, NR34_DIKTAT, [KNIE_LI], [KOALA_34],
+                   pruef_genau([NR34.split("## Befund\n")[1].split("\n\n## Ergebnis")[0]],
+                               NR34.split("## Ergebnis\n")[1])),
+    "koala_nr50": (lauf_koala, NR50_DIKTAT, [KNIE_BDS], [KOALA_50],
+                   pruef_genau(["Normale Stellung der dargestellten Skelettabschnitte.",
+                                "Beidseits medial geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und "
+                                "geringer Randzuschärfung. Lateral beidseits normal weiter Gelenkspalt. Femoropatellar beidseits "
+                                "mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung."],
+                               "1. Geringgradige Gonarthrose beidseits medial (Arthrose Grad 2 nach Kellgren & Lawrence).\n"
+                               "2. Mäßiggradige Femoropatellararthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).\n"
+                               "3. Geringer Gelenkerguss beidseits.")),
+    "koala_kl3_re": (lauf_koala, "Kein Hinweis auf eine Fraktur.", [KNIE_RE], [KOALA_3R],
+                     pruef_genau(["Normale Breite der Kompakta. Medial mäßiggradige Gelenksspaltverschmälerung mit multiplen "
+                                  "Osteophyten und subchondraler Sklerosierung. Lateral normal weiter Gelenkspalt."],
+                                 "Mäßiggradige Gonarthrose rechts medial (Arthrose Grad 3 nach Kellgren & Lawrence).")),
 }
 
 

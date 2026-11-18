@@ -192,6 +192,7 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
     # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
     out = br.nachbearbeiten(roh)
+    out, koala = _koala_frueh(out, seg, template_key, ctx)   # 18.11.2026: KOALA-Kniebefund vor den Wächtern
     # v3.15.5: übrig gebliebene widersprechende Normalsätze → „Im Übrigen …“, Befund/Ergebnis nennen den Befund
     out, aend = br.widersprueche_bereinigen(out, seg)
     if aend:
@@ -211,11 +212,25 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         out = cv.report_beidseits(out)
     if not normal:   # v3.18.4: Bypass (Vorlage ohne KI) braucht keinen K&L-Wächter
         seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else ""
-        out = _kl_waechter(out, seg, template_key, ctx, seite)
+        out = _kl_waechter(out, seg, template_key, ctx, seite, behalten=koala)
     return out
 
 
-def _kl_waechter(out, seg, template_key, ctx, seite=""):
+def _koala_frueh(out, seg, template_key, ctx):
+    """18.11.2026 (Georg, kaiscribe-kl-tabelle-zurueck-n1): den KOALA-Kniebefund schon VOR den Wächtern einsetzen – sie
+    würden sonst die Vorlagensätze, die KOALA ersetzt („Der Gelenkspalt ist allseits normal weit.“), mit „Im Übrigen …“
+    angleichen. ibl_anwenden setzt danach nichts doppelt ein. → (report, eingesetzte Zeilen)."""
+    if not ctx.ibl:
+        return out, []
+    reg = cv.regionen(cv.vorlagen_text(template_key, ctx.templates) + " " + region_name(seg))
+    ko = [b for b in iblb.fuer_abschnitt(ctx.ibl.bausteine, reg) if b.modul == "koala"]
+    if not ko:
+        return out, []
+    e = iblb.einsetzen(out, ko, diktat=seg, cas_leistungen=ctx.ibl.cas_leistungen, templates=ctx.templates)
+    return e.report, [z for zs in e.eingesetzt.values() for z in zs]
+
+
+def _kl_waechter(out, seg, template_key, ctx, seite="", behalten=()):
     """v3.18.4 (Peter 12.11.2026, RH 38): K&L-Grad nur aus Diktat oder IB-Lab-Baustein (passende Region + Seite) —
     nicht gedeckte Grade der KI weg bzw. auf den einzigen erlaubten Grad. Sync: pipeline.ts (ohne IB Lab)."""
     erlaubt = []
@@ -226,7 +241,7 @@ def _kl_waechter(out, seg, template_key, ctx, seite=""):
     if aend:
         ctx.log("[K&L] " + " · ".join(aend))
     # v3.18.5 (Nachtrag RH 99): ohne diktierte Arthrose keine Arthrose-Diagnose im Ergebnis (HIPPO-Messwerte ≠ Arthrose)
-    out, aend = br.arthrose_bereinigen(out, seg)
+    out, aend = br.arthrose_bereinigen(out, seg, behalten=behalten)   # behalten: KOALA-Punkte (IB Lab, nicht die KI)
     if aend:
         ctx.log("[ARTHROSE] " + " · ".join(a[:60] for a in aend))
     return out
@@ -242,7 +257,7 @@ def _ibl_block(seg, template_key, ctx):
         return ""
     reg = cv.regionen(cv.vorlagen_text(template_key, ctx.templates) + " " + region_name(seg))
     return iblb.prompt_block(iblb.fuer_abschnitt(ctx.ibl.bausteine, reg),
-                             (ctx.templates.get(template_key) or {}).get("body"))
+                             (ctx.templates.get(template_key) or {}).get("body"), seg)
 
 
 def ibl_anwenden(erg, ctx):

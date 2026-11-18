@@ -1092,6 +1092,24 @@
      "1"
     ],
     "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nX.\n\n## Ergebnis\nMäßige Gonarthrose links (Arthrose Grad 1 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "Georg 18.11.2026 Nr. 50: KOALA KL 2 (femorotibial) + diktierte mäßige patellofemorale Arthrose → Grad 3 bleibt",
+    "in": "## Kniegelenk beidseits in 2 Ebenen\n\n## Befund\nFemoropatellar beidseits mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Femoropatellararthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence).",
+    "diktat": "Knie beidseits. Mäßige patellofemorale Arthrose beidseits, geringer Gelenkserguss beidseits.",
+    "erlaubt": [
+     "2"
+    ],
+    "out": "## Kniegelenk beidseits in 2 Ebenen\n\n## Befund\nFemoropatellar beidseits mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Femoropatellararthrose beidseits (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "KOALA KL 2 + Adjektiv-Grad 3: ein dritter Grad (4) ist nicht gedeckt, bleibt mit Hinweis stehen",
+    "in": "## Kniegelenk beidseits in 2 Ebenen\n\n## Befund\nFemoropatellar beidseits mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Femoropatellararthrose beidseits (Arthrose Grad 4 nach Kellgren & Lawrence).",
+    "diktat": "Knie beidseits. Mäßige patellofemorale Arthrose beidseits.",
+    "erlaubt": [
+     "2"
+    ],
+    "out": "## Kniegelenk beidseits in 2 Ebenen\n\n## Befund\nFemoropatellar beidseits mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Unauffällige Weichteile.\n\n## Ergebnis\nMäßiggradige Femoropatellararthrose beidseits (Arthrose Grad 4 nach Kellgren & Lawrence)."
    }
   ],
   "adjektiv": [

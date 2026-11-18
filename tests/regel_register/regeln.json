@@ -1,0 +1,917 @@
+{
+ "_doc": "Regel-Register (kaiscribe-kl-tabelle-zurueck-n1, Georg Riegler 18.11.2026: „Wir haben Regeln definiert beim KaiScribe. Die müssen sitzen!!“). Jede von Georg/Peter freigegebene Befundregel mit Prüfwortlaut je Datei. tests/offline/test_regel_register.py wird rot, wenn ein Prüfwort fehlt oder eine Pflicht-Regel (Skill 1–13, 3a–3af, K&L-Tabelle 0–4 …) aus dem Register verschwindet. Wer einen Wortlaut bewusst ändert, ändert ihn hier mit (im selben Commit) und schreibt Datum + Quelle dazu. Quelle der Regeln: Hermes-Skill radiology-shoulder-dictation. status: vorhanden | ergänzt (18.11.) | unklar.",
+ "regeln": [
+  {
+   "id": "kl-0",
+   "titel": "K&L-Tabelle Grad 0",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Grad 0 (keine Arthrose): \"Unauffälliger Gelenksspalt, keine Osteophyten.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "0: \"Unauffälliger Gelenksspalt, keine Osteophyten.\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "0: 'Unauffälliger Gelenksspalt, keine Osteophyten.'"
+    ]
+   },
+   "notiz": "Grad 0 = kein Arthrose-Text, Vorlage bleibt"
+  },
+  {
+   "id": "kl-1",
+   "titel": "K&L-Tabelle Grad 1",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-09-08",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Grad 1 (beginnend/minimal): \"Geringe Osteophytenbildung, fragliche Gelenksspaltverschmälerung.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "1: \"Geringe Osteophytenbildung, fragliche Gelenksspaltverschmälerung.\""
+    ]
+   },
+   "notiz": "durch 80a36ae (12.11.) gestrichen, Wortlaut aus 80a36ae^ zurück"
+  },
+  {
+   "id": "kl-2",
+   "titel": "K&L-Tabelle Grad 2",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Grad 2 (gering/geringgradig): \"Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "2: \"Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung.\""
+    ]
+   },
+   "notiz": "Wortlaut der Skill-Tabelle und Georgs Fixture Nr. 50 (80a36ae^ hatte „Geringe Gelenksspaltverschmälerung mit beginnender Osteophytenbildung …“)"
+  },
+  {
+   "id": "kl-3",
+   "titel": "K&L-Tabelle Grad 3",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-09-08",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Grad 3 (mäßig/mäßiggradig/mittelgradig): \"Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "3: \"Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung.\""
+    ]
+   }
+  },
+  {
+   "id": "kl-4",
+   "titel": "K&L-Tabelle Grad 4 (mit Zystenbildung)",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-09-08",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Grad 4 (hochgradig/ausgeprägt): \"Aufgehobener Gelenksspalt mit ausgeprägter subchondraler Sklerosierung, Zystenbildung und ausgeprägten Osteophyten.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "4: \"Aufgehobener Gelenksspalt mit ausgeprägter subchondraler Sklerosierung, Zystenbildung und ausgeprägten Osteophyten.\""
+    ]
+   },
+   "notiz": "Georg 18.11.: „Zysten kannst du lassen“"
+  },
+  {
+   "id": "kl-wann",
+   "titel": "Grad steht fest: diktiert / Adjektiv der Arthrose-Diagnose / IB Lab – dann Tabelle",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-11-12",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Steht ein Grad fest, steht im Befundtext GENAU der Deskriptor DIESES Grades",
+     "beginnend/minimal = Grad 1, gering/geringgradig/leicht = Grad 2, mäßig/mäßiggradig/mittelgradig = Grad 3, hochgradig/ausgeprägt/schwer = Grad 4"
+    ]
+   },
+   "notiz": "Adjektiv→Grad: Peter 12.11. Option a (RH 99)"
+  },
+  {
+   "id": "kl-rh38",
+   "titel": "Anti-Konfabulation RH 38: nur „Gelenkspaltverschmälerung“ ohne Arthrose-Diagnose → kein Grad, keine Tabelle",
+   "quelle": "Peter Kalmar (RH 38, RH 99)",
+   "datum": "2026-11-12",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "OHNE diktierte Arthrose-Diagnose (nur \"Gelenkspaltverschmälerung\", \"degenerative Veränderungen\", nur Messwerte) gibt es weder Grad noch Arthrose-Diagnose noch Tabellen-Deskriptor",
+     "Diktat nur \"Omarthrose\" → \"1. Omarthrose rechts.\" (kein Grad, keine Tabelle)"
+    ]
+   }
+  },
+  {
+   "id": "kl-ergebnis",
+   "titel": "K&L-Ergebnisformat „… (Arthrose Grad X nach Kellgren & Lawrence).“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-11-18",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "(Arthrose Grad [X] nach Kellgren & Lawrence).\" — z.B. \"Mäßiggradige Gonarthrose links medial (Arthrose Grad 3 nach Kellgren & Lawrence).\""
+    ],
+    "source_code/befund_regeln.py": [
+     "return f\"(Arthrose Grad {grad} nach Kellgren & Lawrence)\""
+    ]
+   }
+  },
+  {
+   "id": "kl-knie-fp",
+   "titel": "Knie: femorotibial und femoropatellar je eigener Satz und Ergebnispunkt",
+   "quelle": "Georg Riegler (Fixtures Nr. 34/50)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Femoropatellar [Deskriptor ihres Grades aus der K&L-TABELLE, klein weitergeschrieben]",
+     "\"Mäßiggradige Femoropatellararthrose links (Arthrose Grad 3 nach Kellgren & Lawrence).\""
+    ]
+   }
+  },
+  {
+   "id": "kl-knie-betont",
+   "titel": "Kompartiment nennen, nicht „betont“; anderes Kompartiment „normal weiter Gelenkspalt“",
+   "quelle": "Georg Riegler",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Schreibe dabei NIE \"betont\", außer es ist so diktiert",
+     "\"Lateral normal weiter Gelenkspalt.\" bzw. \"Medial normal weiter Gelenkspalt.\""
+    ],
+    "source_code/ibl_bausteine.py": [
+     "normal weiter Gelenkspalt."
+    ]
+   }
+  },
+  {
+   "id": "kl-bsp-schulter",
+   "titel": "Beispiel Schulter mäßiggradige Omarthrose → Tabelle Grad 3",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Beispiel: Diktat \"mäßiggradige Omarthrose\" (Schulter rechts) → Befundtext \"Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung.\", Ergebnis \"1. Mäßiggradige Omarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).\""
+    ]
+   },
+   "notiz": "durch 80a36ae/34f78f6 auf „degenerative Veränderungen“/„Grad X“ geändert, zurück"
+  },
+  {
+   "id": "kl-bsp-ellbogen",
+   "titel": "Beispiel Ellbogen geringe Arthrose + Extensorensehnenplatte",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Mineralgehalt und Knochenstruktur regelrecht. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Ansonsten die artikulierenden Gelenkflächen regelrecht konfiguriert, glatt und scharf begrenzt. Keine intra- oder periartikulären Verkalkungen. Kortikale Unregelmäßigkeiten im Bereich der Extensorensehnenplatte."
+    ]
+   }
+  },
+  {
+   "id": "kl-bsp-knie",
+   "titel": "Beispiel Knie „Mäßige Gonarthrose medial betont … (Arthrose Grad 3 nach Kellgren & Lawrence)“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Ergebnis \"1. Mäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence)."
+    ]
+   }
+  },
+  {
+   "id": "kl-koala",
+   "titel": "IB Lab KOALA → Kniebefund nach Tabelle (KL 2–4, engeres Kompartiment, kein Text bei KL 0/1, < 18, Prothese)",
+   "quelle": "Georg Riegler (GO 18.11.2026 ~20:00)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "KOALA_STELLUNG = \"Normale Stellung der dargestellten Skelettabschnitte.\"",
+     "return f\"Patient {b.alter} Jahre (unter 18)\"",
+     "return \"Knieprothese\"",
+     "aus mehreren a.p.-Aufnahmen – kein KOALA-Text, bitte am Bild prüfen"
+    ]
+   }
+  },
+  {
+   "id": "ergebnis-format",
+   "titel": "Ergebnis nummeriert „1. 2. 3.“, ein Punkt ohne Nummer, Voruntersuchung unnummeriert",
+   "quelle": "Georg 09.10. / Peter 12.11. (Einzelpunkt)",
+   "datum": "2026-11-12",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Das Ergebnis ist nummeriert, sobald es MEHR ALS EINEN Punkt hat: jeder Punkt in einer eigenen Zeile, \"1. \", \"2. \", \"3. \""
+    ],
+    "source_code/befund_regeln.py": [
+     "def ergebnis_nummerieren("
+    ]
+   }
+  },
+  {
+   "id": "ibl-frog",
+   "titel": "FROG: Schlussanmerkung + Vorlagen-Sätze",
+   "quelle": "Georg Riegler",
+   "datum": "2026-11-17",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "FROG_SCHLUSS = \"Weitere Winkelmessungen sind den KI-Auswertungsbildern\"",
+     "Das Fußgewölbe ist regulär ausgebildet bei \"\n               \"ordnungsgemäßen Gelenkwinkeln."
+    ]
+   }
+  },
+  {
+   "id": "ibl-lama",
+   "titel": "LAMA: Ergebnis zuerst, Schlussanmerkung",
+   "quelle": "Georg Riegler",
+   "datum": "2026-11-17",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "LAMA_SCHLUSS = \"HKA = Hüft-Knie-Sprunggelenk-Winkel\"",
+     "BEFUND_OHNE_ZEILEN = {\"lama\"}"
+    ]
+   }
+  },
+  {
+   "id": "ibl-panda",
+   "titel": "PANDA: Knochenalter (Messzeilen wörtlich, Thema der Vorlage)",
+   "quelle": "Peter Kalmar",
+   "datum": "2026-10-13",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "\"panda\": {\"hand\"}",
+     "\"panda\": \"Knochenalter\""
+    ]
+   }
+  },
+  {
+   "id": "ibl-rho",
+   "titel": "Rho: KaiScribe setzt von IB-Lab-Rho nichts ein (nur Anzeige); diktierter Rho-Baustein mit Georgs Wortlaut",
+   "quelle": "Georg Riegler (13.10., RH 57 18.11.)",
+   "datum": "2026-11-18",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "NUR_ANZEIGE = {\"rho\"}"
+    ],
+    "source_code/befund_regeln.py": [
+     "RHO_ERGEBNIS = \"Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.\""
+    ]
+   }
+  },
+  {
+   "id": "ibl-ohne-norm",
+   "titel": "LAMA + FROG ohne Normbereiche",
+   "quelle": "Georg Riegler",
+   "datum": "2026-11-18",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "OHNE_NORM = (\"lama\", \"frog\")"
+    ]
+   }
+  },
+  {
+   "id": "wid-erguss",
+   "titel": "Gelenkerguss → „Geringer Gelenkerguss. Ansonsten unauffällige Weichteile.“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "(z.B. \"Geringer Gelenkerguss. Ansonsten unauffällige Weichteile.\")"
+    ]
+   }
+  },
+  {
+   "id": "wid-ki-pathologie",
+   "titel": "Auch eine von der KI gezeigte Pathologie gleicht widersprechende Vorlagensätze an",
+   "quelle": "Georg Riegler",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "das gilt für jede DIKTIERTE und jede von der KI gezeigte Pathologie"
+    ]
+   }
+  },
+  {
+   "id": "1",
+   "titel": "Normalbefund als Gerüst",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Das Normalbefund-Template (<normalbefund_template>) ist das VOLLSTÄNDIGE Gerüst"
+    ]
+   }
+  },
+  {
+   "id": "2",
+   "titel": "Arthrose: „Normale Form …“ anpassen oder entfernen (Form und Stellung → „Normale Stellung …“)",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Normale Form und Stellung der dargestellten Skelettabschnitte.\" → \"Normale Stellung der dargestellten Skelettabschnitte.\""
+    ]
+   },
+   "notiz": "Entfernen war da; Form+Stellung → „Normale Stellung …“ (Widerspruchs-Checkliste) ergänzt 18.11."
+  },
+  {
+   "id": "3",
+   "titel": "Nicht zutreffende Passagen streichen",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "GRUNDREGEL: Wenn ein Normalbefund-Satz durch eine Pathologie hinfällig wird, MUSS er gestrichen oder ersetzt werden"
+    ]
+   }
+  },
+  {
+   "id": "3a",
+   "titel": "Frakturen ohne Graduierung",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Frakturbeschreibung OHNE Adjektiv-Graduierung (nur \"Fraktur\")"
+    ]
+   }
+  },
+  {
+   "id": "3b",
+   "titel": "Seite in die Überschrift",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Die diktierte Körperseite (rechts/links/beidseits) einer paarigen Region"
+    ]
+   }
+  },
+  {
+   "id": "3c",
+   "titel": "„distales/proximales Fragment“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"distales Fragment\"/\"proximales Fragment\" (NICHT \"Distalfragment\")"
+    ]
+   }
+  },
+  {
+   "id": "3d",
+   "titel": "Fraktur: „Ansonsten anatomisch normale Form und Stellung …“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Ansonsten anatomisch normale Form und Stellung der abgebildeten Skelettabschnitte.\""
+    ]
+   }
+  },
+  {
+   "id": "3e",
+   "titel": "Kortikalis: „Ansonsten glatte und scharfe Kontur …“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Ansonsten glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung.\""
+    ]
+   }
+  },
+  {
+   "id": "3f",
+   "titel": "RA/SpA „Zeichen einer …“, Grad in Klammern",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Rheumatoide Arthritis → \"Zeichen einer rheumatoiden Arthritis\"",
+     "ein diktierter Grad jeweils in Klammern dahinter"
+    ]
+   }
+  },
+  {
+   "id": "3g",
+   "titel": "Diktatkorrektur: nur das korrigierte Wort",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "gilt NUR das korrigierte Wort"
+    ]
+   }
+  },
+  {
+   "id": "3h",
+   "titel": "MCP (Finger) vs. MTP (Zehe)",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Finger = \"MCP-Gelenk\", Zehe = \"MTP-Gelenk\" (NIE vertauschen)"
+    ]
+   }
+  },
+  {
+   "id": "3i",
+   "titel": "„Stauung Grad I/II“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Stauung Grad I/II\" (NICHT \"Stauungsgrad\")"
+    ]
+   }
+  },
+  {
+   "id": "3j",
+   "titel": "Pleuraerguss-Höhe, nicht als Zwerchfellhochstand",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"um [N] Wirbelkörper hoch ansteigender Pleuraerguss\" (NICHT als Zwerchfellhochstand)"
+    ]
+   },
+   "notiz": "„NICHT als Zwerchfellhochstand“ fehlte, ergänzt 18.11."
+  },
+  {
+   "id": "3k",
+   "titel": "„loco tipico“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"loco tipico\" (NICHT \"loco typico\")"
+    ]
+   }
+  },
+  {
+   "id": "3l",
+   "titel": "„Non-ossifying Fibroma (NOF)“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Non-ossifying Fibroma (NOF)\""
+    ]
+   }
+  },
+  {
+   "id": "3m",
+   "titel": "„Aerobilie“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Aerobilie\" (NICHT \"Pneumobilia\")"
+    ]
+   }
+  },
+  {
+   "id": "3n",
+   "titel": "JJ-Katheter „mit der Spitze in Projektion auf“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "JJ-Katheter \"mit der Spitze in Projektion auf\""
+    ]
+   }
+  },
+  {
+   "id": "3o",
+   "titel": "Dissoziation/Fehlstellung „Ansonsten“ voran; Terry-Thomas: Stellungssatz weg",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Der Stellungs-Normalsatz bleibt mit \"Ansonsten\" am Satzanfang stehen",
+     "Terry-Thomas-Zeichen: den GESAMTEN Stellungs-Normalsatz entfernen."
+    ]
+   },
+   "notiz": "nie in KaiScribe angekommen, ergänzt 18.11."
+  },
+  {
+   "id": "3p",
+   "titel": "Hyperostosis „Ansonsten die Schädelkalotte …“; aplastischer Sinus frontalis",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "der Kalotten-Normalsatz beginnt mit \"Ansonsten die Schädelkalotte …\"",
+     "Aplastischer Sinus frontalis → \"Ansonsten die beurteilbaren NNH unauffällig.\""
+    ]
+   },
+   "notiz": "nie in KaiScribe angekommen, ergänzt 18.11."
+  },
+  {
+   "id": "3q",
+   "titel": "Beschreibungstext = Morphologie; „Bild wie bei …“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "BESCHREIBUNGSTEXT = NUR MORPHOLOGIE/DESKRIPTOREN",
+     "schreibe im Ergebnis IMMER \"Bild wie bei [Diagnose]\""
+    ]
+   },
+   "notiz": "unklar: Skill-Teil „‚Wie bei‘ → ‚vereinbar mit‘“ (Befundtext) widerspricht „IMMER ‚Bild wie bei‘“ – nicht übernommen, Georg fragen"
+  },
+  {
+   "id": "3r",
+   "titel": "„P.M.“ für Punctum maximum",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"P.M.\" für Punctum maximum"
+    ]
+   }
+  },
+  {
+   "id": "3s",
+   "titel": "Wirbelsäule: < 10° Cobb keine Skoliose, kranial→kaudal, keine Absätze",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Befundtext kranial→kaudal, keine Absätze",
+     "Cobb < 10° → im Ergebnis \"keine Skoliose\""
+    ]
+   }
+  },
+  {
+   "id": "3t",
+   "titel": "Wirbelsäulen-Reihenfolge",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Reihenfolge 1. Asymmetrie/Skoliose → 2. Osteochondrose/Diskopathie → 3. Spondylose → 4. Arthrosen"
+    ]
+   }
+  },
+  {
+   "id": "3u",
+   "titel": "Osteochondrose + Diskopathie in einem Satz",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Osteochondrose + Diskopathie im selben Segment in EINEM Satz."
+    ]
+   }
+  },
+  {
+   "id": "3v",
+   "titel": "Angrenzende Segmente zusammenfassen",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "gleichartige Befunde angrenzender Segmente zusammenfassen (z.B. \"L4 bis S1\")"
+    ]
+   }
+  },
+  {
+   "id": "3w",
+   "titel": "Diagnose → Deskriptor im Befundtext",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Wenn das Ergebnis eine Diagnose nennt, muss der Befund die entsprechenden morphologischen Kriterien beschreiben"
+    ]
+   },
+   "notiz": "eingeschränkt durch RH 38: keine erfundenen Deskriptoren außer Wirbelsäulen-Deskriptoren und K&L-Tabelle"
+  },
+  {
+   "id": "3x",
+   "titel": "Steuerbefehle „Punkt“, „neue Zeile“, „also“, „Visa“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Punkt\" = Satzende bzw. nächster Befundpunkt",
+     "\"Visa\" / \"Wiederschluckakt\" = Videokinematographie des Schluckaktes."
+    ]
+   }
+  },
+  {
+   "id": "3y",
+   "titel": "Plaque „Tiefe“, Komma-Verschiebung (max. 6 mm)",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Plaque-\"Tiefe\" (NIE \"Fläche\"",
+     "STT-Wert 26 mm bzw. 35 mm → 2,6 mm bzw. 3,5 mm (Komma-Verschiebung korrigieren)"
+    ]
+   },
+   "notiz": "„Tiefe“ war da; Komma-Verschiebung ergänzt 18.11."
+  },
+  {
+   "id": "3z",
+   "titel": "Duplex Halsgefäße mit Pathologie: Pathologien zuerst, dann „Ansonsten kommen …“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Ansonsten kommen die A. carotis externa, A. carotis interna und A. carotis communis beidseits sonomorphologisch unauffällig zur Darstellung.\""
+    ]
+   },
+   "notiz": "nie in KaiScribe angekommen, Wortlaut Skill-Zeile 95, ergänzt 18.11."
+  },
+  {
+   "id": "3aa",
+   "titel": "Intima-Media-Komplex / -Hyperplasie",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Intima-Media-Komplex \"mit bis zu [X] mm verdickt\" / Ergebnis \"Intima-Media-Hyperplasie bis [X] mm\""
+    ]
+   }
+  },
+  {
+   "id": "3ab",
+   "titel": "Nervensono-Überschrift „Hochauflösende Sonographie des N. …“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Nervensonographie-Überschrift IMMER \"Hochauflösende Sonographie des N. [Name]\""
+    ]
+   }
+  },
+  {
+   "id": "3ac",
+   "titel": "CSA nur wenn diktiert, dann mit Normwert, nie ins Ergebnis",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Querschnittsfläche (CSA): NUR in den Befundtext aufnehmen, wenn sie EXPLIZIT im Diktat genannt wird (dann mit Normwert)",
+     "CSA NIE ins Ergebnis"
+    ]
+   }
+  },
+  {
+   "id": "3ad",
+   "titel": "Vollständiges Standard-Template als Gerüst",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Übernimm ALLE Template-Sätze wörtlich und in ihrer Reihenfolge, die keiner diktierten Pathologie widersprechen"
+    ]
+   }
+  },
+  {
+   "id": "3ae",
+   "titel": "Ultraschall-gezielte Blockade: Standardtext, nur diktierte Lokalanästhetika, Ergebnis-Konvention",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "NUR die diktierten Lokalanästhetika nennen",
+     "\"Carbostezin\" → \"Carbostesin\", \"Volum A\" → \"Volon A\"",
+     "\"Ultraschall-gezielte Blockade des [Nerv] [Seite] durchgeführt.\""
+    ]
+   },
+   "notiz": "nur die Vorlage war da; Regeln ergänzt 18.11."
+  },
+  {
+   "id": "3af",
+   "titel": "Venen „TVT“, nie „DVT“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Venen: \"TVT\" (NIE \"DVT\")"
+    ]
+   }
+  },
+  {
+   "id": "4",
+   "titel": "Diktierte Pathologie an der Stelle des Normalsatzes",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Die Pathologie-Beschreibung steht an der Stelle des ersetzten Normalbefund-Satzes"
+    ]
+   }
+  },
+  {
+   "id": "5",
+   "titel": "Ergebnis nummeriert, Großbuchstabe + Punkt",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Das Ergebnis ist nummeriert, sobald es MEHR ALS EINEN Punkt hat"
+    ],
+    "source_code/befund_regeln.py": [
+     "def satzform("
+    ]
+   },
+   "notiz": "Ausnahme Peter 12.11.: ein einzelner Punkt ohne Nummer"
+  },
+  {
+   "id": "5a",
+   "titel": "„Kongrement“ → „Konkrement“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-09",
+   "status": "vorhanden",
+   "pruefwort": {
+    "misheard_words.json": [
+     "\"Kongrement\","
+    ]
+   }
+  },
+  {
+   "id": "5b",
+   "titel": "Rho-Textbaustein bei diktiertem „Rho“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-13",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "RHO_BEFUND = (\"Opportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software \""
+    ]
+   },
+   "notiz": "IB-Lab-Rho setzt KaiScribe seit 18.11. nicht mehr ein (RH 57), siehe ibl-rho"
+  },
+  {
+   "id": "6",
+   "titel": "Weichteil-Satz ans Textende",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Der Weichteil-Satz bleibt IMMER am Ende des Befundtextes."
+    ]
+   }
+  },
+  {
+   "id": "7",
+   "titel": "Pathologie direkt anfügen, kein neuer Absatz",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "(direkt anschließend, kein neuer Absatz)"
+    ]
+   }
+  },
+  {
+   "id": "8",
+   "titel": "Finger/Gelenke römisch (I–V)",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Finger/Zehen/Strahlen mit römischen Zahlen (I–V)"
+    ]
+   }
+  },
+  {
+   "id": "9",
+   "titel": "Voruntersuchungsvergleich oben im Befundtext, im Ergebnis unnummeriert",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Vergleich zur Voruntersuchung vom [Datum]:\" steht OBEN im Befundtext",
+     "Ein Voruntersuchungsvergleich steht als unnummerierter Satz."
+    ]
+   },
+   "notiz": "Ergebnis-Teil war da; Stelle im Befundtext ergänzt 18.11."
+  },
+  {
+   "id": "10",
+   "titel": "Zusammengehörige Befunde = ein Punkt",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "ZUSAMMENGEHÖRIG = EIN Punkt"
+    ]
+   }
+  },
+  {
+   "id": "11",
+   "titel": "Im Ergebnis kein „altersentsprechend/unauffällig“ außer Normalbefund",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Im Ergebnis alles \"altersentsprechend/unauffällig\" weglassen — AUSSER bei komplettem Normalbefund."
+    ]
+   }
+  },
+  {
+   "id": "12",
+   "titel": "Ellbogen 3 Kompartimente „Ansonsten die artikulierenden Gelenkflächen …“",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Ansonsten die artikulierenden Gelenkflächen regelrecht konfiguriert, glatt und scharf begrenzt.\""
+    ]
+   }
+  },
+  {
+   "id": "13",
+   "titel": "Ellbogen-Tendinose lateral Extensoren / medial Flexoren",
+   "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
+   "datum": "2026-10-05",
+   "status": "vorhanden",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Epicondylus lateralis = Extensorensehnen-Tendinose, Epicondylus medialis = Flexorensehnen-Tendinose"
+    ]
+   }
+  },
+  {
+   "id": "val-kl",
+   "titel": "Web-Validator: K&L-Tabellensatz bei feststehendem Grad ist kein Erfinden",
+   "quelle": "kaiscribe-kl-tabelle-zurueck-n1",
+   "datum": "2026-11-18",
+   "status": "ergänzt",
+   "pruefwort": {
+    "web_app/src/gemini.ts": [
+     "Steht ein Kellgren-&-Lawrence-Grad fest"
+    ]
+   }
+  }
+ ]
+}

@@ -776,7 +776,7 @@ export function abschnitteBereinigen(report: string, diktat = '', templates?: Vo
     // Befunde nur aus Sätzen, die nicht wörtlich aus einer Vorlage stammen (Sync: befund_regeln.py)
     const eigen = !w.size ? text : saetzeMitLage(text).filter(([a, b]) => !w.has(vorlageNormalisieren(text.slice(a, b))))
       .map(([a, b]) => text.slice(a, b)).join(' ');
-    const befunde = widerspruchBefunde(eigen + '\n' + ergebnis, d);
+    const befunde = widerspruchBefunde(klDeskriptorNeutral(eigen) + '\n' + ergebnis, d);
     for (const [x0, x1, ids] of widerspruchSaetze(text, befunde, d)) {
       const weg = ids.some(i => { const r = kat.get(i)?._str; return !!r && r.test(text.slice(x0, x1).toLowerCase()); });
       stellen.push([x0, x1, weg ? 's' : 'e']);
@@ -1013,6 +1013,22 @@ export function kurzsaetzeSichern(report: string, diktat: string, d: KurzsatzDat
 // Ein K&L-Grad steht nur, wenn er diktiert ist oder aus einem IB-Lab-Baustein kommt (nur EXE) — nie aus dem Wortlaut.
 // Nach der KI: Grad-Angaben ohne Deckung → bei genau einem erlaubten Grad eingesetzt, sonst entfernt (Diagnose bleibt).
 // Sync: source_code/befund_regeln.py (kl_grade, kl_bereinigen), Fixtures befund_regeln_fixtures.json „kl“.
+// K&L-Deskriptor-Tabelle (freigegeben Georg/Peter, = befund_regeln.KL_TABELLE, Gen-Prompt Abschnitt ARTHROSE)
+export const KL_TABELLE: Record<number, string> = {
+  0: 'Unauffälliger Gelenksspalt, keine Osteophyten.',
+  1: 'Geringe Osteophytenbildung, fragliche Gelenksspaltverschmälerung.',
+  2: 'Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung.',
+  3: 'Mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung.',
+  4: 'Aufgehobener Gelenksspalt mit ausgeprägter subchondraler Sklerosierung, Zystenbildung und ausgeprägten Osteophyten.',
+};
+// Für die Befund-Erkennung der Widerspruchs-Wächter ist ein Tabellensatz die Arthrose selbst (Georg 18.11.2026, Nr. 34)
+const KL_TAB_RE = new RegExp(Object.entries(KL_TABELLE).filter(([g]) => g !== '0').map(([, s]) => s.slice(0, -1))
+  .sort((a, b) => b.length - a.length).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+
+export function klDeskriptorNeutral(text: string): string {
+  return (text || '').replace(KL_TAB_RE, 'Gelenkspaltverschmälerung');
+}
+
 const KL_G = String.raw`(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier)`;
 const KL_G_KI = String.raw`(?:[0-4]|IV|III|II|I|null|eins|zwei|drei|vier|X)`;  // KI-Ausgabe: auch der Platzhalter „Grad X“
 const KL_WERT: Record<string, string> = { '0': '0', null: '0', '1': '1', i: '1', eins: '1', '2': '2', ii: '2', zwei: '2',
@@ -1039,9 +1055,12 @@ export function arthroseDiktiert(diktat: string): boolean {
   return ARTHROSE_DIKTAT.test(diktat || '');
 }
 
-export function klAdjektivGrade(diktat: string): string[] {
+const FEMOROPATELLAR = /patell|femoropat/i;
+
+export function klAdjektivGrade(diktat: string, femoropatellar = false): string[] {
   const out = new Set<string>();
   for (const m of (diktat || '').matchAll(KL_ADJ_RE)) {
+    if (femoropatellar && !FEMOROPATELLAR.test(m[0])) continue;
     for (const [g, r] of KL_ADJ) if (new RegExp('^(?:' + r + ')$', 'i').test(m[1])) out.add(g);
   }
   return [...out].sort();
@@ -1060,7 +1079,9 @@ export function klBereinigen(report: string, diktat: string, erlaubt: string[] =
   if (!report || !/kellgren/i.test(report)) return [report, []];
   const d = klGrade(diktat);
   const e = [...new Set(erlaubt)].sort();
-  const ok = d.length ? d : e.length ? e : klAdjektivGrade(diktat);
+  // kaiscribe-kl-tabelle-zurueck-n1 (Georg 18.11.2026, Nr. 50): IB-Lab-Grad (KOALA, femorotibial) vor Adjektiv, daneben
+  // der Adjektiv-Grad einer diktierten Femoropatellar-Arthrose
+  const ok = d.length ? d : e.length ? [...new Set([...e, ...klAdjektivGrade(diktat, true)])].sort() : klAdjektivGrade(diktat);
   const aend: string[] = [];
   const ersetzen = (m0: string, g1?: string, g2?: string): string => {
     const g = KL_WERT[(g1 || g2 || '').toLowerCase()] ?? 'X';

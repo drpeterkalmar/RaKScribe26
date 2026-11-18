@@ -373,7 +373,9 @@ e = I.einsetzen(KNIE, B(KOALA_LI3), diktat="Knie links: Mäßige Gonarthrose Gra
 check("K&L: diktiert Grad 3 = IB Lab 3 → nicht doppelt", "Kellgren-Lawrence-Grad links 3 (IB Lab KOALA)" not in e.report
       and any("schon diktiert" in h for h in e.hinweise), e.report + str(e.hinweise))
 e = I.einsetzen(KNIE, B(KOALA_LI3), diktat="Knie links: Mäßige Gonarthrose.")
-check("K&L: ohne diktierten Grad → IB-Lab-Zeile angefügt", "Kellgren-Lawrence-Grad links 3 (IB Lab KOALA)." in e.report)
+# 18.11.2026 (Georg, kaiscribe-kl-tabelle-zurueck-n1): KOALA bringt keine Messzeile mehr; diktierte Gonarthrose geht vor
+check("K&L 18.11.2026: Gonarthrose diktiert (ohne Grad) → kein KOALA-Text, keine Messzeile, Hinweis",
+      e.report == KNIE and any("schon diktiert" in h for h in e.hinweise), e.report + str(e.hinweise))
 e = I.einsetzen(KNIE, B(KOALA_LI), diktat="Knie links: Mäßige Gonarthrose, Kellgren-Lawrence Grad 2.")
 check("K&L v3.18.8: IB Lab 1 ohne Regeltreffer → nicht im Befund; diktiert 2 → Prüf-Hinweis „der diktierte Grad gilt“",
       "IB Lab KOALA" not in e.report and any("diktierte Grad gilt" in h for h in e.hinweise), e.report + str(e.hinweise))

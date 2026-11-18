@@ -108,6 +108,10 @@ jobs:
         run: python tests/offline/test_ibl_frog_text.py
       - name: IB Lab LAMA + FROG ohne Normbereiche (10+10 echte Fälle, älterer Abholer bereinigt) (v3.19.9)
         run: python tests/offline/test_ibl_ohne_norm.py
+      - name: IB Lab KOALA → Kniebefund nach K&L-Tabelle (Georgs Fixtures Nr. 34/50, ganze EXE-Kette)
+        run: python tests/offline/test_ibl_koala_text.py
+      - name: Regel-Register (jede freigegebene Befundregel mit Wortlaut in Prompt/Validator/Regeln, Skill 1–13/3a–3af)
+        run: python tests/offline/test_regel_register.py
       - name: Kontext aus der Datenbank des RIS + IB-Lab-Gerüst vor dem Diktat (v3.14.0)
         run: python tests/offline/test_cas_kontext.py
       - name: Mammo-Maske (Vorbefund zerlegen, „unverändert“, ACR/BI-RADS, Befund, Datenschutz, Tasten) (v3.15.0)
