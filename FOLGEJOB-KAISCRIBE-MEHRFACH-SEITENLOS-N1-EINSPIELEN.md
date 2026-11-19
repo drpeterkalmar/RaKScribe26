@@ -1,5 +1,10 @@
 # kaiscribe-mehrfach-seitenlos-n1-einspielen – KaiScribe 3.19.14 einspielen (LWS + Becken in einem Diktat), Abnahme 451898
 
+> **NACHTRAG Fr 20.11.2026 00:35 (kaiscribe-frog-einsetzen-n1-einspielen) – gilt vor allem anderen:** Auf X: läuft seit 00:27
+> **KaiScribe 3.19.15** (sha 9c7a91f8ec2e…, enthält 3.19.14 = bd8a4a1), abgenommen am 451898
+> (`docs/einspielen/ergebnis_frog_einsetzen_n1_20261120.md`). **Kein Tausch auf 3.19.14** (Rückschritt). Schritt 1 entfällt, nur noch
+> die Abnahme lws + bü mit der Live-Version 3.19.15 und der Bericht.
+
 Eingereiht von `kaiscribe-mehrfach-seitenlos-n1` (Teil 1, Do 19.11.2026 ~18:30, Mac). Repo RaKScribe26, Ordi-Werkzeuge in ris-mods.
 Ressource: ordi. Georg 19.11. hat das Ziel vorgegeben („Wie funktioniert es, wenn ich 2 Untersuchungen habe?“) und Go für Fix + Einspielen
 gegeben, wenn alle Tests grün sind. **Live bis Fr 20.11. 06:30.**
