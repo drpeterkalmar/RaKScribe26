@@ -22,6 +22,8 @@ Ohne Bausteine (keine Datei, ältere Brücke, Menü „IB-Lab-Bausteine überneh
 und Befund bleiben bit-gleich. Keine Praxisdaten hier (öffentliches Repo): nur Modulnamen und allgemeine Anatomie.
 Tests: tests/offline/test_ibl_bausteine.py
 """
+import json
+import os
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
@@ -114,6 +116,7 @@ class Baustein:
     aktualisiert: str = ""
     vorwerte: List[dict] = field(default_factory=list)   # v3.18.0: frühere Werte derselben Messgröße (nur Anzeige)
     befundtext: Optional[dict] = None   # v3.19.8: FROG – fertige Sätze + Begriffe des Abholers ≥ 1.3.7 (Georg 17.11.2026)
+    text_aus_ablage: bool = False       # kaiscribe-frog-einsetzen-n1: befundtext von KaiScribe aus der Ablage (Brücke zu alt)
     alter: Optional[int] = None         # 18.11.2026: Alter des Patienten in Jahren, wenn die Brücke es liefert (KOALA < 18)
 
     @property
@@ -235,9 +238,65 @@ def aus_liste(liste):
                             nicht_zugeordnet=_texte(d.get("nicht_zugeordnet")),
                             modul_name=str(d.get("modul_name") or ""), aktualisiert=str(d.get("aktualisiert") or ""),
                             vorwerte=_vorwerte(d.get("vorwerte")), befundtext=_befundtext(modul, d.get("befundtext")),
-                            alter=_alter(d)))
+                            text_aus_ablage=d.get("befundtext_quelle") == "ablage", alter=_alter(d)))
     out.sort(key=lambda b: (b.ziffer, b.modul))
     return out
+
+
+# kaiscribe-frog-einsetzen-n1 (Georg 19.11.2026, RH 127 „keine Werte“): an einem Befund-PC lief noch die Brücke 2.5.15 – sie
+# reicht das Feld „befundtext“ nicht durch (FROG erst ab Brücke 2.5.20, HIPPO ab 2.5.22). KaiScribe bekam FROG mit
+# Messzeilen und Begriffen, aber ohne die Sätze, fiel in den alten Weg und setzte 0 Zeilen ein (Ergebnis der Vorlage
+# „unauffällig“ → Begriffe verworfen). Darum holt KaiScribe den Text dann selbst aus der Ablage des Abholers
+# (X:\IBL-Vorbefunde\<AccNo>_<modul>.json, dieselbe Datei, aus der die Brücke liest) – nur bei derselben Fassung, sonst
+# bleibt alles wie geliefert. Sichtbarer Hinweis, damit die veraltete Brücke auffällt (KaiScribe-einrichten.cmd).
+TEXT_MODULE = ("frog", "hippo")
+ABLAGE_FORMAT = "ibl-abholer/1"     # = ris-mods ibl/abholer.py ABLAGE_FORMAT
+_ACCNO = re.compile(r"[0-9A-Za-z-]+")
+
+
+def _ablage_befundtext(ablage, accno, modul, version):
+    """Roh-Feld befundtext[modul] aus der Abholer-Datei derselben Fassung, sonst None (fehlt, andere Fassung, kaputt)."""
+    try:
+        with open(os.path.join(ablage, f"{accno}_{modul}.json"), encoding="utf-8-sig") as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(d, dict) or d.get("format") != ABLAGE_FORMAT or not isinstance(d.get("vorbefund"), dict):
+        return None
+    if str(d.get("accession_number") or "").strip() != accno:
+        return None
+    try:
+        if int(d.get("version") or 0) != version:
+            return None
+    except (TypeError, ValueError):
+        return None
+    bt = d["vorbefund"].get("befundtext")
+    bt = bt.get(modul) if isinstance(bt, dict) else None
+    return bt if _befundtext(modul, bt) is not None else None
+
+
+def text_nachladen(liste, ablage):
+    """Bausteine der Brücke (Liste von dicts) → (Liste, [„FROG v3“ …]): FROG/HIPPO ohne „befundtext“ bekommen ihn aus der
+    Ablage des Abholers (gleiche AccNo und Fassung). FROG nur mit Ergebnispunkten (ohne Pathologie gibt es keinen Text).
+    ablage leer/„aus“ → unverändert. Wirft nie."""
+    if not liste or not ablage or str(ablage).strip().lower() == "aus":
+        return liste, []
+    out, geholt = [], []
+    for d in liste:
+        modul = str(d.get("modul") or "").strip().lower() if isinstance(d, dict) else ""
+        accno = str(d.get("accno") or "").strip() if modul else ""
+        if (modul in TEXT_MODULE and not d.get("befundtext") and _ACCNO.fullmatch(accno)
+                and (modul != "frog" or _texte(d.get("ergebnis")))):
+            try:
+                version = int(d.get("version") or 0)
+            except (TypeError, ValueError):
+                version = 0
+            bt = _ablage_befundtext(ablage, accno, modul, version)
+            if bt is not None:
+                d = dict(d, befundtext=bt, befundtext_quelle="ablage")
+                geholt.append(f"{str(d.get('name') or modul.upper())} v{version}")
+        out.append(d)
+    return out, geholt
 
 
 def band_text(bausteine, an=True):
@@ -257,6 +316,12 @@ def anzeige_hinweise(bausteine):
                 for h in b.hinweise]
         if b.nicht_zugeordnet:
             out.append(f"{b.name}: {len(b.nicht_zugeordnet)} Messgröße(n) nicht zugeordnet (Katalog ergänzen)")
+        if b.text_aus_ablage:
+            out.append(f"{b.name}: Text aus der IB-Lab-Ablage geholt – Brücke an diesem PC veraltet "
+                       "(KaiScribe-einrichten.cmd)")
+        elif b.modul == "frog" and b.befundtext is None and any(ist_schluss(p) for p in b.ergebnis):
+            out.append(f"{b.name}: Fuß-Text fehlt – Brücke an diesem PC veraltet (KaiScribe-einrichten.cmd), "
+                       "IB-Lab-Werte nicht eingesetzt")
     return list(dict.fromkeys(out))
 
 
@@ -1149,9 +1214,14 @@ FROG_PROMPT = ("FROG: Übernimm die Vorlagen-Sätze „Das Fußskelett ist nach 
                "ordnungsgemäßen Gelenkwinkeln.“ wörtlich und unverändert, außer der Arzt hat dazu etwas diktiert – "
                "KaiScribe ersetzt sie nach dem Befund durch die IB-Lab-Sätze. Schreibe selbst keinen Satz und keine "
                "Diagnose zur Stellung der Groß- und Kleinzehe oder zum Längsgewölbe, außer der Arzt hat es diktiert.")
-_FROG_STELLUNG = re.compile(r"Das Fu(?:ß|ss)skelett ist nach Form[^.\n]*?Stellung[^.\n]*\.")
-_FROG_PHALANGEN = re.compile(r"Die Stellung der Phalangen[^.\n]*?ist ordnungsgemäß\.")
-_FROG_GEWOELBE = re.compile(r"Das Fu(?:ß|ss)gewölbe ist regulär ausgebildet(?: bei ordnungsgemäßen Gelenkwinkeln)?\.")
+# kaiscribe-frog-einsetzen-n1 (RH 127, Fuß beidseits): bei beidseitiger CAS-Leistung schreibt die KI „wo nötig beidseits“
+# in die Normalsätze (cas_vorlagen.beidseits_block) – „Das Fußskelett ist beidseits nach Form …“ muss ebenso ersetzt werden.
+_BDS = r"(?: (?:beidseits|beidseitig|jeweils))?"
+_FROG_STELLUNG = re.compile(r"(?:Das Fu(?:ß|ss)skelett|Die Fu(?:ß|ss)skelette)" + _BDS + r" (?:ist|sind)" + _BDS
+                            + r" nach Form[^.\n]*?Stellung[^.\n]*\.")
+_FROG_PHALANGEN = re.compile(r"Die Stellung der Phalangen[^.\n]*?ist" + _BDS + r" ordnungsgemäß\.")
+_FROG_GEWOELBE = re.compile(r"(?:Das Fu(?:ß|ss)gewölbe|Die Fu(?:ß|ss)gewölbe)" + _BDS + r" (?:ist|sind)" + _BDS
+                            + r" regulär ausgebildet(?: bei ordnungsgemäßen Gelenkwinkeln)?\.")
 _FROG_GEW_NORMAL = re.compile(r"^Das Fu(?:ß|ss)gewölbe (?:(?:rechts|links) )?ist regulär ausgebildet\.$")
 _FROG_GEW_SATZ = re.compile(r"(?:Erhöhtes|Abgeflachtes) Längsgewölbe|Das Fu(?:ß|ss)gewölbe")
 _FROG_ERG_UND = re.compile(r"^(Regelrechte Darstellung\b.*?) und des Fu(?:ß|ss)skeletts"

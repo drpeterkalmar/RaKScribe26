@@ -235,6 +235,23 @@
    }
   },
   {
+   "id": "ibl-text-immer",
+   "titel": "FROG-/HIPPO-Text kommt auch mit älterer Brücke in den Befund (Text aus der Abholer-Ablage, Hinweis „Brücke veraltet“); FROG-Vorlagensätze auch mit „beidseits“",
+   "quelle": "Georg Riegler (RH 127, 19.11.: „Teste das immer ob es funktioniert“)",
+   "datum": "2026-11-19",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "TEXT_MODULE = (\"frog\", \"hippo\")",
+     "def text_nachladen(",
+     "_BDS = r\"(?: (?:beidseits|beidseitig|jeweils))?\""
+    ],
+    "source_code/RaKScribe.py": [
+     "_ibl.text_nachladen(liste, getattr(CFG, \"ibl_ablage\", \"\"))"
+    ]
+   }
+  },
+  {
    "id": "ibl-lama",
    "titel": "LAMA: Ergebnis zuerst, Schlussanmerkung",
    "quelle": "Georg Riegler",

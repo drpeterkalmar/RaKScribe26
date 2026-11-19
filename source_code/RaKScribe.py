@@ -3028,6 +3028,12 @@ class RaKScribeApp(ctk.CTk):
         liste = self._cas_kanal.ibl_lesen(a)
         if liste is None:
             return
+        try:   # kaiscribe-frog-einsetzen-n1 (RH 127): FROG-/HIPPO-Text einer zu alten Brücke aus der Ablage nachholen
+            liste, geholt = _ibl.text_nachladen(liste, getattr(CFG, "ibl_ablage", ""))
+            if geholt:
+                log(f"[IBL] Text aus der Ablage nachgeladen (Brücke ohne Text): {', '.join(geholt)}")
+        except Exception:
+            log_exception("[IBL] Text aus der Ablage")
         alt = {b.schluessel: b.version for b in self._ibl_bausteine()}
         a.ibl = liste
         neu = self._ibl_bausteine()

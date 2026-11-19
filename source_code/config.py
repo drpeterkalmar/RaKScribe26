@@ -48,6 +48,9 @@ class Config:
     # v3.18.5 (Nachtrag RH 99): Lauf-Protokoll je Befund (STT-Text, Vorschlag, Modell, Prompt-Stand), auch ohne EOL;
     # LAUF_ORDNER = aus → nie. Fehlt das Laufwerk, schreibt KaiScribe nichts.
     lauf_ordner: str = "X:\\RaKScribe\\Daten\\laeufe"
+    # kaiscribe-frog-einsetzen-n1 (Georg 19.11.2026, RH 127): Ablage des IB-Lab-Abholers – daraus holt KaiScribe den
+    # FROG-/HIPPO-Text selbst, wenn eine ältere Brücke (< 2.5.20 bzw. < 2.5.22) ihn nicht mitgibt. IBL_ABLAGE = aus → nie.
+    ibl_ablage: str = "X:\\IBL-Vorbefunde"
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
     angelegt: bool = False      # Datei fehlte und wurde mit Standardwerten angelegt
@@ -113,6 +116,7 @@ def load_config(path):
     cfg.anthropic_modell = (sek.get("ANTHROPIC_MODELL", "") or cfg.anthropic_modell).strip()
     cfg.anthropic_frist = max(3, _int(sek, "ANTHROPIC_FRIST", 20, cfg.warnungen))
     cfg.lauf_ordner = (sek.get("LAUF_ORDNER", "") or cfg.lauf_ordner).strip().strip('"')
+    cfg.ibl_ablage = (sek.get("IBL_ABLAGE", "") or cfg.ibl_ablage).strip().strip('"')
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):
         for name in ("NAECHSTES_FELD", "VORIGES_FELD", "UEBERNEHMEN", "MASKE_UMSCHALTEN"):

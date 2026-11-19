@@ -1,0 +1,255 @@
+{
+ "quelle": "erzeugt mit ris-mods 53c767e (Abholer 1.3.13: vorbefund.erstelle_vorbefund, Brücke: ibl_bausteine.baustein_lesen + fuer_rakscribe) aus den Winkeln des echten Falls vom 19.11.2026 (Fuß beidseits, RH 127) – nur Winkel, Auftragsnummer erfunden, keine Patientendaten",
+ "abholer_datei": {
+  "format": "ibl-abholer/1",
+  "accession_number": "999001190011",
+  "modul": "frog",
+  "modul_name": "IB Lab FROG",
+  "version": 3,
+  "aktualisiert": "2026-11-19T12:00:00",
+  "vorbefund": {
+   "befundteil": [
+    "Fuß rechts (Aufnahme 1):",
+    "Hallux-valgus-Winkel rechts 6° (IB Lab FROG).",
+    "Intermetatarsalwinkel I/II rechts 9° (IB Lab FROG).",
+    "Distaler metatarsaler Gelenkflächenwinkel rechts 1° (IB Lab FROG).",
+    "Talocalcanealwinkel d.p. rechts 32° (IB Lab FROG).",
+    "Vorfußadduktionswinkel rechts 8° (IB Lab FROG).",
+    "Intermetatarsalwinkel I/V rechts 31° (IB Lab FROG).",
+    "Intermetatarsalwinkel IV/V rechts 10° (IB Lab FROG).",
+    "Metatarsophalangealwinkel V rechts 17° (IB Lab FROG).",
+    "Fuß links (Aufnahme 2):",
+    "Hallux-valgus-Winkel links 5° (IB Lab FROG).",
+    "Intermetatarsalwinkel I/II links 9° (IB Lab FROG).",
+    "Distaler metatarsaler Gelenkflächenwinkel links -1° (IB Lab FROG).",
+    "Talocalcanealwinkel d.p. links 35° (IB Lab FROG).",
+    "Vorfußadduktionswinkel links 9° (IB Lab FROG).",
+    "Intermetatarsalwinkel I/V links 31° (IB Lab FROG).",
+    "Intermetatarsalwinkel IV/V links 11° (IB Lab FROG).",
+    "Metatarsophalangealwinkel V links 13° (IB Lab FROG).",
+    "Fuß rechts (Aufnahme 3):",
+    "Calcaneusneigungswinkel rechts 22° (IB Lab FROG).",
+    "Längsgewölbewinkel nach Djian-Annonier rechts 120° (IB Lab FROG).",
+    "Meary-Winkel rechts -5° (IB Lab FROG).",
+    "Talocalcanealwinkel seitlich rechts 55° (IB Lab FROG).",
+    "Talusneigungswinkel rechts 33° (IB Lab FROG).",
+    "Neigungswinkel Metatarsale I rechts 28° (IB Lab FROG).",
+    "Fuß links (Aufnahme 4):",
+    "Calcaneusneigungswinkel links 22° (IB Lab FROG).",
+    "Längsgewölbewinkel nach Djian-Annonier links 122° (IB Lab FROG).",
+    "Meary-Winkel links -6° (IB Lab FROG).",
+    "Talocalcanealwinkel seitlich links 57° (IB Lab FROG).",
+    "Talusneigungswinkel links 34° (IB Lab FROG).",
+    "Neigungswinkel Metatarsale I links 29° (IB Lab FROG)."
+   ],
+   "ergebnis_punkte": [
+    "Digitus quintus varus beidseits.",
+    "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise_fuer_befunder": [],
+   "nicht_zugeordnet": [],
+   "angewandte_regeln": [
+    "frog-digitus-quintus-varus",
+    "frog-schlussanmerkung"
+   ],
+   "befundtext": {
+    "frog": {
+     "format": 1,
+     "stellung": [
+      "Varusstellung der Kleinzehe beidseits mit einem Metatarsophalangealwinkel V von rechts 17° und links 13°."
+     ],
+     "gewoelbe": [
+      "Das Fußgewölbe ist regulär ausgebildet."
+     ],
+     "gewoelbe_weg": false,
+     "gewoelbe_pathologisch": false,
+     "phalangen": true,
+     "ein_fuss": false,
+     "begriffe": [
+      {
+       "art": "dp",
+       "text": "Digitus quintus varus",
+       "seite": "beidseits"
+      }
+     ],
+     "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+    }
+   },
+   "aufnahmen": [
+    {
+     "modul": "frog",
+     "nr": 1,
+     "beschriftung": "Fuß rechts (Aufnahme 1)",
+     "region": null,
+     "projektion": null,
+     "seite": null,
+     "seite_quelle": null,
+     "kopf": null,
+     "regeln": true
+    },
+    {
+     "modul": "frog",
+     "nr": 2,
+     "beschriftung": "Fuß links (Aufnahme 2)",
+     "region": null,
+     "projektion": null,
+     "seite": null,
+     "seite_quelle": null,
+     "kopf": null,
+     "regeln": true
+    },
+    {
+     "modul": "frog",
+     "nr": 3,
+     "beschriftung": "Fuß rechts (Aufnahme 3)",
+     "region": null,
+     "projektion": null,
+     "seite": null,
+     "seite_quelle": null,
+     "kopf": null,
+     "regeln": true
+    },
+    {
+     "modul": "frog",
+     "nr": 4,
+     "beschriftung": "Fuß links (Aufnahme 4)",
+     "region": null,
+     "projektion": null,
+     "seite": null,
+     "seite_quelle": null,
+     "kopf": null,
+     "regeln": true
+    }
+   ]
+  }
+ },
+ "bruecke_neu": {
+  "accno": "999001190011",
+  "ziffer": 1,
+  "modul": "frog",
+  "name": "FROG",
+  "modul_name": "IB Lab FROG",
+  "version": 3,
+  "aktualisiert": "2026-11-19T12:00:00",
+  "seiten": [
+   "rechts",
+   "links"
+  ],
+  "befundteil": [
+   "Fuß rechts (Aufnahme 1):",
+   "Hallux-valgus-Winkel rechts 6° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/II rechts 9° (IB Lab FROG).",
+   "Distaler metatarsaler Gelenkflächenwinkel rechts 1° (IB Lab FROG).",
+   "Talocalcanealwinkel d.p. rechts 32° (IB Lab FROG).",
+   "Vorfußadduktionswinkel rechts 8° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/V rechts 31° (IB Lab FROG).",
+   "Intermetatarsalwinkel IV/V rechts 10° (IB Lab FROG).",
+   "Metatarsophalangealwinkel V rechts 17° (IB Lab FROG).",
+   "Fuß links (Aufnahme 2):",
+   "Hallux-valgus-Winkel links 5° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/II links 9° (IB Lab FROG).",
+   "Distaler metatarsaler Gelenkflächenwinkel links -1° (IB Lab FROG).",
+   "Talocalcanealwinkel d.p. links 35° (IB Lab FROG).",
+   "Vorfußadduktionswinkel links 9° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/V links 31° (IB Lab FROG).",
+   "Intermetatarsalwinkel IV/V links 11° (IB Lab FROG).",
+   "Metatarsophalangealwinkel V links 13° (IB Lab FROG).",
+   "Fuß rechts (Aufnahme 3):",
+   "Calcaneusneigungswinkel rechts 22° (IB Lab FROG).",
+   "Längsgewölbewinkel nach Djian-Annonier rechts 120° (IB Lab FROG).",
+   "Meary-Winkel rechts -5° (IB Lab FROG).",
+   "Talocalcanealwinkel seitlich rechts 55° (IB Lab FROG).",
+   "Talusneigungswinkel rechts 33° (IB Lab FROG).",
+   "Neigungswinkel Metatarsale I rechts 28° (IB Lab FROG).",
+   "Fuß links (Aufnahme 4):",
+   "Calcaneusneigungswinkel links 22° (IB Lab FROG).",
+   "Längsgewölbewinkel nach Djian-Annonier links 122° (IB Lab FROG).",
+   "Meary-Winkel links -6° (IB Lab FROG).",
+   "Talocalcanealwinkel seitlich links 57° (IB Lab FROG).",
+   "Talusneigungswinkel links 34° (IB Lab FROG).",
+   "Neigungswinkel Metatarsale I links 29° (IB Lab FROG)."
+  ],
+  "ergebnis": [
+   "Digitus quintus varus beidseits.",
+   "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+  ],
+  "hinweise": [],
+  "nicht_zugeordnet": [],
+  "vorwerte": [],
+  "befundtext": {
+   "format": 1,
+   "stellung": [
+    "Varusstellung der Kleinzehe beidseits mit einem Metatarsophalangealwinkel V von rechts 17° und links 13°."
+   ],
+   "gewoelbe": [
+    "Das Fußgewölbe ist regulär ausgebildet."
+   ],
+   "gewoelbe_weg": false,
+   "gewoelbe_pathologisch": false,
+   "phalangen": true,
+   "ein_fuss": false,
+   "begriffe": [
+    {
+     "art": "dp",
+     "text": "Digitus quintus varus",
+     "seite": "beidseits"
+    }
+   ],
+   "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+  }
+ },
+ "bruecke_alt": {
+  "accno": "999001190011",
+  "ziffer": 1,
+  "modul": "frog",
+  "name": "FROG",
+  "modul_name": "IB Lab FROG",
+  "version": 3,
+  "aktualisiert": "2026-11-19T12:00:00",
+  "seiten": [
+   "rechts",
+   "links"
+  ],
+  "befundteil": [
+   "Fuß rechts (Aufnahme 1):",
+   "Hallux-valgus-Winkel rechts 6° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/II rechts 9° (IB Lab FROG).",
+   "Distaler metatarsaler Gelenkflächenwinkel rechts 1° (IB Lab FROG).",
+   "Talocalcanealwinkel d.p. rechts 32° (IB Lab FROG).",
+   "Vorfußadduktionswinkel rechts 8° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/V rechts 31° (IB Lab FROG).",
+   "Intermetatarsalwinkel IV/V rechts 10° (IB Lab FROG).",
+   "Metatarsophalangealwinkel V rechts 17° (IB Lab FROG).",
+   "Fuß links (Aufnahme 2):",
+   "Hallux-valgus-Winkel links 5° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/II links 9° (IB Lab FROG).",
+   "Distaler metatarsaler Gelenkflächenwinkel links -1° (IB Lab FROG).",
+   "Talocalcanealwinkel d.p. links 35° (IB Lab FROG).",
+   "Vorfußadduktionswinkel links 9° (IB Lab FROG).",
+   "Intermetatarsalwinkel I/V links 31° (IB Lab FROG).",
+   "Intermetatarsalwinkel IV/V links 11° (IB Lab FROG).",
+   "Metatarsophalangealwinkel V links 13° (IB Lab FROG).",
+   "Fuß rechts (Aufnahme 3):",
+   "Calcaneusneigungswinkel rechts 22° (IB Lab FROG).",
+   "Längsgewölbewinkel nach Djian-Annonier rechts 120° (IB Lab FROG).",
+   "Meary-Winkel rechts -5° (IB Lab FROG).",
+   "Talocalcanealwinkel seitlich rechts 55° (IB Lab FROG).",
+   "Talusneigungswinkel rechts 33° (IB Lab FROG).",
+   "Neigungswinkel Metatarsale I rechts 28° (IB Lab FROG).",
+   "Fuß links (Aufnahme 4):",
+   "Calcaneusneigungswinkel links 22° (IB Lab FROG).",
+   "Längsgewölbewinkel nach Djian-Annonier links 122° (IB Lab FROG).",
+   "Meary-Winkel links -6° (IB Lab FROG).",
+   "Talocalcanealwinkel seitlich links 57° (IB Lab FROG).",
+   "Talusneigungswinkel links 34° (IB Lab FROG).",
+   "Neigungswinkel Metatarsale I links 29° (IB Lab FROG)."
+  ],
+  "ergebnis": [
+   "Digitus quintus varus beidseits.",
+   "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+  ],
+  "hinweise": [],
+  "nicht_zugeordnet": [],
+  "vorwerte": []
+ }
+}

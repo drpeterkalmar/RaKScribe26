@@ -24,7 +24,7 @@ def check(name, ok, detail=""):
 SKILL = ["1", "2", "3"] + [f"3{c}" for c in "abcdefghijklmnopqrstuvwxyz"] + ["3aa", "3ab", "3ac", "3ad", "3ae", "3af"] \
     + ["4", "5", "5a", "5b", "6", "7", "8", "9", "10", "11", "12", "13"]
 PFLICHT = SKILL + ["kl-0", "kl-1", "kl-2", "kl-3", "kl-4", "kl-wann", "kl-rh38", "kl-ergebnis", "kl-knie-fp", "kl-knie-betont",
-                   "kl-bsp-schulter", "kl-bsp-ellbogen", "kl-bsp-knie", "kl-koala", "ergebnis-format", "ibl-frog", "ibl-lama",
+                   "kl-bsp-schulter", "kl-bsp-ellbogen", "kl-bsp-knie", "kl-koala", "ergebnis-format", "ibl-frog", "ibl-text-immer", "ibl-lama",
                    "ibl-panda", "ibl-rho", "wid-erguss", "wid-ki-pathologie", "val-kl",
                    "mehrfach-untersuchung"]
 
