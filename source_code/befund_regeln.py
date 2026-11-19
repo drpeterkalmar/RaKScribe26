@@ -4,8 +4,8 @@ Gleiche Semantik wie web_app/src/befundRegeln.ts (Web). Beide Engines laufen in
 tests/offline/befund_regeln_test.py gegen dieselbe Tabelle befund_regeln_fixtures.json — Änderungen
 IMMER an beiden Stellen + Fixture.
 
-  split_regionen(text)        Diktat mit ≥2 Regionen ("Schulter rechts … Ellbogen rechts …")
-                              → ein Segment je Region (je eigener Befund).
+  split_regionen(text)        Diktat mit ≥2 Regionen ("Schulter rechts … Ellbogen rechts …", seit 19.11.2026 auch
+                              ohne Seite am Satzanfang: "LWS: … Becken: …") → ein Segment je Region (je eigener Befund).
   ergebnis_nummerieren(rep)   Ergebnis-Zeilen ohne Nummer → "1. 2. 3."; ein einzelner
                               Ergebnispunkt bleibt unnummeriert (v3.18.3, Peter 12.11.2026).
   has_pathology(text)         Pathologie-Stichwort ohne Negation (für den Normalsatz-Check der Nummerierung).
@@ -145,8 +145,8 @@ def titel_mit_seite(titel, raw):
 
 # ── Regionen-Trenner ─────────────────────────────────────────────────────────
 # Gruppe → Wortformen (ganze Wörter). Teilstrukturen derselben Untersuchung (Finger in der
-# Hand, Zehe im Fuß) teilen sich die Gruppe → trennen nicht. Wirbelsäule/Thorax/Becken haben
-# keine Seite und werden nie getrennt (eigene Kombi-Templates).
+# Hand, Zehe im Fuß) teilen sich die Gruppe → trennen nicht. Regionen ohne Seite (Wirbelsäule, Becken, Thorax …):
+# REGIONEN_OHNE_SEITE darunter (seit kaiscribe-mehrfach-seitenlos-n1).
 REGIONEN = [
     ("schulter", r"schulter(?:gelenk)?"),
     ("oberarm", r"oberarm|humerus"),
@@ -170,6 +170,36 @@ _REGION_MARKER_RE = re.compile(
     r"(?:(?:(?:der|die|das)\s+)?(?P<s1>rechte[nsmr]?|linke[nsmr]?)\s+(?P<r1>" + _REGION_ALT + r")" +
     r"|(?P<r2>" + _REGION_ALT + r")(?:\s+in\s+(?:2|zwei)\s+ebenen)?\s+(?P<s2>" + _SEITE + r")))(?!\w)",
     re.I)
+
+# kaiscribe-mehrfach-seitenlos-n1 (Georg 19.11.2026, CAS lws+bü in EINEM Diktat → nur ein LWS-Befund, Becken hineingemischt):
+# Regionen ohne Seite trennen jetzt auch – aber nur als Satzanfang (Diktatanfang, nach Satzzeichen/„Punkt“/„neue Zeile“,
+# nicht nach Komma) und als eigenes Wort („Fibroostosen am Becken“, „Beckenschiefstand“ trennen nicht). Untersuchungen
+# einer Familie mit Kombi-Vorlage trennen untereinander weiter nicht: HWS/BWS/LWS (hws_und_lws, wirbelsäule_gesamt),
+# Becken + Hüfte (beckenübersicht_und_hüfte), Kreuzbein + Steißbein. Sync: befundRegeln.ts REGIONEN_OHNE_SEITE
+REGIONEN_OHNE_SEITE = [
+    ("becken", r"becken(?:übersicht)?|bü|hüften\s+(?:beidseits|bds\.?)|beide\s+hüften"),
+    ("lws", r"lws|lendenwirbelsäule"),
+    ("bws", r"bws|brustwirbelsäule"),
+    ("hws", r"hws|halswirbelsäule"),
+    ("gws", r"gws|ganzwirbelsäule|gesamte\s+wirbelsäule|wirbelsäule\s+gesamt"),
+    ("thorax", r"thorax|lunge"),
+    ("schaedel", r"schädel"),
+    ("nnh", r"nnh|nasennebenhöhlen"),
+    ("abdomen", r"abdomen"),
+    ("kreuzbein", r"kreuzbein|sakrum|sacrum|os\s+sacrum"),
+    ("steissbein", r"steißbein|steissbein"),
+]
+# Familie → trennen untereinander nicht (seitige Hüfte gehört zur Becken-Familie)
+_FAMILIE = {"lws": "ws", "bws": "ws", "hws": "ws", "gws": "ws", "becken": "becken", "huefte": "becken",
+            "kreuzbein": "sakrum", "steissbein": "sakrum"}
+_GRENZE_SATZ = r"(?:^|[.!?:;\n]|(?<!\w)punkt(?!\w)|(?<!\w)neue\s+zeile(?!\w)|(?<!\w)neuzeile(?!\w)|(?<!\w)absatz(?!\w))"
+_OHNE_SEITE_RE = re.compile(
+    _GRENZE_SATZ + r"\s*(" + _MOD + r"(?:(?:der|die|das|des)\s+)?(?P<r>" +
+    "|".join(f"(?P<o_{g}>{pat})" for g, pat in REGIONEN_OHNE_SEITE) + r"))(?!\w)", re.I)
+
+
+def _familie(key):
+    return _FAMILIE.get(key[0], key[0] + "|" + key[1])
 
 
 def _gruppe(wort):
@@ -197,11 +227,15 @@ def split_regionen(text):
     t = text or ""
     starts = []  # (pos, key)
     saetze = None
+    marker = []  # (pos, key) — seitige Regionen + (seit kaiscribe-mehrfach-seitenlos-n1) Regionen ohne Seite am Satzanfang
     for m in _REGION_MARKER_RE.finditer(t):
         region = m.group("r1") or m.group("r2")
         seite = m.group("s1") or m.group("s2")
-        key = (_gruppe(region), _seite_norm(seite))
-        pos = m.end() - len(m.group(1))
+        marker.append((m.end() - len(m.group(1)), (_gruppe(region), _seite_norm(seite))))
+    for m in _OHNE_SEITE_RE.finditer(t):
+        g = next(g for g, _ in REGIONEN_OHNE_SEITE if m.group("o_" + g))
+        marker.append((m.end() - len(m.group(1)), (g, "")))
+    for pos, key in sorted(marker):
         if saetze is None:
             saetze = diktat_saetze(t)
         if _kurz_marker(t, pos, saetze):
@@ -210,6 +244,8 @@ def split_regionen(text):
             continue  # gleiche Region + Seite → derselbe Befund
         if any(k == key for _, k in starts):
             continue  # Region kommt wieder vor (z.B. Rückbezug) → nicht erneut trennen
+        if any(_familie(k) == _familie(key) and "" in (k[1], key[1]) for _, k in starts):
+            continue  # HWS + LWS, Becken + Hüfte rechts: Kombi-Vorlage → derselbe Befund
         starts.append((pos, key))
     if len(starts) < 2:
         return [t]

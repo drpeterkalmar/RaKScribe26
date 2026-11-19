@@ -68,6 +68,8 @@ jobs:
         run: python tests/offline/test_pipeline_exe.py
       - name: EXE-Mehr-Regionen-Befund
         run: python tests/offline/test_regionen.py
+      - name: Mehrere Untersuchungen ohne Seite (LWS + Becken, Georg 19.11.2026)
+        run: python tests/offline/test_mehrfach_seitenlos.py
       - name: EXE-Import ohne Seiteneffekte (UI + main)
         run: python tests/offline/test_import.py
       - name: Toter Code bleibt weg, Prompt-Hinweis einmal

@@ -279,14 +279,31 @@ def cas_wahlen(segmente, ctx):
     erkennen = lambda t: detect.detect_template(t, ctx.templates)  # noqa: E731
     segmente = cv.aufteilen(segmente, ctx.cas, ctx.templates, erkennen)
     bausteine = ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine
+    # kaiscribe-mehrfach-seitenlos-n1 (Georg 19.11.2026): mehrere CAS-Untersuchungen → Sätze nach Inhalt zuordnen
+    # (Coxarthrose/Trochanter → Becken, Osteochondrose L5/S1 → LWS), Prüfzeilen bei unklaren/fremden Sätzen.
+    # Ordi-Bausteine („Baustein Mammo 1“) bleiben unberührt.
+    if any(bs.befund_baustein(br.rho_erkennen(s)[0], bausteine)[0] for s in segmente):
+        leistungen, inhalt_hinweise = [None] * len(segmente), []
+    else:
+        segmente, leistungen, inhalt_hinweise = cv.inhalt_zuordnen(segmente, ctx.cas, ctx.templates, erkennen)
     wahlen = []
-    for seg in segmente:
+    for seg, ziel in zip(segmente, leistungen):
         ohne_rho = br.rho_erkennen(seg)[0]
         if bs.befund_baustein(ohne_rho, bausteine)[0]:
             wahlen.append(cv.Wahl("baustein", "baustein"))
-        else:
-            wahlen.append(cv.wahl(ohne_rho, ctx.cas, ctx.templates, erkennen))
-    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates)
+            continue
+        w = cv.wahl(ohne_rho, ctx.cas, ctx.templates, erkennen)
+        # nach Inhalt gebildeter Abschnitt: Vorlage der CAS-Leistung – die des Diktats nur, wenn sein Satzanfang sie nennt
+        # („Hüftgelenk links: …“), nicht wenn nur ein Befundwort (Coxarthrose) auf die Hüfte zeigt
+        ss = cv.saetze(ohne_rho)
+        if ziel is not None and (w.leistung is None or (w.leistung.vorlage or w.leistung.kurz) != (ziel.vorlage or ziel.kurz)
+                                 or (w.vorlage != ziel.vorlage and not (ss and erkennen(cv.kopf(ss[0][1])) == w.vorlage
+                                                                        and not br.has_pathology(cv.kopf(ss[0][1]))))):
+            w = cv.Wahl(ziel.vorlage, "inhalt", ziel, w.erkannt)
+        wahlen.append(w)
+    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise
+    if inhalt_hinweise:   # Protokoll ohne Diktatinhalt (Umbau Schritt 23): nur die Zahl
+        ctx.log(f"[CAS] {len(inhalt_hinweise)} Prüfzeile(n) zur Satz-Zuordnung")
     # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
     segmente, wahlen, f_log = cv.funktion_ergaenzen(segmente, wahlen, ctx.cas, ctx.templates)
     for z in f_log:

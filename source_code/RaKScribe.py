@@ -2999,9 +2999,14 @@ class RaKScribeApp(ctk.CTk):
         self._cas_hinweise = list(hinweise or [])
         if lbl is not None:
             text = "⚠  " + "  ·  ".join(self._cas_hinweise) if self._cas_hinweise else ""
-            lbl.configure(text=text if len(text) <= 150 else text[:149] + "…")
-        if self._cas_hinweise:
-            log("[CAS] Hinweis: " + " | ".join(self._cas_hinweise))
+            lbl.configure(text=text if len(text) <= 150 else text[:149] + "…",
+                          # kaiscribe-mehrfach-seitenlos-n1: Prüfzeilen („… – bitte prüfen“, Region nicht im CAS-Auftrag)
+                          # rot, sonstige Hinweise („laut CAS, nicht diktiert“) amber
+                          text_color=RECORDING_RED if any("bitte prüfen" in h or "nicht in den CAS-Leistungen" in h
+                                                          for h in self._cas_hinweise) else WARN_AMBER)
+        if self._cas_hinweise:  # Prüfzeilen mit Diktat-Wortlaut („…“) nur als Zahl ins Protokoll (Umbau Schritt 23)
+            log("[CAS] Hinweis: " + " | ".join(h if not h.startswith("„") else "Prüfzeile Satz-Zuordnung"
+                                               for h in self._cas_hinweise))
 
     # ── v3.13.0: IB-Lab-Vorbefund-Bausteine (Peter 13.10.: „… gleich eventuell vorhandene Bausteine von IBL holt“) ─────────
     # Die Brücke 1.2.0 legt cas_ibl_<id>.json neben den Auftrag (beim Start oder später, neue Fassung = neue Datei).

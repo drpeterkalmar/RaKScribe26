@@ -556,7 +556,7 @@ LLM_PROMPTS.clear()
 app.transcript_text.text = "Schulter rechts: Omarthrose."
 app.befund_aus_text(kontrolle=True)
 bis_ruhe(app)
-check("Diktat widerspricht CAS → Hinweise im Band (amber), Befund nach Diktat",
+check("Diktat widerspricht CAS → Hinweise im Band (rot seit 19.11.2026), Befund nach Diktat",
       app.cas_hinweis_label.cget("text") == "⚠  Schultergelenk in 2 Ebenen: nicht in den CAS-Leistungen  ·  HWS laut CAS, "
                                             "nicht diktiert" and "## Schultergelenk" in app.result_text.text,
       app.cas_hinweis_label.cget("text"))
@@ -579,6 +579,51 @@ app.befund_aus_text(kontrolle=True)
 bis_ruhe(app)
 check("ohne Leistungen-Datei: Befund wie bisher, keine Hinweise", app.result_text.text.startswith("## Kniegelenk")
       and getattr(app, "_cas_hinweise", []) == [])
+app.cas_abbrechen()
+
+# kaiscribe-mehrfach-seitenlos-n1 (Georg 19.11.2026, Nachtrag 1): CAS LWS + Becken, fließend ohne Regionsnennung diktiert →
+# beide Befunde sofort im Befundfenster untereinander (je Überschrift + Ergebnis), EOL schickt beide
+BECKEN = L("x-bue", "Becken", "Röntgen", "beckenübersicht_stehend")
+ablegen("20261119001", "x5")
+app._cas_einmal()
+leistungen_ablegen("x5", "20261119001", [LWS, BECKEN])
+app._cas_einmal()
+LLM_PROMPTS.clear()
+app.transcript_text.text = ("geringe Coxarthrose links, Osteochondrose L5/S1, Fibroostosen am Trochanter major beidseits, "
+                            "Spondylophyten L3 bis L5")
+app.befund_aus_text(kontrolle=True)
+bis_ruhe(app)
+txt = app.result_text.text
+check("LWS + Becken ohne Regionsnennung: beide Befunde im Befundfenster (Becken zuerst, Diktat-Reihenfolge), je Ergebnis",
+      txt.startswith("## Beckenübersicht stehend") and "\n## Lendenwirbelsäule in 2 Ebenen" in txt
+      and txt.count("## Ergebnis") == 2 and len(LLM_PROMPTS) == 2 and app._status_raw == "KONTROLLE"
+      and getattr(app, "_cas_hinweise", []) == [], txt[:200])
+check("… Becken-Prompt nur mit den Becken-Sätzen, LWS-Prompt nur mit den LWS-Sätzen", sorted(
+    p.rsplit("<diktat>", 1)[1].split("</diktat>")[0].strip() for p in LLM_PROMPTS) == [
+    "Osteochondrose L5/S1, Spondylophyten L3 bis L5",
+    "geringe Coxarthrose links, Fibroostosen am Trochanter major beidseits"], LLM_PROMPTS and LLM_PROMPTS[0][-300:])
+app.befund_fertig()
+check("… EOL schickt beide Befunde an CAS (Bestätigung mit beiden Titeln)",
+      antwort("x5").get("status") == "fertig"
+      and app._bestaetigung_text == "✓  An CAS übergeben: 20261119001  ·  Beckenübersicht stehend · Lendenwirbelsäule in 2 "
+                                    "Ebenen", getattr(app, "_bestaetigung_text", ""))
+ablegen("20261119002", "x6")
+app._cas_einmal()
+leistungen_ablegen("x6", "20261119002", [LWS, BECKEN])
+app._cas_einmal()
+app.transcript_text.text = "LWS: Osteochondrose L5/S1. Kniegelenk mit Erguss. Becken: Coxarthrose links."
+app.befund_aus_text(kontrolle=True)
+bis_ruhe(app)
+check("Satz mit Region außerhalb des CAS-Auftrags → rote Prüfzeile im Band",
+      "Knie nicht im CAS-Auftrag" in app.cas_hinweis_label.cget("text")
+      and app.cas_hinweis_label.cget("text_color") == mod.RECORDING_RED, app.cas_hinweis_label.cget("text"))
+app.transcript_text.text = "LWS: Osteochondrose L5/S1. Kniegelenk rechts: Erguss. Becken: Coxarthrose links."
+app.befund_aus_text(kontrolle=True)
+bis_ruhe(app)
+check("… eigene Region mit Seite (Knie rechts) außerhalb des CAS-Auftrags: eigener Befund + rote Zeile",
+      "Kniegelenk in 2 Ebenen: nicht in den CAS-Leistungen" in app.cas_hinweis_label.cget("text")
+      and app.cas_hinweis_label.cget("text_color") == mod.RECORDING_RED and app.result_text.text.count("## Ergebnis") == 3,
+      app.cas_hinweis_label.cget("text"))
 app.cas_abbrechen()
 
 # ───────────────────────────── Teil 4: gegen die echte Brückenseite (nur Mac) ─────────────────────────────

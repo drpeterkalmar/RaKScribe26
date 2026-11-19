@@ -105,6 +105,33 @@ const MARKER_SRC = GRENZE + '\\s*(' + MOD +
   `(?:(?:(?:der|die|das)\\s+)?(?<s1>rechte[nsmr]?|linke[nsmr]?)\\s+(?<r1>${REGION_ALT})` +
   `|(?<r2>${REGION_ALT})(?:\\s+in\\s+(?:2|zwei)\\s+ebenen)?\\s+(?<s2>${SEITE})))${NA}`;
 
+// kaiscribe-mehrfach-seitenlos-n1 (Georg 19.11.2026, CAS lws+bü in EINEM Diktat → nur ein LWS-Befund): Regionen ohne Seite
+// trennen jetzt auch – nur am Satzanfang (nicht nach Komma) und als eigenes Wort („Fibroostosen am Becken“ trennt nicht).
+// Familien mit Kombi-Vorlage trennen untereinander nicht (HWS/BWS/LWS, Becken + Hüfte, Kreuzbein + Steißbein).
+// Sync: befund_regeln.py REGIONEN_OHNE_SEITE
+export const REGIONEN_OHNE_SEITE: [string, string][] = [
+  ["becken", "becken(?:übersicht)?|bü|hüften\\s+(?:beidseits|bds\\.?)|beide\\s+hüften"],
+  ["lws", "lws|lendenwirbelsäule"],
+  ["bws", "bws|brustwirbelsäule"],
+  ["hws", "hws|halswirbelsäule"],
+  ["gws", "gws|ganzwirbelsäule|gesamte\\s+wirbelsäule|wirbelsäule\\s+gesamt"],
+  ["thorax", "thorax|lunge"],
+  ["schaedel", "schädel"],
+  ["nnh", "nnh|nasennebenhöhlen"],
+  ["abdomen", "abdomen"],
+  ["kreuzbein", "kreuzbein|sakrum|sacrum|os\\s+sacrum"],
+  ["steissbein", "steißbein|steissbein"],
+];
+const FAMILIE: Record<string, string> = { lws: 'ws', bws: 'ws', hws: 'ws', gws: 'ws', becken: 'becken', huefte: 'becken',
+  kreuzbein: 'sakrum', steissbein: 'sakrum' };
+const GRENZE_SATZ = `(?:^|[.!?:;\\n]|${NB}punkt${NA}|${NB}neue\\s+zeile${NA}|${NB}neuzeile${NA}|${NB}absatz${NA})`;
+const OHNE_SEITE_SRC = GRENZE_SATZ + '\\s*(' + MOD + '(?:(?:der|die|das|des)\\s+)?(?<r>' +
+  REGIONEN_OHNE_SEITE.map(([g, p]) => `(?<o_${g}>${p})`).join('|') + `))${NA}`;
+const familie = (key: string): string => {
+  const [g] = key.split('|');
+  return FAMILIE[g] ?? key;
+};
+
 const gruppe = (wort: string): string => {
   const w = wort.toLowerCase();
   for (const [g, p] of REGIONEN) if (new RegExp(`^(?:${p})$`, 'iu').test(w)) return g;
@@ -120,16 +147,25 @@ export function splitRegionen(text: string): string[] {
   const t = text || '';
   const starts: { pos: number; key: string }[] = [];
   let saetze: [number, number][] | null = null;
+  const marker: { pos: number; key: string }[] = [];
   for (const m of t.matchAll(new RegExp(MARKER_SRC, 'giu'))) {
     const g = m.groups || {};
     const region = g.r1 || g.r2;
     const seite = g.s1 || g.s2;
-    const key = gruppe(region) + '|' + seiteNorm(seite);
-    const pos = (m.index ?? 0) + m[0].length - m[1].length;
+    marker.push({ pos: (m.index ?? 0) + m[0].length - m[1].length, key: gruppe(region) + '|' + seiteNorm(seite) });
+  }
+  for (const m of t.matchAll(new RegExp(OHNE_SEITE_SRC, 'giu'))) {  // kaiscribe-mehrfach-seitenlos-n1
+    const g = REGIONEN_OHNE_SEITE.find(([r]) => m.groups?.['o_' + r])![0];
+    marker.push({ pos: (m.index ?? 0) + m[0].length - m[1].length, key: g + '|' });
+  }
+  marker.sort((a, b) => a.pos - b.pos || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  for (const { pos, key } of marker) {
     if (saetze === null) saetze = diktatSaetze(t);
     if (kurzMarker(t, pos, saetze)) continue;  // v3.16.6: „Fuß rechts in 2 Ebenen empfohlen“ → keine eigene Region
     if (starts.length && starts[starts.length - 1].key === key) continue;
     if (starts.some(s => s.key === key)) continue;
+    // HWS + LWS, Becken + Hüfte rechts: Kombi-Vorlage → derselbe Befund
+    if (starts.some(s => familie(s.key) === familie(key) && (s.key.endsWith('|') || key.endsWith('|')))) continue;
     starts.push({ pos, key });
   }
   if (starts.length < 2) return [t];

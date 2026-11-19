@@ -524,6 +524,154 @@ def aufteilen(segmente, cas, templates, erkennen):
     return out
 
 
+# ── kaiscribe-mehrfach-seitenlos-n1: Sätze nach Inhalt zuordnen ─────────────────────────────────────────────────────
+# Georg 19.11.2026: „Wie funktioniert es, wenn ich 2 Untersuchungen habe?“ – CAS lws + bü, fließend diktiert ohne
+# Regionsnennung („geringe Coxarthrose links, Osteochondrose L5/S1, Fibroostosen am Trochanter major beidseits, …“).
+# Die CAS-Leistungen bestimmen, welche Befunde es gibt; jeder Satz/Teilsatz geht über seine Anatomie-Begriffe zu genau
+# einer davon. Regionsnennung im Diktat hat Vorrang (Abschnitte aus split_regionen/aufteilen bleiben, ihr Satzanfang
+# zählt als Begriff). Ohne Begriff (Osteopenie, „unauffällige Weichteile“, „rechts tiefer“) → zum vorangehenden
+# Satz/Abschnitt. Begriffe zweier CAS-Untersuchungen in einem Satz → bleibt stehen + Prüfzeile; Begriff einer Region,
+# die im CAS-Auftrag fehlt → bleibt stehen + Prüfzeile. Allgemeine Anatomie, keine Praxisdaten.
+_INHALT_REGIONEN = {"hws", "bws", "lws", "becken", "huefte", "knie", "schulter", "ellbogen", "hand", "fuss",
+                    "sprunggelenk", "thorax", "schaedel", "nnh"}
+_INHALT_BEGRIFFE = [
+    ({"lws"}, re.compile(r"(?<![a-zäöüß])(?:l\s?[1-5]|s\s?1|lwk\s?[1-5]?)(?![\d])", re.I)),
+    ({"bws"}, re.compile(r"(?<![a-zäöüß])(?:th\s?(?:1[0-2]|[1-9])|bwk\s?(?:1[0-2]|[1-9])?)(?![\d])", re.I)),
+    ({"hws"}, re.compile(r"(?<![a-zäöüß])(?:c\s?[1-7]|hwk\s?[1-7]?)(?![\d])", re.I)),
+    ({"becken", "huefte"}, re.compile(r"coxarthr|koxarthr|hüftkopf|hueftkopf|pfannendach|acetabul|azetabul|(?<![a-zäöüß])isg"
+                                      r"|iliosakral|symphyse|trochanter|spina\s+iliaca|(?<![a-zäöüß])sias(?![a-zäöüß])"
+                                      r"|beckenschaufel|beckenkamm|beckenschiefstand|schenkelhals|femurkopf|sitzbein"
+                                      r"|schambein|darmbein|(?<![a-zäöüß])os\s+ilium", re.I)),
+    ({"knie"}, re.compile(r"kniegelenk|patell|femoropatell|femorotibial|gonarthr|tibiaplateau|menisk|kreuzband", re.I)),
+]
+# Wirbelsäulen-Begriffe ohne Höhe → die Wirbelsäulen-Untersuchung des Auftrags (nur wenn es genau eine gibt)
+_INHALT_WS = re.compile(r"spondyl|osteochondro|lordose|kyphose|skoliose|wirbelkörper|bandscheib|intervertebral"
+                        r"|deckplatte|grundplatte|facettengelenk|dornfortsatz|uncovertebral|unkovertebral", re.I)
+_TEILSATZ = re.compile(r"[.!?;:\n]+|,(?!\d)|(?<!\w)(?:punkt|neue\s+zeile|neuzeile|absatz)(?!\w)", re.I)
+
+
+def inhalt_regionen(text):
+    """Anatomie-Regionen eines (Teil-)Satzes → (genau: Regionsname/Höhe/Begriff, allgemein: Wirbelsäulen-Begriff)."""
+    genau = regionen(text) & _INHALT_REGIONEN
+    if regionen(text) >= _WS_ALLE and not re.search(r"hws|bws|lws|hals|brust|lenden", text or "", re.I):
+        genau -= _WS_ALLE                # „Wirbelsäule“ allein = allgemein
+    for reg, rx in _INHALT_BEGRIFFE:
+        if rx.search(text or ""):
+            genau |= reg
+    if genau & {"becken", "huefte"}:
+        genau |= {"becken", "huefte"}
+    allgemein = set(_WS_ALLE) if (_INHALT_WS.search(text or "") or regionen(text) >= _WS_ALLE) else set()
+    return genau, allgemein
+
+
+def _teilsaetze(seg):
+    """[(a, b)] lückenlos über seg: je Teilsatz bis einschließlich seines Trenners (Satzzeichen, Komma, „Punkt“)."""
+    out, a = [], 0
+    for m in _TEILSATZ.finditer(seg):
+        if seg[a:m.start()].strip():
+            out.append((a, m.end()))
+            a = m.end()
+        elif out:
+            out[-1] = (out[-1][0], m.end())
+            a = m.end()
+    if seg[a:].strip():
+        out.append((a, len(seg)))
+    elif out:
+        out[-1] = (out[-1][0], len(seg))
+    return out
+
+
+def _untersuchungen(cas):
+    out = []
+    for l in cas.mit_vorlage:
+        if not l.regionen or _funktion_teil(l, cas) or any((x.vorlage or x.kurz) == (l.vorlage or l.kurz) for x in out):
+            continue
+        out.append(l)
+    return out
+
+
+def _ziel(text, unters):
+    """Ziel-Untersuchung eines Teilsatzes → (Leistung | None, Art): ziel | leer | unklar | fremd."""
+    if br.rho_erkennen(text)[2]:
+        ws = [u for u in unters if u.regionen & _WS_ALLE]
+        return (ws[0], "ziel") if len(ws) == 1 else (None, "leer")
+    genau, allgemein = inhalt_regionen(text)
+    for reg in (genau, allgemein):
+        if not reg:
+            continue
+        k = [u for u in unters if u.regionen & reg]
+        if len(k) == 1:
+            return k[0], "ziel"
+        if len(k) > 1:
+            return None, "unklar"
+        if reg is genau:
+            return None, "fremd"
+    return None, "leer"
+
+
+def _region_name(reg):
+    namen = {"lws": "LWS", "bws": "BWS", "hws": "HWS", "becken": "Becken/Hüfte", "huefte": "Becken/Hüfte", "knie": "Knie",
+             "schulter": "Schulter", "ellbogen": "Ellbogen", "hand": "Hand", "fuss": "Fuß", "sprunggelenk": "Sprunggelenk",
+             "thorax": "Thorax", "schaedel": "Schädel", "nnh": "NNH"}
+    return "/".join(dict.fromkeys(namen.get(r, r) for r in sorted(reg)))
+
+
+def inhalt_zuordnen(segmente, cas, templates, erkennen):
+    """Mehrere CAS-Untersuchungen: Teilsätze nach Inhalt auf die Untersuchungen verteilen (siehe oben).
+    → (segmente, leistungen, hinweise): leistungen[i] = Untersuchung des Abschnitts i, wenn die Zuordnung ihn gebildet oder
+    verändert hat (sonst None = Vorlagenwahl wie bisher); hinweise = Prüfzeilen. Nichts zu verteilen → unverändert."""
+    unters = _untersuchungen(cas)
+    if len(unters) < 2:
+        return list(segmente), [None] * len(segmente), []
+    ident = lambda l: l.vorlage or l.kurz  # noqa: E731
+    heim = []
+    for seg in segmente:
+        w = wahl(br.rho_erkennen(seg)[0], cas, templates, erkennen)
+        heim.append(next((u for u in unters if w.leistung is not None and ident(u) == ident(w.leistung)), None))
+    einheiten, hinweise = [], []        # (Abschnitt, a, b, Ziel)
+    for i, seg in enumerate(segmente):
+        teile = _teilsaetze(seg)
+        ziele = [_ziel(seg[a:b], unters) for a, b in teile]
+        erstes = next((l for l, art in ziele if art == "ziel"), None)
+        aktuell = heim[i] or erstes
+        for (a, b), (l, art) in zip(teile, ziele):
+            if art == "ziel":
+                aktuell = l
+            elif aktuell is not None and art in ("unklar", "fremd"):
+                t = " ".join(seg[a:b].strip(" ,;:.").split())
+                kurz_t = t if len(t) <= 40 else t[:39].rstrip() + "…"
+                if art == "unklar":
+                    hinweise.append(f"„{kurz_t}“: nicht eindeutig zuzuordnen, steht bei {aktuell.label} – bitte prüfen")
+                else:
+                    hinweise.append(f"„{kurz_t}“: {_region_name(inhalt_regionen(t)[0])} nicht im CAS-Auftrag, steht bei "
+                                    f"{aktuell.label} – bitte prüfen")
+            einheiten.append((i, a, b, aktuell))
+    # Abschnitt bleibt bit-gleich, wenn alle seine Teilsätze bei ihm bleiben
+    if all(z is None or (heim[i] is not None and ident(z) == ident(heim[i])) for i, _, _, z in einheiten) and \
+            all(heim[i] is not None or all(z is None for j, _, _, z in einheiten if j == i) for i in range(len(segmente))):
+        return list(segmente), [None] * len(segmente), hinweise
+    eimer = {}                           # Schlüssel → [(Abschnitt, a, b)]
+    for i, a, b, z in einheiten:
+        if z is None or (heim[i] is not None and ident(z) == ident(heim[i])):
+            k = ("seg", i)
+        else:
+            j = next((j for j, h in enumerate(heim) if h is not None and ident(h) == ident(z)), None)
+            k = ("seg", j) if j is not None else ("neu", ident(z))
+        eimer.setdefault(k, []).append((i, a, b))
+    ziel_von = {("neu", ident(u)): u for u in unters}
+    out, leist = [], []
+    for k, teile in sorted(eimer.items(), key=lambda kv: min((i, a) for i, a, _ in kv[1])):
+        teile.sort()
+        if k[0] == "seg" and teile == [(k[1], a, b) for a, b in _teilsaetze(segmente[k[1]])]:
+            out.append(segmente[k[1]])   # unverändert
+            leist.append(None)
+            continue
+        text = " ".join(segmente[i][a:b].strip() for i, a, b in teile).strip(" ,;\n")
+        out.append(text)
+        leist.append(heim[k[1]] if k[0] == "seg" else ziel_von[k])
+    return out, leist, hinweise
+
+
 def hinweise(segmente, wahlen, cas, templates):
     """Sichtbare Hinweise (nichts wird ergänzt): Diktat-Region nicht in CAS, CAS-Leistung nicht diktiert, Seite."""
     out = []

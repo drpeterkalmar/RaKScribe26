@@ -39,7 +39,7 @@
    ]
   },
   {
-   "name": "Wirbelsäule ohne Seite trennt nicht",
+   "name": "HWS + LWS = Kombi-Vorlage, trennt nicht (auch seit 19.11.2026)",
    "in": "HWS: Osteochondrose C5/C6. LWS: Spondylosis deformans L3 bis L5.",
    "out": [
     "HWS: Osteochondrose C5/C6. LWS: Spondylosis deformans L3 bis L5."
@@ -157,6 +157,96 @@
    "out": [
     "Knie rechts: Gonarthrose, MRT empfohlen.",
     "Hüfte links: Coxarthrose."
+   ]
+  },
+  {
+   "name": "Georg 19.11. LWS + Becken ohne Seite = zwei Befunde (kaiscribe-mehrfach-seitenlos-n1)",
+   "in": "LWS in 2 Ebenen: Geringe Verschmälerung der Bandscheibenfächer L2 bis L4 mit Sklerosierung. Geringe Spondylophyten L3 bis L5. Beckenübersicht: Geringgradige Coxarthrose links. Geringe Fibroostosen an der SIAS und am Trochanter major beidseits.",
+   "out": [
+    "LWS in 2 Ebenen: Geringe Verschmälerung der Bandscheibenfächer L2 bis L4 mit Sklerosierung. Geringe Spondylophyten L3 bis L5.",
+    "Beckenübersicht: Geringgradige Coxarthrose links. Geringe Fibroostosen an der SIAS und am Trochanter major beidseits."
+   ]
+  },
+  {
+   "name": "seitenlos gesprochen (Punkt/neue Zeile)",
+   "in": "Lendenwirbelsäule Punkt neue Zeile Osteochondrose L5 S1 Punkt neue Zeile Becken Punkt neue Zeile geringe Coxarthrose links Punkt",
+   "out": [
+    "Lendenwirbelsäule Punkt neue Zeile Osteochondrose L5 S1 Punkt",
+    "Becken Punkt neue Zeile geringe Coxarthrose links Punkt"
+   ]
+  },
+  {
+   "name": "Region im Befundsatz trennt nicht („Fibroostosen am Becken“, „Beckenschiefstand“)",
+   "in": "LWS: Osteochondrose L5/S1. Fibroostosen am Becken. Beckenschiefstand 5 mm.",
+   "out": [
+    "LWS: Osteochondrose L5/S1. Fibroostosen am Becken. Beckenschiefstand 5 mm."
+   ]
+  },
+  {
+   "name": "seitenlos nach Komma trennt nicht",
+   "in": "LWS unauffällig, Becken unauffällig.",
+   "out": [
+    "LWS unauffällig, Becken unauffällig."
+   ]
+  },
+  {
+   "name": "Becken + Hüfte rechts = Kombi-Vorlage, trennt nicht",
+   "in": "Beckenübersicht: Coxarthrose beidseits. Hüftgelenk rechts: Coxarthrose rechts.",
+   "out": [
+    "Beckenübersicht: Coxarthrose beidseits. Hüftgelenk rechts: Coxarthrose rechts."
+   ]
+  },
+  {
+   "name": "BÜ-Kürzel und Hüften beidseits",
+   "in": "HWS: Osteochondrose C5/6. BÜ: Coxarthrose beidseits.",
+   "out": [
+    "HWS: Osteochondrose C5/6.",
+    "BÜ: Coxarthrose beidseits."
+   ]
+  },
+  {
+   "name": "Hüften beidseits als Becken-Marker",
+   "in": "LWS: Spondylose. Hüften beidseits: geringe Coxarthrose.",
+   "out": [
+    "LWS: Spondylose.",
+    "Hüften beidseits: geringe Coxarthrose."
+   ]
+  },
+  {
+   "name": "Thorax + Abdomen",
+   "in": "Thorax: Keine Infiltrate. Abdomen: Keine freie Luft.",
+   "out": [
+    "Thorax: Keine Infiltrate.",
+    "Abdomen: Keine freie Luft."
+   ]
+  },
+  {
+   "name": "Thorax mit Lunge = eine Untersuchung",
+   "in": "Thorax in 2 Ebenen. Herz normal groß. Lunge: keine Infiltrate.",
+   "out": [
+    "Thorax in 2 Ebenen. Herz normal groß. Lunge: keine Infiltrate."
+   ]
+  },
+  {
+   "name": "Empfehlung einer seitenlosen Region trennt nicht",
+   "in": "LWS: Osteochondrose L4/5. Beckenübersicht empfohlen.",
+   "out": [
+    "LWS: Osteochondrose L4/5. Beckenübersicht empfohlen."
+   ]
+  },
+  {
+   "name": "Kreuzbein und Steißbein = eine Untersuchung",
+   "in": "Kreuzbein: unauffällig. Steißbein: keine Fraktur.",
+   "out": [
+    "Kreuzbein: unauffällig. Steißbein: keine Fraktur."
+   ]
+  },
+  {
+   "name": "Knie seitig + LWS seitenlos",
+   "in": "Knie rechts: Gonarthrose. LWS: Osteochondrose L5/S1.",
+   "out": [
+    "Knie rechts: Gonarthrose.",
+    "LWS: Osteochondrose L5/S1."
    ]
   }
  ],

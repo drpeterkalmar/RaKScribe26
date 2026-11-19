@@ -953,6 +953,27 @@
      "PANDA_IFU = \"PANDA außerhalb Auftrag/IFU\""
     ]
    }
+  },
+  {
+   "id": "mehrfach-untersuchung",
+   "titel": "Mehrere Untersuchungen in einem Diktat → je Untersuchung eigener Befund mit eigener Vorlage (auch ohne Seite: LWS, Becken, Thorax …; mit CAS Sätze nach Inhalt zugeordnet, unklar/fremd → rote Prüfzeile)",
+   "quelle": "Georg Riegler 05.10./18.11./19.11.2026 (kaiscribe-mehrfach-seitenlos-n1)",
+   "datum": "2026-11-19",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "REGIONEN_OHNE_SEITE = ["
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const REGIONEN_OHNE_SEITE: [string, string][] = ["
+    ],
+    "source_code/cas_vorlagen.py": [
+     "def inhalt_zuordnen(segmente, cas, templates, erkennen):"
+    ],
+    "source_code/pipeline.py": [
+     "cv.inhalt_zuordnen(segmente, ctx.cas, ctx.templates, erkennen)"
+    ]
+   }
   }
  ]
 }
