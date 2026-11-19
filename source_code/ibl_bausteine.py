@@ -163,7 +163,14 @@ def _vorwerte(x):
 
 def _befundtext(modul, x):
     """v3.19.8 (FROG, Georg Riegler 17.11.2026): Feld „befundtext“ der Brücke (Abholer ≥ 1.3.7, ris-mods
-    ibl/frog_ergebnis.py) – nur Fassung 1 mit Inhalt; sonst None (dann gilt das Verhalten bis 3.19.7)."""
+    ibl/frog_ergebnis.py) – nur Fassung 1 mit Inhalt; sonst None (dann gilt das Verhalten bis 3.19.7).
+    v3.19.13 (HIPPO, Georg 18.11.2026, Abholer ≥ 1.3.11, ris-mods ibl/hippo_ergebnis.py): {"saetze", "ergebnis",
+    "schluss", "kind", "becken"}."""
+    if modul == "hippo" and isinstance(x, dict) and x.get("format") == 1:
+        bt = {"saetze": _texte(x.get("saetze")), "ergebnis": str(x.get("ergebnis") or "").strip(),
+              "schluss": str(x.get("schluss") or "").strip(), "kind": bool(x.get("kind")),
+              "becken": bool(x.get("becken"))}
+        return bt if bt["saetze"] else None
     if modul != "frog" or not isinstance(x, dict) or x.get("format") != 1:
         return None
     begriffe = [{"art": str(g.get("art") or ""), "text": str(g.get("text") or "").strip(),
@@ -716,6 +723,19 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
                 e.hinweise.append(f"{b.label}: keiner Knie-Untersuchung eindeutig zuzuordnen – KOALA-Text nicht "
                                   "eingesetzt, bitte prüfen")
             continue
+        if _hippo_text(b):                 # v3.19.13: Becken-/Hüft-Text (Georg 18.11.2026)
+            if i is not None:
+                _hippo_einsetzen(zeilen, teile, i, b, e)
+                continue
+            bericht = "\n".join(zeilen + ende_zeilen)
+            neu = [z for z in _hippo_geruest(b, "")[0] + _hippo_geruest(b, "")[1] if z not in bericht]
+            if neu:
+                ende_zeilen += neu
+                e.eingesetzt[b.schluessel] = neu
+                e.zuordnung[b.modul] = ENDE
+                e.hinweise.append(f"{b.label}: keiner Becken-/Hüft-Untersuchung eindeutig zuzuordnen – Text als eigener "
+                                  "Absatz am Ende, bitte prüfen")
+            continue
         if _frog_text(b):                  # v3.19.8: fertige Sätze statt Messzeilen (Georg 17.11.2026)
             if i is not None:
                 _frog_einsetzen(zeilen, teile, i, b, e)
@@ -821,6 +841,10 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
         if _frog_text(b):                  # v3.19.8: KaiScribe ersetzt Stellungs- und Gewölbesatz der Vorlage selbst
             zeilen.append(f"- {b.name}: Sätze zu Zehenstellung und Fußgewölbe und die zugehörigen Diagnosen im Ergebnis")
             continue
+        if _hippo_text(b):                 # v3.19.13: KaiScribe setzt die HIPPO-Sätze oben ein und gleicht die Vorlage an
+            zeilen.append(f"- {b.name}: Sätze zu Beckenschiefstand, Beinlängendifferenz und auffälligen Hüftwinkeln (oben "
+                          "in der Beschreibung) und die zugehörigen Diagnosen als erster Ergebnispunkt")
+            continue
         nur = b.modul in BEFUND_NUR_AUFFAELLIG | BEFUND_OHNE_ZEILEN
         namen = list(dict.fromkeys(m.name for m in map(messwert, befund_zeilen(b))
                                    if m and not (nur and _abschnitt_zeile(m.zeile))))
@@ -848,7 +872,7 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
         return ""
     weg = []
     for b in bausteine:
-        if b.ergebnis and vorlage and not _frog_text(b) and b.modul not in ("koala", "panda"):   # gleicht selbst an
+        if b.ergebnis and vorlage and not _frog_text(b) and not _hippo_text(b) and b.modul not in ("koala", "panda"):
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), _pathologische_punkte(b, b.ergebnis)) if s not in weg]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
         zeilen.append(_kl_satz(kl))
@@ -856,6 +880,8 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
         zeilen.append(LAMA_PROMPT)
     if any(_frog_text(b) for b in bausteine):
         zeilen.append(FROG_PROMPT)
+    if any(_hippo_text(b) for b in bausteine):
+        zeilen.append(HIPPO_PROMPT)
     if koala:
         zeilen.append(KOALA_PROMPT)
     if weg:
@@ -1012,8 +1038,9 @@ def ist_lama_schluss(punkt):
 
 
 def ist_schluss(punkt):
-    """Schlussanmerkung von LAMA oder FROG – steht ohne Nummer ganz unten im Ergebnis (befund_regeln._UNNUM_RE)."""
-    return ist_lama_schluss(punkt) or _NUM.sub("", (punkt or "").strip()).startswith(FROG_SCHLUSS)
+    """Schlussanmerkung von LAMA, FROG oder HIPPO – steht ohne Nummer ganz unten im Ergebnis (befund_regeln._UNNUM_RE)."""
+    t = _NUM.sub("", (punkt or "").strip())
+    return ist_lama_schluss(punkt) or t.startswith(FROG_SCHLUSS) or t.startswith(HIPPO_SCHLUSS)
 
 
 def _pathologische_punkte(b, punkte):
@@ -1604,6 +1631,167 @@ def _koala_geruest(b, titel, vorlage=None):
     return [" ".join(saetze)], punkte
 
 
+# ───────────────────────────── IB Lab HIPPO: Becken-/Hüft-Text ─────────────────────────────
+# Georg Riegler 18.11.2026 (GO 19:58, Brief kaiscribe-hippo-ergebnistext-n1 + Nachträge 18:30–18:54): der Abholer ≥ 1.3.11
+# (ris-mods ibl/hippo_ergebnis.py) liefert im Feld „befundtext“ fertige Sätze für die Beschreibung (Beckenschiefstand,
+# Beinlängendifferenz, auffällige Winkel mit Wert), den Ergebnispunkt mit den Begriffen ohne Werte und die Schlussanmerkung.
+# Maßgeblich sind die CAS-Vorlagen (templates.json):
+#   - „Beckenübersicht stehend“ (und Hüfte analog): bei HIPPO-Ergebnis entfallen IMMER „Anatomisch normale und symmetrische
+#     Form des Beckenskeletts.“, „Beide Beckenschaufeln stehen gleichhoch.“, „Der CCD-Winkel ist im Normbereich.“ und „Die
+#     artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen.“ (Hüfte: „Anatomisch normale
+#     Form des Hüftgelenkes …“, „… guter Deckung des Hüftkopfes durch die Pfanne.“); die HIPPO-Sätze stehen am Anfang, danach
+#     „Mineralgehalt und Knochenstruktur sind regelrecht. …“.
+#   - „Beckenübersicht und Hüfte“ und die Prothesen-Vorlagen: nur die Zeile „Beckenschiefstand: Keiner. Keine signifikante
+#     Beinlängendifferenz.“ wird durch die HIPPO-Sätze ersetzt.
+#   - Ein verbleibender Vorlagensatz, der einer HIPPO-Diagnose widerspricht („Regelrechte Abbildung beider Pfannendächer.“
+#     neben einer Hüftdysplasie) → rote Prüfzeile, am Text wird nichts geändert.
+#   - Ergebnis: der HIPPO-Punkt als ERSTER Punkt, das Normal-Ergebnis („Regelrechte Darstellung des Beckens.“) entfällt dann,
+#     Diktiertes folgt, die Schlussanmerkung („LCE = … Weitere Winkelmessungen …“) ohne Nummer ganz unten – auch ohne Punkt
+#     (Kinder unter 16: nur beschreibend, kein Punkt; Georg: der Schlusssatz bleibt).
+#   - Schon diktierter Begriff → nicht doppelt; vom Diktat verneint → nicht eingesetzt (Hinweis).
+HIPPO_SCHLUSS = ("LCE = ", "AI = ", "CCD = ")                    # = ris-mods ibl/hippo_ergebnis.ist_schlussanmerkung
+HIPPO_PROMPT = ("HIPPO: Übernimm die Sätze der Becken-/Hüft-Vorlage wörtlich und unverändert (auch „Beckenschiefstand: …“), "
+                "außer der Arzt hat dazu etwas diktiert – KaiScribe setzt nach dem Befund die IB-Lab-Sätze zu "
+                "Beckenschiefstand, Beinlängendifferenz und auffälligen Hüftwinkeln oben in die Beschreibung, nimmt die "
+                "Vorlagen-Sätze zu Beckenform, Beckenschaufeln, CCD-Winkel und Deckung der Hüftköpfe heraus und setzt die "
+                "Diagnosen als ersten Ergebnispunkt. Schreibe selbst keinen Satz und keine Diagnose zu Beckenschiefstand, "
+                "Beinlänge, Überdachung, Pfannendach, Hüftdysplasie oder CCD-Winkel, außer der Arzt hat es diktiert.")
+_HIPPO_WEG = [re.compile(x) for x in (
+    r"Anatomisch normale und symmetrische Form des Beckenskeletts\.",
+    r"Beide Beckenschaufeln stehen gleich ?hoch\.",
+    r"Der CCD-Winkel ist (?:beidseits )?im Normbereich\.",
+    r"Die artikulierenden Flächen sind kongruent bei guter Deckung der Hüftköpfe durch die Pfannen\.",
+    r"Anatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne\.",
+    r"Die artikulierenden Flächen sind kongruent bei guter Deckung des Hüftkopfes durch die Pfanne\.",
+    r"Das Beckenskelett (?:ist )?horizontal, regelrecht konfiguriert und unauffällig strukturiert\.")]
+_HIPPO_ZEILE = re.compile(r"Beckenschiefstand:\s*Keiner\.(?:[ \t]*Keine (?:signifikante )?Beinlängendifferenz\.)?")
+_HIPPO_ERG_NORMAL = re.compile(r"darstellung\b.*(?:becken|hüft)", re.I)
+_HIPPO_MARKE = "\x01HIPPO\x01"
+
+
+def _hippo_text(b):
+    """HIPPO-Baustein mit fertigem Text des Abholers (≥ 1.3.11)?"""
+    return b.modul == "hippo" and b.befundtext is not None
+
+
+def _hippo_punkt(b, diktat, hinweise):
+    """Ergebnispunkt (Begriffe) nach dem Diktat: schon diktierter bzw. verneinter Begriff fällt heraus (Hinweis)."""
+    out = []
+    for satz in [s.strip() for s in re.split(r"(?<=\.)\s+", b.befundtext["ergebnis"]) if s.strip()]:
+        art, wort = _diagnose_im_text(satz.rstrip("."), "", diktat or "")
+        if art == "doppelt":
+            hinweise.append(f"{b.name}: „{_kurz(satz)}“ – schon diktiert, nicht doppelt angefügt")
+            continue
+        if art == "widerspruch":
+            hinweise.append(f"{b.name}: „{_kurz(satz)}“ – Diktat verneint „{wort}“, bitte prüfen (nicht eingesetzt)")
+            continue
+        if art == "verwandt":
+            hinweise.append(f"{b.name}: „{_kurz(satz)}“ angefügt – Diktat nennt schon „{wort}“, bitte prüfen")
+        out.append(satz)
+    return " ".join(out)
+
+
+def _hippo_befund(block, saetze, alte=()):
+    """Beschreibung einer Becken-/Hüft-Untersuchung (Text ohne Überschriften) → neuer Text: HIPPO-Sätze an die Stelle der
+    Zeile „Beckenschiefstand: …“ bzw. an den Anfang, die vier Vorlagen-Sätze heraus. alte: Sätze einer früheren Fassung."""
+    neu = " ".join(saetze)
+    for satz in dict.fromkeys(alte):                  # frühere Fassung (bzw. dieselbe) zuerst herausnehmen, Stelle merken
+        while satz and satz in block:
+            i = block.index(satz)
+            block = _satz_raus(block, i, i + len(satz), "" if _HIPPO_MARKE in block else _HIPPO_MARKE)
+    for rx in _HIPPO_WEG:
+        m = rx.search(block)
+        while m:
+            block = _satz_raus(block, m.start(), m.end())
+            m = rx.search(block)
+    m = _HIPPO_ZEILE.search(block)
+    if _HIPPO_MARKE in block:
+        i = block.index(_HIPPO_MARKE)
+        block = _satz_raus(block, i, i + len(_HIPPO_MARKE), neu)
+        if m:
+            m = _HIPPO_ZEILE.search(block)
+            block = _satz_raus(block, m.start(), m.end())
+    elif m:
+        block = _satz_raus(block, m.start(), m.end(), neu)
+    else:
+        i = len(block) - len(block.lstrip())
+        rest = block[i:]
+        block = block[:i] + neu + ((" " + rest) if rest and not rest.startswith("\n") else rest)
+    return block
+
+
+def _hippo_ergebnis(zeilen, a, punkte, schluss, b, hinweise):
+    """HIPPO-Punkt als ERSTER Punkt, Normal-Ergebnis des Beckens/der Hüfte entfällt (nur mit Punkt), derselbe Punkt nie
+    doppelt, Schlussanmerkung ohne Nummer ganz unten. → Zeilen mehr."""
+    if a.ergebnis < 0:
+        return _ergebnis_anfuegen(zeilen, a, list(punkte) + ([schluss] if schluss else []))
+    s, k = a.ergebnis + 1, a.ende
+    while k > s and not zeilen[k - 1].strip():
+        k -= 1
+    inhalt = zeilen[s:k]
+    rest = []
+    for z in inhalt:
+        t = _NUM.sub("", z).strip()
+        if not t or t in punkte or ist_schluss(t):
+            continue
+        if punkte and z[:1] not in (" ", "\t") and ergebnis_normal([t]) and _HIPPO_ERG_NORMAL.search(t):
+            hinweise.append(f"{b.name}: „{_kurz(t)}“ durch das IB-Lab-Ergebnis ersetzt")
+            continue
+        rest.append(z)
+    neu = br.ergebnis_nummerieren("## Ergebnis\n" + "\n".join(list(punkte) + rest + ([schluss] if schluss else []))
+                                  ).split("\n")[1:]
+    zeilen[s:k] = neu
+    return len(neu) - len(inhalt)
+
+
+def _hippo_einsetzen(zeilen, teile, i, b, e):
+    """HIPPO-Text in die Becken-/Hüft-Untersuchung teile[i] einsetzen (Beschreibung oben, erster Ergebnispunkt, Schluss)."""
+    a = teile[i]
+    bt = b.befundtext
+    punkt = _hippo_punkt(b, a.segment or "", e.hinweise)
+    bs = (a.befund if a.befund >= 0 else a.start) + 1
+    be = a.ergebnis if a.ergebnis >= 0 else a.ende
+    alt = "\n".join(zeilen[bs:be])
+    ersetzt = [z for z in e.nicht_entfernt if z and z in alt]
+    block = _hippo_befund(alt, bt["saetze"], ersetzt + bt["saetze"])
+    e.nicht_entfernt = [z for z in e.nicht_entfernt if z not in ersetzt]
+    if punkt:                                         # verbleibende Vorlagensätze gegen die HIPPO-Diagnosen
+        ohne = block
+        for s in bt["saetze"]:
+            ohne = ohne.replace(s, "")
+        for satz in _normalsaetze(b, ohne.split("\n"), [punkt]):
+            e.hinweise.append(f"⚠ {b.name}: Befundtext „{_kurz(satz, 50)}“ widerspricht IB Lab – bitte prüfen")
+    if block != alt:
+        neu = block.split("\n")
+        zeilen[bs:be] = neu
+        _verschieben(teile, i, len(neu) - (be - bs))
+    punkte = [punkt] if punkt else []
+    _verschieben(teile, i, _hippo_ergebnis(zeilen, a, punkte, bt["schluss"], b, e.hinweise), nur_ende=True)
+    da = "\n".join(zeilen[a.start:a.ende])
+    e.eingesetzt[b.schluessel] = [s for s in bt["saetze"] if s in da] + punkte + ([bt["schluss"]] if bt["schluss"] else [])
+    e.zuordnung[b.modul] = a.titel or "Befund"
+
+
+def _vorlage_ergebnis(l, templates):
+    """Ergebnis-Satz der Vorlage einer CAS-Leistung (Gerüst) – sonst ""."""
+    if not l or not l.get("vorlage"):
+        return ""
+    return str(((templates or {}).get(l.get("vorlage")) or {}).get("ergebnis") or "").strip()
+
+
+def _hippo_geruest(b, titel, vorlage=None, vorlage_ergebnis=""):
+    """Gerüst vor dem Diktat: Vorlage der Becken-/Hüft-Leistung mit den HIPPO-Sätzen (bzw. ohne bekannte Vorlage nur die
+    Sätze) → (Befundzeilen, Ergebnispunkte: HIPPO-Punkt bzw. Normal-Ergebnis der Vorlage, Schlussanmerkung)."""
+    bt = b.befundtext
+    punkte = [bt["ergebnis"]] if bt["ergebnis"] else ([vorlage_ergebnis] if vorlage_ergebnis else [])
+    punkte += [bt["schluss"]] if bt["schluss"] else []
+    if vorlage:
+        rumpf = "\n".join(vorlage.split("\n")[1:]).strip("\n")
+        if rumpf.strip():
+            return _hippo_befund(rumpf, bt["saetze"]).split("\n"), punkte
+    return [" ".join(bt["saetze"])], punkte
+
+
 # IB Lab PANDA (Georg Riegler 18.11.2026, Brief kaiscribe-panda-knochenalter-n1): der Abholer ≥ 1.3.10 (ris-mods
 # ibl/panda_ergebnis.py) liefert den FERTIGEN Knochenalter-Text als einzigen Ergebnispunkt („Zum Zeitpunkt der Untersuchung
 # beträgt das Alter des Jungen 13 Jahre und 6 Monate. Das ermittelte Knochenalter nach Greulich und Pyle beträgt … und ist
@@ -1704,7 +1892,7 @@ def befund_zeilen(b):
     """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
     wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
     Zeile steht."""
-    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b) or b.modul in ("koala", "panda"):
+    if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b) or _hippo_text(b) or b.modul in ("koala", "panda"):
         return []
     if b.modul not in BEFUND_NUR_AUFFAELLIG:
         return list(b.befundteil)
@@ -1726,6 +1914,8 @@ def hat_inhalt(b):
         return koala_hat_text(b)
     if b.modul == "panda":
         return bool(panda_text(b))
+    if _hippo_text(b):
+        return True
     return bool(befund_zeilen(b) or b.ergebnis)
 
 
@@ -1737,6 +1927,11 @@ def auffaellige_zeilen(bausteine):
             bt = b.befundtext
             out += [s for s in bt["stellung"] + bt["gewoelbe"] if not _FROG_GEW_NORMAL.match(s) and s not in out]
             out += [t for t in (f"{x['text']} {x['seite']}".strip() for x in bt["begriffe"]) if t not in out]
+            continue
+        if _hippo_text(b):                 # v3.19.13: auffällige HIPPO-Sätze (nicht „Kein …“) und der Begriffe-Punkt
+            bt = b.befundtext
+            out += [s for s in bt["saetze"] + ([bt["ergebnis"]] if bt["ergebnis"] else [])
+                    if not s.startswith(("Kein ", "Keine ")) and s not in out]
             continue
         if b.modul == "panda":             # 19.11.2026: der Knochenalter-Text nur, wenn retardiert/akzeleriert
             t = panda_text(b)
@@ -1848,6 +2043,9 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
                 je[b.schluessel] = ([], [panda_text(b, cas_leistungen)])
             elif b.modul == "koala":             # 18.11.2026: Knie-Vorlage mit KOALA-Text (bzw. nur die Sätze)
                 je[b.schluessel] = _koala_geruest(b, titel, vorlagen.get(b.schluessel))
+            elif _hippo_text(b):                 # v3.19.13: Becken-/Hüft-Vorlage mit den HIPPO-Sätzen (bzw. nur die Sätze)
+                je[b.schluessel] = _hippo_geruest(b, titel, vorlagen.get(b.schluessel), _vorlage_ergebnis(
+                    _leistung_fuer(b, cas_leistungen, templates), templates))
             elif _frog_text(b):                  # v3.19.8: nur die FROG-Sätze (ohne Vorlagentext) + Begriffe + Schluss
                 plan = _frog_plan(b, titel, Abschnitt(titel, 0, 0).seite, "", [])
                 je[b.schluessel] = (_frog_zeilen(plan, punkte=False), _frog_punkte(plan)) if plan else ([], [])

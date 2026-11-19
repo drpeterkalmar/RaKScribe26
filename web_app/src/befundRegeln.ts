@@ -148,7 +148,8 @@ const NUM_RE = /^\s*(?:\*\*)?\s*\d+\s*[.)]\s*(?:\*\*)?\s*/;
 const BULLET_RE = /^\s*[-*•–]\s+/;
 // v3.19.x (Georg 17.11.2026, IB Lab LAMA): Schlussanmerkung „HKA = Hüft-Knie-Sprunggelenk-Winkel, …“ ohne Nummer. Sync: befund_regeln.py
 // v3.19.8 (Georg 17.11.2026, IB Lab FROG): ebenso „Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS …“.
-const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel|^Weitere Winkelmessungen sind den KI-Auswertungsbildern/i;
+// v3.19.13 (Georg 18.11.2026, IB Lab HIPPO): auch „LCE = …“ / „AI = …“ / „CCD = …“. Sync: befund_regeln.py _UNNUM_RE
+const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel|^Weitere Winkelmessungen sind den KI-Auswertungsbildern|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)/i;
 
 // v3.7.4 (Georg 09.10.): Ergebnis-Punkt beginnt groß und endet mit Punkt. Sync: befund_regeln.py satzform
 const SATZENDE = /[.!?:;]$/;

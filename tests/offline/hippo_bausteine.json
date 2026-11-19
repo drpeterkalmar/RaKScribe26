@@ -1,0 +1,664 @@
+[
+ {
+  "nr": 52,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-52",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 23,2° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 144,5° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 12,9° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 21,7° (IB Lab HIPPO).",
+    "CCD-Winkel links 145,8° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 10,1° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 7 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 1 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Grenzwertige Überdachung des rechten Hüftkopfes bei steilem Pfannendach. Grenzwertige Überdachung des linken Hüftkopfes. Coxa valga beidseits.",
+    "LCE = lateraler Center-Edge-Winkel nach Wiberg, AI = Acetabulumindex nach Tönnis, CCD = Caput-Collum-Diaphysen-Winkel. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 7 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 1 mm, links kürzer.",
+     "Der LCE-Winkel beträgt rechts 23° und links 22°.",
+     "Der AI-Winkel beträgt rechts 13°.",
+     "Der CCD-Winkel beträgt rechts 145° und links 146°."
+    ],
+    "ergebnis": "Grenzwertige Überdachung des rechten Hüftkopfes bei steilem Pfannendach. Grenzwertige Überdachung des linken Hüftkopfes. Coxa valga beidseits.",
+    "schluss": "LCE = lateraler Center-Edge-Winkel nach Wiberg, AI = Acetabulumindex nach Tönnis, CCD = Caput-Collum-Diaphysen-Winkel. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 45
+  }
+ },
+ {
+  "nr": 53,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-53",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 33,6° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 129,2° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 0,3° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 31,3° (IB Lab HIPPO).",
+    "CCD-Winkel links 129,3° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 1,2° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 2 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 1 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 2 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 1 mm, rechts kürzer."
+    ],
+    "ergebnis": "",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 20
+  }
+ },
+ {
+  "nr": 54,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-54",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 23,3° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 130,9° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 8,3° (IB Lab HIPPO).",
+    "CCD-Winkel links 128° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 4 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 6 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Grenzwertige Überdachung des rechten Hüftkopfes.",
+    "LCE = lateraler Center-Edge-Winkel nach Wiberg. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [
+    "IB Lab HIPPO links: Hüftprothese – Winkel dieser Seite nicht im Text, bitte prüfen."
+   ],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 4 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 6 mm, links kürzer.",
+     "Der LCE-Winkel beträgt rechts 23°."
+    ],
+    "ergebnis": "Grenzwertige Überdachung des rechten Hüftkopfes.",
+    "schluss": "LCE = lateraler Center-Edge-Winkel nach Wiberg. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 74
+  }
+ },
+ {
+  "nr": 55,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-55",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 31,2° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 141,1° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 7° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 33,2° (IB Lab HIPPO).",
+    "CCD-Winkel links 128,5° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 6,4° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 1 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 11 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Coxa valga rechts.",
+    "CCD = Caput-Collum-Diaphysen-Winkel. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 1 mm, links tieferstehend.",
+     "Beinlängendifferenz von 11 mm, rechts kürzer.",
+     "Der CCD-Winkel beträgt rechts 141°."
+    ],
+    "ergebnis": "Coxa valga rechts.",
+    "schluss": "CCD = Caput-Collum-Diaphysen-Winkel. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 46
+  }
+ },
+ {
+  "nr": 56,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-56",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 32,7° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 136,3° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts -1,9° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 26° (IB Lab HIPPO).",
+    "CCD-Winkel links 135,5° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 4,9° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 6 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 2 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Vermehrte Überdachung des rechten Hüftkopfes.",
+    "AI = Acetabulumindex nach Tönnis. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 6 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 2 mm, links kürzer.",
+     "Der AI-Winkel beträgt rechts −2°."
+    ],
+    "ergebnis": "Vermehrte Überdachung des rechten Hüftkopfes.",
+    "schluss": "AI = Acetabulumindex nach Tönnis. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 26
+  }
+ },
+ {
+  "nr": 57,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-57",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 33,6° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 129,2° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 3,6° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 35,8° (IB Lab HIPPO).",
+    "CCD-Winkel links 129,7° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 0° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 1 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 4 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 1 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 4 mm, rechts kürzer."
+    ],
+    "ergebnis": "",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 52
+  }
+ },
+ {
+  "nr": 58,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-58",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg links 29,5° (IB Lab HIPPO).",
+    "CCD-Winkel links 132,9° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links -6,9° (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Vermehrte Überdachung des linken Hüftkopfes.",
+    "AI = Acetabulumindex nach Tönnis. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Der AI-Winkel beträgt links −7°."
+    ],
+    "ergebnis": "Vermehrte Überdachung des linken Hüftkopfes.",
+    "schluss": "AI = Acetabulumindex nach Tönnis. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": false
+   },
+   "alter": 89
+  }
+ },
+ {
+  "nr": 59,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-59",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 23,2° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 133,7° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 7,8° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 25,7° (IB Lab HIPPO).",
+    "CCD-Winkel links 131,5° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 11,3° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 3 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 0 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [],
+   "hinweise": [
+    "IB Lab HIPPO: Ergebnis auf einer Ganzbeinaufnahme – kein Text, bitte am KI-Bild prüfen."
+   ],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "alter": 44
+  }
+ },
+ {
+  "nr": 60,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-60",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 31,9° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 123,3° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 7,7° (IB Lab HIPPO)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "alter": 64
+  }
+ },
+ {
+  "nr": 61,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-61",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 30,9° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 132,6° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 3,9° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 30,1° (IB Lab HIPPO).",
+    "CCD-Winkel links 127,8° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 1,9° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 9 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 3 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 9 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 3 mm, links kürzer."
+    ],
+    "ergebnis": "",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 68
+  }
+ },
+ {
+  "nr": 62,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-62",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 24,9° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 132,7° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 8,4° (IB Lab HIPPO)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "alter": 40
+  }
+ },
+ {
+  "nr": 63,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-63",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg links 30,6° (IB Lab HIPPO).",
+    "CCD-Winkel links 132,5° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 2,8° (IB Lab HIPPO)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "alter": 45
+  }
+ },
+ {
+  "nr": 64,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-64",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 21° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 136° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 12,6° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 21,3° (IB Lab HIPPO).",
+    "CCD-Winkel links 140,4° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 9,8° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 1 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 2 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Grenzwertige Überdachung des rechten Hüftkopfes bei steilem Pfannendach. Grenzwertige Überdachung des linken Hüftkopfes.",
+    "LCE = lateraler Center-Edge-Winkel nach Wiberg, AI = Acetabulumindex nach Tönnis. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 1 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 2 mm, links kürzer.",
+     "Der LCE-Winkel beträgt rechts 21° und links 21°.",
+     "Der AI-Winkel beträgt rechts 13°."
+    ],
+    "ergebnis": "Grenzwertige Überdachung des rechten Hüftkopfes bei steilem Pfannendach. Grenzwertige Überdachung des linken Hüftkopfes.",
+    "schluss": "LCE = lateraler Center-Edge-Winkel nach Wiberg, AI = Acetabulumindex nach Tönnis. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 16
+  }
+ },
+ {
+  "nr": 65,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-65",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 33,1° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 129,3° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 0,7° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 34° (IB Lab HIPPO).",
+    "CCD-Winkel links 131,6° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 2,1° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 4 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 3 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 4 mm, links tieferstehend.",
+     "Beinlängendifferenz von 3 mm, rechts kürzer."
+    ],
+    "ergebnis": "",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 68
+  }
+ },
+ {
+  "nr": 66,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-66",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 17,5° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 148,1° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 12,7° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 16,6° (IB Lab HIPPO).",
+    "CCD-Winkel links 160,3° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 15,4° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 1 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 2 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "LCE = lateraler Center-Edge-Winkel nach Wiberg, AI = Acetabulumindex nach Tönnis, CCD = Caput-Collum-Diaphysen-Winkel. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 1 mm, rechts tieferstehend.",
+     "Beinlängendifferenz von 2 mm, rechts kürzer.",
+     "Der LCE-Winkel beträgt rechts 18° und links 17°.",
+     "Der AI-Winkel beträgt rechts 13° und links 15°.",
+     "Der CCD-Winkel beträgt rechts 148° und links 160°."
+    ],
+    "ergebnis": "",
+    "schluss": "LCE = lateraler Center-Edge-Winkel nach Wiberg, AI = Acetabulumindex nach Tönnis, CCD = Caput-Collum-Diaphysen-Winkel. Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": true,
+    "becken": true
+   },
+   "alter": 7
+  }
+ },
+ {
+  "nr": 67,
+  "datum": "18.11.",
+  "baustein": {
+   "accno": "T-67",
+   "ziffer": 1,
+   "modul": "hippo",
+   "name": "HIPPO",
+   "modul_name": "IB Lab HIPPO",
+   "version": 1,
+   "aktualisiert": "2026-11-18T10:00:00",
+   "seiten": [
+    "rechts",
+    "links"
+   ],
+   "befundteil": [
+    "LCE-Winkel nach Wiberg rechts 29,6° (IB Lab HIPPO).",
+    "CCD-Winkel rechts 121° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) rechts 4,2° (IB Lab HIPPO).",
+    "LCE-Winkel nach Wiberg links 30,4° (IB Lab HIPPO).",
+    "CCD-Winkel links 122,8° (IB Lab HIPPO).",
+    "Pfannendachwinkel nach Tönnis (Acetabulumindex) links 1,7° (IB Lab HIPPO).",
+    "Beckenhöhendifferenz 1 mm (IB Lab HIPPO).",
+    "Beinlängendifferenz 1 mm (IB Lab HIPPO)."
+   ],
+   "ergebnis": [
+    "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+   ],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Geringer Beckenschiefstand von 1 mm, links tieferstehend.",
+     "Beinlängendifferenz von 1 mm, rechts kürzer."
+    ],
+    "ergebnis": "",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "kind": false,
+    "becken": true
+   },
+   "alter": 49
+  }
+ }
+]
