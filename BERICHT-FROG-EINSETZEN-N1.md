@@ -76,8 +76,8 @@ beidseits.“), 0 Zeilen.
 ## 4. Version, Web, EXE
 - **3.19.15** auf main (`fa2dcc4`, Fix `4623f50`). Enthält 3.19.14.
 - EXE: Build 44585294862 **grün**, Release **3.19.15 = latest**, `rakscribe26.exe` 56 560 416 Byte, sha256
-  `9c7a91f8ec2e1105d0b7c05dfb17d4609d6854c3dfbf40ba117b78f29dea71de`. Windows-UI-Test 44585570908: siehe Nachtrag unten.
-- Web: Deploy 44585958439 (nur Versionsnummer, kein IB Lab im Web).
+  `9c7a91f8ec2e1105d0b7c05dfb17d4609d6854c3dfbf40ba117b78f29dea71de`. Windows-UI-Test 44585570908 **grün**.
+- Web: Deploy 44585958439 **grün**, https://drpeterkalmar.github.io/RaKScribe26/ zeigt **3.19.15** (nur Versionsnummer, kein IB Lab im Web).
 - ris-mods (Brücke, Formatierer, Abholer): keine Änderung.
 
 ## 5. Werkzeuge
@@ -94,7 +94,7 @@ beidseits.“), 0 Zeilen.
   - Ressource ordi, ab Do 19.11. 20:15, nach `kaiscribe-mehrfach-seitenlos-n1-einspielen`.
   - **Pflicht-Abnahme vor dem Tausch:** Testpatient 451898 mit fuss2 + bü, echter FROG- und HIPPO-Baustein. Brief-Text belegen
     (Screenshot/Textauszug). Ohne Beleg wird nicht eingespielt.
-  - Der wartende 3.19.14-Auftrag bekam einen Nachtrag: Er nimmt 3.19.14, nicht 3.19.15.
+  - Der wartende 3.19.14-Auftrag (Server-Queue) bekam einen Nachtrag: Er nimmt 3.19.14, nicht 3.19.15.
 - `kaiscribe-frog-einsetzen-n1-kontrolle` (Brief `FOLGEJOB-KAISCRIBE-FROG-EINSETZEN-N1-KONTROLLE.md`): Fr 20.11. ab 13:00 auf der VM.
   Prüft nur lesend den ersten echten FROG-Fall mit 3.19.15 und `rakscribe.log`. Ohne FROG-Fall reiht er sich auf den nächsten Werktag ein
   (bis Mi 25.11.).
