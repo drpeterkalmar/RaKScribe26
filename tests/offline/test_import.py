@@ -56,7 +56,7 @@ check("init_runtime(): config.ini angelegt, Log geschrieben", (tmp / "config.ini
 check("init_runtime(): Vorlagen, Prompt, Fehlhör-Liste geladen", len(rks.RADIOLOGY_TEMPLATES) > 100
       and "RAKSCRIBE_PROMPT_VERSION" in rks.INITIAL_PROMPT_CONTENT and rks.MISHEARD_COMPILED)
 check("init_runtime(): ohne Schlüssel kein Speech-Client, App gesperrt", rks.speech_client is None and not rks.keys_ready())
-check("init_runtime(): gebündelte phrases.json ladbar (292 / 68)", rks._selbsttest_phrasen() == [292, 68], str(rks._selbsttest_phrasen()))
+check("init_runtime(): gebündelte phrases.json ladbar (292 / 79, Georg 20.11.2026 +11)", rks._selbsttest_phrasen() == [292, 79], str(rks._selbsttest_phrasen()))
 check("Vorlagen-Erkennung nach init_runtime", rks.detect_template("Vorfuß rechts in 2 Ebenen unauffällig") == "vorfuß_in_2_ebenen")
 
 code = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
