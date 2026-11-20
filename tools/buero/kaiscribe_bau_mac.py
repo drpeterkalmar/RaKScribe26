@@ -24,6 +24,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -103,7 +104,10 @@ def release(commit, tag, sha):
         f.write(f"Gebaut und getestet am Büro-PC (kaiscribe_bau.py), Commit {commit[:8]}, SHA256 {sha}.\n\n"
                 f"<!-- windows-ui-test -->\n{text}\n")
         notes = f.name
-    a = ["release", "create", tag, exe, "-R", REPO, "--target", commit, "--title", f"KaiScribe {tag}",
+    # kaiscribe-umzug-n1-exe: Asset KaiScribe.exe + Übergang rakscribe26.exe (dieselbe Datei, alte Update-Wege)
+    neu = os.path.join(tempfile.mkdtemp(prefix="ksbau_"), "KaiScribe.exe")
+    shutil.copyfile(exe, neu)
+    a = ["release", "create", tag, neu, exe, "-R", REPO, "--target", commit, "--title", f"KaiScribe {tag}",
          "--notes-file", notes]
     if tag.startswith("test-"):
         a.append("--prerelease")
@@ -111,9 +115,11 @@ def release(commit, tag, sha):
     os.unlink(notes)
     if r.returncode:
         return False, "gh release create: " + (r.stderr or r.stdout).strip()[:200]
-    d = gh("api", f"repos/{REPO}/releases/tags/{tag}", "--jq", '.assets[]|select(.name=="rakscribe26.exe")|.digest')
-    if d.stdout.strip() != "sha256:" + sha:
-        return False, f"Release-Digest {d.stdout.strip() or '?'} ≠ gebaute EXE"
+    shutil.rmtree(os.path.dirname(neu), ignore_errors=True)
+    for name in ("KaiScribe.exe", "rakscribe26.exe"):
+        d = gh("api", f"repos/{REPO}/releases/tags/{tag}", "--jq", f'.assets[]|select(.name=="{name}")|.digest')
+        if d.stdout.strip() != "sha256:" + sha:
+            return False, f"Release-Digest {name} {d.stdout.strip() or '?'} ≠ gebaute EXE"
     return True, f"Release {tag} angelegt"
 
 

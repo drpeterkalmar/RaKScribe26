@@ -27,8 +27,8 @@ tmp = pathlib.Path(tempfile.mkdtemp(prefix="rks_keys_"))
 base, appdata = tmp / "exe", tmp / "appdata"
 base.mkdir()
 user_dir, user_path = k.user_key_paths({"APPDATA": str(appdata)})
-check("Benutzer-Schlüssel liegt in %APPDATA%\\RaKScribe", user_dir == str(appdata / "RaKScribe")
-      and user_path.endswith("rakscribe-praxis-key.json"))
+check("Benutzer-Schlüssel liegt in %APPDATA%\\KaiScribe (kaiscribe-umzug-n1-exe)", user_dir == str(appdata / "KaiScribe")
+      and user_path.endswith("kaiscribe-praxis-key.json"))
 os.makedirs(user_dir)
 
 check("ohne Datei → kein Schlüssel", k.load_praxis_key(str(base), user_path) == ("", None))
@@ -55,6 +55,37 @@ logs = []
 (base / "rakscribe-praxis-key.json").write_text("{kaputt")
 check("kaputte Datei → kein Schlüssel + Log", k.load_praxis_key(str(base), user_path, log=logs.append) == ("", None)
       and any("nicht verwertbar" in l for l in logs))
+# kaiscribe-umzug-n1-exe: neuer Name kaiscribe-praxis-key.json hat Vorrang, alter Name ist Rückfall (X:, Drive, Profil)
+(base / "rakscribe-praxis-key.json").write_text(praxis("AQ.alt-neben-exe"))
+(base / "kaiscribe-praxis-key.json").write_text(praxis("AQ.neu-neben-exe"))
+check("neben der EXE: kaiscribe-praxis-key.json vor rakscribe-praxis-key.json",
+      k.load_vertex_key(str(base), user_path) == "AQ.neu-neben-exe")
+os.remove(base / "kaiscribe-praxis-key.json")
+logs = []
+check("neben der EXE nur der alte Name → Rückfall gelesen, Log nennt die Datei",
+      k.load_praxis_key(str(base), user_path, log=logs.append)[0] == "AQ.alt-neben-exe"
+      and any("rakscribe-praxis-key.json geladen" in l for l in logs), str(logs))
+os.remove(base / "rakscribe-praxis-key.json")
+os.remove(user_path)
+(pathlib.Path(user_dir) / "rakscribe-praxis-key.json").write_text(praxis("AQ.alt-benutzer"))
+check("Benutzer-Ordner nur mit altem Namen → Rückfall", k.load_vertex_key(str(base), user_path) == "AQ.alt-benutzer")
+pathlib.Path(user_path).write_text(praxis("AQ.neu-benutzer"))
+check("… neuer Name im Benutzer-Ordner hat Vorrang", k.load_vertex_key(str(base), user_path) == "AQ.neu-benutzer")
+check("„Schlüssel entfernen“ trifft beide Namen im Benutzer-Ordner",
+      k.benutzer_schluessel(user_path) == [user_path, str(pathlib.Path(user_dir) / "rakscribe-praxis-key.json")])
+for p in k.benutzer_schluessel(user_path):
+    os.remove(p)
+check("… danach kein Schlüssel", k.praxis_key_path(str(base), user_path) is None)
+alt_ordner = appdata / "RaKScribe"
+alt_ordner.mkdir()
+(alt_ordner / "rakscribe-praxis-key.json").write_text(praxis("AQ.nur-alter-ordner"))
+check("alter Ordner %APPDATA%\\RaKScribe wird nach dem Umzug NICHT mehr gelesen (neuer Ordner da)",
+      k.praxis_key_path(str(base), user_path) is None)
+os.rmdir(user_dir)
+d2, p2 = k.user_key_paths({"APPDATA": str(appdata)})
+check("… fehlt der neue Ordner (Kopie gescheitert), liest die EXE weiter den alten",
+      d2 == str(alt_ordner) and k.load_vertex_key(str(base), p2) == "AQ.nur-alter-ordner", d2)
+os.makedirs(user_dir)
 check("ist_praxis_schluessel: kombiniert ja, Teilschlüssel nein",
       k.ist_praxis_schluessel(json.loads(praxis("AQ.x"))) and not k.ist_praxis_schluessel(json.loads(praxis("AQ.x", False)))
       and not k.ist_praxis_schluessel({"stt": {"private_key": "x"}}))

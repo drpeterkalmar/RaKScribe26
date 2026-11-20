@@ -1,6 +1,6 @@
 # 🚀 KaiScribe (vormals RaKScribe)
 
-> **Name:** Seit Version 3.17.0 (Oktober 2026) heißt das Programm **KaiScribe** (Familie: KaiScribe = Diktat/Befund, KaiView = Viewer, KaiRad = Dachname). Technische Namen bleiben vorerst gleich: Repo `RaKScribe26`, Programmdatei `rakscribe26.exe`, Download-Link `releases/latest/download/rakscribe26.exe`, Ordner `X:\RaKScribe`, `%APPDATA%\RaKScribe` und die Schlüsseldatei `rakscribe-praxis-key.json`.
+> **Name:** Seit Version 3.17.0 (Oktober 2026) heißt das Programm **KaiScribe** (Familie: KaiScribe = Diktat/Befund, KaiView = Viewer, KaiRad = Dachname). Seit dem Umzug im November 2026 auch technisch: `KaiScribe.exe`, `%APPDATA%\KaiScribe`, `kaiscribe-praxis-key.json`, `X:\KaiScribe`. Übergang: Das Release enthält zusätzlich `rakscribe26.exe` (dieselbe Datei); alter Schlüsselname, alter Benutzer-Ordner (wird einmal kopiert) und `X:\RaKScribe` gehen als Rückfall weiter. Unverändert: Repo `RaKScribe26`, Pages-Pfad `/RaKScribe26/`, der Austausch-Ordner mit der Brücke `%LOCALAPPDATA%\RaKScribe`.
 
 **Intelligentes Reporting und strukturiertes radiologisches Befunden** – blitzschnell, hochpräzise und maßgeschneidert für den klinischen Alltag.
 
@@ -12,7 +12,7 @@ KaiScribe ist ein hocheffizienter radiologischer Befundungsassistent. Es kombini
 
 ## 💡 Architektur: Online-Only 💻
 
-Um eine maximale Vereinfachung, Stabilität und einen minimalen Hardware-Bedarf zu garantieren, läuft RaKScribe26 als reine Online-Anwendung:
+Um eine maximale Vereinfachung, Stabilität und einen minimalen Hardware-Bedarf zu garantieren, läuft KaiScribe als reine Online-Anwendung:
 
 * **Spracherkennung (STT):** **Google Cloud Speech-to-Text** (sichere Übertragung via HTTPS, live-streaming, extrem präzise inkl. medizinischem Fachwortschatz-Boost).
 * **Strukturierung (LLM):** **Google Gemini 1.5 Flash** (unter-Sekunden Antwortzeiten, zero-configuration) oder optional **OpenAI GPT-4o-mini**.
@@ -41,9 +41,9 @@ Für den Online-Modus fallen bei Google folgende minimale Gebühren an:
 
 ## ⭐ Hauptmerkmale
 
-* **🏥 Modalitätsspezifische Befundvorlagen:** RaKScribe26 erkennt automatisch die Bildgebungsmodalität des diktierten Befunds und wählt die passende strukturierte Vorlage. Jede Modalität hat eigene, klinisch präzise Templates – keine Verwechslung mehr zwischen Röntgen, Sonographie und Nervenschall.
+* **🏥 Modalitätsspezifische Befundvorlagen:** KaiScribe erkennt automatisch die Bildgebungsmodalität des diktierten Befunds und wählt die passende strukturierte Vorlage. Jede Modalität hat eigene, klinisch präzise Templates – keine Verwechslung mehr zwischen Röntgen, Sonographie und Nervenschall.
 * **⚡ Sub-Sekunden-Latenz:** Befunde werden online via Gemini Flash in unter 2 Sekunden fertig strukturiert und formatiert zurückgeliefert.
-* **🔑 Ein Key für alles:** Eine einzige Datei (`rakscribe-praxis-key.json`) authentifiziert Spracherkennung (Speech-to-Text) **und** Gemini – keine manuelle API-Key-Eingabe, keine separate Konfiguration.
+* **🔑 Ein Key für alles:** Eine einzige Datei (`kaiscribe-praxis-key.json`, früher `rakscribe-praxis-key.json`) authentifiziert Spracherkennung (Speech-to-Text) **und** Gemini – keine manuelle API-Key-Eingabe, keine separate Konfiguration.
 * **📋 Auto-Paste & Hotkey (F10):** Ein einziger Tastendruck auf **F10** startet und stoppt das Diktat. Nach Beendigung wird der fertige Befund automatisch in die Zwischenablage kopiert und per `Ctrl+V` direkt in Ihr aktives RIS, Word oder KIS eingefügt.
 * **✍️ Ergänzung an Cursor-Stelle (seit v3.5.0, Anzeige ab v3.18.9):** In den fertigen Befund rechts klicken (oder Text markieren) und Record drücken (SpeechMike, F10 oder Knopf): Das Diktat kommt **wörtlich** an diese Stelle bzw. ersetzt die Markierung – ohne KI-Umbau, ohne „Nur Text“ einzuschalten. Die Statuszeile zeigt dabei „Ergänzung an Cursor-Stelle“ (Aufnahme, Pause, Einfügen) und danach „Ergänzung an Cursor-Stelle eingefügt“. Ohne Cursor im Befund bleibt alles wie gehabt; EOL schickt danach wie immer den sichtbaren Befund weiter (`tests/offline/test_einfuegen.py`, `test_speechmike_ablauf.py` 6c).
 * **🛡️ Befundfeld nie still überschreiben (3.19.16, Peter 20.11.2026):** Steht rechts schon Text, ist jedes Diktat eine **Ergänzung** – ohne Cursor kommt sie ans Ende des Befundteils des passenden Abschnitts (vor „## Ergebnis“), Titel und Text bleiben Zeichen für Zeichen. Neuer Befund nur bei leerem Feld (nach EOL, „Clear all“, F1 Neu); das unberührte IB-Lab-Gerüst wird beim Diktat zum Befund ausgebaut (IB-Lab-Texte bleiben). Statuszeile beim Record: „Ergänzung“ bzw. „Neuer Befund“. Knöpfe im BEFUND-Kopf: **Clear all** (Feld leeren, Fall bleibt offen), **Reset** (erster Befundvorschlag des Falls), **Restructure** (Befund aus dem aktuellen Text neu aufbauen – Peters Ergänzungen seit dem letzten KaiScribe-Stand haben Vorrang, widersprechende Normalsätze fallen weg, Ergebnis wird angepasst, Titel bleibt, Verlorenes kommt als rote Prüfzeile). Strg+Z im Befundfeld holt den Stand vor dem letzten Schritt (nochmal = wieder vor). SpeechMike-INS ohne neue Aufnahme baut einen stehenden Befund nicht mehr still neu. EXE = Web (`source_code/befundfeld.py` ≡ `web_app/src/befundfeld.ts`, `tests/offline/test_befundfeld.py`, Livetest `tools/verify_restructure.py`).
@@ -79,14 +79,14 @@ Jede Modalität verfügt über eigene, klinisch präzise Befundvorlagen. Die aut
 Eine ausführliche Anleitung zur Einrichtung finden Sie in der **[INSTALL.md](INSTALL.md)**.
 
 ### 1. EXE bekommen
-Die Befund-PCs bekommen `rakscribe26.exe` automatisch über das Praxis-Update (`X:\RaKScribe\`); einen öffentlichen
+Die Befund-PCs bekommen `KaiScribe.exe` automatisch über das Praxis-Update (`X:`); einen öffentlichen
 Download gibt es nicht mehr (Repo privat). Vorlagen, Prompt und Fehlhör-Liste sind in der EXE eingebaut.
 
 ### 2. Praxis-Key hinterlegen (EIN Key für alles)
-Legen Sie `rakscribe-praxis-key.json` (aus dem Drive-Ordner „RaKScribe") in denselben Ordner wie die EXE. Fertig – diese eine Datei versorgt Spracherkennung **und** Gemini.
+Legen Sie `kaiscribe-praxis-key.json` (Praxis-Drive; alter Name `rakscribe-praxis-key.json` geht weiter) in denselben Ordner wie die EXE. Fertig – diese eine Datei versorgt Spracherkennung **und** Gemini.
 
 ### 3. Starten
-Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installation nötig.
+Doppelklick auf **`KaiScribe.exe`** – fertig. Kein Python, keine Installation nötig.
 
 ---
 
@@ -95,7 +95,7 @@ Doppelklick auf **`rakscribe26.exe`** – fertig. Kein Python, keine Installatio
 ```ini
 [SETTINGS]
 # Befund-KI: gemini = Gemini 3.5 Flash über Vertex AI am EU-Endpoint (Modell und Endpoint sind fest eingebaut).
-# Der Schlüssel kommt ausschließlich aus rakscribe-praxis-key.json — nicht hier eintragen.
+# Der Schlüssel kommt ausschließlich aus kaiscribe-praxis-key.json (Rückfall rakscribe-praxis-key.json) — nicht hier eintragen.
 LLM_PROVIDER = gemini
 LLM_MODEL = gemini-3.5-flash
 
@@ -132,20 +132,20 @@ ausgewertet und dürfen gelöscht werden.
   mit Diktattext: Umgebungsvariable `RAKSCRIBE_DEBUG=1` (Web-Konsole: `localStorage.rakscribe_debug = '1'`).
 - **Tests** laufen bei jedem Push (`.github/workflows/test.yml`); der Web-Deploy startet erst, wenn sie grün sind.
 
-## ⏱️ Bereitschaft: RaKScribe wartet minimiert (EXE, ab v3.11.0)
+## ⏱️ Bereitschaft: KaiScribe wartet minimiert (EXE, ab v3.11.0)
 
 - **Menü ☰ „Mit Windows starten (wartet minimiert)“**: Nach der Windows-Anmeldung wartet ein kleiner, unsichtbarer
-  Starter (`%APPDATA%\RaKScribe\warte_auf_x.vbs`), bis die EXE erreichbar ist (X: kommt erst mit dem CAS-Login, höchstens
+  Starter (`%APPDATA%\KaiScribe\warte_auf_x.vbs`), bis die EXE erreichbar ist (X: kommt erst mit dem CAS-Login, höchstens
   4 h), und startet sie dann nur als Symbol in der Taskleiste. Keine lokale Kopie — Updates bleiben „eine Datei tauschen“.
-- **Nach EOL im CAS-Modus** geht RaKScribe nach ~1,5 s wieder in die Taskleiste (Menü „Nach CAS-Befund minimieren“).
-- **Nur eine RaKScribe**: Ein zweiter Start holt die laufende nach vorne. Schließen (X) beendet RaKScribe wie bisher.
+- **Nach EOL im CAS-Modus** geht KaiScribe nach ~1,5 s wieder in die Taskleiste (Menü „Nach CAS-Befund minimieren“).
+- **Nur eine KaiScribe**: Ein zweiter Start holt die laufende nach vorne. Schließen (X) beendet KaiScribe wie bisher.
 - Bericht: [`BEREITSCHAFT_BERICHT.md`](BEREITSCHAFT_BERICHT.md).
 
 ## 🧭 CAS-Leistungen als Vorrang-Hinweis (EXE, ab v3.12.0)
 
 - Die RaKScribe-Brücke (ab 1.1.0) reicht zum CAS-Diktat die Leistungen des Eintrags nach
   (`cas_leistungen_<id>.json`, Sekunden nach dem Auftrag). Das blaue Band zeigt sie: „CAS-Diktat <Nr> (<Kürzel>) · HWS ·
-  Schulter re. (Sono)“. Ohne diese Datei arbeitet RaKScribe wie bisher.
+  Schulter re. (Sono)“. Ohne diese Datei arbeitet KaiScribe wie bisher.
 - **Vorlagenwahl:** Die Erkennung aus dem Diktat läuft immer, die CAS-Liste ist ein Vorrang-Hinweis, kein Zwang
   (`source_code/cas_vorlagen.py`). Bestätigt das Diktat eine CAS-Region, gilt deren Vorlage. Nennt es nur die Region,
   während CAS eine andere Modalität kennt („Knie“ und „Sono Knie“), gilt die CAS-Vorlage. „Unauffällig.“ bekommt die
@@ -154,7 +154,7 @@ ausgewertet und dürfen gelöscht werden.
   CAS-Untersuchung nennen („Fuß links: … LWS: …“). So entsteht je Untersuchung ein eigener Befund in Diktat-Reihenfolge.
 - **Hinweise im Band:** „LWS laut CAS, nicht diktiert“, „… nicht in den CAS-Leistungen“ und „Seite: diktiert rechts,
   laut CAS links“. Ergänzt wird dabei nichts.
-- **Nach EOL im CAS-Modus** steht 4,5 s ein grünes Band „✓ An CAS übergeben: <Nr> · <Titel>“, erst danach geht RaKScribe
+- **Nach EOL im CAS-Modus** steht 4,5 s ein grünes Band „✓ An CAS übergeben: <Nr> · <Titel>“, erst danach geht KaiScribe
   in die Taskleiste. In der Kopfzeile überdeckt „Bereit“ den Hinweis „SpeechMike verbunden“ nicht mehr.
 - Ohne CAS-Leistungen bleiben Einzelbefunde bit-gleich (`tools/cas_bitgleich.py`, 726 Diktate). Tests:
   `tests/offline/test_cas_leistungen.py`, live `tools/test_all_regions.py --cas`. Die Zuordnung Leistungskürzel → Vorlage
@@ -177,14 +177,14 @@ ausgewertet und dürfen gelöscht werden.
   Vorlagensatz „Fußgewölbe regulär“) erscheint ein gelber Hinweis in der IB-Lab-Zeile, am Text ändert sich nichts. Die
   Hinweise des Bausteins (Bildqualität, Fraktur-Verdacht, Entwürfe) erscheinen nur dort, nie im Befund. Ein Klick auf die
   Zeile zeigt alle Werte und Hinweise.
-- **Werte nach dem Befund:** RaKScribe ändert einen schon erstellten Befund nicht still. Stattdessen erscheint der Knopf
+- **Werte nach dem Befund:** KaiScribe ändert einen schon erstellten Befund nicht still. Stattdessen erscheint der Knopf
   „＋ IB Lab einfügen“, eine ältere Fassung wird dabei wörtlich ersetzt.
 - Menü ☰ **„IB-Lab-Bausteine übernehmen“** (Standard an). Ohne Bausteine bzw. bei „aus“ sind Prompt und Befund bit-gleich
   mit 3.12.0 (726 Diktate). Tests: `tests/offline/test_ibl_bausteine.py`, live `tools/test_all_regions.py --ibl`.
 
 - **Vorwerte (ab v3.18.0):** Liefert der Baustein einen früheren Wert derselben Messgröße, steht er schon in der
   Quellen-Klammer der Befundzeile („Cobb-Winkel 18° (IB Lab SQUIRREL; Vorwert 03/2024: 12°, IB Lab).“) und kommt so wörtlich
-  ins Gerüst und in den Befund. RaKScribe zeigt den Vorwert-Teil im Befund-Feld grau und listet die Vorwerte beim Klick auf
+  ins Gerüst und in den Befund. KaiScribe zeigt den Vorwert-Teil im Befund-Feld grau und listet die Vorwerte beim Klick auf
   die IB-Lab-Zeile. Ohne Vorwerte bleibt alles bit-gleich (`tests/offline/test_cas_kontext.py`).
 - **Nur auffällige Messwerte (ab v3.18.8, FROG, HIPPO, KOALA):** In den Befund (Gerüst und nach der KI) kommen nur die
   Messzeilen, aus denen eine aktive Regel des Abholers (ris-mods `ibl/regeln/<modul>.toml`) einen Ergebnispunkt gemacht
@@ -206,13 +206,13 @@ ausgewertet und dürfen gelöscht werden.
   strukturierten Befunds (Titel der Untersuchung, Messwerte wörtlich, Ergebnispunkte). **Auffällige Werte sind farbig
   hervorgehoben** — nur, wenn eine Regel des IB-Lab-Abholers (Schwellen mit Quelle) daraus einen Ergebnispunkt gemacht hat;
   sonst wird nichts gewertet. Diktiert wird wie gewohnt; der Befund aus dem Diktat ersetzt das Gerüst, die Messwerte
-  setzt RaKScribe danach wieder wörtlich ein (wie seit 3.13.0). Ohne Werte gibt es kein Gerüst.
-- **Werte, die erst später kommen**, setzt RaKScribe jetzt bis EOL selbst sichtbar in den Befund ein (Hinweis +
+  setzt KaiScribe danach wieder wörtlich ein (wie seit 3.13.0). Ohne Werte gibt es kein Gerüst.
+- **Werte, die erst später kommen**, setzt KaiScribe jetzt bis EOL selbst sichtbar in den Befund ein (Hinweis +
   Hervorhebung). Kamen sie weniger als 3 s vor EOL, muss EOL ein zweites Mal gedrückt werden — nie etwas Ungesehenes.
 
 ## 🩻 Mammo-Maske: Felder per SpeechMike-Taste, Vorbefund schon eingetragen (EXE, ab v3.15.0)
 
-Hat ein CAS-Diktat eine **Mammographie-Leistung** (Screening oder kurativ), zeigt RaKScribe links statt des Diktat-Felds
+Hat ein CAS-Diktat eine **Mammographie-Leistung** (Screening oder kurativ), zeigt KaiScribe links statt des Diktat-Felds
 die **Mammo-Maske** mit vier Feldern: **Inspektion und Palpation · Mammographie · Sonographie · Ergebnis** (mit ACR und
 BI-RADS). Ohne Mamma-Sono-Leistung ist die Sonographie eingeklappt und als „optional (keine Sono-Leistung in CAS)“
 markiert (ab v3.16.0): Vor-/Rückspulen hält dort, ein Diktat oder Klick „＋ zuschalten“ holt sie dazu (die Sono wird bei
@@ -241,7 +241,7 @@ Screenings oft trotzdem gemacht), leer bleibt sie ohne Abschnitt und ohne Warnun
 - **Am Ambient ohne F1/F2:** „Neu“ (F1) = F9 bzw. Knopf „↺ Neu (F9)“, „Nur Text“ (F2) = Schalter oben rechts im Befund.
 
 - **Vorbefund:** Die Brücke (ab 2.1.0) liefert den letzten fertigen Mammographie-Befund mit Datum und ACR/BI-RADS der
-  Doppelbefundung. RaKScribe zerlegt ihn an den Labels und trägt ihn **grau** als Vorschlag ein („Vorbefund TT.MM.JJJJ“).
+  Doppelbefundung. KaiScribe zerlegt ihn an den Labels und trägt ihn **grau** als Vorschlag ein („Vorbefund TT.MM.JJJJ“).
   Ein Vorschlag wird **nie still** zum heutigen Befund: INS warnt, solange ein Feld noch Vorschlag ist; ein zweites INS
   ohne Änderung baut den Befund **ohne** diese Felder.
 - **„unverändert“** diktiert (oder F3) → der Vorbefund dieses Felds mit Vergleichsdatum, z. B. „Verglichen mit 05.06.2024
@@ -261,7 +261,7 @@ Screenings oft trotzdem gemacht), leer bleibt sie ohne Abschnitt und ohne Warnun
 ## 🔧 v3.15.4 außerdem (Peter 15.10.2026, Ordi-Probelauf)
 
 - **Genaue Spracherkennung (chirp_3) in der EXE repariert:** Die Schlüssel für chirp_3 wurden ohne Scope angelegt — jede
-  Token-Erneuerung scheiterte mit „invalid_scope“ (Ordi-Protokoll 15.10.: 18 von 18 Volltranskriptionen), RaKScribe nahm
+  Token-Erneuerung scheiterte mit „invalid_scope“ (Ordi-Protokoll 15.10.: 18 von 18 Volltranskriptionen), KaiScribe nahm
   dann still das schwächere Live-Transkript. Jetzt mit Scope `cloud-platform` (wie alle Werkzeuge am Mac).
 - **Beidseitige CAS-Leistung → beidseitiger Befund:** Ist die CAS-Leistung einer paarigen Region beidseits („bds.“,
   „beidseits“, „bilateral“), heißt die Überschrift immer „… beidseits …“ (auch wenn nur eine Seite diktiert wurde), der
@@ -278,11 +278,11 @@ Screenings oft trotzdem gemacht), leer bleibt sie ohne Abschnitt und ohne Warnun
   Fehlhör-Liste → Befund), der Befund steht rechts **zur Kontrolle** (nichts wird eingefügt); mit CAS-Auftrag schickt
   EOL Befund + Datei-Audio wie gewohnt an die Brücke. m4a/AAC öffnet die Desktop-App nicht (Meldung) — dafür die Web-App
   oder die Datei als mp3/ogg speichern. Wie der Upload der Web-App.
-- **WAV-Modus für automatische Ende-zu-Ende-Tests:** `rakscribe26.exe --wav-ablauf ablauf.json [--schluessel key.json]
-  [--zustand zustand.json]`. Statt des Mikrofons spielt RaKScribe Audio-Dateien in Echtzeit-Blöcken (100 ms) ein, sonst
+- **WAV-Modus für automatische Ende-zu-Ende-Tests:** `KaiScribe.exe --wav-ablauf ablauf.json [--schluessel key.json]
+  [--zustand zustand.json]`. Statt des Mikrofons spielt KaiScribe Audio-Dateien in Echtzeit-Blöcken (100 ms) ein, sonst
   Stille; Google-Streaming, chirp_3 und Gemini sind **echt**. Die SpeechMike-Tasten drückt das Ablaufskript über
-  denselben Dekodierer wie das Gerät; am Ende schließt sich RaKScribe selbst (offener CAS-Auftrag → „abgebrochen“).
-  Läuft immer als Gast neben einer laufenden RaKScribe: eigener Mutex, kein SpeechMike-Gerät, keine globalen Tasten,
+  denselben Dekodierer wie das Gerät; am Ende schließt sich KaiScribe selbst (offener CAS-Auftrag → „abgebrochen“).
+  Läuft immer als Gast neben einer laufenden KaiScribe: eigener Mutex, kein SpeechMike-Gerät, keine globalen Tasten,
   kein Autostart, Zwischenablage/Strg+V/Dialoge bleiben unberührt (Dialoge stehen nur im Protokoll). Der Zustand
   (Befund, Maske, Ablauf-Protokoll mit Zeiten je Schritt) steht in `<ablauf>.zustand.json`.
 

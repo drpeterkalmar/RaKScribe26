@@ -52,7 +52,7 @@ L_HG_BDS = _l("t-hg-bds", "Handgelenk bds.", "Röntgen", "handgelenk_in_2_ebenen
 
 
 def prozesse():
-    """Laufende rakscribe26-Prozesse (PIDs) — nur lesen (tasklist, Ausgabe tolerant dekodiert)."""
+    """Laufende KaiScribe-Prozesse (KaiScribe.exe + Übergang rakscribe26.exe, PIDs) — nur lesen (tasklist, tolerant)."""
     try:
         out = subprocess.run(["tasklist", "/FO", "CSV", "/NH"], capture_output=True, timeout=30).stdout
         txt = out.decode("utf-8", errors="replace") if out else ""
@@ -61,7 +61,7 @@ def prozesse():
     pids = []
     for z in txt.splitlines():
         t = [x.strip('"') for x in z.split('","')]
-        if t and t[0].lower().startswith("rakscribe26"):
+        if t and (t[0].lower() == "kaiscribe.exe" or t[0].lower().startswith(("kaiscribe (", "rakscribe26"))):
             pids.append(t[1] if len(t) > 1 else "?")
     return sorted(pids)
 

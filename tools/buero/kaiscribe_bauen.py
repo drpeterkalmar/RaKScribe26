@@ -10,10 +10,12 @@ Ordi-Hermes vom Mac geholt hat (https://mac-mini…:8451/quelle/kaiscribe/quelle
 1. venv %LOCALAPPDATA%\\KaiScribe-Bau\\venv (bleibt für den nächsten Bau), pip install -r requirements.txt + Testwerkzeuge
 2. PyInstaller mit GENAU den Argumenten aus .github/workflows/build-exe.yml (eine Quelle, kein zweites Rezept)
 3. Windows-UI-Test tests/windows/exe_ui_test.py gegen die gebaute EXE (wie test-exe-windows.yml). Schutz am echten PC:
-   läuft schon eine rakscribe26.exe in dieser Sitzung (gleicher Einzelinstanz-Mutex) oder liegt die echte
-   Autostart-Verknüpfung RaKScribe.lnk (Fall G legt sie an und löscht sie wieder) → nicht testen, KSBAU=belegt.
+   läuft schon eine KaiScribe.exe/rakscribe26.exe in dieser Sitzung (gleicher Einzelinstanz-Mutex) oder liegt die echte
+   Autostart-Verknüpfung KaiScribe.lnk bzw. RaKScribe.lnk (Fall G legt sie an und löscht sie wieder) → nicht testen,
+   KSBAU=belegt.
 4. Abgabe an den Mac (POST, nur Tailnet): EXE + report.md; der Mac legt daraus das GitHub-Release an (angemeldet,
-   ~/.hermes/scripts/kaiscribe_bau.py). Kein Token am Büro-PC.
+   ~/.hermes/scripts/kaiscribe_bau.py) – mit KaiScribe.exe und dem Übergangs-Asset rakscribe26.exe. Kein Token am Büro-PC.
+   Transportname der Ablage bleibt rakscribe26.exe (ordi_quelle.py nimmt nur diesen Namen an).
 Letzte Zeile:  KSBAU=<ok|fehler|belegt> COMMIT=<sha> TAG=<tag> SHA256=<exe|-> UITEST=<pass>/<gesamt> DAUER=<s> GRUND=<…>
 """
 import argparse
@@ -40,16 +42,27 @@ def pyinstaller_args(workflow_text):
     raise ValueError("keine pyinstaller-Zeile in build-exe.yml")
 
 
-def autostart_lnk():
+EXE_NAMEN = ("KaiScribe.exe", "rakscribe26.exe")       # kaiscribe-umzug-n1-exe: neu + Übergang
+LNK_NAMEN = ("KaiScribe.lnk", "RaKScribe.lnk")          # wie bereitschaft.VERKNUEPFUNG / ALT_VERKNUEPFUNG
+
+
+def autostart_lnks():
     """Echter Autostart-Ordner dieses Benutzers (wie bereitschaft.autostart_ordner, ohne API-Aufruf)."""
-    return pathlib.Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" \
-        / "RaKScribe.lnk"
+    ordner = pathlib.Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
+    return [ordner / n for n in LNK_NAMEN]
 
 
-def laeuft_rakscribe():
+def autostart_da():
+    return any(p.exists() for p in autostart_lnks())
+
+
+def laeuft_kaiscribe():
     # Bytes statt Text: tasklist schreibt cp850, mit PYTHONUTF8=1 brach das Dekodieren ab (Probe-Bau 05.11.)
-    r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq rakscribe26.exe", "/NH"], capture_output=True, timeout=60)
-    return b"rakscribe26.exe" in (r.stdout or b"").lower()
+    for name in EXE_NAMEN:
+        r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq " + name, "/NH"], capture_output=True, timeout=60)
+        if name.lower().encode() in (r.stdout or b"").lower():
+            return True
+    return False
 
 
 def ui_zaehlen(text):
@@ -94,13 +107,14 @@ def main(argv=None):
     version = (q / "VERSION").read_text(encoding="utf-8").strip()
     if not a.tag.startswith("test-") and a.tag != version:
         return ende("fehler", "Tag %s passt nicht zu VERSION %s" % (a.tag, version))
-    print("INFO rakscribe_laeuft=%s autostart_lnk=%s" % ("ja" if laeuft_rakscribe() else "nein",
-                                                         "ja" if autostart_lnk().exists() else "nein"), flush=True)
+    print("INFO kaiscribe_laeuft=%s autostart_lnk=%s" % ("ja" if laeuft_kaiscribe() else "nein",
+                                                         "ja" if autostart_da() else "nein"), flush=True)
     if not a.ohne_ui_test:
-        if laeuft_rakscribe():
-            return ende("belegt", "eine rakscribe26.exe läuft in dieser Sitzung (UI-Test teilt ihren Mutex)")
-        if autostart_lnk().exists():
-            return ende("belegt", "echte Autostart-Verknüpfung RaKScribe.lnk vorhanden (UI-Test Fall G würde sie löschen)")
+        if laeuft_kaiscribe():
+            return ende("belegt", "eine KaiScribe-EXE läuft in dieser Sitzung (UI-Test teilt ihren Mutex)")
+        if autostart_da():
+            return ende("belegt", "echte Autostart-Verknüpfung KaiScribe.lnk/RaKScribe.lnk vorhanden (UI-Test Fall G würde "
+                                  "sie löschen)")
 
     print("1/4 Bau-venv", flush=True)
     venv = pathlib.Path(os.environ["LOCALAPPDATA"]) / "KaiScribe-Bau" / "venv"
@@ -117,9 +131,9 @@ def main(argv=None):
     if lauf([str(venv / "Scripts" / "pyinstaller.exe"), "--noconfirm", *args], w / "pyinstaller.log",
             cwd=q / "source_code", frist=2400):
         return ende("fehler", "PyInstaller (siehe pyinstaller.log)")
-    exe = q / "source_code" / "dist" / "rakscribe26.exe"
+    exe = q / "source_code" / "dist" / "KaiScribe.exe"
     if not exe.exists():
-        return ende("fehler", "dist\\rakscribe26.exe fehlt")
+        return ende("fehler", "dist\\KaiScribe.exe fehlt")
     erg["SHA256"] = hashlib.sha256(exe.read_bytes()).hexdigest()
 
     bericht = w / "ui-report" / "report.md"
@@ -131,8 +145,8 @@ def main(argv=None):
                     w / "ui-test.log", cwd=q, frist=2400)
         n_ok, n = ui_zaehlen((w / "ui-test.log").read_text(encoding="utf-8", errors="replace"))
         erg["UITEST"] = "%d/%d" % (n_ok, n)
-        if autostart_lnk().exists():   # Fall G hat aufgeräumt – sonst sofort melden
-            return ende("fehler", "UI-Test hat RaKScribe.lnk im Autostart hinterlassen")
+        if autostart_da():   # Fall G hat aufgeräumt – sonst sofort melden
+            return ende("fehler", "UI-Test hat eine Verknüpfung im Autostart hinterlassen")
         if code != 0 or n == 0 or n_ok != n:
             return ende("fehler", "UI-Test rot (Exit %d, %s)" % (code, erg["UITEST"]))
 

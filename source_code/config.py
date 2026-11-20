@@ -6,7 +6,7 @@
 - Nur ein echter Lesefehler (configparser.Error, z. B. fehlender [SETTINGS]-Kopf, doppelte Schlüssel) ist fatal:
   KonfigFehler mit Klartext — RaKScribe.py zeigt ihn als Dialog und beendet sich.
 - Nicht mehr ausgewertet (still ignoriert, falls noch in alten Dateien): CHUNK_DURATION, STT_ENGINE,
-  GOOGLE_JSON_FILENAME. Schlüssel kommen seit v3.2.3 nur aus rakscribe-praxis-key.json.
+  GOOGLE_JSON_FILENAME. Schlüssel kommen seit v3.2.3 nur aus dem Praxis-Schlüssel (kaiscribe-praxis-key.json, keys.py).
 """
 import configparser
 import hashlib
@@ -17,11 +17,11 @@ from typing import Dict, List
 
 STANDARD_INHALT = (
     "[SETTINGS]\n"
-    "# Befund-KI: gemini (Vertex AI, gemini-3.5-flash am EU-Endpoint — Schlüssel aus rakscribe-praxis-key.json)\n"
+    "# Befund-KI: gemini (Vertex AI, gemini-3.5-flash am EU-Endpoint — Schlüssel aus kaiscribe-praxis-key.json)\n"
     "LLM_PROVIDER = gemini\n"
     "LLM_MODEL = gemini-3.5-flash\n"
     "# Anbieter: anthropic (Standard seit 16.11.2026: Claude Sonnet 5.5, Text maskiert; jedes Problem → Gemini als\n"
-    "# Rückfall; Schlüssel anthropic_api_key in rakscribe-praxis-key.json) | gemini\n"
+    "# Rückfall; Schlüssel anthropic_api_key in kaiscribe-praxis-key.json) | gemini\n"
     "LLM_ANBIETER = anthropic\n"
     "ANTHROPIC_MODELL = claude-sonnet-5-5\n"
     "ANTHROPIC_FRIST = 20\n"
@@ -46,8 +46,9 @@ class Config:
     anthropic_frist: int = 20
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
     # v3.18.5 (Nachtrag RH 99): Lauf-Protokoll je Befund (STT-Text, Vorschlag, Modell, Prompt-Stand), auch ohne EOL;
-    # LAUF_ORDNER = aus → nie. Fehlt das Laufwerk, schreibt KaiScribe nichts.
-    lauf_ordner: str = "X:\\RaKScribe\\Daten\\laeufe"
+    # LAUF_ORDNER = aus → nie. Fehlt das Laufwerk, schreibt KaiScribe nichts. kaiscribe-umzug-n1-exe: X:\KaiScribe, solange
+    # es den Ordner auf X: noch nicht gibt X:\RaKScribe (umzug.x_pfad beim Schreiben, gilt auch für einen Eintrag in config.ini).
+    lauf_ordner: str = "X:\\KaiScribe\\Daten\\laeufe"
     # kaiscribe-frog-einsetzen-n1 (Georg 19.11.2026, RH 127): Ablage des IB-Lab-Abholers – daraus holt KaiScribe den
     # FROG-/HIPPO-Text selbst, wenn eine ältere Brücke (< 2.5.20 bzw. < 2.5.22) ihn nicht mitgibt. IBL_ABLAGE = aus → nie.
     ibl_ablage: str = "X:\\IBL-Vorbefunde"
@@ -131,7 +132,7 @@ def load_config(path):
 
 def einmalig(merker_pfad, text):
     """Merker für einmalige Hinweise (Umbau Schritt 24, Gutachten P3-4): True genau beim ersten Mal je Hinweistext.
-    Der Merker liegt in %APPDATA%\\RaKScribe (überlebt EXE-Updates). Lesefehler → Hinweis zeigen;
+    Der Merker liegt in %APPDATA%\\KaiScribe (überlebt EXE-Updates). Lesefehler → Hinweis zeigen;
     Schreibfehler → trotzdem zeigen (lieber einmal zu oft als nie)."""
     schluessel = hashlib.sha1((text or "").encode("utf-8")).hexdigest()
     try:

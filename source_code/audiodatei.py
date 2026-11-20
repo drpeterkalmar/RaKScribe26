@@ -4,7 +4,7 @@
    DIESELBE Kette wie nach einer Aufnahme (chirp_3 → Fehlhör-Liste → Befund mit Gemini), Ergebnis rechts zur Kontrolle,
    EOL wie gewohnt (mit CAS-Auftrag geht die Datei als <Nr>.wav an die Brücke). Wie der Upload der Web-App
    (web_app/src/App.tsx audioUploadRef/decodeFileToWavBlob).
-2. WAV-Modus für die Automation (rakscribe26.exe --wav-ablauf <ablauf.json> [--schluessel <key.json>]): statt des
+2. WAV-Modus für die Automation (KaiScribe.exe --wav-ablauf <ablauf.json> [--schluessel <key.json>]): statt des
    Mikrofons spielt WavQuelle Audio-Dateien in Echtzeit-Blöcken (100 ms) ein, sonst Stille; Google-Streaming, chirp_3 und
    Gemini bleiben ECHT. Die SpeechMike-Tasten drückt ein Ablaufskript (Ablauf/AblaufLaeufer) über denselben Dekodierer
    wie das Gerät; RaKScribe beendet sich am Ende selbst. Läuft immer als Gast (eigener Mutex, kein Gerät, keine globalen
@@ -380,5 +380,5 @@ class AblaufLaeufer:
         finally:
             self.fertig = True
             self.log("[WAV] Ablauf " + ("fertig" if not self.fehler else "abgebrochen: " + self.fehler)
-                     + f" nach {self.jetzt() - self._t0:.1f} s – RaKScribe wird geschlossen.")
+                     + f" nach {self.jetzt() - self._t0:.1f} s – KaiScribe wird geschlossen.")
             self.a["ende"]()

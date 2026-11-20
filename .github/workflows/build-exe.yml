@@ -39,19 +39,23 @@ jobs:
       - name: Build EXE with PyInstaller
         working-directory: source_code
         run: |
-          pyinstaller --onefile --noconsole --name=rakscribe26 --icon=../rakscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=jobstate --hidden-import=pipeline --hidden-import=aufnahme --hidden-import=config --hidden-import=keys --hidden-import=detect --hidden-import=stt --hidden-import=gemini --hidden-import=clipboard_win --hidden-import=bausteine --hidden-import=korrektur --hidden-import=einfuegen --hidden-import=befundfeld --hidden-import=protokoll --hidden-import=speechmike --hidden-import=segmente --hidden-import=fensterziel --hidden-import=cas_auftrag --hidden-import=cas_vorlagen --hidden-import=ibl_bausteine --hidden-import=bereitschaft --hidden-import=maske --hidden-import=audiodatei --hidden-import=llm_anbieter --hidden-import=ki_maske --hidden-import=nutzung --hidden-import=soundfile --collect-binaries _soundfile_data --hidden-import=hid --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." --add-data "../phrases.json;." --add-data "../ordi_bausteine.json;." --add-data "../masken.json;." --add-data "../VERSION;." RaKScribe.py
+          pyinstaller --onefile --noconsole --name=KaiScribe --icon=../kaiscribe.ico --hidden-import=google.cloud.speech --hidden-import=google.cloud.speech_v2 --collect-all google --collect-all grpc --hidden-import=misheard --hidden-import=befund_regeln --hidden-import=normalbypass --hidden-import=jobstate --hidden-import=pipeline --hidden-import=aufnahme --hidden-import=config --hidden-import=keys --hidden-import=detect --hidden-import=stt --hidden-import=gemini --hidden-import=clipboard_win --hidden-import=bausteine --hidden-import=korrektur --hidden-import=einfuegen --hidden-import=befundfeld --hidden-import=protokoll --hidden-import=speechmike --hidden-import=segmente --hidden-import=fensterziel --hidden-import=cas_auftrag --hidden-import=cas_vorlagen --hidden-import=ibl_bausteine --hidden-import=bereitschaft --hidden-import=maske --hidden-import=audiodatei --hidden-import=llm_anbieter --hidden-import=ki_maske --hidden-import=nutzung --hidden-import=umzug --hidden-import=soundfile --collect-binaries _soundfile_data --hidden-import=hid --add-data "../misheard_words.json;." --add-data "../radiology_prompt.txt;." --add-data "../templates.json;." --add-data "../vorlagen_vorrang.json;." --add-data "../phrases.json;." --add-data "../ordi_bausteine.json;." --add-data "../masken.json;." --add-data "../VERSION;." RaKScribe.py
           Get-ChildItem dist
 
       - name: Stage release files
         shell: bash
         run: |
           mkdir -p release
-          cp source_code/dist/rakscribe26.exe release/
+          cp source_code/dist/KaiScribe.exe release/
+          # kaiscribe-umzug-n1-exe (20.11.2026): Übergang – dieselbe Datei zusätzlich als rakscribe26.exe, damit alte
+          # Update-Wege (Update.ps1, Einspiel-Wächter, releases/latest/download/rakscribe26.exe) weiter auflösen.
+          cp source_code/dist/KaiScribe.exe release/rakscribe26.exe
+          cmp release/KaiScribe.exe release/rakscribe26.exe
           # v3.2.2 (Peter 05.10.): NUR die EXE ausliefern — Vorlagen, Prompt und Fehlhör-Liste sind eingebaut,
           # config.ini legt die EXE beim ersten Start selbst an. Keine Extradateien mehr zum Herunterladen.
           # SECURITY (03.09.26): KEINE Key-Dateien mehr in Release-Assets (public repo!).
-          # Verteilung der Keys nur ueber den privaten Drive-Ordner RaKScribe.
-          # Einziger Schluessel: rakscribe-praxis-key.json (Drive) → in der EXE per Menue laden (v3.2.3).
+          # Verteilung der Keys nur ueber den privaten Praxis-Drive.
+          # Einziger Schluessel: kaiscribe-praxis-key.json (frueher rakscribe-praxis-key.json) → per Menue laden (v3.2.3).
 
       - name: Determine version
         id: version

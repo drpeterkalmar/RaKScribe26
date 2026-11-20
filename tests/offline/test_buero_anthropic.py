@@ -70,6 +70,8 @@ out = io.StringIO()
 with contextlib.redirect_stdout(out):
     rc = ka.cmd_probe({"--exe": "x:\\rakscribe\\RAKSCRIBE26.exe"})
 check("Probe weigert sich bei der Produktions-EXE auf X:", rc == 1 and "nur_mit_kopie" in out.getvalue(), out.getvalue())
+check("… auch die neue EXE X:\\KaiScribe\\KaiScribe.exe (kaiscribe-umzug-n1-exe)",
+      ka.ist_produktions_exe("X:\\KaiScribe\\KaiScribe.exe") and ka.ist_produktions_exe("x:\\kaiscribe\\rakscribe26.exe"))
 check("Probe mit Kopie erlaubt", not ka.ist_produktions_exe("C:\\Users\\cas\\AppData\\Local\\hermes\\work\\ks_tausch\\v3.19.0\\rakscribe26.exe"))
 lang = "## Knie\n\n## Befund\n" + "Normalsatz. " * 60 + "\n\n## Ergebnis\n1. Mäßige Gonarthrose links medial."
 check("Probe liest den vollen Befund (result_voll), nicht die ersten 600 Zeichen",

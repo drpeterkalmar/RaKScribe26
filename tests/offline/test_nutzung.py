@@ -32,7 +32,7 @@ z10 = nutzung.Zaehler(d, "CASWS10", jetzt=lambda: T)
 
 check("Ordner neben dem Lauf-Protokoll", nutzung.ordner_aus("X:\\RaKScribe\\Daten\\laeufe")
       == "X:\\RaKScribe\\Daten\\nutzung", nutzung.ordner_aus("X:\\RaKScribe\\Daten\\laeufe"))
-check("LAUF_ORDNER = aus → APPDATA", nutzung.ordner_aus("aus", appdata="/tmp/ad") == os.path.join("/tmp/ad", "RaKScribe", "nutzung"))
+check("LAUF_ORDNER = aus → APPDATA\\KaiScribe", nutzung.ordner_aus("aus", appdata="/tmp/ad") == os.path.join("/tmp/ad", "KaiScribe", "nutzung"))
 check("PC-Name aus COMPUTERNAME, Dateiname-sicher", nutzung.pc_name({"COMPUTERNAME": "CAS WS08"}) == "CAS_WS08")
 
 # Weiche → Zähler (wie in der EXE: beobachter=NUTZUNG.ki)

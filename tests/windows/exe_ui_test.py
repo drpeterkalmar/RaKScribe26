@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""exe_ui_test.py — Automatischer Oberflächen-Test der RaKScribe-Windows-EXE (läuft auf GitHub Actions, windows-latest).
+"""exe_ui_test.py — Automatischer Oberflächen-Test der KaiScribe-Windows-EXE (läuft auf GitHub Actions, windows-latest).
 
 Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEIN echter Praxis-Schlüssel):
   A  Start ohne Schlüssel  → Fenster erscheint, Sperre „Praxis-Schlüssel laden“ sichtbar, Aufnahme-Button gesperrt
@@ -36,7 +36,7 @@ Was geprüft wird (echte EXE aus dem Release, echtes Windows, kein Mikrofon, KEI
 Die EXE schreibt ihren UI-Zustand per Selbsttest-Modus (RAKSCRIBE_SELFTEST) als JSON; dazu je ein Screenshot.
 Ergebnis: <out>/report.md, <out>/results.json, <out>/*.png  — Exit 1 bei FAIL.
 
-Aufruf:  python exe_ui_test.py <pfad/zur/rakscribe26.exe> <ausgabe-ordner> [versions-tag]
+Aufruf:  python exe_ui_test.py <pfad/zur/KaiScribe.exe> <ausgabe-ordner> [versions-tag]
 """
 import ctypes, json, os, pathlib, shutil, subprocess, sys, tempfile, time
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -59,7 +59,8 @@ def screen_size():
     return u.GetSystemMetrics(0), u.GetSystemMetrics(1)
 
 
-# Fenstertitel der EXE seit 3.17.0 „KaiScribe <Version> – Röntgen am Kai“ (vorher „RaKScribe …“; Prozess bleibt rakscribe26)
+# Fenstertitel der EXE seit 3.17.0 „KaiScribe <Version> – Röntgen am Kai“ (vorher „RaKScribe …“). Prozess seit
+# kaiscribe-umzug-n1-exe KaiScribe.exe (Übergangs-Asset rakscribe26.exe ist dieselbe Datei)
 FENSTER = "KaiScribe"
 
 
@@ -84,7 +85,8 @@ def kill_all(p):
     # PyInstaller-onefile: Bootloader + Kindprozess → ganzen Baum beenden, dann warten bis alle Fenster weg sind
     if p is not None:
         subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True)
-    subprocess.run(["taskkill", "/F", "/IM", "rakscribe26.exe"], capture_output=True)
+    for name in ("KaiScribe.exe", "rakscribe26.exe"):
+        subprocess.run(["taskkill", "/F", "/IM", name], capture_output=True)
     t0 = time.time()
     while rks_windows() and time.time() - t0 < 20:
         time.sleep(0.5)
@@ -520,7 +522,10 @@ TESTBEFUND = ("## TEST RaKScribe-Brücke – bitte nicht vidieren\n\n## Befund\n
 
 def rks_prozesse():
     import psutil
-    return [p for p in psutil.process_iter(["name"]) if (p.info["name"] or "").lower().startswith("rakscribe26")]
+    def ist_ks(n):   # wie umzug.ist_kaiscribe_prozess: KaiScribe.exe, Kopien, Übergang rakscribe26.exe
+        n = (n or "").lower()
+        return n == "kaiscribe.exe" or n.startswith(("kaiscribe (", "rakscribe26"))
+    return [p for p in psutil.process_iter(["name"]) if ist_ks(p.info["name"])]
 
 
 def starter_prozesse(skript):
@@ -594,14 +599,14 @@ def fall_g():
     exe = work / EXE.name
     shutil.copy(EXE, exe)
     appdata = work / "appdata"
-    (appdata / "RaKScribe").mkdir(parents=True)
-    (appdata / "RaKScribe" / "rakscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
-    ordner = work / "localappdata" / "RaKScribe"
+    (appdata / "KaiScribe").mkdir(parents=True)
+    (appdata / "KaiScribe" / "kaiscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
+    ordner = work / "localappdata" / "RaKScribe"   # Austausch mit der Brücke bleibt %LOCALAPPDATA%\RaKScribe
     ordner.mkdir(parents=True)
     umg = {"APPDATA": str(appdata), "LOCALAPPDATA": str(work / "localappdata")}
     basis = {k: v for k, v in os.environ.items() if not k.startswith("RAKSCRIBE_")}
-    vbs = appdata / "RaKScribe" / bereitschaft.STARTER
-    starter_log = appdata / "RaKScribe" / bereitschaft.STARTER_LOG
+    vbs = appdata / "KaiScribe" / bereitschaft.STARTER
+    starter_log = appdata / "KaiScribe" / bereitschaft.STARTER_LOG
     G = {"exe": str(exe)}
 
     def ph(state, name, warten=0.0, timeout=30):
@@ -817,6 +822,8 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
         (work / "radiology_prompt_v4.txt").write_text("<role>alter v4-Prompt</role>\n{template_body}\n{roh_text}", encoding="utf-8")
     appdata = work / "appdata"; appdata.mkdir()
     if with_key:
+        # kaiscribe-umzug-n1-exe: Schlüssel liegt wie auf den Befund-PCs bis 3.19 im ALTEN Profilordner – die EXE kopiert ihn
+        # beim Start nach %APPDATA%\KaiScribe\kaiscribe-praxis-key.json (alt bleibt) und muss damit entsperrt sein
         (appdata / "RaKScribe").mkdir()
         (appdata / "RaKScribe" / "rakscribe-praxis-key.json").write_text(json.dumps(dummy_key()), encoding="utf-8")
     state = work / "selftest.json"
@@ -861,6 +868,11 @@ def run_case(case, with_key, demo, send_f10, old_prompt=False, mit_fall_d=False,
                 screenshot(hwnd, OUT / f"{case}_ende.png")
             except Exception:
                 pass
+        if with_key:
+            neu, alt = appdata / "KaiScribe" / "kaiscribe-praxis-key.json", appdata / "RaKScribe" / "rakscribe-praxis-key.json"
+            check(case, "Umzug: Schlüssel aus %APPDATA%\\RaKScribe nach %APPDATA%\\KaiScribe kopiert, alter bleibt",
+                  neu.exists() and alt.exists() and neu.read_bytes() == alt.read_bytes(),
+                  f"neu={neu.exists()} alt={alt.exists()}")
         return {"state": st, "after_f10": after, "fall_d": d, "sm_gesperrt": sm, "fall_e": e, "fall_f": f, "fall_m": mm,
                 "screenshot": f"{case}.png",
                 "size": size, "t_start": round(t_start, 1)}
@@ -1294,8 +1306,8 @@ def fall_w():
     work = pathlib.Path(tempfile.mkdtemp(prefix="rks_W_"))
     shutil.copy(EXE, work / EXE.name)
     appdata = work / "appdata"
-    (appdata / "RaKScribe").mkdir(parents=True)
-    key = work / "schluessel" / "rakscribe-praxis-key.json"
+    (appdata / "KaiScribe").mkdir(parents=True)
+    key = work / "schluessel" / "kaiscribe-praxis-key.json"
     key.parent.mkdir()
     key.write_text(json.dumps(dummy_key()), encoding="utf-8")
     shutil.copy(AUDIO / "ton_440.ogg", work / "diktat.ogg")

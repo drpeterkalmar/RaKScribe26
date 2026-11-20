@@ -1,7 +1,7 @@
 name: Windows UI-Test (EXE)
 
 # Läuft automatisch nach jedem erfolgreichen EXE-Build (oder manuell mit Versions-Tag).
-# Startet die ECHTE rakscribe26.exe aus dem Release auf einem frischen Windows-Rechner,
+# Startet die ECHTE KaiScribe.exe aus dem Release auf einem frischen Windows-Rechner,
 # prüft Sperre / F10 / Entsperren / Befund-Formatierung und dokumentiert das Ergebnis:
 #   - Zusammenfassung im Actions-Lauf (Job Summary)
 #   - Screenshots + report.md als Artefakt
@@ -50,13 +50,15 @@ jobs:
           # neuestes Release inkl. Vorabversion test-<Lauf> (Umbau Schritt 21) = das gerade gebaute
           if [ -z "$TAG" ]; then TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName'); fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          gh release download "$TAG" --pattern rakscribe26.exe --dir exe --clobber
+          # kaiscribe-umzug-n1-exe: KaiScribe.exe + Übergangs-Asset rakscribe26.exe müssen identisch sein
+          gh release download "$TAG" --pattern KaiScribe.exe --pattern rakscribe26.exe --dir exe --clobber
           ls -la exe
+          cmp exe/KaiScribe.exe exe/rakscribe26.exe
 
       - name: UI-Test ausführen
         id: test
         shell: bash
-        run: python tests/windows/exe_ui_test.py exe/rakscribe26.exe ui-report "${{ steps.rel.outputs.tag }}"
+        run: python tests/windows/exe_ui_test.py exe/KaiScribe.exe ui-report "${{ steps.rel.outputs.tag }}"
 
       - name: Ergebnis in Job-Zusammenfassung
         if: always()
@@ -75,7 +77,7 @@ jobs:
         if: always() && hashFiles('ui-report/report.md') != ''
         shell: bash
         run: |
-          # Screenshots bleiben im Actions-Artefakt; als Release-Download nur rakscribe26.exe (Peter: keine Extradateien)
+          # Screenshots bleiben im Actions-Artefakt; als Release-Download nur KaiScribe.exe (+ Übergang rakscribe26.exe), keine Extradateien
           TAG="${{ steps.rel.outputs.tag }}"
           cd ui-report
           OLD=$(gh release view "$TAG" --json body -q .body | sed '/<!-- windows-ui-test -->/,$d')

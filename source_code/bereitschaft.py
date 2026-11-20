@@ -1,20 +1,23 @@
-"""Bereitschaft (v3.11.0, Peter 13.10.2026): RaKScribe wartet minimiert auf das nächste CAS-Diktat — ohne Windows
+"""Bereitschaft (v3.11.0, Peter 13.10.2026): KaiScribe wartet minimiert auf das nächste CAS-Diktat — ohne Windows
 importierbar und testbar (tests/offline/test_bereitschaft.py; echter Ablauf: tests/windows/exe_ui_test.py Fall G).
 
 Peter: „Die EXE braucht immer ein paar Sekunden, um zum ersten Mal in den RAM geladen zu werden. Schön wäre, wenn sie als
 Symbol in der Taskleiste wartet, bis der nächste Befund diktiert werden soll.“
-  Autostart      Menü ☰ „Mit Windows starten (wartet minimiert)“ legt im Benutzer-Autostart RaKScribe.lnk an. Sie startet
-                 NICHT die EXE, sondern den lokalen, unsichtbaren Starter %APPDATA%\\RaKScribe\\warte_auf_x.vbs: X: (dort
+  Autostart      Menü ☰ „Mit Windows starten (wartet minimiert)“ legt im Benutzer-Autostart KaiScribe.lnk an. Sie startet
+                 NICHT die EXE, sondern den lokalen, unsichtbaren Starter %APPDATA%\\KaiScribe\\warte_auf_x.vbs: X: (dort
                  liegt die gemeinsame EXE) gibt es erst nach dem CAS-Login. Der Starter prüft alle 10 s, ob die EXE
-                 erreichbar ist, und startet sie dann mit --minimiert; läuft RaKScribe schon (z. B. von der Brücke
+                 erreichbar ist, und startet sie dann mit --minimiert; läuft KaiScribe schon (z. B. von der Brücke
                  gestartet), tut er nichts; nach 4 h gibt er still auf. Er merkt sich den Pfad der EXE, aus der der Haken
                  gesetzt wurde — keine lokale Kopie der EXE (Updates bleiben „eine Datei auf X: tauschen“).
                  v3.18.12 (Starter 2): meldet sich CAS gerade an, wartet er auf das CAS-Hauptfenster (höchstens 120 s),
-                 dann 15 s Ruhe (CasmedNeu.bat verbindet X: beim CAS-Start neu); läuft RaKScribe 90 s nach dem Start
+                 dann 15 s Ruhe (CasmedNeu.bat verbindet X: beim CAS-Start neu); läuft KaiScribe 90 s nach dem Start
                  nicht, startet er sie bis zu 3× neu. Jeder Schritt steht in starter.log.
-  Einzelinstanz  Benannter Mutex je Windows-Sitzung. Ein zweiter Start holt die laufende RaKScribe nach vorne (Datei
+  Einzelinstanz  Benannter Mutex je Windows-Sitzung. Ein zweiter Start holt die laufende KaiScribe nach vorne (Datei
                  nach_vorne.json, die Oberfläche prüft sie im CAS-Takt) und beendet sich; mit --minimiert endet er still.
 Wahrheit für „Autostart an“ ist die Verknüpfung im Autostart-Ordner (was dort liegt, startet Windows).
+  Umzug          kaiscribe-umzug-n1-exe (20.11.2026): Verknüpfung bis 3.19 „RaKScribe.lnk“ → beim Start (nachziehen) durch
+                 KaiScribe.lnk ersetzt; der Starter erkennt KaiScribe.exe und rakscribe26.exe. Der Mutex bleibt gleich,
+                 damit alte und neue EXE nie zugleich in einer Sitzung laufen.
 """
 import ntpath
 import os
@@ -23,13 +26,15 @@ import sys
 import time
 
 import cas_auftrag as _cas  # gleicher Ordner und gleiche atomaren JSON-Dateien wie der CAS-Auftrag
+import umzug as _umzug  # kaiscribe-umzug-n1-exe: Prozessnamen alt + neu
 
 MINIMIERT = "--minimiert"
 STARTER = "warte_auf_x.vbs"
-VERKNUEPFUNG = "RaKScribe.lnk"
+VERKNUEPFUNG = "KaiScribe.lnk"
+ALT_VERKNUEPFUNG = "RaKScribe.lnk"        # bis 3.19; nachziehen() ersetzt sie durch KaiScribe.lnk
 HILFSSKRIPT = "verknuepfung_anlegen.vbs"
 STARTER_LOG = "starter.log"
-STARTER_KENNUNG = "RaKScribe-Starter 2"   # Vorlagen-Stand: ändert sich die Vorlage, zieht RaKScribe den Starter nach
+STARTER_KENNUNG = "KaiScribe-Starter 3"   # Vorlagen-Stand: ändert sich die Vorlage, zieht KaiScribe den Starter nach
 TAKT_S = 10
 FRIST_S = 4 * 3600
 # v3.18.12 (Starter 2, Büro-PC-Neustart 14.11.2026): rakscribe26 startete 13:40:23 von X:, eine Sekunde danach verband der
@@ -41,7 +46,7 @@ CAS_MAX_S = 120
 RUHE_S = 15
 PRUEF_S = 90
 NACHSTARTS = 3
-PROZESS_PRAEFIX = "rakscribe26"           # wie die Brücke (windows.prozesse): trifft auch „rakscribe26 (1).exe“
+PROZESS_MUSTER = _umzug.PROZESS_MUSTER   # KaiScribe.exe, „KaiScribe (1).exe“, rakscribe26*.exe (wie die Brücke)
 MUTEX = "Local\\RaKScribe26-Einzelinstanz"
 SIGNAL = "nach_vorne.json"
 SIGNAL_MAX_ALTER_S = 60
@@ -132,15 +137,15 @@ def _cas_ps():
 def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s=RUHE_S, pruef_s=PRUEF_S,
                 nachstarts=NACHSTARTS):
     """Der lokale Starter. Nur der EXE-Pfad (+ Zeiten für Tests) ist veränderlich — gleicher Pfad = gleicher Text."""
-    wql = (f"SELECT * FROM Win32_Process WHERE Name LIKE '{PROZESS_PRAEFIX}%' "
-           f"OR Name = '{_wql(ntpath.basename(exe))}'")
+    wql = ("SELECT * FROM Win32_Process WHERE " + " OR ".join(f"Name LIKE '{_wql(m)}'" for m in PROZESS_MUSTER)
+           + f" OR Name = '{_wql(ntpath.basename(exe))}'")
     ps = ("powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -Command "
           f'"{_cas_ps()}"')
     zeilen = [
-        f"' {STARTER_KENNUNG} – angelegt von RaKScribe (Menü ☰ „Mit Windows starten (wartet minimiert)“).",
+        f"' {STARTER_KENNUNG} – angelegt von KaiScribe (Menü ☰ „Mit Windows starten (wartet minimiert)“).",
         "' Nicht von Hand ändern: Haken im Menü aus = diese Datei und die Verknüpfung im Autostart werden gelöscht.",
-        "' Wartet nach der Windows-Anmeldung, bis die RaKScribe-EXE erreichbar ist (X: gibt es erst nach dem CAS-Login),",
-        "' und startet sie dann minimiert (nur Symbol in der Taskleiste). Läuft RaKScribe schon: nichts tun.",
+        "' Wartet nach der Windows-Anmeldung, bis die KaiScribe-EXE erreichbar ist (X: gibt es erst nach dem CAS-Login),",
+        "' und startet sie dann minimiert (nur Symbol in der Taskleiste). Läuft KaiScribe schon: nichts tun.",
         f"' Meldet sich CAS gerade an (CAS läuft, Hauptfenster „{CAS_FENSTER}“ noch nicht da): bis {_dauer(cas_max_s)} warten,",
         f"' danach {_dauer(ruhe_s)} Ruhe – CasmedNeu.bat trennt X: beim CAS-Start und verbindet neu (net use x: /d /y).",
         f"' Läuft KaiScribe {_dauer(pruef_s)} nach dem Start nicht: bis {nachstarts}× neu starten.",
@@ -162,19 +167,19 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
         "versuch = 0",
         "Do",
         "  WarteAufExe",
-        "  If RaKScribeLaeuft() Then",
+        "  If KaiScribeLaeuft() Then",
         "    If versuch = 0 Then",
-        '      Notiz "RaKScribe läuft schon – nichts zu tun"',
+        '      Notiz "KaiScribe läuft schon – nichts zu tun"',
         "    Else",
-        '      Notiz "RaKScribe läuft inzwischen – nichts zu tun"',
+        '      Notiz "KaiScribe läuft inzwischen – nichts zu tun"',
         "    End If",
         "    WScript.Quit 0",
         "  End If",
         "  WarteAufCas",
         "  WScript.Sleep RUHE_S * 1000",
         "  WarteAufExe",
-        "  If RaKScribeLaeuft() Then",
-        '    Notiz "RaKScribe läuft inzwischen – nichts zu tun"',
+        "  If KaiScribeLaeuft() Then",
+        '    Notiz "KaiScribe läuft inzwischen – nichts zu tun"',
         "    WScript.Quit 0",
         "  End If",
         "  On Error Resume Next",
@@ -188,7 +193,7 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
         "  End If",
         "  On Error GoTo 0",
         "  WScript.Sleep PRUEF_S * 1000",
-        "  If RaKScribeLaeuft() Then",
+        "  If KaiScribeLaeuft() Then",
         '    Notiz "läuft " & PRUEF_S & " s nach dem Start" & Versuchstext()',
         "    WScript.Quit 0",
         "  End If",
@@ -259,10 +264,10 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
         '  If versuch > 0 Then Versuchstext = " (Nachstart " & versuch & "/" & NACHSTARTS & ")"',
         "End Function",
         "",
-        "Function RaKScribeLaeuft()",
+        "Function KaiScribeLaeuft()",
         "  ' nur Prozesse dieses Benutzers; im Zweifel False — dann verhindert die EXE selbst eine zweite Instanz",
         "  Dim wmi, p, rc, benutzer, domaene, ich",
-        "  RaKScribeLaeuft = False",
+        "  KaiScribeLaeuft = False",
         "  On Error Resume Next",
         '  ich = ""',
         '  ich = LCase(CreateObject("WScript.Network").UserName)',
@@ -272,7 +277,7 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
         '    benutzer = ""',
         "    rc = -1",
         "    rc = p.GetOwner(benutzer, domaene)",
-        '    If rc = 0 And ich <> "" And LCase(benutzer) = ich Then RaKScribeLaeuft = True',
+        '    If rc = 0 And ich <> "" And LCase(benutzer) = ich Then KaiScribeLaeuft = True',
         "  Next",
         "End Function",
         "",
@@ -294,7 +299,7 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
 def verknuepfung_vbs(lnk, ziel, argumente, arbeitsordner, symbol=None, beschreibung=BESCHREIBUNG):
     """Einmal-Skript: Verknüpfung über WScript.Shell anlegen (Rückgabe 0 = gespeichert)."""
     zeilen = [
-        "' RaKScribe: Autostart-Verknüpfung anlegen (läuft einmal, wird danach gelöscht)",
+        "' KaiScribe: Autostart-Verknüpfung anlegen (läuft einmal, wird danach gelöscht)",
         "Option Explicit",
         "Dim sh, v",
         "On Error Resume Next",
@@ -355,7 +360,7 @@ class Autostart:
 
     def __init__(self, daten_ordner, startup_ordner=None, log=None, ausfuehren=None, wscript=None,
                  existiert=os.path.exists, ordner_da=os.path.isdir):
-        self.daten_ordner = daten_ordner                              # %APPDATA%\RaKScribe (wie Schlüssel/Einstellungen)
+        self.daten_ordner = daten_ordner                              # %APPDATA%\KaiScribe (wie Schlüssel/Einstellungen)
         self.ordner = startup_ordner or autostart_ordner()
         self.log = log or (lambda *a: None)
         self.wscript = wscript or wscript_pfad()
@@ -367,11 +372,15 @@ class Autostart:
         return os.path.join(self.ordner, VERKNUEPFUNG)
 
     @property
+    def alt_lnk(self):
+        return os.path.join(self.ordner, ALT_VERKNUEPFUNG)
+
+    @property
     def starter(self):
         return os.path.join(self.daten_ordner, STARTER)
 
     def an(self):
-        return os.path.exists(self.lnk)
+        return os.path.exists(self.lnk) or os.path.exists(self.alt_lnk)
 
     def _starter_text(self):
         try:
@@ -388,6 +397,7 @@ class Autostart:
         if not exe:
             return False, "Autostart gibt es nur in der EXE (nicht beim Start aus dem Quelltext)."
         hilfe = os.path.join(self.daten_ordner, HILFSSKRIPT)
+        alt_da = os.path.exists(self.alt_lnk)
         code, fehler = None, ""
         try:
             vbs_schreiben(self.starter, starter_vbs(exe))
@@ -400,17 +410,19 @@ class Autostart:
             fehler = f": {e}"
         finally:
             _weg(hilfe)
-        if not self.an():
-            _weg(self.starter)
+        if not os.path.exists(self.lnk):
+            if not alt_da:
+                _weg(self.starter)
             return False, ("Autostart konnte nicht eingerichtet werden — die Verknüpfung im Autostart-Ordner fehlt "
                            f"(Windows Script Host gesperrt?, Rückgabe {code}{fehler}).")
+        _weg(self.alt_lnk)   # bis 3.19: RaKScribe.lnk → zeigte auf den Starter im alten Ordner; sonst zwei Starter
         self.log(f"[AUTOSTART] an: {self.lnk} → {self.starter} → {exe} {MINIMIERT}")
         return True, f"Autostart an – nach der Windows-Anmeldung wartet KaiScribe minimiert ({ntpath.basename(exe)})"
 
     def entfernen(self):
         """Haken aus: Verknüpfung und Starter löschen (ein noch wartender Starter endet beim nächsten Takt)."""
         fehler = []
-        for p in (self.lnk, self.starter):
+        for p in (self.lnk, self.alt_lnk, self.starter):
             try:
                 os.remove(p)
             except FileNotFoundError:
@@ -430,6 +442,14 @@ class Autostart:
         if not exe_jetzt or not self.an():
             return None
         text = self._starter_text()
+        if not os.path.exists(self.lnk):
+            # kaiscribe-umzug-n1-exe: nur die alte RaKScribe.lnk da → KaiScribe.lnk + Starter im neuen Ordner (Ziel wie gemerkt)
+            gemerkt = starter_exe_lesen(text)
+            ziel = gemerkt if gemerkt and (self.existiert(gemerkt) or not self.ordner_da(ntpath.dirname(gemerkt))) \
+                else exe_jetzt
+            ok, meldung = self.einrichten(ziel)
+            return (f"[AUTOSTART] umgestellt: {ALT_VERKNUEPFUNG} → {VERKNUEPFUNG} ({ziel})" if ok
+                    else f"[AUTOSTART] Umstellung {ALT_VERKNUEPFUNG} → {VERKNUEPFUNG} gescheitert: {meldung}")
         gemerkt = starter_exe_lesen(text)
         ziel = gemerkt or exe_jetzt
         umgezogen = bool(gemerkt) and not gleicher_pfad(gemerkt, exe_jetzt) and not self.existiert(gemerkt) \
@@ -452,7 +472,7 @@ _MUTEX = []
 
 
 def einzelinstanz_sichern(name=MUTEX):
-    """True = diese RaKScribe ist die erste in dieser Windows-Sitzung (Mutex gehört ihr bis zum Prozessende), False =
+    """True = diese KaiScribe ist die erste in dieser Windows-Sitzung (Mutex gehört ihr bis zum Prozessende), False =
     läuft schon. Außerhalb von Windows (Tests) immer True; kann der Mutex nicht angelegt werden: lieber starten."""
     try:
         import ctypes
@@ -475,7 +495,7 @@ def einzelinstanz_sichern(name=MUTEX):
 
 
 def vordergrund_erlauben():
-    """Wir wurden gerade vom Benutzer gestartet und dürfen nach vorne — dieses Recht der laufenden RaKScribe geben
+    """Wir wurden gerade vom Benutzer gestartet und dürfen nach vorne — dieses Recht der laufenden KaiScribe geben
     (wie die Brücke: AllowSetForegroundWindow(ASFW_ANY))."""
     try:
         import ctypes
@@ -485,7 +505,7 @@ def vordergrund_erlauben():
 
 
 def nach_vorne_bitten(ordner, exe=None, version="?", pid=None, jetzt=time.time):
-    """Zweiter Start: die laufende RaKScribe bitten, sich nach vorne zu holen (sie prüft alle 0,5 s im CAS-Takt)."""
+    """Zweiter Start: die laufende KaiScribe bitten, sich nach vorne zu holen (sie prüft alle 0,5 s im CAS-Takt)."""
     _cas._json_schreiben(os.path.join(ordner, SIGNAL), {"pid": os.getpid() if pid is None else pid, "exe": exe,
                                                          "version": version, "zeit": jetzt()})
     vordergrund_erlauben()

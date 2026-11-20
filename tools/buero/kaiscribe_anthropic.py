@@ -201,8 +201,11 @@ def befund_aus_zustand(z):
 
 
 def ist_produktions_exe(pfad):
+    """Die gemeinsame EXE auf X: — alter und neuer Ordner, alter und neuer Name (kaiscribe-umzug-n1-exe)."""
     import ntpath
-    return ntpath.normcase(ntpath.normpath(pfad)) == ntpath.normcase(ntpath.join(X, "rakscribe26.exe"))
+    echt = {ntpath.normcase(ntpath.join(o, n)) for o in ("X:\\RaKScribe", "X:\\KaiScribe")
+            for n in ("rakscribe26.exe", "KaiScribe.exe")}
+    return ntpath.normcase(ntpath.normpath(pfad)) in echt
 
 
 def cmd_probe(a):

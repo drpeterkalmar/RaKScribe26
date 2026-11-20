@@ -1,4 +1,4 @@
-## RaKScribe (Windows-EXE) - (c) 2025-2026 Dr. Peter Kalmar - Licensed under GPLv3
+## KaiScribe (Windows-EXE, bis 3.19 „RaKScribe“) - (c) 2025-2026 Dr. Peter Kalmar - Licensed under GPLv3
 # Diktat → strukturierter Befund. STT: Google Streaming (Live-Anzeige) + chirp_3 (Endtext); LLM: Gemini 3.5 Flash (EU).
 # Diese Datei = Oberfläche + main() (Umbau 06.10.2026). Logik ohne UI in: config, keys, detect, stt, gemini, pipeline,
 # aufnahme, jobstate, clipboard_win, befund_regeln, normalbypass, misheard. Beim Import passiert nichts (init_runtime).
@@ -44,6 +44,7 @@ import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke 
 import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
 import maske as _mk  # v3.15.0: Mammo-Maske — Felder per SpeechMike-Taste, Vorbefund schon eingetragen (ohne KI)
 import audiodatei as _ad  # v3.16.0: „Audio laden“ + WAV-Modus (Audio-Datei statt Mikrofon, echtes STT + Gemini)
+import umzug as _umzug  # kaiscribe-umzug-n1-exe: %APPDATA%\\RaKScribe → KaiScribe, X:\\KaiScribe vor X:\\RaKScribe
 
 # =========================================================================
 # === PFAD-LOGIK ===
@@ -59,6 +60,8 @@ else:
     RESOURCES_DIR = BASE_DIR
 
 # --- LOGGING SYSTEM ---
+# kaiscribe-umzug-n1-exe: Dateiname bleibt rakscribe.log – die Abnahme-Werkzeuge (ris-mods Teststrecke, diktat_e2e,
+# mammo_probe) lesen ihn neben der EXE; Umbenennen erst zusammen mit ihnen.
 LOG_FILE_PATH = os.path.join(BASE_DIR, 'rakscribe.log')
 
 def log(*args):
@@ -116,14 +119,16 @@ LLM_MODEL = CFG.llm_model
 API_KEY = CFG.api_key
 
 # --- STT Engines Initialisierungs-Logik ---
-# Schlüssel: seit v3.2.3 ausschließlich rakscribe-praxis-key.json (Gemini + STT in EINER Datei).
+# Schlüssel: seit v3.2.3 ausschließlich der Praxis-Schlüssel (Gemini + STT in EINER Datei): kaiscribe-praxis-key.json,
+# Rückfall rakscribe-praxis-key.json (keys.py). USER_KEY_DIR = %APPDATA%\\KaiScribe — init_runtime() setzt ihn nach dem
+# einmaligen Kopieren aus %APPDATA%\\RaKScribe neu (umzug.py).
 _read_text_robust = _keys.read_text_robust
 USER_KEY_DIR, USER_KEY_PATH = _keys.user_key_paths()
 
 
 def _schluessel_benutzerpfad():
-    """v3.16.0: im WAV-Modus darf --schluessel auf eine vorhandene rakscribe-praxis-key.json zeigen (nur gelesen, nie
-    kopiert oder gelöscht); sonst der per Menü geladene Schlüssel in %APPDATA%\\RaKScribe wie bisher."""
+    """v3.16.0: im WAV-Modus darf --schluessel auf eine vorhandene Schlüsseldatei zeigen (nur gelesen, nie kopiert
+    oder gelöscht); sonst der per Menü geladene Schlüssel in %APPDATA%\\KaiScribe wie bisher."""
     extra = os.environ.get("RAKSCRIBE_WAV_SCHLUESSEL") if wav_modus() else None
     return extra if extra else USER_KEY_PATH
 
@@ -133,7 +138,7 @@ def _praxis_key_path():
 
 
 def _load_praxis_key():
-    """(gemini_key, stt_dict) aus rakscribe-praxis-key.json (keys.py)."""
+    """(gemini_key, stt_dict) aus dem Praxis-Schlüssel (keys.py)."""
     return _keys.load_praxis_key(BASE_DIR, _schluessel_benutzerpfad(), log=print)
 
 
@@ -154,12 +159,12 @@ def init_google_speech():
     if not google_speech_available:
         print("[INIT] Google Cloud Speech Bibliotheken nicht installiert.")
         return False
-    # v3.2.3 (Peter 06.10.): STT-Schlüssel NUR aus rakscribe-praxis-key.json. Die alten Einzeldateien
+    # v3.2.3 (Peter 06.10.): STT-Schlüssel NUR aus dem Praxis-Schlüssel (keys.py). Die alten Einzeldateien
     # (rakscribe-stt-key.json/.b64, config.ini GOOGLE_JSON_FILENAME) sind rotiert und werden nicht mehr gelesen.
     global _SA_CREDENTIALS
     _gk, _pstt = _load_praxis_key()
     if not _pstt:
-        print("[INIT] Keine STT-Credentials: rakscribe-praxis-key.json fehlt (neben der EXE oder per Menü laden).")
+        print(f"[INIT] Keine STT-Credentials: {_keys.PRAXIS_KEY_NAME} fehlt (neben der EXE oder per Menü laden).")
         return False
     credentials = _keys.stt_credentials(_pstt)
     _SA_CREDENTIALS = credentials
@@ -205,7 +210,7 @@ def _init_llm():
             if _load_vertex_key():
                 print(f"[INIT] Gemini-Client via Vertex AI API-Key konfiguriert (Modell: {LLM_MODEL}) [OK]")
             else:
-                print("[WARN] Kein Gemini-Key — rakscribe-praxis-key.json laden.")
+                print(f"[WARN] Kein Gemini-Key — {_keys.PRAXIS_KEY_NAME} laden.")
         elif LLM_PROVIDER == 'openai':
             key = API_KEY if API_KEY else os.environ.get("OPENAI_API_KEY", "")
             if not key:
@@ -464,7 +469,7 @@ _chirp3_worker = _stt.chirp3_worker
 
 def _ki_weiche(anbieter):
     """kaiscribe-haiku-ab-n1: Anbieter-Weiche (llm_anbieter.py). gemini = wie bisher; anthropic = maskiert, Anthropic-
-    Schlüssel aus rakscribe-praxis-key.json (anthropic_api_key), jedes Problem → dieser Befund über Gemini."""
+    Schlüssel aus dem Praxis-Schlüssel (anthropic_api_key), jedes Problem → dieser Befund über Gemini."""
     return _la.Weiche(anbieter, CFG.anthropic_modell, log=print, frist=CFG.anthropic_frist,
                       beobachter=lambda info: NUTZUNG is not None and NUTZUNG.ki(info),
                       gemini_fn=lambda p, s: _gem.generate(p, s, _load_vertex_key(), log=print),
@@ -547,7 +552,7 @@ def _pipeline_kontext(cas=None, ibl=None):
                        cas=cas, ibl=ibl)
 
 
-# v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — Einstellung überlebt Neustart und Update (%APPDATA%\\RaKScribe)
+# v3.4.0 (Peter 07.10.): Schalter „Nur Text“ — Einstellung überlebt Neustart und Update (%APPDATA%\\KaiScribe)
 def _einstellungen_pfad():
     return os.path.join(USER_KEY_DIR, "einstellungen.json")
 
@@ -649,8 +654,8 @@ def _kurzpfad(pfad, n=64):
 
 
 GEMINI_401_TEXT = ("Gemini: HTTP 401 — der Praxis-Schlüssel ist ungültig oder veraltet.\n\n"
-                   "Bitte die aktuelle rakscribe-praxis-key.json aus dem Drive-Ordner RaKScribe\n"
-                   "über Menü → „Schlüssel-Datei laden…“ neu laden.")
+                   "Bitte den aktuellen Praxis-Schlüssel (kaiscribe-praxis-key.json, früher\n"
+                   "rakscribe-praxis-key.json, Praxis-Drive) über Menü → „Schlüssel-Datei laden…“ neu laden.")
 def _fokus_ist_eigenes_fenster():
     """True, wenn das Vordergrundfenster zu RaKScribe selbst gehört (v3.3.2, Gutachten P3-4: Strg+V landete dann
     als zweite Kopie in der eigenen Befund-Box statt im RIS). Außerhalb von Windows immer False."""
@@ -774,7 +779,7 @@ def types_ns(**k):
 
 
 def wav_modus():
-    """v3.16.0: WAV-Modus (rakscribe26.exe --wav-ablauf <ablauf.json>): Audio-Dateien statt Mikrofon, Tasten aus dem
+    """v3.16.0: WAV-Modus (KaiScribe.exe --wav-ablauf <ablauf.json>): Audio-Dateien statt Mikrofon, Tasten aus dem
     Ablaufskript, echtes Google-STT + Gemini. Nur zusammen mit dem Selbsttest-Gerüst (RAKSCRIBE_SELFTEST) — immer Gast."""
     return bool(os.environ.get("RAKSCRIBE_WAV_ABLAUF")) and bool(os.environ.get("RAKSCRIBE_SELFTEST"))
 
@@ -1155,7 +1160,7 @@ class RaKScribeApp(ctk.CTk):
         self.after(150, self.refresh_key_state)
         self.after(400, self._selftest_hook)
         # Umbau Schritt 24 (Gutachten P3-4): Hinweis auf die alte Prompt-Datei nur EINMAL je Datei/Version
-        # (Merker in %APPDATA%\\RaKScribe), nicht bei jedem Start
+        # (Merker in %APPDATA%\\KaiScribe), nicht bei jedem Start
         if PROMPT_HINWEIS and not os.environ.get("RAKSCRIBE_SELFTEST"):
             self.after(1200, self._prompt_hinweis)
 
@@ -1940,7 +1945,7 @@ class RaKScribeApp(ctk.CTk):
         m = tk.Menu(self, tearoff=0, bg=BGC_ELEV, fg=TEXT_PRIMARY, activebackground=BGC_CARD,
                     activeforeground="#FFFFFF", selectcolor=MENU_HAKEN, bd=0, font=(UI_FONT, 11))
         m.add_command(label="Schlüssel-Datei laden…", command=self.load_key_dialog)
-        if _praxis_key_path() == USER_KEY_PATH:
+        if _praxis_key_path() in _keys.benutzer_schluessel(USER_KEY_PATH):
             m.add_command(label="Gespeicherten Schlüssel entfernen", command=self.remove_user_key)
         m.add_separator()
         m.add_checkbutton(label="Diktat in den Befund: Satzanfang groß", variable=self.gross_satzanfang_var,
@@ -1994,7 +1999,7 @@ class RaKScribeApp(ctk.CTk):
     def load_key_dialog(self):
         from tkinter import filedialog
         import shutil
-        path = filedialog.askopenfilename(title="rakscribe-praxis-key.json wählen",
+        path = filedialog.askopenfilename(title="Praxis-Schlüssel wählen (kaiscribe-praxis-key.json)",
                                           filetypes=[("Praxis-Schlüssel", "*.json"), ("Alle Dateien", "*.*")])
         if not path:
             return
@@ -2006,7 +2011,8 @@ class RaKScribeApp(ctk.CTk):
             shutil.copyfile(path, USER_KEY_PATH)
         except Exception as e:
             messagebox.showerror("Schlüssel nicht erkannt",
-                                 "Bitte rakscribe-praxis-key.json aus dem Drive-Ordner „RaKScribe“ wählen.\n\n"
+                                 "Bitte kaiscribe-praxis-key.json (früher rakscribe-praxis-key.json) aus dem "
+                                 "Praxis-Drive wählen.\n\n"
                                  f"Details: {e}")
             return
         global speech_client
@@ -2020,10 +2026,11 @@ class RaKScribeApp(ctk.CTk):
     def remove_user_key(self):
         if not messagebox.askyesno("Schlüssel entfernen", "Gespeicherten Praxis-Schlüssel entfernen?"):
             return
-        try:
-            os.remove(USER_KEY_PATH)
-        except Exception:
-            pass
+        for p in _keys.benutzer_schluessel(USER_KEY_PATH):   # neuer und alter Name im Benutzer-Ordner
+            try:
+                os.remove(p)
+            except Exception:
+                pass
         global speech_client, _SA_CREDENTIALS
         speech_client = None
         _SA_CREDENTIALS = None
@@ -2062,7 +2069,7 @@ class RaKScribeApp(ctk.CTk):
         ctk.CTkLabel(box, text="Praxis-Schlüssel laden", font=(UI_FONT, 20, "bold"),
                      text_color=TEXT_PRIMARY).pack()
         ctk.CTkLabel(box, text="KaiScribe ist gesperrt, bis der Schlüssel geladen ist.\n"
-                               "Datei: rakscribe-praxis-key.json (Drive-Ordner „RaKScribe“)",
+                               "Datei: kaiscribe-praxis-key.json (früher rakscribe-praxis-key.json)",
                      font=(UI_FONT, 13), text_color=TEXT_MUTED, justify="center").pack(pady=(8, 18))
         ctk.CTkButton(box, text="Schlüssel-Datei wählen…", height=46, width=320, corner_radius=10,
                       font=(UI_FONT, 14, "bold"), fg_color=ACCENT_PURPLE, hover_color=ACCENT_HOVER,
@@ -2890,7 +2897,7 @@ class RaKScribeApp(ctk.CTk):
     def _einfuegen(self):
         """Strg+V ins Vordergrundfenster — außer RaKScribe selbst hat den Fokus (dann liegt der Befund nur kopiert bereit)."""
         if _fokus_ist_eigenes_fenster():
-            log("[PASTE] RaKScribe selbst im Vordergrund — kein Strg+V, Befund liegt in der Zwischenablage.")
+            log("[PASTE] KaiScribe selbst im Vordergrund — kein Strg+V, Befund liegt in der Zwischenablage.")
             self.status_badge.configure(text="   ●  Befund kopiert — im RIS mit Strg+V einfügen   ", text_color=TEXT_PRIMARY)
             return
         self._strg_v()
@@ -3357,7 +3364,7 @@ class RaKScribeApp(ctk.CTk):
 
         def schreiben():
             try:
-                pfad = _cas.lauf_schreiben(ordner, daten)
+                pfad = _cas.lauf_schreiben(_umzug.x_pfad(ordner), daten)   # X:\\KaiScribe vor X:\\RaKScribe
                 if pfad:
                     log(f"[LAUF] protokolliert: {os.path.basename(pfad)}")
             except Exception as e:
@@ -4600,8 +4607,16 @@ def init_runtime():
     LLM-Client, Befund-Prompt, Fehlhör-Liste, Vorlagen — in dieser Reihenfolge wie bisher beim Import."""
     global google_speech_available, speech, CFG, LLM_PROVIDER, LLM_MODEL, API_KEY, KI_GEN, KI_KORR, NUTZUNG
     global INITIAL_PROMPT_CONTENT, RAG_BEISPIELE, RADIOLOGY_TEMPLATES, DISPLAY_NAMES, MASKEN, MASKE_TASTEN, MASKE_TASTEN_AMBIENT
-    log(f"--- RaKScribe26 Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
+    global USER_KEY_DIR, USER_KEY_PATH
+    log(f"--- KaiScribe Startup (Frozen: {getattr(sys, 'frozen', False)}) ---")
     log(f"BASE_DIR: {BASE_DIR}")
+    # kaiscribe-umzug-n1-exe: %APPDATA%\\RaKScribe einmalig nach %APPDATA%\\KaiScribe kopieren (alt bleibt), danach neu lesen
+    try:
+        _umzug.benutzer_daten_uebernehmen(log=log)
+    except Exception:
+        log_exception("[UMZUG] Benutzer-Daten")
+    USER_KEY_DIR, USER_KEY_PATH = _keys.user_key_paths()
+    log(f"Benutzer-Ordner: {USER_KEY_DIR}")
     log(f"RESOURCES_DIR: {RESOURCES_DIR}")
     # Google Cloud Imports (optional, dynamically checked)
     try:
@@ -4628,14 +4643,15 @@ def init_runtime():
     # kaiscribe-sonnet-n2: Zähler je PC/Monat neben dem Lauf-Protokoll; Selbsttest/WAV-Modus und Tests (nicht Windows)
     # zählen nie
     if os.name == "nt" and not os.environ.get("RAKSCRIBE_SELFTEST"):
-        NUTZUNG = _nutz.Zaehler(_nutz.ordner_aus(CFG.lauf_ordner))
+        # X:\\KaiScribe vor X:\\RaKScribe — erst beim Schreiben auflösen (X: fehlt beim Start oft noch)
+        NUTZUNG = _nutz.Zaehler(lambda: _umzug.x_pfad(_nutz.ordner_aus(CFG.lauf_ordner)))
         _stt.ZAEHLER = NUTZUNG.stt
         _af.ZAEHLER = lambda s: NUTZUNG.stt(s, "streaming")   # sonnet-n3-beleg: Live-Anzeige kostet bei Google auch
         print(f"[INIT] Nutzungszähler: {NUTZUNG.ordner} ({NUTZUNG.pc})")
     if KI_GEN.anbieter != "gemini" or KI_KORR.anbieter != "gemini":
         print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, Rückfall Gemini"
               + ("" if _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad()) else
-                 " (WARNUNG: anthropic_api_key fehlt in rakscribe-praxis-key.json → alles über Gemini)"))
+                 " (WARNUNG: anthropic_api_key fehlt im Praxis-Schlüssel → alles über Gemini)"))
     # Initialisiere die Google Cloud Speech Engine beim Start
     if not init_google_speech():
         print("[INIT] Warnung: Google STT konnte beim Start nicht initialisiert werden.")
@@ -4692,7 +4708,7 @@ def main():
         try:
             if not minimiert:
                 _bs.nach_vorne_bitten(_cas.ordner_standard(), exe=_bs.exe_pfad(), version=app_version())
-            log("[START] RaKScribe läuft schon – " + ("Autostart: nichts zu tun." if minimiert
+            log("[START] KaiScribe läuft schon – " + ("Autostart: nichts zu tun." if minimiert
                                                        else "das laufende Fenster wird nach vorne geholt."))
         except Exception:
             log_exception("[START] Zweiter Start")

@@ -41,8 +41,9 @@ check("Starter: Takt 10 s, Frist 4 h", "Const TAKT_S = 10\r\n" in st and "Const 
       and "WScript.Sleep TAKT_S * 1000" in st and 'DateDiff("s", runde, Now) >= FRIST_S' in st)
 check("Starter: startet minimiert ohne Fokus (--minimiert, Fensterstil 7, nicht warten)",
       'sh.Run """" & EXE & """ --minimiert", 7, False' in st)
-check("Starter: prüft vor dem Start, ob RaKScribe schon läuft (Name wie die Brücke, nur eigener Benutzer)",
-      "If RaKScribeLaeuft() Then" in st and "Name LIKE 'rakscribe26%' OR Name = 'rakscribe26.exe'" in st
+check("Starter: prüft vor dem Start, ob KaiScribe schon läuft (KaiScribe.exe + Übergang rakscribe26, nur eigener Benutzer)",
+      "If KaiScribeLaeuft() Then" in st and ("WHERE Name LIKE 'KaiScribe.exe' OR Name LIKE 'KaiScribe (%' "
+                                             "OR Name LIKE 'rakscribe26%' OR Name = 'rakscribe26.exe'") in st
       and "p.GetOwner(benutzer, domaene)" in st and 'CreateObject("WScript.Network").UserName' in st)
 check("Starter: endet, wenn der Haken aus ist (Skript gelöscht)", "If Not fso.FileExists(WScript.ScriptFullName) Then" in st)
 check("Starter: keine Kopie der EXE, außer der EXE nur die CAS-Abfrage (PowerShell, unsichtbar, wartet)",
@@ -50,7 +51,7 @@ check("Starter: keine Kopie der EXE, außer der EXE nur die CAS-Abfrage (PowerSh
       and 'Const CAS_PS = "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden' in st)
 # v3.18.12 Starter 2 (Büro-PC-Neustart 14.11.: X: wurde 1 s nach dem Start neu verbunden, KaiScribe war weg)
 check("Starter 2: Kennung, CAS höchstens 120 s, 15 s Ruhe, Prüfung nach 90 s, bis 3 Nachstarts",
-      st.startswith("' RaKScribe-Starter 2 ") and "Const CAS_MAX_S = 120\r\n" in st and "Const RUHE_S = 15\r\n" in st
+      st.startswith("' KaiScribe-Starter 3 ") and "Const CAS_MAX_S = 120\r\n" in st and "Const RUHE_S = 15\r\n" in st
       and "Const PRUEF_S = 90\r\n" in st and "Const NACHSTARTS = 3\r\n" in st)
 ps = bs._cas_ps()
 check("CAS-Abfrage: nur eigene Sitzung, CasMed/Cas, Hauptfenster „CAS - *“, Rückgabe 0/1/2, ohne doppelte Anführungszeichen",
@@ -59,9 +60,9 @@ check("CAS-Abfrage: nur eigene Sitzung, CasMed/Cas, Hauptfenster „CAS - *“, 
       and 'Const CAS_PS = "' + bs._vbs("powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden "
                                         '-Command "' + ps + '"') + '"' in st)
 check("Starter 2: Ablauf EXE da → läuft schon? → CAS abwarten → Ruhe → EXE noch da? → Start → Prüfung",
-      re.search(r"Do\r\n  WarteAufExe\r\n  If RaKScribeLaeuft\(\) Then\r\n.*?  WarteAufCas\r\n  WScript\.Sleep RUHE_S \* 1000\r\n"
-                r"  WarteAufExe\r\n  If RaKScribeLaeuft\(\) Then\r\n.*?sh\.Run .*?WScript\.Sleep PRUEF_S \* 1000\r\n"
-                r"  If RaKScribeLaeuft\(\) Then\r\n.*?versuch = versuch \+ 1\r\n  If versuch > NACHSTARTS Then", st, re.S)
+      re.search(r"Do\r\n  WarteAufExe\r\n  If KaiScribeLaeuft\(\) Then\r\n.*?  WarteAufCas\r\n  WScript\.Sleep RUHE_S \* 1000\r\n"
+                r"  WarteAufExe\r\n  If KaiScribeLaeuft\(\) Then\r\n.*?sh\.Run .*?WScript\.Sleep PRUEF_S \* 1000\r\n"
+                r"  If KaiScribeLaeuft\(\) Then\r\n.*?versuch = versuch \+ 1\r\n  If versuch > NACHSTARTS Then", st, re.S)
       is not None)
 check("Starter 2: Protokollzeilen für CAS-Warten, Prüfung, Nachstart, Aufgeben",
       all(t in st for t in ('"CAS meldet sich gerade an – warte auf das Hauptfenster (höchstens " & CAS_MAX_S & " s)"',
@@ -69,7 +70,11 @@ check("Starter 2: Protokollzeilen für CAS-Warten, Prüfung, Nachstart, Aufgeben
                             '"CAS angemeldet nach "', '"läuft " & PRUEF_S & " s nach dem Start" & Versuchstext()',
                             '" s nach dem Start nicht – Nachstart " & versuch & "/" & NACHSTARTS',
                             '"aufgegeben: läuft auch nach " & NACHSTARTS & " Nachstarts nicht"',
-                            '"RaKScribe läuft schon – nichts zu tun"', '"RaKScribe läuft inzwischen – nichts zu tun"')))
+                            '"KaiScribe läuft schon – nichts zu tun"', '"KaiScribe läuft inzwischen – nichts zu tun"')))
+check("Starter: eine künftige KaiScribe-Bruecke.exe zählt NICHT als laufende KaiScribe (kein „KaiScribe%“)",
+      "LIKE 'KaiScribe%'" not in st and not bs._umzug.ist_kaiscribe_prozess("KaiScribe-Bruecke.exe")
+      and all(bs._umzug.ist_kaiscribe_prozess(n) for n in ("KaiScribe.exe", "kaiscribe (1).exe", "rakscribe26.exe",
+                                                           "RaKScribe26 (2).exe")))
 check("Starter 2: Frist je Runde (X: kann nach dem Start wieder fehlen), Haken-aus-Prüfung in der Warterunde",
       "Sub WarteAufExe()" in st and 'If DateDiff("s", runde, Now) >= FRIST_S Then' in st
       and st.count("If Not fso.FileExists(WScript.ScriptFullName) Then") == 1
@@ -175,7 +180,7 @@ class WshAttrappe:
         return self.code
 
 
-DATEN, STARTUP = TMP / "appdata" / "RaKScribe", TMP / "Startup"
+DATEN, STARTUP = TMP / "appdata" / "KaiScribe", TMP / "Startup"
 wsh = WshAttrappe()
 au = bs.Autostart(str(DATEN), startup_ordner=str(STARTUP), ausfuehren=wsh, wscript="C:\\Windows\\System32\\wscript.exe")
 check("Autostart anfangs aus", not au.an() and au.ziel() is None)
@@ -183,7 +188,7 @@ ok, text = au.einrichten(None)
 check("Start aus dem Quelltext (kein EXE-Pfad): kein Autostart, nichts geschrieben", not ok and "nur in der EXE" in text
       and not DATEN.exists() and wsh.aufrufe == [])
 ok, text = au.einrichten(X_EXE)
-lnk = json.loads((STARTUP / "RaKScribe.lnk").read_text(encoding="utf-8"))
+lnk = json.loads((STARTUP / "KaiScribe.lnk").read_text(encoding="utf-8"))
 check("Haken an: Verknüpfung im Autostart → wscript.exe → lokaler Starter", ok and au.an()
       and lnk["TargetPath"] == "C:\\Windows\\System32\\wscript.exe"
       and lnk["Arguments"] == f'//B //Nologo "{DATEN / "warte_auf_x.vbs"}"' and lnk["WorkingDirectory"] == str(DATEN)
@@ -234,6 +239,39 @@ os.remove(DATEN / "warte_auf_x.vbs")
 m = au3.nachziehen(X_EXE)
 check("Starter fehlt, Verknüpfung da → neu angelegt", au3.ziel() == X_EXE and m and "fehlte" in m, str(m))
 au3.entfernen()
+
+# kaiscribe-umzug-n1-exe: bis 3.19 hieß die Verknüpfung RaKScribe.lnk (Starter im alten Ordner %APPDATA%\RaKScribe).
+# umzug.py hat den Ordner samt warte_auf_x.vbs nach %APPDATA%\KaiScribe kopiert → nachziehen() stellt auf KaiScribe.lnk um.
+ALT_LNK = STARTUP / "RaKScribe.lnk"
+DA = {X_EXE}
+au4 = bs.Autostart(str(DATEN), startup_ordner=str(STARTUP), ausfuehren=WshAttrappe(), wscript="w.exe",
+                   existiert=lambda p: p in DA, ordner_da=lambda o: True)
+ALT_LNK.write_text("{}", encoding="utf-8")
+bs.vbs_schreiben(str(DATEN / "warte_auf_x.vbs"), bs.starter_vbs(X_EXE, takt_s=30))   # kopierter alter Starter
+check("Umzug: nur alte RaKScribe.lnk → Autostart gilt als an (Haken bleibt gesetzt)", au4.an()
+      and not (STARTUP / "KaiScribe.lnk").exists())
+m = au4.nachziehen("X:\KaiScribe\KaiScribe.exe")
+check("… nachziehen: KaiScribe.lnk + aktueller Starter, gemerkte EXE (erreichbar) bleibt Ziel, alte Verknüpfung weg",
+      m and "umgestellt" in m and (STARTUP / "KaiScribe.lnk").exists() and not ALT_LNK.exists() and au4.an()
+      and au4.ziel() == X_EXE and bs.vbs_lesen(str(DATEN / "warte_auf_x.vbs")) == bs.starter_vbs(X_EXE), str(m))
+check("… danach nichts mehr zu tun", au4.nachziehen("X:\KaiScribe\KaiScribe.exe") is None)
+au4.entfernen()
+ALT_LNK.write_text("{}", encoding="utf-8")
+DA.clear()
+bs.vbs_schreiben(str(DATEN / "warte_auf_x.vbs"), bs.starter_vbs(X_EXE))
+m = au4.nachziehen("X:\KaiScribe\KaiScribe.exe")
+check("… gemerkte EXE weg (Ordner erreichbar) → Ziel ist die laufende EXE", m and "umgestellt" in m
+      and au4.ziel() == "X:\KaiScribe\KaiScribe.exe" and not ALT_LNK.exists(), str(m))
+au4.entfernen()
+ALT_LNK.write_text("{}", encoding="utf-8")
+bs.vbs_schreiben(str(DATEN / "warte_auf_x.vbs"), bs.starter_vbs(X_EXE))
+au5 = bs.Autostart(str(DATEN), startup_ordner=str(STARTUP), ausfuehren=WshAttrappe(code=1, anlegen=False), wscript="w.exe",
+                   existiert=lambda p: True, ordner_da=lambda o: True)
+m = au5.nachziehen(X_EXE)
+check("… Umstellung scheitert (Script Host gesperrt) → gemeldet, alte Verknüpfung + Starter bleiben (Autostart weiter an)",
+      m and "gescheitert" in m and ALT_LNK.exists() and (DATEN / "warte_auf_x.vbs").exists() and au5.an(), str(m))
+ok, text = au5.entfernen()
+check("… Haken aus entfernt auch die alte RaKScribe.lnk", ok and not ALT_LNK.exists() and not au5.an(), text)
 
 check("Einzelinstanz außerhalb von Windows: immer erste Instanz", bs.einzelinstanz_sichern() is True)
 SIG = TMP / "localappdata" / "RaKScribe"

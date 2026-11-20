@@ -10,9 +10,9 @@
 #   KAISCRIBE_HTPASSWD      (optional) absoluter Server-Pfad einer .htpasswd → /download/ nur mit Passwort
 #
 # 1. Offline-Gates wie test.yml (Python-Teil) – rot = Abbruch
-# 2. npm ci + Build mit KAISCRIBE_BASE=/ und VITE_EXE_DOWNLOAD=./download/rakscribe26.exe
+# 2. npm ci + Build mit KAISCRIBE_BASE=/ und VITE_EXE_DOWNLOAD=./download/KaiScribe.exe
 # 3. SECURITY-Schritt WÖRTLICH aus .github/workflows/deploy.yml (kein Schlüsselmaterial im Bundle)
-# 4. neueste rakscribe26.exe (angemeldet per gh, Prüfsumme = Release-Digest) nach dist/download/, robots.txt + .htaccess
+# 4. neueste KaiScribe.exe (angemeldet per gh, Prüfsumme = Release-Digest) nach dist/download/, robots.txt + .htaccess
 #    (noindex, kein Verzeichnis-Listing, optional Passwort für /download/)
 # 5. rsync nach KAISCRIBE_WEB_ZIEL, danach live prüfen: index.html referenziert dasselbe index-*.js wie dist/
 set -euo pipefail
@@ -26,7 +26,7 @@ for t in $(grep -oE 'python tests/offline/[a-z_]+\.py' .github/workflows/test.ym
 done
 
 echo "2/5 Build"
-(cd web_app && npm ci --silent && KAISCRIBE_BASE=/ VITE_EXE_DOWNLOAD=./download/rakscribe26.exe npm run build)
+(cd web_app && npm ci --silent && KAISCRIBE_BASE=/ VITE_EXE_DOWNLOAD=./download/KaiScribe.exe npm run build)
 
 echo "3/5 Schlüssel-Schutz (aus deploy.yml)"
 /usr/bin/python3 - <<'EOF'
@@ -39,9 +39,9 @@ EOF
 echo "4/5 EXE + Server-Dateien"
 mkdir -p web_app/dist/download
 TAG=$(gh api "repos/$REPO/releases/latest" --jq .tag_name)
-SOLL=$(gh api "repos/$REPO/releases/latest" --jq '.assets[]|select(.name=="rakscribe26.exe")|.digest')
-gh release download "$TAG" -R "$REPO" -p rakscribe26.exe -D web_app/dist/download --clobber
-IST="sha256:$(shasum -a 256 web_app/dist/download/rakscribe26.exe | cut -d' ' -f1)"
+SOLL=$(gh api "repos/$REPO/releases/latest" --jq '.assets[]|select(.name=="KaiScribe.exe")|.digest')
+gh release download "$TAG" -R "$REPO" -p KaiScribe.exe -D web_app/dist/download --clobber
+IST="sha256:$(shasum -a 256 web_app/dist/download/KaiScribe.exe | cut -d' ' -f1)"
 [ "$IST" = "$SOLL" ] || { echo "Prüfsumme der EXE falsch ($IST statt $SOLL)"; exit 1; }
 printf 'User-agent: *\nDisallow: /\n' > web_app/dist/robots.txt
 {

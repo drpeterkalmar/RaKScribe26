@@ -56,6 +56,8 @@ TESTBEFUND = ("## TEST RaKScribe-Brücke – bitte nicht vidieren\n\n"
 def ordner_standard(umgebung=None):
     umgebung = os.environ if umgebung is None else umgebung
     basis = umgebung.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), "AppData", "Local")
+    # bleibt %LOCALAPPDATA%\RaKScribe (kaiscribe-umzug-n1-exe): Austausch mit der Brücke je PC — die gemeinsame EXE auf X:
+    # und alte wie neue Brücken müssen denselben Ordner benutzen, bis jede Brücke umgestellt ist.
     return os.path.join(basis, "RaKScribe")
 
 
@@ -315,11 +317,12 @@ def nachvollzug(stt_roh, diktat="", modell="", prompt_version="", prompt_quelle=
 
 # ── v3.18.5 Lauf-Protokoll (Peter 12.11.2026, Nachtrag RH 99: Fenster ohne EOL geschlossen → nichts gespeichert, „warum stand
 # das im Ergebnis?“ war nicht beantwortbar) ─────────────────────────────────────────────────────────────────────────────
-# Je Befund-Lauf eine Datei <Nr>_<JJJJMMTT-HHMMSS>.json im Lauf-Ordner (Standard X:\RaKScribe\Daten\laeufe, config.ini
+# Je Befund-Lauf eine Datei <Nr>_<JJJJMMTT-HHMMSS>.json im Lauf-Ordner (Standard X:\KaiScribe\Daten\laeufe – solange es
+# den nicht gibt X:\RaKScribe\Daten\laeufe, umzug.x_pfad –, config.ini
 # LAUF_ORDNER, „aus“ = nie), unabhängig von EOL: nachvollzug() + ergebnis_vorschlag (Befund, wie KaiScribe ihn vorschlug)
 # + Nr/Benutzer/Rechner. Bleibt in der Praxis (Netzlaufwerk), nie ins Protokoll; Dateien älter als 30 Tage löscht
 # KaiScribe selbst (höchstens einmal je Tag und Prozess). Fehlt das Laufwerk, wird nichts geschrieben (kein Ordner auf C:).
-LAUF_ORDNER_STANDARD = "X:\\RaKScribe\\Daten\\laeufe"
+LAUF_ORDNER_STANDARD = "X:\\KaiScribe\\Daten\\laeufe"
 LAUF_TAGE = 30
 _LAUF_DATEI = re.compile(r"^[\w-]+_\d{8}-\d{6}(?:-\d+)?\.json$")
 _aufgeraeumt = {}

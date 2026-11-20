@@ -23,9 +23,10 @@ wf = (ROOT / ".github" / "workflows" / "build-exe.yml").read_text(encoding="utf-
 args = B.pyinstaller_args(wf)
 zeile = next(z.strip() for z in wf.splitlines() if z.strip().startswith("pyinstaller --onefile"))
 check("Argumente = Workflow-Zeile ohne 'pyinstaller'", args == shlex.split(zeile)[1:])
-check("Name rakscribe26, eine Datei, ohne Konsole", "--name=rakscribe26" in args and "--onefile" in args
+check("Name KaiScribe, eine Datei, ohne Konsole (kaiscribe-umzug-n1-exe)", "--name=KaiScribe" in args and "--onefile" in args
       and "--noconsole" in args)
-check("Icon und Einstieg RaKScribe.py", "--icon=../rakscribe.ico" in args and args[-1] == "RaKScribe.py")
+check("Icon und Einstieg RaKScribe.py", "--icon=../kaiscribe.ico" in args and args[-1] == "RaKScribe.py"
+      and (ROOT / "kaiscribe.ico").exists())
 daten = [args[i + 1] for i, x in enumerate(args) if x == "--add-data"]
 for d in ("../VERSION;.", "../templates.json;.", "../misheard_words.json;.", "../radiology_prompt.txt;.",
           "../masken.json;.", "../ordi_bausteine.json;.", "../phrases.json;.", "../vorlagen_vorrang.json;."):
@@ -40,8 +41,19 @@ except ValueError:
     check("ohne pyinstaller-Zeile → Fehler", True)
 
 check("UI-Test zählen", B.ui_zaehlen("PASS [A] a\nFAIL [B] b\nx PASS\nPASS [C] c\n") == (2, 3))
-check("Autostart-Pfad = RaKScribe.lnk (Name wie bereitschaft.VERKNUEPFUNG)", B.autostart_lnk().name == "RaKScribe.lnk"
-      and 'VERKNUEPFUNG = "RaKScribe.lnk"' in (ROOT / "source_code" / "bereitschaft.py").read_text(encoding="utf-8"))
+bsq = (ROOT / "source_code" / "bereitschaft.py").read_text(encoding="utf-8")
+check("Autostart-Schutz: KaiScribe.lnk + alte RaKScribe.lnk (wie bereitschaft.VERKNUEPFUNG/ALT_VERKNUEPFUNG)",
+      [p.name for p in B.autostart_lnks()] == ["KaiScribe.lnk", "RaKScribe.lnk"]
+      and 'VERKNUEPFUNG = "KaiScribe.lnk"' in bsq and 'ALT_VERKNUEPFUNG = "RaKScribe.lnk"' in bsq)
+bau = (ROOT / "tools" / "buero" / "kaiscribe_bauen.py").read_text(encoding="utf-8")
+check("Büro-Bau: EXE dist\\KaiScribe.exe, läuft-Prüfung beide Namen, Ablage-Transportname rakscribe26.exe",
+      'q / "source_code" / "dist" / "KaiScribe.exe"' in bau and B.EXE_NAMEN == ("KaiScribe.exe", "rakscribe26.exe")
+      and 'a.tag, erg["SHA256"], "rakscribe26.exe")' in bau)
+mac = (ROOT / "tools" / "buero" / "kaiscribe_bau_mac.py").read_text(encoding="utf-8")
+check("Mac-Release: beide Assets (KaiScribe.exe + rakscribe26.exe), Digest je Asset geprüft",
+      '"release", "create", tag, neu, exe,' in mac and 'for name in ("KaiScribe.exe", "rakscribe26.exe"):' in mac)
+check("GitHub-Bau (build-exe.yml): beide Assets, identisch", "cp source_code/dist/KaiScribe.exe release/\n" in wf
+      and "cp source_code/dist/KaiScribe.exe release/rakscribe26.exe" in wf and "cmp release/KaiScribe.exe release/rakscribe26.exe" in wf)
 
 auf = (ROOT / "tools" / "buero" / "auftrag_exe_bauen.txt").read_text(encoding="utf-8")
 platz = set(re.findall(r"\{([A-Z_]+)\}", auf))

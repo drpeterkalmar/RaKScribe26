@@ -37,13 +37,13 @@ def pc_name(environ=None):
 
 
 def ordner_aus(lauf_ordner, appdata=None):
-    """Zähler-Ordner neben dem Lauf-Protokoll (X:\\RaKScribe\\Daten\\nutzung); LAUF_ORDNER = aus → %APPDATA%\\RaKScribe."""
+    """Zähler-Ordner neben dem Lauf-Protokoll (X:\\KaiScribe\\Daten\\nutzung); LAUF_ORDNER = aus → %APPDATA%\\KaiScribe."""
     lo = (lauf_ordner or "").strip()
     if lo and lo.lower() != "aus":
         import ntpath
         pfad = ntpath if "\\" in lo else os.path       # X:\… auch beim Test am Mac richtig zerlegen
         return pfad.join(pfad.dirname(lo.rstrip("\\/")) or lo, "nutzung")
-    return os.path.join(appdata or os.environ.get("APPDATA") or os.path.expanduser("~"), "RaKScribe", "nutzung")
+    return os.path.join(appdata or os.environ.get("APPDATA") or os.path.expanduser("~"), "KaiScribe", "nutzung")
 
 
 def _datei(ordner, monat, pc):
@@ -67,18 +67,25 @@ def _grund_kategorie(grund):
 
 class Zaehler:
     def __init__(self, ordner, pc=None, jetzt=None):
-        self.ordner, self.pc = ordner, pc or pc_name()
+        """ordner: Pfad oder Funktion, die ihn bei jedem Schreiben liefert (kaiscribe-umzug-n1-exe: X:\\KaiScribe vor
+        X:\\RaKScribe erst auflösen, wenn X: verbunden ist)."""
+        self._ordner, self.pc = ordner, pc or pc_name()
         self.jetzt = jetzt or datetime.datetime.now
 
+    @property
+    def ordner(self):
+        return self._ordner() if callable(self._ordner) else self._ordner
+
     def _aendern(self, fn):
-        if not self.ordner:
+        ordner = self.ordner
+        if not ordner:
             return
         t = self.jetzt()
         tag, monat = t.strftime("%Y-%m-%d"), t.strftime("%Y-%m")
         with _sperre:
             try:
-                os.makedirs(self.ordner, exist_ok=True)
-                pfad = _datei(self.ordner, monat, self.pc)
+                os.makedirs(ordner, exist_ok=True)
+                pfad = _datei(ordner, monat, self.pc)
                 d = _lesen(pfad)
                 d["pc"] = self.pc
                 td = d.setdefault("tage", {}).setdefault(tag, {})
@@ -90,7 +97,7 @@ class Zaehler:
             except Exception:
                 return
         try:
-            schreibe_tagesbericht(self.ordner, tag)
+            schreibe_tagesbericht(ordner, tag)
         except Exception:
             pass
 

@@ -78,9 +78,10 @@ const KEY_VERSION = '2';
 const GEN_PROMPT = stripPromptMarker(genPromptRaw);
 const APP_VERSION = appVersionRaw.trim();
 // kaiscribe-privat-n1 (05.11.2026): Download-Ziel beim Bau einstellbar – am neuen Ort (netcup) liegt die EXE neben der
-// Web-App (VITE_EXE_DOWNLOAD=./download/rakscribe26.exe, tools/web_netcup_bauen.sh). Ohne Angabe wie bisher das Release.
+// Web-App (VITE_EXE_DOWNLOAD=./download/KaiScribe.exe, tools/web_netcup_bauen.sh). Ohne Angabe wie bisher das Release.
+// kaiscribe-umzug-n1-exe (20.11.2026): Asset heißt KaiScribe.exe (rakscribe26.exe liegt im Übergang daneben).
 const EXE_DOWNLOAD: string = import.meta.env.VITE_EXE_DOWNLOAD
-  || 'https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/rakscribe26.exe';
+  || 'https://github.com/drpeterkalmar/RaKScribe26/releases/latest/download/KaiScribe.exe';
 // v3.1: Fehlhör-Liste — auto-Regeln laufen deterministisch VOR Call 0 (auch ohne Gemini),
 // llm-Regeln landen als Tabelle im Call-0-Prompt. Pflege NUR in /misheard_words.json.
 const MISHEARD: MisheardFile = misheardData as MisheardFile;
@@ -402,7 +403,7 @@ export default function App() {
     setKeyError('');
     const ok = await loadPraxisKey(txt.trim());
     if (!ok) {
-      setKeyError('Schlüssel nicht erkannt. Bitte rakscribe-praxis-key.json aus dem Drive-Ordner „RaKScribe“ verwenden.');
+      setKeyError('Schlüssel nicht erkannt. Bitte den Praxis-Schlüssel (kaiscribe- bzw. rakscribe-praxis-key.json) aus dem Praxis-Drive verwenden.');
       return false;
     }
     setMenuOpen(false); setPasteOpen(false); setPasteValue('');
@@ -1438,8 +1439,8 @@ export default function App() {
             <p className="gate-text">KaiScribe ist gesperrt, bis der Schlüssel geladen ist.</p>
             <div className="gate-drop">
               <KeyRound size={26} />
-              <span><strong>rakscribe-praxis-key.json</strong> hierher ziehen</span>
-              <small>aus dem Drive-Ordner „RaKScribe“</small>
+              <span><strong>Praxis-Schlüssel</strong> (praxis-key.json) hierher ziehen</span>
+              <small>aus dem Praxis-Drive</small>
             </div>
             <label className="btn btn-primary btn-wide">
               <FileKey size={18} /> Schlüssel-Datei wählen
