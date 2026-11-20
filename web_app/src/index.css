@@ -186,6 +186,8 @@ kbd {
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
 .btn-ghost { background: transparent; border-color: var(--line-strong); color: var(--text); }
 .btn-ghost:hover:not(:disabled) { background: var(--bg-panel); }
+/* 3.19.16: Clear all / Reset / Restructure im Befund-Kopf */
+.btn-sm { height: 30px; padding: 0 10px; font-size: 12.5px; }
 .btn-record { height: 46px; padding: 0 20px; background: var(--accent); color: #fff; margin-right: auto; }
 .btn-record:hover:not(:disabled) { background: var(--accent-hover); }
 .btn-record.is-recording { background: var(--rec); animation: pulse-rec 1.6s infinite; }

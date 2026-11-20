@@ -7,6 +7,7 @@ rufen DIESELBE Funktion; nur der LLM-Aufruf wird übergeben (ctx.llm).
 Tests: tests/offline/test_pipeline_exe.py, tests/offline/test_regionen.py.
 v3.13.0: mit IB-Lab-Bausteinen (ctx.ibl) danach ibl_anwenden() — Messwerte wörtlich, ohne KI (ibl_bausteine.py).
 """
+import dataclasses
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from typing import Any, Callable, List, Optional
 
 import bausteine as bs
 import befund_regeln as br
+import befundfeld as bf
 import cas_vorlagen as cv
 import detect
 import gemini
@@ -65,6 +67,8 @@ class Kontext:
     korrektur: Optional[Callable[[str], str]] = None  # v3.4: Call 0 (korrektur.py) — nur im Nur-Text-Modus
     cas: Optional[cv.CasHinweis] = None          # v3.12.0: CAS-Leistungen des Auftrags (Vorrang-Hinweis); None = wie bisher
     ibl: Optional[iblb.IblKontext] = None         # v3.13.0: IB-Lab-Bausteine des Auftrags (nach der KI einsetzen); None = wie bisher
+    umbau: str = ""                               # 3.19.16 Restructure: <umbau>-Hinweis (befundfeld.umbau_block); "" = wie bisher
+    umbau_weg: tuple = ()                         # 3.19.16 Restructure: vorher gestrichene Normalsätze (vor den Wächtern raus)
 
 
 @dataclass
@@ -171,7 +175,7 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
-    normal = ist_normalbefund(seg, template_key, ctx.display_names)
+    normal = ist_normalbefund(seg, template_key, ctx.display_names) and not ctx.umbau   # Restructure: immer KI
     if normal:
         ctx.log(f"[BYPASS] Normalbefund erkannt: {protokoll.diktat(seg)}. Generiere direkt aus Template '{template_key}'.")
         # v3.15.4: Seite aus CAS nur für paarige Regionen (Wirbelsäule/Becken/Thorax/Schädel nie „beidseits“)
@@ -186,12 +190,16 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
         wid_block = br.widerspruch_prompt(br.widerspruch_befunde(seg), template_data["body"])
         if wid_block:
             beispiele = wid_block + ("\n" + beispiele if beispiele else "")
+        if ctx.umbau:   # 3.19.16 Restructure: Vorrang-Hinweis an derselben Stelle wie <widersprueche> (Web gleich)
+            beispiele = ctx.umbau + ("\n" + beispiele if beispiele else "")
         roh = ctx.llm(gen_prompt(seg, template_data, ctx.prompt, ctx.hinweise, beispiele, cas_block,
                                  _ibl_block(seg, template_key, ctx)))
     if ctx.protokoll is not None:
         ctx.protokoll.append({"segment": seg, "template": template_key, "roh": roh})
     # v3.2: '## Befund' sichern + Ergebnis deterministisch nummerieren (einzelner Normalbefund-Satz unnummeriert)
     out = br.nachbearbeiten(roh)
+    if ctx.umbau_weg:   # 3.19.16: gestrichene Normalsätze nicht wörtlich zurück (sonst machte der Wächter „Im Übrigen …“)
+        out = bf.streichen(out, ctx.umbau_weg)
     out, koala = _koala_frueh(out, seg, template_key, ctx)   # 18.11.2026: KOALA-Kniebefund vor den Wächtern
     # v3.15.5: übrig gebliebene widersprechende Normalsätze → „Im Übrigen …“, Befund/Ergebnis nennen den Befund
     out, aend = br.widersprueche_bereinigen(out, seg)
@@ -368,3 +376,58 @@ def nur_text_aus_diktat(diktat, ctx):
         raw = (ctx.korrektur(raw) or raw).strip()
     raw = bs.saetze_einsetzen(raw, ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine)
     return Ergebnis(raw=raw, report=raw, segmente=[raw])
+
+
+def befund_umbauen(aktuell, stand, ctx):
+    """3.19.16 Restructure (Peter 20.11.2026): den AKTUELLEN Text im Befundfeld (mit Peters diktierten oder getippten
+    Änderungen) über die normale Befundkette neu aufbauen. Peters Änderungen = Sätze, die im letzten KaiScribe-Stand
+    (stand) nicht standen, haben Vorrang; widersprechende Normalsätze fallen vorher heraus (befundfeld.umbau_segment),
+    das Ergebnis wird angepasst, die Überschriften bleiben. Abschnitte ohne Änderung bleiben bei mehreren Untersuchungen
+    Zeichen für Zeichen stehen. Danach: jede Vorrang-Angabe muss inhaltlich im Befund stehen (sonst wörtlich
+    nachgetragen + Prüfzeile), jede eigene (nicht aus einer Vorlage stammende) Angabe ebenso (sonst Prüfzeile).
+    → Ergebnis (report, cas_hinweise = Prüfzeilen, leer = nichts umzubauen). Sync: pipeline.ts befundUmbauen."""
+    text = (aktuell or "").strip()
+    if not text:
+        return Ergebnis(leer=True)
+    ohne_stand = not (stand or "").strip()
+    vor = [] if ohne_stand else bf.vorrang(stand, text)
+    if not vor and not ohne_stand:
+        return Ergebnis(raw=text, report=text, leer=True)
+    bloecke = [b for b in bf.bloecke(text) if b["befund"] or b["ergebnis"]] or bf.bloecke(text)
+    teile, segmente, titel = [], [], []
+    for b in bloecke:
+        bt = bf.block_text(text, b)
+        eigene = [s for s in vor if br.vorlage_normalisieren(s) in br.vorlage_normalisieren(bt)]
+        if len(bloecke) > 1 and not eigene and not ohne_stand:
+            teile.append(bt)          # unverändert (KL-/Kinder-/Mehrfachbefund der anderen Untersuchung bleibt)
+            titel.append(b["titel"])
+            continue
+        seg, gestrichen = bf.umbau_segment(bt, eigene)
+        if gestrichen:
+            ctx.log(f"[UMBAU] {len(gestrichen)} widersprechende(r) Normalsatz/Normalsätze vorher entfernt")
+        uctx = dataclasses.replace(ctx, umbau=bf.umbau_block(eigene, gestrichen, ohne_stand), umbau_weg=tuple(gestrichen))
+        wahl = None
+        if ctx.cas:
+            erkennen = lambda t: detect.detect_template(t, ctx.templates)  # noqa: E731
+            wahl = cv.wahl(br.rho_erkennen(seg)[0], ctx.cas, ctx.templates, erkennen)
+        teile.append(bf.streichen(befund_fuer_segment(seg, uctx, wahl), gestrichen))
+        segmente.append(seg)
+        titel.append(b["titel"])
+    report = br.befunde_zusammenfuegen(teile)
+    if len(teile) == len(titel):
+        report = bf.titel_uebernehmen(report, titel)
+    erg = ibl_anwenden(Ergebnis(raw=text, report=report, segmente=segmente), ctx)
+    hinweise = []
+    fehlt = bf.fehlende(vor, erg.report)
+    for s in fehlt:               # Peters Angabe ging verloren → wörtlich zurück, rot zum Prüfen
+        erg.report = bf.ergaenzen(erg.report, s)[0]
+        hinweise.append(bf.pruefzeile(s))
+    hinweise += [bf.pruefzeile(s, ergebnis=True) for s in bf.ergebnis_fehlt(vor, erg.report)]
+    vorlagen = br._vorlagen_saetze(ctx.templates)[0]
+    eigene_alt = [s for s, art in bf.saetze(text, mit_ergebnis=False)
+                  if br.vorlage_normalisieren(s) not in vorlagen and s not in vor]
+    hinweise += [bf.pruefzeile(s) for s in bf.fehlende(eigene_alt, erg.report) if not bf.verneint_vorrang(s, vor)]
+    erg.cas_hinweise = hinweise
+    ctx.log(f"[UMBAU] {len(vor)} Änderung(en) mit Vorrang, {len(teile)} Abschnitt(e), {len(fehlt)} nachgetragen, "
+            f"{len(hinweise)} Prüfzeile(n)")
+    return erg

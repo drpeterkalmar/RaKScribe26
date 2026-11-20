@@ -28,6 +28,7 @@ import normalbypass as _nb  # v3.2 (Peter 05.10.): strenger Normalbefund-Bypass 
 import jobstate as _js  # Umbau Schritt 4 (Gutachten P1-2/P2-5): Zustandsmaschine F10/F9 + Generationsnummer je Lauf
 import aufnahme as _af  # Umbau Schritt 6 (Gutachten P1-4): Mikrofon getrennt von der Streaming-Live-Anzeige
 import einfuegen as _einf  # v3.5: Diktat an der Cursor-Stelle in den Befund einfügen
+import befundfeld as _bf  # 3.19.16: Befundfeld nie still überschreiben – Ergänzung, Clear all/Reset/Restructure
 import korrektur as _korr  # v3.4: Nur-Text-Modus (Call 0 wie Web-App)
 import llm_anbieter as _la  # kaiscribe-haiku-ab-n1: LLM_ANBIETER gemini | anthropic (maskiert, Rückfall Gemini)
 import nutzung as _nutz  # kaiscribe-sonnet-n2: Zähler Claude/Rückfall/Chirp-Sekunden + Tagesbericht (ohne Patientendaten)
@@ -605,13 +606,28 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 # v3.8.0 (Peter 11.10., Nachtrag 3/4): Hilfe-Zeilen im Menü — gleicher Text in der Web-App (App.tsx)
 HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig & weiter",
                     "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)",
-                    "In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)")
+                    "In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)",
+                    # 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1)
+                    "Steht rechts schon ein Befund: Record = Ergänzung (Titel und Text bleiben) · neuer Befund nur bei leerem Feld oder F1",
+                    "Befund-Kopf: Clear all = Feld leeren · Reset = erster Vorschlag · Restructure = neu aufbauen (deine "
+                    "Änderungen haben Vorrang) · Strg+Z im Befund = Schritt zurück")
 # v3.18.9 (Peter 12.11., kaiscribe-cursor-record-n1): Steht der Cursor beim Record im Befund rechts, wird das Diktat
 # wörtlich dort eingefügt (seit v3.5.0, unabhängig von „Nur Text“) — die Statuszeile sagt das jetzt in jedem Schritt.
 ERGAENZUNG = "Ergänzung an Cursor-Stelle"
 ERGAENZUNG_STATUS = {"RECORDING": f"{ERGAENZUNG} · Aufnahme läuft",
                      "PAUSED": f"{ERGAENZUNG} · Pause – Record: weiter · INS: einfügen",
                      "PROCESSING": f"{ERGAENZUNG} wird eingefügt…"}
+# 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1: „wird manchmal alles gelöscht oder der Titel ändert sich“):
+# steht rechts schon Text, ist jedes Diktat eine Ergänzung (Titel und Text bleiben); neuer Befund nur bei leerem Feld.
+EINBAU_STATUS = {
+    _bf.ERGAENZUNG: {"RECORDING": "Ergänzung · Aufnahme läuft",
+                     "PAUSED": "Ergänzung · Pause – Record: weiter · INS: einbauen",
+                     "PROCESSING": "Ergänzung wird eingebaut…"},
+    _bf.NEU: {"RECORDING": "Neuer Befund · Aufnahme läuft",
+              "PAUSED": "Neuer Befund · Pause – Record: weiter · INS: Befund erstellen"},
+    _bf.GERUEST: {"RECORDING": "Neuer Befund (IB-Lab-Gerüst) · Aufnahme läuft",
+                  "PAUSED": "Neuer Befund (IB-Lab-Gerüst) · Pause – Record: weiter · INS: Befund erstellen"},
+}
 BESTAETIGUNG_MS = 4500  # v3.12.0 (Peter 13.10.): grünes Band „An CAS übergeben“ nach EOL, nicht zu übersehen
 MINIMIEREN_NACH_EOL_MS = BESTAETIGUNG_MS + 100  # v3.11.0: danach wieder als Symbol in die Taskleiste (erst nach dem Band)
 CAS_GRUEN = "#1E6B43"
@@ -1048,6 +1064,14 @@ class RaKScribeApp(ctk.CTk):
         self.stream_interim = ""     # Live-Anzeige: letzter Zwischenstand
         self._aufnahme = None        # aufnahme.Aufnahme der laufenden/letzten Aufnahme
         self._einfuegen_ziel = None  # v3.5: (start, ende) im Befund, wenn an der Cursor-Stelle diktiert wird
+        # 3.19.16 Befundfeld: was das laufende Diktat mit dem Feld macht (befundfeld.modus), erster und letzter
+        # KaiScribe-Stand des Falls (Reset / Restructure-Diff), ein Schritt zurück (Strg+Z im Befundfeld)
+        self._einbau = None
+        self._abgeschlossen = False  # Befund rechts ging per F10 schon hinaus (kopiert/eingefügt) = wie nach EOL
+        self._stand_erst = self._stand_ks = self._transkript_ks = self._fehl_stand = None
+        self._stand_erst_geruest = False
+        self._rueck = None
+        self._vor_lauf = None
         self._live_aus = False       # Live-Anzeige ausgefallen (Aufnahme läuft weiter)
         # v3.8.0 SpeechMike: Nachdiktat, reparierte Abschnitte, Kontrollschritt (INS → prüfen → EOL)
         self._basis = ""             # bisheriges Diktat, an das eine SpeechMike-Aufnahme anschließt
@@ -1245,6 +1269,17 @@ class RaKScribeApp(ctk.CTk):
                                              fg_color=BORDER_STRONG, border_color=TEXT_FAINT, border_width=2,
                                              button_color=TEXT_PRIMARY, button_hover_color="#FFFFFF")
         self.nur_text_switch.pack(side="right", pady=10)
+        # 3.19.16 (Peter 20.11.2026): drei Knöpfe im BEFUND-Kopf (per Maus; SpeechMike-Belegung unverändert)
+        kopf_kw = dict(height=28, font=(UI_FONT, 12), fg_color="transparent", hover_color=BGC_ELEV, border_width=1,
+                       border_color=BORDER_STRONG, text_color=TEXT_PRIMARY, corner_radius=8)
+        self.clear_btn = ctk.CTkButton(right_head, text="Clear all", width=78, command=self.befund_leeren, **kopf_kw)
+        self.clear_btn.pack(side="left", padx=(14, 0))
+        self.resetbefund_btn = ctk.CTkButton(right_head, text="Reset", width=62, command=self.befund_zuruecksetzen,
+                                             **kopf_kw)
+        self.resetbefund_btn.pack(side="left", padx=(6, 0))
+        self.restructure_btn = ctk.CTkButton(right_head, text="Restructure", width=98, command=self.befund_umbauen,
+                                             **kopf_kw)
+        self.restructure_btn.pack(side="left", padx=(6, 0))
         # v3.7.0 (Peter 07.10.): Option im Menü — beim Diktat in den Befund am Satzanfang groß beginnen
         self.gross_satzanfang_var = tk.BooleanVar(value=bool(einstellung_lesen("gross_satzanfang", True)))
 
@@ -1270,6 +1305,8 @@ class RaKScribeApp(ctk.CTk):
         self.result_text = ctk.CTkTextbox(right_card, **box_kw)
         self.result_text.pack(fill="both", expand=True, padx=10, pady=8)
         self._setup_report_formatting()
+        for k in ("<Control-z>", "<Control-Z>"):     # 3.19.16: ein Schritt zurück im Befundfeld
+            self.result_text._textbox.bind(k, self._rueckgaengig)
 
         # Diktat-Fußzeile
         self.record_btn = ctk.CTkButton(left_foot, text=" Aufnahme Starten (F10) ", height=44, width=230,
@@ -2067,6 +2104,8 @@ class RaKScribeApp(ctk.CTk):
         label, dot, bg = STATUS_STYLE.get(raw, (text, {"busy": WARN_AMBER, "recording": RECORDING_RED}.get(type, READY_GREEN), "#1B2030"))
         if raw in ERGAENZUNG_STATUS and getattr(self, "_einfuegen_ziel", None) is not None:
             label = ERGAENZUNG_STATUS[raw]  # v3.18.9: Diktat geht wörtlich an die Cursor-Stelle im Befund
+        elif raw in EINBAU_STATUS.get(getattr(self, "_einbau", None), {}):
+            label = EINBAU_STATUS[self._einbau][raw]   # 3.19.16: „Ergänzung“ bzw. „Neuer Befund“
         if raw == "RECORDING" and getattr(self, "_live_aus", False):
             label += " · Live-Anzeige ausgefallen"  # Umbau Schritt 6: Aufnahme läuft trotzdem weiter
         self.status_badge.configure(text=f"   ●  {label}   ", fg_color=bg, text_color=TEXT_PRIMARY)
@@ -2106,7 +2145,8 @@ class RaKScribeApp(ctk.CTk):
         self.final_transcript = ""
         self.stream_transcript = ""
         self.stream_interim = ""
-        self._einfuegen_ziel = None
+        self._einfuegen_ziel = self._einbau = None
+        self._stand_leeren()       # 3.19.16: F1/F9 Neu = ausdrücklich neuer Befund, Reset-Stand dieses Falls verworfen
         self._sm_sitzung_leeren()  # v3.8.0: Nachdiktat/Abschnitte/Kontrollschritt verwerfen
         if getattr(self, "_cas", None) is not None:  # v3.10.0: F9 leert nur das Diktat, der CAS-Auftrag bleibt offen
             self._cas_aufnahmen, self._cas_test = [], False
@@ -2210,20 +2250,25 @@ class RaKScribeApp(ctk.CTk):
             if self._einfuegen_ziel is not None:
                 log(f"[EINFÜGEN] {ERGAENZUNG}: Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt "
                     f"(wörtlich, Nur Text {'an' if self.nur_text_aktiv() else 'aus'}).")
+            self._einbau = self._einbau_bestimmen()
+            self._vor_lauf = self.result_text.get("1.0", "end-1c")
             self.final_transcript = ""
             self.stream_transcript = ""
             self.stream_interim = ""
             self._live_aus = False
             self._basis, self._abschnitte, self._live = basis, [], {}
             self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
-            if getattr(self, "_cas", None) is not None:
+            neu_befund = self._einbau in (_bf.NEU, _bf.GERUEST)
+            if getattr(self, "_cas", None) is not None and neu_befund:   # 3.19.16: Ergänzung → Befund bleibt, samt Stand
                 self._cas_hinweise_zeigen([])  # v3.12.0: Hinweise gehören zum vorigen Befund
                 self._ibl_befund_leeren()      # v3.13.0: ebenso der Stand der IB-Lab-Werte im Befund
             self.transcript_text.delete("1.0", "end")
             if basis:
                 self.transcript_text.insert("1.0", basis)  # Nachdiktat: bisheriges Diktat bleibt stehen
-            if self._einfuegen_ziel is None and not basis:  # Nachdiktat: alter Befund bleibt bis zum nächsten INS
-                self.result_text.delete("1.0", "end")
+            # 3.19.16: das rechte Feld wird beim Start NIE mehr geleert (Gerüst bzw. Text bleiben sichtbar, bis das
+            # Ergebnis kommt; Ergänzungen bauen sich in den stehenden Befund ein)
+            log(f"[BEFUNDFELD] Record: {_bf.STATUS.get(self._einbau, self._einbau)}"
+                + (" (an Cursor-Stelle)" if self._einbau == _bf.CURSOR else ""))
             self.is_recording = True
             
             self.update_status("RECORDING", "recording")   # v3.18.9: mit Cursor im Befund „Ergänzung an Cursor-Stelle“
@@ -2412,10 +2457,10 @@ class RaKScribeApp(ctk.CTk):
             pass
         v = getattr(self, "gross_satzanfang_var", None)
         gross = bool(v.get()) if v is not None else True
-        neu, cursor = _einf.einfuegen(self.result_text.get("1.0", "end-1c"), ziel[0], ziel[1], text, gross=gross)
-        self.result_text.delete("1.0", "end")
-        self.result_text.insert("1.0", neu)
-        self._einfuegen_ziel = None  # v3.18.9: verbraucht — die nächsten Statusmeldungen sind wieder die normalen
+        vorher = self.result_text.get("1.0", "end-1c")
+        neu, cursor = _einf.einfuegen(vorher, ziel[0], ziel[1], text, gross=gross)
+        self._feld_setzen(neu, vorher)   # 3.19.16: Strg+Z im Befundfeld holt den Stand davor zurück
+        self._einfuegen_ziel = self._einbau = None  # v3.18.9: verbraucht — danach wieder die normalen Statusmeldungen
         log(f"[EINFÜGEN] {ERGAENZUNG}: {len(text.strip())} Zeichen an Stelle {tuple(ziel)} eingefügt.")
         try:
             tb = self.result_text._textbox
@@ -2424,6 +2469,197 @@ class RaKScribeApp(ctk.CTk):
             tb.focus_set()
         except Exception:
             pass
+
+    # ── 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1): Befundfeld nie still überschreiben ─────────────────
+    # „Wenn schon was rechts steht und ich dazudiktieren möchte, wird manchmal alles gelöscht oder der Titel ändert sich,
+    # irgendwie random.“ Ursache: ohne Fokus im Feld (kurzer Klick in Plaza/CAS) baute jedes Diktat einen neuen Befund.
+    # Jetzt: Text rechts → Ergänzung (befundfeld.ergaenzen), neuer Befund nur bei leerem Feld / Gerüst / F1 Neu.
+    # Knöpfe im BEFUND-Kopf: Clear all, Reset (erster Vorschlag des Falls), Restructure (Umbau mit Peters Vorrang).
+    # Jeder dieser Schritte und jedes Diktat: Strg+Z im Befundfeld holt den Stand davor (ein Schritt, nochmal = wieder vor).
+    def _einbau_bestimmen(self):
+        if getattr(self, "_maske_lauf", False):
+            return _bf.MASKE
+        rechts = self.result_text.get("1.0", "end-1c")
+        fehl = getattr(self, "_fehl_stand", None)
+        if fehl and rechts.strip() == fehl.strip():
+            return _bf.NEU      # unvollständiger Mehr-Regionen-Befund, unberührt: wie bisher neu diktieren
+        # F10 ohne CAS: der Befund rechts ging schon per Kopieren/Strg+V hinaus → wie nach EOL (neuer Patient)
+        fertig = bool(getattr(self, "_gesendet", False) or getattr(self, "_abgeschlossen", False))
+        self._abgeschlossen = False
+        return _bf.modus(rechts, geruest=self._nur_geruest(), cursor=self._einfuegen_ziel is not None, abgeschlossen=fertig)
+
+    def _feld_setzen(self, text, vorher=None):
+        """Befundfeld auf text setzen; vorher (Standard: jetziger Inhalt) kann Strg+Z zurückholen."""
+        alt = self.result_text.get("1.0", "end-1c") if vorher is None else vorher
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", text)
+        if alt.strip() and alt != text:
+            self._rueck = alt
+
+    def _befund_setzen(self, report, fehler=False):
+        """UI-Thread: Ergebnis eines Befund-Laufs (neuer Befund bzw. Gerüst ausgebaut) ins Feld, Stände merken."""
+        vorher = getattr(self, "_vor_lauf", None)
+        self._feld_setzen(report, vorher if vorher is not None else "")
+        if fehler:
+            self._fehl_stand = report
+            return
+        self._fehl_stand = None
+        self._stand_ks, self._transkript_ks = report, self.final_transcript
+        if getattr(self, "_stand_erst", None) is None or getattr(self, "_stand_erst_geruest", False):
+            self._stand_erst, self._stand_erst_geruest = report, False   # Reset: erster Befundvorschlag dieses Falls
+
+    def _ergaenzung_einbauen(self, gen, text):
+        if not self._job.aktuell(gen):
+            return
+        v = getattr(self, "gross_satzanfang_var", None)
+        gross = bool(v.get()) if v is not None else True
+        vorher = self.result_text.get("1.0", "end-1c")
+        neu, cursor = _bf.ergaenzen(vorher, text, gross=gross)
+        self._feld_setzen(neu, vorher)
+        self._einbau = None
+        log(f"[BEFUNDFELD] Ergänzung: {len(text.strip())} Zeichen eingebaut (Titel und Text unverändert).")
+        try:
+            tb = self.result_text._textbox
+            tb.mark_set("insert", f"1.0+{cursor}c")
+            tb.see("insert")
+        except Exception:
+            pass
+
+    def _stand_leeren(self):
+        """Fallwechsel/EOL/F1 Neu: erster und letzter KaiScribe-Stand und der Schritt zurück gehören zum alten Fall."""
+        self._abgeschlossen = False
+        self._stand_erst = self._stand_ks = self._transkript_ks = self._fehl_stand = None
+        self._stand_erst_geruest = False
+        self._rueck = None
+
+    def _rueckgaengig(self, _evt=None):
+        """Strg+Z im Befundfeld: Stand vor dem letzten KaiScribe-Schritt (Diktat, Clear all, Reset, Restructure) zurück;
+        noch einmal Strg+Z = wieder vor (nichts geht verloren). Ohne gemerkten Stand: normales Strg+Z."""
+        alt = getattr(self, "_rueck", None)
+        if alt is None or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            return None
+        jetzt = self.result_text.get("1.0", "end-1c")
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", alt)
+        self._rueck = jetzt
+        log("[BEFUNDFELD] Strg+Z: vorheriger Stand zurück.")
+        self._kurzhinweis("Vorheriger Stand zurück – Strg+Z noch einmal = wieder vor", 6000)
+        return "break"
+
+    def _befundfeld_frei(self, was):
+        if self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING, _js.LOCKED) or getattr(self, "_maske_lauf", False):
+            self._kurzhinweis(f"{was}: erst Aufnahme/Verarbeitung abschließen")
+            return False
+        return True
+
+    def befund_leeren(self):
+        """Knopf „Clear all“: rechtes Feld (und das Diktat dazu) leeren; Fenster und CAS-Fall bleiben offen. Das
+        nächste Diktat wird ein neuer Befund. Strg+Z holt den Befund zurück, Reset den ersten Vorschlag."""
+        if not self._befundfeld_frei("Clear all"):
+            return
+        vorher = self.result_text.get("1.0", "end-1c")
+        self.result_text.delete("1.0", "end")
+        if vorher.strip():
+            self._rueck = vorher
+        self.transcript_text.delete("1.0", "end")
+        self.final_transcript = self.stream_transcript = self.stream_interim = ""
+        self._einfuegen_ziel = self._einbau = None
+        self._stand_ks = self._transkript_ks = self._fehl_stand = None
+        self._ibl_geruest_text = None
+        self._sm_sitzung_leeren()
+        if getattr(self, "_cas", None) is not None:
+            self._cas_hinweise_zeigen([])
+            self._ibl_befund_leeren()
+            self._ibl_band_zeigen()
+        log("[BEFUNDFELD] Clear all: Befundfeld geleert, Fall bleibt offen.")
+        self.update_status("READY", "ready")
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self._kurzhinweis("Befundfeld geleert – nächstes Diktat = neuer Befund · Strg+Z holt ihn zurück", 8000)
+
+    def befund_zuruecksetzen(self):
+        """Knopf „Reset“: zurück zum ersten Befundvorschlag dieses Falls (alle späteren Diktate/Änderungen verworfen,
+        Strg+Z holt den Stand davor)."""
+        if not self._befundfeld_frei("Reset"):
+            return
+        erst = getattr(self, "_stand_erst", None)
+        if not erst:
+            self._kurzhinweis("Reset: noch kein Befundvorschlag in diesem Fall")
+            return
+        vorher = self.result_text.get("1.0", "end-1c")
+        if vorher == erst:
+            self._kurzhinweis("Reset: es steht schon der erste Befundvorschlag da")
+            return
+        self._feld_setzen(erst, vorher)
+        self._stand_ks, self._fehl_stand = erst, None
+        if getattr(self, "_cas", None) is not None:
+            self._cas_hinweise_zeigen([])
+            self.after(300, self._ibl_markieren)
+        log("[BEFUNDFELD] Reset: erster Befundvorschlag des Falls wiederhergestellt.")
+        self._kurzhinweis("Erster Befundvorschlag wiederhergestellt – Strg+Z = Stand davor", 8000)
+
+    def befund_umbauen(self):
+        """Knopf „Restructure“: den aktuellen Text (mit Peters Ergänzungen/Änderungen) über die Befundkette neu aufbauen
+        (pipeline.befund_umbauen). Ergebnis nur zur Kontrolle (nie Strg+V), Strg+Z holt den Stand davor."""
+        if not self._befundfeld_frei("Restructure"):
+            return
+        aktuell = self.result_text.get("1.0", "end-1c")
+        if not aktuell.strip():
+            self._kurzhinweis("Restructure: das Befundfeld ist leer")
+            return
+        if not keys_ready():
+            self.refresh_key_state()
+            return
+        if self._job.ereignis("ins") is None:
+            return
+        gen = self._job.gen
+        self._kontroll_gen = gen            # wie SpeechMike-INS: nur anzeigen, EOL schickt weiter
+        self._befund_wartet = self._gesendet = False
+        stand = getattr(self, "_stand_ks", None) or ""
+        if stand:   # eingesetzte IB-Lab-Zeilen gehören zum KaiScribe-Stand, nicht zu Peters Vorrang
+            stand = "\n".join([stand] + [z for zs in (getattr(self, "_ibl_zeilen", {}) or {}).values() for z in zs])
+        cas, ibl = self._cas_hinweis_fuer_lauf(), self._ibl_fuer_lauf()
+        log(f"[BEFUNDFELD] Restructure ({len(aktuell)} Zeichen, {'mit' if stand else 'ohne'} KaiScribe-Stand).")
+        self.update_status("PROCESSING", "busy")
+        self.status_badge.configure(text="   ●  Restructure läuft – dein Text hat Vorrang …   ")
+        self.record_btn.configure(state="disabled", text=" Restructure … ")
+
+        def lauf():
+            try:
+                erg = _pl.befund_umbauen(aktuell, stand, _pipeline_kontext(cas, ibl))
+            except Exception as e:
+                log_exception("[BEFUNDFELD] Restructure")
+                msg = GEMINI_401_TEXT if ("401" in str(e) or "Unauthorized" in str(e)) else f"Restructure fehlgeschlagen:\n{e}"
+                self.after(0, lambda m=msg: self._ende_fehler(gen, m, "Restructure"))
+                return
+            self.after(0, lambda: self._umbau_fertig(gen, aktuell, erg, ibl))
+        threading.Thread(target=lauf, daemon=True).start()
+
+    def _umbau_fertig(self, gen, aktuell, erg, ibl):
+        if not self._job.aktuell(gen):
+            return
+        if erg.leer:
+            self._job.ereignis("kein_text", gen)
+            self.update_status("READY", "ready")
+            self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+            self._kurzhinweis("Restructure: keine Änderung seit dem letzten KaiScribe-Stand – nichts umzubauen", 8000)
+            return
+        if self.result_text.get("1.0", "end-1c") != aktuell:   # währenddessen getippt → nichts überschreiben
+            self._ende_fehler(gen, None)
+            self._kurzhinweis("Restructure verworfen: der Befund wurde währenddessen geändert – bitte erneut", 10000)
+            return
+        self._feld_setzen(erg.report, aktuell)
+        self._stand_ks, self._fehl_stand = erg.report, None
+        pruef = list(erg.cas_hinweise or [])
+        if getattr(self, "_cas", None) is not None:
+            self._cas_hinweise_zeigen(pruef)
+            self._ibl_nach_lauf(erg)
+            self._lauf_protokollieren(erg, "(Restructure)", ibl)
+        log(f"[BEFUNDFELD] Restructure fertig: {len(pruef)} Prüfzeile(n).")
+        self._lauf_fertig(gen)
+        if pruef:
+            self._kurzhinweis("⚠ " + pruef[0] + (f" (+{len(pruef) - 1})" if len(pruef) > 1 else ""), 15000)
+        else:
+            self._kurzhinweis("Befund neu aufgebaut – deine Änderungen haben Vorrang · Strg+Z = Stand davor", 8000)
 
     def nur_text_aktiv(self):
         v = getattr(self, "nur_text_var", None)
@@ -2450,9 +2686,23 @@ class RaKScribeApp(ctk.CTk):
         if not keys_ready():
             self.refresh_key_state()
             return "break"
+        rechts = self.result_text.get("1.0", "end-1c")
+        if kontrolle and rechts.strip() and self._job.vorschau("ins") is not None and not self._nur_geruest():
+            # 3.19.16 (Peter 20.11.2026): SpeechMike-INS ohne neue Aufnahme baut einen stehenden Befund nicht still neu
+            # (zweimal INS gedrückt → neuer Titel). Neu nur, wenn das Diktat links seit diesem Befund geändert wurde
+            # und rechts nichts von Hand dazukam; sonst Hinweis auf Restructure bzw. F1 Neu.
+            ks = getattr(self, "_stand_ks", None)
+            if ks is None or rechts.strip() != ks.strip():
+                self._kurzhinweis("Rechts steht ein geänderter Befund – Restructure baut ihn neu, F1 = Neu", 8000)
+                return "break"
+            if text == (getattr(self, "_transkript_ks", None) or "").strip():
+                self._kurzhinweis("Befund steht schon rechts – EOL schickt ihn weiter", 6000)
+                return "break"
         if self._job.ereignis("ins" if kontrolle else "text") is None:  # Aufnahme oder Verarbeitung läuft
             return "break"
         gen = self._job.gen
+        self._vor_lauf = rechts      # 3.19.16: Strg+Z holt den Befund davor zurück
+        self._einbau = _bf.GERUEST if self._nur_geruest() else _bf.NEU
         # v3.8.0 SpeechMike-INS: Ergebnis nur anzeigen (EOL schickt weiter); bei „Nur Text“ der korrigierte Text
         self._kontroll_gen = gen if kontrolle else None
         self._befund_wartet = self._gesendet = False
@@ -2483,6 +2733,21 @@ class RaKScribeApp(ctk.CTk):
                 self.after(0, lambda: self._lauf_fertig(gen))
                 self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(f"{ERGAENZUNG} eingefügt", 6000))
                 return
+            if not nur_befund and getattr(self, "_einbau", None) == _bf.ERGAENZUNG:
+                # 3.19.16 (Peter 20.11.2026): rechts steht schon ein Befund, kein Cursor → das neu Diktierte (korrigiert
+                # wie bei „Nur Text“) wird ans Ende des passenden Befundteils eingebaut, Titel und Text bleiben
+                erg = _pl.nur_text_aus_diktat(getattr(self, "_neuer_text", "") or self.final_transcript, _pipeline_kontext())
+                if erg.leer:
+                    self.after(0, lambda: self._ende_kein_text(gen))
+                    return
+                if not self._job.aktuell(gen):
+                    log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingebaut.")
+                    return
+                self.after(0, lambda t=erg.report: self._ergaenzung_einbauen(gen, t))
+                self.after(0, lambda: self._lauf_fertig(gen))
+                self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(
+                    "Ergänzung eingebaut – Titel und Text bleiben · Restructure baut den Befund neu · Strg+Z = zurück", 8000))
+                return
             if self.nur_text_aktiv() and not nur_befund:  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
                 self._ui(gen, lambda: (self.result_text.delete("1.0", "end"),
                                        self.result_text.insert("1.0", "... Text wird korrigiert ...")))
@@ -2493,8 +2758,7 @@ class RaKScribeApp(ctk.CTk):
                 if not self._job.aktuell(gen):
                     log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingefügt.")
                     return
-                self._ui(gen, lambda r=erg.report: (self.result_text.delete("1.0", "end"),
-                                                    self.result_text.insert("1.0", r)))
+                self._ui(gen, lambda r=erg.report: self._befund_setzen(r))
                 self.after(0, lambda: self._lauf_fertig(gen))
                 return
             stt_roh = self.final_transcript  # v3.18.4: STT-Rohtext dieses Laufs (Nachvollziehbarkeit, nur CAS-Merkdatei)
@@ -2519,10 +2783,7 @@ class RaKScribeApp(ctk.CTk):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
                 return
             if report:
-                self._ui(gen, lambda r=report: (
-                    self.result_text.delete("1.0", "end"),
-                    self.result_text.insert("1.0", r)
-                ))
+                self._ui(gen, lambda r=report, f=bool(fehler): self._befund_setzen(r, fehler=f))
             if fehler:  # Mehr-Regionen-Befund unvollständig: fertige Teile stehen in der Box, NICHT einfügen
                 msg = ("Befund für Region " + ", ".join(f"„{f}“" for f in fehler)
                        + " konnte nicht erstellt werden — bitte erneut diktieren.\n\n"
@@ -2549,7 +2810,7 @@ class RaKScribeApp(ctk.CTk):
     def _ende_kein_text(self, gen):
         if self._job.ereignis("kein_text", gen) is None:
             return
-        self._einfuegen_ziel = None  # v3.18.9: keine „Ergänzung an Cursor-Stelle“-Anzeige über den Lauf hinaus
+        self._einfuegen_ziel = self._einbau = None  # v3.18.9: keine Ergänzungs-Anzeige über den Lauf hinaus
         messagebox.showinfo("Info", "Kein Text diktiert.")
         self.update_status("READY", "ready")
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
@@ -2559,7 +2820,15 @@ class RaKScribeApp(ctk.CTk):
         """Läuft im UI-Thread: Befund gescheitert → Status Fehler, Knopf wieder frei, ggf. Dialog."""
         if self._job.ereignis("report_failed", gen) is None:
             return
-        self._einfuegen_ziel = None  # v3.18.9 (wie _ende_kein_text)
+        self._einfuegen_ziel = self._einbau = None  # v3.18.9 (wie _ende_kein_text)
+        try:   # 3.19.16: „... Befund wird geladen ...“ nicht stehen lassen – der Text von vorher (z. B. Gerüst) kommt zurück
+            vor = getattr(self, "_vor_lauf", None)
+            if vor and self.result_text.get("1.0", "end-1c").strip() in ("... Befund wird geladen ...",
+                                                                         "... Text wird korrigiert ..."):
+                self.result_text.delete("1.0", "end")
+                self.result_text.insert("1.0", vor)
+        except Exception:
+            pass
         if msg:
             messagebox.showerror(titel, msg)
         self.update_status("ERROR", "busy")
@@ -2611,6 +2880,7 @@ class RaKScribeApp(ctk.CTk):
         self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
         self.level_indicator.configure(fg_color=READY_GREEN, width=0)
         if self.copy_formatted_report():
+            self._abgeschlossen = True   # 3.19.16: kopiert (+ Strg+V) = fertig wie EOL → nächstes Diktat = neuer Befund
             self.after(500, lambda: self._job.aktuell(gen) and self._einfuegen())
         else:
             self.update_status("ERROR", "busy")
@@ -2895,7 +3165,8 @@ class RaKScribeApp(ctk.CTk):
     def _felder_leeren(self):
         """Nach EOL: alles leeren — bereit für den nächsten Patienten."""
         self.final_transcript = self.stream_transcript = self.stream_interim = ""
-        self._einfuegen_ziel = None
+        self._einfuegen_ziel = self._einbau = None
+        self._stand_leeren()       # 3.19.16: Fall fertig → Reset-/Restructure-Stand und Strg+Z verworfen
         self._sm_sitzung_leeren()
         self.transcript_text.delete("1.0", "end")
         self.result_text.delete("1.0", "end")
@@ -3144,6 +3415,9 @@ class RaKScribeApp(ctk.CTk):
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", e.report)
         self._ibl_geruest_text = e.report
+        self._stand_ks, self._transkript_ks = e.report, ""     # 3.19.16: KaiScribe-Stand (Restructure-Diff)
+        if getattr(self, "_stand_erst", None) is None or getattr(self, "_stand_erst_geruest", False):
+            self._stand_erst, self._stand_erst_geruest = e.report, True   # Reset vor dem ersten Befund = Gerüst
         self._ibl_lauf_auftrag = a.auftrag_id
         self._ibl_im_befund = dict(e.behandelt)
         self._ibl_zeilen = {k: list(v) for k, v in e.eingesetzt.items()}
@@ -3370,6 +3644,8 @@ class RaKScribeApp(ctk.CTk):
         if self._gesendet and not laeuft:
             self._felder_leeren()  # schon eingefügter Befund gehört zum vorigen Patienten → frisch beginnen
         inhalt = laeuft or self._cas_hat_inhalt()
+        if not inhalt:
+            self._stand_leeren()     # 3.19.16: Reset-/Restructure-Stand gehört zum vorigen Fall
         self._bestaetigung_weg()
         self._cas_hinweise_zeigen([])
         self._ibl_befund_leeren()
@@ -3393,6 +3669,7 @@ class RaKScribeApp(ctk.CTk):
         self._ibl_geruest_text = None
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
         self._cas_nachvollzug = None     # v3.18.4: gehört zum Auftrag
+        self._stand_erst, self._stand_erst_geruest = None, False   # 3.19.16: Reset-Stand gehört zum Fall
         self._cas_hinweise_zeigen([])
         self._ibl_befund_leeren()
         self._ibl_band_zeigen()

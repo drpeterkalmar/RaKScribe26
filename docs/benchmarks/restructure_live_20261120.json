@@ -1,0 +1,198 @@
+{
+ "prompt": "2026-11-18-kl-tabelle-koala",
+ "route": "alle=claude-sonnet-5-5",
+ "laeufe": [
+  {
+   "fall": "knie_enostose",
+   "lauf": 1,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Knie links unauffällig.",
+   "zusatz": "Enostose im distalen Femur von 6 mm.",
+   "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
+   "vorher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nEnostose im distalen Femur von 6 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
+   "nachher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt regelrecht, im Übrigen regelrechte Knochenstruktur, abgesehen von einer Enostose im distalen Femur mit einer Größe von 6 mm. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nEnostose im distalen Femur von 6 mm links.",
+   "vorrang": [
+    "Enostose im distalen Femur von 6 mm."
+   ],
+   "hinweise": [],
+   "s": 21.7
+  },
+  {
+   "fall": "knie_enostose",
+   "lauf": 2,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Knie links unauffällig.",
+   "zusatz": "Enostose im distalen Femur von 6 mm.",
+   "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
+   "vorher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nEnostose im distalen Femur von 6 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes links.",
+   "nachher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt regelrecht. Enostose im distalen Femur von 6 mm. Im Übrigen Knochenstruktur regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nEnostose im distalen Femur links von 6 mm.",
+   "vorrang": [
+    "Enostose im distalen Femur von 6 mm."
+   ],
+   "hinweise": [],
+   "s": 21.6
+  },
+  {
+   "fall": "rh38_erguss",
+   "lauf": 1,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Kniegelenk links. Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
+   "zusatz": "Kleiner Gelenkerguss im Recessus suprapatellaris.",
+   "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist im Übrigen normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.",
+   "vorher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist im Übrigen normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nKleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.",
+   "nachher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist im Übrigen normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Kleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\n1. Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.\n2. Kleiner Gelenkerguss im Recessus suprapatellaris links.",
+   "vorrang": [
+    "Kleiner Gelenkerguss im Recessus suprapatellaris."
+   ],
+   "hinweise": [],
+   "s": 24.1
+  },
+  {
+   "fall": "rh38_erguss",
+   "lauf": 2,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Kniegelenk links. Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes, im Übrigen unauffällig.",
+   "zusatz": "Kleiner Gelenkerguss im Recessus suprapatellaris.",
+   "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist im Übrigen normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.",
+   "vorher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist im Übrigen normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nKleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.",
+   "nachher": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nMäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Im Übrigen sind die Gelenkflächen normal geformt und kongruent. Der Gelenkspalt ist im Übrigen normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Kleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\n1. Mäßige Gelenkspaltverschmälerung des medialen Kniegelenkspaltes links.\n2. Kleiner Gelenkerguss im Recessus suprapatellaris links.",
+   "vorrang": [
+    "Kleiner Gelenkerguss im Recessus suprapatellaris."
+   ],
+   "hinweise": [],
+   "s": 5.4
+  },
+  {
+   "fall": "erhalt_knie_meniskus",
+   "lauf": 1,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Kniegelenk rechts: Mäßige Gonarthrose medial betont mit Osteophyten und subchondraler Sklerosierung, kein Erguss.",
+   "zusatz": "Zusätzlich Chondrokalzinose des Außenmeniskus.",
+   "stand": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Medial betonte mäßige Gelenkspaltverschmälerung mit Osteophyten und subchondraler Sklerosierung. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nMäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).",
+   "vorher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Medial betonte mäßige Gelenkspaltverschmälerung mit Osteophyten und subchondraler Sklerosierung. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen.\n\nUnauffällige Weichteile.\nZusätzlich Chondrokalzinose des Außenmeniskus.\n\n## Ergebnis\nMäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).",
+   "nachher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Medial betonte mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Kein Hinweis auf freie Gelenkkörper. Chondrokalzinose des Außenmeniskus. Ansonsten unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Chondrokalzinose des Außenmeniskus rechts.",
+   "vorrang": [
+    "Zusätzlich Chondrokalzinose des Außenmeniskus."
+   ],
+   "hinweise": [],
+   "s": 4.4
+  },
+  {
+   "fall": "erhalt_knie_meniskus",
+   "lauf": 2,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Kniegelenk rechts: Mäßige Gonarthrose medial betont mit Osteophyten und subchondraler Sklerosierung, kein Erguss.",
+   "zusatz": "Zusätzlich Chondrokalzinose des Außenmeniskus.",
+   "stand": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nPatella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Normale Breite der Kompakta. Medial betonte mäßige Gelenkspaltverschmälerung mit Osteophyten und subchondraler Sklerosierung. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte sowie glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n\nMäßige Gonarthrose rechts medial betont mit Osteophyten und subchondraler Sklerosierung (Arthrose Grad 3 nach Kellgren & Lawrence).",
+   "vorher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nPatella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Normale Breite der Kompakta. Medial betonte mäßige Gelenkspaltverschmälerung mit Osteophyten und subchondraler Sklerosierung. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte sowie glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nZusätzlich Chondrokalzinose des Außenmeniskus.\n\n## Ergebnis\n\nMäßige Gonarthrose rechts medial betont mit Osteophyten und subchondraler Sklerosierung (Arthrose Grad 3 nach Kellgren & Lawrence).",
+   "nachher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nIm Übrigen normale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Medial betonte mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Chondrokalzinose des Außenmeniskus. Kein Hinweis auf freie Gelenkkörper. Unauffällige Weichteile.\n\n## Ergebnis\n1. Mäßige Gonarthrose rechts medial betont (Arthrose Grad 3 nach Kellgren & Lawrence).\n2. Chondrokalzinose des Außenmeniskus rechts.",
+   "vorrang": [
+    "Zusätzlich Chondrokalzinose des Außenmeniskus."
+   ],
+   "hinweise": [],
+   "s": 5.2
+  },
+  {
+   "fall": "rh99_fraktur",
+   "lauf": 1,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Beckenübersicht stehend. Geringe Gelenkspaltverschmälerung beider Hüftgelenke kranial betont, kein Hinweis auf eine Fraktur, im Übrigen unauffällig.",
+   "zusatz": "Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts.",
+   "stand": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Der CCD-Winkel ist im Normbereich. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Kein Hinweis auf eine Fraktur. Unauffällige Weichteile.\n\n## Ergebnis\nGeringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke.",
+   "vorher": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Der CCD-Winkel ist im Normbereich. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Kein Hinweis auf eine Fraktur. Unauffällige Weichteile.\nAlte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts.\n\n## Ergebnis\nGeringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke.",
+   "nachher": "## Beckenübersicht stehend\n\n## Befund\nBeide Beckenschaufeln stehen gleichhoch. Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts. Im Übrigen kein Hinweis auf eine Fraktur. Regelrechte Abbildung beider Pfannendächer. Der CCD-Winkel ist im Normbereich. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke.\n2. Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts.",
+   "vorrang": [
+    "Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts."
+   ],
+   "hinweise": [],
+   "s": 4.9
+  },
+  {
+   "fall": "rh99_fraktur",
+   "lauf": 2,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Beckenübersicht stehend. Geringe Gelenkspaltverschmälerung beider Hüftgelenke kranial betont, kein Hinweis auf eine Fraktur, im Übrigen unauffällig.",
+   "zusatz": "Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts.",
+   "stand": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke. Im Übrigen ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke.\n2. Kein Hinweis auf eine Fraktur.",
+   "vorher": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale und symmetrische Form des Beckenskeletts. Beide Beckenschaufeln stehen gleichhoch. Mineralgehalt und Knochenstruktur sind regelrecht. Die kortikalen Randkonturen sind normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke. Im Übrigen ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\nAlte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts.\n\n## Ergebnis\n1. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke.\n2. Kein Hinweis auf eine Fraktur.",
+   "nachher": "## Beckenübersicht stehend\n\n## Befund\nBeide Beckenschaufeln stehen gleichhoch. Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts. Im Übrigen Mineralgehalt und Knochenstruktur regelrecht. Im Übrigen sind die kortikalen Randkonturen normal breit, glatt und scharf abgrenzbar ohne pathologische Konturunterbrechungen. Regelrechte Abbildung beider Pfannendächer. Im Übrigen ordnungsgemäße Stellung der normal geformten Hüftköpfe. Der CCD-Winkel ist im Normbereich. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke. Keine intra- oder periartikulären Verkalkungen. Das Iliosakralgelenk und der Symphysenspalt sind normal weit, glatt und scharf begrenzt. Das Os sacrum ist unauffällig. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe kranial betonte Gelenkspaltverschmälerung beider Hüftgelenke.\n2. Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts.",
+   "vorrang": [
+    "Alte, knöchern konsolidierte Fraktur des oberen Schambeinasts rechts."
+   ],
+   "hinweise": [],
+   "s": 5.4
+  },
+  {
+   "fall": "schulter_kalk",
+   "lauf": 1,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Schulter rechts unauffällig.",
+   "zusatz": "Kalkdepot im Verlauf der Supraspinatussehne von 8 mm.",
+   "stand": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.",
+   "vorher": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\nKalkdepot im Verlauf der Supraspinatussehne von 8 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.",
+   "nachher": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation. Unauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Kalkdepot im Verlauf der Supraspinatussehne von 8 mm. Normale Weichteile.\n\n## Ergebnis\nKalkdepot im Verlauf der Supraspinatussehne von 8 mm rechts.",
+   "vorrang": [
+    "Kalkdepot im Verlauf der Supraspinatussehne von 8 mm."
+   ],
+   "hinweise": [],
+   "s": 2.2
+  },
+  {
+   "fall": "schulter_kalk",
+   "lauf": 2,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Schulter rechts unauffällig.",
+   "zusatz": "Kalkdepot im Verlauf der Supraspinatussehne von 8 mm.",
+   "stand": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.",
+   "vorher": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation.\n\nUnauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Keine Kalzifikationen im Bereich der Rotatorenmanschette.\n\nNormale Weichteile.\nKalkdepot im Verlauf der Supraspinatussehne von 8 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Schultergelenkes rechts.",
+   "nachher": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Die Gelenkflächen sind regelrecht konturiert. Der Gelenkspalt ist allseits normal weit. AC-Gelenk altersentsprechend, keine Luxation. Unauffällige Darstellung der übrigen angrenzenden Skelettanteile des Schultergürtels und des oberen Thoraxskeletts. Kalkdepot im Verlauf der Supraspinatussehne von 8 mm. Normale Weichteile.\n\n## Ergebnis\nKalkdepot im Verlauf der Supraspinatussehne rechts von 8 mm.",
+   "vorrang": [
+    "Kalkdepot im Verlauf der Supraspinatussehne von 8 mm."
+   ],
+   "hinweise": [],
+   "s": 2.1
+  },
+  {
+   "fall": "mehrfach_hand",
+   "lauf": 1,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Knie rechts unauffällig. Hand links unauffällig.",
+   "zusatz": "Hand links: Rhizarthrose.",
+   "stand": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.\n\n\n## Hand links in 2 Ebenen\n\n## Befund\n\nMineralgehalt und Knochenstruktur regelrecht. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta: normale Breite. Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung der Hand links.",
+   "vorher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.\n\n\n## Hand links in 2 Ebenen\n\n## Befund\n\nMineralgehalt und Knochenstruktur regelrecht. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta: normale Breite. Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\n\nUnauffällige Weichteile.\nHand links: Rhizarthrose.\n\n## Ergebnis\nRegelrechte Darstellung der Hand links.",
+   "nachher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.\n\n\n## Hand links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta: normale Breite. Rhizarthrose links. Im Übrigen Gelenkflächen anatomisch normal geformt und glatt begrenzt, Gelenkspalten normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRhizarthrose links.",
+   "vorrang": [
+    "Hand links: Rhizarthrose."
+   ],
+   "hinweise": [],
+   "s": 1.8
+  },
+  {
+   "fall": "mehrfach_hand",
+   "lauf": 2,
+   "status": "PASS",
+   "probleme": [],
+   "diktat": "Knie rechts unauffällig. Hand links unauffällig.",
+   "zusatz": "Hand links: Rhizarthrose.",
+   "stand": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.\n\n\n## Hand links in 2 Ebenen\n\n## Befund\n\nMineralgehalt und Knochenstruktur regelrecht. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta: normale Breite. Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung der Hand links.",
+   "vorher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.\n\n\n## Hand links in 2 Ebenen\n\n## Befund\n\nMineralgehalt und Knochenstruktur regelrecht. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta: normale Breite. Gelenkflächen anatomisch normal geformt und glatt begrenzt. Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\n\nUnauffällige Weichteile.\nHand links: Rhizarthrose.\n\n## Ergebnis\nRegelrechte Darstellung der Hand links.",
+   "nachher": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes rechts.\n\n\n## Hand links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung. Kompakta: normale Breite. Rhizarthrose links. Im Übrigen Gelenkflächen anatomisch normal geformt und glatt begrenzt sowie Gelenkspalten allseits normal weit. Kein Hinweis auf intra- oder periartikuläre Verkalkungen.\n\nUnauffällige Weichteile.\n\n## Ergebnis\nRhizarthrose links.",
+   "vorrang": [
+    "Hand links: Rhizarthrose."
+   ],
+   "hinweise": [],
+   "s": 1.9
+  }
+ ]
+}

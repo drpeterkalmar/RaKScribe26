@@ -87,8 +87,11 @@ mod._korr.korrigieren = lambda t, key, block="", log=None: "Zusätzlich kleiner 
 NEU = "## Schultergelenk links\n\n## Befund\nRegelrecht.\n\n## Ergebnis\nUnauffälliger Befund."
 mod._llm_aufruf = lambda p: NEU
 app, tb = lauf(insert=pos, fokus=False, chirp="Schulter links Tendinopathie der Supraspinatussehne")
-check("EXE ohne Cursor im Befund: normaler Ablauf, neuer Befund ersetzt den alten", "Kniegelenk" not in app.result_text.text
-      and "Schultergelenk links" in app.result_text.text, repr(app.result_text.text[:80]))
+# 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1): ohne Cursor, aber mit Befund rechts = Ergänzung, KEIN
+# neuer Befund mehr (früher: „neuer Befund ersetzt den alten“ – Titel weg, Peter: „irgendwie random“)
+check("EXE ohne Cursor im Befund: Ergänzung ans Ende des Befundteils, Titel und Text bleiben, keine Befund-KI",
+      app.result_text.text == BEFUND.replace("Bänder intakt.", "Bänder intakt.\nZusätzlich kleiner Gelenkerguss."),
+      repr(app.result_text.text[:120]))
 app.reset_dictation()
 check("EXE F9 löscht das Einfüge-Ziel", app._einfuegen_ziel is None)
 
@@ -206,9 +209,10 @@ check("Record direkt mit Markierung (Nur Text AUS) → Markierung wörtlich erse
       app.result_text.text == BEFUND.replace("Kein Erguss.", "Zusätzlich kleiner Gelenkerguss."), repr(app.result_text.text))
 mod._llm_aufruf = lambda p: NEU
 app, tb, stati, nt = lauf_direkt(insert=pos, fokus=False)
-check("Record ohne Cursor im Befund → normaler Befund (Nachdiktat), keine Ergänzungs-Anzeige",
-      "Schultergelenk links" in app.result_text.text and "Ergänzung" not in "".join(stati)
-      and getattr(app, "_letzter_hinweis", "") != "Ergänzung an Cursor-Stelle eingefügt", f"{stati} / {app.result_text.text[:40]!r}")
+check("Record ohne Cursor im Befund → Ergänzung (nicht an Cursor-Stelle), Statuszeile „Ergänzung“, Titel bleibt",
+      app.result_text.text.startswith("## Kniegelenk rechts") and "Schultergelenk" not in app.result_text.text
+      and "Ergänzung · Aufnahme läuft" in stati[0] and "Ergänzung wird eingebaut" in stati[1]
+      and "Cursor-Stelle" not in "".join(stati), f"{stati} / {app.result_text.text[:40]!r}")
 
 print("FAILS:", fails)
 sys.exit(1 if fails else 0)

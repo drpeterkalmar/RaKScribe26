@@ -1,0 +1,290 @@
+[
+ {
+  "art": "ergaenzen",
+  "name": "Knie: Ergänzung ans Ende des Befundteils",
+  "text": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "neu": "zusätzlich kleiner Gelenkerguss",
+  "ergebnis": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nZusätzlich kleiner Gelenkerguss.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "cursor": 538
+ },
+ {
+  "art": "ergaenzen",
+  "name": "Mehrfachbefund: Ergänzung zur LWS (Region im Diktat)",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+  "neu": "LWS: Osteochondrose L5/S1",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\nLWS: Osteochondrose L5/S1.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+  "cursor": 511
+ },
+ {
+  "art": "ergaenzen",
+  "name": "Mehrfachbefund ohne Region: in den letzten Abschnitt",
+  "text": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).",
+  "neu": "kleiner Erguss",
+  "ergebnis": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\nKleiner Erguss.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).",
+  "cursor": 456
+ },
+ {
+  "art": "ergaenzen",
+  "name": "Seite entscheidet bei zwei Knien",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "neu": "Knie rechts zusätzlich Erguss",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\nKnie rechts zusätzlich Erguss.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "cursor": 257
+ },
+ {
+  "art": "ergaenzen",
+  "name": "Nur-Text-Inhalt: angehängt",
+  "text": "Kniegelenk rechts unauffällig.",
+  "neu": "zusätzlich kleiner Erguss",
+  "ergebnis": "Kniegelenk rechts unauffällig. Zusätzlich kleiner Erguss.",
+  "cursor": 57
+ },
+ {
+  "art": "ergaenzen",
+  "name": "Fließtext mit Ergebnis-Zeile: davor",
+  "text": "Knie rechts: Erguss.\nErgebnis: Erguss.",
+  "neu": "Bänder intakt",
+  "ergebnis": "Knie rechts: Erguss.\nBänder intakt.\nErgebnis: Erguss.",
+  "cursor": 35
+ },
+ {
+  "art": "ergaenzen",
+  "name": "leeres Feld",
+  "text": "",
+  "neu": "Knie rechts unauffällig",
+  "ergebnis": "Knie rechts unauffällig.",
+  "cursor": 24
+ },
+ {
+  "art": "ergaenzen",
+  "name": "nur Ergebnis-Abschnitt",
+  "text": "## Knie\n\n## Ergebnis\nUnauffällig.",
+  "neu": "kleiner Erguss",
+  "ergebnis": "## Knie\nKleiner Erguss.\n\n## Ergebnis\nUnauffällig.",
+  "cursor": 23
+ },
+ {
+  "art": "ergaenzen",
+  "name": "Satzzeichen bleibt, klein → groß",
+  "text": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "neu": "Erguss?",
+  "ergebnis": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nErguss?\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "cursor": 513
+ },
+ {
+  "art": "vorrang",
+  "name": "Ergänzung + getippte Änderung",
+  "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "aktuell": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella leicht hochstehend in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nErguss.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "ergebnis": [
+   "Patella leicht hochstehend in regelrechter Position.",
+   "Erguss."
+  ]
+ },
+ {
+  "art": "vorrang",
+  "name": "Ergebnis-Nummer zählt nicht",
+  "stand": "## A\n\n## Ergebnis\n1. Erguss.",
+  "aktuell": "## A\n\n## Ergebnis\nErguss.",
+  "ergebnis": []
+ },
+ {
+  "art": "umbau_segment",
+  "name": "Enostose dazudiktiert → „Unauffällige Spongiosa“ fliegt raus, Ergebnis nennt Enostose",
+  "text": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Unauffällige Spongiosa. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nEnostose im distalen Femur von 6 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "vor": [
+   "Enostose im distalen Femur von 6 mm."
+  ],
+  "ergebnis": [
+   "Kniegelenk links in 2 Ebenen:\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nEnostose im distalen Femur von 6 mm.\nErgebnis: Regelrechte Darstellung des Kniegelenkes.",
+   [
+    "Unauffällige Spongiosa.",
+    "Mineralgehalt und Knochenstruktur sind regelrecht."
+   ]
+  ],
+  "block": "<umbau>\nDas Diktat ist KEIN neues Diktat, sondern der aktuelle Text aus dem Befundfeld (Untersuchung, Befund, bisheriges Ergebnis), den der Arzt ergänzt bzw. geändert hat. Erstelle daraus den Befund nach allen Regeln dieses Prompts vollständig neu strukturiert.\nVom Arzt ergänzt oder geändert (VORRANG – gilt vor Vorlage und bisherigem Text):\n- „Enostose im distalen Femur von 6 mm.“\nRegeln für den Umbau:\n1. Jede Vorrang-Angabe steht im Befund an der fachlich passenden Stelle (Wortlaut möglichst beibehalten); ist sie ein Befund, steht sie auch im Ergebnis.\n2. Normal- und Vorlagensätze, die einer Vorrang-Angabe widersprechen, bleiben so nicht stehen (Regeln wie bei <widersprueche>).\n3. Alle übrigen Angaben des bisherigen Textes (Befunde, Messwerte, Seiten, Grade, Empfehlungen, IB-Lab-Texte) bleiben inhaltlich vollständig erhalten. Nichts erfinden, nichts weglassen.\n4. Das Ergebnis wird an die Vorrang-Angaben angepasst; Nummerierung wie immer.\n5. Die Überschrift (Untersuchung) bleibt wie im bisherigen Text.\nSchon entfernt, weil sie einer Vorrang-Angabe widersprechen: „Unauffällige Spongiosa.“ „Mineralgehalt und Knochenstruktur sind regelrecht.“\n</umbau>"
+ },
+ {
+  "art": "umbau_segment",
+  "name": "Mehrfachbefund: nur der geänderte Abschnitt wird umgebaut, Knie (K&L-Tabelle) bleibt Zeichen für Zeichen",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\nOsteochondrose L5/S1.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+  "vor": [
+   "Osteochondrose L5/S1."
+  ],
+  "ergebnis": [
+   "Kniegelenk rechts in 2 Ebenen:\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\nRegelrechte Stellung der Wirbelkörper. Mineralgehalt und Knochenstruktur sind regelrecht.\nOsteochondrose L5/S1.\nErgebnis: Geringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence). Regelrechte Darstellung der LWS.",
+   [
+    "Bandscheibenfächer normal hoch."
+   ]
+  ],
+  "block": "<umbau>\nDas Diktat ist KEIN neues Diktat, sondern der aktuelle Text aus dem Befundfeld (Untersuchung, Befund, bisheriges Ergebnis), den der Arzt ergänzt bzw. geändert hat. Erstelle daraus den Befund nach allen Regeln dieses Prompts vollständig neu strukturiert.\nVom Arzt ergänzt oder geändert (VORRANG – gilt vor Vorlage und bisherigem Text):\n- „Osteochondrose L5/S1.“\nRegeln für den Umbau:\n1. Jede Vorrang-Angabe steht im Befund an der fachlich passenden Stelle (Wortlaut möglichst beibehalten); ist sie ein Befund, steht sie auch im Ergebnis.\n2. Normal- und Vorlagensätze, die einer Vorrang-Angabe widersprechen, bleiben so nicht stehen (Regeln wie bei <widersprueche>).\n3. Alle übrigen Angaben des bisherigen Textes (Befunde, Messwerte, Seiten, Grade, Empfehlungen, IB-Lab-Texte) bleiben inhaltlich vollständig erhalten. Nichts erfinden, nichts weglassen.\n4. Das Ergebnis wird an die Vorrang-Angaben angepasst; Nummerierung wie immer.\n5. Die Überschrift (Untersuchung) bleibt wie im bisherigen Text.\nSchon entfernt, weil sie einer Vorrang-Angabe widersprechen: „Bandscheibenfächer normal hoch.“\n</umbau>"
+ },
+ {
+  "art": "umbau_block",
+  "name": "ohne Stand",
+  "vor": [],
+  "ohne_stand": true,
+  "ergebnis": "<umbau>\nDas Diktat ist KEIN neues Diktat, sondern der aktuelle Text aus dem Befundfeld (Untersuchung, Befund, bisheriges Ergebnis), den der Arzt ergänzt bzw. geändert hat. Erstelle daraus den Befund nach allen Regeln dieses Prompts vollständig neu strukturiert.\nDer ganze Text stammt vom Arzt (alles hat Vorrang).\nRegeln für den Umbau:\n1. Jede Vorrang-Angabe steht im Befund an der fachlich passenden Stelle (Wortlaut möglichst beibehalten); ist sie ein Befund, steht sie auch im Ergebnis.\n2. Normal- und Vorlagensätze, die einer Vorrang-Angabe widersprechen, bleiben so nicht stehen (Regeln wie bei <widersprueche>).\n3. Alle übrigen Angaben des bisherigen Textes (Befunde, Messwerte, Seiten, Grade, Empfehlungen, IB-Lab-Texte) bleiben inhaltlich vollständig erhalten. Nichts erfinden, nichts weglassen.\n4. Das Ergebnis wird an die Vorrang-Angaben angepasst; Nummerierung wie immer.\n5. Die Überschrift (Untersuchung) bleibt wie im bisherigen Text.\n</umbau>"
+ },
+ {
+  "art": "titel",
+  "name": "Titel bleiben",
+  "neu": "## X\n\n## Befund\na.\n\n\n## Y\n\n## Befund\nb.",
+  "alt": [
+   "Knie links",
+   "LWS"
+  ],
+  "ergebnis": "## Knie links\n\n## Befund\na.\n\n\n## LWS\n\n## Befund\nb."
+ },
+ {
+  "art": "umbau",
+  "name": "Enostose dazudiktiert → „Unauffällige Spongiosa“ fliegt raus, Ergebnis nennt Enostose",
+  "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Unauffällige Spongiosa. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "aktuell": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Unauffällige Spongiosa. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nEnostose im distalen Femur von 6 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "llm": "## Kniegelenk links\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Unauffällige Spongiosa. Enostose im distalen Femur von 6 mm. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Der Gelenkspalt ist allseits normal weit. Unauffällige Weichteile.\n\n## Ergebnis\nEnostose im distalen Femur links.",
+  "ergebnis": {
+   "report": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Enostose im distalen Femur von 6 mm. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Der Gelenkspalt ist allseits normal weit. Unauffällige Weichteile.\n\n## Ergebnis\nEnostose im distalen Femur links.",
+   "hinweise": [
+    "„Unauffällige Spongiosa.“ nicht sicher im neuen Befund – bitte prüfen"
+   ],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "Ergänzung ändert das Ergebnis (Erguss), KI passt es an",
+  "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "aktuell": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nKleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "llm": "## Kniegelenk in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Der Gelenkspalt ist allseits normal weit. Kleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nKleiner Gelenkerguss im Recessus suprapatellaris links.",
+  "ergebnis": {
+   "report": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Der Gelenkspalt ist allseits normal weit. Kleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nKleiner Gelenkerguss im Recessus suprapatellaris links.",
+   "hinweise": [],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "Ergänzung mit Befund, KI lässt das Ergebnis normal → rote Prüfzeile",
+  "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "aktuell": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nKleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "llm": "## Kniegelenk in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Kleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "ergebnis": {
+   "report": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Kleiner Gelenkerguss im Recessus suprapatellaris.\n\n## Ergebnis\nKleiner Gelenkerguss im Recessus suprapatellaris links.",
+   "hinweise": [],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "KI verliert Peters Angabe → wörtlich nachgetragen + Prüfzeile",
+  "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "aktuell": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\nAlte knöcherne Absprengung am Fibulaköpfchen von 4 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "llm": "## Kniegelenk links\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "ergebnis": {
+   "report": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte.\nAlte knöcherne Absprengung am Fibulaköpfchen von 4 mm.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+   "hinweise": [
+    "„Alte knöcherne Absprengung am Fibulaköpfchen von 4 mm.“ nicht sicher im neuen Befund – bitte prüfen"
+   ],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "Mehrfachbefund: nur der geänderte Abschnitt wird umgebaut, Knie (K&L-Tabelle) bleibt Zeichen für Zeichen",
+  "stand": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+  "aktuell": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Bandscheibenfächer normal hoch. Mineralgehalt und Knochenstruktur sind regelrecht.\nOsteochondrose L5/S1.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+  "llm": "## LWS\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Osteochondrose L5/S1 mit Höhenminderung des Bandscheibenfachs. Im Übrigen normal hohe Bandscheibenfächer.\n\n## Ergebnis\nOsteochondrose L5/S1.",
+  "ergebnis": {
+   "report": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nRegelrechte Stellung der Wirbelkörper. Osteochondrose L5/S1 mit Höhenminderung des Bandscheibenfachs. Im Übrigen normal hohe Bandscheibenfächer.\n\n## Ergebnis\nOsteochondrose L5/S1.",
+   "hinweise": [
+    "„Bandscheibenfächer normal hoch.“ nicht sicher im neuen Befund – bitte prüfen"
+   ],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "K&L-Befund + Ergänzung: Tabellensatz und Grad bleiben",
+  "stand": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).",
+  "aktuell": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\nZusätzlich kleiner Gelenkerguss.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).",
+  "llm": "## Kniegelenk rechts\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Kleiner Gelenkerguss. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Kleiner Gelenkerguss rechts.",
+  "ergebnis": {
+   "report": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGeringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Kleiner Gelenkerguss. Im Übrigen normale Form und Stellung. Patella in regelrechter Position.\n\n## Ergebnis\n1. Geringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Kleiner Gelenkerguss rechts.",
+   "hinweise": [],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "Kinder-Befund + Ergänzung: Wachstumsfugen-Satz bleibt",
+  "stand": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur.\n\n## Ergebnis\nAltersentsprechender Befund der linken Hand ohne Fraktur.",
+  "aktuell": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur.\nWeichteilschwellung dorsal über dem Handgelenk.\n\n## Ergebnis\nAltersentsprechender Befund der linken Hand ohne Fraktur.",
+  "llm": "## Hand links\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur. Weichteilschwellung dorsal über dem Handgelenk.\n\n## Ergebnis\n1. Weichteilschwellung dorsal über dem Handgelenk links.\n2. Keine Fraktur.",
+  "ergebnis": {
+   "report": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur. Weichteilschwellung dorsal über dem Handgelenk.\n\n## Ergebnis\n1. Weichteilschwellung dorsal über dem Handgelenk links.\n2. Keine Fraktur.",
+   "hinweise": [],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "KI verliert eine eigene (nicht aus der Vorlage stammende) Angabe → Prüfzeile",
+  "stand": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur.\n\n## Ergebnis\nAltersentsprechender Befund der linken Hand ohne Fraktur.",
+  "aktuell": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur.\nWeichteilschwellung dorsal.\n\n## Ergebnis\nAltersentsprechender Befund der linken Hand ohne Fraktur.",
+  "llm": "## Hand links\n\n## Befund\nRegelrechte Stellung. Keine Fraktur. Weichteilschwellung dorsal.\n\n## Ergebnis\nWeichteilschwellung dorsal links.",
+  "ergebnis": {
+   "report": "## Hand links in 2 Ebenen\n\n## Befund\nRegelrechte Stellung. Keine Fraktur. Weichteilschwellung dorsal.\n\n## Ergebnis\nWeichteilschwellung dorsal links.",
+   "hinweise": [
+    "„Altersentsprechend offene Wachstumsfugen.“ nicht sicher im neuen Befund – bitte prüfen"
+   ],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "Fraktur ergänzt: „Kein Hinweis auf eine Fraktur.“ fällt gewollt weg, ohne Prüfzeile",
+  "stand": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur.\n\n## Ergebnis\nAltersentsprechender Befund der linken Hand ohne Fraktur.",
+  "aktuell": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Keine Fraktur.\nWulstfraktur des distalen Radius.\n\n## Ergebnis\nAltersentsprechender Befund der linken Hand ohne Fraktur.",
+  "llm": "## Hand links\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Wulstfraktur des distalen Radius.\n\n## Ergebnis\nWulstfraktur des distalen Radius links.",
+  "ergebnis": {
+   "report": "## Hand links in 2 Ebenen\n\n## Befund\nAltersentsprechend offene Wachstumsfugen. Regelrechte Stellung. Wulstfraktur des distalen Radius.\n\n## Ergebnis\nWulstfraktur des distalen Radius links.",
+   "hinweise": [],
+   "leer": false,
+   "aufrufe": 1
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "nichts geändert → nichts umzubauen (kein KI-Aufruf)",
+  "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "aktuell": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "llm": "",
+  "ergebnis": {
+   "report": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+   "hinweise": [],
+   "leer": true,
+   "aufrufe": 0
+  }
+ },
+ {
+  "art": "umbau",
+  "name": "ohne KaiScribe-Stand (getippter Text) → alles hat Vorrang",
+  "stand": "",
+  "aktuell": "Knie links: kleine Enostose im Femurkondylus, sonst unauffällig.",
+  "llm": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nKleine Enostose im Femurkondylus. Der Gelenkspalt ist allseits normal weit.\n\n## Ergebnis\nKleine Enostose im Femurkondylus links.",
+  "ergebnis": {
+   "report": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nKleine Enostose im Femurkondylus. Der Gelenkspalt ist allseits normal weit.\n\n## Ergebnis\nKleine Enostose im Femurkondylus links.",
+   "hinweise": [],
+   "leer": false,
+   "aufrufe": 1
+  }
+ }
+]

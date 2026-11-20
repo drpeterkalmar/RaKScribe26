@@ -3,9 +3,10 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, type VorrangDaten } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
+import { bloecke, blockText, umbauSegment, umbauBlock, titelUebernehmen, vorrang, saetze, fehlende, ergaenzen, pruefzeile, streichen, ergebnisFehlt, verneintVorrang } from './befundfeld.ts';
 import { ORDI_BAUSTEINE, befundBaustein, nurBaustein, bericht as bausteinBericht, vorlage as bausteinVorlage, kiHinweis, saetzeEinsetzen, type Bausteine } from './bausteine.ts';
 
 export type PipelineKontext = GenKontext & {
@@ -19,14 +20,16 @@ export type PipelineKontext = GenKontext & {
 // Diktat mit mehreren Regionen ("Schulter rechts … Ellbogen rechts …") → je Region ein eigener Befund mit eigenem
 // Template und eigenem Ergebnis (parallel), danach Ergebnis deterministisch nummeriert.
 // v3.9.0 (Georg 13.10.): Rho-Auslöser raus aus dem Diktat, Rho-Baustein danach rein. Sync: pipeline.py
-export const befundFuerSegment = async (seg: string, ctx: PipelineKontext): Promise<string> => {
+// 3.19.16: umbau = <umbau>-Hinweis von Restructure (befundfeld.ts umbauBlock); '' = wie bisher
+// weg = vorher gestrichene Normalsätze (vor den Wächtern heraus, wie pipeline.py ctx.umbau_weg)
+export const befundFuerSegment = async (seg: string, ctx: PipelineKontext, umbau = '', weg: string[] = []): Promise<string> => {
   const [segOhne, score, rho] = rhoErkennen(seg);
-  if (!rho) return befundFuerSegmentKern(seg, ctx);
+  if (!rho) return befundFuerSegmentKern(seg, ctx, umbau, weg);
   console.log(`[RHO] Textbaustein (Score ${score || '–'})`);
-  return rhoEinfuegen(await befundFuerSegmentKern(segOhne, ctx), score);
+  return rhoEinfuegen(await befundFuerSegmentKern(segOhne, ctx, umbau, weg), score);
 };
 
-const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise<string> => {
+const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext, umbau = '', weg: string[] = []): Promise<string> => {
   // v3.3 (Peter 06.10.): „Baustein Mammo 1“ → Ordi-Textbaustein statt Vorlage (1:1 wie EXE pipeline.py)
   const bausteine = ctx.bausteine ?? ORDI_BAUSTEINE;
   const [bKey, bRest] = befundBaustein(seg, bausteine);
@@ -52,7 +55,7 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
   }
 
   // RAG-Bypass-Shortcut für reine Normalbefunde (1:1 wie EXE)
-  if (isPureNormalFinding(seg, ctx.displayNames) && detectedKey !== 'allgemein') {
+  if (isPureNormalFinding(seg, ctx.displayNames) && detectedKey !== 'allgemein' && !umbau) {   // Restructure: immer KI
     console.log(`[BYPASS] Normalbefund erkannt. Generiere direkt aus Template.`);
     // v3.2 (Peter 05.10.): Ergebnis = Normal-Ergebnis der Untersuchung (+ Seite) — NIE das Diktat abschreiben
     const ergebnis = ergebnisMitSeite(activeTemplate.ergebnis || '', seg);
@@ -67,13 +70,15 @@ const befundFuerSegmentKern = async (seg: string, ctx: PipelineKontext): Promise
   }
   // v3.15.5 (Peter 15.10.): diktierte umschriebene Befunde + die widersprechenden Normalsätze der Vorlage (Sync: pipeline.py)
   const wid = ctx.vorrang.widersprueche;
-  const widBlock = widerspruchPrompt(widerspruchBefunde(seg, wid), activeTemplate.body, wid);
+  // 3.19.16 Restructure: Vorrang-Hinweis vor <widersprueche> an der Stelle {examples} (Sync: pipeline.py)
+  const widBlock = [umbau, widerspruchPrompt(widerspruchBefunde(seg, wid), activeTemplate.body, wid)].filter(Boolean).join('\n');
   const structuredText = await callGeminiLLM(seg, activeTemplate.body, activeTemplate.display_name, widBlock, activeTemplate.ergebnis || 'Unauffälliger Befund.', ctx);
   // Step 3: Konsistenz-Validierung gegen das Diktat
   ctx.status('Validiere Befund-Konsistenz...');
   const validatedReport = await validateReportConsistency(seg, structuredText, ctx);
   // v3.15.5: übrig gebliebene widersprechende Normalsätze → „Im Übrigen …“, Befund/Ergebnis nennen den Befund
-  const [bereinigt, aend] = widersprucheBereinigen(nachbearbeiten(validatedReport), seg, wid);
+  const nb = nachbearbeiten(validatedReport);
+  const [bereinigt, aend] = widersprucheBereinigen(weg.length ? streichen(nb, weg) : nb, seg, wid);
   if (aend.length) console.log(`[WIDERSPRUCH] ${aend.length} Korrektur(en) nach der KI`);
   // v3.18.13 (Peter 14.11.2026, #314): Abschnitt nennt selbst einen Befund ↔ Normalsatz daneben, fremder Vorlagensatz (Sync: pipeline.py)
   const [geprueft, abschn] = abschnitteBereinigen(bereinigt, seg, ctx.templates, wid);
@@ -111,3 +116,43 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
 // Sync: source_code/pipeline.py nur_text_aus_diktat.
 export const nurTextAusDiktat = (text: string, ctx: Pick<PipelineKontext, 'bausteine'>): string =>
   saetzeEinsetzen(text.trim(), ctx.bausteine ?? ORDI_BAUSTEINE);
+
+// 3.19.16 Restructure (Peter 20.11.2026): aktuellen Text im Befundfeld über die Befundkette neu aufbauen, Peters
+// Änderungen seit dem letzten KaiScribe-Stand (stand) haben Vorrang, Überschriften bleiben, unveränderte Abschnitte
+// (mehrere Untersuchungen) bleiben Zeichen für Zeichen; danach Prüfung, dass nichts verloren ging (Prüfzeilen).
+// Sync: pipeline.py befund_umbauen (ohne CAS/IB Lab — die gibt es nur in der EXE).
+export type Umbau = { report: string; hinweise: string[]; leer: boolean };
+export const befundUmbauen = async (aktuellIn: string, stand: string, ctx: PipelineKontext): Promise<Umbau> => {
+  const text = (aktuellIn || '').trim();
+  if (!text) return { report: '', hinweise: [], leer: true };
+  const ohneStand = !(stand || '').trim();
+  const vor = ohneStand ? [] : vorrang(stand, text);
+  if (!vor.length && !ohneStand) return { report: text, hinweise: [], leer: true };
+  const alle = bloecke(text);
+  const bl = alle.filter(b => b.befund || b.ergebnis).length ? alle.filter(b => b.befund || b.ergebnis) : alle;
+  const teile: string[] = [], titel: (string | null)[] = [];
+  for (const b of bl) {
+    const bt = blockText(text, b);
+    const eigene = vor.filter(s => vorlageNormalisieren(bt).includes(vorlageNormalisieren(s)));
+    if (bl.length > 1 && !eigene.length && !ohneStand) { teile.push(bt); titel.push(b.titel); continue; }
+    const [seg, gestrichen] = umbauSegment(bt, eigene, ctx.vorrang.widersprueche);
+    if (gestrichen.length) console.log(`[UMBAU] ${gestrichen.length} widersprechende(r) Normalsatz/Normalsätze vorher entfernt`);
+    teile.push(streichen(await befundFuerSegment(seg, ctx, umbauBlock(eigene, gestrichen, ohneStand), gestrichen), gestrichen));
+    titel.push(b.titel);
+  }
+  let report = titelUebernehmen(befundeZusammenfuegen(teile), titel);
+  const hinweise: string[] = [];
+  const fehlt = fehlende(vor, report);
+  for (const s of fehlt) { report = ergaenzen(report, s)[0]; hinweise.push(pruefzeile(s)); }
+  hinweise.push(...ergebnisFehlt(vor, report).map(s => pruefzeile(s, true)));
+  const vorlagen = new Set<string>();
+  for (const t of Object.values(ctx.templates)) {
+    const body = t?.body || '';
+    for (const [a, e] of saetzeMitLage(body)) { const n = vorlageNormalisieren(body.slice(a, e)); if (n) vorlagen.add(n); }
+  }
+  for (const [neu, alte] of Object.entries(VORLAGEN_ALTFORMEN)) if (vorlagen.has(vorlageNormalisieren(neu))) alte.forEach(x => vorlagen.add(vorlageNormalisieren(x)));
+  const eigeneAlt = saetze(text, false).map(([s]) => s).filter(s => !vorlagen.has(vorlageNormalisieren(s)) && !vor.includes(s));
+  hinweise.push(...fehlende(eigeneAlt, report).filter(s => !verneintVorrang(s, vor)).map(s => pruefzeile(s)));
+  console.log(`[UMBAU] ${vor.length} Änderung(en) mit Vorrang, ${teile.length} Abschnitt(e), ${fehlt.length} nachgetragen, ${hinweise.length} Prüfzeile(n)`);
+  return { report, hinweise, leer: false };
+};

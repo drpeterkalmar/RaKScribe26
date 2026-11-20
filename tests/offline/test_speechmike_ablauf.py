@@ -239,18 +239,27 @@ CHIRP["tor"].set()
 bis_ruhe(app)
 check("… danach steht der Befund zur Kontrolle (nichts eingefügt)", app._status_raw == "KONTROLLE" and S.AUFZ.tasten == [])
 
-# 6. Nachdiktat: Record nach INS hängt an, nächstes INS = neuer Befund aus dem Gesamtdiktat
+# 6. Nachdiktat: Record nach INS hängt links an; rechts steht schon ein Befund → 3.19.16 (Peter 20.11.2026,
+# kaiscribe-befundfeld-sicher-n1: „wird manchmal alles gelöscht oder der Titel ändert sich“) = ERGÄNZUNG: nur das neu
+# Diktierte kommt ans Ende des Befundteils, Titel und bisheriger Text bleiben Zeichen für Zeichen, keine Befund-KI.
 ALT = app.result_text.text
 CHIRP["antworten"] = ["Zusätzlich kleiner Gelenkerguss."]
+n_prompts = len(LLM["prompts"])
 druecke(app, "RECORD")
-check("Record nach INS: bisheriges Diktat bleibt links, alter Befund bleibt rechts (bis zum nächsten INS)",
+check("Record nach INS: bisheriges Diktat bleibt links, alter Befund bleibt rechts, Statuszeile „Ergänzung“",
       app._job.zustand == "RECORDING" and app._basis == NORMAL and app.transcript_text.text.startswith(NORMAL)
-      and app.result_text.text == ALT, repr(app.transcript_text.text))
+      and app.result_text.text == ALT and app._einbau == "ergaenzung", repr(app.transcript_text.text))
 audio(app); druecke(app, "INS"); bis_ruhe(app)
-check("nächstes INS: Befund aus dem Gesamtdiktat (bisher + neu), nichts eingefügt",
-      LLM["prompts"] and NORMAL in LLM["prompts"][-1] and "Zusätzlich kleiner Gelenkerguss." in LLM["prompts"][-1]
-      and "Gelenkerguss" in app.result_text.text and app.transcript_text.text == NORMAL + " Zusätzlich kleiner Gelenkerguss."
-      and S.AUFZ.tasten == [], repr(app.transcript_text.text))
+titel = ALT.split("\n", 1)[0]
+check("nächstes INS: Ergänzung eingebaut (vor „## Ergebnis“), Titel + Text bleiben, keine Befund-KI, nichts eingefügt",
+      len(LLM["prompts"]) == n_prompts and app.result_text.text.split("\n", 1)[0] == titel
+      and "Zusätzlich kleiner Gelenkerguss." in app.result_text.text.split("## Ergebnis")[0]
+      and app.result_text.text.replace("\nZusätzlich kleiner Gelenkerguss.", "", 1) == ALT
+      and app.transcript_text.text == NORMAL + " Zusätzlich kleiner Gelenkerguss." and S.AUFZ.tasten == [],
+      repr(app.result_text.text))
+check("… Strg+Z im Befundfeld holt den Befund vor der Ergänzung zurück, nochmal = wieder vor",
+      app._rueckgaengig() == "break" and app.result_text.text == ALT and app._rueckgaengig() == "break"
+      and "Gelenkerguss" in app.result_text.text)
 
 # 6b. Cursor im Befund + Record (Nachdiktat) → INS: NUR das neu Diktierte an der Cursor-Stelle (v3.5.0-Logik)
 app = neue_app()

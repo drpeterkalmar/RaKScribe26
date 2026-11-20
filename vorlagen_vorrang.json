@@ -371,7 +371,7 @@
         "muster": "mineral(?:gehalt|isation|salzgehalt)[a-zäöüß0-9_]*[^.]{0,60}(?:regelrecht|normal|unauffällig|regulär)|(?<![a-zäöüß])(?:regelrechte?|normale?)[rsn]? mineral"
       },
       "struktur": {
-        "muster": "(?:knochen|spongiosa)struktur[a-zäöüß0-9_]*[^.]{0,60}(?:regelrecht|normal|unauffällig|regulär)|spongiosa[a-zäöüß0-9_]*[^.]{0,40}(?:regelrecht|normal|scharf)|medulla ossium[^.]{0,40}(?:regulär|regelrecht|normal)|(?<![a-zäöüß])keine (?:fokalen? )?läsion"
+        "muster": "(?:knochen|spongiosa)struktur[a-zäöüß0-9_]*[^.]{0,60}(?:regelrecht|normal|unauffällig|regulär)|spongiosa[a-zäöüß0-9_]*[^.]{0,40}(?:regelrecht|normal|scharf)|medulla ossium[^.]{0,40}(?:regulär|regelrecht|normal)|(?<![a-zäöüß])keine (?:fokalen? )?läsion|(?<![a-zäöüß])(?:unauffällige?[rsn]?|regelrechte?[rsn]?|normale?[rsn]?|reguläre?[rsn]?|homogene?[rsn]?) (?:[a-zäöüß]+ )?spongiosa"
       },
       "verkalkung": {
         "muster": "(?<![a-zäöüß])kein[a-zäöüß0-9_]*[^.]{0,60}(?:verkalkung|kalzifikation|kalkdepot|kalkeinlagerung)|ohne (?:hinweis auf |nachweis von )?verkalkung"

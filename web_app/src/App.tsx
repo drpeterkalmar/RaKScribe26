@@ -24,10 +24,17 @@ import { type TemplatesMap } from './detect.ts';
 import { istAbbruch, fehlermeldung } from './net.ts';
 // Umbau Schritt 18: Gemini-Aufrufe (Call 0/1/2, Schlüsselprüfung) und Befund-Kette als Module
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
-import { befundAusDiktat, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
+import { befundAusDiktat, befundUmbauen, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
 import { einfuegen, markdownOffset } from './einfuegen.ts';
+import { ergaenzen, modus, type Modus } from './befundfeld.ts';
 // v3.18.9 (Peter 12.11.): Cursor im Befund beim Record → wörtliche Ergänzung dort (wie RaKScribe.py ERGAENZUNG)
 const ERGAENZUNG = 'Ergänzung an Cursor-Stelle';
+// 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1): steht rechts schon Text, ist jedes Diktat eine Ergänzung
+// (Titel und Text bleiben); neuer Befund nur bei leerem Feld. Statuszeilen = RaKScribe.py EINBAU_STATUS.
+const EINBAU_STATUS: Partial<Record<Modus, { aufnahme: string; pause: string }>> = {
+  ergaenzung: { aufnahme: 'Ergänzung · Aufnahme läuft', pause: 'Ergänzung · Pause – Record: weiter · INS: einbauen' },
+  neu: { aufnahme: 'Neuer Befund · Aufnahme läuft', pause: 'Neuer Befund · Pause – Record: weiter · INS: Befund erstellen' },
+};
 import { transcribeAudio, transcribeFullAudioWithGoogle, mitFallback, getSttToken, type SttKontext, type SttSchluessel, type Phrasen } from './stt.ts';
 import { LaufVerwaltung, befundLauf, uiAktion, type Lauf, type BefundUi, type AppZustand } from './lauf.ts';
 // v3.8.0 (Peter 11.10.): SpeechMike-Tasten + LEDs direkt über WebHID (Sync: source_code/speechmike.py)
@@ -331,6 +338,14 @@ export default function App() {
   const laufendVonRef = useRef<number>(0);              // erster Live-Chunk des laufenden Abschnitts
   const segStartRef = useRef<number>(0);                // erstes Sample des laufenden Abschnitts
   const basisRef = useRef<string>('');                  // bisheriges Diktat (Nachdiktat)
+  // 3.19.16 Befundfeld (Sync: RaKScribe.py): Art des laufenden Diktats, erster/letzter KaiScribe-Stand des Falls
+  // (Reset / Restructure-Diff), ein Schritt zurück (Strg+Z), Feldinhalt vor dem Lauf
+  const einbauRef = useRef<Modus | null>(null);
+  const standErstRef = useRef<string | null>(null);
+  const standKsRef = useRef<string | null>(null);
+  const transkriptKsRef = useRef<string | null>(null);
+  const rueckRef = useRef<string | null>(null);
+  const vorLaufRef = useRef<string | null>(null);
   const gesendetRef = useRef<boolean>(false);           // sichtbarer Befund wurde schon automatisch kopiert (F10)
   const [befundWartet, setBefundWartet] = useState<boolean>(false);  // INS-Ergebnis wartet auf EOL (LED grün)
   const [repariert, setRepariert] = useState<'' | 'laeuft' | 'fertig'>('');
@@ -535,7 +550,12 @@ export default function App() {
 
   // Befund (Regionen → Bypass | Call 1 + 2) oder im Nur-Text-Modus nur der korrigierte Text (Call 0 lief schon)
   // v3.5.0: mit gemerkter Cursor-Stelle → korrigierter Text in den bestehenden Befund (Ergebnis = ganzer Befund)
-  const befundOderText = (text: string, ctx: PipelineKontext, ziel: [number, number] | null = null): Promise<string> => {
+  const befundOderText = (text: string, ctx: PipelineKontext, ziel: [number, number] | null = null, ergaenzung = false): Promise<string> => {
+    if (ergaenzung && !ziel) {  // 3.19.16: ans Ende des passenden Befundteils, Titel und Text bleiben (befundfeld.ts)
+      const [neu, cursor] = ergaenzen(structuredReportRef.current, nurTextAusDiktat(text, ctx), grossSatzanfangRef.current);
+      if (reportView === 'text') setCursorSetzen([cursor, cursor]);
+      return Promise.resolve(neu);
+    }
     if (ziel) {
       const [neu, cursor] = einfuegen(structuredReportRef.current, ziel[0], ziel[1], nurTextAusDiktat(text, ctx), grossSatzanfangRef.current);
       setReportView('text');
@@ -545,9 +565,23 @@ export default function App() {
     return nurTextRef.current ? Promise.resolve(nurTextAusDiktat(text, ctx)) : befundAusDiktat(text, ctx);
   };
   // v3.8.0: kontrolle = SpeechMike-INS → Ergebnis nur anzeigen, NICHT kopieren (EOL schickt es weiter)
-  const befundUi = (kontrolle = false): BefundUi => ({
+  // 3.19.16: Befundfeld setzen, vorher (Standard: jetziger Inhalt) holt Strg+Z zurück
+  const feldSetzen = (text: string, vorher: string = structuredReportRef.current) => {
+    if (vorher.trim() && vorher !== text) rueckRef.current = vorher;
+    setStructuredReport(text);
+  };
+  const standLeeren = () => { standErstRef.current = standKsRef.current = transkriptKsRef.current = rueckRef.current = null; };
+  // art: 'neu' = neuer Befund (Stände merken), sonst Ergänzung/Cursor (Peters Text → kein neuer KaiScribe-Stand)
+  const befundUi = (kontrolle = false, art: 'neu' | 'ergaenzung' = 'neu'): BefundUi => ({
     transkript: setTranscript,
-    befund: setStructuredReport,
+    befund: (t: string) => {
+      if (art === 'neu') {
+        feldSetzen(t, vorLaufRef.current ?? '');
+        standKsRef.current = t;
+        if (standErstRef.current === null) standErstRef.current = t;
+      } else feldSetzen(t);
+      einbauRef.current = null;
+    },
     status: setStatusText,
     fertig: kontrolle
       ? () => { setStatus('ready'); setStatusText('Befund prüfen – EOL schickt ihn weiter'); setBefundWartet(true); }
@@ -652,6 +686,8 @@ export default function App() {
 
       const lauf = laeufeRef.current.neu();
       aufnahmeLaufRef.current = lauf;
+      // 3.19.16: schon automatisch kopierter Befund (F10/Knopf) = fertig wie nach EOL → nächstes Diktat = neuer Befund
+      const abgeschlossen = gesendetRef.current;
       basisRef.current = basis;
       abschnitteRef.current = [];
       laufendVonRef.current = 0;
@@ -662,10 +698,12 @@ export default function App() {
       setBefundWartet(false);
       setRepariert('');
       setTranscript(basis);
-      // v3.5.0: an der Cursor-Stelle → Befund bleibt; v3.8.0: Nachdiktat → alter Befund bleibt bis zum nächsten INS
-      if (!einfuegeZielRef.current && !basis) setStructuredReport('');
+      // 3.19.16: das rechte Feld wird beim Start nie mehr geleert — Text rechts = Ergänzung (befundfeld.ts modus)
+      einbauRef.current = modus(structuredReportRef.current, false, !!einfuegeZielRef.current, false, abgeschlossen);
+      vorLaufRef.current = structuredReportRef.current;
       setStatus('recording');
-      setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft` : 'Aufnahme läuft...');
+      setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft`
+        : EINBAU_STATUS[einbauRef.current]?.aufnahme ?? 'Aufnahme läuft...');
       pufferRef.current = new Int16Puffer();
 
       // Reset chunk refs
@@ -768,6 +806,8 @@ export default function App() {
     const mitBasis = (t: string) => [basis, t].map(x => x.trim()).filter(Boolean).join(' ');
     const ziel = einfuegeZielRef.current;  // v3.5.0: gemerkte Cursor-Stelle (null = normaler Befund)
     einfuegeZielRef.current = null;
+    const ergaenzung = einbauRef.current === 'ergaenzung';  // 3.19.16: Text rechts, kein Cursor → einbauen
+    const nurNeu = !!ziel || ergaenzung;
     await befundLauf(lauf, {
       transkribieren: async () => {
         const st = lauf.nurAktuell(setStatusText);
@@ -803,12 +843,15 @@ export default function App() {
         }
         // Gutachten P2-10: ohne verwertbaren Text die echte Google-Meldung zeigen statt „kein Text erkannt“
         if (!finalRawText.trim() && sttFehler) throw sttFehler;
-        return ziel ? finalRawText : mitBasis(finalRawText);  // v3.8.0: Nachdiktat hängt an (Cursor-Einfügen: nur neu)
+        return nurNeu ? finalRawText : mitBasis(finalRawText);  // v3.8.0: Nachdiktat hängt an (Ergänzung: nur neu)
       },
       korrigieren: (text, signal) => correctTranscriptionWithGemini(text, genKontext(lauf, signal)),
       // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
-      befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal), ziel),
-    }, { ...befundUi(kontrolle), transkript: (t: string) => setTranscript(ziel ? mitBasis(t) : t) },
+      befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal), ziel, ergaenzung),
+    }, { ...befundUi(kontrolle, nurNeu ? 'ergaenzung' : 'neu'), transkript: (t: string) => {
+      setTranscript(nurNeu ? mitBasis(t) : t);
+      if (!nurNeu) transkriptKsRef.current = t;
+    } },
     { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
   };
 
@@ -830,7 +873,8 @@ export default function App() {
     laufendVonRef.current = chunkTranscriptsRef.current.length;
     setStatus('paused');
     setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Pause – Record: weiter · INS: einfügen`
-      : 'Pause – Record: weiter · INS: Befund erstellen');
+      : einbauRef.current && EINBAU_STATUS[einbauRef.current] ? EINBAU_STATUS[einbauRef.current]!.pause
+        : 'Pause – Record: weiter · INS: Befund erstellen');
     anzeigeAktualisieren();
     if (ende - start < 8000) return;  // unter 0,5 s: nichts zu reparieren
     setRepariert('laeuft');
@@ -851,7 +895,8 @@ export default function App() {
     segStartRef.current = pufferRef.current.laenge;
     pausiertRef.current = false;
     setStatus('recording');
-    setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft` : 'Aufnahme läuft...');
+    setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft`
+      : einbauRef.current && EINBAU_STATUS[einbauRef.current] ? EINBAU_STATUS[einbauRef.current]!.aufnahme : 'Aufnahme läuft...');
   };
 
   // Manual Copy Result
@@ -875,6 +920,9 @@ export default function App() {
     setStatus('processing');
     setStatusText('Verarbeite hochgeladenes Audio...');
     setTranscript('');
+    vorLaufRef.current = structuredReportRef.current;  // 3.19.16: Strg+Z holt den Befund davor zurück
+    standLeeren();
+    rueckRef.current = vorLaufRef.current.trim() ? vorLaufRef.current : null;
     setStructuredReport('');
 
     await befundLauf(lauf, {
@@ -904,8 +952,21 @@ export default function App() {
       setStatusText(kontrolle ? 'Kein Diktat – erst Record drücken' : 'Bitte zuerst den Diktattext links eintippen oder einfügen.');
       return;
     }
+    const rechts = structuredReportRef.current;
+    if (kontrolle && rechts.trim()) {
+      // 3.19.16 (Sync: RaKScribe.py befund_aus_text): SpeechMike-INS ohne neue Aufnahme baut einen stehenden Befund
+      // nicht still neu — nur, wenn links seit diesem Befund geändert wurde und rechts nichts von Hand dazukam
+      if (standKsRef.current === null || rechts.trim() !== standKsRef.current.trim()) {
+        setStatusText('Rechts steht ein geänderter Befund – Restructure baut ihn neu, F1 = Neu');
+        return;
+      }
+      if (text === (transkriptKsRef.current ?? '').trim()) { setStatusText('Befund steht schon rechts – EOL schickt ihn weiter'); return; }
+    }
     const lauf = laeufeRef.current.neu();
     einfuegeZielRef.current = null;
+    einbauRef.current = 'neu';
+    vorLaufRef.current = rechts;
+    transkriptKsRef.current = text;
     gesendetRef.current = false;
     setBefundWartet(false);
     setStatus('processing');
@@ -946,6 +1007,8 @@ export default function App() {
     segStartRef.current = 0;
     basisRef.current = '';
     gesendetRef.current = false;
+    einbauRef.current = null;
+    standLeeren();  // 3.19.16: F1/F9 Neu und EOL = neuer Fall → Reset-/Restructure-Stand und Strg+Z verworfen
     setBefundWartet(false);
     setRepariert('');
 
@@ -953,6 +1016,72 @@ export default function App() {
     setStructuredReport('');
     setStatus('ready');
     setStatusText('Bereit');
+  };
+
+  // ── 3.19.16 (Peter 20.11.2026): Knöpfe im Befund-Kopf (Sync: RaKScribe.py befund_leeren/_zuruecksetzen/_umbauen) ──
+  const befundfeldFrei = (was: string): boolean => {
+    if (statusRef.current !== 'ready' || !keysReadyRef.current) { setStatusText(`${was}: erst Aufnahme/Verarbeitung abschließen`); return false; }
+    return true;
+  };
+  const befundLeeren = () => {  // Clear all: Feld (und Diktat dazu) leeren, nächstes Diktat = neuer Befund
+    if (!befundfeldFrei('Clear all')) return;
+    const vorher = structuredReportRef.current;
+    if (vorher.trim()) rueckRef.current = vorher;
+    setStructuredReport('');
+    setTranscript('');
+    basisRef.current = '';
+    gesendetRef.current = false;
+    setBefundWartet(false);
+    standKsRef.current = transkriptKsRef.current = null;
+    einfuegeZielRef.current = null;
+    einbauRef.current = null;
+    setStatusText('Befundfeld geleert – nächstes Diktat = neuer Befund · Strg+Z holt ihn zurück');
+  };
+  const befundZuruecksetzen = () => {  // Reset: erster Befundvorschlag dieses Falls
+    if (!befundfeldFrei('Reset')) return;
+    const erst = standErstRef.current;
+    if (!erst) { setStatusText('Reset: noch kein Befundvorschlag in diesem Fall'); return; }
+    if (structuredReportRef.current === erst) { setStatusText('Reset: es steht schon der erste Befundvorschlag da'); return; }
+    feldSetzen(erst);
+    standKsRef.current = erst;
+    setStatusText('Erster Befundvorschlag wiederhergestellt – Strg+Z = Stand davor');
+  };
+  const befundUmbauenKnopf = async () => {  // Restructure: Peters Änderungen haben Vorrang, nur zur Kontrolle
+    if (!befundfeldFrei('Restructure')) return;
+    const aktuell = structuredReportRef.current;
+    if (!aktuell.trim()) { setStatusText('Restructure: das Befundfeld ist leer'); return; }
+    const lauf = laeufeRef.current.neu();
+    setStatus('processing');
+    setStatusText('Restructure läuft – dein Text hat Vorrang …');
+    try {
+      const erg = await befundUmbauen(aktuell, standKsRef.current ?? '', genKontext(lauf, lauf.signal));
+      if (!lauf.aktuell()) return;
+      setStatus('ready');
+      if (erg.leer) { setStatusText('Restructure: keine Änderung seit dem letzten KaiScribe-Stand – nichts umzubauen'); return; }
+      if (structuredReportRef.current !== aktuell) { setStatusText('Restructure verworfen: der Befund wurde währenddessen geändert – bitte erneut'); return; }
+      feldSetzen(erg.report, aktuell);
+      standKsRef.current = erg.report;
+      setBefundWartet(true);
+      setStatusText(erg.hinweise.length ? `⚠ ${erg.hinweise[0]}${erg.hinweise.length > 1 ? ` (+${erg.hinweise.length - 1})` : ''}`
+        : 'Befund neu aufgebaut – deine Änderungen haben Vorrang · Strg+Z = Stand davor');
+    } catch (err: unknown) {
+      if (!lauf.aktuell()) return;
+      setStatus('ready');
+      setStatusText('Restructure fehlgeschlagen.');
+      if (!istAbbruch(err)) alert('Restructure fehlgeschlagen: ' + fehlermeldung(err));
+    }
+  };
+  // Strg+Z im Befund (beide Ansichten): Stand vor dem letzten KaiScribe-Schritt, nochmal = wieder vor
+  const rueckgaengig = (): boolean => {
+    const alt = rueckRef.current;
+    if (alt === null || statusRef.current !== 'ready') return false;
+    rueckRef.current = structuredReportRef.current;
+    setStructuredReport(alt);
+    setStatusText('Vorheriger Stand zurück – Strg+Z noch einmal = wieder vor');
+    return true;
+  };
+  const strgZ = (e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && rueckgaengig()) e.preventDefault();
   };
 
   // Refs to avoid stale closures in global keyboard event listeners (Umbau Schritt 19: useLatest)
@@ -1181,6 +1310,8 @@ export default function App() {
                   <span>SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig &amp; weiter</span>
                   <span>F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)</span>
                   <span>In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)</span>
+                  <span>Steht rechts schon ein Befund: Record = Ergänzung (Titel und Text bleiben) · neuer Befund nur bei leerem Feld oder F1</span>
+                  <span>Befund-Kopf: Clear all = Feld leeren · Reset = erster Vorschlag · Restructure = neu aufbauen (deine Änderungen haben Vorrang) · Strg+Z im Befund = Schritt zurück</span>
                 </div>
               </div>
             )}
@@ -1262,6 +1393,10 @@ export default function App() {
         <section className="panel panel-report">
           <div className="panel-head">
             <h2><Sparkles size={16} /> Befund</h2>
+            {/* 3.19.16 (Peter 20.11.2026): drei Knöpfe per Maus; SpeechMike-Belegung unverändert */}
+            <button className="btn btn-ghost btn-sm" onClick={befundLeeren} disabled={status !== 'ready' || !structuredReport} title="Befundfeld leeren – nächstes Diktat = neuer Befund (Strg+Z holt ihn zurück)">Clear all</button>
+            <button className="btn btn-ghost btn-sm" onClick={befundZuruecksetzen} disabled={status !== 'ready'} title="Zurück zum ersten Befundvorschlag dieses Falls">Reset</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => void befundUmbauenKnopf()} disabled={status !== 'ready' || !structuredReport || !keysReady} title="Befund aus dem aktuellen Text neu aufbauen – deine Änderungen haben Vorrang">Restructure</button>
             {isCopied && <span className="copied"><Check size={13} /> Kopiert</span>}
             {status === 'processing' && <LoaderCircle size={16} className="spin muted" />}
             <label className="switch" title="Nur die korrigierte Spracherkennung übernehmen, ohne strukturierten Befund">
@@ -1279,10 +1414,10 @@ export default function App() {
           </div>
           {reportView === 'formatiert' ? (
             structuredReport
-              ? <div className="report-view" title="Klicken zum Bearbeiten oder um an dieser Stelle zu diktieren" onMouseUp={formatiertAngeklickt} dangerouslySetInnerHTML={{ __html: reportToHtml(structuredReport) }} />
+              ? <div className="report-view" tabIndex={0} onKeyDown={strgZ} title="Klicken zum Bearbeiten oder um an dieser Stelle zu diktieren" onMouseUp={formatiertAngeklickt} dangerouslySetInnerHTML={{ __html: reportToHtml(structuredReport) }} />
               : <div className="report-view report-empty">Der strukturierte Befund erscheint hier nach dem Diktat und wird automatisch kopiert.</div>
           ) : (
-            <textarea ref={reportEditorRef} value={structuredReport} onChange={e => setStructuredReport(e.target.value)}
+            <textarea ref={reportEditorRef} value={structuredReport} onChange={e => setStructuredReport(e.target.value)} onKeyDown={strgZ}
               className="editor editor-report" placeholder="Noch kein Befund."
               title="Befund bearbeiten. Cursor setzen oder Text markieren und F10: das Diktat wird an dieser Stelle eingefügt." />
           )}

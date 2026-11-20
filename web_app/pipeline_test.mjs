@@ -7,7 +7,8 @@ import { LaufVerwaltung, befundLauf } from './src/lauf.ts';
 import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
 import { wavFromInt16 } from './src/audio.ts';
-import { befundAusDiktat, nurTextAusDiktat } from './src/pipeline.ts';
+import { befundAusDiktat, befundUmbauen, nurTextAusDiktat } from './src/pipeline.ts';
+import { ergaenzen, vorrang, umbauSegment, umbauBlock, titelUebernehmen } from './src/befundfeld.ts';
 import { einfuegen, markdownOffset } from './src/einfuegen.ts';
 import { correctTranscriptionWithGemini, validationPrompt, correctionPrompt, SYS_MSG, VERTEX_ENDPOINT } from './src/gemini.ts';
 import { nachbearbeiten } from './src/befundRegeln.ts';
@@ -257,6 +258,38 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   // letzter Ergebnis-Punkt „Erguss“: davor stehen „Kein Erguss…“ und „1. Erguss“ → 2 Vorkommen
   check(markdownOffset(md, 'Erguss', 2, 2) === md.lastIndexOf('Erguss') + 2, 'markdownOffset: gleiches Textstück, späteres Vorkommen');
   check(markdownOffset(md, 'gibt es nicht', 0) === null, 'markdownOffset: nicht gefunden → null');
+}
+
+{
+  // 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1): Befundfeld nie still überschreiben — dieselben Fälle wie
+  // die EXE (tests/offline/test_befundfeld.py), Restructure mit derselben festen KI-Antwort (Call 1 und Call 2)
+  const lies = (rel) => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
+  const templates = lies('../templates.json');
+  const ctx = { apiKey: 'AQ.dummy', prompt: readFileSync(new URL('../radiology_prompt.txt', import.meta.url), 'utf8'),
+    status: () => {}, templates, vorrang: lies('../vorlagen_vorrang.json'), displayNames: Object.values(templates).map(t => t.display_name) };
+  const gleich = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  for (const f of JSON.parse(readFileSync('../tests/offline/snapshots/befundfeld_faelle.txt', 'utf-8'))) {
+    let r;
+    if (f.art === 'ergaenzen') { const [t, c] = ergaenzen(f.text, f.neu); r = gleich([t, c], [f.ergebnis, f.cursor]) ? f.ergebnis : [t, c]; }
+    else if (f.art === 'vorrang') r = vorrang(f.stand, f.aktuell);
+    else if (f.art === 'umbau_segment') {
+      const seg = umbauSegment(f.text, f.vor);
+      r = gleich(umbauBlock(f.vor, seg[1]), f.block) ? seg : ['Block anders', umbauBlock(f.vor, seg[1])];
+    }
+    else if (f.art === 'umbau_block') r = umbauBlock(f.vor, [], f.ohne_stand);
+    else if (f.art === 'titel') r = titelUebernehmen(f.neu, f.alt);
+    else if (f.art === 'umbau') {
+      let aufrufe = 0;
+      globalThis.fetch = async () => {
+        aufrufe++;
+        return json(200, { candidates: [{ content: { parts: [{ text: f.llm }] }, finishReason: 'STOP' }] });
+      };
+      const e = await befundUmbauen(f.aktuell, f.stand, ctx);
+      // Web ruft je Abschnitt Call 1 + Call 2 (Validator), die EXE nur Call 1
+      r = { report: e.report, hinweise: e.hinweise, leer: e.leer, aufrufe: aufrufe / 2 };
+    }
+    check(gleich(r, f.ergebnis), `befundfeld = EXE: ${f.art}: ${f.name}`, JSON.stringify(r).slice(0, 600));
+  }
 }
 
 console.log(`${n - fail}/${n} PASS (pipeline)`);
