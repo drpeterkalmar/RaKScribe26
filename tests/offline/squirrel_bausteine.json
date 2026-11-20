@@ -1,0 +1,366 @@
+[
+ {
+  "nr": 1,
+  "fall": "fixture",
+  "beschreibung": "SQUIRREL_SR 20,9/44,5/31,2 → 21/44/31, anatomisch",
+  "baustein": {
+   "accno": "T-90011",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [
+    "links"
+   ],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T2-T5, linkskonvex) 20,9° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 2. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 3. Krümmung (T12-L4, linkskonvex) 31,2° (IB Lab SQUIRREL).",
+    "Coronal Balance (C7-Lot zur zentralen Sakrallinie, Abweichung nach links) 2,0 mm (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [
+    "IB Lab SQUIRREL: Hinweis des Herstellers – Reevaluation by a medical professional required.",
+    "IB Lab SQUIRREL: Hinweis des Herstellers – Image not for diagnostic use",
+    "IB Lab SQUIRREL: Hinweis des Herstellers – Cobb angles below the applied display threshold are suppressed; the applied threshold may differ from the configured value.",
+    "IB Lab SQUIRREL: Hinweis des Herstellers – Cobb angle cutoff applied: 8.0 degrees",
+    "IB Lab SQUIRREL: Coronal Balance (C7-Lot zur zentralen Sakrallinie) ohne erkannte Kalibrierkugel gemessen („CAUTION: Calibration sphere not detected. Applied magnification factor: 100.0%“) – Werte übernommen, keine Schlussfolgerung daraus."
+   ],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Linkskonvexe skoliotische Krümmung der BWS (Th2–Th5) mit einem Cobb-Winkel von 21°.",
+     "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°.",
+     "Linkskonvexe skoliotische Krümmung der BWS und LWS (Th12–L4) mit einem Cobb-Winkel von 31°."
+    ],
+    "cobb_satz": "Cobb-Winkel 21° (Th2–Th5), 44° (Th5–Th12) und 31° (Th12–L4).",
+    "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS. Mittelgradige linkskonvexe Skoliose der BWS und LWS. Mittelgradige linkskonvexe Skoliose der BWS.",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "coronal": "",
+    "anatomisch": true,
+    "kind": false,
+    "achse_normal_weg": true,
+    "kruemmungen": [
+     {
+      "cobb": 21,
+      "grad": "mittelgradig",
+      "konvex": "linkskonvex",
+      "region": "BWS",
+      "hoehe": "Th2–Th5",
+      "satz": "Linkskonvexe skoliotische Krümmung der BWS (Th2–Th5) mit einem Cobb-Winkel von 21°.",
+      "ergebnis": "Mittelgradige linkskonvexe Skoliose der BWS.",
+      "verlauf": ""
+     },
+     {
+      "cobb": 44,
+      "grad": "hochgradig",
+      "konvex": "rechtskonvex",
+      "region": "BWS",
+      "hoehe": "Th5–Th12",
+      "satz": "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°.",
+      "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS.",
+      "verlauf": ""
+     },
+     {
+      "cobb": 31,
+      "grad": "mittelgradig",
+      "konvex": "linkskonvex",
+      "region": "BWS und LWS",
+      "hoehe": "Th12–L4",
+      "satz": "Linkskonvexe skoliotische Krümmung der BWS und LWS (Th12–L4) mit einem Cobb-Winkel von 31°.",
+      "ergebnis": "Mittelgradige linkskonvexe Skoliose der BWS und LWS.",
+      "verlauf": ""
+     }
+    ]
+   }
+  }
+ },
+ {
+  "nr": 2,
+  "fall": "index",
+  "beschreibung": "Index-Labeling 44,5° (ohne Höhe/Region)",
+  "baustein": {
+   "accno": "T-90021",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (V5-V12, rechtskonvex) 44,5° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Rechtskonvexe skoliotische Krümmung mit einem Cobb-Winkel von 44°."
+    ],
+    "cobb_satz": "Cobb-Winkel 44°.",
+    "ergebnis": "Hochgradige rechtskonvexe Skoliose.",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "coronal": "",
+    "anatomisch": false,
+    "kind": false,
+    "achse_normal_weg": true,
+    "kruemmungen": [
+     {
+      "cobb": 44,
+      "grad": "hochgradig",
+      "konvex": "rechtskonvex",
+      "region": "",
+      "hoehe": "",
+      "satz": "Rechtskonvexe skoliotische Krümmung mit einem Cobb-Winkel von 44°.",
+      "ergebnis": "Hochgradige rechtskonvexe Skoliose.",
+      "verlauf": ""
+     }
+    ]
+   }
+  }
+ },
+ {
+  "nr": 3,
+  "fall": "unter10",
+  "beschreibung": "alle Cobb < 10° (kein Text)",
+  "baustein": {
+   "accno": "T-90031",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T5-T12, rechtskonvex) 9,4° (IB Lab SQUIRREL).",
+    "Cobb-Winkel 2. Krümmung (T12-L4, linkskonvex) 8° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": []
+  }
+ },
+ {
+  "nr": 4,
+  "fall": "einzeln",
+  "beschreibung": "eine Krümmung 44,5° Th5–Th12 rechtskonvex",
+  "baustein": {
+   "accno": "T-90041",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°."
+    ],
+    "cobb_satz": "Cobb-Winkel 44° (Th5–Th12).",
+    "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS.",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "coronal": "",
+    "anatomisch": true,
+    "kind": false,
+    "achse_normal_weg": true,
+    "kruemmungen": [
+     {
+      "cobb": 44,
+      "grad": "hochgradig",
+      "konvex": "rechtskonvex",
+      "region": "BWS",
+      "hoehe": "Th5–Th12",
+      "satz": "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°.",
+      "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS.",
+      "verlauf": ""
+     }
+    ]
+   }
+  }
+ },
+ {
+  "nr": 5,
+  "fall": "kind",
+  "beschreibung": "Kind 12 J., 44,5°",
+  "baustein": {
+   "accno": "T-90051",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°."
+    ],
+    "cobb_satz": "Cobb-Winkel 44° (Th5–Th12).",
+    "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS.",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "coronal": "",
+    "anatomisch": true,
+    "kind": true,
+    "achse_normal_weg": true,
+    "kruemmungen": [
+     {
+      "cobb": 44,
+      "grad": "hochgradig",
+      "konvex": "rechtskonvex",
+      "region": "BWS",
+      "hoehe": "Th5–Th12",
+      "satz": "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°.",
+      "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS.",
+      "verlauf": ""
+     }
+    ]
+   }
+  }
+ },
+ {
+  "nr": 6,
+  "fall": "vorwert",
+  "beschreibung": "Vorwert 03/2025 39° → 44,5° (+5°, Progredienz)",
+  "baustein": {
+   "accno": "T-90061",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°."
+    ],
+    "cobb_satz": "Cobb-Winkel 44° (Th5–Th12; Vorwert 03/2025: 39°).",
+    "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS. Zunahme von 39° (03/2025) auf 44° im Sinne einer Progredienz.",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "coronal": "",
+    "anatomisch": true,
+    "kind": false,
+    "achse_normal_weg": true,
+    "kruemmungen": [
+     {
+      "cobb": 44,
+      "grad": "hochgradig",
+      "konvex": "rechtskonvex",
+      "region": "BWS",
+      "hoehe": "Th5–Th12",
+      "satz": "Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°.",
+      "ergebnis": "Hochgradige rechtskonvexe Skoliose der BWS.",
+      "verlauf": "Zunahme von 39° (03/2025) auf 44° im Sinne einer Progredienz."
+     }
+    ]
+   }
+  }
+ },
+ {
+  "nr": 7,
+  "fall": "metall",
+  "beschreibung": "Metall/Implantat (nur Prüfzeile)",
+  "baustein": {
+   "accno": "T-90071",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T5-T12, rechtskonvex) 44,5° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [
+    "SQUIRREL: Metall/Implantat erkannt („implant“) – kein Skoliose-Text, Cobb-Winkel bitte am Bild prüfen."
+   ],
+   "nicht_zugeordnet": [],
+   "vorwerte": []
+  }
+ },
+ {
+  "nr": 8,
+  "fall": "ohne_konvex",
+  "beschreibung": "Konvexität fehlt (Prüfzeile)",
+  "baustein": {
+   "accno": "T-90081",
+   "ziffer": 1,
+   "modul": "squirrel",
+   "name": "SQUIRREL",
+   "modul_name": "SQUIRREL",
+   "version": 1,
+   "aktualisiert": "2026-11-20T10:00:00",
+   "seiten": [],
+   "befundteil": [
+    "Cobb-Winkel 1. Krümmung (T5-T12) 25° (IB Lab SQUIRREL)."
+   ],
+   "ergebnis": [],
+   "hinweise": [
+    "SQUIRREL: Konvexität einer Krümmung fehlt im SR – Richtung bitte am Bild prüfen."
+   ],
+   "nicht_zugeordnet": [],
+   "vorwerte": [],
+   "befundtext": {
+    "format": 1,
+    "saetze": [
+     "Skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 25°."
+    ],
+    "cobb_satz": "Cobb-Winkel 25° (Th5–Th12).",
+    "ergebnis": "Mittelgradige Skoliose der BWS.",
+    "schluss": "Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.",
+    "coronal": "",
+    "anatomisch": true,
+    "kind": false,
+    "achse_normal_weg": true,
+    "kruemmungen": [
+     {
+      "cobb": 25,
+      "grad": "mittelgradig",
+      "konvex": "",
+      "region": "BWS",
+      "hoehe": "Th5–Th12",
+      "satz": "Skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 25°.",
+      "ergebnis": "Mittelgradige Skoliose der BWS.",
+      "verlauf": ""
+     }
+    ]
+   }
+  }
+ }
+]

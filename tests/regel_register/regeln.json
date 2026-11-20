@@ -236,18 +236,62 @@
   },
   {
    "id": "ibl-text-immer",
-   "titel": "FROG-/HIPPO-Text kommt auch mit älterer Brücke in den Befund (Text aus der Abholer-Ablage, Hinweis „Brücke veraltet“); FROG-Vorlagensätze auch mit „beidseits“",
+   "titel": "FROG-/HIPPO-/SQUIRREL-Text kommt auch mit älterer Brücke in den Befund (Text aus der Abholer-Ablage, Hinweis „Brücke veraltet“); FROG-Vorlagensätze auch mit „beidseits“",
    "quelle": "Georg Riegler (RH 127, 19.11.: „Teste das immer ob es funktioniert“)",
    "datum": "2026-11-19",
    "status": "ergänzt",
    "pruefwort": {
     "source_code/ibl_bausteine.py": [
-     "TEXT_MODULE = (\"frog\", \"hippo\")",
+     "TEXT_MODULE = (\"frog\", \"hippo\", \"squirrel\")",
      "def text_nachladen(",
      "_BDS = r\"(?: (?:beidseits|beidseitig|jeweils))?\""
     ],
     "source_code/RaKScribe.py": [
      "_ibl.text_nachladen(liste, getattr(CFG, \"ibl_ablage\", \"\"))"
+    ]
+   },
+   "notiz": "20.11.2026 (kaiscribe-squirrel-ergebnistext-n1): SQUIRREL dazu (Brücke ≥ 1.8.0 reicht den Skoliose-Text erst durch)"
+  },
+  {
+   "id": "ibl-squirrel",
+   "titel": "IB Lab SQUIRREL: Skoliose-Sätze je Krümmung ≥ 10° (kranial→kaudal) an der Stelle des Achsensatzes, EIN Ergebnispunkt (Hauptkrümmung zuerst, Progredienz ≥ 5°), Schlussanmerkung ohne Nummer; keine Messzeilen; Metall/Verlauf unklar/Konvexität fehlt = rote Prüfzeile",
+   "quelle": "Georg Riegler 20.11.2026 („1a 2a 3a 4a 5ja“, Brief kaiscribe-squirrel-ergebnistext-n1; ris-mods ibl/regeln/squirrel.toml [ergebnistext])",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "def _squirrel_einsetzen(",
+     "_SQ_GWS = re.compile(",
+     "if b.modul == \"squirrel\" and (_squirrel_text(b) or _squirrel_metall(b)):",
+     "hs = [f\"⚠ {h}\" if \"prüfen\" in h and not h.startswith(\"⚠\") else h for h in hs]"
+    ]
+   }
+  },
+  {
+   "id": "ibl-squirrel-diktat",
+   "titel": "SQUIRREL Vorrang Diktat: nennt das Diktat eine seitliche Krümmung/Skoliose/Asymmetrie (auch verneint), bleibt die Wortwahl des Arztes – nur der Cobb-Satz dahinter, kein Ergebnissatz, nie zusätzlich „Skoliose“; Kyphose/Lordose zählen nicht",
+   "quelle": "Peter Kalmar 20.11.2026, Punkt 20 (Brief kaiscribe-squirrel-ergebnistext-n1)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "DIKTAT_KRUEMMUNG = re.compile(",
+     "r\"(?i)skolio\\w*|asymmetri\\w*|rechtskonvex\\w*|linkskonvex\\w*|konvex\\w*\\s+(?:nach\\s+)?(?:rechts|links)|\"",
+     "mache daraus keine „Skoliose“, wenn er sie nicht \""
+    ]
+   }
+  },
+  {
+   "id": "ibl-squirrel-achse",
+   "titel": "SQUIRREL Achsensatz: Kyphose-/Lordose-Sätze der Vorlage bleiben; „achsengerechte Stellung“/„Normaler Achsenverlauf“ entfällt bei Skoliose-Text oder diktierter Krümmung",
+   "quelle": "Peter Kalmar 20.11.2026, Punkt 40b (Brief kaiscribe-squirrel-ergebnistext-n1)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "VORLAGE_ACHSE_NORMAL = re.compile(",
+     "r\"(?i)[^.\\n]*(?:achsengerechte[nr]?\\s+Stellung|normaler\\s+Achsenverlauf|regelrechter\\s+Achsenverlauf|\"",
+     "if not VORLAGE_ACHSE_NORMAL.search(diktat or \"\"):    # 40b"
     ]
    }
   },
@@ -600,7 +644,8 @@
      "Befundtext kranial→kaudal, keine Absätze",
      "Cobb < 10° → im Ergebnis \"keine Skoliose\""
     ]
-   }
+   },
+   "notiz": "20.11.2026 (Georg „1a 2a 3a 4a 5ja“, kaiscribe-squirrel-ergebnistext-n1): gilt weiter für DIKTIERTE Cobb-Winkel. Von IB Lab SQUIRREL kommt unter 10° gar kein Text (Abholer ris-mods ibl/squirrel_ergebnis.py: alle Cobb < 10° → kein Feld befundtext, KaiScribe setzt keinen Skoliose-Satz und keinen Ergebnispunkt); IB-Lab-Sätze stehen kranial→kaudal ohne Absatz (ibl-squirrel)."
   },
   {
    "id": "3t",

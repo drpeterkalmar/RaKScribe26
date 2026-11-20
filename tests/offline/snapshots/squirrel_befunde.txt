@@ -1,0 +1,192 @@
+=== Fixture · GWS a.p. · ohne Krümmung im Diktat
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Linkskonvexe skoliotische Krümmung der BWS (Th2–Th5) mit einem Cobb-Winkel von 21°. Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°. Linkskonvexe skoliotische Krümmung der BWS und LWS (Th12–L4) mit einem Cobb-Winkel von 31°. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose der BWS. Mittelgradige linkskonvexe Skoliose der BWS und LWS. Mittelgradige linkskonvexe Skoliose der BWS.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== Fixture · Gesamte Wirbelsäule
+## Gesamte Wirbelsäule
+
+## Befund
+Linkskonvexe skoliotische Krümmung der BWS (Th2–Th5) mit einem Cobb-Winkel von 21°. Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°. Linkskonvexe skoliotische Krümmung der BWS und LWS (Th12–L4) mit einem Cobb-Winkel von 31°.
+
+HWS:
+Alle Wirbelkörper von normaler Form und Höhe. Die Knochenstruktur unauffällig. Die Bandscheibenräume normal hoch. Die kleinen Zwischenwirbelgelenke ohne Auffälligkeiten. Der Cervicalkanal normal weit. Der Dens median, die Kopfgelenke o. B.
+
+BWS:
+Harmonische Kyphose. Wirbelkörper nach Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Spatien intervertebralia und Canalis spinalis normal weit.
+
+LWS:
+Anzahl und Höhe der Lendenwirbelkörper regelrecht. Das dorsale Alignement ist erhalten. Die Abschlussplatten und Corticalis allseits regelrecht. Kein Nachweis von Facettengelenksarthrosen. Kein Nachweis von Discopathien.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose der BWS. Mittelgradige linkskonvexe Skoliose der BWS und LWS. Mittelgradige linkskonvexe Skoliose der BWS.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== Einzeln · Achsengerechte Stellung + Kyphose
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Harmonische Kyphose der BWS. Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°. Wirbelkörper nach Anzahl, Form und Größe regelrecht.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose der BWS.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== Index-Labeling
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Rechtskonvexe skoliotische Krümmung mit einem Cobb-Winkel von 44°. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== alle < 10°
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe Skoliose. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+Cobb-Winkel 1. Krümmung (T5-T12, rechtskonvex) 9,4° (IB Lab SQUIRREL).
+Cobb-Winkel 2. Krümmung (T12-L4, linkskonvex) 8° (IB Lab SQUIRREL).
+
+## Ergebnis
+Regelrechte Darstellung der Wirbelsäule.
+--- Hinweise
+
+
+=== Diktat flachbogige skoliotische Asymmetrie
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Normale Stellung, flachbogige skoliotische Asymmetrie. Cobb-Winkel 21° (Th2–Th5), 44° (Th5–Th12) und 31° (Th12–L4). Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht.
+
+## Ergebnis
+Flachbogige skoliotische Asymmetrie.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: Krümmung diktiert – Wortwahl bleibt, nur Cobb-Winkel eingesetzt (kein Ergebnissatz)
+
+=== Diktat verneint
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Keine Skoliose. Cobb-Winkel 44° (Th5–Th12). Wirbelkörper regelrecht.
+
+## Ergebnis
+Keine Skoliose.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: Krümmung diktiert – Wortwahl bleibt, nur Cobb-Winkel eingesetzt (kein Ergebnissatz)
+
+=== Kind 12 J.
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose der BWS.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== Vorwert 39° → 44°
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose der BWS. Zunahme von 39° (03/2025) auf 44° im Sinne einer Progredienz.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== Metall
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe Skoliose. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Regelrechte Darstellung der Wirbelsäule.
+--- Hinweise
+
+
+=== Konvexität fehlt
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 25°. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Mittelgradige Skoliose der BWS.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.
+--- Hinweise
+SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergebnis ersetzt
+
+=== Gerüst GWS a.p.
+## Ganzaufnahme der Wirbelsäule a.-p.
+
+## Befund
+Wirbelsäule: Linkskonvexe skoliotische Krümmung der BWS (Th2–Th5) mit einem Cobb-Winkel von 21°. Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°. Linkskonvexe skoliotische Krümmung der BWS und LWS (Th12–L4) mit einem Cobb-Winkel von 31°. Alignementlinien regelrecht.
+Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
+Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
+Zwischenwirbelräume und Spinalkanal: Normal weit.
+Rippen: Mitdargestellte Anteile unauffällig.
+Weichteile: Keine radiopaken Fremdkörper.
+
+## Ergebnis
+Hochgradige rechtskonvexe Skoliose der BWS. Mittelgradige linkskonvexe Skoliose der BWS und LWS. Mittelgradige linkskonvexe Skoliose der BWS.
+Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.

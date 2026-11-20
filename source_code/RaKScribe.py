@@ -3541,11 +3541,13 @@ class RaKScribeApp(ctk.CTk):
             fg_color="transparent", text_color=READY_GREEN if self._ibl_an() else TEXT_FAINT))
 
     def _ibl_hinweise_zeigen(self, hinweise):
-        self._ibl_hinweise = list(dict.fromkeys(hinweise or []))
+        self._ibl_hinweise = sorted(dict.fromkeys(hinweise or []), key=lambda h: not h.startswith("⚠"))   # Prüfzeilen zuerst
         lbl = getattr(self, "ibl_hinweis_label", None)
         if lbl is not None:
             t = "⚠  " + "  ·  ".join(self._ibl_hinweise) if self._ibl_hinweise else ""
-            lbl.configure(text=t if len(t) <= 140 else t[:126].rstrip() + "…  (Klick: alle)")
+            # kaiscribe-squirrel-ergebnistext-n1: Prüfzeilen („⚠ …“, z. B. SQUIRREL Metall/Verlauf) rot, sonst amber
+            lbl.configure(text=t if len(t) <= 140 else t[:126].rstrip() + "…  (Klick: alle)",
+                          text_color=RECORDING_RED if any(h.startswith("⚠") for h in self._ibl_hinweise) else WARN_AMBER)
         if self._ibl_hinweise:  # Protokoll ohne Befundinhalt (Umbau Schritt 23): nur Zahl und Module
             module = sorted({h.split(":", 1)[0] for h in self._ibl_hinweise if ":" in h[:24]})
             log(f"[IBL] Hinweise: {len(self._ibl_hinweise)}" + (f" ({', '.join(module)})" if module else ""))

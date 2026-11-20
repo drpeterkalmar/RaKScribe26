@@ -168,12 +168,23 @@ def _befundtext(modul, x):
     """v3.19.8 (FROG, Georg Riegler 17.11.2026): Feld „befundtext“ der Brücke (Abholer ≥ 1.3.7, ris-mods
     ibl/frog_ergebnis.py) – nur Fassung 1 mit Inhalt; sonst None (dann gilt das Verhalten bis 3.19.7).
     v3.19.13 (HIPPO, Georg 18.11.2026, Abholer ≥ 1.3.11, ris-mods ibl/hippo_ergebnis.py): {"saetze", "ergebnis",
-    "schluss", "kind", "becken"}."""
+    "schluss", "kind", "becken"}. SQUIRREL (Georg 20.11.2026, Abholer ≥ 1.3.14): {"saetze", "cobb_satz", "ergebnis",
+    "schluss", "coronal", "anatomisch", "kind", "achse_normal_weg", "kruemmungen"}."""
     if modul == "hippo" and isinstance(x, dict) and x.get("format") == 1:
         bt = {"saetze": _texte(x.get("saetze")), "ergebnis": str(x.get("ergebnis") or "").strip(),
               "schluss": str(x.get("schluss") or "").strip(), "kind": bool(x.get("kind")),
               "becken": bool(x.get("becken"))}
         return bt if bt["saetze"] else None
+    if modul == "squirrel" and isinstance(x, dict) and x.get("format") == 1:
+        # Georg 20.11.2026 „1a 2a 3a 4a 5ja“ (Abholer ≥ 1.3.14, ris-mods ibl/squirrel_ergebnis.py): Skoliose-Sätze, Cobb-Satz
+        # für den Diktat-Fall (Peter 20.11.2026 Punkt 20), ein Ergebnispunkt, Schluss
+        bt = {"saetze": _texte(x.get("saetze")), "cobb_satz": str(x.get("cobb_satz") or "").strip(),
+              "ergebnis": str(x.get("ergebnis") or "").strip(), "schluss": str(x.get("schluss") or "").strip(),
+              "coronal": str(x.get("coronal") or "").strip(), "anatomisch": bool(x.get("anatomisch")),
+              "kind": bool(x.get("kind")), "achse_normal_weg": bool(x.get("achse_normal_weg", True)),
+              "kruemmungen": [dict(k) for k in (x.get("kruemmungen") if isinstance(x.get("kruemmungen"), list) else [])
+                              if isinstance(k, dict)]}
+        return bt if bt["saetze"] and bt["cobb_satz"] else None
     if modul != "frog" or not isinstance(x, dict) or x.get("format") != 1:
         return None
     begriffe = [{"art": str(g.get("art") or ""), "text": str(g.get("text") or "").strip(),
@@ -249,7 +260,8 @@ def aus_liste(liste):
 # „unauffällig“ → Begriffe verworfen). Darum holt KaiScribe den Text dann selbst aus der Ablage des Abholers
 # (X:\IBL-Vorbefunde\<AccNo>_<modul>.json, dieselbe Datei, aus der die Brücke liest) – nur bei derselben Fassung, sonst
 # bleibt alles wie geliefert. Sichtbarer Hinweis, damit die veraltete Brücke auffällt (KaiScribe-einrichten.cmd).
-TEXT_MODULE = ("frog", "hippo")
+# SQUIRREL (20.11.2026) ebenso – die Brücke reicht den Skoliose-Text erst ab 1.8.0/Abholer 1.3.14 durch.
+TEXT_MODULE = ("frog", "hippo", "squirrel")
 ABLAGE_FORMAT = "ibl-abholer/1"     # = ris-mods ibl/abholer.py ABLAGE_FORMAT
 _ACCNO = re.compile(r"[0-9A-Za-z-]+")
 
@@ -312,8 +324,11 @@ def anzeige_hinweise(bausteine):
     """Hinweise des Abholers (nur Anzeige, nie in den Befund) + Zahl nicht zugeordneter Messgrößen."""
     out = []
     for b in bausteine:
-        out += [h if h.lower().startswith((b.name.lower(), (b.modul_name or "-").lower())) else f"{b.name}: {h}"
-                for h in b.hinweise]
+        hs = [h if h.lower().startswith((b.name.lower(), (b.modul_name or "-").lower())) else f"{b.name}: {h}"
+              for h in b.hinweise]
+        if b.modul == "squirrel":          # 20.11.2026: Metall, Verlauf nicht zuordenbar, Konvexität fehlt = rote Prüfzeile
+            hs = [f"⚠ {h}" if "prüfen" in h and not h.startswith("⚠") else h for h in hs]
+        out += hs
         if b.nicht_zugeordnet:
             out.append(f"{b.name}: {len(b.nicht_zugeordnet)} Messgröße(n) nicht zugeordnet (Katalog ergänzen)")
         if b.text_aus_ablage:
@@ -788,6 +803,19 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
                 e.hinweise.append(f"{b.label}: keiner Knie-Untersuchung eindeutig zuzuordnen – KOALA-Text nicht "
                                   "eingesetzt, bitte prüfen")
             continue
+        if _squirrel_text(b):              # 20.11.2026: Skoliose-Text (Georg „1a 2a 3a 4a 5ja“, Peter Punkt 20/40b)
+            if i is not None:
+                _squirrel_einsetzen(zeilen, teile, i, b, e, ganz)
+                continue
+            bericht = "\n".join(zeilen + ende_zeilen)
+            neu = [z for z in _squirrel_ende(b, ganz) if z not in bericht]
+            if neu:
+                ende_zeilen += neu
+                e.eingesetzt[b.schluessel] = neu
+                e.zuordnung[b.modul] = ENDE
+                e.hinweise.append(f"{b.label}: keiner Wirbelsäulen-Untersuchung eindeutig zuzuordnen – Text als eigener "
+                                  "Absatz am Ende, bitte prüfen")
+            continue
         if _hippo_text(b):                 # v3.19.13: Becken-/Hüft-Text (Georg 18.11.2026)
             if i is not None:
                 _hippo_einsetzen(zeilen, teile, i, b, e)
@@ -910,6 +938,12 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
             zeilen.append(f"- {b.name}: Sätze zu Beckenschiefstand, Beinlängendifferenz und auffälligen Hüftwinkeln (oben "
                           "in der Beschreibung) und die zugehörigen Diagnosen als erster Ergebnispunkt")
             continue
+        if _squirrel_text(b):              # 20.11.2026: KaiScribe setzt Skoliose-Sätze bzw. Cobb-Winkel selbst ein
+            zeilen.append(f"- {b.name}: " + ("Cobb-Winkel (die Krümmung hat der Arzt selbst diktiert)"
+                                             if squirrel_diktiert(diktat) else
+                                             "Sätze zur seitlichen Krümmung (Skoliose) mit Cobb-Winkel an der Stelle des "
+                                             "Vorlagensatzes zur Achse und die Diagnose als erster Ergebnispunkt"))
+            continue
         nur = b.modul in BEFUND_NUR_AUFFAELLIG | BEFUND_OHNE_ZEILEN
         namen = list(dict.fromkeys(m.name for m in map(messwert, befund_zeilen(b))
                                    if m and not (nur and _abschnitt_zeile(m.zeile))))
@@ -937,7 +971,8 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
         return ""
     weg = []
     for b in bausteine:
-        if b.ergebnis and vorlage and not _frog_text(b) and not _hippo_text(b) and b.modul not in ("koala", "panda"):
+        if b.ergebnis and vorlage and not _frog_text(b) and not _hippo_text(b) and not _squirrel_text(b) \
+                and b.modul not in ("koala", "panda"):
             weg += [s for s in _normalsaetze(b, vorlage.split("\n"), _pathologische_punkte(b, b.ergebnis)) if s not in weg]
     if kl:   # v3.18.4 (RH 38): den IB-Lab-Grad muss die KI kennen, um ihn statt eines eigenen zu übernehmen
         zeilen.append(_kl_satz(kl))
@@ -947,6 +982,8 @@ def prompt_block(bausteine, vorlage=None, diktat=""):
         zeilen.append(FROG_PROMPT)
     if any(_hippo_text(b) for b in bausteine):
         zeilen.append(HIPPO_PROMPT)
+    if any(_squirrel_text(b) for b in bausteine):
+        zeilen.append(SQUIRREL_PROMPT)
     if koala:
         zeilen.append(KOALA_PROMPT)
     if weg:
@@ -1790,9 +1827,10 @@ def _hippo_befund(block, saetze, alte=()):
     return block
 
 
-def _hippo_ergebnis(zeilen, a, punkte, schluss, b, hinweise):
+def _hippo_ergebnis(zeilen, a, punkte, schluss, b, hinweise, normal=_HIPPO_ERG_NORMAL, weg=()):
     """HIPPO-Punkt als ERSTER Punkt, Normal-Ergebnis des Beckens/der Hüfte entfällt (nur mit Punkt), derselbe Punkt nie
-    doppelt, Schlussanmerkung ohne Nummer ganz unten. → Zeilen mehr."""
+    doppelt, Schlussanmerkung ohne Nummer ganz unten. → Zeilen mehr. normal: Normal-Ergebnis der Region, weg: eigene Punkte
+    einer früheren Fassung, die nicht mehr gelten (SQUIRREL)."""
     if a.ergebnis < 0:
         return _ergebnis_anfuegen(zeilen, a, list(punkte) + ([schluss] if schluss else []))
     s, k = a.ergebnis + 1, a.ende
@@ -1802,9 +1840,9 @@ def _hippo_ergebnis(zeilen, a, punkte, schluss, b, hinweise):
     rest = []
     for z in inhalt:
         t = _NUM.sub("", z).strip()
-        if not t or t in punkte or ist_schluss(t):
+        if not t or t in punkte or t in weg or ist_schluss(t):
             continue
-        if punkte and z[:1] not in (" ", "\t") and ergebnis_normal([t]) and _HIPPO_ERG_NORMAL.search(t):
+        if punkte and z[:1] not in (" ", "\t") and ergebnis_normal([t]) and normal.search(t):
             hinweise.append(f"{b.name}: „{_kurz(t)}“ durch das IB-Lab-Ergebnis ersetzt")
             continue
         rest.append(z)
@@ -1859,6 +1897,187 @@ def _hippo_geruest(b, titel, vorlage=None, vorlage_ergebnis=""):
         rumpf = "\n".join(vorlage.split("\n")[1:]).strip("\n")
         if rumpf.strip():
             return _hippo_befund(rumpf, bt["saetze"]).split("\n"), punkte
+    return [" ".join(bt["saetze"])], punkte
+
+
+# ───────────────────────────── IB Lab SQUIRREL: Skoliose-Text der Ganzwirbelsäule ─────────────────────────────
+# Georg Riegler 20.11.2026 („1a 2a 3a 4a 5ja“, Brief kaiscribe-squirrel-ergebnistext-n1): der Abholer ≥ 1.3.14 (ris-mods
+# ibl/squirrel_ergebnis.py, Regeln ibl/regeln/squirrel.toml [ergebnistext]) liefert im Feld „befundtext“ je Krümmung ≥ 10°
+# (kranial → kaudal) einen Satz („Rechtskonvexe skoliotische Krümmung der BWS (Th5–Th12) mit einem Cobb-Winkel von 44°.“),
+# ggf. die seitliche Rumpfabweichung, EINEN Ergebnispunkt (Hauptkrümmung zuerst, ggf. „Zunahme von 32° (03/2025) auf 44° im
+# Sinne einer Progredienz.“), den Cobb-Satz für den Diktat-Fall und die Schlussanmerkung. Unter 10°, Metall, andere Region/
+# Projektion, unter 10 J.: kein Feld. „ergebnis_punkte“ bleibt für SQUIRREL leer – den Skoliose-Satz setzt nur, wer das
+# Diktat kennt (KaiScribe hier, sonst der Formatierer ris-mods bruecke/ibl_einfuegen.squirrel_text_planen).
+#   - Vorrang Diktat (Peter 20.11.2026, Punkt 20): nennt das DIKTAT (nicht die Vorlage, nicht die eigenen Sätze) eine
+#     seitliche Krümmung/Skoliose/Asymmetrie – auch verneint –, bleibt die Wortwahl des Arztes; dann nur der Cobb-Satz
+#     (+ Rumpfabweichung) hinter seinen Satz, KEIN Ergebnissatz, nie zusätzlich „Skoliose“ (DIKTAT_KRUEMMUNG).
+#   - Sonst: die Sätze an die Stelle des Vorlagensatzes zur Achse („Wirbelsäule: Normale Stellung, …“ der GWS a.p.,
+#     „Normaler Achsenverlauf.“/„Annähernd achsengerechte Stellung.“; Gesamte Wirbelsäule mit HWS/BWS/LWS-Abschnitten bzw.
+#     ohne Achsensatz: als erster Absatz), der Punkt als ERSTER Ergebnispunkt (Normal-Ergebnis der Wirbelsäule entfällt),
+#     Schlussanmerkung ohne Nummer ganz unten.
+#   - Peter 20.11.2026, Punkt 40b: Kyphose-/Lordose-Sätze der Vorlage bleiben; „achsengerechte Stellung“/„Normaler
+#     Achsenverlauf“ (VORLAGE_ACHSE_NORMAL) entfällt bei Skoliose-Text ODER diktierter Krümmung (außer der Arzt hat selbst so
+#     diktiert).
+#   - Keine Messzeilen „Cobb-Winkel … (IB Lab SQUIRREL).“, wenn der Text da ist; Hinweise mit „prüfen“ = rote Prüfzeile.
+SQUIRREL_PROMPT = ("SQUIRREL: Übernimm die Sätze der Wirbelsäulen-Vorlage wörtlich und unverändert (auch „Normale Stellung …“, "
+                   "„Normaler Achsenverlauf.“, „achsengerechte Stellung“ und die Kyphose-/Lordose-Sätze), außer der Arzt hat "
+                   "dazu etwas diktiert – KaiScribe setzt nach dem Befund die IB-Lab-Sätze zur seitlichen Krümmung mit den "
+                   "Cobb-Winkeln an die Stelle des Achsensatzes und die Skoliose als ersten Ergebnispunkt. Schreibe selbst "
+                   "keinen Satz, keinen Cobb-Winkel und keine Diagnose zu Skoliose oder seitlicher Krümmung, außer der Arzt "
+                   "hat es diktiert. Hat der Arzt eine seitliche Krümmung, Skoliose oder Asymmetrie diktiert (auch verneint), "
+                   "übernimm seine Wortwahl wörtlich in Befund und Ergebnis – mache daraus keine „Skoliose“, wenn er sie nicht "
+                   "so genannt hat, und verschärfe nie; KaiScribe ergänzt dann nur die Cobb-Winkel.")
+# = ris-mods ibl/squirrel_ergebnis.DIKTAT_KRUEMMUNG / VORLAGE_ACHSE_NORMAL (wörtlich; Test prüft die Gleichheit)
+DIKTAT_KRUEMMUNG = re.compile(
+    r"(?i)skolio\w*|asymmetri\w*|rechtskonvex\w*|linkskonvex\w*|konvex\w*\s+(?:nach\s+)?(?:rechts|links)|"
+    r"(?:seitliche|seitwärts|lateral\w*)\s+(?:\w+\s+)?(?:krümmung|ausbiegung|verkrümmung|abweichung)|"
+    r"seitausbiegung|s-förmig\w*|c-förmig\w*|fehlhaltung\s+nach\s+(?:rechts|links)|"
+    r"krümmung\w*\s+nach\s+(?:rechts|links)")
+VORLAGE_ACHSE_NORMAL = re.compile(
+    r"(?i)[^.\n]*(?:achsengerechte[nr]?\s+Stellung|normaler\s+Achsenverlauf|regelrechter\s+Achsenverlauf|"
+    r"achsengerechte[rn]?\s+Achsenverlauf)[^.\n]*\.?")
+# GWS a.p. (templates.json ganzaufnahme_der_wirbelsäule_a-p): „Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe
+# Skoliose. Alignementlinien regelrecht.“ – der Achsensatz hinter „Wirbelsäule: “ (die Beschriftung bleibt)
+_SQ_GWS = re.compile(r"(?<=Wirbelsäule: )Normale Stellung(?:, flachbogige (?:rechts|links)-?konvexe Skoliose)?\.")
+_SQ_ABSCHNITT = re.compile(r"(?m)^(?:HWS|BWS|LWS):[ \t]*$")          # Gesamte Wirbelsäule / HWS und LWS
+_SQ_BESCHRIFTUNG = re.compile(r"[A-Za-zÄÖÜäöüß]{2,15}:[ \t]*")
+_SQ_ERG_NORMAL = re.compile(r"darstellung\b.*(?:wirbelsäule|hws|bws|lws)", re.I)
+_SQ_METALL = re.compile(r"metall|implantat", re.I)
+_SQ_SATZENDE = re.compile(r"\.(?=\s|$)")
+_SQ_MARKE, _SQ_ACHSE = "\x01SQ\x01", "\x01SQ-X\x01"
+
+
+def _squirrel_text(b):
+    """SQUIRREL-Baustein mit fertigem Text des Abholers (≥ 1.3.14)?"""
+    return b.modul == "squirrel" and b.befundtext is not None
+
+
+def _squirrel_metall(b):
+    """SQUIRREL ohne Text wegen Metall/Implantat (Hinweis des Abholers) – dann nur die Prüfzeile, keine Messzeilen."""
+    return b.modul == "squirrel" and b.befundtext is None and any(_SQ_METALL.search(h) for h in b.hinweise)
+
+
+def squirrel_diktiert(diktat):
+    """Nennt das Diktat eine seitliche Krümmung/Skoliose/Asymmetrie (auch verneint)? (Peter 20.11.2026, Punkt 20)"""
+    return bool(DIKTAT_KRUEMMUNG.search(diktat or ""))
+
+
+def _squirrel_neu(b, diktiert):
+    """Sätze für die Beschreibung: Skoliose-Sätze bzw. (Diktat-Fall) nur Cobb-Satz + Rumpfabweichung."""
+    bt = b.befundtext
+    return [x for x in (bt["cobb_satz"], bt["coronal"]) if x] if diktiert else list(bt["saetze"])
+
+
+def _squirrel_befund(block, neu, diktiert, diktat="", alte=()):
+    """Beschreibung einer Wirbelsäulen-Untersuchung (Text ohne Überschriften) → (neuer Text, Sätze, die ohne diktierte
+    Krümmung schon eine Krümmung nennen – Prüfzeile). alte: eigene Sätze einer früheren Fassung (ihre Stelle gilt)."""
+    txt = " ".join(neu)
+    for satz in dict.fromkeys(alte):
+        while satz and satz in block:
+            i = block.index(satz)
+            block = _satz_raus(block, i, i + len(satz), "" if _SQ_MARKE in block else _SQ_MARKE)
+    gesamt = bool(_SQ_ABSCHNITT.search(block))
+    if not diktiert:
+        m = _SQ_GWS.search(block)
+        if m:
+            block = _satz_raus(block, m.start(), m.end(), _SQ_ACHSE)
+    if not VORLAGE_ACHSE_NORMAL.search(diktat or ""):    # 40b – außer der Arzt hat selbst so diktiert
+        pos = 0
+        while True:
+            m = VORLAGE_ACHSE_NORMAL.search(block, pos)
+            if not m:
+                break
+            a, z = m.start(), m.end()
+            a += len(block[a:z]) - len(block[a:z].lstrip())
+            lab = _SQ_BESCHRIFTUNG.match(block, a)
+            a = lab.end() if lab and lab.end() < z else a
+            if DIKTAT_KRUEMMUNG.search(block[a:z]):          # der Satz nennt selbst eine Krümmung (Diktat) – bleibt
+                pos = z
+                continue
+            setzen = _SQ_ACHSE not in block and not gesamt
+            block = _satz_raus(block, a, z, _SQ_ACHSE if setzen else "")
+            pos = a + (len(_SQ_ACHSE) if setzen else 0)
+    m = DIKTAT_KRUEMMUNG.search(block) if diktiert else None
+    if m:                                                # hinter den Satz des Arztes
+        e = _SQ_SATZENDE.search(block, m.end())
+        j = e.end() if e else (block.find("\n", m.end()) if "\n" in block[m.end():] else len(block))
+        block = block[:j] + " " + txt + block[j:]
+    elif _SQ_MARKE in block:                             # Stelle einer früheren Fassung
+        i = block.index(_SQ_MARKE)
+        block = _satz_raus(block, i, i + len(_SQ_MARKE), txt)
+    elif _SQ_ACHSE in block:
+        i = block.index(_SQ_ACHSE)
+        block = _satz_raus(block, i, i + len(_SQ_ACHSE), txt)
+    else:
+        i = len(block) - len(block.lstrip())
+        rest = block[i:]
+        if gesamt:
+            block = block[:i] + txt + ("\n\n" + rest if rest else "")
+        else:
+            block = block[:i] + txt + ((" " + rest) if rest and not rest.startswith("\n") else rest)
+    for marke in (_SQ_MARKE, _SQ_ACHSE):
+        while marke in block:
+            i = block.index(marke)
+            block = _satz_raus(block, i, i + len(marke))
+    konflikt = []
+    if not diktiert:
+        ohne = block.replace(txt, "")
+        for zeile in ohne.split("\n"):
+            konflikt += [x.strip() for x in re.split(r"(?<=[.!?])\s+", zeile) if DIKTAT_KRUEMMUNG.search(x)]
+    return block, konflikt
+
+
+def _squirrel_einsetzen(zeilen, teile, i, b, e, ganz=""):
+    """SQUIRREL-Text in die Wirbelsäulen-Untersuchung teile[i] einsetzen (Beschreibung an der Stelle des Achsensatzes bzw.
+    Cobb-Satz hinter dem diktierten Satz, erster Ergebnispunkt, Schluss)."""
+    a = teile[i]
+    bt = b.befundtext
+    diktat = a.segment or ganz or ""
+    diktiert = squirrel_diktiert(diktat)
+    neu = _squirrel_neu(b, diktiert)
+    bs = (a.befund if a.befund >= 0 else a.start) + 1
+    be = a.ergebnis if a.ergebnis >= 0 else a.ende
+    alt = "\n".join(zeilen[bs:be])
+    ersetzt = [z for z in e.nicht_entfernt if z and z in alt]
+    eigene = [x for x in [bt["cobb_satz"], bt["coronal"]] + bt["saetze"] if x]
+    block, konflikt = _squirrel_befund(alt, neu, diktiert, diktat, ersetzt + eigene)
+    e.nicht_entfernt = [z for z in e.nicht_entfernt if z not in ersetzt]
+    for satz in konflikt:
+        e.hinweise.append(f"⚠ {b.name}: Befundtext „{_kurz(satz, 50)}“ nennt schon eine Krümmung (nicht diktiert) – "
+                          "bitte prüfen")
+    if diktiert:
+        e.hinweise.append(f"{b.name}: Krümmung diktiert – Wortwahl bleibt, nur Cobb-Winkel eingesetzt (kein Ergebnissatz)")
+    if block != alt:
+        nz = block.split("\n")
+        zeilen[bs:be] = nz
+        _verschieben(teile, i, len(nz) - (be - bs))
+    punkte = [bt["ergebnis"]] if bt["ergebnis"] and not diktiert else []
+    weg = [bt["ergebnis"]] if bt["ergebnis"] and diktiert else []
+    _verschieben(teile, i, _hippo_ergebnis(zeilen, a, punkte, bt["schluss"], b, e.hinweise, _SQ_ERG_NORMAL, weg),
+                 nur_ende=True)
+    da = "\n".join(zeilen[a.start:a.ende])
+    e.eingesetzt[b.schluessel] = [s for s in neu if s in da] + punkte + ([bt["schluss"]] if bt["schluss"] else [])
+    e.zuordnung[b.modul] = a.titel or "Befund"
+
+
+def _squirrel_ende(b, diktat=""):
+    """Ohne passende Untersuchung: Sätze (bzw. Cobb-Satz), Ergebnispunkt und Schluss als Zeilen für den Absatz am Ende."""
+    bt = b.befundtext
+    diktiert = squirrel_diktiert(diktat)
+    return _squirrel_neu(b, diktiert) + ([bt["ergebnis"]] if bt["ergebnis"] and not diktiert else []) \
+        + ([bt["schluss"]] if bt["schluss"] else [])
+
+
+def _squirrel_geruest(b, vorlage=None, vorlage_ergebnis=""):
+    """Gerüst vor dem Diktat: Vorlage der Wirbelsäulen-Leistung mit den Skoliose-Sätzen an der Stelle des Achsensatzes (bzw.
+    ohne bekannte Vorlage nur die Sätze) → (Befundzeilen, Ergebnispunkte: Skoliose-Punkt, Schlussanmerkung)."""
+    bt = b.befundtext
+    punkte = [bt["ergebnis"]] if bt["ergebnis"] else ([vorlage_ergebnis] if vorlage_ergebnis else [])
+    punkte += [bt["schluss"]] if bt["schluss"] else []
+    if vorlage:
+        rumpf = "\n".join(vorlage.split("\n")[1:]).strip("\n")
+        if rumpf.strip():
+            return _squirrel_befund(rumpf, bt["saetze"], False)[0].split("\n"), punkte
     return [" ".join(bt["saetze"])], punkte
 
 
@@ -1964,6 +2183,8 @@ def befund_zeilen(b):
     Zeile steht."""
     if b.modul in BEFUND_OHNE_ZEILEN or _frog_text(b) or _hippo_text(b) or b.modul in ("koala", "panda"):
         return []
+    if b.modul == "squirrel" and (_squirrel_text(b) or _squirrel_metall(b)):   # 20.11.2026: Text statt Messzeilen,
+        return []                                                               # Metall: nur Prüfzeile
     if b.modul not in BEFUND_NUR_AUFFAELLIG:
         return list(b.befundteil)
     out = []
@@ -1984,7 +2205,7 @@ def hat_inhalt(b):
         return koala_hat_text(b)
     if b.modul == "panda":
         return bool(panda_text(b))
-    if _hippo_text(b):
+    if _hippo_text(b) or _squirrel_text(b):
         return True
     return bool(befund_zeilen(b) or b.ergebnis)
 
@@ -2002,6 +2223,10 @@ def auffaellige_zeilen(bausteine):
             bt = b.befundtext
             out += [s for s in bt["saetze"] + ([bt["ergebnis"]] if bt["ergebnis"] else [])
                     if not s.startswith(("Kein ", "Keine ")) and s not in out]
+            continue
+        if _squirrel_text(b):              # 20.11.2026: die Skoliose-Sätze und der Ergebnispunkt
+            bt = b.befundtext
+            out += [s for s in bt["saetze"] + ([bt["ergebnis"]] if bt["ergebnis"] else []) if s not in out]
             continue
         if b.modul == "panda":             # 19.11.2026: der Knochenalter-Text nur, wenn retardiert/akzeleriert
             t = panda_text(b)
@@ -2115,6 +2340,9 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
                 je[b.schluessel] = _koala_geruest(b, titel, vorlagen.get(b.schluessel))
             elif _hippo_text(b):                 # v3.19.13: Becken-/Hüft-Vorlage mit den HIPPO-Sätzen (bzw. nur die Sätze)
                 je[b.schluessel] = _hippo_geruest(b, titel, vorlagen.get(b.schluessel), _vorlage_ergebnis(
+                    _leistung_fuer(b, cas_leistungen, templates), templates))
+            elif _squirrel_text(b):              # 20.11.2026: Wirbelsäulen-Vorlage mit den Skoliose-Sätzen (bzw. nur die Sätze)
+                je[b.schluessel] = _squirrel_geruest(b, vorlagen.get(b.schluessel), _vorlage_ergebnis(
                     _leistung_fuer(b, cas_leistungen, templates), templates))
             elif _frog_text(b):                  # v3.19.8: nur die FROG-Sätze (ohne Vorlagentext) + Begriffe + Schluss
                 plan = _frog_plan(b, titel, Abschnitt(titel, 0, 0).seite, "", [])
