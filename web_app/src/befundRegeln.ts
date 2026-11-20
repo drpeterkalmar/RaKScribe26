@@ -1364,10 +1364,18 @@ const daumen = (zeilen: string[], dk: string, aend: string[]): void => {
   });
 };
 
+// 26 (RH 49, Georg): Titel der Kombi Becken + Hüfte mit einer Seite (Sync: befund_regeln.py)
+const KOMBI_TITEL_RE = /^## Beckenübersicht und Hüfte (rechts|links)(?: in 2 Ebenen)?[ \t]*$/u;
+export const KOMBI_TITEL = '## Becken sowie Hüftgelenk in 2 Ebenen {seite}';
+
 export function grundregeln(report: string, diktat = '', templates?: VorlagenMap): [string, string[]] {
   if (!report || !report.includes('## ')) return [report, []];
   const zeilen = report.split('\n');
   const aend: string[] = [];
+  zeilen.forEach((z, i) => {
+    const m = KOMBI_TITEL_RE.exec(z.trim());
+    if (m) { zeilen[i] = KOMBI_TITEL.replace('{seite}', m[1]); aend.push(`Titel ${zeilen[i].slice(3)}`); }
+  });
   const dk = (diktat || '').toLowerCase();
   daumen(zeilen, dk, aend);
   for (const [a, e] of abschnitt(zeilen, 'befund').reverse()) {

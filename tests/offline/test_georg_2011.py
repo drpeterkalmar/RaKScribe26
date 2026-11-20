@@ -222,5 +222,25 @@ erg = pl.befund_aus_diktat("Ganzbeinaufnahme im Stand beidseits: MAD links 11,7 
 check("35: LAMA im Normbereich → kein „Varisierung“ im Befundtext, Werte bleiben",
       "Varisierung" not in erg.report and "MAD links 11,7 mm und rechts 12,6 mm." in erg.report, erg.report)
 
+# ───────────────────────────── 26: RH 49 Becken + Hüfte rechts ─────────────────────────────
+BUE2 = L("bü", "Beckenübersicht", "beckenübersicht_stehend", None, ziffer=1)
+HR = L("hftr", "Hüfte re.", "hüftgelenk_in_2_ebenen", "rechts", ziffer=2)
+log = []
+erg = pl.befund_aus_diktat("Beckenübersicht und Hüftgelenk rechts. Geringe Coxarthrose rechts.",
+                           kontext(lambda p: ki_vorlage(p, "Geringe Coxarthrose rechts."), [BUE2, HR], log=log.append))
+titel = [z[3:] for z in erg.report.split("\n") if z.startswith("## ") and z[3:] not in ("Befund", "Ergebnis")]
+check("26 (RH 49): Becken + Hüfte rechts → EIN Befund mit Kombi-Vorlage, Titel „Becken sowie Hüftgelenk in 2 Ebenen rechts“",
+      titel == ["Becken sowie Hüftgelenk in 2 Ebenen rechts"] and erg.vorlagen == ["beckenübersicht_und_hüfte"]
+      and "links" not in erg.report and not [h for h in erg.cas_hinweise if "nicht eindeutig" in h],
+      (titel, erg.vorlagen, erg.cas_hinweise))
+
+# ───────────────────────────── 22: Zehennummer nie raten (RH 93) ─────────────────────────────
+ZEHE = L("zehel", "Zehe li.", "zehe_in_2_ebenen", "links")
+for d, rot in (("Zehe links: kleine Exostose.", True), ("Zehe links, D V: kleine Exostose.", False),
+               ("Großzehe links: Hallux valgus.", False)):
+    erg = pl.befund_aus_diktat(d, kontext(lambda p: ki_vorlage(p, "Kleine Exostose links."), [ZEHE]))
+    check(f"22: {d!r} → {'Prüfzeile' if rot else 'keine Prüfzeile'} „Nummer nicht diktiert“",
+          any("Nummer (I–V) nicht diktiert" in h for h in erg.cas_hinweise) == rot, erg.cas_hinweise)
+
 print(f"\nFEHLER: {fails}")
 sys.exit(1 if fails else 0)

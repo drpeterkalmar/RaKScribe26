@@ -213,6 +213,10 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     if not normal:   # v3.18.4: Bypass (Vorlage ohne KI) braucht keinen K&L-Wächter
         seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else ""
         out = _kl_waechter(out, seg, template_key, ctx, seite, behalten=koala)
+    if template_key == KOMBI_BECKEN_HUEFTE and wahl is not None and wahl.leistung is not None \
+            and wahl.leistung.seite in ("rechts", "links"):   # RH 49: Seite der Hüfte laut CAS in die Überschrift
+        out = re.sub(r"(?m)^## Beckenübersicht und Hüfte(?: in 2 Ebenen)?[ \t]*$",
+                     f"## Beckenübersicht und Hüfte {wahl.leistung.seite}", out)
     return _grundregeln(out, seg, ctx)
 
 
@@ -312,7 +316,8 @@ def cas_wahlen(segmente, ctx):
                                                                         and not br.has_pathology(cv.kopf(ss[0][1]))))):
             w = cv.Wahl(ziel.vorlage, "inhalt", ziel, w.erkannt)
         wahlen.append(w)
-    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise
+    segmente, wahlen, inhalt_hinweise = _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx)
+    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise + _strahl_hinweise(segmente, wahlen)
     if inhalt_hinweise:   # Protokoll ohne Diktatinhalt (Umbau Schritt 23): nur die Zahl
         ctx.log(f"[CAS] {len(inhalt_hinweise)} Prüfzeile(n) zur Satz-Zuordnung")
     # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
@@ -326,6 +331,40 @@ def cas_wahlen(segmente, ctx):
                 + (f", Diktat allein: {w.erkannt}" if w.erkannt and w.erkannt != w.vorlage else "")
                 + (f", CAS {w.leistung.kurz}" if w.leistung else "") + ")")
     return segmente, wahlen, hinweise
+
+
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 22, RH 93): CAS-Kürzel nur „Zehe“/„Finger“ ohne Nummer – fehlt die
+# Nummer auch im Diktat, wird sie nie geraten: rote Prüfzeile
+_STRAHL = re.compile(r"(?<![a-zäöüß])(?:dig(?:itus)?\.?\s*)?(?:i{1,3}|iv|v|[1-5])(?![a-zäöüß0-9])|daumen|großzeh|grosszeh|"
+                     r"kleinzeh|zeigefinger|mittelfinger|ringfinger|kleinfinger|hallux|digitus", re.I)
+STRAHL_FEHLT = "{name}: Nummer (I–V) nicht diktiert – bitte im Befund ergänzen (wird nicht geraten)"
+
+
+def _strahl_hinweise(segmente, wahlen):
+    out = []
+    for seg, w in zip(segmente, wahlen):
+        if w.vorlage in ("zehe_in_2_ebenen", "finger_in_2_ebenen") and not _STRAHL.search(br.rho_erkennen(seg)[0]):
+            out.append(STRAHL_FEHLT.format(name="Zehe" if w.vorlage.startswith("zehe") else "Finger"))
+    return out
+
+
+KOMBI_BECKEN_HUEFTE = "beckenübersicht_und_hüfte"
+_BECKEN_FAMILIE = {"beckenübersicht_stehend", "hüftgelenk_in_2_ebenen", KOMBI_BECKEN_HUEFTE}
+
+
+def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 26, RH 49: „Beckenübersicht und Hüftgelenk rechts“ → zwei Befunde,
+    Titel/Seite falsch): wählt ein Abschnitt die Kombi-Vorlage Becken + Hüfte (v3.18.7) und gehören alle Abschnitte zu
+    Becken/Hüfte, bleibt es EIN Befund mit der Kombi-Vorlage; die Seite kommt von der Hüft-Leistung laut CAS."""
+    if not any(w.vorlage == KOMBI_BECKEN_HUEFTE for w in wahlen) or not all(w.vorlage in _BECKEN_FAMILIE for w in wahlen):
+        return segmente, wahlen, inhalt_hinweise
+    if len(segmente) < 2:            # ein Abschnitt mit der Kombi-Vorlage deckt beide CAS-Leistungen
+        return segmente, wahlen, [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
+    huefte = next((w.leistung for w in wahlen if w.leistung is not None and w.leistung.seite), None) or \
+        next((l for l in ctx.cas.alle if l.vorlage == "hüftgelenk_in_2_ebenen"), None)
+    ctx.log(f"[CAS] Becken + Hüfte: {len(segmente)} Abschnitte → ein Befund mit der Kombi-Vorlage")
+    return [" ".join(s.strip() for s in segmente)], [cv.Wahl(KOMBI_BECKEN_HUEFTE, "kombi", huefte, KOMBI_BECKEN_HUEFTE)], \
+        [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
 
 
 def befund_aus_diktat(diktat, ctx, beim_start=None):

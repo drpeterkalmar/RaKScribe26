@@ -1679,12 +1679,22 @@ def _daumen(zeilen, dk, aend):
             zeilen[i] = neu
 
 
+# 26 (RH 49, Georg): Titel der Kombi Becken + Hüfte mit einer Seite
+_KOMBI_TITEL = re.compile(r"^## Beckenübersicht und Hüfte (rechts|links)(?: in 2 Ebenen)?[ \t]*$")
+KOMBI_TITEL = "## Becken sowie Hüftgelenk in 2 Ebenen {seite}"
+
+
 def grundregeln(report, diktat="", templates=None):
     """→ (report, Änderungen). Siehe Kopf dieses Abschnitts."""
     if not report or "## " not in report:
         return report, []
     zeilen = report.split("\n")
     aend = []
+    for i, z in enumerate(zeilen):
+        m = _KOMBI_TITEL.match(z.strip())
+        if m:
+            zeilen[i] = KOMBI_TITEL.format(seite=m.group(1))
+            aend.append(f"Titel {zeilen[i][3:]}")
     dk = (diktat or "").lower()
     _daumen(zeilen, dk, aend)
     for a, e in reversed(_abschnitt(zeilen, "befund")):

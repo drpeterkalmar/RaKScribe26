@@ -1391,6 +1391,36 @@
      "\"Fibroostose\""
     ]
    }
+  },
+  {
+   "id": "georg-becken-huefte-kombi",
+   "titel": "Becken + Hüfte (eine Seite): EIN Befund mit Kombi-Vorlage (v3.18.7), Titel „Becken sowie Hüftgelenk in 2 Ebenen rechts“, Seite aus CAS (RH 49, Test test_georg_2011 + Fixtures georg_2011)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 26, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/pipeline.py": [
+     "def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):"
+    ],
+    "source_code/befund_regeln.py": [
+     "KOMBI_TITEL = \"## Becken sowie Hüftgelenk in 2 Ebenen {seite}\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const KOMBI_TITEL = '## Becken sowie Hüftgelenk in 2 Ebenen {seite}';"
+    ]
+   }
+  },
+  {
+   "id": "georg-strahl-nummer",
+   "titel": "Zehen-/Fingernummer nicht diktiert und CAS ohne Nummer → rote Prüfzeile, nie raten (RH 93, Test test_georg_2011)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 22, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/pipeline.py": [
+     "STRAHL_FEHLT = \"{name}: Nummer (I–V) nicht diktiert – bitte im Befund ergänzen (wird nicht geraten)\""
+    ]
+   }
   }
  ]
 }
