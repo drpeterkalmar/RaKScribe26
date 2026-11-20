@@ -163,10 +163,12 @@ check("Muster: Kyphose/Lordose/Hyperkyphose zählen nicht, Skoliose/Asymmetrie/S
       not I.squirrel_diktiert("Verstärkte Kyphose der BWS, Hyperlordose der LWS, Streckhaltung der HWS.")
       and all(I.squirrel_diktiert(x) for x in ("flachbogige Skoliose", "skoliotische Asymmetrie", "Seitausbiegung",
                                                 "rechtskonvex", "S-förmig", "keine Skoliose", "konvex nach links")))
-# die VORLAGE zählt nicht: GWS-Vorlage enthält „flachbogige rechts-konvexe Skoliose“ – ohne Diktat trotzdem Skoliose-Text
+# die VORLAGE zählt nicht als Diktat: Bis 3.19.19 enthielt die GWS-Vorlage „flachbogige rechts-konvexe Skoliose“; seit
+# kaiscribe-gws-ap-normaltext-n1 (Peter 20.11.2026, #459 „a“) nur noch „Normale Stellung.“ – ohne Diktat Skoliose-Text
+# aus SQUIRREL, der Achsensatz ist ersetzt (Gate ohne SQUIRREL: tests/offline/test_gws_ap_normaltext.py)
 e = I.einsetzen(bericht(GWS), baustein("einzeln"), diktat="Wirbelsäule unauffällig.")
 check("Vorlage mit „Skoliose“ zählt nicht als Diktat: Skoliose-Satz + Punkt",
-      S2 in e.report and "flachbogige rechts-konvexe" not in e.report
+      S2 in e.report and "flachbogige rechts-konvexe" not in e.report and "Normale Stellung" not in e.report
       and teil(e.report, "ergebnis").startswith("Hochgradige rechtskonvexe Skoliose der BWS."), e.report)
 # erst ohne, dann mit Diktat einsetzen (Knopf nach neuem Diktat): eigener Punkt + Sätze werden ersetzt
 e1 = I.einsetzen(bericht(GWS, befund="Wirbelsäule: Normale Stellung. Wirbelkörper regelrecht."), baustein("einzeln"),

@@ -1055,6 +1055,22 @@
      "cv.leistung_vorlage(l, templates)"
     ]
    }
+  },
+  {
+   "id": "gws-ap-normaltext",
+   "titel": "Vorlage „Ganzaufnahme der Wirbelsäule a.-p.“: Normaltext „Wirbelsäule: Normale Stellung. Alignementlinien regelrecht.“ – ohne „flachbogige rechts-konvexe Skoliose“; Skoliose steht nur, wenn diktiert oder von SQUIRREL (Cobb ≥ 10°)",
+   "quelle": "Peter 20.11.2026, Kanban #459 Antwort „a“ (kaiscribe-gws-ap-normaltext-n1)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "templates.json": [
+     "\"body\": \"Ganzaufnahme der Wirbelsäule a.-p.\\n\\nWirbelsäule: Normale Stellung. Alignementlinien regelrecht.\\n"
+    ],
+    "tests/offline/test_gws_ap_normaltext.py": [
+     "NEU = \"Wirbelsäule: Normale Stellung. Alignementlinien regelrecht.\""
+    ]
+   },
+   "notiz": "Vorher stand die Skoliose im Normaltext jeder GWS a.p. ohne SQUIRREL (BERICHT-GWS-SEITLICH-VORLAGE-N1). Der SQUIRREL-Ersatz (_SQ_GWS in ibl_bausteine.py) greift auf „Normale Stellung.“ unverändert."
   }
  ]
 }

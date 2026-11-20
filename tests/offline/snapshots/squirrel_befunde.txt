@@ -69,7 +69,7 @@ SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergeb
 ## Ganzaufnahme der Wirbelsäule a.-p.
 
 ## Befund
-Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe Skoliose. Alignementlinien regelrecht.
+Wirbelsäule: Normale Stellung. Alignementlinien regelrecht.
 Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
 Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
 Zwischenwirbelräume und Spinalkanal: Normal weit.
@@ -147,7 +147,7 @@ SQUIRREL: „Regelrechte Darstellung der Wirbelsäule.“ durch das IB-Lab-Ergeb
 ## Ganzaufnahme der Wirbelsäule a.-p.
 
 ## Befund
-Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe Skoliose. Alignementlinien regelrecht.
+Wirbelsäule: Normale Stellung. Alignementlinien regelrecht.
 Wirbelkörper: Anzahl, Form, Größe und Stellung zueinander regelrecht. Mineralgehalt und Knochenstruktur unauffällig. Kortikale Randkonturen, einschließlich Platae terminales, glatt und scharf begrenzt.
 Bogenwurzeln und Querfortsätze: Regelrecht konfiguriert.
 Zwischenwirbelräume und Spinalkanal: Normal weit.
