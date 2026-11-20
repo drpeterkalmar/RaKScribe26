@@ -327,18 +327,28 @@ export function rhoErkennen(seg: string): [string, string, boolean] {
   return [rest || seg, score, true];
 }
 
+// kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkte 19/40c/31): Rho IMMER als eigener Einzelbefund ganz am Schluss mit
+// eigener Überschrift, eigenem Text und Ergebnis; diktierter Score < 7 → kein Text. Sync: befund_regeln.py
+export const RHO_TITEL = 'Opportunistisches Knochendichtescreening (KI)';
+export const RHO_AB = 7;
 export function rhoEinfuegen(report: string, score: string): string {
   if (!report || report.includes(RHO_ERGEBNIS)) return report;
+  if (score && /^\d+$/.test(score) && Number(score) < RHO_AB) return report;
   const befund = RHO_BEFUND.replace('{score}', score ? `Der Score von ${score} (Skala 1–10) zeigt` : 'Der Score von ≥7 (Skala 1–10) zeigt');  // Georg 13.10.: ohne diktierten Score immer ≥7
-  if (!report.includes('## Ergebnis')) return report.trimEnd() + '\n\n' + befund + '\n\n## Ergebnis\n' + RHO_ERGEBNIS;
-  const i = report.lastIndexOf('## Ergebnis');
-  const kopf = report.slice(0, i).trimEnd();
-  let erg = report.slice(i + '## Ergebnis'.length);
-  const zeilen = erg.split('\n').filter(z => z.trim());
-  const nummeriert = zeilen.some(z => NUM_RE.test(z));
-  erg = erg.trimEnd() + '\n' + RHO_ERGEBNIS;
-  const neu = kopf + '\n\n' + befund + '\n\n## Ergebnis' + erg;
-  return (nummeriert || zeilen.length <= 1) ? ergebnisNummerieren(neu) : neu;
+  return befundeZusammenfuegen([report, `## ${RHO_TITEL}\n\n## Befund\n${befund}\n\n## Ergebnis\n${RHO_ERGEBNIS}`]);
+}
+
+export function rhoAnsEnde(report: string): string {
+  if (!report || !report.includes(`## ${RHO_TITEL}`)) return report;
+  const zeilen = report.split('\n');
+  const a = zeilen.findIndex(z => z.trim() === `## ${RHO_TITEL}`);
+  let e = a + 1;
+  const kopf = (z: string) => { const s = z.trim(); return s.startsWith('## ') && !['befund', 'ergebnis'].includes(s.slice(3).trim().toLowerCase().replace(/:$/, '')); };
+  while (e < zeilen.length && !kopf(zeilen[e])) e++;
+  if (e >= zeilen.length) return report;
+  const block = zeilen.slice(a, e).join('\n').trim();
+  const rest = [...zeilen.slice(0, a), ...zeilen.slice(e)].join('\n').trim().replace(/\n{4,}/g, '\n\n\n');
+  return befundeZusammenfuegen([rest, block]);
 }
 
 export const befundeZusammenfuegen = (reports: string[]): string =>
@@ -514,7 +524,8 @@ export const istSkelettText = (text: string, d?: WiderspruchDaten): boolean => {
 };
 
 const WID_ABK = new Set(['bzw', 'ca', 'z', 'b', 'u', 'a', 'v', 'd', 'h', 'evtl', 'ggf', 'inkl', 'max', 'min', 'lig', 'n', 'nn',
-  'm', 'mm', 'li', 're', 'bds', 'vs', 'st', 'p', 'i', 'dr', 'o', 's', 'co', 'e', 'g', 'ap', 'pa', 'bspw', 'usw']);
+  'm', 'mm', 'li', 're', 'bds', 'vs', 'st', 'p', 'i', 'dr', 'o', 's', 'co', 'e', 'g', 'ap', 'pa', 'bspw', 'usw',
+  'dig', 'proc']);  // kaiscribe-georg-2011-n1: „Dig. V“
 export function saetzeMitLage(text: string): [number, number][] {
   const t = text || '';
   const out: [number, number][] = [];
@@ -692,7 +703,10 @@ export function widersprucheBereinigen(report: string, diktat: string, d?: Wider
     neu.push(text.slice(pos));
     text = neu.join('');
     if (weg.size) text = text.replace(/[ \t]+(?=\n|$)/gu, '');   // nach dem Streichen keine Leerzeichen am Zeilenende
-    const fehlend = befunde.filter(b => kat.has(b.id) && !widBeschreibt(text.toLowerCase(), kat.get(b.id)!, c));
+    // kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 78): Schreibvarianten (c/k/z, femoropatellar↔patellofemoral) zählen als
+    // beschrieben, ein schon dastehender Satz wird nie ein zweites Mal angehängt (Sync: befund_regeln.py)
+    const fehlend = befunde.filter(b => kat.has(b.id) && !schreibvarianten(text).some(v => widBeschreibt(v, kat.get(b.id)!, c))
+      && !phraseVorhanden(b.phrase, text));
     if (fehlend.length) {
       const satz = fehlend.map(b => satzAusPhrase(b.phrase)).join(' ');
       if (erste !== null) text = text.slice(0, erste) + satz + ' ' + text.slice(erste);
@@ -1177,4 +1191,265 @@ export function arthroseBereinigen(report: string, diktat: string, d?: Widerspru
   });
   aend.push(...statt.map(s => `diktierter Befund statt Arthrose: ${s}`));
   return [ergebnisNummerieren(neu.join('\n')), aend];
+}
+
+// ── kaiscribe-georg-2011-n1 (Georg Riegler 20.11.2026, Diktiertag) ─────────────────────────────────────────────────────
+// Grundregeln nach allen anderen Wächtern: Befund beginnt nie mit „Im Übrigen/Ansonsten“ (7/14b/21a/32), Pleuraerguss →
+// Sinus-Satz raus + „Ansonsten das Zwerchfell beidseits glatt begrenzt.“ (10), Widerspruchsregel 14a/18/37b/40a, diktierte
+// Abstufung „skoliotische Asymmetrie“ (20), KI-Hinweise nie im Ergebnis (21b), „SI-Gelenksarthrose“ (38), Wirbelsäule ohne
+// K&L-Grad (42). Sync: source_code/befund_regeln.py grundregeln, Fixtures „georg_2011“.
+export const UEBRIGEN_ANFANG = /^(Im [Üü]brigen|Ansonsten)\b,?\s+/u;
+const STELLUNG_PATHO = /fraktur|luxation|fehlstellung|disloz|dislokation|hochstand|skolio|listhes|dissoziation|achsabweich|achsfehl|seitausbieg|kontinuitätsunterbrech|fragment|valgus|varus|fehlhaltung|streckhaltung|beckenschiefstand|abkippung|versatz/u;
+const NEG_NAH = /(?<![a-zäöüß])(?:kein[a-zäöüß]*|ohne|nicht|ausschluss|frei von)(?![a-zäöüß])/u;
+const WS_TITEL = /wirbelsäule|halswirbel|brustwirbel|lendenwirbel|(?<![a-zäöüß])(?:hws|bws|lws|gws)(?![a-zäöüß])/iu;
+const THORAX_TITEL = /thorax|lunge/iu;
+export const GEORG_STREICHEN: [string, string, RegExp | null, string[]][] = [
+  ['humeruskopfhochstand', 'hochstand des humeruskopf|humeruskopf[a-zäöüß]*hochstand|humeruskopf[a-zäöüß ]{0,25}hochstand|schulterhochstand|kopfhochstand', null,
+    ['humeruskopf[^.]*regelrechte[rn]? artikulation']],
+  ['infiltrat', 'infiltrat', null, ['(?<![a-zäöüß])kein(?:e[nmrs]?)?(?![a-zäöüß])[^.]*infiltrat']],
+  ['beckenschiefstand', 'beckenschiefstand|beckenkippung|beckenhochstand|becken[a-zäöüß ]{0,15}schief', null,
+    ['symmetrische form des beckenskelett', 'becken(?:schaufeln|kämme)[^.]*gleich ?hoch']],
+  ['skoliose', 'skolio|seitausbieg|cobb', WS_TITEL,
+    ['^(?:(?:im übrigen|ansonsten),?\\s+)?normaler achsenverlauf', '^(?:(?:im übrigen|ansonsten),?\\s+)?(?:annähernd\\s+)?achsengerechte stellung']],
+];
+const GEORG_RX = GEORG_STREICHEN.map(([i, w, t, ss]) => [i, new RegExp(w, 'u'), t, ss.map(x => new RegExp(x, 'u'))] as const);
+const KEINE_SKOLIOSE = /keine skoliose|kein[a-zäöüß]* (?:hinweis auf|nachweis einer?) skoliose/u;
+const PLEURA = /pleuraerg(?:u|ü)(?:ss|ß)|pleuraeffusion|erg(?:u|ü)ss[a-zäöüß ]{0,20}pleura/u;
+const ERGUSS_SATZ = /erg(?:u|ü)(?:ss|ß)|stumpf|randwinkel|winkelerguss/u;
+const SINUS_FREI = /(?<![a-zäöüß])sinus(?![a-zäöüß])[^.]*(?<![a-zäöüß])frei(?![a-zäöüß])/u;
+const ZWERCHFELL_NORMAL = /^(?:(?:im übrigen|ansonsten),?\s+)?(?:das\s+|beide\s+)?zwerchfell[a-zäöüß]*[^.]*(?:normaler lage|scharf|glatt)/u;
+export const ZWERCHFELL_ANSONSTEN = 'Ansonsten das Zwerchfell beidseits glatt begrenzt.';
+const KI_PUNKT = /^\s*(?:\d+\s*[.)]\s*)?(?:KI\s*[:(-]|\(KI\)|RBfracture\b)/iu;
+const SI_ARTHROSE = /(?<![\p{L}\p{N}_-])(?:ISG|SIG|SI|Iliosakral|Iliosacral|Sakroiliakal|Sacroiliacal)(?:[- ]?[Gg]elenk(?:s|e)?)?[- ]?[Aa]rthrose(n?)(?![\p{L}\p{N}_])/gu;
+const KL_KLAMMER_WS = /\s*\((?:Arthrose\s+)?Grad\s+(?:\d|[IVX]+)\s+nach\s+Kellgren[^)]*\)/gu;
+const SKOL_ABSTUFUNG = /skoliotische[a-zäöüß]*\s+(asymmetrie|fehlhaltung|haltung|seitabweichung)/u;
+const SKOLIOSE_WORT = /(?<![\p{L}\p{N}_])Skoliose(?![\p{L}\p{N}_])/gu;
+
+const bejaht = (text: string, rx: RegExp): boolean => {
+  for (const m of (text || '').matchAll(new RegExp(rx.source, 'gu'))) {
+    const vor = text.slice(Math.max(0, m.index! - 60), m.index!).split(/[.;:,\n]/u).pop()!;
+    if (!NEG_NAH.test(vor)) return true;
+  }
+  return false;
+};
+
+const satzWeg = (text: string, a: number, b: number): string => {
+  let vor = text.slice(0, a), nach = text.slice(b);
+  if (nach.startsWith(' ')) nach = nach.slice(1);
+  else if (vor.endsWith(' ')) vor = vor.slice(0, -1);
+  if ((!vor || vor.endsWith('\n')) && nach.startsWith('\n')) nach = nach.slice(1);
+  return vor + nach;
+};
+
+const titelVor = (zeilen: string[], i: number): string => {
+  for (let j = i - 1; j >= 0; j--) {
+    const s = zeilen[j].trim();
+    if (s.startsWith('## ') && !['befund', 'ergebnis'].includes(s.slice(3).trim().toLowerCase().replace(/:$/, ''))) return s.slice(3).trim();
+  }
+  return '';
+};
+
+const worte = (s: string): string => (s || '').toLowerCase().split(/[^a-zäöüß0-9-]+/u).filter(Boolean).sort().join('\u0001');
+const VORLAGEN_WORTE = new WeakMap<object, Map<string, string>>();
+const vorlageZurueck = (rest: string, templates?: VorlagenMap): string | null => {
+  if (!templates) return null;
+  let c = VORLAGEN_WORTE.get(templates);
+  if (!c) {
+    c = new Map();
+    for (const v of Object.values(templates)) {
+      const body = (v && v.body) || '';
+      for (const [a, b] of saetzeMitLage(body)) if (!c.has(worte(body.slice(a, b)))) c.set(worte(body.slice(a, b)), body.slice(a, b).trim());
+    }
+    VORLAGEN_WORTE.set(templates, c);
+  }
+  return c.get(worte(rest)) ?? null;
+};
+
+export function befundAnfang(text: string, templates?: VorlagenMap): [string, string] {
+  const spans = saetzeMitLage(text || '');
+  if (!spans.length) return [text, ''];
+  const [a, b] = spans[0];
+  const s = text.slice(a, b);
+  const m = UEBRIGEN_ANFANG.exec(s);
+  if (!m) return [text, ''];
+  const ansonsten = m[1].toLowerCase().startsWith('ansonsten');
+  for (const [x, y] of spans.slice(1)) {
+    const t = text.slice(x, y);
+    if (UEBRIGEN_ANFANG.test(t)) continue;
+    if (ansonsten ? hasPathology(t) : bejaht(t.toLowerCase(), STELLUNG_PATHO)) {
+      const ohne = satzWeg(text, a, b);
+      const y2 = y - (text.length - ohne.length);
+      return [ohne.slice(0, y2) + ' ' + s + ohne.slice(y2), `hinter die Pathologie: ${s.slice(0, 50)}`];
+    }
+  }
+  const rest = s.slice(m[0].length);
+  let neu: string | null;
+  if (WID_VERB.test(rest.split(' ', 1)[0].toLowerCase())) {
+    neu = vorlageZurueck(rest, templates);
+    if (neu === null) return [text, ''];
+  } else neu = rest.slice(0, 1).toUpperCase() + rest.slice(1);
+  return [text.slice(0, a) + neu + text.slice(b), `ohne „${m[1]}“: ${neu.slice(0, 50)}`];
+}
+
+const saetzeStreichen = (text: string, rxs: readonly RegExp[]): [string, string[]] => {
+  const aend: string[] = [];
+  for (const [a, b] of saetzeMitLage(text).reverse()) {
+    const s = text.slice(a, b);
+    if (rxs.some(rx => rx.test(s.toLowerCase()))) {
+      text = satzWeg(text, a, b);
+      aend.push(`gestrichen: ${s.trim().slice(0, 60)}`);
+    }
+  }
+  return [text, aend];
+};
+
+const pleura = (text: string, diktat: string): [string, string[]] => {
+  const quelle = diktat.toLowerCase();
+  const m = new RegExp(PLEURA.source, 'u').exec(quelle);
+  const seite = m ? diktierteSeite(quelle.slice(Math.max(0, m.index - 60), m.index + m[0].length + 60)) : diktierteSeite(text);
+  const aend: string[] = [];
+  for (const [a, b] of saetzeMitLage(text).reverse()) {
+    const s = text.slice(a, b).toLowerCase();
+    if (!SINUS_FREI.test(s) || bejaht(s, ERGUSS_SATZ)) continue;
+    const andere = ({ rechts: 'links', links: 'rechts' } as Record<string, string>)[seite];
+    if (seite !== 'beidseits' && (s.includes('übrig') || (andere && s.includes(andere) && !s.includes(seite || '-')))) continue;
+    aend.push(`gestrichen: ${text.slice(a, b).slice(0, 60)}`);
+    text = satzWeg(text, a, b);
+  }
+  const spans = saetzeMitLage(text);
+  let erguss = spans.find(([x, y]) => bejaht(text.slice(x, y).toLowerCase(), ERGUSS_SATZ) && !ZWERCHFELL_NORMAL.test(text.slice(x, y).toLowerCase()));
+  if (!erguss || text.includes(ZWERCHFELL_ANSONSTEN)) return [text, aend];
+  for (const [a, b] of [...spans].reverse()) {
+    if (ZWERCHFELL_NORMAL.test(text.slice(a, b).toLowerCase()) && !(a === erguss[0] && b === erguss[1])) {
+      aend.push(`gestrichen: ${text.slice(a, b).slice(0, 60)}`);
+      if (a < erguss[0]) {
+        const d = text.length;
+        text = satzWeg(text, a, b);
+        erguss = [erguss[0] - (d - text.length), erguss[1] - (d - text.length)];
+      } else text = satzWeg(text, a, b);
+    }
+  }
+  const y = erguss[1];
+  aend.push('ergänzt: ' + ZWERCHFELL_ANSONSTEN);
+  return [text.slice(0, y) + ' ' + ZWERCHFELL_ANSONSTEN + text.slice(y), aend];
+};
+
+const DAUMEN = /(?<![a-zäöüß])daumen(?![a-zäöüß])/u;
+const ANDERER_FINGER = /zeigefinger|mittelfinger|ringfinger|kleinfinger|(?<![a-zäöüß])dig(?:itus|\.)?\s*(?:ii|iii|iv|v|[2-5])(?![a-z0-9])/u;
+const DAUMEN_SATZ_RE = /Normale Form der Phalangen((?: beidseits)?) und im Rahmen der Varianz auch des Endgliedes bei achsengerechter Stellung\./gu;
+export const DAUMEN_SATZ = 'Normale Form der Phalangen{bds}, achsengerechte Stellung.';
+const kopfzeile = (s: string): boolean => s.startsWith('## ') && !['befund', 'ergebnis'].includes(s.slice(3).trim().toLowerCase().replace(/:$/, ''));
+
+// 28b/29: diktierter Daumen statt CAS-„Finger“ in Überschrift und Ergebnis; Daumen-Normalsatz ohne Varianz-Endglied
+const daumen = (zeilen: string[], dk: string, aend: string[]): void => {
+  const nurDaumen = bejaht(dk, DAUMEN) && !ANDERER_FINGER.test(dk);
+  let titel = '';
+  zeilen.forEach((z, i) => {
+    const s = z.trim();
+    if (kopfzeile(s)) {
+      if (nurDaumen && /^## Finger(?![a-zäöüß])/u.test(s)) {
+        zeilen[i] = z.replace('## Finger', '## Daumen');
+        aend.push(`Überschrift Daumen statt Finger: ${zeilen[i].trim().slice(0, 50)}`);
+      }
+      titel = zeilen[i];
+      return;
+    }
+    if (s.startsWith('## ') || !titel.toLowerCase().includes('daumen')) return;
+    let neu = z.replace(DAUMEN_SATZ_RE, (_m, bds: string) => DAUMEN_SATZ.replace('{bds}', bds));
+    if (nurDaumen) {
+      neu = neu.replace(/(?<![\p{L}\p{N}_])des Fingers(?![\p{L}\p{N}_])/gu, 'des Daumens')
+        .replace(/(?<![\p{L}\p{N}_])Finger(?=\s+(?:rechts|links|beidseits)(?![\p{L}\p{N}_]))/gu, 'Daumen');
+    }
+    if (neu !== z) { aend.push(`Daumen: ${neu.trim().slice(0, 50)}`); zeilen[i] = neu; }
+  });
+};
+
+export function grundregeln(report: string, diktat = '', templates?: VorlagenMap): [string, string[]] {
+  if (!report || !report.includes('## ')) return [report, []];
+  const zeilen = report.split('\n');
+  const aend: string[] = [];
+  const dk = (diktat || '').toLowerCase();
+  daumen(zeilen, dk, aend);
+  for (const [a, e] of abschnitt(zeilen, 'befund').reverse()) {
+    const titel = titelVor(zeilen, a - 1);
+    let text = zeilen.slice(a, e).join('\n');
+    let tl = text.toLowerCase();
+    for (const [i, wenn, nurTitel, saetze] of GEORG_RX) {
+      if (nurTitel !== null && !nurTitel.test(titel)) continue;
+      if (!(bejaht(dk, wenn) || bejaht(tl, wenn))) continue;
+      if (i === 'skoliose' && (KEINE_SKOLIOSE.test(dk) || KEINE_SKOLIOSE.test(tl))) continue;
+      const [t2, x] = saetzeStreichen(text, saetze);
+      text = t2;
+      aend.push(...x.map(z => `${i}: ${z}`));
+      tl = text.toLowerCase();
+    }
+    if (THORAX_TITEL.test(titel) && (bejaht(dk, PLEURA) || bejaht(tl, PLEURA))) {
+      const [t2, x] = pleura(text, diktat || '');
+      text = t2;
+      aend.push(...x.map(z => `pleuraerguss: ${z}`));
+    }
+    const lead = text.length - text.trimStart().length;
+    const [neu, x] = befundAnfang(text.slice(lead), templates);
+    if (x) { text = text.slice(0, lead) + neu; aend.push(x); }
+    zeilen.splice(a, e - a, ...text.split('\n'));
+  }
+  const skol = /skoliose|flachprofil/u.test(dk) ? null : SKOL_ABSTUFUNG.exec(dk);
+  let erg = false;
+  for (const [a, e] of abschnitt(zeilen, 'ergebnis').reverse()) {
+    for (let i = e - 1; i >= a; i--) {
+      const z = zeilen[i];
+      if (KI_PUNKT.test(z)) {
+        aend.push(`KI-Hinweis nicht im Ergebnis: ${z.trim().slice(0, 60)}`);
+        zeilen.splice(i, 1);
+        erg = true;
+      } else if (skol && new RegExp(SKOLIOSE_WORT.source, 'u').test(z)) {
+        zeilen[i] = z.replace(SKOLIOSE_WORT, 'skoliotische ' + skol[1].charAt(0).toUpperCase() + skol[1].slice(1).toLowerCase());
+        aend.push(`diktierte Abstufung: ${zeilen[i].trim().slice(0, 60)}`);
+        erg = true;
+      }
+    }
+  }
+  let out = zeilen.join('\n');
+  const si = out.replace(SI_ARTHROSE, (_m, n: string) => 'SI-Gelenksarthrose' + n);
+  if (si !== out) { aend.push('Schreibweise SI-Gelenksarthrose'); out = si; }
+  if (out.includes('Kellgren')) {
+    const zz = out.split('\n');
+    let titel = '';
+    zz.forEach((z, i) => {
+      const s = z.trim();
+      if (s.startsWith('## ') && !['befund', 'ergebnis'].includes(s.slice(3).trim().toLowerCase().replace(/:$/, ''))) titel = s.slice(3);
+      else if (WS_TITEL.test(titel) && new RegExp(KL_KLAMMER_WS.source, 'u').test(z)) {
+        zz[i] = z.replace(KL_KLAMMER_WS, '');
+        aend.push('Wirbelsäule ohne K&L-Grad');
+        erg = true;
+      }
+    });
+    out = zz.join('\n');
+  }
+  if (erg) out = ergebnisNummerieren(out);
+  return [out, aend];
+}
+
+// 13 (RH 78): Schreibvarianten für die Nachprüfung „Befund fehlt im Text“ (Sync: befund_regeln.py)
+const VERTAUSCHT: [string, string][] = [['femoropatellar', 'patellofemoral'], ['femorotibial', 'tibiofemoral'], ['retropatellar', 'femoropatellar']];
+export function schreibvarianten(text: string): string[] {
+  const t = (text || '').toLowerCase();
+  const out = [t, t.replace(/[kz]/gu, 'c'), t.replace(/c(?!h)/gu, 'k')];
+  for (const [x, y] of VERTAUSCHT) {
+    const basis = out.slice(0, 3);
+    out.push(...basis.filter(v => v.includes(x)).map(v => v.split(x).join(y)), ...basis.filter(v => v.includes(y)).map(v => v.split(y).join(x)));
+  }
+  return [...new Set(out)];
+}
+const inhaltsworte = (t: string): Set<string> =>
+  new Set((t || '').toLowerCase().replace(/[kz]/gu, 'c').split(/[^a-zäöüß0-9]+/u).filter(w => w.length >= 4));
+export function phraseVorhanden(phrase: string, text: string): boolean {
+  const w = inhaltsworte(phrase);
+  if (!w.size) return false;
+  const restC = schreibvarianten(text).join(' ').replace(/[kz]/gu, 'c');
+  const da = (x: string): boolean => {
+    if (restC.includes(x)) return true;
+    return VERTAUSCHT.some(([p, q]) => [[p, q], [q, p]].some(([u, v]) => x.includes(u) && restC.includes(x.split(u).join(v))));
+  };
+  return [...w].every(da);
 }

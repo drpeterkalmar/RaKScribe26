@@ -200,6 +200,9 @@ def _alter(d):
 
 
 NUR_ANZEIGE = {"rho"}               # v3.19.10: Module, von denen KaiScribe nie Text einsetzt (nur Hinweise in der Anzeige)
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 21b, RH 69/92): KI-Hinweise (RBfracture „KI: Verdacht auf …“) sind nie ein
+# Ergebnispunkt und stehen nicht im Befund – sie bleiben nur als Hinweis für den Arzt (Anzeige).
+NUR_HINWEIS = {"rbfracture"}
 
 
 def aus_liste(liste):
@@ -225,6 +228,11 @@ def aus_liste(liste):
         if modul in OHNE_NORM:                                   # v3.19.9: nie ein Normbereich (Georg 18.11.2026)
             ergebnis, hinweise = [ohne_norm(t) for t in ergebnis], [ohne_norm(t) for t in hinweise]
         befundteil = _texte(d.get("befundteil"))
+        if modul in NUR_HINWEIS:
+            name = str(d.get("name") or modul.upper())
+            hinweise = hinweise + [f"{name}: {t} (nur Hinweis, nicht im Befund)" for t in befundteil + ergebnis
+                                   if t not in hinweise]
+            befundteil, ergebnis = [], []
         if modul in NUR_ANZEIGE:
             # v3.19.10 (Georg 18.11.2026, RH 57): KaiScribe setzt von Rho nichts ein – weder „Rho-Score N von 10“ noch den
             # Entwurf des Abholers. Ein Rho-Text kommt nur bei Score ≥ 7, ohne DEXA in den letzten 2 Jahren und nur für

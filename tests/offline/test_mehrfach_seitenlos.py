@@ -201,8 +201,11 @@ ctx = pl.Kontext(templates=T, display_names=DISPLAY, prompt=PROMPT, llm=ki_attra
                  cas=cv.CasHinweis([LWS, BUE], T))
 erg = pl.befund_aus_diktat(GEMISCHT + ", Rho 8", ctx)
 b = bloecke(erg.report)
-check("Rho-Auslöser im gemischten Diktat → Rho-Baustein im LWS-Befund, nicht im Becken",
-      "(Rho)" in b.get("Lendenwirbelsäule in 2 Ebenen", "") and "(Rho)" not in b.get("Beckenübersicht stehend", ""),
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkte 19/40c): Rho ist ein eigener Einzelbefund ganz am Schluss
+check("Rho-Auslöser im gemischten Diktat → eigener Rho-Befund am Schluss, weder im LWS- noch im Becken-Befund",
+      "(Rho)" not in b.get("Lendenwirbelsäule in 2 Ebenen", "x") and "(Rho)" not in b.get("Beckenübersicht stehend", "x")
+      and "(Rho)" in b.get(br.RHO_TITEL, "") and erg.report.rstrip().endswith(br.RHO_ERGEBNIS)
+      and erg.report.index("## " + br.RHO_TITEL) > erg.report.index("## Beckenübersicht stehend"),
       erg.report)
 
 # ohne CAS: Georgs Diktat mit Überschriften → trotzdem zwei Befunde (Regionen-Trenner)

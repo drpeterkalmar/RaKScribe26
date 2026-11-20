@@ -991,6 +991,250 @@
      "cv.inhalt_zuordnen(segmente, ctx.cas, ctx.templates, erkennen)"
     ]
    }
+  },
+  {
+   "id": "georg-befundanfang",
+   "titel": "Befund beginnt nie mit „Im Übrigen“/„Ansonsten“; erste Zeile = Stellung; „Im Übrigen“ nur nach pathologischer Stellung, „Ansonsten“ hinter der Pathologie (RH 21, 22, 63, 80, 92)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 7/14b/21a/32/37c, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Der Befundtext beginnt NIE mit \"Im Übrigen …\" oder \"Ansonsten …\". Die erste Zeile ist die Stellung (bei Becken/Hüfte inkl. LCE-Winkel bzw. Überdachung)."
+    ],
+    "source_code/befund_regeln.py": [
+     "UEBRIGEN_ANFANG = re.compile(r\"^(Im [Üü]brigen|Ansonsten)\\b,?\\s+\")"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const UEBRIGEN_ANFANG = /^(Im [Üü]brigen|Ansonsten)\\b,?\\s+/u;"
+    ]
+   }
+  },
+  {
+   "id": "georg-pleuraerguss",
+   "titel": "Pleuraerguss diktiert → Sinus-Satz der betroffenen Seite raus, „Ansonsten das Zwerchfell beidseits glatt begrenzt.“ (RH 64)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 10, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "danach \"Ansonsten das Zwerchfell beidseits glatt begrenzt.\" statt \"Das Zwerchfell in normaler Lage und scharf begrenzt.\";"
+    ],
+    "source_code/befund_regeln.py": [
+     "ZWERCHFELL_ANSONSTEN = \"Ansonsten das Zwerchfell beidseits glatt begrenzt.\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const ZWERCHFELL_ANSONSTEN = 'Ansonsten das Zwerchfell beidseits glatt begrenzt.';"
+    ]
+   }
+  },
+  {
+   "id": "georg-widerspruch-normalsatz",
+   "titel": "Widerspruchsregel: Normalsätze, die diktierter Pathologie/DD oder KI-Befund widersprechen, fallen weg – Humeruskopfhochstand, DD infiltrativ, Beckenschiefstand (beide Sätze), SQUIRREL-Skoliose/Cobb (Achsen-Sätze; Kyphose BWS + Lordose LWS bleiben)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 14a/18/37b/40a/40b, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "diktierter Humeruskopfhochstand → \"Der Humeruskopf steht in regelrechter Artikulation.\" entfällt",
+     "Beckenschiefstand (diktiert oder IB Lab) → \"Anatomisch normale und symmetrische Form des Beckenskeletts.\" UND \"Beide Beckenschaufeln stehen gleichhoch.\" entfallen",
+     "\"Harmonische Kyphose\" (BWS) und \"Normale Lordose\" (LWS) bleiben"
+    ],
+    "source_code/befund_regeln.py": [
+     "(\"humeruskopfhochstand\", ",
+     "[r\"symmetrische form des beckenskelett\", r\"becken(?:schaufeln|kämme)[^.]*gleich ?hoch\"]",
+     "(\"infiltrat\", r\"infiltrat\", None,"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "['humeruskopfhochstand', ",
+     "['symmetrische form des beckenskelett', 'becken(?:schaufeln|kämme)[^.]*gleich ?hoch']",
+     "['infiltrat', 'infiltrat', null,"
+    ]
+   }
+  },
+  {
+   "id": "georg-diktat-woertlich",
+   "titel": "Diktat wörtlich: Fibroostose nie „Fibrosierung“, Erguss nie „degenerativ“, akzessorische Knochen (Os tibiale externum …) nie Ausriss/Fraktur (RH 51, RH 30)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 8/41b, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Fibroostose\" bleibt Fibroostose (NIE \"Fibrosierung\")",
+     "akzessorische Knochen (Os tibiale externum, Os trigonum, Os peroneum, Os naviculare cornutum, Os intermetatarseum, Os vesalianum …) bleiben akzessorische Knochen"
+    ]
+   }
+  },
+  {
+   "id": "georg-abstufung-etage",
+   "titel": "Diktierte Abstufung/Etage wörtlich: „flachbogige skoliotische Asymmetrie“ ≠ Skoliose; L4/L5 nicht → „Diskopathie L5“ (RH 28)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 20/25, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"flachbogige skoliotische Asymmetrie\" bleibt in Befund und Ergebnis \"flachbogige skoliotische Asymmetrie\"",
+     "NIE \"Diskopathie L5\""
+    ],
+    "source_code/befund_regeln.py": [
+     "_SKOL_ABSTUFUNG = re.compile(r\"skoliotische[a-zäöüß]*\\s+(asymmetrie|fehlhaltung|haltung|seitabweichung)\")"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const SKOL_ABSTUFUNG = /skoliotische[a-zäöüß]*\\s+(asymmetrie|fehlhaltung|haltung|seitabweichung)/u;"
+    ]
+   }
+  },
+  {
+   "id": "georg-ki-hinweis",
+   "titel": "KI-Hinweise (RBfracture, „KI: Verdacht auf …“) nie als Ergebnispunkt, nur Hinweis für den Arzt (RH 69, RH 92)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 21b, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "KI-HINWEISE (RBfracture u. ä., \"KI: Verdacht auf …\") sind NIE ein Ergebnispunkt"
+    ],
+    "source_code/befund_regeln.py": [
+     "_KI_PUNKT = re.compile(r\"^\\s*(?:\\d+\\s*[.)]\\s*)?(?:KI\\s*[:(-]|\\(KI\\)|RBfracture\\b)\", re.I)"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const KI_PUNKT = /^\\s*(?:\\d+\\s*[.)]\\s*)?(?:KI\\s*[:(-]|\\(KI\\)|RBfracture\\b)/iu;"
+    ],
+    "source_code/ibl_bausteine.py": [
+     "NUR_HINWEIS = {\"rbfracture\"}"
+    ]
+   }
+  },
+  {
+   "id": "georg-zusammengehoerig",
+   "titel": "Zusammengehörige Befunde derselben Struktur (Fraktur + Dislokation/Gelenkbeteiligung) = EIN Ergebnispunkt (RH 69; Regel ohne Log abgeleitet – Georg bestätigen)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. RH 69, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Beschreibungen derselben Verletzung bzw. desselben Befunds an derselben Struktur (z.B. Fraktur + ihre Dislokation/Abkippung/Gelenkbeteiligung/Fragment) bilden EINEN Ergebnispunkt"
+    ]
+   }
+  },
+  {
+   "id": "georg-bezeichnung-seite",
+   "titel": "Diktierte Seite bleibt im Befundsatz; diktierte genauere Bezeichnung (Daumen, Dig. I–V, Zehe) vor CAS-Kürzel in Titel + Ergebnis; Finger-/Zehennummer nie raten (RH 79, RH 93)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 22/28, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "eine beim Befund DIKTIERTE Seite bleibt aber im Befundsatz stehen",
+     "Eine Finger- oder Zehennummer, die nicht diktiert ist, wird NIE geraten"
+    ],
+    "source_code/befund_regeln.py": [
+     "_ANDERER_FINGER = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const ANDERER_FINGER = "
+    ]
+   }
+  },
+  {
+   "id": "georg-daumen",
+   "titel": "Daumen-Normalsatz: „Normale Form der Phalangen, achsengerechte Stellung.“",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 29, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "\"Normale Form der Phalangen, achsengerechte Stellung.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "DAUMEN_SATZ = \"Normale Form der Phalangen{bds}, achsengerechte Stellung.\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const DAUMEN_SATZ = 'Normale Form der Phalangen{bds}, achsengerechte Stellung.';"
+    ]
+   }
+  },
+  {
+   "id": "georg-kl-peripher",
+   "titel": "K&L-Standardsätze bei diktiertem Grad an ALLEN peripheren Gelenken inkl. Daumensattelgelenk (Ergebnis „Geringe Rhizarthrose beidseits.“), an der Wirbelsäule NIE (RH 81)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 30/42, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "also an ALLEN peripheren Gelenken",
+     "NIE an der Wirbelsäule (Unkovertebral-, Facetten-, kleine Wirbelgelenke: kein K&L-Satz, kein Grad",
+     "Ergebnis \"Geringe Rhizarthrose beidseits.\""
+    ],
+    "source_code/befund_regeln.py": [
+     "_KL_KLAMMER_WS = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const KL_KLAMMER_WS = "
+    ]
+   }
+  },
+  {
+   "id": "georg-knie-rechts-zuerst",
+   "titel": "Knie beidseits: im Ergebnis immer rechts zuerst, gleicher Befund beidseits darf zusammengefasst werden",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 33, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "KNIE BEIDSEITS: Im Ergebnis IMMER zuerst die rechte Seite"
+    ]
+   }
+  },
+  {
+   "id": "georg-si-gelenksarthrose",
+   "titel": "Schreibweise „SI-Gelenksarthrose“",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 38, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "radiology_prompt.txt": [
+     "Schreibweise \"SI-Gelenksarthrose\""
+    ],
+    "source_code/befund_regeln.py": [
+     "\"SI-Gelenksarthrose\" + m.group(1)"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "'SI-Gelenksarthrose' + n"
+    ]
+   }
+  },
+  {
+   "id": "georg-rho-einzelbefund",
+   "titel": "Rho immer als eigener Einzelbefund ganz am Schluss: Überschrift „Opportunistisches Knochendichtescreening (KI)“, eigener Text + Ergebnis; Score 6 → kein Text, 7 → Text (RH 12, RH 21)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 19/31/40c, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "RHO_TITEL = \"Opportunistisches Knochendichtescreening (KI)\"",
+     "RHO_AB = 7"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const RHO_TITEL = 'Opportunistisches Knochendichtescreening (KI)';",
+     "export const RHO_AB = 7;"
+    ]
+   }
+  },
+  {
+   "id": "georg-nachpruefung-varianten",
+   "titel": "[WIDERSPRUCH]-Nachprüfung: Schreibvarianten (c/k/z, femoropatellar↔patellofemoral) zählen, Rohsatz nie doppelt angehängt (RH 78)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 13, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_VERTAUSCHT = ((\"femoropatellar\", \"patellofemoral\")"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const VERTAUSCHT: [string, string][] = [['femoropatellar', 'patellofemoral']"
+    ]
+   }
   }
  ]
 }

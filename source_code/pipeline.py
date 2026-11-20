@@ -167,7 +167,7 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
             return out
         out = br.widersprueche_bereinigen(out, seg)[0]                                    # v3.15.5
         out = br.kurzsaetze_sichern(br.abschnitte_bereinigen(out, seg, ctx.templates)[0], seg)[0]   # v3.18.13, v3.16.6
-        return _kl_waechter(out, seg, template_key, ctx)
+        return _grundregeln(_kl_waechter(out, seg, template_key, ctx), seg, ctx)
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
@@ -213,6 +213,15 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     if not normal:   # v3.18.4: Bypass (Vorlage ohne KI) braucht keinen K&L-Wächter
         seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else ""
         out = _kl_waechter(out, seg, template_key, ctx, seite, behalten=koala)
+    return _grundregeln(out, seg, ctx)
+
+
+def _grundregeln(out, diktat, ctx):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026): Befund nie mit „Im Übrigen/Ansonsten“, widersprechende Normalsätze zu
+    diktierter/KI-Pathologie weg, KI-Hinweise nie im Ergebnis, SI-Gelenksarthrose, Wirbelsäule ohne K&L (Sync: pipeline.ts)."""
+    out, aend = br.grundregeln(out, diktat, ctx.templates)
+    if aend:
+        ctx.log(f"[GRUNDREGEL] {len(aend)} Korrektur(en): " + " · ".join(a[:50] for a in aend))
     return out
 
 
@@ -267,7 +276,8 @@ def ibl_anwenden(erg, ctx):
         return erg
     erg.ibl = iblb.einsetzen(erg.report, ctx.ibl.bausteine, segmente=erg.segmente, diktat=erg.raw,
                             cas_leistungen=ctx.ibl.cas_leistungen, templates=ctx.templates)
-    erg.report = erg.ibl.report
+    # kaiscribe-georg-2011-n1: IB-Lab-Texte (HIPPO-Beckenschiefstand, SQUIRREL-Cobb) zählen wie diktierte Befunde
+    erg.report = _grundregeln(erg.ibl.report, "", ctx)
     ctx.log("[IBL] eingesetzt: " + (", ".join(f"{m} → {t}" for m, t in erg.ibl.zuordnung.items()) or "nichts")
             + f" · {len(erg.ibl.zeilen)} Zeile(n) · {len(erg.ibl.hinweise)} Hinweis(e)")
     return erg
@@ -352,6 +362,7 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             ausnahmen.append(e)
             teile.append(e)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
+    report = br.rho_ans_ende(report)   # kaiscribe-georg-2011-n1 (Georg 20.11., Punkt 19): Rho-Befund immer am Schluss
     return ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
                                  cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx)
 
