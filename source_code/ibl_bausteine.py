@@ -1882,9 +1882,10 @@ def _hippo_einsetzen(zeilen, teile, i, b, e):
 
 def _vorlage_ergebnis(l, templates):
     """Ergebnis-Satz der Vorlage einer CAS-Leistung (Gerüst) – sonst ""."""
-    if not l or not l.get("vorlage"):
+    v = cv.leistung_vorlage(l, templates or {}) if l else None
+    if not v:
         return ""
-    return str(((templates or {}).get(l.get("vorlage")) or {}).get("ergebnis") or "").strip()
+    return str(((templates or {}).get(v) or {}).get("ergebnis") or "").strip()
 
 
 def _hippo_geruest(b, titel, vorlage=None, vorlage_ergebnis=""):
@@ -2312,9 +2313,10 @@ def geruest(bausteine, cas_leistungen=None, templates=None):
     vorlagen = {}                                # Baustein → Text der Vorlage seiner CAS-Leistung (KOALA)
     for b in mit_inhalt:
         l = _leistung_fuer(b, cas_leistungen, templates)
-        name = (templates.get(l.get("vorlage")) or {}).get("display_name") if l and l.get("vorlage") else None
+        lv = cv.leistung_vorlage(l, templates) if l else None   # wie die Vorlagenwahl (Patella axial, GWS seitlich)
+        name = (templates.get(lv) or {}).get("display_name") if lv else None
         if name:
-            vorlagen[b.schluessel] = (templates.get(l.get("vorlage")) or {}).get("body")
+            vorlagen[b.schluessel] = (templates.get(lv) or {}).get("body")
         if b.modul == "panda":
             if not panda_text(b, cas_leistungen):
                 continue

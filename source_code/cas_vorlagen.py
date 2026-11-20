@@ -149,6 +149,7 @@ class Leistung:
     seite: Optional[str]
     regionen: set = field(default_factory=set)
     funktion_grund: Optional[str] = None   # kaiscribe-funktion-n1: Funktionsaufnahmen-Leistung → Grund-Vorlage (HWS/LWS in 2 Ebenen)
+    gws_seitlich: bool = False             # kaiscribe-gws-seitlich-vorlage-n1: Ganzaufnahme mit Seitaufnahmen laut Leistungstext
 
     @property
     def spezifisch(self):
@@ -183,7 +184,37 @@ def zusatz_vorlage(v, text, templates):
     for erweitert, (grund, muster) in ZUSATZ_VORLAGEN.items():
         if v == grund and erweitert in templates and muster.search(text or ""):
             return erweitert
+    return gws_vorlage(v, text, templates)
+
+
+# kaiscribe-gws-seitlich-vorlage-n1 (Georg Riegler 20.11.2026 „A“): Die Brücke ordnet „WS Ganzaufn. ap + stl. geteilt“
+# (auch „… ap+seitl“, „… ap u.seitl.“) der Vorlage „Ganzaufnahme der Wirbelsäule a.-p.“ zu – ohne HWS/BWS/LWS-Abschnitte,
+# obwohl die Seitaufnahmen gemacht wurden. Nennt der Leistungstext Ganzaufnahme UND seitlich, gilt „Gesamte Wirbelsäule“
+# (Abschnitte HWS/BWS/LWS mit Normaltext, das Diktat ersetzt den passenden Normalsatz). Nur a.p. → wie bisher.
+GWS_AP, GWS_GESAMT = "ganzaufnahme_der_wirbelsäule_a-p", "wirbelsäule_gesamt"
+_GWS_LEISTUNG = re.compile(r"ganz|gesamt|(?<![a-zäöü])ges\.", re.I)
+_SEITLICH_LEISTUNG = re.compile(r"(?<![a-zäöü])(?:seitl\w*|stl|lat(?:eral)?)(?![a-zäöü])", re.I)
+# Diktat-Vorlagen einzelner Wirbelsäulen-Abschnitte: bei „Gesamte Wirbelsäule“ laut CAS gehört ihr Text in die Gesamt-Vorlage
+WS_TEILE = {GWS_AP, "halswirbelsäule_in_2_ebenen", "brustwirbelsäule_in_2_ebenen", "lendenwirbelsäule_in_2_ebenen",
+            "hws_und_lws"}
+
+
+def gws_vorlage(v, text, templates):
+    """CAS-Vorlage v einer Ganzaufnahme-Leistung mit Seitaufnahmen → „Gesamte Wirbelsäule“, sonst v."""
+    t = text or ""
+    if v in (GWS_AP, None) and GWS_GESAMT in templates and _GWS_LEISTUNG.search(t) and _SEITLICH_LEISTUNG.search(t) \
+            and regionen(t) >= _WS_ALLE:
+        return GWS_GESAMT
     return v
+
+
+def leistung_vorlage(l, templates):
+    """Vorlage einer CAS-Leistung (dict der Brücke) wie in CasHinweis (Zusatz „Patella axial“, GWS seitlich) – ohne
+    Funktions-Teilung; für das IB-Lab-Gerüst."""
+    v = l.get("vorlage")
+    if v is not None and v not in templates:
+        v = None
+    return zusatz_vorlage(v, l.get("text") or "", templates)
 
 
 # kaiscribe-funktion-n1 (RH 97, Peter 17.11.2026: „KaiScribe hat Funktion vergessen“): Die Brücke ordnet „HWS ap u. seitl.
@@ -303,7 +334,8 @@ class CasHinweis:
         self.alle.append(Leistung(
             kurz=str(d.get("kurz") or ""), label=anzeige or label(text, d.get("kurz"), mod), vorlage=v, modalitaet=mod,
             seite=d.get("seite") or seite_aus_text(text),
-            regionen=regionen(text + " " + (vorlagen_text(v, templates) if v else "")), funktion_grund=funktion_grund))
+            regionen=regionen(text + " " + (vorlagen_text(v, templates) if v else "")), funktion_grund=funktion_grund,
+            gws_seitlich=v == GWS_GESAMT and gws_vorlage(None, text, templates) == GWS_GESAMT))
 
     def __bool__(self):
         return bool(self.alle)
@@ -350,6 +382,10 @@ def abgleich(key, text, cas, templates):
     for l in cas.alle:   # kaiscribe-funktion-n1: Diktat „HWS …“ ↔ nur „Funktionsaufnahmen HWS“ laut CAS → Funktions-Vorlage
         if l.funktion_grund and l.funktion_grund == key:
             return l, l.vorlage
+    if key in WS_TEILE:  # kaiscribe-gws-seitlich-vorlage-n1: GWS mit Seitaufnahmen laut CAS – Diktat GWS/HWS/LWS … → Gesamt
+        for l in cas.alle:
+            if l.gws_seitlich:
+                return l, GWS_GESAMT
     reg = regionen(vorlagen_text(key, templates))
     if not reg:
         return None, None

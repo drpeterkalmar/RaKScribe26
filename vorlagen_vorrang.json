@@ -235,6 +235,18 @@
       ]
     },
     {
+      "key": "wirbelsäule_gesamt",
+      "_grund": "kaiscribe-gws-seitlich-vorlage-n1 (Georg 20.11.2026 „A“): Ganzaufnahme mit Seitaufnahme im Diktat („in 2 Ebenen“, „a.p. und seitlich“, „seitlich“) → Gesamte Wirbelsäule mit HWS/BWS/LWS-Abschnitten; Rückfall, wenn die CAS-Leistung fehlt oder unklar ist",
+      "bereich": "text",
+      "alle": [
+        "(ganzaufnahme|ganz ?wirbelsaeule|wirbelsaeulenganz)",
+        "(^| )(seitlich\\w*|seitaufnahme\\w*|seitbild\\w*|in (2|zwei) ebenen)( |$)"
+      ],
+      "keins": [
+        "(^| )(ohne|kein\\w*|nur a p|nur ap)( \\w+)? (seitlich\\w*|seitaufnahme\\w*|seitbild\\w*)( |$)"
+      ]
+    },
+    {
       "key": "ganzaufnahme_der_wirbelsäule_a-p",
       "alle": [
         "(ganzaufnahme|ganz ?wirbelsaeule|wirbelsaeulenganz|ganze wirbelsaeule a)"

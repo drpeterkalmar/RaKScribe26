@@ -1036,6 +1036,25 @@
      "cv.inhalt_zuordnen(segmente, ctx.cas, ctx.templates, erkennen)"
     ]
    }
+  },
+  {
+   "id": "gws-seitlich-vorlage",
+   "titel": "Ganzwirbelsäule mit Seitaufnahme (CAS-Leistung „ap + seitl./stl.“, sonst Diktat „in 2 Ebenen“/„a.p. und seitlich“/„seitlich“) → Vorlage „Gesamte Wirbelsäule“ (HWS/BWS/LWS mit Normaltext, Diktat ersetzt den passenden Normalsatz); nur a.p. → „Ganzaufnahme der Wirbelsäule a.-p.“",
+   "quelle": "Georg Riegler 20.11.2026 „A“ (kaiscribe-gws-seitlich-vorlage-n1)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_vorlagen.py": [
+     "def gws_vorlage(v, text, templates):",
+     "if key in WS_TEILE:"
+    ],
+    "vorlagen_vorrang.json": [
+     "\"key\": \"wirbelsäule_gesamt\","
+    ],
+    "source_code/ibl_bausteine.py": [
+     "cv.leistung_vorlage(l, templates)"
+    ]
+   }
   }
  ]
 }

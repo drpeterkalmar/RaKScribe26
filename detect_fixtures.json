@@ -2777,6 +2777,26 @@
     [
       "MRT Sprunggelenk, Achillessehne intakt",
       "mr_des_sprunggelenke:"
+    ],
+    [
+      "Ganzaufnahme der Wirbelsäule in 2 Ebenen unauffällig",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "Ganzaufnahme der Wirbelsäule a.p. und seitlich, flachbogige skoliotische Asymmetrie",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "Ganzaufnahme mit seitlich: Osteochondrose L5/S1",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "Wirbelsäulenganzaufnahme seitlich: Hyperkyphose",
+      "wirbelsäule_gesamt"
+    ],
+    [
+      "Ganzaufnahme der Wirbelsäule ohne seitliche Aufnahme, unauffällig",
+      "ganzaufnahme_der_wirbelsäule_a-p"
     ]
   ]
 }
