@@ -185,7 +185,11 @@ def _befundtext(modul, x):
           "gewoelbe_weg": bool(x.get("gewoelbe_weg")), "gewoelbe_pathologisch": bool(x.get("gewoelbe_pathologisch")),
           "phalangen": bool(x.get("phalangen")), "ein_fuss": bool(x.get("ein_fuss")), "begriffe": begriffe,
           "schluss": str(x.get("schluss") or "").strip()}
-    return bt if begriffe and (bt["stellung"] or bt["gewoelbe"]) else None
+    # NACHTRAG ibl-georg-2011-n1 (ris-mods, Abholer 1.3.14, RH 30): alle Winkel in Norm + Toleranz bzw. widersprüchlich →
+    # keine Diagnose, aber „messwerte“-Sätze (d.p. / seitlich) ans Ende der Fuß-Beschreibung, kein Ergebnispunkt
+    bt["messwerte"] = [ohne_norm(t) for t in _texte(x.get("messwerte"))]
+    bt["ohne_diagnose"] = bool(x.get("ohne_diagnose")) and bool(bt["messwerte"])
+    return bt if (begriffe and (bt["stellung"] or bt["gewoelbe"])) or bt["ohne_diagnose"] else None
 
 
 def _alter(d):
@@ -751,7 +755,7 @@ def _zeilen_entfernen(text, alte):
     """Zeilen einer älteren Fassung wörtlich herausnehmen (Ergebnispunkte samt Nummer) → (Text, nicht gefunden)."""
     fehlt = []
     for z in alte or []:
-        neu = re.sub(r"(?m)^[ \t]*(?:\d+\.\s*)?" + re.escape(z) + r"[ \t]*(?:\n|$)", "", text, count=1)
+        neu = re.sub(r"(?m)^[ \t]*(?:\d+\.\s*)?(?:Anmerkung:\s*)?" + re.escape(z) + r"[ \t]*(?:\n|$)", "", text, count=1)
         if neu == text:
             fehlt.append(z)
         text = neu
@@ -778,7 +782,7 @@ def einsetzen(report, bausteine, segmente=None, diktat="", cas_leistungen=None, 
     ende_zeilen = []
     for b in bausteine:
         e.behandelt[b.schluessel] = b.version
-        if not b.befundteil and not b.ergebnis:
+        if not b.befundteil and not b.ergebnis and not frog_ohne_diagnose(b):
             continue
         i, _art = zuordnen(b, teile, cas_leistungen, templates)
         if b.modul == "panda":             # 19.11.2026: Knochenalter als fertiger Ergebnisbefund (Georg 18.11.2026)
@@ -984,7 +988,7 @@ class IblKontext:
     cas_leistungen: Optional[list] = None
 
     def __bool__(self):
-        return any(b.befundteil or b.ergebnis for b in self.bausteine)
+        return any(b.befundteil or b.ergebnis or frog_ohne_diagnose(b) for b in self.bausteine)
 
 
 # ───────────────────────────── v3.14.0: Gerüst vor dem Diktat, auffällige Werte ─────────────────────────────
@@ -1106,13 +1110,23 @@ _LAMA_DIKTAT = re.compile(r"achse|beinläng|beinlaeng|varus|valgus|varisch|valgi
 _LAMA_NORMAL = re.compile(r"^(?:Keine Beinlängendifferenz|Regelrechte Beinachse|Beidseits regelrechte Beinachse)")
 
 
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 9/25/26d): Winkel-Erläuterungen (LAMA/FROG/HIPPO-Schlussanmerkung, „Weitere
+# Winkelmessungen …“) stehen als eigener Block „Anmerkung: …“ mit einer Leerzeile davor am Ende des Ergebnisses.
+ANMERKUNG = "Anmerkung: "
+_ANMERKUNG = re.compile(r"^\s*Anmerkung:\s*")
+
+
+def _ohne_anmerkung(punkt):
+    return _ANMERKUNG.sub("", _NUM.sub("", (punkt or "").strip()))
+
+
 def ist_lama_schluss(punkt):
-    return _NUM.sub("", (punkt or "").strip()).startswith(LAMA_SCHLUSS)
+    return _ohne_anmerkung(punkt).startswith(LAMA_SCHLUSS)
 
 
 def ist_schluss(punkt):
     """Schlussanmerkung von LAMA, FROG oder HIPPO – steht ohne Nummer ganz unten im Ergebnis (befund_regeln._UNNUM_RE)."""
-    t = _NUM.sub("", (punkt or "").strip())
+    t = _ohne_anmerkung(punkt)
     return ist_lama_schluss(punkt) or t.startswith(FROG_SCHLUSS) or t.startswith(HIPPO_SCHLUSS)
 
 
@@ -1245,6 +1259,11 @@ def _frog_text(b):
     return b.modul == "frog" and b.befundtext is not None
 
 
+def frog_ohne_diagnose(b):
+    """NACHTRAG ibl-georg-2011-n1 (Abholer 1.3.14, RH 30): FROG ohne Diagnose, nur Messwert-Sätze?"""
+    return _frog_text(b) and bool(b.befundtext.get("ohne_diagnose"))
+
+
 def _frog_plan(b, titel, seite, diktat, hinweise):
     """FROG-Text für EINE Untersuchung → (Stellungs-Sätze, Gewölbe-Sätze, Gewölbesatz streichen, Ergebnispunkt,
     Schlussanmerkung) oder None (nichts einsetzen). Vorfuß: nur d.p. Ein Fuß ohne Seite im Begriff: Seite aus dem Titel
@@ -1252,6 +1271,9 @@ def _frog_plan(b, titel, seite, diktat, hinweise):
     kommen trotzdem); verneint das Diktat einen Begriff, kommt aus dieser Projektion nichts (Hinweis)."""
     bt = b.befundtext
     vorfuss = bool(_VORFUSS.search(titel or ""))
+    if bt.get("ohne_diagnose"):              # RH 30: nur die Messwerte (Vorfuß: nur d.p.), Vorlagensätze bleiben
+        mw = [m for m in bt["messwerte"] if not vorfuss or not re.search(r"seitlich", m, re.I)]
+        return (mw, [], False, "", bt["schluss"]) if mw else None
     if seite not in ("rechts", "links"):     # Titel ohne Seite: die Seite des Bausteins (genau ein Fuß)
         seite = b.seiten[0] if len(b.seiten) == 1 else ""
     texte, aktiv, verneint = [], set(), set()
@@ -1364,6 +1386,17 @@ def _frog_einsetzen(zeilen, teile, i, b, e):
         return
     st, gw, weg, _punkt, _schluss = plan
     punkte = _frog_punkte(plan)
+    if b.befundtext.get("ohne_diagnose"):    # RH 30: Messwerte als Absatz ans Ende der Beschreibung, nur die Anmerkung
+        da = "\n".join(zeilen[a.start:a.ende])
+        neu = [m for m in st if m not in da]
+        if neu:
+            _verschieben(teile, i, _befund_anfuegen(zeilen, a, neu))
+        if punkte:
+            _verschieben(teile, i, _ergebnis_vorne(zeilen, a, punkte, a.segment, b, e.hinweise), nur_ende=True)
+        da = "\n".join(zeilen[a.start:a.ende])
+        e.eingesetzt[b.schluessel] = [m for m in st if m in da] + punkte
+        e.zuordnung[b.modul] = a.titel or "Befund"
+        return
     bs = (a.befund if a.befund >= 0 else a.start) + 1
     be = a.ergebnis if a.ergebnis >= 0 else a.ende
     alt = "\n".join(zeilen[bs:be])
@@ -1966,6 +1999,28 @@ def _panda_einsetzen(zeilen, teile, i, b, text, e):
     e.zuordnung[b.modul] = a.titel or "Befund"
 
 
+def anmerkung_absetzen(report):
+    """Punkt 9: die Schlussanmerkung(en) jedes Ergebnisses ans Ende, mit einer Leerzeile davor; die erste beginnt mit
+    „Anmerkung: “. Ohne Schlussanmerkung unverändert, zweimal angewandt gleich."""
+    if not report or "## Ergebnis" not in report:
+        return report
+    zeilen = report.split("\n")
+    for a, e in reversed(br._abschnitt(zeilen, "ergebnis")):
+        idx = [i for i in range(a, e) if zeilen[i].strip() and ist_schluss(zeilen[i])]
+        if not idx:
+            continue
+        texte = [_ohne_anmerkung(zeilen[i]) for i in idx]
+        nach = e
+        while nach > a and not zeilen[nach - 1].strip():
+            nach -= 1
+        rest = [zeilen[i] for i in range(a, nach) if i not in idx]
+        while rest and not rest[-1].strip():
+            rest.pop()
+        vor = [""] if any(z.strip() for z in rest) else []
+        zeilen[a:e] = rest + vor + [ANMERKUNG + texte[0]] + texte[1:] + zeilen[nach:e]
+    return "\n".join(zeilen)
+
+
 def befund_zeilen(b):
     """Befundzeilen, die von Baustein b in den Befund kommen: alle (Module außerhalb BEFUND_NUR_AUFFAELLIG, bit-gleich
     wie bis 3.18.7) bzw. nur die mit Ergebnispunkt; eine Beschriftung („Fuß d.p.:“) nur, wenn darunter noch eine
@@ -1992,7 +2047,7 @@ def hat_inhalt(b):
         return koala_hat_text(b)
     if b.modul == "panda":
         return bool(panda_text(b))
-    if _hippo_text(b):
+    if _hippo_text(b) or frog_ohne_diagnose(b):   # RH 30: Messwerte ohne Diagnose
         return True
     return bool(befund_zeilen(b) or b.ergebnis)
 

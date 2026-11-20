@@ -3054,7 +3054,7 @@ class RaKScribeApp(ctk.CTk):
         """v3.18.4 (Peter 12.11.2026, RH 38): womit dieser Befund entstand — geht bei EOL in „fertig“ an die Brücke
         (Merkdatei <Nr>.rakscribe.json auf X:), nie ins Protokoll."""
         try:
-            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
+            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis or _ibl.frog_ohne_diagnose(b)] if ibl else []
             zeilen = len(erg.ibl.zeilen) if getattr(erg, "ibl", None) is not None else 0
             self._cas_nachvollzug = _cas.nachvollzug(
                 stt_roh, erg.raw, _modell_name(), br.prompt_version(INITIAL_PROMPT_CONTENT), PROMPT_QUELLE,
@@ -3070,7 +3070,7 @@ class RaKScribeApp(ctk.CTk):
         auch nach dem Masken-Befund (INS), dann mit „maske“ = Art (screening/…), sonst gleiches Format."""
         try:
             a = getattr(self, "_cas", None)
-            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
+            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis or _ibl.frog_ohne_diagnose(b)] if ibl else []
             zeilen = len(erg.ibl.zeilen) if getattr(erg, "ibl", None) is not None else 0
             nv = _cas.nachvollzug(stt_roh, erg.raw, _modell_name(), br.prompt_version(INITIAL_PROMPT_CONTENT),
                                   PROMPT_QUELLE, _vorlagen_stand(), erg.vorlagen, module, zeilen, app_version())
@@ -3138,6 +3138,7 @@ class RaKScribeApp(ctk.CTk):
         e = _ibl.geruest(self._ibl_bausteine(), list(a.leistungen or []), RADIOLOGY_TEMPLATES)
         if e is None:
             return False
+        e.report = _ibl.anmerkung_absetzen(e.report)   # kaiscribe-georg-2011-n1 (Punkt 9): „Anmerkung: …“-Block
         if self._nur_geruest() and e.report.strip() == (self._ibl_geruest_text or "").strip():
             return True
         neu = not frei
@@ -3296,6 +3297,7 @@ class RaKScribeApp(ctk.CTk):
         e = _ibl.einsetzen(self.result_text.get("1.0", "end-1c"), offen,
                            diktat=self.final_transcript or self.transcript_text.get("1.0", "end-1c"),
                            cas_leistungen=list(a.leistungen or []), templates=RADIOLOGY_TEMPLATES, entfernen=alte)
+        e.report = _ibl.anmerkung_absetzen(e.report)   # kaiscribe-georg-2011-n1 (Punkt 9)
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", e.report)
         self._ibl_im_befund = {**(getattr(self, "_ibl_im_befund", {}) or {}), **e.behandelt}
@@ -4170,7 +4172,7 @@ class RaKScribeApp(ctk.CTk):
                 diktat = " ".join(f.roh for f in m.felder if f.roh)
                 einsatz = _ibl.einsetzen(report, ibl.bausteine, segmente=[report], diktat=diktat,
                                          cas_leistungen=ibl.cas_leistungen, templates=RADIOLOGY_TEMPLATES)
-                report = einsatz.report
+                report = einsatz.report = _ibl.anmerkung_absetzen(einsatz.report)   # Punkt 9
             log(f"[MASKE] Befund: {len(report)} Zeichen, KI-Korrektur {n_ki} Feld(er), Hinweise {len(b.hinweise)}")
         except Exception as e:
             log_exception("[MASKE] Befund aus der Maske")

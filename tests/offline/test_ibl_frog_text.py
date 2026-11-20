@@ -348,12 +348,13 @@ FUSS_CAS = cv.CasHinweis([L("fussl", "Fuß links", "fuß_in_2_ebenen", "links")]
 prompts = []
 erg = pl.befund_aus_diktat("Fuß links unauffällig.", kontext(prompts, B(11), FUSS_CAS))
 check("Pipeline, Normalbefund ohne KI: derselbe Text wie oben, Hinweis nur in erg.ibl", prompts == []
-      and erg.report == soll and erg.vollstaendig and "bitte prüfen" not in erg.report, erg.report)
+      and erg.report == I.anmerkung_absetzen(soll) and erg.vollstaendig and "bitte prüfen" not in erg.report, erg.report)
 prompts = []
 erg = pl.befund_aus_diktat("Fuß links: Arthrose im Großzehengrundgelenk.", kontext(prompts, B(11), FUSS_CAS, KI))
 check("Pipeline mit KI: <ibl_messwerte> mit dem FROG-Satz im Prompt, Begriffe vor dem diktierten Befund",
       len(prompts) == 1 and "FROG: Übernimm die Vorlagen-Sätze" in prompts[0]
-      and f"1. {BILD_ERG}\n2. Arthrose im Großzehengrundgelenk links.\n{SCHLUSS}" in erg.report and BILD_ST in erg.report,
+      and f"1. {BILD_ERG}\n2. Arthrose im Großzehengrundgelenk links.\n\n{I.ANMERKUNG}{SCHLUSS}" in erg.report
+      and BILD_ST in erg.report,
       erg.report)
 prompts = []
 erg = pl.befund_aus_diktat("Fuß rechts unauffällig.",

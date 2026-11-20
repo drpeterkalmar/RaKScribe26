@@ -582,7 +582,7 @@ check("… v1-Zeilen ersetzt, v2 drin, LAMA ohne Ganzbein-Abschnitt → Absatz a
       and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in app.result_text.text
       and app.result_text.text.rstrip().endswith("Beinlängendifferenz von 15 mm, links kürzer.\nVarusfehlstellung rechts "
                                                  "(HKA 5,8°). Regelrechte Beinachse links (HKA 0,9°)"
-                                                 ".\n" + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
+                                                 ".\n\n" + I.ANMERKUNG + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
       and any("LAMA beidseits: keiner Untersuchung eindeutig zuzuordnen" in h for h in app._ibl_hinweise)
       and any("Katalog ergänzen" in h for h in app._ibl_hinweise),
       app.result_text.text[-400:])

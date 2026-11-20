@@ -268,7 +268,8 @@ _BULLET_RE = re.compile(r"^\s*[-*•–]\s+")
 # v3.19.13 (Georg 18.11.2026, IB Lab HIPPO): ebenso „LCE = lateraler Center-Edge-Winkel …“ / „AI = …“ / „CCD = …“.
 _UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel"
                        r"|^Weitere Winkelmessungen sind den KI-Auswertungsbildern"
-                       r"|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)", re.I)
+                       r"|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)"
+                       r"|^Anmerkung:", re.I)   # kaiscribe-georg-2011-n1 (Punkt 9): „Anmerkung: …“-Block
 
 _SATZENDE = (".", "!", "?", ":", ";")
 

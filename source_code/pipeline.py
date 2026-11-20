@@ -277,7 +277,7 @@ def ibl_anwenden(erg, ctx):
     erg.ibl = iblb.einsetzen(erg.report, ctx.ibl.bausteine, segmente=erg.segmente, diktat=erg.raw,
                             cas_leistungen=ctx.ibl.cas_leistungen, templates=ctx.templates)
     # kaiscribe-georg-2011-n1: IB-Lab-Texte (HIPPO-Beckenschiefstand, SQUIRREL-Cobb) zählen wie diktierte Befunde
-    erg.report = _grundregeln(erg.ibl.report, "", ctx)
+    erg.report = iblb.anmerkung_absetzen(_grundregeln(erg.ibl.report, "", ctx))   # Punkt 9: „Anmerkung: …“-Block
     ctx.log("[IBL] eingesetzt: " + (", ".join(f"{m} → {t}" for m, t in erg.ibl.zuordnung.items()) or "nichts")
             + f" · {len(erg.ibl.zeilen)} Zeile(n) · {len(erg.ibl.hinweise)} Hinweis(e)")
     return erg
