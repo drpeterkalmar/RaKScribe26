@@ -46,6 +46,8 @@ Abend). Die Anleitung steht in `FOLGEJOB-KAISCRIBE-GWS-SEITLICH-VORLAGE-N1-EINSP
 - Einspielen und Abnahme am 451898 macht der Abend-Auftrag (Nachtrag an `kaiscribe-befundfeld-sicher-n1-einspielen-f1`).
 - Die Vorlage „Ganzaufnahme der Wirbelsäule a.-p.“ enthält im Normaltext „flachbogige rechts-konvexe Skoliose“. Mit SQUIRREL
   wird das ersetzt, ohne SQUIRREL bleibt es stehen. Seit 3.19.18 betrifft das nur noch reine a.p.-Aufnahmen. Ob der Satz
-  „Normale Stellung.“ heißen soll, entscheidet Peter (Kanban-Karte).
+  „Normale Stellung.“ heißen soll, entscheidet Peter (Kanban #459).
+
+👉 Peter/Georg: GWS-a.p.-Normaltext „flachbogige rechts-konvexe Skoliose“ streichen (a) oder lassen (b), bis 27.11. (Kanban #459)
 - Langfristig wäre es sauberer, auch in ris-mods `katalog/kuerzel_vorlage.tsv` gws/gesws2/wsg2 auf `wirbelsäule_gesamt` zu
   stellen. Nötig ist das nicht, weil KaiScribe es selbst erkennt; eine Brücken-Änderung bräuchte den Windows-Test.
