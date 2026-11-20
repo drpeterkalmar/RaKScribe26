@@ -67,7 +67,10 @@ check("leeres Diktat-Feld → Hinweis, kein Lauf", S.AUFZ.dialoge and app._job.z
 app = neue_app(DIKTAT)
 mod.speech_client = S.FakeSpeechClient(S.streaming_stub())
 mod._get_stt_access_token = lambda: "token"
+_frage = mod.messagebox.askyesno
+mod.messagebox.askyesno = lambda *a, **k: True   # kaiscribe-georg-2011-n1 (RH 7): Text links → Rückfrage, bestätigt
 app.toggle_recording()
+mod.messagebox.askyesno = _frage
 gen = app._job.gen
 app.befund_aus_text()
 check("während der Aufnahme ignoriert", app._job.zustand == "RECORDING" and app._job.gen == gen and PROMPTS == [])

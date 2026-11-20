@@ -30,6 +30,8 @@ mod = S.lade_rakscribe()
 mod.keys_ready = lambda: True
 mod._get_stt_access_token = lambda: "token"
 mod._fokus_ist_eigenes_fenster = lambda: True
+# kaiscribe-georg-2011-n1 (RH 7): F10 mit Text im Befund ohne Cursor-Ziel fragt jetzt nach – hier bestätigt der Arzt
+mod.messagebox.askyesno = lambda *a, **k: True
 mod._korr.korrigieren = lambda t, key, block="", log=None: "Zusätzlich kleiner Gelenkerguss."
 mod._llm_aufruf = lambda p: (_ for _ in ()).throw(AssertionError("Befund-KI beim Einfügen gerufen"))
 BEFUND = "## Kniegelenk rechts\n\n## Befund\nKein Erguss. Bänder intakt.\n\n## Ergebnis\nUnauffälliger Befund."
