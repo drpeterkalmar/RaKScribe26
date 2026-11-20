@@ -177,5 +177,50 @@ check("32: Knie – Befund beginnt mit „Normale Form und Stellung …“, nie 
       erg.report.split("## Befund\n", 1)[1].startswith("Normale Form und Stellung")
       and any(str(x).startswith("[GRUNDREGEL]") for x in log), erg.report)
 
+# ───────────────────────────── 16/17: RH 84 Sprunggelenk + Fuß, Jones-Fraktur ─────────────────────────────
+import re  # noqa: E402
+
+
+def ki_vorlage(p, erg="Unauffälliger Befund."):
+    u = re.search(r"<untersuchung>(.*?)</untersuchung>", p).group(1)
+    k = next(k for k, v in T.items() if v.get("display_name") == u)
+    return f"## {u}\n\n## Befund\n{T[k]['body'].split(chr(10), 2)[2]}\n\n## Ergebnis\n{erg}"
+
+
+OSG = L("osgl", "OSG li.", "sprunggelenk_in_2_ebenen", "links", ziffer=1)
+FUSSL = L("fussl", "Fuß li.", "fuß_in_2_ebenen", "links", ziffer=2)
+erg = pl.befund_aus_diktat("Jones-Fraktur Os metatarsale V links.",
+                           kontext(lambda p: ki_vorlage(p, "Jones-Fraktur links."), [OSG, FUSSL]))
+titel = [z[3:] for z in erg.report.split("\n") if z.startswith("## ") and z[3:] not in ("Befund", "Ergebnis")]
+check("16: Jones/Os metatarsale V → Vorfuß-Vorlage (nicht „allgemein“), Region Fuß",
+      erg.vorlagen[0] == "vorfuß_in_2_ebenen" and cv.regionen("Jones-Fraktur Os metatarsale V") == {"fuss"}, erg.vorlagen)
+check("16: 2 CAS-Leistungen, 1 diktierte Region → die zweite (OSG) bekommt ihren Normalbefund + Prüfzeile",
+      "Sprunggelenk links in 2 Ebenen" in titel and T["sprunggelenk_in_2_ebenen"]["body"].split("\n", 2)[2][:40] in erg.report
+      and any(cv.NICHT_DIKTIERT_NORMAL in h for h in erg.cas_hinweise), (titel, erg.cas_hinweise))
+check("41b: Os naviculare cornutum zählt zum Fuß, nicht zur Hand", cv.regionen("kleines Os naviculare cornutum") == {"fuss"},
+      cv.regionen("kleines Os naviculare cornutum"))
+
+# ───────────────────────────── 36/37a/35: LWS + Ganzbein (nur LAMA, nicht diktiert) ─────────────────────────────
+LAMA_SCHLUSS = ("HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie/Traglinie des "
+                "Ganzbeines). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen.")
+LAMA = {"accno": "999001200077", "ziffer": 2, "modul": "lama", "name": "LAMA", "version": 1, "seiten": ["rechts", "links"],
+        "befundteil": ["HKA-Winkel rechts 178,1° (IB Lab LAMA)."],
+        "ergebnis": ["Regelrechte Beinachse beidseits (HKA rechts 1,9°, links 0,9°; MAD rechts 12,6 mm, links 11,7 mm).",
+                     LAMA_SCHLUSS], "hinweise": []}
+LWS1 = L("lws", "LWS", "lendenwirbelsäule_in_2_ebenen", None, ziffer=1)
+GB = L("gb", "Ganzbein bds.", "ganzbeinaufnahme_im_stand", "beidseits", ziffer=2)
+erg = pl.befund_aus_diktat("Lendenwirbelsäule: Osteochondrose L5/S1.",
+                           kontext(lambda p: ki_vorlage(p, "Osteochondrose L5/S1."), [LWS1, GB], [LAMA]))
+gb_titel = next((z[3:] for z in erg.report.split("\n") if z.startswith("## Ganzbein")), None)
+check("36/37a: reiner KI-Teil (Ganzbein mit LAMA, nicht diktiert) bekommt eigenen Befund mit Titel aus der CAS-Leistung",
+      gb_titel is not None and "Regelrechte Beinachse beidseits" in ergebnis_teil(erg.report, gb_titel)
+      and ergebnis_teil(erg.report, gb_titel).endswith("Anmerkung: " + LAMA_SCHLUSS), erg.report)
+ki_var = (lambda p: ki_vorlage(p, "Unauffälliger Befund.").replace(
+    "## Befund\n", "## Befund\nMAD links 11,7 mm und rechts 12,6 mm mit Varisierung.\n"))
+erg = pl.befund_aus_diktat("Ganzbeinaufnahme im Stand beidseits: MAD links 11,7 mm, rechts 12,6 mm.",
+                           kontext(ki_var, [GB], [LAMA]))
+check("35: LAMA im Normbereich → kein „Varisierung“ im Befundtext, Werte bleiben",
+      "Varisierung" not in erg.report and "MAD links 11,7 mm und rechts 12,6 mm." in erg.report, erg.report)
+
 print(f"\nFEHLER: {fails}")
 sys.exit(1 if fails else 0)

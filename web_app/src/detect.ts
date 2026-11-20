@@ -338,6 +338,8 @@ export function detectTemplate(text: string, templates: TemplatesMap, vorrangDat
     ["sprunggelenk_in_2_ebenen", ["sprunggelenk", "osg", "usg", "malleolar", "malleolus"]],
     ["fuß_in_2_ebenen", ["fuß", "fuss", "mittelfuß", "vorfuß", "rückfuß"]],
     ["zehe_in_2_ebenen", ["zehe", "großzehe"]],
+    // kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 84): Jones-Fraktur/Os metatarsale ohne „Fuß“ → Vorfuß (Sync: detect.py)
+    ["vorfuß_in_2_ebenen", ["jones", "metatars"]],
     ["kniegelenk_in_2_ebenen", ["knie", "gonarthrose"]],
     ["hüftgelenk_in_2_ebenen", ["hüfte", "hft", "coxarthrose"]]
   ];

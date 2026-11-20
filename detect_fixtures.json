@@ -2777,6 +2777,22 @@
     [
       "MRT Sprunggelenk, Achillessehne intakt",
       "mr_des_sprunggelenke:"
+    ],
+    [
+      "Jones-Fraktur Os metatarsale V rechts.",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "Os metatarsale V Basisfraktur links",
+      "vorfuß_in_2_ebenen"
+    ],
+    [
+      "Fuß links: Fraktur Os metatarsale V",
+      "fuß_in_2_ebenen"
+    ],
+    [
+      "Sprunggelenk rechts, Jones-Fraktur",
+      "sprunggelenk_in_2_ebenen"
     ]
   ]
 }

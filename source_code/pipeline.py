@@ -277,7 +277,8 @@ def ibl_anwenden(erg, ctx):
     erg.ibl = iblb.einsetzen(erg.report, ctx.ibl.bausteine, segmente=erg.segmente, diktat=erg.raw,
                             cas_leistungen=ctx.ibl.cas_leistungen, templates=ctx.templates)
     # kaiscribe-georg-2011-n1: IB-Lab-Texte (HIPPO-Beckenschiefstand, SQUIRREL-Cobb) zählen wie diktierte Befunde
-    erg.report = iblb.anmerkung_absetzen(_grundregeln(erg.ibl.report, "", ctx))   # Punkt 9: „Anmerkung: …“-Block
+    # Punkt 9: „Anmerkung: …“-Block; Punkt 35: kein „Varisierung“ bei regelrechter LAMA-Achse
+    erg.report = iblb.anmerkung_absetzen(iblb.lama_achsworte(_grundregeln(erg.ibl.report, "", ctx)))
     ctx.log("[IBL] eingesetzt: " + (", ".join(f"{m} → {t}" for m, t in erg.ibl.zuordnung.items()) or "nichts")
             + f" · {len(erg.ibl.zeilen)} Zeile(n) · {len(erg.ibl.hinweise)} Hinweis(e)")
     return erg
@@ -316,7 +317,9 @@ def cas_wahlen(segmente, ctx):
         ctx.log(f"[CAS] {len(inhalt_hinweise)} Prüfzeile(n) zur Satz-Zuordnung")
     # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
     segmente, wahlen, f_log = cv.funktion_ergaenzen(segmente, wahlen, ctx.cas, ctx.templates)
-    for z in f_log:
+    # kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 84/77/37): nicht diktierte CAS-Untersuchung → eigener Normalbefund
+    segmente, wahlen, hinweise, n_log = cv.nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, ctx.cas, ctx.templates)
+    for z in f_log + n_log:
         ctx.log("[CAS] " + z)
     for i, w in enumerate(wahlen, 1):
         ctx.log(f"[CAS] Abschnitt {i}/{len(wahlen)}: Vorlage {w.vorlage} ({w.art}"

@@ -183,5 +183,25 @@ check("3: zurückgestellter Befund steht im Band (Ablage macht die Brücke)",
 a = cas.Auftrag({"auftrag_id": "x", "nr": "1"})
 check("3: ohne Feld wie bisher", not a.zurueckgestellt and cas.ZURUECKGESTELLT not in a.band_text())
 
+# ───────────────────────────── 17: Titel robust (RH 67) ─────────────────────────────
+roh = "Finger rechts in 2 Ebenen\n\n## Befund\nNormale Form.\n\n## Ergebnis\nX.\n\n\n# Hand links\n## Befund\nY.\n\n## Ergebnis\nZ."
+check("17: erste Zeile = Titel, auch ohne „## “ (bzw. „# “) – vor der Übergabe an CAS ergänzt",
+      cas.titel_sichern(roh) == roh.replace("Finger rechts", "## Finger rechts").replace("# Hand links", "## Hand links"),
+      cas.titel_sichern(roh))
+ok = "## Knie\n\n## Befund\nA.\n\n## Ergebnis\nB."
+check("17: korrekte Überschriften und Sätze vor „## Befund“ bleiben unverändert",
+      cas.titel_sichern(ok) == ok and cas.titel_sichern("Ein Satz.\n## Befund\nA.") == "Ein Satz.\n## Befund\nA.")
+app.reset_dictation()
+app.transcript_text.insert("1.0", "Kniegelenk rechts: kleiner Gelenkerguss.")
+app.befund_aus_text(kontrolle=True)
+bis_ruhe(app)
+t = app.result_text.text
+app.result_text.delete("1.0", "end")
+app.result_text.insert("1.0", t.replace("## Kniegelenk rechts", "Kniegelenk rechts", 1))   # von Hand bearbeitet (RH 67)
+app._cas_taste("eol")
+gesendet = [n for n in os.listdir(ORDNER) if n.endswith(".txt")]
+inhalt = open(os.path.join(ORDNER, gesendet[-1]), encoding="utf-8").read() if gesendet else ""
+check("17: EOL schickt den Titel mit „## “ an die Brücke", inhalt.startswith("## Kniegelenk rechts\n"), (gesendet, inhalt[:60]))
+
 print(f"\nFEHLER: {fails}")
 sys.exit(1 if fails else 0)

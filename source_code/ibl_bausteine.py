@@ -1999,6 +1999,42 @@ def _panda_einsetzen(zeilen, teile, i, b, text, e):
     e.zuordnung[b.modul] = a.titel or "Befund"
 
 
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 35): „Varus/Valgus/Varisierung“ nur außerhalb der Grenzen (HKA −2…4°,
+# MAD 3…17 mm) – die prüft der Abholer (ris-mods lama_ergebnis.py: „Regelrechte Beinachse …“). Steht im Ganzbein-Ergebnis
+# eine regelrechte Beinachse, fällt ein KI-Zusatz „mit Varisierung“ o. ä. für diese Seite im Befundtext weg.
+_LAMA_REGELRECHT = re.compile(r"Regelrechte Beinachse(?: (rechts|links|beidseits))?", re.I)
+_LAMA_ACHSWORT = re.compile(r"\s*,?\s*(?:mit|bei|im Sinne einer?|und)\s+(?:(?:einer?|geringe[rn]?|leichte[rn]?|diskrete[rn]?|"
+                            r"minimale[rn]?)\s+)*(?:Varisierung|Valgisierung|Varus|Valgus|Varusabweichung|"
+                            r"Valgusabweichung)(?:\s+(?:rechts|links|beidseits))?(?=[.,;]|\s*$)", re.I)
+
+
+def lama_achsworte(report):
+    """Ganzbein-Befund: Varus-/Valgus-Zusätze der KI weg, wenn LAMA die Achse dieser Seite regelrecht nennt."""
+    if not report or "Beinachse" not in report:
+        return report
+    zeilen = report.split("\n")
+    for a, e in reversed(br._abschnitt(zeilen, "befund")):
+        titel = next((zeilen[j] for j in range(a - 2, -1, -1) if zeilen[j].startswith("## ")
+                      and zeilen[j][3:].strip().lower() not in ("befund", "ergebnis")), "")
+        if "ganzbein" not in titel.lower():
+            continue
+        erg = next(((x, y) for x, y in br._abschnitt(zeilen, "ergebnis") if x > a), None)
+        text_erg = " ".join(zeilen[erg[0]:erg[1]]) if erg else ""
+        seiten = set()
+        for m in _LAMA_REGELRECHT.finditer(text_erg):
+            seiten |= {"rechts", "links"} if m.group(1) in (None, "beidseits") else {m.group(1).lower()}
+        if not seiten:
+            continue
+        for i in range(a, e):
+            def weg(m, z=zeilen[i]):
+                s = m.group(0).lower()
+                genannt = {x for x in ("rechts", "links") if x in s} or \
+                    ({x for x in ("rechts", "links") if x in z.lower()} if "beidseits" not in s else {"rechts", "links"})
+                return "" if (genannt or {"rechts", "links"}) <= seiten else m.group(0)
+            zeilen[i] = _LAMA_ACHSWORT.sub(weg, zeilen[i])
+    return "\n".join(zeilen)
+
+
 def anmerkung_absetzen(report):
     """Punkt 9: die Schlussanmerkung(en) jedes Ergebnisses ans Ende, mit einer Leerzeile davor; die erste beginnt mit
     „Anmerkung: “. Ohne Schlussanmerkung unverändert, zweimal angewandt gleich."""

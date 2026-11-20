@@ -166,6 +166,30 @@ class Auftrag:
 ZURUECKGESTELLT = "zurückgestellt – EOL ersetzt den Befundteil"
 
 
+def titel_sichern(text):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 17, RH 67: Titel ging ohne „## “ an CAS → Formatierer ohne
+    Überschrift): die Zeile direkt vor „## Befund“ ist der Titel der Untersuchung – steht sie ohne „## “ da (von Hand
+    bearbeitet) bzw. als „# …“/„### …“, bekommt sie „## “. Sätze (Punkt am Ende) bleiben unberührt."""
+    if not text or "## Befund" not in text:
+        return text
+    zeilen = text.split("\n")
+    for i, z in enumerate(zeilen):
+        if z.strip().lower().rstrip(":") != "## befund":
+            continue
+        j = i - 1
+        while j >= 0 and not zeilen[j].strip():
+            j -= 1
+        if j < 0:
+            continue
+        t = zeilen[j].strip()
+        if t.startswith("## ") or t.endswith((".", "!", "?", ":", ";")) or len(t) > 120:
+            continue
+        if j > 0 and zeilen[j - 1].strip() and not zeilen[j - 1].strip().startswith("## "):
+            continue                     # mitten in einem Absatz – kein Titel
+        zeilen[j] = "## " + t.lstrip("#").strip()
+    return "\n".join(zeilen)
+
+
 def heute_diktiert(ordner, nr, jetzt=time.time):
     """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 23: Doppel-Diktat-Gefahr): Lauf-Dateien <Nr>_<heute>-*.json im
     Lauf-Ordner → Liste der Dateinamen (leer: noch nicht diktiert, Ordner aus/fehlt). Wirft nie."""

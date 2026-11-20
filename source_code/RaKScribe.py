@@ -3678,6 +3678,7 @@ class RaKScribeApp(ctk.CTk):
             self._kurzhinweis("IB-Lab-Werte eben eingefügt – bitte prüfen, dann EOL noch einmal", 6000)
             return
         self._ibl_eol_ok = False
+        text = _cas.titel_sichern(text)   # kaiscribe-georg-2011-n1 (RH 67): Titel auch ohne „## “ als Überschrift
         pcm = self._cas_pcm()
         self._ibl_eol_pruefen(text)
         try:

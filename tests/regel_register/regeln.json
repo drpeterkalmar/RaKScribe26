@@ -1235,6 +1235,162 @@
      "const VERTAUSCHT: [string, string][] = [['femoropatellar', 'patellofemoral']"
     ]
    }
+  },
+  {
+   "id": "georg-anmerkung",
+   "titel": "Winkel-Erläuterung (LAMA/FROG/HIPPO, „Weitere Winkelmessungen …“) als eigener Block „Anmerkung: …“ mit 1 Leerzeile davor (Test test_georg_2011)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 9/25/26d, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "ANMERKUNG = \"Anmerkung: \""
+    ],
+    "source_code/befund_regeln.py": [
+     "r\"|^Anmerkung:\", re.I)"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "|^Anmerkung:/i;"
+    ]
+   }
+  },
+  {
+   "id": "georg-frog-ohne-diagnose",
+   "titel": "FROG ohne Diagnose (Abholer 1.3.14, RH 30): Messwert-Sätze ans Ende der Fuß-Beschreibung, kein Ergebnispunkt, Anmerkung; Prüfzeile „bitte am KI-Bild prüfen“ (Test test_georg_2011)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 41a, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "bt[\"ohne_diagnose\"] = bool(x.get(\"ohne_diagnose\")) and bool(bt[\"messwerte\"])",
+     "def frog_ohne_diagnose(b):"
+    ]
+   }
+  },
+  {
+   "id": "georg-nur-text-aus",
+   "titel": "„Nur Text“ bei jedem neuen CAS-Auftrag automatisch aus, deutliche Anzeige solange an (RH 57, Test test_georg_2011_ui)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 5, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/RaKScribe.py": [
+     "NUR_TEXT_AN = \"⚠ NUR TEXT AN – kein Befund\"",
+     "log(\"[MODUS] Nur Text beim neuen CAS-Auftrag ausgeschaltet\")"
+    ]
+   }
+  },
+  {
+   "id": "georg-bereits-diktiert",
+   "titel": "Fall heute schon diktiert (Lauf-Datei) → Warnung „Bereits diktiert“ + Bestätigung (Test test_georg_2011_ui)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 23, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_auftrag.py": [
+     "def heute_diktiert(ordner, nr, jetzt=time.time):"
+    ],
+    "source_code/RaKScribe.py": [
+     "k.antworten(a, \"abgelehnt\", grund=\"bereits diktiert\")"
+    ]
+   }
+  },
+  {
+   "id": "georg-aufnahme-rueckfrage",
+   "titel": "„Aufnahme starten“ löscht nicht übergebenen Text nur nach Rückfrage, Knopf „↶ Rückgängig“, Lauf-Datei auch im Nur-Text-Weg (RH 7, Test test_georg_2011_ui)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 39, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/RaKScribe.py": [
+     "\"Neue Aufnahme starten und den Text ersetzen?\\n\"",
+     "text=\"↶ Rückgängig\"",
+     "self._lauf_protokollieren(erg, self.final_transcript, None)"
+    ]
+   }
+  },
+  {
+   "id": "georg-zurueckgestellt",
+   "titel": "Zurückgestellter Befund: Brücke legt ab, KaiScribe zeigt es im Band (Test test_georg_2011_ui)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 3, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_auftrag.py": [
+     "ZURUECKGESTELLT = \"zurückgestellt – EOL ersetzt den Befundteil\""
+    ]
+   }
+  },
+  {
+   "id": "georg-jones-vorfuss",
+   "titel": "MT V/Jones/Os metatarsale → vorfuß_in_2_ebenen, Region Fuß; akzessorische Fußknochen = Fuß (RH 84, Test test_georg_2011 + detect_fixtures)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 16/41b, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/detect.py": [
+     "(\"vorfuß_in_2_ebenen\", [\"jones\", \"metatars\"]),"
+    ],
+    "web_app/src/detect.ts": [
+     "[\"vorfuß_in_2_ebenen\", [\"jones\", \"metatars\"]],"
+    ],
+    "source_code/cas_vorlagen.py": [
+     "metatars|\\bjones|os tibiale|os trigonum|"
+    ]
+   }
+  },
+  {
+   "id": "georg-nicht-diktiert-normal",
+   "titel": "Mehrere CAS-Leistungen, nur ein Teil diktiert → jede nicht diktierte Untersuchung bekommt eigenen Befund mit Titel + Normalsätzen (auch reine KI-Teile wie Ganzbein/LAMA), Prüfzeile (RH 84/77/37, Test test_georg_2011)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 16/26/36/37a/40d, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_vorlagen.py": [
+     "NICHT_DIKTIERT_NORMAL = \"laut CAS, nicht diktiert – Normalbefund der Vorlage eingesetzt, bitte prüfen\""
+    ]
+   }
+  },
+  {
+   "id": "georg-titel-robust",
+   "titel": "Titel robust: Zeile vor „## Befund“ ohne „## “ wird vor der Übergabe zur Überschrift (RH 67, Test test_georg_2011_ui)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 17, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_auftrag.py": [
+     "def titel_sichern(text):"
+    ],
+    "source_code/RaKScribe.py": [
+     "text = _cas.titel_sichern(text)"
+    ]
+   }
+  },
+  {
+   "id": "georg-lama-achsworte",
+   "titel": "LAMA: „Varus/Valgus/Varisierung“ nur außerhalb HKA −2…4°, MAD 3…17 mm – bei regelrechter LAMA-Achse kein Zusatz im Befundtext (Test test_georg_2011)",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 35, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "def lama_achsworte(report):"
+    ]
+   }
+  },
+  {
+   "id": "georg-stt-vokabular",
+   "titel": "STT-Vokabular (chirp_3): Os tibiale externum, Os trigonum, Os peroneum, Os naviculare cornutum, Fibroostose, Jones-Fraktur, SI-Gelenksarthrose …",
+   "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 8/41b, Durchsprache 15:20)",
+   "datum": "2026-11-20",
+   "status": "ergänzt",
+   "pruefwort": {
+    "phrases.json": [
+     "\"Os tibiale externum\"",
+     "\"Os naviculare cornutum\"",
+     "\"Fibroostose\""
+    ]
+   }
   }
  ]
 }
