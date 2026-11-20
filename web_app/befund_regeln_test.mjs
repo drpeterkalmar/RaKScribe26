@@ -2,7 +2,7 @@
 // Pendant zu ../befund_regeln_test.py (das ruft dieses Skript auf).
 //   cd web_app && node --experimental-strip-types befund_regeln_test.mjs
 import { readFileSync } from 'node:fs';
-import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, abschnitteBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen, sttSatzzeichen } from './src/befundRegeln.ts';
+import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, abschnitteBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen, sttSatzzeichen, grundregeln, rhoAnsEnde } from './src/befundRegeln.ts';
 
 const F = JSON.parse(readFileSync(new URL('../befund_regeln_fixtures.json', import.meta.url), 'utf8'));
 let fail = 0, n = 0;
@@ -23,6 +23,11 @@ for (const c of F.widerspruch.bereinigen) { const g = widersprucheBereinigen(c.i
 for (const c of F.widerspruch.einschraenken) { const g = satzEinschraenken(c.in); check(g === c.out, 'einschränken: ' + c.in.slice(0, 40), g); }
 for (const c of F.widerspruch.befunde) { const g = widerspruchBefunde(c.in, WD).map(b => [b.id, b.phrase, b.global]); check(JSON.stringify(g) === JSON.stringify(c.out), 'befunde: ' + c.in, g); }
 for (const c of F.widerspruch.prompt) { const g = widerspruchPrompt(widerspruchBefunde(c.diktat, WD), TPL[c.vorlage].body, WD); check(g === c.out, 'wid-prompt: ' + c.diktat, g); }
+for (const c of F.georg_2011.faelle) {   // kaiscribe-georg-2011-n1 (Georg 20.11.2026): Grundregeln
+  const g = grundregeln(c.in, c.diktat, TPL)[0]; check(g === c.out, 'georg_2011: ' + c.name, g);
+  check(grundregeln(g, c.diktat, TPL)[0] === g, 'georg_2011 zweimal gleich: ' + c.name.slice(0, 50), 'nicht idempotent');
+}
+for (const c of F.rho.ans_ende) { const g = rhoAnsEnde(c.in); check(g === c.out, 'rho ans Ende: ' + c.in.slice(0, 30), g); }
 for (const c of F.abschnitte.faelle) { const g = abschnitteBereinigen(c.in, c.diktat, TPL, WD)[0]; check(g === c.out, 'abschnitte: ' + c.name, g); }   // v3.18.13
 // v3.16.6: Kurzsätze (Daten aus vorlagen_vorrang.json, Standard = gebündelte Datei)
 for (const c of F.kurzsaetze.ohne) { const g = ohneEmpfehlungen(c.in); check(g === c.out, 'ohne Empfehlung: ' + c.in.slice(0, 45), g); }

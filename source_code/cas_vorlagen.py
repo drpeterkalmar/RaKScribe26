@@ -36,12 +36,14 @@ REGIONEN = [
     ("knie", r"knie|patella|gonarthr"),
     ("unterschenkel", r"unterschenkel|tibia|fibula|ganzbein"),
     ("sprunggelenk", r"sprunggelenk|\bosg\b|\busg\b|malleol"),
-    ("fuss", r"fuß|fuss|zehe|calcaneus|kalkaneus|ferse|achilles|hallux"),
+    # kaiscribe-georg-2011-n1 (RH 84, RH 30): Metatarsale/Jones-Fraktur und akzessorische Fußknochen gehören zum Fuß
+    ("fuss", r"fuß|fuss|zehe|calcaneus|kalkaneus|ferse|achilles|hallux|metatars|\bjones|os tibiale|os trigonum|"
+             r"os peroneum|naviculare cornutum|os intermetatarse|os vesalian"),
     ("schulter", r"schulter|akromio|acromio|clavicula|klavikula|schlüsselbein|scapula|skapula|supraspinatus|rotatoren"),
     ("oberarm", r"oberarm|\bhumerus\b"),
     ("ellbogen", r"el(?:l|le)n?bogen|olecranon"),
     ("unterarm", r"unterarm|vorderarm|\bradius\b|\bulna\b"),
-    ("hand", r"\bhand|finger|daumen|karpal|scaphoid|skaphoid|navicular|kahnbein|mittelhand|handwurzel"),
+    ("hand", r"\bhand|finger|daumen|karpal|scaphoid|skaphoid|navicular(?!e cornutum)|kahnbein|mittelhand|handwurzel"),
     ("thorax", r"thorax|lunge|pulmo|rippe|sternum"),
     ("abdomen", r"abdomen|bauch|leber|galle|pankreas|milz|niere|harnblase|urogramm|pyelogra|retroperit"),
     ("mamma", r"mamma|mammo"),
@@ -783,6 +785,32 @@ def funktion_saetze(seg):
             pos = b
     rest.append(seg[pos:])
     return teil, re.sub(r"(?:\s*[.;:]){2,}", ".", "".join(rest)).strip(" ,;\n")
+
+
+NICHT_DIKTIERT_NORMAL = "laut CAS, nicht diktiert – Normalbefund der Vorlage eingesetzt, bitte prüfen"
+
+
+def nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, cas, templates):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkte 16/17/26/36/37a, RH 84/77/37): mehrere CAS-Untersuchungen, aber nur
+    ein Teil diktiert → jede nicht diktierte Untersuchung mit eigener Vorlage bekommt ihren eigenen Befund (Titel aus
+    der CAS-Leistung, Normalsätze der Vorlage, ohne KI); IB-Lab-Werte (z. B. LAMA im Ganzbein) setzt KaiScribe danach
+    dort ein. Sichtbare Prüfzeile statt „laut CAS, nicht diktiert“. Ohne diktierten Abschnitt mit CAS-Leistung
+    (Ordi-Baustein, nichts zugeordnet) bleibt alles wie bisher. → (segmente, wahlen, hinweise, [Log])."""
+    if not any(w.leistung is not None for w in wahlen) or any(w.art == "baustein" for w in wahlen):
+        return segmente, wahlen, hinweise, []
+    segmente, wahlen, hinweise, log = list(segmente), list(wahlen), list(hinweise), []
+    for l in cas.alle:
+        alt = f"{l.label} laut CAS, nicht diktiert"
+        if alt not in hinweise or not l.vorlage or l.vorlage not in templates or l.vorlage == "allgemein" \
+                or l.funktion_grund or _funktion_teil(l, cas) \
+                or any(x.funktion_grund and x.kurz == l.kurz for x in cas.alle):
+            continue                     # Funktions-Kombi: Regel kaiscribe-funktion-n1 bleibt (nicht diktiert → nichts)
+        seite = l.seite if (l.seite and l.regionen & PAARIG) else ""
+        segmente.append(f"{_anzeige(l.vorlage, templates) or l.vorlage}{' ' + seite if seite else ''} unauffällig.")
+        wahlen.append(Wahl(l.vorlage, "cas", l, l.vorlage))
+        hinweise[hinweise.index(alt)] = f"{l.label} {NICHT_DIKTIERT_NORMAL}"
+        log.append(f"{l.label}: nicht diktiert → Normalbefund der Vorlage {l.vorlage}")
+    return segmente, wahlen, hinweise, log
 
 
 def funktion_ergaenzen(segmente, wahlen, cas, templates):

@@ -129,6 +129,9 @@ class Auftrag:
         self.ibl = None          # v3.13.0: Bausteine aus cas_ibl_<id>.json (Liste von dicts); None = (noch) keine Datei
         self.ibl_signatur = None  # Größe + Änderungszeit der zuletzt gelesenen Datei (nur bei Änderung neu lesen)
         self.kontext = None      # v3.14.0: dict aus cas_kontext_<id>.json; None = (noch) keine Datei
+        # kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 3): von der Schreibkraft zur Befundung zurückgestellter Befund –
+        # die Brücke legt ihn selbst ab (Merkdatei korrektur=True, Formatierer ersetzt den Befundteil); KaiScribe zeigt es nur
+        self.zurueckgestellt = bool(d.get("zurueckgestellt"))
 
     def labels(self):
         """Kurznamen der Leistungen fürs Band (ohne Abrechnungsposten), z. B. ['HWS', 'Schulter re. (Sono)']."""
@@ -157,7 +160,49 @@ class Auftrag:
         labels = self.labels()
         if labels:   # v3.12.0: „CAS-Diktat <Nr> (<Benutzer>) · HWS · Schulter re. (Sono)“
             t += " · " + " · ".join(labels[:4]) + (" · …" if len(labels) > 4 else "")
+        if self.zurueckgestellt:
+            t += " · " + ZURUECKGESTELLT
         return t
+
+
+ZURUECKGESTELLT = "zurückgestellt – EOL ersetzt den Befundteil"
+
+
+def titel_sichern(text):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 17, RH 67: Titel ging ohne „## “ an CAS → Formatierer ohne
+    Überschrift): die Zeile direkt vor „## Befund“ ist der Titel der Untersuchung – steht sie ohne „## “ da (von Hand
+    bearbeitet) bzw. als „# …“/„### …“, bekommt sie „## “. Sätze (Punkt am Ende) bleiben unberührt."""
+    if not text or "## Befund" not in text:
+        return text
+    zeilen = text.split("\n")
+    for i, z in enumerate(zeilen):
+        if z.strip().lower().rstrip(":") != "## befund":
+            continue
+        j = i - 1
+        while j >= 0 and not zeilen[j].strip():
+            j -= 1
+        if j < 0:
+            continue
+        t = zeilen[j].strip()
+        if t.startswith("## ") or t.endswith((".", "!", "?", ":", ";")) or len(t) > 120:
+            continue
+        if j > 0 and zeilen[j - 1].strip() and not zeilen[j - 1].strip().startswith("## "):
+            continue                     # mitten in einem Absatz – kein Titel
+        zeilen[j] = "## " + t.lstrip("#").strip()
+    return "\n".join(zeilen)
+
+
+def heute_diktiert(ordner, nr, jetzt=time.time):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 23: Doppel-Diktat-Gefahr): Lauf-Dateien <Nr>_<heute>-*.json im
+    Lauf-Ordner → Liste der Dateinamen (leer: noch nicht diktiert, Ordner aus/fehlt). Wirft nie."""
+    try:
+        nr = re.sub(r"[^\w-]", "", str(nr or ""))
+        if not nr or not ordner or str(ordner).strip().lower() in ("aus", "0", "nein", "off") or not os.path.isdir(ordner):
+            return []
+        tag = time.strftime("%Y%m%d", time.localtime(jetzt()))
+        return sorted(n for n in os.listdir(ordner) if n.startswith(f"{nr}_{tag}-") and n.endswith(".json"))
+    except OSError:
+        return []
 
 
 def entscheidung(aktiv, hat_inhalt):

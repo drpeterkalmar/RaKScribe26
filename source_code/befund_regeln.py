@@ -268,7 +268,8 @@ _BULLET_RE = re.compile(r"^\s*[-*•–]\s+")
 # v3.19.13 (Georg 18.11.2026, IB Lab HIPPO): ebenso „LCE = lateraler Center-Edge-Winkel …“ / „AI = …“ / „CCD = …“.
 _UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel"
                        r"|^Weitere Winkelmessungen sind den KI-Auswertungsbildern"
-                       r"|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)", re.I)
+                       r"|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)"
+                       r"|^Anmerkung:", re.I)   # kaiscribe-georg-2011-n1 (Punkt 9): „Anmerkung: …“-Block
 
 _SATZENDE = (".", "!", "?", ":", ";")
 
@@ -441,23 +442,40 @@ def rho_erkennen(seg):
     return (rest or seg), score, True
 
 
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkte 19/40c/31): Rho steht IMMER als eigener Einzelbefund ganz am Schluss
+# (nach allen Untersuchungen, auch bei Mehrfach) mit eigener Überschrift, eigenem Text und eigenem Ergebnis – nie im
+# LWS- oder Becken-Teil. Ein diktierter Score unter 7 bringt keinen Text (Regel seit 19.11., RH 21: Rho 6).
+RHO_TITEL = "Opportunistisches Knochendichtescreening (KI)"
+RHO_AB = 7
+
+
 def rho_einfuegen(report, score):
-    """Variante C ans Ende des (letzten) Befundtexts, Variante 2 als letzter Ergebnis-Punkt."""
+    """Eigener Befund „## Opportunistisches Knochendichtescreening (KI)“ (Variante C + Ergebnis Variante 2) am Ende;
+    Score < 7 → unverändert."""
     if not report or RHO_ERGEBNIS in report:
         return report
+    if score and score.isdigit() and int(score) < RHO_AB:
+        return report
     s = f"Der Score von {score} (Skala 1–10) zeigt" if score else "Der Score von ≥7 (Skala 1–10) zeigt"  # Georg 13.10.: ohne diktierten Score immer ≥7
-    befund = RHO_BEFUND.format(score=s)
-    if "## Ergebnis" not in report:
-        return report.rstrip() + "\n\n" + befund + "\n\n## Ergebnis\n" + RHO_ERGEBNIS
-    i = report.rfind("## Ergebnis")
-    kopf, erg = report[:i].rstrip(), report[i + len("## Ergebnis"):]
-    zeilen = [z for z in erg.split("\n") if z.strip()]
-    nummeriert = any(_NUM_RE.match(z) for z in zeilen)
-    erg = erg.rstrip() + "\n" + RHO_ERGEBNIS
-    neu = kopf + "\n\n" + befund + "\n\n## Ergebnis" + erg
-    # nummerierte Ergebnisse oder ein einzelner Punkt → neu durchzählen; mehrere unnummerierte (wörtlicher
-    # Ordi-Baustein) bleiben unnummeriert
-    return ergebnis_nummerieren(neu) if (nummeriert or len(zeilen) <= 1) else neu
+    return befunde_zusammenfuegen([report, f"## {RHO_TITEL}\n\n## Befund\n{RHO_BEFUND.format(score=s)}\n\n"
+                                           f"## Ergebnis\n{RHO_ERGEBNIS}"])
+
+
+def rho_ans_ende(report):
+    """Mehrfach-Befund: den Rho-Befund (aus dem Abschnitt, in dem „Rho“ diktiert wurde) ans Ende stellen."""
+    if not report or f"## {RHO_TITEL}" not in report:
+        return report
+    zeilen = report.split("\n")
+    a = next(i for i, z in enumerate(zeilen) if z.strip() == f"## {RHO_TITEL}")
+    e = a + 1
+    while e < len(zeilen) and not (zeilen[e].strip().startswith("## ")
+                                   and zeilen[e].strip()[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis")):
+        e += 1
+    if e >= len(zeilen):
+        return report
+    block = "\n".join(zeilen[a:e]).strip()
+    rest = re.sub(r"\n{4,}", "\n\n\n", "\n".join(zeilen[:a] + zeilen[e:]).strip())
+    return befunde_zusammenfuegen([rest, block])
 
 
 def befunde_zusammenfuegen(reports):
@@ -688,7 +706,8 @@ def ist_skelett_text(text, daten=None):
 
 
 _WID_ABK = {"bzw", "ca", "z", "b", "u", "a", "v", "d", "h", "evtl", "ggf", "inkl", "max", "min", "lig", "n", "nn", "m",
-            "mm", "li", "re", "bds", "vs", "st", "p", "i", "dr", "o", "s", "co", "e", "g", "ap", "pa", "bspw", "usw"}
+            "mm", "li", "re", "bds", "vs", "st", "p", "i", "dr", "o", "s", "co", "e", "g", "ap", "pa", "bspw", "usw",
+            "dig", "proc"}   # kaiscribe-georg-2011-n1: „Dig. V“, „Proc. …“
 
 
 def saetze_mit_lage(text):
@@ -873,7 +892,11 @@ def widersprueche_bereinigen(report, diktat, daten=None):
         text = "".join(neu)
         if weg:                                     # nach dem Streichen keine Leerzeichen am Zeilenende
             text = re.sub(r"[ \t]+(?=\n|$)", "", text)
-        fehlend = [b for b in befunde if b["id"] in kat and not _beschreibt(text.lower(), kat[b["id"]], c)]
+        # kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 78): Schreibvarianten (c/k/z, femoropatellar↔patellofemoral)
+        # zählen als beschrieben, ein schon dastehender Satz wird nie ein zweites Mal angehängt
+        fehlend = [b for b in befunde if b["id"] in kat
+                   and not any(_beschreibt(v, kat[b["id"]], c) for v in schreibvarianten(text))
+                   and not phrase_vorhanden(b["phrase"], text)]
         if fehlend:
             satz = " ".join(_satz_aus_phrase(b["phrase"]) for b in fehlend)
             if erste is not None:                   # vor dem ersten eingeschränkten Normalsatz
@@ -1447,3 +1470,323 @@ def arthrose_bereinigen(report, diktat, daten=None, behalten=()):
             neu.append(z)
     aend += [f"diktierter Befund statt Arthrose: {s}" for s in statt]
     return ergebnis_nummerieren("\n".join(neu)), aend
+
+
+# ── kaiscribe-georg-2011-n1 (Georg Riegler 20.11.2026, Diktiertag, Sammelliste + Durchsprache 15:20) ──────────────────
+# Grundregeln NACH allen anderen Wächtern (EXE: je Abschnitt und noch einmal nach dem Einsetzen der IB-Lab-Texte; Web: je
+# Abschnitt). Ohne Treffer bleibt der Text Zeichen für Zeichen gleich. Sync: befundRegeln.ts grundregeln, Fixtures
+# „georg_2011“ in befund_regeln_fixtures.json.
+#  7/14b/21a/32/RH 22/RH 80: Der Befund beginnt NIE mit „Im Übrigen …“/„Ansonsten …“. „Ansonsten“ wandert hinter die erste
+#     Pathologie, „Im Übrigen“ nur hinter eine pathologische Stellung (Fraktur, Fehlstellung, Hochstand, Skoliose …); sonst
+#     fällt das Wort weg („Im Übrigen normale Form und Stellung …“ → „Normale Form und Stellung …“).
+#  10 Pleuraerguss: Sinus-Satz der betroffenen Seite raus, „Ansonsten das Zwerchfell beidseits glatt begrenzt.“ hinter den
+#     Erguss-Satz (Georg OK).
+#  14a/18/37b/40a Widerspruchsregel (diktiert ODER von der KI im Befund gezeigt): Humeruskopfhochstand → „… regelrechter
+#     Artikulation“ raus; Infiltrat/DD infiltrativ → „kein … Infiltrat“ raus; Beckenschiefstand → „Anatomisch normale und
+#     symmetrische Form des Beckenskeletts“ und „Beide Beckenschaufeln/-kämme stehen gleich hoch“ raus; Skoliose/Cobb
+#     (SQUIRREL) → „Normaler Achsenverlauf“/„achsengerechte Stellung“ raus (Kyphose BWS + Lordose LWS bleiben, Georg final).
+#  20 Diktierte Abstufung: „skoliotische Asymmetrie“ ohne diktierte „Skoliose“ wird im Ergebnis nicht zur Skoliose.
+#  21b/RH 69 KI-Hinweise („KI: Verdacht auf …“, RBfracture) sind nie ein Ergebnispunkt (nur Hinweis).
+#  38 Schreibweise „SI-Gelenksarthrose“.
+#  42 Wirbelsäule: nie ein Kellgren-&-Lawrence-Grad (Unkovertebral-, Facetten-, Wirbelgelenke).
+UEBRIGEN_ANFANG = re.compile(r"^(Im [Üü]brigen|Ansonsten)\b,?\s+")
+_STELLUNG_PATHO = re.compile(r"fraktur|luxation|fehlstellung|disloz|dislokation|hochstand|skolio|listhes|dissoziation|"
+                             r"achsabweich|achsfehl|seitausbieg|kontinuitätsunterbrech|fragment|valgus|varus|fehlhaltung|"
+                             r"streckhaltung|beckenschiefstand|abkippung|versatz")
+_NEG_NAH = re.compile(r"(?<![a-zäöüß])(?:kein[a-zäöüß]*|ohne|nicht|ausschluss|frei von)(?![a-zäöüß])")
+_WS_TITEL = re.compile(r"wirbelsäule|halswirbel|brustwirbel|lendenwirbel|(?<![a-zäöüß])(?:hws|bws|lws|gws)(?![a-zäöüß])", re.I)
+_THORAX_TITEL = re.compile(r"thorax|lunge", re.I)
+GEORG_STREICHEN = [
+    # (id, bejahter Befund im Diktat oder Befundtext, Titel-Bedingung, Sätze, die dann wegfallen)
+    ("humeruskopfhochstand", r"hochstand des humeruskopf|humeruskopf[a-zäöüß]*hochstand|humeruskopf[a-zäöüß ]{0,25}hochstand|"
+                             r"schulterhochstand|kopfhochstand", None,
+     [r"humeruskopf[^.]*regelrechte[rn]? artikulation"]),
+    ("infiltrat", r"infiltrat", None, [r"(?<![a-zäöüß])kein(?:e[nmrs]?)?(?![a-zäöüß])[^.]*infiltrat"]),
+    ("beckenschiefstand", r"beckenschiefstand|beckenkippung|beckenhochstand|becken[a-zäöüß ]{0,15}schief", None,
+     [r"symmetrische form des beckenskelett", r"becken(?:schaufeln|kämme)[^.]*gleich ?hoch"]),
+    ("skoliose", r"skolio|seitausbieg|cobb", _WS_TITEL,
+     [r"^(?:(?:im übrigen|ansonsten),?\s+)?normaler achsenverlauf",
+      r"^(?:(?:im übrigen|ansonsten),?\s+)?(?:annähernd\s+)?achsengerechte stellung"]),
+]
+_GEORG_RX = [(i, re.compile(w), t, [re.compile(s) for s in ss]) for i, w, t, ss in GEORG_STREICHEN]
+_KEINE_SKOLIOSE = re.compile(r"keine skoliose|kein[a-zäöüß]* (?:hinweis auf|nachweis einer?) skoliose")
+_PLEURA = re.compile(r"pleuraerg(?:u|ü)(?:ss|ß)|pleuraeffusion|erg(?:u|ü)ss[a-zäöüß ]{0,20}pleura")
+_ERGUSS_SATZ = re.compile(r"erg(?:u|ü)(?:ss|ß)|stumpf|randwinkel|winkelerguss")
+_SINUS_FREI = re.compile(r"(?<![a-zäöüß])sinus(?![a-zäöüß])[^.]*(?<![a-zäöüß])frei(?![a-zäöüß])")
+_ZWERCHFELL_NORMAL = re.compile(r"^(?:(?:im übrigen|ansonsten),?\s+)?(?:das\s+|beide\s+)?zwerchfell[a-zäöüß]*[^.]*"
+                                r"(?:normaler lage|scharf|glatt)")
+ZWERCHFELL_ANSONSTEN = "Ansonsten das Zwerchfell beidseits glatt begrenzt."
+_KI_PUNKT = re.compile(r"^\s*(?:\d+\s*[.)]\s*)?(?:KI\s*[:(-]|\(KI\)|RBfracture\b)", re.I)
+_SI_ARTHROSE = re.compile(r"(?<![\wÄÖÜäöüß-])(?:ISG|SIG|SI|Iliosakral|Iliosacral|Sakroiliakal|Sacroiliacal)"
+                          r"(?:[- ]?[Gg]elenk(?:s|e)?)?[- ]?[Aa]rthrose(n?)(?![\wäöüß])")
+_KL_KLAMMER_WS = re.compile(r"\s*\((?:Arthrose\s+)?Grad\s+(?:\d|[IVX]+)\s+nach\s+Kellgren[^)]*\)")
+_SKOL_ABSTUFUNG = re.compile(r"skoliotische[a-zäöüß]*\s+(asymmetrie|fehlhaltung|haltung|seitabweichung)")
+
+
+def _bejaht(text, rx):
+    """Kommt rx in text (klein) vor, ohne dass im selben Teilsatz davor „kein/ohne/nicht …“ steht?"""
+    for m in rx.finditer(text or ""):
+        vor = text[max(0, m.start() - 60):m.start()]
+        vor = re.split(r"[.;:,\n]", vor)[-1]
+        if not _NEG_NAH.search(vor):
+            return True
+    return False
+
+
+def _satz_weg(text, a, b):
+    """text[a:b] samt einem Leerzeichen (und einer dadurch leeren Zeile) herausnehmen."""
+    vor, nach = text[:a], text[b:]
+    if nach[:1] == " ":
+        nach = nach[1:]
+    elif vor[-1:] == " ":
+        vor = vor[:-1]
+    if (not vor or vor.endswith("\n")) and nach[:1] == "\n":
+        nach = nach[1:]
+    return vor + nach
+
+
+def _titel_vor(zeilen, i):
+    for j in range(i - 1, -1, -1):
+        s = zeilen[j].strip()
+        if s.startswith("## ") and s[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis"):
+            return s[3:].strip()
+    return ""
+
+
+_VORLAGEN_WORTE = {}
+
+
+def _worte(s):
+    return tuple(sorted(w for w in re.split(r"[^a-zäöüß0-9-]+", (s or "").lower()) if w))
+
+
+def _vorlage_zurueck(rest, templates):
+    """„sind die Gelenkflächen normal geformt.“ → Vorlagensatz mit denselben Wörtern („Die Gelenkflächen sind …“)."""
+    if not templates:
+        return None
+    c = _VORLAGEN_WORTE.get(id(templates))
+    if c is None:
+        c = {}
+        for v in templates.values():
+            body = v.get("body") if isinstance(v, dict) else ""
+            for a, b in saetze_mit_lage(body or ""):
+                c.setdefault(_worte(body[a:b]), body[a:b].strip())
+        _VORLAGEN_WORTE[id(templates)] = c
+    return c.get(_worte(rest))
+
+
+def befund_anfang(text, templates=None):
+    """Befundtext einer Untersuchung → (text, Änderung oder ""). Beginnt er mit „Im Übrigen“/„Ansonsten“: hinter die erste
+    passende Pathologie stellen, sonst das Wort weglassen."""
+    spans = saetze_mit_lage(text or "")
+    if not spans:
+        return text, ""
+    a, b = spans[0]
+    s = text[a:b]
+    m = UEBRIGEN_ANFANG.match(s)
+    if not m:
+        return text, ""
+    ansonsten = m.group(1).lower().startswith("ansonsten")
+    for x, y in spans[1:]:
+        t = text[x:y]
+        if UEBRIGEN_ANFANG.match(t):
+            continue
+        if has_pathology(t) if ansonsten else _bejaht(t.lower(), _STELLUNG_PATHO):
+            ohne = _satz_weg(text, a, b)
+            y2 = y - (len(text) - len(ohne))
+            return ohne[:y2] + " " + s + ohne[y2:], f"hinter die Pathologie: {s[:50]}"
+    rest = s[m.end():]
+    if _WID_VERB.match(rest.split(" ", 1)[0].lower()):
+        neu = _vorlage_zurueck(rest, templates)
+        if neu is None:
+            return text, ""
+    else:
+        neu = rest[:1].upper() + rest[1:]
+    return text[:a] + neu + text[b:], f"ohne „{m.group(1)}“: {neu[:50]}"
+
+
+def _saetze_streichen(text, rxs):
+    aend = []
+    for a, b in reversed(saetze_mit_lage(text)):
+        s = text[a:b]
+        if any(rx.search(s.lower()) for rx in rxs):
+            text = _satz_weg(text, a, b)
+            aend.append(f"gestrichen: {s.strip()[:60]}")
+    return text, aend
+
+
+def _pleura(text, diktat):
+    """Thorax mit Pleuraerguss: Sinus-Satz der betroffenen Seite raus, „Ansonsten das Zwerchfell …“ hinter den Erguss."""
+    quelle = diktat.lower()
+    m = next((x for x in _PLEURA.finditer(quelle)), None)
+    seite = diktierte_seite(quelle[max(0, m.start() - 60):m.end() + 60]) if m else diktierte_seite(text)
+    aend = []
+    for a, b in reversed(saetze_mit_lage(text)):
+        s = text[a:b].lower()
+        if not _SINUS_FREI.search(s) or _bejaht(s, _ERGUSS_SATZ):
+            continue
+        andere = {"rechts": "links", "links": "rechts"}.get(seite)
+        if seite != "beidseits" and ("übrig" in s or (andere and andere in s and (seite or "-") not in s)):
+            continue
+        aend.append(f"gestrichen: {text[a:b][:60]}")
+        text = _satz_weg(text, a, b)
+    spans = saetze_mit_lage(text)
+    erguss = next(((x, y) for x, y in spans if _bejaht(text[x:y].lower(), _ERGUSS_SATZ)
+                   and not _ZWERCHFELL_NORMAL.search(text[x:y].lower())), None)
+    if erguss is None or ZWERCHFELL_ANSONSTEN in text:
+        return text, aend
+    for a, b in reversed(spans):
+        if _ZWERCHFELL_NORMAL.search(text[a:b].lower()) and (a, b) != erguss:
+            aend.append(f"gestrichen: {text[a:b][:60]}")
+            if a < erguss[0]:
+                d = len(text)
+                text = _satz_weg(text, a, b)
+                erguss = (erguss[0] - (d - len(text)), erguss[1] - (d - len(text)))
+            else:
+                text = _satz_weg(text, a, b)
+    y = erguss[1]
+    aend.append("ergänzt: " + ZWERCHFELL_ANSONSTEN)
+    return text[:y] + " " + ZWERCHFELL_ANSONSTEN + text[y:], aend
+
+
+_DAUMEN = re.compile(r"(?<![a-zäöüß])daumen(?![a-zäöüß])")
+_ANDERER_FINGER = re.compile(r"zeigefinger|mittelfinger|ringfinger|kleinfinger|(?<![a-zäöüß])dig(?:itus|\.)?\s*(?:ii|iii|iv|v|[2-5])(?![a-z0-9])")
+_DAUMEN_SATZ = re.compile(r"Normale Form der Phalangen((?: beidseits)?) und im Rahmen der Varianz auch des Endgliedes "
+                          r"bei achsengerechter Stellung\.")
+DAUMEN_SATZ = "Normale Form der Phalangen{bds}, achsengerechte Stellung."
+
+
+def _daumen(zeilen, dk, aend):
+    """28b/29: diktierter Daumen statt CAS-„Finger“ in Überschrift und Ergebnis; Daumen-Normalsatz ohne Varianz-Endglied."""
+    nur_daumen = _bejaht(dk, _DAUMEN) and not _ANDERER_FINGER.search(dk)
+    titel = ""
+    for i, z in enumerate(zeilen):
+        s = z.strip()
+        if s.startswith("## ") and s[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis"):
+            if nur_daumen and re.match(r"## Finger(?![a-zäöüß])", s):
+                zeilen[i] = z.replace("## Finger", "## Daumen", 1)
+                aend.append(f"Überschrift Daumen statt Finger: {zeilen[i].strip()[:50]}")
+            titel = zeilen[i]
+            continue
+        if s.startswith("## ") or "daumen" not in titel.lower():
+            continue
+        neu = _DAUMEN_SATZ.sub(lambda m: DAUMEN_SATZ.format(bds=m.group(1)), z)
+        if nur_daumen:
+            neu = re.sub(r"(?<![\wäöüß])des Fingers(?![\wäöüß])", "des Daumens", neu)
+            neu = re.sub(r"(?<![\wäöüß])Finger(?=\s+(?:rechts|links|beidseits)(?![\wäöüß]))", "Daumen", neu)
+        if neu != z:
+            aend.append(f"Daumen: {neu.strip()[:50]}")
+            zeilen[i] = neu
+
+
+# 26 (RH 49, Georg): Titel der Kombi Becken + Hüfte mit einer Seite
+_KOMBI_TITEL = re.compile(r"^## Beckenübersicht und Hüfte (rechts|links)(?: in 2 Ebenen)?[ \t]*$")
+KOMBI_TITEL = "## Becken sowie Hüftgelenk in 2 Ebenen {seite}"
+
+
+def grundregeln(report, diktat="", templates=None):
+    """→ (report, Änderungen). Siehe Kopf dieses Abschnitts."""
+    if not report or "## " not in report:
+        return report, []
+    zeilen = report.split("\n")
+    aend = []
+    for i, z in enumerate(zeilen):
+        m = _KOMBI_TITEL.match(z.strip())
+        if m:
+            zeilen[i] = KOMBI_TITEL.format(seite=m.group(1))
+            aend.append(f"Titel {zeilen[i][3:]}")
+    dk = (diktat or "").lower()
+    _daumen(zeilen, dk, aend)
+    for a, e in reversed(_abschnitt(zeilen, "befund")):
+        titel = _titel_vor(zeilen, a - 1)
+        text = "\n".join(zeilen[a:e])
+        tl = text.lower()
+        for i, wenn, nur_titel, saetze in _GEORG_RX:
+            if nur_titel is not None and not nur_titel.search(titel):
+                continue
+            if not (_bejaht(dk, wenn) or _bejaht(tl, wenn)):
+                continue
+            if i == "skoliose" and (_KEINE_SKOLIOSE.search(dk) or _KEINE_SKOLIOSE.search(tl)):
+                continue
+            text, x = _saetze_streichen(text, saetze)
+            aend += [f"{i}: {z}" for z in x]
+            tl = text.lower()
+        if _THORAX_TITEL.search(titel) and (_bejaht(dk, _PLEURA) or _bejaht(tl, _PLEURA)):
+            text, x = _pleura(text, diktat or "")
+            aend += [f"pleuraerguss: {z}" for z in x]
+        lead = len(text) - len(text.lstrip())
+        neu, x = befund_anfang(text[lead:], templates)
+        if x:
+            text = text[:lead] + neu
+            aend.append(x)
+        zeilen[a:e] = text.split("\n")
+    # Ergebnis: KI-Hinweise nie als Punkt, diktierte Abstufung „skoliotische Asymmetrie“
+    skol = _SKOL_ABSTUFUNG.search(dk) if not re.search(r"skoliose|flachprofil", dk) else None
+    erg = False
+    for a, e in reversed(_abschnitt(zeilen, "ergebnis")):
+        for i in range(e - 1, a - 1, -1):
+            z = zeilen[i]
+            if _KI_PUNKT.match(z):
+                aend.append(f"KI-Hinweis nicht im Ergebnis: {z.strip()[:60]}")
+                del zeilen[i]
+                erg = True
+            elif skol and re.search(r"(?<![\wäöüß])Skoliose(?![\wäöüß])", z):
+                zeilen[i] = re.sub(r"(?<![\wäöüß])Skoliose(?![\wäöüß])", "skoliotische " + skol.group(1).capitalize(), z)
+                aend.append(f"diktierte Abstufung: {zeilen[i].strip()[:60]}")
+                erg = True
+    out = "\n".join(zeilen)
+    # 38: SI-Gelenksarthrose; 42: an der Wirbelsäule kein K&L-Grad
+    si = _SI_ARTHROSE.sub(lambda m: "SI-Gelenksarthrose" + m.group(1), out)
+    if si != out:
+        aend.append("Schreibweise SI-Gelenksarthrose")
+        out = si
+    if "Kellgren" in out:
+        zeilen, titel = out.split("\n"), ""
+        for i, z in enumerate(zeilen):
+            s = z.strip()
+            if s.startswith("## ") and s[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis"):
+                titel = s[3:]
+            elif _WS_TITEL.search(titel) and _KL_KLAMMER_WS.search(z):
+                zeilen[i] = _KL_KLAMMER_WS.sub("", z)
+                aend.append("Wirbelsäule ohne K&L-Grad")
+                erg = True
+        out = "\n".join(zeilen)
+    if erg:
+        out = ergebnis_nummerieren(out)
+    return out, aend
+
+
+# 13 (RH 78): Schreibvarianten für die Nachprüfung „Befund fehlt im Text“ – c/k/z (Chondrocalcinose ↔ Chondrokalzinose)
+# und vertauschte Wortteile (femoropatellar ↔ patellofemoral, femorotibial ↔ tibiofemoral)
+_VERTAUSCHT = (("femoropatellar", "patellofemoral"), ("femorotibial", "tibiofemoral"), ("retropatellar", "femoropatellar"))
+
+
+def schreibvarianten(text):
+    t = (text or "").lower()
+    out = [t, re.sub(r"[kz]", "c", t), re.sub(r"c(?!h)", "k", t)]
+    for x, y in _VERTAUSCHT:
+        out += [v.replace(x, y) for v in out[:3] if x in v] + [v.replace(y, x) for v in out[:3] if y in v]
+    return list(dict.fromkeys(out))
+
+
+def _inhaltsworte(t):
+    return {w for w in re.split(r"[^a-zäöüß0-9]+", re.sub(r"[kz]", "c", (t or "").lower())) if len(w) >= 4}
+
+
+def phrase_vorhanden(phrase, text):
+    """Steht der diktierte Teilsatz (bis auf Schreibvarianten) schon im Text? Alle Inhaltswörter (≥ 4 Buchstaben, Wortteile
+    vertauscht) kommen vor."""
+    worte = _inhaltsworte(phrase)
+    if not worte:
+        return False
+    rest = " ".join(schreibvarianten(text))
+    rest_c = re.sub(r"[kz]", "c", rest)
+    def da(w):
+        if w in rest_c:
+            return True
+        for x, y in _VERTAUSCHT:
+            for p, q in ((x, y), (y, x)):
+                if p in w and w.replace(p, q) in rest_c:
+                    return True
+        return False
+    return all(da(w) for w in worte)

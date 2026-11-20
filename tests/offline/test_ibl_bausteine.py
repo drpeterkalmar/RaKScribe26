@@ -236,8 +236,12 @@ check("   … dieselbe Fassung noch einmal → nichts doppelt (idempotent)", e3.
 ordi = "## Mammographie beidseits\n\n## Befund\nText.\n\n## Ergebnis\nPunkt eins\nPunkt zwei"
 e = I.einsetzen(ordi, B(dict(RBF_D, accno="1", ergebnis=["KI-Verdacht auf Fraktur (RBfracture) – bitte am Bild prüfen."])),
                 diktat="Baustein Mammo.")
-check("m) wörtlicher Ordi-Baustein (mehrere unnummerierte Punkte) bleibt unnummeriert",
-      "\nPunkt eins\nPunkt zwei\nKI-Verdacht auf Fraktur" in e.report, e.report)
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 21b, RH 69/92): RBfracture nie im Ergebnis, nur Hinweis für den Arzt
+rbf = B(dict(RBF_D, accno="1", ergebnis=["KI-Verdacht auf Fraktur (RBfracture) – bitte am Bild prüfen."]))
+check("m) RBfracture-Ergebnis kommt nie ins Ergebnis (wörtlicher Ordi-Baustein bleibt unverändert), nur als Hinweis",
+      e.report == ordi and "KI-Verdacht" not in e.report and rbf[0].ergebnis == [] and rbf[0].befundteil == []
+      and any("KI-Verdacht auf Fraktur (RBfracture) – bitte am Bild prüfen. (nur Hinweis, nicht im Befund)" in h
+              for h in I.anzeige_hinweise(rbf)), (e.report, I.anzeige_hinweise(rbf)))
 blk = I.prompt_block(B(FROG_D, LAMA_D, RBF_D))
 check("n) Gen-Prompt <ibl_messwerte>: nur Messgrößen-Namen, keine Zahlen, keine Diagnosen, Regeln",
       "- FROG: Calcaneusneigungswinkel, Hallux-valgus-Winkel" in blk
@@ -578,7 +582,7 @@ check("… v1-Zeilen ersetzt, v2 drin, LAMA ohne Ganzbein-Abschnitt → Absatz a
       and "Calcaneusneigungswinkel links 12,4° (IB Lab FROG)." in app.result_text.text
       and app.result_text.text.rstrip().endswith("Beinlängendifferenz von 15 mm, links kürzer.\nVarusfehlstellung rechts "
                                                  "(HKA 5,8°). Regelrechte Beinachse links (HKA 0,9°)"
-                                                 ".\n" + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
+                                                 ".\n\n" + I.ANMERKUNG + LAMA_SCHLUSS) and not app.ibl_knopf.sichtbar
       and any("LAMA beidseits: keiner Untersuchung eindeutig zuzuordnen" in h for h in app._ibl_hinweise)
       and any("Katalog ergänzen" in h for h in app._ibl_hinweise),
       app.result_text.text[-400:])

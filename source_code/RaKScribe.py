@@ -1285,6 +1285,13 @@ class RaKScribeApp(ctk.CTk):
         self.restructure_btn = ctk.CTkButton(right_head, text="Restructure", width=98, command=self.befund_umbauen,
                                              **kopf_kw)
         self.restructure_btn.pack(side="left", padx=(6, 0))
+        self._nur_text_anzeige()   # kaiscribe-georg-2011-n1 (Georg 20.11., RH 57): deutlich, solange an
+        # kaiscribe-georg-2011-n1 (Georg 20.11., RH 7): letzter Stand vor dem Löschen (Aufnahme starten/Neu) zurückholen
+        self._letzter_stand = None
+        self.rueckgaengig_btn = ctk.CTkButton(right_head, text="↶ Rückgängig", width=110, height=26,
+                                              command=self.rueckgaengig, font=(UI_FONT, 12), fg_color=BGC_ELEV,
+                                              hover_color=BORDER_STRONG, text_color=TEXT_MUTED, state="disabled")
+        self.rueckgaengig_btn.pack(side="right", padx=(0, 10), pady=10)
         # v3.7.0 (Peter 07.10.): Option im Menü — beim Diktat in den Befund am Satzanfang groß beginnen
         self.gross_satzanfang_var = tk.BooleanVar(value=bool(einstellung_lesen("gross_satzanfang", True)))
 
@@ -2149,6 +2156,8 @@ class RaKScribeApp(ctk.CTk):
         elif aktion == "abbrechen":
             log("[UI] Verarbeitung abgebrochen (F9) — Ergebnis wird verworfen.")
         log("[UI] Zurücksetzen angefordert. Lösche Transkription, Befund und Aufnahmedaten.")
+        if aktion not in ("stop_und_reset", "abbrechen"):   # kaiscribe-georg-2011-n1: „↶ Rückgängig“ holt den Stand zurück
+            self._stand_merken()                            # (nicht das halbe Diktat einer verworfenen Aufnahme)
         self.final_transcript = ""
         self.stream_transcript = ""
         self.stream_interim = ""
@@ -2242,6 +2251,18 @@ class RaKScribeApp(ctk.CTk):
         if aktion == "start" and not keys_ready():
             self.refresh_key_state()
             return
+        # kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 7: „Aufnahme starten“ hat den ganzen Text gelöscht): würde der
+        # Start noch nicht übergebenen Text verwerfen → erst fragen; der Stand wird gemerkt (Rückgängig-Knopf).
+        # Merge 3.20.0: steht rechts ein Befund, ergänzt das Diktat ihn seit 3.19.16 (nichts geht verloren) → keine Frage
+        if aktion == "start" and not basis and not self._maske_aktiv() and self._start_verwirft_text() \
+                and self._einfuege_ziel_ermitteln() is None:
+            if not messagebox.askyesno("Aufnahme starten",
+                                       "Links/rechts steht noch Text, der nicht an CAS übergeben ist.\n\n"
+                                       "Neue Aufnahme starten und den Text ersetzen?\n"
+                                       "(„↶ Rückgängig“ holt ihn danach zurück.)"):
+                log("[RECORD] Start abgebrochen – vorhandener Text bleibt")
+                return
+            self._stand_merken()
         if not speech_client:
             if not init_google_speech():
                 messagebox.showerror("Fehler", "Google Cloud Speech-to-Text konnte nicht initialisiert werden. Bitte prüfen Sie Ihre Credentials (JSON-Datei) und die Internetverbindung.")
@@ -2676,6 +2697,78 @@ class RaKScribeApp(ctk.CTk):
         an = self.nur_text_aktiv()
         einstellung_schreiben("nur_text", an)
         log(f"[MODUS] Nur Text {'an' if an else 'aus'}")
+        self._nur_text_anzeige()
+
+    NUR_TEXT_AN = "⚠ NUR TEXT AN – kein Befund"
+
+    def _nur_text_anzeige(self):
+        """kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 57: „Nur Text“ blieb seit 07:37 an, alle Folgediktate ohne
+        Befund): solange an, steht der Schalter deutlich in Bernstein „⚠ NUR TEXT AN – kein Befund“."""
+        sw = getattr(self, "nur_text_switch", None)
+        if sw is None:
+            return
+        try:
+            an = self.nur_text_aktiv()
+            sw.configure(text=self.NUR_TEXT_AN if an else "Nur Text", text_color=WARN_AMBER if an else TEXT_PRIMARY)
+        except Exception:
+            pass
+
+    def _stand_merken(self):
+        """Diktat + Befund vor dem Löschen merken (Rückgängig-Knopf); nur wenn etwas dasteht."""
+        try:
+            d = self.transcript_text.get("1.0", "end-1c")
+            b = self.result_text.get("1.0", "end-1c")
+        except Exception:
+            return
+        if (d.strip() or b.strip()) and not self._nur_geruest():
+            self._letzter_stand = (d, b)
+            btn = getattr(self, "rueckgaengig_btn", None)
+            if btn is not None:
+                btn.configure(state="normal")
+            log(f"[UI] Stand gemerkt (Diktat {len(d)} / Befund {len(b)} Zeichen) – Rückgängig möglich")
+
+    def rueckgaengig(self, _evt=None):
+        """Letzten Stand (Diktat links, Befund rechts) zurückholen – nur, wenn gerade nichts läuft."""
+        st = getattr(self, "_letzter_stand", None)
+        if not st or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            return False
+        d, b = st
+        self.transcript_text.delete("1.0", "end")
+        self.transcript_text.insert("1.0", d)
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", b)
+        self.final_transcript = d
+        self._befund_wartet, self._gesendet = bool(b.strip()), False
+        self._letzter_stand = None
+        btn = getattr(self, "rueckgaengig_btn", None)
+        if btn is not None:
+            btn.configure(state="disabled")
+        log("[UI] Rückgängig: letzter Stand wiederhergestellt")
+        self._kurzhinweis("Letzter Stand wiederhergestellt", 5000)
+        return True
+
+    def _start_verwirft_text(self):
+        """Ginge beim Aufnahme-Start nicht übergebener Text verloren? Nur wenn das nächste Diktat einen NEUEN Befund
+        beginnt (rechts leer bzw. unberührter Fehlstand, 3.19.16 befundfeld.modus) und links/rechts noch Text steht."""
+        try:
+            rechts = self.result_text.get("1.0", "end-1c").strip()
+        except Exception:
+            return False
+        fehl = (getattr(self, "_fehl_stand", None) or "").strip()
+        if rechts and not self._nur_geruest() and not (fehl and rechts == fehl):
+            return False            # Ergänzung: der stehende Befund bleibt Zeichen für Zeichen
+        if getattr(self, "_abgeschlossen", False):
+            return False            # F10 ohne CAS: schon kopiert + eingefügt (wie nach EOL)
+        return self._vorhandener_text()
+
+    def _vorhandener_text(self):
+        """Steht links/rechts Text, der noch nicht übergeben ist (kein IB-Lab-Gerüst)?"""
+        try:
+            d = self.transcript_text.get("1.0", "end-1c").strip()
+            b = self.result_text.get("1.0", "end-1c").strip()
+        except Exception:
+            return False
+        return bool((d or b) and not self._nur_geruest() and not getattr(self, "_gesendet", False))
 
     def befund_aus_text(self, _evt=None, kontrolle=False):
         """v3.6.0 (Peter 07.10.): getippten/eingefügten Text im Diktat-Feld ohne Aufnahme zu einem strukturierten
@@ -2762,6 +2855,8 @@ class RaKScribeApp(ctk.CTk):
                 if erg.leer:
                     self.after(0, lambda: self._ende_kein_text(gen))
                     return
+                # kaiscribe-georg-2011-n1 (RH 7: keine Lauf-Datei): auch der Nur-Text-Lauf wird sofort gesichert
+                self._lauf_protokollieren(erg, self.final_transcript, None)
                 if not self._job.aktuell(gen):
                     log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingefügt.")
                     return
@@ -3332,7 +3427,7 @@ class RaKScribeApp(ctk.CTk):
         """v3.18.4 (Peter 12.11.2026, RH 38): womit dieser Befund entstand — geht bei EOL in „fertig“ an die Brücke
         (Merkdatei <Nr>.rakscribe.json auf X:), nie ins Protokoll."""
         try:
-            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
+            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis or _ibl.frog_ohne_diagnose(b)] if ibl else []
             zeilen = len(erg.ibl.zeilen) if getattr(erg, "ibl", None) is not None else 0
             self._cas_nachvollzug = _cas.nachvollzug(
                 stt_roh, erg.raw, _modell_name(), br.prompt_version(INITIAL_PROMPT_CONTENT), PROMPT_QUELLE,
@@ -3348,7 +3443,7 @@ class RaKScribeApp(ctk.CTk):
         auch nach dem Masken-Befund (INS), dann mit „maske“ = Art (screening/…), sonst gleiches Format."""
         try:
             a = getattr(self, "_cas", None)
-            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis] if ibl else []
+            module = [b.label for b in ibl.bausteine if b.befundteil or b.ergebnis or _ibl.frog_ohne_diagnose(b)] if ibl else []
             zeilen = len(erg.ibl.zeilen) if getattr(erg, "ibl", None) is not None else 0
             nv = _cas.nachvollzug(stt_roh, erg.raw, _modell_name(), br.prompt_version(INITIAL_PROMPT_CONTENT),
                                   PROMPT_QUELLE, _vorlagen_stand(), erg.vorlagen, module, zeilen, app_version())
@@ -3416,6 +3511,7 @@ class RaKScribeApp(ctk.CTk):
         e = _ibl.geruest(self._ibl_bausteine(), list(a.leistungen or []), RADIOLOGY_TEMPLATES)
         if e is None:
             return False
+        e.report = _ibl.anmerkung_absetzen(e.report)   # kaiscribe-georg-2011-n1 (Punkt 9): „Anmerkung: …“-Block
         if self._nur_geruest() and e.report.strip() == (self._ibl_geruest_text or "").strip():
             return True
         neu = not frei
@@ -3579,6 +3675,7 @@ class RaKScribeApp(ctk.CTk):
         e = _ibl.einsetzen(self.result_text.get("1.0", "end-1c"), offen,
                            diktat=self.final_transcript or self.transcript_text.get("1.0", "end-1c"),
                            cas_leistungen=list(a.leistungen or []), templates=RADIOLOGY_TEMPLATES, entfernen=alte)
+        e.report = _ibl.anmerkung_absetzen(e.report)   # kaiscribe-georg-2011-n1 (Punkt 9)
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", e.report)
         self._ibl_im_befund = {**(getattr(self, "_ibl_im_befund", {}) or {}), **e.behandelt}
@@ -3647,6 +3744,19 @@ class RaKScribeApp(ctk.CTk):
             self._kurzhinweis(f"Neues CAS-Diktat {a.nr} abgelehnt – erst {self._cas.nr} mit EOL abschließen "
                               "oder im Band abbrechen", 10000)
             return
+        # kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 23): Fall heute schon diktiert (Lauf-Datei da) → Warnung +
+        # Bestätigung; „Nein“ gibt den Auftrag an die Brücke zurück
+        frueher = [] if (self._cas is not None and self._cas.nr == a.nr) else \
+            _cas.heute_diktiert(getattr(CFG, "lauf_ordner", _cas.LAUF_ORDNER_STANDARD), a.nr)
+        if frueher:
+            log(f"[CAS] Auftrag {a.nr}: heute schon diktiert ({len(frueher)} Lauf-Datei(en))")
+            uhr = frueher[-1][len(a.nr) + 10:len(a.nr) + 16]          # <Nr>_<JJJJMMTT>-<hhmmss>.json
+            if not messagebox.askyesno("Bereits diktiert",
+                                       f"Fall {a.nr} wurde heute schon diktiert ({len(frueher)}× – zuletzt "
+                                       f"{uhr[:2]}:{uhr[2:4]} Uhr).\n\nTrotzdem noch einmal diktieren?"):
+                k.antworten(a, "abgelehnt", grund="bereits diktiert")
+                self._kurzhinweis(f"CAS-Diktat {a.nr} zurückgegeben – heute schon diktiert", 10000)
+                return
         if e == "ersetzen":
             k.antworten(self._cas, "ersetzt", grund=f"neuer Auftrag {a.nr}")
         laeuft = self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING)
@@ -3662,6 +3772,12 @@ class RaKScribeApp(ctk.CTk):
         self._cas, self._cas_test = a, False
         self._cas_aufnahmen = [self._aufnahme] if (inhalt and self._aufnahme is not None) else []
         k.antworten(a, "angenommen")
+        if self.nur_text_aktiv() and not laeuft:   # kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 5, RH 57)
+            self.nur_text_var.set(False)
+            self._nur_text_umgeschaltet()
+            log("[MODUS] Nur Text beim neuen CAS-Auftrag ausgeschaltet")
+            self.after(300, lambda: self._kurzhinweis("„Nur Text“ war an – für das neue CAS-Diktat ausgeschaltet "
+                                                      "(strukturierter Befund)", 8000))
         log(f"[CAS] Auftrag {a.nr} ({a.benutzer or '-'}) angenommen" + (" – Diktat läuft bzw. Text steht schon da"
                                                                          if inhalt else ""))
         self._cas_band_zeigen()
@@ -3862,6 +3978,7 @@ class RaKScribeApp(ctk.CTk):
             self._kurzhinweis("IB-Lab-Werte eben eingefügt – bitte prüfen, dann EOL noch einmal", 6000)
             return
         self._ibl_eol_ok = False
+        text = _cas.titel_sichern(text)   # kaiscribe-georg-2011-n1 (RH 67): Titel auch ohne „## “ als Überschrift
         pcm = self._cas_pcm()
         self._ibl_eol_pruefen(text)
         try:
@@ -4456,7 +4573,7 @@ class RaKScribeApp(ctk.CTk):
                 diktat = " ".join(f.roh for f in m.felder if f.roh)
                 einsatz = _ibl.einsetzen(report, ibl.bausteine, segmente=[report], diktat=diktat,
                                          cas_leistungen=ibl.cas_leistungen, templates=RADIOLOGY_TEMPLATES)
-                report = einsatz.report
+                report = einsatz.report = _ibl.anmerkung_absetzen(einsatz.report)   # Punkt 9
             log(f"[MASKE] Befund: {len(report)} Zeichen, KI-Korrektur {n_ki} Feld(er), Hinweise {len(b.hinweise)}")
         except Exception as e:
             log_exception("[MASKE] Befund aus der Maske")

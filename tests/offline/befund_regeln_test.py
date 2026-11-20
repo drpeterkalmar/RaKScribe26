@@ -76,6 +76,13 @@ for c in W["befunde"]:
 for c in W["prompt"]:
     g = br.widerspruch_prompt(br.widerspruch_befunde(c["diktat"]), TPL[c["vorlage"]]["body"])
     check(g == c["out"], f"wid-prompt: {c['diktat']!r}", g)
+for c in F["georg_2011"]["faelle"]:   # kaiscribe-georg-2011-n1 (Georg 20.11.2026): Grundregeln
+    g = br.grundregeln(c["in"], c["diktat"], TPL)[0]
+    check(g == c["out"], f"georg_2011: {c['name']}", g)
+    check(br.grundregeln(g, c["diktat"], TPL)[0] == g, f"georg_2011 zweimal gleich: {c['name'][:50]}", "nicht idempotent")
+for c in F["rho"]["ans_ende"]:   # kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund am Schluss
+    g = br.rho_ans_ende(c["in"])
+    check(g == c["out"], f"rho ans Ende: {c['in'][:30]!r}", g)
 for c in F["abschnitte"]["faelle"]:   # v3.18.13 (Peter 14.11.2026, #314): Abschnittsprüfung
     g = br.abschnitte_bereinigen(c["in"], c["diktat"], TPL)[0]
     check(g == c["out"], f"abschnitte: {c['name']}", g)
@@ -150,8 +157,8 @@ check(sys_exe is not None and sys_exe == sys_web, "systemInstruction EXE == Web"
 
 print("── SYNC: gemeinsame Daten (Umbau Schritt 20, Gutachten P2-2/P2-13)")
 PH = json.loads((ROOT / "phrases.json").read_text())
-check({"chirp", "medical_exe", "medical_web"} <= set(PH) and (len(PH["chirp"]), len(PH["medical_exe"]), len(PH["medical_web"])) == (68, 292, 565),
-      "phrases.json: chirp 68, medical_exe 292, medical_web 565", {k: len(v) for k, v in PH.items() if k != "_doc"})
+check({"chirp", "medical_exe", "medical_web"} <= set(PH) and (len(PH["chirp"]), len(PH["medical_exe"]), len(PH["medical_web"])) == (79, 292, 565),
+      "phrases.json: chirp 79, medical_exe 292, medical_web 565", {k: len(v) for k, v in PH.items() if k != "_doc"})
 check(len(set(PH["medical_web"])) == len(PH["medical_web"]) and len(set(PH["chirp"])) == len(PH["chirp"]), "Phrasenlisten ohne Doppelte (Web/chirp)")
 stt_py = (ROOT / "source_code/stt.py").read_text()
 stt_ts = (ROOT / "web_app/src/stt.ts").read_text()

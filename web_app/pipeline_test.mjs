@@ -141,8 +141,8 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   await transcribeAudio(wav, false, { sttKey, phrasen });
   const chirp = gesendet[0].body.config.adaptation.phraseSets[0].inlinePhraseSet.phrases;
   const chunk = gesendet[1].body.config.speechContexts[0];
-  check(chirp.map(p => p.value).join('|') === PHR.chirp.join('|') && chirp.every(p => p.boost === 10) && PHR.chirp.length === 68,
-        'chirp_3: PhraseSet = phrases.json chirp (68, Boost 10)');
+  check(chirp.map(p => p.value).join('|') === PHR.chirp.join('|') && chirp.every(p => p.boost === 10) && PHR.chirp.length === 79,
+        'chirp_3: PhraseSet = phrases.json chirp (79, Boost 10)');
   check(chunk.phrases.join('|') === PHR.medical_web.join('|') && chunk.boost === 15 && new Set(chunk.phrases).size === chunk.phrases.length,
         '6-s-Chunk: speechContexts = phrases.json medical_web (ohne Doppelte, Boost 15)');
 }

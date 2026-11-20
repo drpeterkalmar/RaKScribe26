@@ -114,7 +114,7 @@ check("… dazu jetzt ein klarer Hinweis auf die veraltete Brücke", any("Brück
       for h in I.anzeige_hinweise(I.aus_liste([ALT]))), I.anzeige_hinweise(I.aus_liste([ALT])))
 
 SOLL_BEFUND = (KLEINZEHE + " Das Fußgewölbe ist regulär ausgebildet. Mineralgehalt und Knochenstruktur sind regelrecht.")
-SOLL_ERG = f"Digitus quintus varus beidseits.\n{SCHLUSS}"
+SOLL_ERG = f"Digitus quintus varus beidseits.\n\n{I.ANMERKUNG}{SCHLUSS}"   # Punkt 9 (Georg 20.11.2026): „Anmerkung: …“-Block
 neu = lauf([NEU], "fuss2")
 check("neue Brücke, KI schreibt „Das Fußskelett ist beidseits nach Form …“: Satz ersetzt (nicht am Ende angehängt)",
       befund_teil(neu.report).startswith(SOLL_BEFUND) and "ist beidseits nach Form" not in neu.report

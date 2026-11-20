@@ -171,7 +171,7 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
             return out
         out = br.widersprueche_bereinigen(out, seg)[0]                                    # v3.15.5
         out = br.kurzsaetze_sichern(br.abschnitte_bereinigen(out, seg, ctx.templates)[0], seg)[0]   # v3.18.13, v3.16.6
-        return _kl_waechter(out, seg, template_key, ctx)
+        return _grundregeln(_kl_waechter(out, seg, template_key, ctx), seg, ctx)
     template_key = wahl.vorlage if wahl is not None else detect.detect_template(seg, ctx.templates)
     template_data = ctx.templates.get(template_key) or ctx.templates["allgemein"]  # templates.json enthält „allgemein“
     bds = cv.beidseits(wahl)   # v3.15.4 (Peter 15.10.): CAS-Leistung beidseits → Befund IMMER beidseitig
@@ -221,6 +221,19 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     if not normal:   # v3.18.4: Bypass (Vorlage ohne KI) braucht keinen K&L-Wächter
         seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else ""
         out = _kl_waechter(out, seg, template_key, ctx, seite, behalten=koala)
+    if template_key == KOMBI_BECKEN_HUEFTE and wahl is not None and wahl.leistung is not None \
+            and wahl.leistung.seite in ("rechts", "links"):   # RH 49: Seite der Hüfte laut CAS in die Überschrift
+        out = re.sub(r"(?m)^## Beckenübersicht und Hüfte(?: in 2 Ebenen)?[ \t]*$",
+                     f"## Beckenübersicht und Hüfte {wahl.leistung.seite}", out)
+    return _grundregeln(out, seg, ctx)
+
+
+def _grundregeln(out, diktat, ctx):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026): Befund nie mit „Im Übrigen/Ansonsten“, widersprechende Normalsätze zu
+    diktierter/KI-Pathologie weg, KI-Hinweise nie im Ergebnis, SI-Gelenksarthrose, Wirbelsäule ohne K&L (Sync: pipeline.ts)."""
+    out, aend = br.grundregeln(out, diktat, ctx.templates)
+    if aend:
+        ctx.log(f"[GRUNDREGEL] {len(aend)} Korrektur(en): " + " · ".join(a[:50] for a in aend))
     return out
 
 
@@ -275,7 +288,9 @@ def ibl_anwenden(erg, ctx):
         return erg
     erg.ibl = iblb.einsetzen(erg.report, ctx.ibl.bausteine, segmente=erg.segmente, diktat=erg.raw,
                             cas_leistungen=ctx.ibl.cas_leistungen, templates=ctx.templates)
-    erg.report = erg.ibl.report
+    # kaiscribe-georg-2011-n1: IB-Lab-Texte (HIPPO-Beckenschiefstand, SQUIRREL-Cobb) zählen wie diktierte Befunde
+    # Punkt 9: „Anmerkung: …“-Block; Punkt 35: kein „Varisierung“ bei regelrechter LAMA-Achse
+    erg.report = iblb.anmerkung_absetzen(iblb.lama_achsworte(_grundregeln(erg.ibl.report, "", ctx)))
     ctx.log("[IBL] eingesetzt: " + (", ".join(f"{m} → {t}" for m, t in erg.ibl.zuordnung.items()) or "nichts")
             + f" · {len(erg.ibl.zeilen)} Zeile(n) · {len(erg.ibl.hinweise)} Hinweis(e)")
     return erg
@@ -309,18 +324,55 @@ def cas_wahlen(segmente, ctx):
                                                                         and not br.has_pathology(cv.kopf(ss[0][1]))))):
             w = cv.Wahl(ziel.vorlage, "inhalt", ziel, w.erkannt)
         wahlen.append(w)
-    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise
+    segmente, wahlen, inhalt_hinweise = _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx)
+    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise + _strahl_hinweise(segmente, wahlen)
     if inhalt_hinweise:   # Protokoll ohne Diktatinhalt (Umbau Schritt 23): nur die Zahl
         ctx.log(f"[CAS] {len(inhalt_hinweise)} Prüfzeile(n) zur Satz-Zuordnung")
     # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
     segmente, wahlen, f_log = cv.funktion_ergaenzen(segmente, wahlen, ctx.cas, ctx.templates)
-    for z in f_log:
+    # kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 84/77/37): nicht diktierte CAS-Untersuchung → eigener Normalbefund
+    segmente, wahlen, hinweise, n_log = cv.nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, ctx.cas, ctx.templates)
+    for z in f_log + n_log:
         ctx.log("[CAS] " + z)
     for i, w in enumerate(wahlen, 1):
         ctx.log(f"[CAS] Abschnitt {i}/{len(wahlen)}: Vorlage {w.vorlage} ({w.art}"
                 + (f", Diktat allein: {w.erkannt}" if w.erkannt and w.erkannt != w.vorlage else "")
                 + (f", CAS {w.leistung.kurz}" if w.leistung else "") + ")")
     return segmente, wahlen, hinweise
+
+
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 22, RH 93): CAS-Kürzel nur „Zehe“/„Finger“ ohne Nummer – fehlt die
+# Nummer auch im Diktat, wird sie nie geraten: rote Prüfzeile
+_STRAHL = re.compile(r"(?<![a-zäöüß])(?:dig(?:itus)?\.?\s*)?(?:i{1,3}|iv|v|[1-5])(?![a-zäöüß0-9])|daumen|großzeh|grosszeh|"
+                     r"kleinzeh|zeigefinger|mittelfinger|ringfinger|kleinfinger|hallux|digitus", re.I)
+STRAHL_FEHLT = "{name}: Nummer (I–V) nicht diktiert – bitte im Befund ergänzen (wird nicht geraten)"
+
+
+def _strahl_hinweise(segmente, wahlen):
+    out = []
+    for seg, w in zip(segmente, wahlen):
+        if w.vorlage in ("zehe_in_2_ebenen", "finger_in_2_ebenen") and not _STRAHL.search(br.rho_erkennen(seg)[0]):
+            out.append(STRAHL_FEHLT.format(name="Zehe" if w.vorlage.startswith("zehe") else "Finger"))
+    return out
+
+
+KOMBI_BECKEN_HUEFTE = "beckenübersicht_und_hüfte"
+_BECKEN_FAMILIE = {"beckenübersicht_stehend", "hüftgelenk_in_2_ebenen", KOMBI_BECKEN_HUEFTE}
+
+
+def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):
+    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 26, RH 49: „Beckenübersicht und Hüftgelenk rechts“ → zwei Befunde,
+    Titel/Seite falsch): wählt ein Abschnitt die Kombi-Vorlage Becken + Hüfte (v3.18.7) und gehören alle Abschnitte zu
+    Becken/Hüfte, bleibt es EIN Befund mit der Kombi-Vorlage; die Seite kommt von der Hüft-Leistung laut CAS."""
+    if not any(w.vorlage == KOMBI_BECKEN_HUEFTE for w in wahlen) or not all(w.vorlage in _BECKEN_FAMILIE for w in wahlen):
+        return segmente, wahlen, inhalt_hinweise
+    if len(segmente) < 2:            # ein Abschnitt mit der Kombi-Vorlage deckt beide CAS-Leistungen
+        return segmente, wahlen, [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
+    huefte = next((w.leistung for w in wahlen if w.leistung is not None and w.leistung.seite), None) or \
+        next((l for l in ctx.cas.alle if l.vorlage == "hüftgelenk_in_2_ebenen"), None)
+    ctx.log(f"[CAS] Becken + Hüfte: {len(segmente)} Abschnitte → ein Befund mit der Kombi-Vorlage")
+    return [" ".join(s.strip() for s in segmente)], [cv.Wahl(KOMBI_BECKEN_HUEFTE, "kombi", huefte, KOMBI_BECKEN_HUEFTE)], \
+        [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
 
 
 def befund_aus_diktat(diktat, ctx, beim_start=None):
@@ -360,6 +412,7 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             ausnahmen.append(e)
             teile.append(e)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
+    report = br.rho_ans_ende(report)   # kaiscribe-georg-2011-n1 (Georg 20.11., Punkt 19): Rho-Befund immer am Schluss
     return ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
                                  cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx)
 
