@@ -1263,8 +1263,15 @@
    "pruefwort": {
     "radiology_prompt.txt": [
      "KNIE BEIDSEITS: Im Ergebnis IMMER zuerst die rechte Seite"
+    ],
+    "source_code/befund_regeln.py": [
+     "_KNIE_BDS_TITEL = re.compile(r\"knie[a-zäöüß]*.*(?:beidseit|bds)\", re.I)"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const KNIE_BDS_TITEL = /knie[a-zäöüß]*.*(?:beidseit|bds)/iu;"
     ]
-   }
+   },
+   "notiz": "3.20.2 (Abnahme 21.11.2026 am Testpatienten: KI schrieb links zuerst): deterministisch in grundregeln (EXE = Web), Fixture georg_2011 „33 …“."
   },
   {
    "id": "georg-si-gelenksarthrose",
@@ -1501,6 +1508,21 @@
    "pruefwort": {
     "source_code/pipeline.py": [
      "STRAHL_FEHLT = \"{name}: Nummer (I–V) nicht diktiert – bitte im Befund ergänzen (wird nicht geraten)\""
+    ]
+   }
+  },
+  {
+   "id": "widerspruch-andere-seite",
+   "titel": "Widerspruchs-Wächter: ein Normalsatz, der ausdrücklich die ANDERE Seite nennt („Rechts sind die Gelenkflächen normal …“ bei Gonarthrose links), wird nicht eingeschränkt (kein „Im Übrigen sind Rechts …“)",
+   "quelle": "Abnahme 3.20.1 am Testpatienten 451898, 21.11.2026 (kaiscribe-georg-2011-abnahme)",
+   "datum": "2026-11-21",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def wid_seite(t):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function widSeite(t: string): string {"
     ]
    }
   }

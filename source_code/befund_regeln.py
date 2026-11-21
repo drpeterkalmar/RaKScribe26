@@ -668,6 +668,9 @@ def widerspruch_befunde(diktat, daten=None):
                 out.append({"id": k["id"], "name": k["name"], "phrase": _wid_phrase(roh, m.start()) or roh,
                             "gruppen": sorted(eigene | set(k.get("gruppen") or [])),
                             "global": bool(k.get("global")) or not (eigene | set(k.get("gruppen") or []))})
+                sd = wid_seite(t)
+                if sd:
+                    out[-1]["seite"] = sd
                 break
     return out
 
@@ -747,6 +750,7 @@ def widerspruch_saetze(text, befunde, daten=None):
         if any(_beschreibt(s, kat[x["id"]], c) for x in befunde if x["id"] in kat):
             continue                                   # beschreibt den Befund selbst (Pathologie-Satz)
         sg = _wid_gruppen(s, c)
+        ss = wid_seite(s)
         ids = []
         for x in befunde:
             k = kat.get(x["id"])
@@ -758,7 +762,7 @@ def widerspruch_saetze(text, befunde, daten=None):
                 if rx and rx[0].search(s) and not (rx[1] is not None and rx[1].search(s)):
                     treffer = True
                     break
-            if treffer and _wid_betrifft(sg, x):
+            if treffer and _wid_betrifft(sg, x) and not (x.get("seite") and ss and ss != x["seite"]):
                 ids.append(x["id"])
         if ids:
             out.append((a, b, ids))
@@ -766,6 +770,20 @@ def widerspruch_saetze(text, befunde, daten=None):
 
 
 _WID_GENERISCH = {"gelenk", "weichteile"}
+# 3.20.2 (Abnahme 21.11.2026, Knie beidseits: „links geringe Gonarthrose“ – die KI schrieb richtig „Rechts sind die
+# Gelenkflächen normal …“, der Wächter machte daraus „Im Übrigen sind Rechts …“): ein Normalsatz, der ausdrücklich die
+# ANDERE Seite nennt, widerspricht einem Befund mit Seite nicht.
+_WID_RECHTS = re.compile(r"(?<![a-zäöüß])rechts(?:seitig[a-zäöüß]*)?(?![a-zäöüß])|(?<![a-zäöüß])rechte[nrsm]?(?![a-zäöüß])", re.I)
+_WID_LINKS = re.compile(r"(?<![a-zäöüß])links(?:seitig[a-zäöüß]*)?(?![a-zäöüß])|(?<![a-zäöüß])linke[nrsm]?(?![a-zäöüß])", re.I)
+_WID_BEIDE = re.compile(r"(?<![a-zäöüß])(?:beidseit[a-zäöüß]*|bds|beide[nrsm]?)(?![a-zäöüß])", re.I)
+
+
+def wid_seite(t):
+    """„rechts“ | „links“ | "" (keine bzw. beide Seiten genannt)."""
+    r, l = bool(_WID_RECHTS.search(t or "")), bool(_WID_LINKS.search(t or ""))
+    if r == l or _WID_BEIDE.search(t or ""):
+        return ""
+    return "rechts" if r else "links"
 
 
 def _wid_betrifft(sg, befund):
@@ -787,7 +805,7 @@ _WID_KLEIN = re.compile(r"^(?:normale?[rsnm]?|normal|regelrechte?[rsnm]?|regelre
                         r"anatomisch[a-zäöüß]*|ordnungsgemäße?[rsnm]?|keine?[rsnm]?|kein|unauffällige?[rsnm]?|"
                         r"altersentsprechende?[rsnm]?|symmetrische?[rsnm]?|achsengerechte?[rsnm]?|allseits|"
                         r"harmonische?[rsnm]?|regulär[a-zäöüß]*|intakte?[rsnm]?|"
-                        r"gute?[rsnm]?|erhaltene?[rsnm]?|beide[rn]?|die|der|das|den|dem|des|eine?[rsnm]?|sie|es)$", re.I)
+                        r"gute?[rsnm]?|erhaltene?[rsnm]?|beide[rn]?|die|der|das|den|dem|des|eine?[rsnm]?|sie|es|rechts|links)$", re.I)
 
 
 def _klein_anfang(t):
@@ -1684,6 +1702,16 @@ _KOMBI_TITEL = re.compile(r"^## Beckenübersicht und Hüfte (rechts|links)(?: in
 KOMBI_TITEL = "## Becken sowie Hüftgelenk in 2 Ebenen {seite}"
 
 
+_KNIE_BDS_TITEL = re.compile(r"knie[a-zäöüß]*.*(?:beidseit|bds)", re.I)
+_ANMERKUNG_ZEILE = re.compile(r"^(?:Anmerkung:|Weitere Winkelmessungen|HKA = |LCE = )")
+
+
+def _seiten_rang(z):
+    """Ergebnispunkt → 0 nur rechts, 1 beide/keine Seite, 2 nur links (stabil sortiert)."""
+    sd = wid_seite(z)
+    return 0 if sd == "rechts" else 2 if sd == "links" else 1
+
+
 def grundregeln(report, diktat="", templates=None):
     """→ (report, Änderungen). Siehe Kopf dieses Abschnitts."""
     if not report or "## " not in report:
@@ -1734,6 +1762,18 @@ def grundregeln(report, diktat="", templates=None):
                 zeilen[i] = re.sub(r"(?<![\wäöüß])Skoliose(?![\wäöüß])", "skoliotische " + skol.group(1).capitalize(), z)
                 aend.append(f"diktierte Abstufung: {zeilen[i].strip()[:60]}")
                 erg = True
+    # 33 (Georg 20.11.2026, Abnahme 21.11.: KI schrieb links vor rechts): Knie beidseits – im Ergebnis rechts zuerst
+    for a, e in _abschnitt(zeilen, "ergebnis"):
+        if not _KNIE_BDS_TITEL.search(_titel_vor(zeilen, a - 1)):
+            continue
+        idx = [i for i in range(a, e) if zeilen[i].strip() and not _ANMERKUNG_ZEILE.match(zeilen[i].strip())]
+        alt = [zeilen[i] for i in idx]
+        neu = sorted(alt, key=_seiten_rang)
+        if neu != alt:
+            for i, z in zip(idx, neu):
+                zeilen[i] = z
+            aend.append("Knie beidseits: Ergebnis rechts zuerst")
+            erg = True
     out = "\n".join(zeilen)
     # 38: SI-Gelenksarthrose; 42: an der Wirbelsäule kein K&L-Grad
     si = _SI_ARTHROSE.sub(lambda m: "SI-Gelenksarthrose" + m.group(1), out)

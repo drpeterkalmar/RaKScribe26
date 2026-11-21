@@ -765,6 +765,12 @@
     "diktat": "Knie links. Geringgradige patellofemorale Chondrocalcinose.",
     "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Geringgradige femoropatellare Chondrokalzinose. Kein Hinweis auf freie Gelenkkörper. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige femoropatellare Chondrokalzinose links.",
     "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Geringgradige femoropatellare Chondrokalzinose. Kein Hinweis auf freie Gelenkkörper. Unauffällige Weichteile.\n\n## Ergebnis\nGeringgradige femoropatellare Chondrokalzinose links."
+   },
+   {
+    "name": "Knie beidseits: „Rechts sind die Gelenkflächen normal …“ widerspricht der Gonarthrose LINKS nicht (Abnahme 3.20.1, 21.11.2026)",
+    "diktat": "Kniegelenke beidseits: links geringe Gonarthrose, rechts zarte Fibroostose am Patellapol.",
+    "in": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Links geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Rechts zarte Fibroostose am Patellapol. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent. Rechts ist der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Zarte Fibroostose am Patellapol rechts.",
+    "out": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Links geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Rechts zarte Fibroostose am Patellapol. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent. Rechts ist der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Zarte Fibroostose am Patellapol rechts."
    }
   ],
   "einschraenken": [
@@ -1613,6 +1619,12 @@
     "diktat": "",
     "in": "## Beckenübersicht und Hüfte beidseits\n\n## Befund\nA.\n\n## Ergebnis\nB.",
     "out": "## Beckenübersicht und Hüfte beidseits\n\n## Befund\nA.\n\n## Ergebnis\nB."
+   },
+   {
+    "name": "33 Knie beidseits: Ergebnis rechts zuerst (Abnahme 3.20.1 am Testpatienten, KI schrieb links zuerst)",
+    "diktat": "Kniegelenke beidseits: links geringe Gonarthrose, rechts zarte Fibroostose am Patellapol.",
+    "in": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Links geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Rechts zarte Fibroostose am Patellapol. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent. Rechts ist der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringe Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Zarte Fibroostose am Patellapol rechts.",
+    "out": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Links geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Rechts zarte Fibroostose am Patellapol. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent. Rechts ist der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Zarte Fibroostose am Patellapol rechts.\n2. Geringe Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
    }
   ]
  }

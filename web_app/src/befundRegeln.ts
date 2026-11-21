@@ -405,7 +405,7 @@ export type WiderspruchKategorie = { id: string; name: string; muster: string; a
 export type WiderspruchDaten = { kategorien?: WiderspruchKategorie[]; merkmale?: Record<string, { muster: string; ausser?: string }>;
   strukturen?: Record<string, string>; strukturen_vorrang?: Record<string, string[]>; einschraenkung?: string; verneinung_vor?: string;
   verneinung_nach?: string; skelett?: string };
-export type WiderspruchBefund = { id: string; name: string; phrase: string; gruppen: string[]; global: boolean };
+export type WiderspruchBefund = { id: string; name: string; phrase: string; gruppen: string[]; global: boolean; seite?: string };
 type WidKat = WiderspruchKategorie & { _re: RegExp; _aus: RegExp | null; _bef: RegExp | null; _str: RegExp | null };
 type WidC = { kat: WidKat[]; merk: Record<string, [RegExp, RegExp | null]>; strukt: [string, RegExp][]; vorrang: Record<string, string[]>;
   einschraenkung: RegExp | null; verneinung_vor: RegExp | null; verneinung_nach: RegExp | null; skelett: RegExp | null };
@@ -490,8 +490,11 @@ export function widerspruchBefunde(diktat: string, d?: WiderspruchDaten): Widers
         if (c.verneinung_vor && c.verneinung_vor.test(t.slice(0, i))) continue;
         if (c.verneinung_nach && c.verneinung_nach.test(t.slice(i + m[0].length))) continue;
         const alle = new Set([...widVorrang(widGruppen(t, c), c), ...(k.gruppen || [])]);
-        out.push({ id: k.id, name: k.name, phrase: widPhrase(roh, i) || roh, gruppen: [...alle].sort(),
-          global: !!k.global || alle.size === 0 });
+        const b: WiderspruchBefund = { id: k.id, name: k.name, phrase: widPhrase(roh, i) || roh, gruppen: [...alle].sort(),
+          global: !!k.global || alle.size === 0 };
+        const sd = widSeite(t);
+        if (sd) b.seite = sd;
+        out.push(b);
         break;
       }
     }
@@ -549,6 +552,15 @@ export function saetzeMitLage(text: string): [number, number][] {
 }
 
 const WID_GENERISCH = new Set(['gelenk', 'weichteile']);
+// 3.20.2 (Abnahme 21.11.2026): Normalsatz, der ausdrücklich die ANDERE Seite nennt, widerspricht einem Befund mit Seite nicht
+const WID_RECHTS = /(?<![a-zäöüß])rechts(?:seitig[a-zäöüß]*)?(?![a-zäöüß])|(?<![a-zäöüß])rechte[nrsm]?(?![a-zäöüß])/iu;
+const WID_LINKS = /(?<![a-zäöüß])links(?:seitig[a-zäöüß]*)?(?![a-zäöüß])|(?<![a-zäöüß])linke[nrsm]?(?![a-zäöüß])/iu;
+const WID_BEIDE = /(?<![a-zäöüß])(?:beidseit[a-zäöüß]*|bds|beide[nrsm]?)(?![a-zäöüß])/iu;
+export function widSeite(t: string): string {
+  const r = WID_RECHTS.test(t || ''), l = WID_LINKS.test(t || '');
+  if (r === l || WID_BEIDE.test(t || '')) return '';
+  return r ? 'rechts' : 'links';
+}
 function widBetrifft(sg: Set<string>, b: WiderspruchBefund): boolean {
   const fg = new Set(b.gruppen);
   if (b.global || sg.size === 0) return true;
@@ -569,6 +581,7 @@ export function widerspruchSaetze(text: string, befunde: WiderspruchBefund[], d?
     if (c.einschraenkung && c.einschraenkung.test(s)) continue;
     if (befunde.some(x => kat.has(x.id) && widBeschreibt(s, kat.get(x.id)!, c))) continue;
     const sg = widGruppen(s, c);
+    const ss = widSeite(s);
     const ids: string[] = [];
     for (const x of befunde) {
       const k = kat.get(x.id);
@@ -577,7 +590,7 @@ export function widerspruchSaetze(text: string, befunde: WiderspruchBefund[], d?
         const rx = c.merk[mn];
         return !!rx && rx[0].test(s) && !(rx[1] && rx[1].test(s));
       });
-      if (treffer && widBetrifft(sg, x)) ids.push(x.id);
+      if (treffer && widBetrifft(sg, x) && !(x.seite && ss && ss !== x.seite)) ids.push(x.id);
     }
     if (ids.length) out.push([a, b, ids]);
   }
@@ -588,7 +601,7 @@ const WID_VERB = /^(?:ist|sind|zeigt|zeigen|weist|weisen|stellt|stellen|steht|st
 const WID_KLEIN = new RegExp('^(?:normale?[rsnm]?|normal|regelrechte?[rsnm]?|regelrecht|glatte?[rsnm]?|scharfe?[rsnm]?|' +
   'anatomisch[a-zäöüß]*|ordnungsgemäße?[rsnm]?|keine?[rsnm]?|kein|unauffällige?[rsnm]?|altersentsprechende?[rsnm]?|' +
   'symmetrische?[rsnm]?|achsengerechte?[rsnm]?|allseits|harmonische?[rsnm]?|regulär[a-zäöüß]*|intakte?[rsnm]?|' +
-  'gute?[rsnm]?|erhaltene?[rsnm]?|beide[rn]?|die|der|das|den|dem|des|eine?[rsnm]?|sie|es)$', 'iu');
+  'gute?[rsnm]?|erhaltene?[rsnm]?|beide[rn]?|die|der|das|den|dem|des|eine?[rsnm]?|sie|es|rechts|links)$', 'iu');
 const kleinAnfang = (t: string): string => {
   const w = t.split(' ', 1)[0];
   return WID_KLEIN.test(w.replace(/[,:]+$/u, '')) ? w.charAt(0).toLowerCase() + t.slice(1) : t;
@@ -1368,6 +1381,10 @@ const daumen = (zeilen: string[], dk: string, aend: string[]): void => {
 const KOMBI_TITEL_RE = /^## Beckenübersicht und Hüfte (rechts|links)(?: in 2 Ebenen)?[ \t]*$/u;
 export const KOMBI_TITEL = '## Becken sowie Hüftgelenk in 2 Ebenen {seite}';
 
+const KNIE_BDS_TITEL = /knie[a-zäöüß]*.*(?:beidseit|bds)/iu;
+const ANMERKUNG_ZEILE = /^(?:Anmerkung:|Weitere Winkelmessungen|HKA = |LCE = )/u;
+const seitenRang = (z: string): number => { const sd = widSeite(z); return sd === 'rechts' ? 0 : sd === 'links' ? 2 : 1; };
+
 export function grundregeln(report: string, diktat = '', templates?: VorlagenMap): [string, string[]] {
   if (!report || !report.includes('## ')) return [report, []];
   const zeilen = report.split('\n');
@@ -1415,6 +1432,19 @@ export function grundregeln(report: string, diktat = '', templates?: VorlagenMap
         aend.push(`diktierte Abstufung: ${zeilen[i].trim().slice(0, 60)}`);
         erg = true;
       }
+    }
+  }
+  // 33 (Georg 20.11.2026, Abnahme 21.11.): Knie beidseits – im Ergebnis rechts zuerst (Sync: befund_regeln.py)
+  for (const [a, e] of abschnitt(zeilen, 'ergebnis')) {
+    if (!KNIE_BDS_TITEL.test(titelVor(zeilen, a - 1))) continue;
+    const idx: number[] = [];
+    for (let i = a; i < e; i++) if (zeilen[i].trim() && !ANMERKUNG_ZEILE.test(zeilen[i].trim())) idx.push(i);
+    const alt = idx.map(i => zeilen[i]);
+    const neu = alt.map((z, k) => [z, k] as [string, number]).sort((x, y) => seitenRang(x[0]) - seitenRang(y[0]) || x[1] - y[1]).map(x => x[0]);
+    if (neu.some((z, k) => z !== alt[k])) {
+      idx.forEach((i, k) => { zeilen[i] = neu[k]; });
+      aend.push('Knie beidseits: Ergebnis rechts zuerst');
+      erg = true;
     }
   }
   let out = zeilen.join('\n');
