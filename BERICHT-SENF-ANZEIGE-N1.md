@@ -1,6 +1,6 @@
 # Bericht kaiscribe-senf-anzeige-n1 – Opus-Senf als Hinweis im KaiScribe-Fenster (nur kp), Sa 21.11.2026
 
-- **Gebaut (main, Version siehe unten):** eigene Zeile „Senf – nur Hinweis“ unter dem CAS-Band, nur für Kürzel aus
+- **Gebaut (main, Version 3.21.0):** eigene Zeile „Senf – nur Hinweis“ unter dem CAS-Band, nur für Kürzel aus
   `SENF_ANZEIGE` (Standard `kp`, `aus` = niemand). Anzeige je Status: „Senf läuft…“ (alle 15 s nachladen, max. 10 min) ·
   „Senf: unauffällig“ · Zeile(n) „RH xx · …“ · „Senf: kein Ergebnis“. Nachtrag 20.11.: markier-/kopierbar (Strg+A/Strg+C,
   Knopf „⧉ Kopieren“), schreibgeschützt, kein Einfüge-/Diktierziel; der Senf geht nie von selbst in Befund, EOL-Datei,
