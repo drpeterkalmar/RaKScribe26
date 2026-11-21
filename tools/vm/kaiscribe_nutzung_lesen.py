@@ -1,11 +1,14 @@
 """KaiScribe-Nutzung lesen (kaiscribe-sonnet-n3-beleg, 17.11.2026) — läuft auf der Automaten-VM als rakauto (X: nur lesen).
 
-  py -3.12 kaiscribe_nutzung_lesen.py [--tage JJJJ-MM-TT,…] [--ordner X:\\RaKScribe\\Daten]
+  py -3.12 kaiscribe_nutzung_lesen.py [--tage JJJJ-MM-TT,…] [--ordner X:\\KaiScribe\\Daten]
 
+Ordner (kaiscribe-umzug-n2, 21.11.2026): Standard X:\\KaiScribe\\Daten; fehlt der, Rückfall auf X:\\RaKScribe\\Daten
+(wie source_code/umzug.x_pfad). Gelesen werden <Ordner>\\laeufe und <Ordner>\\nutzung.
 Gibt nur Zähler aus, nie Befundtext, Nr oder Benutzer:
   LAUF <tag> rechner=<PC> modell=<…> kaiscribe=<Version> maske=<ja|nein> anzahl=<n> von=<HH:MM> bis=<HH:MM>
   NUTZUNG <monat> <PC> <tag> befunde=… anthropic=… gemini=… rueckfall=… usd=… chirp_s=… stream_s=… gruende=<Kat:n;…>
   TAGESBERICHT <tag> (danach die Datei wörtlich, je Zeile mit „| “ davor; sie enthält nur Zahlen/Kategorien)
+  ORDNER <gelesener Ordner>
   WARNDATEI <monat> ja|nein
   NUTZUNG_LESEN=fertig
 """
@@ -16,6 +19,9 @@ import json
 import os
 import re
 import sys
+
+ORDNER_NEU = "X:\\KaiScribe\\Daten"
+ORDNER_ALT = "X:\\RaKScribe\\Daten"
 
 SICHER = re.compile(r"[^\w./() +-]")
 
@@ -83,17 +89,28 @@ def nutzung(ordner, tage):
                 print("| " + re.sub(r"\d{6,}", "<zahl>", zeile)[:300])
 
 
+def standard_ordner(ist_ordner=os.path.isdir):
+    """X:\\KaiScribe\\Daten, sonst X:\\RaKScribe\\Daten (Übergang), sonst der neue (→ „Ordner fehlt“)."""
+    for o in (ORDNER_NEU, ORDNER_ALT):
+        if ist_ordner(o):
+            return o
+    return ORDNER_NEU
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     heute = datetime.date.today()
     ap.add_argument("--tage", default=",".join(str(heute - datetime.timedelta(days=i)) for i in (1, 0)))
-    ap.add_argument("--ordner", default="X:\\RaKScribe\\Daten")
+    ap.add_argument("--ordner", default=None,
+                    help="Datenordner (Standard %s, fehlt der: %s)" % (ORDNER_NEU, ORDNER_ALT))
     ap.add_argument("--ohne-laeufe", action="store_true")
     a = ap.parse_args(argv)
     tage = [t for t in a.tage.split(",") if re.match(r"^\d{4}-\d\d-\d\d$", t)]
+    a.ordner = a.ordner or standard_ordner()
     if not os.path.isdir(a.ordner):
         print("NUTZUNG_LESEN=fehler GRUND=Ordner fehlt")
         return 1
+    print("ORDNER %s" % re.sub(r"[\r\n]", "_", a.ordner)[:200])
     if not a.ohne_laeufe:
         laeufe(os.path.join(a.ordner, "laeufe"), tage)
     nutzung(os.path.join(a.ordner, "nutzung"), tage)

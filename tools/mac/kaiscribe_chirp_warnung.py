@@ -6,7 +6,7 @@
 Lädt tools/vm/kaiscribe_nutzung_lesen.py auf die Automaten-VM, startet es dort als rakauto (X: nur lesen, über
 C:\\RaK\\tmp\\n10_interaktiv.ps1 wie ks_kontrolle.ps1) und bekommt nur Zähler zurück (Tagesbericht, Monatszähler je PC,
 Lauf-Dateien je Rechner/Modell/Version). Warnung, wenn
-  - der Tagesbericht der EXE die Zeile „WARNUNG“ hat oder X:\\RaKScribe\\Daten\\nutzung\\warnung_<JJJJ-MM>.txt da ist, oder
+  - der Tagesbericht der EXE die Zeile „WARNUNG“ hat oder X:\\KaiScribe\\Daten\\nutzung\\warnung_<JJJJ-MM>.txt da ist, oder
   - die eigene Hochrechnung aus den Monatszählern (source_code/nutzung.py, ab dem ersten Tag mit Daten, Chirp + Live-
     Anzeige/Streaming, sobald die EXE die Live-Sekunden zählt) > 6 € liegt
     (die EXE bis 3.19.4 teilt durch den Tag des Monats und rechnet den November viel zu niedrig).
@@ -118,7 +118,7 @@ def karte_text(e):
                                                for td in d["tage"].values()) / 60) for pc, d in sorted(e["pcs"].items()))
     return ("Google-Spracherkennung %s bis %s: Chirp %.1f min (0,016 $/min) + Live-Anzeige %.1f min (0,024 $/min) ≈ "
             "%.2f €, hochgerechnet %.2f €/Monat aus %d Tagen (Grenze 6 €, Google-Gutschrift ~9 €/Monat). Je PC: %s. Befund-KI im Monat: %d Befunde über Claude, %d "
-            "Rückfälle auf Gemini. Quelle: X:\\RaKScribe\\Daten\\nutzung (Tagesbericht %s%s). Entscheiden: a) so lassen "
+            "Rückfälle auf Gemini. Quelle: X:\\KaiScribe\\Daten\\nutzung (Tagesbericht %s%s). Entscheiden: a) so lassen "
             "(Mehrkosten zahlen) b) Budget/Gutschrift prüfen c) Spracherkennung billiger (Folgejob). Keine automatische "
             "Quota-Änderung." % (e["erster"] or e["monat"] + "-01", e["tag"], e["chirp_min"], e["stream_min"], e["eur"],
                                  e["hoch_eur"], e["tage"], je_pc or "–", befunde, rf, e["tag"],

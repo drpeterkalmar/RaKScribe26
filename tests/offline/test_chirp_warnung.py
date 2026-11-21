@@ -67,6 +67,24 @@ check("Leser: Monatszähler + Rückfallgrund als Kategorie + Tagesbericht wörtl
       and "gruende=Anthropic-Ausfall (timeout):1" in aus.replace("_", " ") and "| Chirp 28.3 min" in aus
       and "WARNDATEI 2026-11 nein" in aus, aus)
 
+check("Leser: meldet den gelesenen Ordner", ("ORDNER %s" % daten) in aus, aus)
+
+# 1b) Umzug (kaiscribe-umzug-n2): Standard X:\KaiScribe\Daten, fehlt der → X:\RaKScribe\Daten
+check("Ordner: neuer Standard", kl.ORDNER_NEU == "X:\\KaiScribe\\Daten"
+      and kl.standard_ordner(lambda o: o in {kl.ORDNER_NEU, kl.ORDNER_ALT}) == kl.ORDNER_NEU)
+check("Ordner: Rückfall auf X:\\RaKScribe\\Daten", kl.standard_ordner(lambda o: o == kl.ORDNER_ALT) == kl.ORDNER_ALT)
+check("Ordner: keiner da → neuer (Fehler „Ordner fehlt“)", kl.standard_ordner(lambda o: False) == kl.ORDNER_NEU)
+gelesen = []
+_alt_std = kl.standard_ordner
+kl.standard_ordner = lambda: (gelesen.append(1), str(daten))[1]
+buf = io.StringIO()
+with redirect_stdout(buf):
+    rc = kl.main(["--tage", "2026-11-16"])
+kl.standard_ordner = _alt_std
+check("Leser ohne --ordner nimmt den Standardordner", rc == 0 and gelesen and "LAUF_KAPUTT 1" in buf.getvalue(), buf.getvalue())
+check("Mac-Texte zeigen den neuen Ordner", "X:\\KaiScribe\\Daten\\nutzung" in cw.__doc__
+      and "RaKScribe\\Daten" not in pathlib.Path(cw.__file__).read_text(encoding="utf-8"))
+
 # 2) Auswertung: 1 Tag → keine Warnung (Mindesttage), Beleg-Tabelle, alter Rechner erkannt
 e = cw.auswerten(aus, "2026-11-16")
 check("Auswertung: Chirp 28,3 min, aus 1 Tag, noch keine Warnung", abs(e["chirp_min"] - 28.34) < 0.01 and e["tage"] == 1
@@ -88,6 +106,7 @@ roh2 = roh.replace("chirp_s=60 ", "chirp_s=1500 ")
 e = cw.auswerten(roh2, "2026-11-18")
 check("eigene Hochrechnung > 6 € ab 3 Tagen → Warnung", e["warn_eigen"] and e["hoch_eur"] > 6, e["hoch_eur"])
 txt = cw.karte_text(e)
+check("Kartentext: Quelle X:\\KaiScribe\\Daten\\nutzung", "Quelle: X:\\KaiScribe\\Daten\\nutzung" in txt, txt)
 check("Kartentext: Minuten, €, Rückfälle, a/b/c, keine Quota-Änderung", "hochgerechnet" in txt and "1 Rückfälle" in txt
       and "a) so lassen" in txt and "Keine automatische Quota-Änderung" in txt, txt)
 check("noch keine Karte im Monat", not cw.karte_schon_da("2026-11"))
