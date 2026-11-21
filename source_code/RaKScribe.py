@@ -3962,8 +3962,11 @@ class RaKScribeApp(ctk.CTk):
                 zeile.pack_forget()
                 return
             n = min(4, max(1, text.count("\n") + 1))
-            box.configure(height=24 * n + 8)
-            zeile.configure(height=24 * n + 20)
+            try:                             # Höhe nur Kosmetik – darf das Zeigen nie verhindern
+                box.configure(height=24 * n + 8)
+                zeile.configure(height=24 * n + 20)
+            except Exception:
+                pass
             self._senf_nachpacken()
         except Exception:
             log_exception("[SENF] Anzeige")
