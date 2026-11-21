@@ -13,6 +13,9 @@ max. 10 min) · „Senf: unauffällig“ · Zeile(n) · „Senf: kein Ergebnis�
 „⧉ Kopieren“), sonst nie in Befund/EOL/Lauf-Datei/Zwischenablage. Keine Ablage → Zeile aus.
 
 ## Tore
+- **EXE-Release 3.21.0 ist noch NICHT gebaut** (main `bb88ae7`, GitHub `Tests` + Pages-Deploy grün; der Bau läuft nur per
+  Hand, damit „Latest“ erst mit der Abnahme kommt): `gh workflow run build-exe.yml -f version=3.21.0` (bzw. auf dem dann
+  aktuellen main-Stand mit dessen VERSION), danach `Windows UI-Test (EXE)` abwarten.
 - Tests (GitHub `Tests` grün auf dem eingespielten Commit, enthält `tests/offline/test_senf_anzeige.py`), Build EXE,
   Windows-UI-Test zur Version grün.
 - Einspielen nur nach Ordi-Schluss (Mo–Do ab 20:15, Fr ab 13:30, Wochenende). Kein Klick am Büro-PC während der Ordi.

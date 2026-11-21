@@ -9,6 +9,7 @@
   Zwilling `X:\KaiScribe\Daten\senf` wird mitgesucht. Code `source_code/senf_anzeige.py`, Fenster `RaKScribe.py` (`_senf_*`).
 - **Tests:** `tests/offline/test_senf_anzeige.py` 69/69 grün (3× hintereinander), ganze Offline-Reihe am Mac grün bis auf
   `test_cas_auftrag`/`test_maske_ablauf`, die mit /usr/bin/python3 (3.9) schon auf unverändertem main rot sind (GitHub grün).
+- **GitHub:** Tests + Pages-Deploy auf `bb88ae7` grün; EXE-Release 3.21.0 baut der Folgejob (Bau nur per Hand).
 - **Noch NICHT aktiv auf X:** Einspielen + Abnahme am Testpatienten 451898 (Feld sichtbar + CAS-Brief ohne Senf) brauchen
   den Büro-PC → Folgejob `kaiscribe-senf-anzeige-n1-einspielen` (`FOLGEJOB-KAISCRIBE-SENF-ANZEIGE-N1-EINSPIELEN.md`).
 - **Offen:** Fenster-Optik nur mit Attrappen geprüft (kein Tk am Mac, Leicht-Spur) → Screenshot beim Einspielen; erster
