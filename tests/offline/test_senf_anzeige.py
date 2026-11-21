@@ -63,6 +63,27 @@ check("lesen: halb geschriebene Datei → fehlt (beim Nachladen wieder)", senf.l
 ablage(A, "20261121003", status="fertig", befund="auffaellig", zeilen=[SENF_ZEILE])
 art, d = senf.lesen(A, "20261121003")
 check("lesen: Datei da → da + Inhalt", art == "da" and d["zeilen"] == [SENF_ZEILE])
+_ok = senf.ordner_kandidaten
+Z1, Z2 = tempfile.mkdtemp(prefix="rks_senf_z1_"), tempfile.mkdtemp(prefix="rks_senf_z2_")
+senf.ordner_kandidaten = lambda o: [Z1, Z2]
+try:
+    # Einsatzfund 21.11.: Zwilling hinkt (laeuft, älter), erster Ordner schon fertig → fertig gewinnt, in beiden Reihenfolgen
+    ablage(Z1, "20261121040", status="fertig", befund="auffaellig", zeilen=[SENF_ZEILE], zeit="2026-11-21T14:57:58")
+    ablage(Z2, "20261121040", status="laeuft", zeit="2026-11-21T14:48:52")
+    ablage(Z2, "20261121041", status="fertig", befund="auffaellig", zeilen=[SENF_ZEILE], zeit="2026-11-21T14:57:58")
+    ablage(Z1, "20261121041", status="laeuft", zeit="2026-11-21T14:48:52")
+    check("lesen: Zwilling hinkt (laeuft) → jüngstes Ergebnis (fertig) gewinnt, egal welcher Ordner",
+          senf.lesen("x", "20261121040")[1]["status"] == "fertig" and senf.lesen("x", "20261121041")[1]["status"] == "fertig")
+    ablage(Z1, "20261121042", status="laeuft", zeit="2026-11-21T10:00:00")
+    ablage(Z2, "20261121042", status="fertig", befund="unauffaellig", zeit="2026-11-21T10:00:00")
+    check("lesen: gleiche Zeit → fertig vor laeuft", senf.lesen("x", "20261121042")[1]["status"] == "fertig")
+    with open(os.path.join(Z1, "20261121043.json"), "w") as f:
+        f.write('{"v": 1, "nr": "2026')
+    ablage(Z2, "20261121043", status="fertig", befund="unauffaellig")
+    check("lesen: halb geschriebene Datei im einen Ordner, gute im anderen → da",
+          senf.lesen("x", "20261121043")[0] == "da")
+finally:
+    senf.ordner_kandidaten = _ok
 vorher = sorted(os.listdir(A)), os.path.getmtime(os.path.join(A, "20261121003.json"))
 senf.lesen(A, "20261121003")
 check("lesen schreibt/löscht nichts in der Ablage",

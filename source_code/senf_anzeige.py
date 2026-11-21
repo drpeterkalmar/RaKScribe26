@@ -81,6 +81,8 @@ def lesen(ordner, nr, ist_ordner=os.path.isdir, oeffnen=open):
     if not _NR.match(nr):
         return "aus", None
     gefunden = False
+    treffer = []                          # alle lesbaren Dateien (Ordner + Zwilling), das jüngste Ergebnis gewinnt
+    kaputt = False
     for o in ordner_kandidaten(ordner):
         try:
             if not ist_ordner(o):
@@ -99,9 +101,19 @@ def lesen(ordner, nr, ist_ordner=os.path.isdir, oeffnen=open):
         try:
             d = json.loads(roh)
         except ValueError:
-            return "fehlt", None          # wird gerade geschrieben → beim nächsten Nachladen wieder
+            kaputt = True                 # wird gerade geschrieben → beim nächsten Nachladen wieder
+            continue
         if isinstance(d, dict) and str(d.get("nr") or nr) == nr:
-            return "da", d
+            treffer.append(d)
+    if treffer:
+        # Die VM spiegelt in den Zwilling mit Verzögerung (kaiscribe-senf-anzeige-n1-einspielen, 21.11.: Zwilling stand
+        # 1 min auf „laeuft“, der erste Ordner schon auf „fertig“) → nicht „erster Ordner gewinnt“, sondern jüngste
+        # „zeit“ (ISO-Text, vergleichbar), bei Gleichstand „fertig“ vor „laeuft“.
+        def rang(d):
+            return (str(d.get("zeit") or ""), 1 if str(d.get("status") or "").strip().lower() == FERTIG else 0)
+        return "da", max(treffer, key=rang)
+    if kaputt:
+        return "fehlt", None
     return ("fehlt" if gefunden else "aus"), None
 
 
