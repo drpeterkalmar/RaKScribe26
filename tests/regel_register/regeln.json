@@ -1540,6 +1540,22 @@
      "function stellungVor(text: string, spans: [number, number][]): [string, string] {"
     ]
    }
+  },
+  {
+   "id": "gws-ap-beschriftung",
+   "titel": "GWS a.p.: Beschriftung „Wirbelsäule:“ bleibt (KI ließ sie weg); SQUIRREL ersetzt „Normale Stellung.“ auch ohne Beschriftung (nie Skoliose-Satz + „Normale Stellung.“); diktierte Skoliose bleibt „Skoliose“ (nicht „Seitausbiegung“)",
+   "quelle": "Abnahme 3.20.4 am Testpatienten 451898, 21.11.2026 (#459 A/B/C, kaiscribe-georg-2011-abnahme)",
+   "datum": "2026-11-21",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_GWS_AP_TITEL = re.compile(r\"ganzaufnahme der wirbelsäule a\\.?-?p\", re.I)",
+     "_SEITAUSBIEGUNG = re.compile("
+    ],
+    "source_code/ibl_bausteine.py": [
+     "_SQ_GWS = re.compile(r\"(?m)(?:(?<=Wirbelsäule: )|^)Normale Stellung"
+    ]
+   }
   }
  ]
 }

@@ -1637,6 +1637,18 @@
     "diktat": "Distale Radiusfraktur",
     "in": "## Unterarm rechts\n\n## Befund\nDistale Radiusfraktur mit Dislokation. Im Übrigen normale Form und Stellung der übrigen Abschnitte.\n\n## Ergebnis\nX.",
     "out": "## Unterarm rechts\n\n## Befund\nDistale Radiusfraktur mit Dislokation. Im Übrigen normale Form und Stellung der übrigen Abschnitte.\n\n## Ergebnis\nX."
+   },
+   {
+    "name": "GWS a.p. A: KI ließ „Wirbelsäule:“ weg → Beschriftung zurück (Abnahme 3.20.4, 21.11.2026)",
+    "diktat": "ganzaufnahme der wirbelsäule ap: unauffällig",
+    "in": "## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nNormale Stellung. Alignementlinien regelrecht.\n\nAnzahl, Form, Größe und Stellung der Wirbelkörper zueinander regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der Wirbelsäule.",
+    "out": "## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nWirbelsäule: Normale Stellung. Alignementlinien regelrecht.\n\nAnzahl, Form, Größe und Stellung der Wirbelkörper zueinander regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der Wirbelsäule."
+   },
+   {
+    "name": "GWS a.p. B: diktierte Skoliose bleibt Skoliose (nicht „Seitausbiegung“) (Abnahme 3.20.4, 21.11.2026)",
+    "diktat": "Ganzaufnahme der Wirbelsäule AP: flachbogige linkskonvexe Skoliose, sonst unauffällig",
+    "in": "## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nAlignementlinien regelrecht. Flachbogige linkskonvexe Seitausbiegung. Im Übrigen normale Stellung.\n\n## Ergebnis\nFlachbogige linkskonvexe Skoliose.",
+    "out": "## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nWirbelsäule: Alignementlinien regelrecht. Flachbogige linkskonvexe Skoliose. Im Übrigen normale Stellung.\n\n## Ergebnis\nFlachbogige linkskonvexe Skoliose."
    }
   ]
  }

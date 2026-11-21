@@ -1985,7 +1985,9 @@ VORLAGE_ACHSE_NORMAL = re.compile(
     r"achsengerechte[rn]?\s+Achsenverlauf)[^.\n]*\.?")
 # GWS a.p. (templates.json ganzaufnahme_der_wirbelsäule_a-p): „Wirbelsäule: Normale Stellung, flachbogige rechts-konvexe
 # Skoliose. Alignementlinien regelrecht.“ – der Achsensatz hinter „Wirbelsäule: “ (die Beschriftung bleibt)
-_SQ_GWS = re.compile(r"(?<=Wirbelsäule: )Normale Stellung(?:, flachbogige (?:rechts|links)-?konvexe Skoliose)?\.")
+# 3.20.5 (Abnahme 21.11.2026, GWS a.p. C): die KI ließ die Beschriftung „Wirbelsäule:“ weg – „Normale Stellung.“ am Zeilen-/
+# Befundanfang zählt genauso (sonst stand der Skoliose-Satz NEBEN „Normale Stellung.“)
+_SQ_GWS = re.compile(r"(?m)(?:(?<=Wirbelsäule: )|^)Normale Stellung(?:, flachbogige (?:rechts|links)-?konvexe Skoliose)?\.")
 _SQ_ABSCHNITT = re.compile(r"(?m)^(?:HWS|BWS|LWS):[ \t]*$")          # Gesamte Wirbelsäule / HWS und LWS
 _SQ_BESCHRIFTUNG = re.compile(r"[A-Za-zÄÖÜäöüß]{2,15}:[ \t]*")
 _SQ_ERG_NORMAL = re.compile(r"darstellung\b.*(?:wirbelsäule|hws|bws|lws)", re.I)

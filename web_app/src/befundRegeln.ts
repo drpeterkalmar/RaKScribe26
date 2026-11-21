@@ -1398,6 +1398,10 @@ const KOMBI_TITEL_RE = /^## Beckenübersicht und Hüfte (rechts|links)(?: in 2 E
 export const KOMBI_TITEL = '## Becken sowie Hüftgelenk in 2 Ebenen {seite}';
 
 const SEITE_ADJ = /((?:^|[.!?]\s+|\n)(?:Rechts|Links|Beidseits)\s+)(Degenerative[nrs]?|Geringe[nrs]?|Geringgradige[nrs]?|Mäßige[nrs]?|Mäßiggradige[nrs]?|Deutliche[nrs]?|Ausgeprägte[nrs]?|Beginnende[nrs]?|Fortgeschrittene[nrs]?|Zarte[nrs]?|Kleine[nrs]?|Diskrete[nrs]?)(?=\s+[A-ZÄÖÜ])/gu;
+const SKOL_DIKTIERT = /(?<![a-zäöüß])skoliose(?![a-zäöüß])/u;
+const SEITAUSBIEGUNG = /(?<![A-Za-zÄÖÜäöüß])Seitausbiegung(?![a-zäöüß])/u;
+const GWS_AP_TITEL = /ganzaufnahme der wirbelsäule a\.?-?p/iu;
+const GWS_ERSTE = /^(?:Normale Stellung|Alignementlinien|Rechtskonvexe skoliotische|Linkskonvexe skoliotische|Flachbogige|Skoliose)/u;
 const KNIE_BDS_TITEL = /knie[a-zäöüß]*.*(?:beidseit|bds)/iu;
 const ANMERKUNG_ZEILE = /^(?:Anmerkung:|Weitere Winkelmessungen|HKA = |LCE = )/u;
 const seitenRang = (z: string): number => { const sd = widSeite(z); return sd === 'rechts' ? 0 : sd === 'links' ? 2 : 1; };
@@ -1430,9 +1434,17 @@ export function grundregeln(report: string, diktat = '', templates?: VorlagenMap
       text = t2;
       aend.push(...x.map(z => `pleuraerguss: ${z}`));
     }
+    if (SKOL_DIKTIERT.test(dk) && !tl.includes('skoliose') && SEITAUSBIEGUNG.test(text)) {   // Diktat wörtlich (Sync: befund_regeln.py)
+      text = text.replace(new RegExp(SEITAUSBIEGUNG.source, 'gu'), 'Skoliose');
+      aend.push('diktierte Skoliose statt „Seitausbiegung“');
+    }
     const lead = text.length - text.trimStart().length;
     const [neu, x] = befundAnfang(text.slice(lead), templates);
     if (x) { text = text.slice(0, lead) + neu; aend.push(x); }
+    if (GWS_AP_TITEL.test(titel)) {
+      const l2 = text.length - text.trimStart().length;
+      if (GWS_ERSTE.test(text.slice(l2))) { text = text.slice(0, l2) + 'Wirbelsäule: ' + text.slice(l2); aend.push('GWS a.p.: Beschriftung „Wirbelsäule:“'); }
+    }
     zeilen.splice(a, e - a, ...text.split('\n'));
   }
   const skol = /skoliose|flachprofil/u.test(dk) ? null : SKOL_ABSTUFUNG.exec(dk);

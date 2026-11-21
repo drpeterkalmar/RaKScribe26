@@ -89,6 +89,13 @@ check("SQUIRREL: Sätze an Stelle von „Normale Stellung.“, Beschriftung und 
 check("SQUIRREL: Ergebnis „Hochgradige rechtskonvexe Skoliose der BWS.“ wie bisher",
       e.report.split("## Ergebnis\n")[1].startswith("Hochgradige rechtskonvexe Skoliose der BWS."), e.report)
 
+# ── 4b. Abnahme 21.11.2026 (C): KI ließ „Wirbelsäule:“ weg – SQUIRREL ersetzt „Normale Stellung.“ trotzdem ──
+rep2 = ("## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nNormale Stellung. Alignementlinien regelrecht. Anzahl, Form, Größe "
+        "und Stellung der Wirbelkörper zueinander regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der Wirbelsäule.")
+e2 = I.einsetzen(rep2, B, diktat="Wirbelsäule unauffällig.")
+check("SQUIRREL ohne Beschriftung: Skoliose-Satz statt „Normale Stellung.“ (nie beides)",
+      S2 in e2.report and "Normale Stellung" not in e2.report, e2.report)
+
 # ── 5. Abnahme 21.11.2026: STT schreibt „ganz Aufnahme der Wirbelsäule AP“ → Fehlhör-Liste → a.p.-Vorlage ──
 import detect as _det  # noqa: E402
 import misheard as _mh  # noqa: E402

@@ -1725,6 +1725,11 @@ KOMBI_TITEL = "## Becken sowie Hüftgelenk in 2 Ebenen {seite}"
 _SEITE_ADJ = re.compile(r"((?:^|[.!?]\s+|\n)(?:Rechts|Links|Beidseits)\s+)(Degenerative[nrs]?|Geringe[nrs]?|Geringgradige[nrs]?|"
                         r"Mäßige[nrs]?|Mäßiggradige[nrs]?|Deutliche[nrs]?|Ausgeprägte[nrs]?|Beginnende[nrs]?|"
                         r"Fortgeschrittene[nrs]?|Zarte[nrs]?|Kleine[nrs]?|Diskrete[nrs]?)(?=\s+[A-ZÄÖÜ])")
+_SKOL_DIKTIERT = re.compile(r"(?<![a-zäöüß])skoliose(?![a-zäöüß])")
+_SEITAUSBIEGUNG = re.compile(r"(?<![A-Za-zÄÖÜäöüß])Seitausbiegung(?![a-zäöüß])")
+_GWS_AP_TITEL = re.compile(r"ganzaufnahme der wirbelsäule a\.?-?p", re.I)
+_GWS_ERSTE = re.compile(r"(?:Normale Stellung|Alignementlinien|Rechtskonvexe skoliotische|Linkskonvexe skoliotische|"
+                        r"Flachbogige|Skoliose)")
 _KNIE_BDS_TITEL = re.compile(r"knie[a-zäöüß]*.*(?:beidseit|bds)", re.I)
 _ANMERKUNG_ZEILE = re.compile(r"^(?:Anmerkung:|Weitere Winkelmessungen|HKA = |LCE = )")
 
@@ -1765,11 +1770,20 @@ def grundregeln(report, diktat="", templates=None):
         if _THORAX_TITEL.search(titel) and (_bejaht(dk, _PLEURA) or _bejaht(tl, _PLEURA)):
             text, x = _pleura(text, diktat or "")
             aend += [f"pleuraerguss: {z}" for z in x]
+        if _SKOL_DIKTIERT.search(dk) and "skoliose" not in tl and _SEITAUSBIEGUNG.search(text):   # Diktat wörtlich
+            text = _SEITAUSBIEGUNG.sub("Skoliose", text)
+            aend.append("diktierte Skoliose statt „Seitausbiegung“")
+            tl = text.lower()
         lead = len(text) - len(text.lstrip())
         neu, x = befund_anfang(text[lead:], templates)
         if x:
             text = text[:lead] + neu
             aend.append(x)
+        if _GWS_AP_TITEL.search(titel):          # GWS a.p.: Beschriftung „Wirbelsäule:“ der Vorlage (KI ließ sie weg)
+            lead = len(text) - len(text.lstrip())
+            if _GWS_ERSTE.match(text[lead:]):
+                text = text[:lead] + "Wirbelsäule: " + text[lead:]
+                aend.append("GWS a.p.: Beschriftung „Wirbelsäule:“")
         zeilen[a:e] = text.split("\n")
     # Ergebnis: KI-Hinweise nie als Punkt, diktierte Abstufung „skoliotische Asymmetrie“
     skol = _SKOL_ABSTUFUNG.search(dk) if not re.search(r"skoliose|flachprofil", dk) else None
