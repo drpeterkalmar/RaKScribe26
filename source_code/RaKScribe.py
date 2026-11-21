@@ -3367,6 +3367,14 @@ class RaKScribeApp(ctk.CTk):
             merker = _sme.Merker(lokal, _sme.MERKER_X_STANDARD)
             w = _sme.Waechter(api, CFG, merker, log=log, warnen=lambda nr, text: self._sm_warnungen.append((nr, text)))
             self._sm_thread = _sme.Thread(w, log=log).start()
+            self._sm_waechter = w
+            taste = str(getattr(CFG, "sm_uebernehmen_taste", _sme.UEBERNEHMEN_TASTE_STANDARD) or "").strip().lower()
+            if taste and taste not in ("aus", "-", "0", "nein") and not gast_selbsttest():
+                try:   # Nachtrag Peter 21.11. 21:13: „Übernehmen“ = nur die [SENF]-Marken im offenen Diktat entfernen
+                    keyboard.add_hotkey(taste, w.uebernehmen_anfordern, suppress=True)
+                    log(f"[SM] Taste „Übernehmen“: {taste}")
+                except Exception:
+                    log_exception("[SM] Taste Übernehmen")
             log(f"[SM] Wächter gestartet (Senf {', '.join(CFG.sm_senf) or 'aus'}; IB Lab {', '.join(CFG.sm_ibl) or 'aus'})")
         except Exception:
             log_exception("[SM] Start")

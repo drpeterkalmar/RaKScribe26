@@ -15,15 +15,18 @@ Ablauf (eigener Hintergrund-Thread, Takt 0,5 s, blockiert die Oberfläche nie):
      Befehlszeile nur, wenn ihr Prozess höchstens START_FENSTER_S vor dem Fenster entstanden ist und das Kürzel zum
      Fenstertitel passt. Unklar → für dieses Fenster nichts (lieber nichts als ins falsche Diktat).
   2. Inhalt: Senf aus der Ablage der VM (senf_anzeige.lesen, Ordner + Zwilling, jüngstes Ergebnis gewinnt; nachladen
-     alle 15 s, höchstens 10 min) — nur Status „fertig“, die Zeile(n) der Ablage ohne Mess-/JSON-Zeilen, jede mit „[SENF“
-     davor (erste: SENF_KOPF). IB Lab aus der Ablage des Abholers (X:\\IBL-Vorbefunde\\<Nr><Ziffer>_<modul>.json, dieselbe
+     alle 15 s, höchstens 10 min) — nur Status „fertig“, die Zeile(n) der Ablage ohne Mess-/JSON-Zeilen, BEFUNDTAUGLICH
+     (Nachtrag Peter 21.11. 21:13: ohne „RH xx · Untersuchung ·“), davor nur die kurze Marke „[SENF] “; unauffällig nur
+     „[SENF] unauffällig“. Übernehmen = Marken weg: Taste SM_UEBERNEHMEN_TASTE (Standard Strg+Alt+S) entfernt NUR die
+     Marken im offenen Diktat (EM_SETSEL + WM_CLEAR, gegengelesen), danach ergänzt Peter frei. IB Lab aus der Ablage des Abholers (X:\\IBL-Vorbefunde\\<Nr><Ziffer>_<modul>.json, dieselbe
      Datei wie Brücke/Formatierer) → ibl_bausteine.auffaellige_zeilen: genau die pathologischen Sätze/Ergebnispunkte, die
      KaiScribe im eigenen Befund einsetzt und markiert — wörtlich, nie umformuliert; Normalbefunde/„kein Text“ ergeben nichts.
   3. Einfügen nur, wenn gerade NICHT aufgenommen wird (Windows-Mikrofonanzeige: keine App nutzt das Mikrofon; unbekannt
      → warten). Text ans ENDE des Diktats (WM_PASTE an das Textfeld, ohne Fokuswechsel), Cursor/Markierung des Arztes
      danach genau wie vorher, Zwischenablage danach zurück. Jeder Text höchstens EINMAL je Diktatnummer (Merker lokal +
      auf X:, vor dem Einfügen geschrieben; steht der Text schon im Fenster, wird nur gemerkt). Jeder Fehler → nichts.
-  4. Sicherheitsnetz: Schließt das Diktatfenster, während noch eine „[SENF“-Zeile drinsteht → deutliche Warnung im
+  4. Sicherheitsnetz (nur wegen der Marke, nie wegen des Inhalts): Schließt das Diktatfenster, während noch eine
+     „[SENF“-Marke drinsteht → deutliche Warnung im
      KaiScribe-Fenster + Merker „senf_offen“ (für eine spätere Prüfung der Vidierliste). KaiScribe ändert den Brief nie.
 Schalter: SM_SENF / SM_IBL in config.ini (Kürzel, Standard kp, „aus“ = niemand) und zentral die Freigabe
 SM_FREIGABE_DATEI im Brücken-Ordner auf X: (fehlt = AUS, Release-Regel Georg: erst nach dem Lauf an 451898) sowie der
@@ -42,9 +45,10 @@ import umzug as _umzug
 
 SM_STANDARD = ("kp",)
 EXE_NAME = "casspeechmagic.exe"
-MARKE = "[SENF"
-SENF_KOPF = "[SENF – Hinweis, vor Vidieren löschen] "
+MARKE = "[SENF"            # Sicherheitsnetz: jede noch stehende Marke (auch angefangene) zählt
+MARKE_KURZ = "[SENF]"      # Nachtrag Peter 21.11. 21:13: nur diese kurze Marke vor dem befundtauglichen Text
 SENF_FOLGE = "[SENF] "
+UEBERNEHMEN_TASTE_STANDARD = "ctrl+alt+s"   # „Übernehmen“: entfernt nur die Marken im offenen Diktat
 SENF_UNAUFFAELLIG = "[SENF] unauffällig"
 SENF_NICHT_BEURTEILBAR = "[SENF] nicht beurteilbar"
 TAKT_S = 0.5
@@ -58,8 +62,9 @@ SM_FREIGABE_DATEI = "speechmagic_einfuegen_an.txt"
 SM_AUS_DATEI = "speechmagic_einfuegen_aus.txt"
 SCHALTER_ORDNER_STANDARD = "X:\\" + _umzug.NAME + "\\Bruecke"
 MERKER_X_STANDARD = "X:\\" + _umzug.NAME + "\\Daten\\speechmagic"
-WARNUNG = ("Im SpeechMagic-Diktat {nr} stand beim Schließen noch eine [SENF]-Zeile.\n"
-           "Bitte vor dem Vidieren löschen (der Brief wird von KaiScribe nicht geändert).")
+WARNUNG = ("Im SpeechMagic-Diktat {nr} stand beim Schließen noch eine [SENF]-Marke.\n"
+           "Bitte vor dem Vidieren übernehmen (Marke löschen) oder den Senf streichen –\n"
+           "der Brief wird von KaiScribe nicht geändert.")
 
 _NR = re.compile(r"^\d{11}$")
 _MESS = re.compile(r"^\s*(?:MESSUNG|ZIEL|JSON)\b|^\s*[{\[]", re.I)
@@ -92,6 +97,20 @@ def diktat_titel(titel):
     return m.group(1).lower() if m else None
 
 
+_RH = re.compile(r"^\s*RH\s*\d*\s*·\s*")
+
+
+def senf_inhalt(zeile):
+    """Nachtrag Peter 21.11.2026 21:13: befundtauglich – „RH 31 · Knie re · Gelenkerguss“ → „Gelenkerguss“ (ohne RH-Nummer
+    und Untersuchung). Zeilen ohne dieses Muster bleiben, wie sie sind."""
+    z = " ".join(str(zeile or "").split())
+    if _RH.match(z):
+        teile = [t.strip() for t in z.split("·")]
+        rest = teile[2:] if len(teile) >= 3 else teile[1:]
+        z = " · ".join(t for t in rest if t)
+    return z
+
+
 def senf_zeilen(d):
     """Ablage-Inhalt (dict) → ("fertig", [Zeilen fürs Diktat]) | ("warten", []) | ("nichts", []).
     Nur „fertig“ ergibt Text; solange weitere Serien laufen, wird gewartet."""
@@ -106,14 +125,14 @@ def senf_zeilen(d):
         return "warten", []
     bef = str(d.get("befund") or "").strip().lower()
     zeilen = [z for z in (" ".join(str(x).split()) for x in (d.get("zeilen") or [])) if z and not _MESS.match(z)]
-    zeilen = [z[:300] for z in zeilen][:6]
+    zeilen = [z for z in (senf_inhalt(x)[:300] for x in zeilen) if z][:6]
     if bef == "unauffaellig":
         return "fertig", [SENF_UNAUFFAELLIG]
     if bef == "nicht_beurteilbar":
         return "fertig", [SENF_NICHT_BEURTEILBAR] + [SENF_FOLGE + z for z in zeilen]
     if not zeilen:
         return "nichts", []
-    return "fertig", [SENF_KOPF + zeilen[0]] + [SENF_FOLGE + z for z in zeilen[1:]]
+    return "fertig", [SENF_FOLGE + z for z in zeilen]
 
 
 def _texte(x):
@@ -224,6 +243,11 @@ def hat_senf(text):
     return MARKE in str(text or "")
 
 
+def ohne_marken(text):
+    """Text nach „Übernehmen“: jede „[SENF] “ bzw. „[SENF]“ weg, sonst nichts geändert."""
+    return str(text or "").replace(SENF_FOLGE, "").replace(MARKE_KURZ, "")
+
+
 def kuerzel_liste(roh, standard=SM_STANDARD):
     return _senf.kuerzel_liste(roh, standard)
 
@@ -325,6 +349,27 @@ class Waechter:
         self.erster = True
         self._schalter = (None, -1e9)
         self.eingefuegt_n = 0
+        self._uebernehmen = threading.Event()
+
+    def uebernehmen_anfordern(self):
+        """Taste „Übernehmen“ (beliebiger Thread): beim nächsten Takt die Marken im offenen Diktat entfernen."""
+        self._uebernehmen.set()
+
+    def _uebernehmen_jetzt(self):
+        offen = [s for s in self.sitzungen.values() if s is not None and s.edit is not None]
+        if not offen:
+            self.log("[SM] Übernehmen: kein offenes SpeechMagic-Diktat von KaiScribe")
+            return
+        s = max(offen, key=lambda x: x.t0)
+        t = self.api.text(s.edit)
+        if t is None or MARKE_KURZ not in t:
+            self.log(f"[SM] {s.nr}: Übernehmen – keine [SENF]-Marke im Diktat")
+            return
+        ok, n, grund = self.api.marken_entfernen(s.edit, (SENF_FOLGE, MARKE_KURZ))
+        nach = self.api.text(s.edit)
+        if nach is not None:
+            s.text = nach
+        self.log(f"[SM] {s.nr}: Übernehmen – {n} Marke(n) entfernt" + ("" if ok else f", abgebrochen ({grund})"))
 
     # Schalter
     def frei(self):
@@ -358,6 +403,12 @@ class Waechter:
             self.erster = True
             return
         jetzt = self.jetzt()
+        if self._uebernehmen.is_set():
+            self._uebernehmen.clear()
+            try:
+                self._uebernehmen_jetzt()
+            except Exception as e:
+                self.log(f"[SM] Übernehmen: Fehler {type(e).__name__} – nichts geändert")
         # 1. Prozesse: Befehlszeilen neuer CASSpeechMagic-Prozesse merken (der Startprozess lebt oft nur kurz)
         lebend = set()
         for pid, erstellt, cmd in self.api.prozesse():
@@ -417,7 +468,7 @@ class Waechter:
         if s is None:
             return
         if hat_senf(s.text):
-            self.log(f"[SM] {s.nr}: Diktat geschlossen, [SENF]-Zeile steht noch drin – Warnung")
+            self.log(f"[SM] {s.nr}: Diktat geschlossen, [SENF]-Marke steht noch drin – Warnung")
             try:
                 self.merker.schreiben(s.nr, senf_offen=True)
             except Exception:
@@ -427,7 +478,7 @@ class Waechter:
             except Exception:
                 pass
         else:
-            self.log(f"[SM] {s.nr}: Diktat geschlossen" + (" (Senf-Zeile gelöscht)" if s.senf_eingefuegt else ""))
+            self.log(f"[SM] {s.nr}: Diktat geschlossen" + (" (Senf übernommen bzw. gelöscht)" if s.senf_eingefuegt else ""))
             if s.senf_eingefuegt:
                 try:
                     self.merker.schreiben(s.nr, senf_offen=False)
@@ -696,6 +747,53 @@ class Win32:
             except Exception:
                 pass
             self._clip_zurueck(cb, alt)
+
+    def marken_entfernen(self, edit, marken):
+        """Nur die Marken löschen (EM_SETSEL + WM_CLEAR, kein Fokuswechsel, keine Zwischenablage), von hinten nach vorn;
+        nach jedem Schritt gegenlesen – weicht der Text ab: EM_UNDO und Abbruch. Markierung danach wie vorher (um die
+        gelöschten Zeichen davor verschoben). → (ok, anzahl, grund)."""
+        EM_GETSEL, EM_SETSEL, WM_CLEAR, EM_UNDO = 0x00B0, 0x00B1, 0x0303, 0x00C7
+        sel = self._sende(edit, EM_GETSEL)
+        if sel is None or sel >= 0xFFFFFFFF or sel < 0:
+            return False, 0, "Markierung nicht lesbar"
+        a, e = sel & 0xFFFF, (sel >> 16) & 0xFFFF
+        text = self.text(edit)
+        if text is None:
+            return False, 0, "Text nicht lesbar"
+        # RichEdit ≥ 2.0 zählt einen Absatz als EIN Zeichen (\r), WM_GETTEXT liefert \r\n → zuerst so, sonst roh
+        for cr in (True, False):
+            norm = (lambda t: t.replace("\r\n", "\r")) if cr else (lambda t: t)
+            rt = norm(text)
+            stellen = []
+            i = 0
+            while i < len(rt):
+                for mk in marken:
+                    if rt.startswith(mk, i):
+                        stellen.append((i, len(mk)))
+                        i += len(mk)
+                        break
+                else:
+                    i += 1
+            n, fehler = 0, ""
+            for pos, ln in reversed(stellen):
+                self._sende(edit, EM_SETSEL, pos, pos + ln)
+                if self._sende(edit, WM_CLEAR) is None:
+                    fehler = "Fenster antwortet nicht"
+                    break
+                neu = self.text(edit)
+                soll = rt[:pos] + rt[pos + ln:]
+                if neu is None or norm(neu) != soll:
+                    self._sende(edit, EM_UNDO)
+                    fehler = "Text weicht ab"
+                    break
+                rt, n = soll, n + 1
+            if n or not fehler or not cr:
+                vor_a = sum(ln for pos, ln in stellen[len(stellen) - n:] if pos < a) if n else 0
+                vor_e = sum(ln for pos, ln in stellen[len(stellen) - n:] if pos < e) if n else 0
+                self._sende(edit, EM_SETSEL, max(0, a - vor_a), max(0, e - vor_e))
+                return not fehler, n, fehler
+            text = self.text(edit) or text           # zweiter Versuch mit rohen Positionen
+        return False, 0, "nicht gelöscht"
 
     def _clip_offen(self, cb, versuche=10):
         for _ in range(versuche):

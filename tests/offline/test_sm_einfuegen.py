@@ -41,9 +41,14 @@ SENF = {"v": 1, "nr": NR, "status": "fertig", "zeit": "2026-11-21T20:00:00", "be
         "zeilen": ["RH 31 · Knie re · Gelenkerguss", "RH 31 · Knie re · Fabella", "MESSUNG {\"a\": 1}"],
         "weitere_laufen": False}
 z = M.senf_zeilen(SENF)
-check("Senf auffällig → erste Zeile mit Kopf „[SENF – Hinweis, vor Vidieren löschen]“, weitere mit [SENF], ohne Messblock",
-      z == ("fertig", ["[SENF – Hinweis, vor Vidieren löschen] RH 31 · Knie re · Gelenkerguss",
-                       "[SENF] RH 31 · Knie re · Fabella"]), z)
+check("Nachtrag 21:13: Senf befundtauglich (ohne „RH xx · Untersuchung ·“), nur kurze Marke [SENF], ohne Messblock",
+      z == ("fertig", ["[SENF] Gelenkerguss", "[SENF] Fabella"]), z)
+check("senf_inhalt: RH-Zeile ohne Untersuchung, mehrteilige Pathologie bleibt, fremde Zeile unverändert",
+      M.senf_inhalt("RH 31 · Knie re · Gelenkerguss") == "Gelenkerguss"
+      and M.senf_inhalt("RH 7 · LWS · Spondylolisthese L5/S1 · Meyerding I") == "Spondylolisthese L5/S1 · Meyerding I"
+      and M.senf_inhalt("RH 7 · Gelenkerguss") == "Gelenkerguss" and M.senf_inhalt("Kleiner Erguss.") == "Kleiner Erguss.")
+check("ohne_marken: nur die Marken weg, Inhalt bleibt",
+      M.ohne_marken("Diktat.\r\n[SENF] Gelenkerguss\r\n[SENF]Fabella") == "Diktat.\r\nGelenkerguss\r\nFabella")
 check("Senf unauffällig → „[SENF] unauffällig“",
       M.senf_zeilen(dict(SENF, befund="unauffaellig", zeilen=["RH 31 · Knie · unauffällig (…)"]))
       == ("fertig", ["[SENF] unauffällig"]))
@@ -162,6 +167,12 @@ class Api:
     def mikrofon(self):
         return self.mikro
 
+    def marken_entfernen(self, edit, marken):
+        t = self.texte.get(edit, "")
+        n = sum(t.count(m) for m in marken[:1])
+        self.texte[edit] = M.ohne_marken(t)
+        return True, n, ""
+
     def einfuegen(self, edit, text):
         self.einfuege_aufrufe.append((edit, text))
         vor = self.cursor.get(edit, 0)
@@ -210,7 +221,7 @@ oeffnen(api, uhr)
 takte(w, uhr, 3)
 txt = api.texte["E100"]
 check("kp öffnet SpeechMagic-Diktat → Senf + FROG-Sätze stehen am Ende des Diktats",
-      "[SENF – Hinweis, vor Vidieren löschen] RH 31 · Knie re · Gelenkerguss" in txt and "Pes cavus links" in txt, txt)
+      "[SENF] Gelenkerguss" in txt and "RH 31" not in txt and "Pes cavus links" in txt, txt)
 check("… IB-Lab-Sätze zuerst, Senf-Block zuletzt (klar abgesetzt)", txt.index("Pes cavus links") < txt.index("[SENF"), txt)
 check("… in EINEM Einfügen, Cursor des Arztes und Zwischenablage danach wie vorher",
       len(api.einfuege_aufrufe) == 1 and api.cursor.get("E100", 0) == 0 and api.clip == "Arzt-Zwischenablage")
@@ -228,6 +239,28 @@ oeffnen(api, uhr, hwnd=101, pid=8, text=api.texte["E100"])
 takte(w, uhr, 50, 1.0)
 check("Wiederöffnen derselben Nummer → nichts doppelt (Merker)", len(api.einfuege_aufrufe) == 1, api.einfuege_aufrufe)
 
+# Übernehmen (Taste): nur die Marken weg, danach keine Warnung beim Schließen
+w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
+takte(w, uhr, 1)
+oeffnen(api, uhr)
+takte(w, uhr, 3)
+api.texte["E100"] = "Kniegelenk rechts: kein Erguss.\n" + api.texte["E100"]
+w.uebernehmen_anfordern()
+takte(w, uhr, 1)
+t = api.texte["E100"]
+check("Übernehmen: Marken entfernt, Senf-Inhalt + Diktat + IB-Lab-Sätze bleiben wörtlich",
+      "[SENF" not in t and "Gelenkerguss" in t and "Fabella" in t and t.startswith("Kniegelenk rechts: kein Erguss.")
+      and "Pes cavus links" in t, t)
+check("… Log nennt die Zahl der Marken (ohne Text)", any("Übernehmen – 2 Marke(n) entfernt" in l for l in logs), logs)
+api.texte["E100"] += "\nGelenkerguss mit Begleitsynovitis."      # Peter ergänzt frei
+takte(w, uhr, 3)
+schliessen(api)
+takte(w, uhr, 2)
+check("… übernommen und frei ergänzt → beim Schließen KEINE Warnung (nur die Marke zählt, nie der Inhalt)", warn == [], warn)
+w.uebernehmen_anfordern()
+takte(w, uhr, 1)
+check("Übernehmen ohne offenes Diktat → nur Log, nichts geändert", any("kein offenes SpeechMagic-Diktat" in l for l in logs))
+
 # Sicherheitsnetz: Senf bleibt stehen, Fenster zu → Warnung + Merker senf_offen
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 takte(w, uhr, 1)
@@ -235,7 +268,7 @@ oeffnen(api, uhr)
 takte(w, uhr, 3)
 schliessen(api)
 takte(w, uhr, 2)
-check("Sicherheitsnetz: [SENF]-Zeile beim Schließen noch drin → Warnung mit Diktatnummer",
+check("Sicherheitsnetz: [SENF]-Marke beim Schließen noch drin → Warnung mit Diktatnummer",
       len(warn) == 1 and warn[0][0] == NR and "[SENF]" in warn[0][1] and "Vidieren" in warn[0][1], warn)
 check("… Merker senf_offen = true (für die spätere Vidierlisten-Prüfung)", w.merker.lesen(NR)["senf_offen"] is True)
 
@@ -454,6 +487,62 @@ check("Win32: Fenster antwortet nicht → (False, Grund), Zwischenablage trotzde
       not ok and "antwortet" in grund and clip.daten[13] == "Arzt-Text", (ok, grund))
 wi._sende = lambda *a, **k: 0xFFFFFFFF
 check("Win32: Markierung nicht lesbar (Text > 64k) → nichts", wi.einfuegen(42, "x") == (False, "Markierung nicht lesbar"))
+
+# Übernehmen in Win32: RichEdit zählt Absätze als ein Zeichen (\r), WM_GETTEXT liefert \r\n
+class Feld:
+    def __init__(self, text, sel, crlf_intern=False):
+        self.t = text.replace("\r\n", "\n").replace("\n", "\r\n" if crlf_intern else "\r")
+        self.sel, self.crlf, self.undo = sel, crlf_intern, []
+
+    def gettext(self):
+        return self.t if self.crlf else self.t.replace("\r", "\r\n")
+
+    def sende(self, h, msg, wp=0, lp=0, frist=2000):
+        if msg == 0x00B0:
+            return self.sel[0] | (self.sel[1] << 16)
+        if msg == 0x00B1:
+            self.sel = (wp, lp)
+        if msg == 0x0303:
+            a, e = self.sel
+            self.undo.append(self.t)
+            self.t = self.t[:a] + self.t[e:]
+            self.sel = (a, a)
+        if msg == 0x00C7 and self.undo:
+            self.t = self.undo.pop()
+        return 0
+
+
+for crlf in (False, True):
+    f = Feld("Diktat.\r\n[SENF] Gelenkerguss\r\n[SENF] Fabella", (3, 3), crlf_intern=crlf)
+    wi2 = object.__new__(M.Win32)
+    wi2._sende = f.sende
+    wi2.text = lambda edit, f=f: f.gettext()
+    ok, n, grund = wi2.marken_entfernen(1, (M.SENF_FOLGE, M.MARKE_KURZ))
+    check(f"Win32 Übernehmen ({'CRLF' if crlf else 'CR'} intern): 2 Marken weg, Text sonst gleich, Cursor (3) unverändert",
+          ok and n == 2 and f.gettext().replace("\r\n", "\n").replace("\r", "\n") == "Diktat.\nGelenkerguss\nFabella"
+          and f.sel == (3, 3), (ok, n, grund, repr(f.gettext()), f.sel))
+f = Feld("[SENF] Erguss\r\nDiktat", (20, 20))
+wi2._sende, wi2.text = f.sende, (lambda edit, f=f: f.gettext())
+ok, n, grund = wi2.marken_entfernen(1, (M.SENF_FOLGE, M.MARKE_KURZ))
+check("Win32 Übernehmen: Cursor hinter der Marke rückt um die gelöschten Zeichen nach vorn",
+      ok and f.sel == (20 - len(M.SENF_FOLGE),) * 2, (ok, f.sel))
+
+
+class Stur(Feld):
+    def sende(self, h, msg, wp=0, lp=0, frist=2000):
+        if msg == 0x0303:              # löscht das Falsche
+            self.undo.append(self.t)
+            self.t = self.t[1:]
+            return 0
+        return Feld.sende(self, h, msg, wp, lp, frist)
+
+
+f = Stur("Diktat.\r\n[SENF] Erguss", (0, 0))
+wi2._sende, wi2.text = f.sende, (lambda edit, f=f: f.gettext())
+vorher = f.gettext()
+ok, n, grund = wi2.marken_entfernen(1, (M.SENF_FOLGE, M.MARKE_KURZ))
+check("Win32 Übernehmen: Text weicht nach dem Löschen ab → Rückgängig, Text unverändert, ok=False",
+      not ok and n == 0 and f.gettext() == vorher, (ok, n, grund, f.gettext()))
 del sys.modules["win32clipboard"]
 
 # ───────────────────────────── Teil 4: Konfiguration + Fenster ─────────────────────────────
@@ -461,7 +550,8 @@ d = tempfile.mkdtemp()
 p = os.path.join(d, "config.ini")
 open(p, "w", encoding="utf-8").write("[SETTINGS]\nLLM_PROVIDER = gemini\n")
 c = C.load_config(p)
-check("config: Standard SM_SENF = SM_IBL = kp", c.sm_senf == ["kp"] and c.sm_ibl == ["kp"])
+check("config: Standard SM_SENF = SM_IBL = kp, Taste Übernehmen Strg+Alt+S",
+      c.sm_senf == ["kp"] and c.sm_ibl == ["kp"] and c.sm_uebernehmen_taste == "ctrl+alt+s")
 open(p, "w", encoding="utf-8").write("[SETTINGS]\nSM_SENF = aus\nSM_IBL = kp, MH\n")
 c = C.load_config(p)
 check("config: SM_SENF = aus → niemand, SM_IBL = kp, MH → [kp, mh]", c.sm_senf == [] and c.sm_ibl == ["kp", "mh"])
@@ -471,7 +561,7 @@ check("config.ini im Repo dokumentiert SM_SENF/SM_IBL",
 check("ohne Windows kein Win32 (Wächter bleibt aus)", M.win32_oder_none() is None)
 src = (ROOT / "source_code/RaKScribe.py").read_text(encoding="utf-8")
 check("KaiScribe-Fenster startet den Wächter, Warnung über Warteschlange (nie aus dem Thread in Tk)",
-      "self._sm_start()" in src and "_sm_warnungen.append" in src and "popleft" in src)
+      "self._sm_start()" in src and "w.uebernehmen_anfordern" in src and "_sm_warnungen.append" in src and "popleft" in src)
 check("EXE-Bau nimmt das Modul mit", "--hidden-import=sm_einfuegen" in (ROOT / ".github/workflows/build-exe.yml").read_text())
 check("Senf im KaiScribe-Diktatweg bleibt unberührt: senf_anzeige wird hier nur gelesen, nicht geändert",
       "Der Senf landet NIE von selbst in Befund" in (ROOT / "source_code/senf_anzeige.py").read_text(encoding="utf-8"))
