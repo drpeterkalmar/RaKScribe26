@@ -22,6 +22,9 @@ fails = 0
 
 def check(name, ok, detail=""):
     global fails
+    if not ok and "app" in globals() and getattr(globals()["app"], "_senf", None) is not None:
+        v = globals()["app"]._senf
+        detail = f"{detail} [senf: zustand={v.zustand} lesungen={v.lesungen} frist={v.zeitueberschreitungen}]"
     print(("✅" if ok else "❌"), name, "" if ok else detail)
     fails += (not ok)
 
@@ -262,7 +265,13 @@ def neue_app():
     app = S.baue_app(mod)
     # Nachladen nach 15 s nicht sofort (pump() kennt keine Zeit) → eigene Liste, nachladen(app) spielt sie ab
     app._spaet = []
-    app.after = lambda ms, fn=None, *a: (app._spaet if ms == senf.NACHLADEN_S * 1000 else app._queue).append((fn, a))
+    # 100-ms-Takt: kurz warten wie die Tk-Hauptschleife – pump() würde sonst ohne Pause kreisen und den Lese-Thread
+    # aushungern (GIL), was es im echten Fenster nicht gibt
+    def after(ms, fn=None, *a):
+        if ms == senf.PRUEF_MS:
+            time.sleep(0.005)
+        (app._spaet if ms == senf.NACHLADEN_S * 1000 else app._queue).append((fn, a))
+    app.after = after
     app._cas, app._cas_aufnahmen, app._cas_test = None, [], False
     app._cas_kanal = cas.Kanal(ORDNER, pid=777, version="3.20.6", prozess_lebt=lambda pid: True)
     app._fensterziel = mod._fz.Fensterziel(None)
