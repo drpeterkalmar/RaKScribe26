@@ -264,6 +264,20 @@ w.uebernehmen_anfordern()
 takte(w, uhr, 1)
 check("Übernehmen ohne offenes Diktat → nur Log, nichts geändert", any("kein offenes SpeechMagic-Diktat" in l for l in logs))
 
+# Auslöser-Datei (live L2: injizierte Tasten erreichen den keyboard-Hook nicht) → derselbe Weg wie die Taste
+w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
+aus_datei = os.path.join(tmp, "sm_uebernehmen.txt")
+w.ausloeser = aus_datei
+w.existiert = lambda p, alt=w.existiert: os.path.exists(p) if p == aus_datei else alt(p)
+takte(w, uhr, 1)
+oeffnen(api, uhr)
+takte(w, uhr, 3)
+open(aus_datei, "w").write("x")
+takte(w, uhr, 1)
+check("Auslöser-Datei: Marken weg wie mit der Taste, Datei sofort gelöscht",
+      "[SENF" not in api.texte["E100"] and "Gelenkerguss" in api.texte["E100"] and not os.path.exists(aus_datei)
+      and any("Auslöser-Datei" in l for l in logs), logs)
+
 # Sicherheitsnetz: Senf bleibt stehen, Fenster zu → Warnung + Merker senf_offen
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 takte(w, uhr, 1)

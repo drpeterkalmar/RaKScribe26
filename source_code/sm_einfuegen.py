@@ -49,6 +49,7 @@ MARKE = "[SENF"            # Sicherheitsnetz: jede noch stehende Marke (auch ang
 MARKE_KURZ = "[SENF]"      # Nachtrag Peter 21.11. 21:13: nur diese kurze Marke vor dem befundtauglichen Text
 SENF_FOLGE = "[SENF] "
 UEBERNEHMEN_TASTE_STANDARD = "ctrl+alt+s"   # „Übernehmen“: entfernt nur die Marken im offenen Diktat
+UEBERNEHMEN_DATEI = "sm_uebernehmen.txt"     # Auslöser für Tests/Fernwartung (lokaler Ordner, wird sofort gelöscht)
 SENF_UNAUFFAELLIG = "[SENF] unauffällig"
 SENF_NICHT_BEURTEILBAR = "[SENF] nicht beurteilbar"
 TAKT_S = 0.5
@@ -341,7 +342,7 @@ class Waechter:
     warnen(nr, text) zeigt die Sicherheitsnetz-Warnung (im KaiScribe-Hauptthread)."""
 
     def __init__(self, api, cfg, merker, log=print, warnen=None, jetzt=time.time, lese_senf=_senf.lesen,
-                 lese_ibl=ibl_bausteine_lesen, existiert=os.path.exists):
+                 lese_ibl=ibl_bausteine_lesen, existiert=os.path.exists, ausloeser=None, entfernen=os.remove):
         self.api, self.cfg, self.merker, self.log = api, cfg, merker, log
         self.warnen = warnen or (lambda nr, text: None)
         self.jetzt, self.lese_senf, self.lese_ibl, self.existiert = jetzt, lese_senf, lese_ibl, existiert
@@ -352,6 +353,7 @@ class Waechter:
         self._schalter = (None, -1e9)
         self.eingefuegt_n = 0
         self._uebernehmen = threading.Event()
+        self.ausloeser, self.entfernen = ausloeser, entfernen     # live L2 21.11.: injizierte Tasten erreichen den Hook nicht
 
     def uebernehmen_anfordern(self):
         """Taste „Übernehmen“ (beliebiger Thread): beim nächsten Takt die Marken im offenen Diktat entfernen."""
@@ -420,6 +422,13 @@ class Waechter:
             self.erster = True
             return
         jetzt = self.jetzt()
+        if self.ausloeser and self.existiert(self.ausloeser):
+            try:
+                self.entfernen(self.ausloeser)
+            except OSError:
+                pass
+            self.log("[SM] Übernehmen per Auslöser-Datei")
+            self._uebernehmen.set()
         if self._uebernehmen.is_set():
             self._uebernehmen.clear()
             try:

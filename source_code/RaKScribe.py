@@ -3365,7 +3365,8 @@ class RaKScribeApp(ctk.CTk):
                 return                                   # kein Windows (Tests am Mac/Linux) → aus
             lokal = os.path.join(_cas.ordner_standard(), "speechmagic")
             merker = _sme.Merker(lokal, _sme.MERKER_X_STANDARD)
-            w = _sme.Waechter(api, CFG, merker, log=log, warnen=lambda nr, text: self._sm_warnungen.append((nr, text)))
+            w = _sme.Waechter(api, CFG, merker, log=log, warnen=lambda nr, text: self._sm_warnungen.append((nr, text)),
+                              ausloeser=os.path.join(_cas.ordner_standard(), _sme.UEBERNEHMEN_DATEI))
             self._sm_thread = _sme.Thread(w, log=log).start()
             self._sm_waechter = w
             taste = str(getattr(CFG, "sm_uebernehmen_taste", _sme.UEBERNEHMEN_TASTE_STANDARD) or "").strip().lower()
