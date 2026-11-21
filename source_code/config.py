@@ -15,6 +15,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+import senf_anzeige as _senf
+
 STANDARD_INHALT = (
     "[SETTINGS]\n"
     "# Befund-KI: gemini (Vertex AI, gemini-3.5-flash am EU-Endpoint — Schlüssel aus kaiscribe-praxis-key.json)\n"
@@ -52,6 +54,10 @@ class Config:
     # kaiscribe-frog-einsetzen-n1 (Georg 19.11.2026, RH 127): Ablage des IB-Lab-Abholers – daraus holt KaiScribe den
     # FROG-/HIPPO-Text selbst, wenn eine ältere Brücke (< 2.5.20 bzw. < 2.5.22) ihn nicht mitgibt. IBL_ABLAGE = aus → nie.
     ibl_ablage: str = "X:\\IBL-Vorbefunde"
+    # kaiscribe-senf-anzeige-n1 (Peter 20.11.2026): Opus-Senf als schreibgeschützter Hinweis beim Öffnen eines CAS-Diktats,
+    # nur für Kürzel in SENF_ANZEIGE (Standard kp; „aus“ = niemand). SENF_ORDNER = Ablage der VM (nur lesend).
+    senf_anzeige: List[str] = field(default_factory=lambda: ["kp"])
+    senf_ordner: str = _senf.SENF_ORDNER_STANDARD
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
     angelegt: bool = False      # Datei fehlte und wurde mit Standardwerten angelegt
@@ -118,6 +124,9 @@ def load_config(path):
     cfg.anthropic_frist = max(3, _int(sek, "ANTHROPIC_FRIST", 20, cfg.warnungen))
     cfg.lauf_ordner = (sek.get("LAUF_ORDNER", "") or cfg.lauf_ordner).strip().strip('"')
     cfg.ibl_ablage = (sek.get("IBL_ABLAGE", "") or cfg.ibl_ablage).strip().strip('"')
+    if "SENF_ANZEIGE" in sek:
+        cfg.senf_anzeige = _senf.kuerzel_liste(sek.get("SENF_ANZEIGE", ""))  # kp | kp, mh | [kp] | aus
+    cfg.senf_ordner = (sek.get("SENF_ORDNER", "") or cfg.senf_ordner).strip().strip('"')
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):
         for name in ("NAECHSTES_FELD", "VORIGES_FELD", "UEBERNEHMEN", "MASKE_UMSCHALTEN"):

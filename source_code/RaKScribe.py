@@ -38,6 +38,7 @@ import clipboard_win as _cb  # v3.2.3 (Gutachten P1-1): Zwischenablage mit Wiede
 import speechmike as _sm  # v3.8.0: SpeechMike-Tasten + LEDs direkt (hidapi), ohne Konfiguration in SpeechControl
 import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten nach SpeechMike-Pausen
 import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
+import senf_anzeige as _senf  # kaiscribe-senf-anzeige-n1: Opus-Senf als schreibgeschützter Hinweis (nur kp, nur lesen)
 import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
 import cas_vorlagen as _cv  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis für die Vorlagenwahl
 import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke — nach der KI wörtlich einsetzen
@@ -1396,6 +1397,20 @@ class RaKScribeApp(ctk.CTk):
         # v3.14.0: letzter Vorbefund derselben Untersuchung (aus der Datenbank des RIS) — nur lesen, geht nie an die KI
         self.vorbefund_knopf = ctk.CTkButton(self.cas_band, text="Vorbefund", width=150, command=self._vorbefund_zeigen,
                                              **rand_kw, **band_kw)
+        # kaiscribe-senf-anzeige-n1 (Peter 20.11.2026): Opus-Senf zur Untersuchung als HINWEIS unter dem Band, nur für
+        # Kürzel aus SENF_ANZEIGE (kp). Eigenes, schreibgeschütztes Feld — kein Diktier-/Einfügeziel, geht nie in Befund,
+        # EOL oder Zwischenablage; markieren + Strg+C bzw. „Kopieren“ nur auf Peters Aktion (Nachtrag 20.11.).
+        self.senf_zeile = ctk.CTkFrame(self, fg_color="#2A2412", corner_radius=0, height=60)
+        self.senf_zeile.pack_propagate(False)
+        ctk.CTkLabel(self.senf_zeile, text="Senf\nnur Hinweis", font=(UI_FONT, 11, "bold"), text_color=WARN_AMBER,
+                     width=86, justify="left", anchor="w").pack(side="left", padx=(18, 8))
+        self.senf_kopier_knopf = ctk.CTkButton(self.senf_zeile, text="⧉ Kopieren", width=100,
+                                               command=lambda: self.senf_kopieren(aus_knopf=True), **rand_kw, **band_kw)
+        self.senf_kopier_knopf.pack(side="right", padx=(8, 14))
+        self.senf_box = ctk.CTkTextbox(self.senf_zeile, height=50, font=(UI_FONT, 13), wrap="word", fg_color="#1F1A0C",
+                                       text_color="#F2E6C4", border_width=1, border_color="#6B5A2A", corner_radius=6)
+        self.senf_box.pack(side="left", fill="both", expand=True, pady=5)
+        self._senf_box_einrichten()
         self.bind_all("<F11>", lambda e: self._cas_taste("ins"))
         self.bind_all("<F12>", lambda e: self._cas_taste("eol"))
         # v3.15.0: Mammo-Maske auch ohne SpeechMike (Fern-Test): Bild↓/Bild↑ = nächstes/voriges Feld
@@ -3784,6 +3799,7 @@ class RaKScribeApp(ctk.CTk):
                                                                          if inhalt else ""))
         self._cas_band_zeigen()
         self._ibl_band_zeigen()
+        self._senf_start(a)              # kaiscribe-senf-anzeige-n1: nur kp, liest im Hintergrund, blockiert nie
         self._cas_nach_vorne()
         if not keys_ready():  # v3.11.0: minimiert ohne Schlüssel gewartet → Sperre + Hinweis erst jetzt zeigen
             self.refresh_key_state()
@@ -3800,6 +3816,7 @@ class RaKScribeApp(ctk.CTk):
         self._cas_hinweise_zeigen([])
         self._ibl_befund_leeren()
         self._ibl_band_zeigen()
+        self._senf_stop()                # der Senf gehört zum Auftrag
         for w in (getattr(self, "cas_kopf_label", None), getattr(self, "vorbefund_knopf", None)):
             if w is not None:
                 try:
@@ -3840,8 +3857,129 @@ class RaKScribeApp(ctk.CTk):
                     knopf.pack_forget()
             self._band_hoehe()
             band.pack(fill="x", before=self.main_container)
+            self._senf_nachpacken()          # Senf-Zeile bleibt direkt unter dem Band
         except Exception:
             log_exception("[CAS] Band")
+
+    # ── kaiscribe-senf-anzeige-n1 (Peter 20.11.2026): Opus-Senf als schreibgeschützter Hinweis, nur Kürzel aus SENF_ANZEIGE ──
+    # Ablage der VM X:\RaKScribe\Daten\senf\<Nr>.json (ris-mods opus_senf 1.7.0), NUR lesen, im Hintergrund-Thread mit
+    # Frist 1 s (senf_anzeige.Verfolgung). „läuft“/noch keine Datei → alle 15 s nachladen, höchstens 10 min. Kein Netz /
+    # keine Ablage → Zeile aus. Der Text steht NUR in self.senf_box: nie in transcript_text/result_text, EOL-Datei, Lauf-Datei
+    # oder Zwischenablage — kopiert wird ausschließlich in senf_kopieren() (Knopf bzw. Strg+C im Feld).
+    def _senf_box_einrichten(self):
+        box = getattr(self, "senf_box", None)
+        tb = getattr(box, "_textbox", None)
+        if tb is None:
+            return
+        try:
+            tb.configure(state="disabled", takefocus=0)     # schreibgeschützt, Tab springt nicht hinein
+            tb.bind("<Button-1>", lambda e: tb.focus_set(), add="+")   # Klick → Strg+A/Strg+C wirken im Feld
+            for k in ("<Control-a>", "<Control-A>"):
+                tb.bind(k, lambda e: self._senf_alles_markieren())
+            for k in ("<Control-c>", "<Control-C>", "<<Copy>>"):
+                tb.bind(k, lambda e: (self.senf_kopieren(), "break")[1])
+            for k in ("<<Paste>>", "<<Cut>>", "<<Clear>>", "<Control-v>", "<Control-V>", "<Control-x>", "<Control-X>"):
+                tb.bind(k, lambda e: "break")              # nie ein Einfügeziel
+        except Exception:
+            log_exception("[SENF] Feld einrichten")
+
+    def _senf_alles_markieren(self):
+        tb = getattr(getattr(self, "senf_box", None), "_textbox", None)
+        try:
+            tb.tag_add("sel", "1.0", "end-1c")
+        except Exception:
+            pass
+        return "break"
+
+    def senf_kopieren(self, aus_knopf=False):
+        """NUR auf Peters Aktion (Knopf „Kopieren“ oder Strg+C im Senf-Feld): Markierung, sonst den ganzen Senf als reinen
+        Text in die Zwischenablage — für casus belli oder Mails. Sonst ruft niemand diese Methode auf."""
+        box = getattr(self, "senf_box", None)
+        if box is None:
+            return False
+        text = ""
+        try:
+            tb = box._textbox
+            if tb.tag_ranges("sel"):
+                text = tb.get("sel.first", "sel.last")
+        except Exception:
+            pass
+        if not text.strip():
+            text = box.get("1.0", "end-1c")
+        text = text.strip()
+        if not text:
+            return False
+        ok = _cb.zwischenablage_setzen(win32clipboard, None, text)
+        log(f"[SENF] {'kopiert' if ok else 'NICHT kopiert'} ({len(text)} Zeichen, {'Knopf' if aus_knopf else 'Strg+C'})")
+        self._kurzhinweis("Senf kopiert" if ok else "Senf nicht kopiert – Zwischenablage gesperrt", 3000)
+        return ok
+
+    def _senf_start(self, a):
+        self._senf = None
+        self._senf_zeigen("aus", "")
+        liste = getattr(CFG, "senf_anzeige", list(_senf.SENF_ANZEIGE_STANDARD))
+        if a is None or not _senf.aktiv(a.benutzer, liste):
+            return
+        v = _senf.Verfolgung(a.auftrag_id, a.nr, getattr(CFG, "senf_ordner", _senf.SENF_ORDNER_STANDARD), time.time())
+        self._senf = v
+        log(f"[SENF] Auftrag {a.nr}: Anzeige an ({a.benutzer})")
+        self.after(10, lambda: self._senf_takt(v))
+
+    def _senf_stop(self):
+        self._senf = None
+        self._senf_zeigen("aus", "")
+
+    def _senf_takt(self, v):
+        a = getattr(self, "_cas", None)
+        if v is not getattr(self, "_senf", None) or a is None or a.auftrag_id != v.auftrag_id:
+            return                           # Auftrag zu Ende oder ein neuer offen → diese Verfolgung ist vorbei
+        try:
+            anz, weiter = v.takt(time.time())
+        except Exception:
+            log_exception("[SENF] Takt")
+            return
+        if anz is not None:
+            log(f"[SENF] {v.nr}: {anz[0]}" + (f" (nach {v.lesungen} Lesungen, Frist überschritten "
+                                                f"{v.zeitueberschreitungen}×)" if v.zeitueberschreitungen else ""))
+            self._senf_zeigen(*anz)
+        if weiter is not None:
+            self.after(weiter, lambda: self._senf_takt(v))
+
+    SENF_FARBEN = {_senf.LAEUFT: TEXT_MUTED, _senf.KEIN: TEXT_MUTED, _senf.FERTIG: "#F2E6C4"}
+
+    def _senf_zeigen(self, zustand, text):
+        zeile, box = getattr(self, "senf_zeile", None), getattr(self, "senf_box", None)
+        self._senf_sichtbar = bool(zeile is not None and box is not None and zustand != "aus" and text)
+        if zeile is None or box is None:
+            return
+        try:
+            box.configure(state="normal")
+            box.delete("1.0", "end")
+            if self._senf_sichtbar:
+                box.insert("1.0", text)
+            box.configure(state="disabled", text_color=self.SENF_FARBEN.get(zustand, TEXT_MUTED))
+            if not self._senf_sichtbar:
+                zeile.pack_forget()
+                return
+            n = min(4, max(1, text.count("\n") + 1))
+            box.configure(height=24 * n + 8)
+            zeile.configure(height=24 * n + 20)
+            self._senf_nachpacken()
+        except Exception:
+            log_exception("[SENF] Anzeige")
+
+    def _senf_nachpacken(self):
+        zeile = getattr(self, "senf_zeile", None)
+        if zeile is None or not getattr(self, "_senf_sichtbar", False):
+            return
+        try:
+            band = getattr(self, "cas_band", None)
+            if band is not None and band.winfo_ismapped():
+                zeile.pack(fill="x", after=band)
+            else:
+                zeile.pack(fill="x", before=self.main_container)
+        except Exception:
+            log_exception("[SENF] Zeile")
 
     def _band_hoehe(self):
         """v3.14.0: Höhe des Bands nach den sichtbaren Zeilen (Grundzeile, Kopfzeile, IB-Lab-Zeile)."""

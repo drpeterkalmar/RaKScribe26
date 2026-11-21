@@ -210,6 +210,20 @@ ausgewertet und dürfen gelöscht werden.
 - **Werte, die erst später kommen**, setzt KaiScribe jetzt bis EOL selbst sichtbar in den Befund ein (Hinweis +
   Hervorhebung). Kamen sie weniger als 3 s vor EOL, muss EOL ein zweites Mal gedrückt werden — nie etwas Ungesehenes.
 
+## 🔎 Opus-Senf als Hinweis im Fenster (EXE, nur kp, ab v3.21)
+
+Wunsch Peter 20.11.2026: beim Öffnen eines CAS-Diktats sieht kp, was der Opus-Senf zur Untersuchung gefunden hat.
+- Eigene Zeile **„Senf – nur Hinweis“** unter dem CAS-Band, schreibgeschützt: „Senf läuft…“, „Senf: unauffällig“, die
+  Zeile(n) „RH xx · Untersuchung · Pathologie“ oder „Senf: kein Ergebnis“ (Fehler/übersprungen/nach 10 min nichts).
+  Steht der Senf noch aus, lädt KaiScribe alle 15 s nach (höchstens 10 min).
+- **Markier- und kopierbar** (Nachtrag 20.11.): Strg+A / Strg+C im Feld oder Knopf „⧉ Kopieren“ – nur auf Peters Aktion.
+  Der Senf geht **nie** von selbst in Diktat, Befund, EOL-Datei, Lauf-Datei oder Zwischenablage; das Feld ist kein
+  Diktier-/Einfügeziel.
+- Quelle: `X:\RaKScribe\Daten\senf\<Diktatnummer>.json` (ris-mods opus_senf ≥ 1.7.0), nur lesend, im Hintergrund mit
+  Frist 1 s. Kein Laufwerk/keine Ablage → Zeile aus, Diktieren unverändert.
+- `config.ini`: `SENF_ANZEIGE = kp` (Kürzelliste, `aus` = niemand), `SENF_ORDNER = …`. Test:
+  `tests/offline/test_senf_anzeige.py`.
+
 ## 🩻 Mammo-Maske: Felder per SpeechMike-Taste, Vorbefund schon eingetragen (EXE, ab v3.15.0)
 
 Hat ein CAS-Diktat eine **Mammographie-Leistung** (Screening oder kurativ), zeigt KaiScribe links statt des Diktat-Felds
