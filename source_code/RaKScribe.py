@@ -39,6 +39,7 @@ import speechmike as _sm  # v3.8.0: SpeechMike-Tasten + LEDs direkt (hidapi), oh
 import segmente as _seg  # v3.8.0: Diktat-Anzeige mit reparierten Abschnitten nach SpeechMike-Pausen
 import fensterziel as _fz  # v3.8.0: EOL fügt ins zuletzt aktive Fremdfenster (SpeechMagic/RIS) ein
 import senf_anzeige as _senf  # kaiscribe-senf-anzeige-n1: Opus-Senf als schreibgeschützter Hinweis (nur kp, nur lesen)
+import sm_einfuegen as _sme  # senf-ibl-speechmagic-paste-n1: Senf + auffällige IB-Lab-Sätze ins SpeechMagic-Fenster (nur kp)
 import cas_auftrag as _cas  # v3.10.0: CAS-Auftrag der RaKScribe-Brücke — EOL schreibt eine Datei statt Strg+V
 import cas_vorlagen as _cv  # v3.12.0: CAS-Leistungen als Vorrang-Hinweis für die Vorlagenwahl
 import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke — nach der KI wörtlich einsetzen
@@ -698,6 +699,21 @@ def _hid_version():
         return f"FEHLT: {e}"
 
 
+def _sm_selbsttest(app):
+    """Selbsttest (senf-ibl-speechmagic-paste-n1): Win32-Teil des SpeechMagic-Wächters auf echtem Windows einmal
+    durchlaufen (Prozesse, Fenster, Mikrofon-Anzeige) – ohne etwas einzufügen."""
+    try:
+        api = _sme.win32_oder_none()
+        if api is None:
+            return "kein Win32"
+        p = api.prozesse()
+        f = api.fenster()
+        return (f"ok thread={'ja' if getattr(app, '_sm_thread', None) is not None else 'nein'} prozesse={len(p)} "
+                f"fenster={len(f)} mikrofon={api.mikrofon()}")
+    except Exception as e:
+        return f"FEHLER: {type(e).__name__}: {e}"
+
+
 def _zwischenablage_lesen():
     """Selbsttest: Text in der Zwischenablage (für die EOL-Prüfung auf echtem Windows)."""
     try:
@@ -1128,6 +1144,7 @@ class RaKScribeApp(ctk.CTk):
         self._cas, self._cas_aufnahmen, self._cas_test = None, [], False
         self._cas_kanal = _cas.Kanal(version=app_version(), log=log, prozess_lebt=_cas.prozess_lebt)
         self.after(700, self._cas_takt)
+        self._sm_start()                 # senf-ibl-speechmagic-paste-n1: Wächter fürs SpeechMagic-Fenster (eigener Thread)
         # v3.11.0 (Peter 13.10.): Bereitschaft — ab der Windows-Anmeldung minimiert warten (Autostart über einen lokalen
         # Starter, der auf X: wartet), nach EOL im CAS-Modus wieder minimieren; ein zweiter Start holt dieses Fenster vor.
         self._minimiert_gestartet, self._zweitstarts = bool(minimiert), 0
@@ -1479,6 +1496,7 @@ class RaKScribeApp(ctk.CTk):
                     "job_zustand": self._job.zustand,
                     # v3.8.0 SpeechMike: hidapi im Bündel, Lese-Thread läuft ohne Gerät, LED-Soll, Kontrollschritt, EOL
                     "hid": _hid_version(),
+                    "sm_einfuegen": _sm_selbsttest(self),
                     "speechmike_thread": bool(getattr(self, "_speechmike", None) and self._speechmike._thread
                                               and self._speechmike._thread.is_alive()),
                     "speechmike_verbunden": getattr(getattr(self, "_speechmike", None), "verbunden", None),
@@ -3325,7 +3343,58 @@ class RaKScribeApp(ctk.CTk):
                 self._speechmike.beenden()
         except Exception:
             pass
+        try:
+            if getattr(self, "_sm_thread", None) is not None:
+                self._sm_thread.stop()
+        except Exception:
+            pass
         self.destroy()
+
+    # ── senf-ibl-speechmagic-paste-n1 (Peter 21.11.2026): Senf + auffällige IB-Lab-Sätze ins SpeechMagic-Diktatfenster ──
+    # Eigener Hintergrund-Thread (sm_einfuegen.Thread), nur Kürzel aus SM_SENF/SM_IBL und nur mit zentraler Freigabe-Datei.
+    # Die Oberfläche bekommt nur die Sicherheitsnetz-Warnung (Warteschlange, im Tk-Takt abgeholt) – nie blockierend.
+    def _sm_start(self):
+        import collections
+        self._sm_warnungen = collections.deque()          # append/popleft sind threadsicher
+        self._sm_thread = None
+        try:
+            api = _sme.win32_oder_none()
+            if api is None:
+                if sys.platform == "win32":
+                    log("[SM] Win32 nicht verfügbar – Wächter aus")
+                return                                   # kein Windows (Tests am Mac/Linux) → aus
+            lokal = os.path.join(_cas.ordner_standard(), "speechmagic")
+            merker = _sme.Merker(lokal, _sme.MERKER_X_STANDARD)
+            w = _sme.Waechter(api, CFG, merker, log=log, warnen=lambda nr, text: self._sm_warnungen.append((nr, text)))
+            self._sm_thread = _sme.Thread(w, log=log).start()
+            log(f"[SM] Wächter gestartet (Senf {', '.join(CFG.sm_senf) or 'aus'}; IB Lab {', '.join(CFG.sm_ibl) or 'aus'})")
+        except Exception:
+            log_exception("[SM] Start")
+        self.after(1000, self._sm_ui_takt)
+
+    def _sm_ui_takt(self):
+        try:
+            while self._sm_warnungen:
+                nr, text = self._sm_warnungen.popleft()
+                self._sm_warnung_zeigen(nr, text)
+        except Exception:
+            pass
+        self.after(1000, self._sm_ui_takt)
+
+    def _sm_warnung_zeigen(self, nr, text):
+        """Deutliche, nicht-modale Warnung (bleibt stehen, bis sie weggeklickt wird) + Statuszeile."""
+        try:
+            self._kurzhinweis(f"SENF-Zeile noch im Diktat {nr} – vor dem Vidieren löschen", 15000)
+            top = tk.Toplevel(self)
+            top.title("KaiScribe – SENF-Zeile noch im Diktat")
+            top.attributes("-topmost", True)
+            top.configure(bg="#7A1010")
+            tk.Label(top, text=text, bg="#7A1010", fg="white", font=(UI_FONT, 13, "bold"), justify="left",
+                     wraplength=520, padx=18, pady=14).pack()
+            tk.Button(top, text="Verstanden", command=top.destroy, padx=14).pack(pady=(0, 12))
+            self._sm_warnung_fenster = top
+        except Exception:
+            log_exception("[SM] Warnung")
 
     # ── v3.10.0: CAS-Auftrag der RaKScribe-Brücke (Peter 12.10.: „Digitales Diktat“ ohne SpeechMagic) ────────────────
     # Die Brücke legt cas_auftrag.json ab (cas_auftrag.py). RaKScribe nimmt ihn an, zeigt das Band und holt sich den

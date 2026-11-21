@@ -906,6 +906,9 @@ if a:
     check("A_gesperrt", "Mikrofon-Auswahl nicht leer", bool(s.get("mic_dropdown")), s.get("mic_dropdown", ""))
     # v3.8.0 SpeechMike: hidapi im Bündel, Lese-Thread läuft ohne Gerät ohne Fehler, Record ohne Schlüssel startet nichts
     check("A_gesperrt", "hidapi im EXE-Bündel (import hid)", str(s.get("hid", "")).startswith("hidapi"), str(s.get("hid")))
+    # senf-ibl-speechmagic-paste-n1: Wächter fürs SpeechMagic-Fenster läuft, Win32-Aufrufe ohne Fehler (ohne Einfügen)
+    check("A_gesperrt", "SpeechMagic-Wächter: Thread läuft, Prozesse/Fenster/Mikrofon lesbar",
+          str(s.get("sm_einfuegen", "")).startswith("ok thread=ja"), str(s.get("sm_einfuegen")))
     check("A_gesperrt", "SpeechMike-Leser läuft ohne Gerät (sucht weiter)", s.get("speechmike_thread") is True
           and s.get("speechmike_verbunden") is None, f"{s.get('speechmike_thread')} / {s.get('speechmike_verbunden')}")
     smg = a.get("sm_gesperrt")

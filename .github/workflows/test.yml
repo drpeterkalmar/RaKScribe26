@@ -120,6 +120,8 @@ jobs:
         run: python tests/offline/test_georg_2011_ui.py
       - name: Opus-Senf als Hinweis im Fenster (nur kp, je Status, kopierbar nur auf Aktion, Befund/EOL ohne Senf, kein Hänger)
         run: python tests/offline/test_senf_anzeige.py
+      - name: Senf + auffällige IB-Lab-Sätze ins SpeechMagic-Fenster (nur kp, einmal je Nr., nie während Aufnahme, Cursor/Zwischenablage zurück, SENF-Warnung)
+        run: python tests/offline/test_sm_einfuegen.py
       - name: IB Lab LAMA + FROG ohne Normbereiche (10+10 echte Fälle, älterer Abholer bereinigt) (v3.19.9)
         run: python tests/offline/test_ibl_ohne_norm.py
       - name: IB Lab KOALA → Kniebefund nach K&L-Tabelle (Georgs Fixtures Nr. 34/50, ganze EXE-Kette)

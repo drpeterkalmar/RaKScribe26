@@ -58,6 +58,10 @@ class Config:
     # nur für Kürzel in SENF_ANZEIGE (Standard kp; „aus“ = niemand). SENF_ORDNER = Ablage der VM (nur lesend).
     senf_anzeige: List[str] = field(default_factory=lambda: ["kp"])
     senf_ordner: str = _senf.SENF_ORDNER_STANDARD
+    # senf-ibl-speechmagic-paste-n1 (Peter 21.11.2026): Senf / auffällige IB-Lab-Sätze automatisch ins SpeechMagic-Fenster,
+    # nur für diese Kürzel (Standard kp, „aus“ = niemand); zusätzlich zentrale Freigabe-Datei (sm_einfuegen.py).
+    sm_senf: List[str] = field(default_factory=lambda: ["kp"])
+    sm_ibl: List[str] = field(default_factory=lambda: ["kp"])
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
     angelegt: bool = False      # Datei fehlte und wurde mit Standardwerten angelegt
@@ -127,6 +131,10 @@ def load_config(path):
     if "SENF_ANZEIGE" in sek:
         cfg.senf_anzeige = _senf.kuerzel_liste(sek.get("SENF_ANZEIGE", ""))  # kp | kp, mh | [kp] | aus
     cfg.senf_ordner = (sek.get("SENF_ORDNER", "") or cfg.senf_ordner).strip().strip('"')
+    if "SM_SENF" in sek:
+        cfg.sm_senf = _senf.kuerzel_liste(sek.get("SM_SENF", ""))      # kp | kp, mh | aus
+    if "SM_IBL" in sek:
+        cfg.sm_ibl = _senf.kuerzel_liste(sek.get("SM_IBL", ""))
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):
         for name in ("NAECHSTES_FELD", "VORIGES_FELD", "UEBERNEHMEN", "MASKE_UMSCHALTEN"):
