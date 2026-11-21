@@ -15,7 +15,7 @@
 - **Schalter:** `SM_SENF` / `SM_IBL` in config.ini (Standard kp, `aus` = niemand), `SM_UEBERNEHMEN_TASTE` (Standard ctrl+alt+s).
   Zentral wirkt es nur mit der Freigabe-Datei. Notaus: `speechmagic_einfuegen_aus.txt` daneben anlegen oder die Freigabe löschen (wirkt in ≤ 30 s).
   rg und alle anderen Kürzel: unverändert, nichts davon.
-- **Code/Tests:** `source_code/sm_einfuegen.py`, `tests/offline/test_sm_einfuegen.py` (76 Prüfungen), ganze Offline-Reihe grün,
+- **Code/Tests:** `source_code/sm_einfuegen.py`, `tests/offline/test_sm_einfuegen.py` (72 Prüfungen), ganze Offline-Reihe grün,
   Windows-UI-Test (Wächter läuft) 3.22.0–3.22.3 grün. Probe-Skript `tools/sm_probe.ps1`.
 - **Offen:** (1) Strg+Alt+S mit echter Tastatur ist noch nicht belegt. Künstlich gesendete Tasten erreichen den Tasten-Hook nicht; belegt ist
   derselbe Ablauf über die Auslöser-Datei. (2) Das Warten während einer echten Aufnahme ist nicht live belegt (am Testplatz gab es keinen Ton).
