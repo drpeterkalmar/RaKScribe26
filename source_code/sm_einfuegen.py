@@ -52,6 +52,8 @@ UEBERNEHMEN_TASTE_STANDARD = "ctrl+alt+s"   # „Übernehmen“: entfernt nur di
 SENF_UNAUFFAELLIG = "[SENF] unauffällig"
 SENF_NICHT_BEURTEILBAR = "[SENF] nicht beurteilbar"
 TAKT_S = 0.5
+STARTWACHE_S = 0.05        # live 21.11.: der Startprozess beim residenten CASSpeechMagic lebt < 0,5 s → nur die
+                           # Prozessliste (Toolhelp) alle 50 ms, Befehlszeile nur für NEUE CASSpeechMagic-PIDs
 START_FENSTER_S = 60        # Befehlszeile gilt nur, wenn ihr Prozess so kurz vor dem Fenster entstand
 TEXT_LESEN_S = 1.0          # Fenstertext nachlesen (für „steht schon da“ und das Sicherheitsnetz)
 IBL_NACHLADEN_S = 20
@@ -391,6 +393,21 @@ class Waechter:
             wert = neu
         return wert
 
+    def schnell(self):
+        """Startwache nötig? (zuletzt freigegeben und mindestens eine Kürzel-Liste)."""
+        senf_l, ibl_l = self._listen()
+        return bool(self._schalter[0]) and bool(senf_l or ibl_l)
+
+    def starts_erfassen(self):
+        """Neue CASSpeechMagic-PIDs → (Entstehung, Befehlszeile) merken. → Menge der lebenden PIDs."""
+        lebend = set(self.api.sm_pids())
+        for pid in lebend:
+            if pid not in self.starts:
+                info = self.api.prozess_info(pid)
+                if info and info[0] is not None:
+                    self.starts[pid] = (info[0], kommandozeile(info[1]))
+        return lebend
+
     def _listen(self):
         return (list(getattr(self.cfg, "sm_senf", SM_STANDARD) or []), list(getattr(self.cfg, "sm_ibl", SM_STANDARD) or []))
 
@@ -409,12 +426,9 @@ class Waechter:
                 self._uebernehmen_jetzt()
             except Exception as e:
                 self.log(f"[SM] Übernehmen: Fehler {type(e).__name__} – nichts geändert")
-        # 1. Prozesse: Befehlszeilen neuer CASSpeechMagic-Prozesse merken (der Startprozess lebt oft nur kurz)
-        lebend = set()
-        for pid, erstellt, cmd in self.api.prozesse():
-            lebend.add(pid)
-            if pid not in self.starts:
-                self.starts[pid] = (erstellt, kommandozeile(cmd))
+        # 1. Prozesse: Befehlszeilen neuer CASSpeechMagic-Prozesse merken (der Startprozess lebt oft nur kurz – dazwischen
+        # erfasst die Startwache alle 50 ms, siehe Thread)
+        lebend = self.starts_erfassen()
         for pid in list(self.starts):
             if pid not in lebend and jetzt - self.starts[pid][0] > 2 * START_FENSTER_S:
                 del self.starts[pid]
@@ -647,10 +661,21 @@ class Win32:
         finally:
             k.CloseHandle(h)
 
-    def prozesse(self):
-        out = []
+    def sm_pids(self):
         pids = self._pids()
         self._sm_pids = set(pids)
+        return pids
+
+    def prozess_info(self, pid):
+        try:
+            erstellt, cmd = self._cmd_und_zeit(pid)
+        except Exception:
+            return None
+        return (erstellt, cmd) if erstellt is not None else None
+
+    def prozesse(self):
+        out = []
+        pids = self.sm_pids()
         for pid in pids:
             try:
                 erstellt, cmd = self._cmd_und_zeit(pid)
@@ -946,9 +971,15 @@ class Thread:
         except Exception:
             pass
         fehler = 0
-        while not self._stop.wait(self.takt_s):
+        warte = min(STARTWACHE_S, self.takt_s)
+        naechst = time.monotonic()
+        while not self._stop.wait(warte):
             try:
-                self.w.takt()
+                if time.monotonic() >= naechst:
+                    naechst = time.monotonic() + self.takt_s
+                    self.w.takt()
+                elif self.w.schnell():
+                    self.w.starts_erfassen()          # Startwache: kurzlebige Startprozesse nicht verpassen
                 fehler = 0
             except Exception as e:
                 fehler += 1

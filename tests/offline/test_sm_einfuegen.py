@@ -152,8 +152,11 @@ class Api:
         self.einfuege_aufrufe = []
         self.clip = "Arzt-Zwischenablage"
 
-    def prozesse(self):
-        return list(self.procs)
+    def sm_pids(self):
+        return [p[0] for p in self.procs]
+
+    def prozess_info(self, pid):
+        return next(((p[1], p[2]) for p in self.procs if p[0] == pid), None)
 
     def fenster(self):
         return list(self.wins)
@@ -363,6 +366,25 @@ api.texte["E100"] = ""
 takte(w, uhr, 3)
 check("residenter Prozess übernimmt: Befehlszeile des kurzen Startprozesses zählt (Nr 031, nicht 005)",
       len(api.einfuege_aufrufe) == 1 and any(NR in l and "erkannt" in l for l in logs), logs)
+# Live 21.11. (L1, Diktat 036): Startprozess lebt kürzer als ein Takt – nur die Startwache (50 ms) sieht ihn
+w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
+api.procs.append((7, uhr.t - 3600, CMD.replace("-n 31", "-n 5")))
+takte(w, uhr, 1)
+check("Startwache nur bei Freigabe aktiv", w.schnell() is True)
+uhr.t += 0.05
+api.procs.append((9, uhr.t - 0.02, CMD))
+w.starts_erfassen()                                # zwischen zwei Takten
+api.procs = [p for p in api.procs if p[0] != 9]    # nach 0,2 s wieder weg
+uhr.t += 0.2
+api.wins.append((100, 7, TITEL))
+api.texte["E100"] = ""
+takte(w, uhr, 3)
+check("… Startprozess nur zwischen zwei Takten sichtbar → Nummer trotzdem richtig, eingefügt",
+      len(api.einfuege_aufrufe) == 1 and any(NR in l and "erkannt" in l for l in logs), logs)
+w2, *_ = neu_waechter(senf=SENF, freigabe=False)
+w2.takt()
+check("Startwache ohne Freigabe aus (keine Prozessliste alle 50 ms)", w2.schnell() is False)
+
 # KaiScribe startet, während schon ein Diktat offen ist → dieses Fenster nie
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 oeffnen(api, uhr)
@@ -397,6 +419,29 @@ takte(w, uhr, 1)
 oeffnen(api, uhr)
 takte(w, uhr, 5)
 check("Fehler beim Einfügen → nichts, Log, kein Absturz", any("Fehler RuntimeError" in l for l in logs), logs)
+
+# Thread: Takt alle 0,5 s, dazwischen Startwache alle 50 ms (nur wenn schnell())
+class Zaehler:
+    def __init__(self):
+        self.takte, self.erfasst = 0, 0
+        self.merker = types.SimpleNamespace(aufraeumen=lambda: 0)
+
+    def takt(self):
+        self.takte += 1
+
+    def schnell(self):
+        return True
+
+    def starts_erfassen(self):
+        self.erfasst += 1
+
+
+import time as _t  # noqa: E402
+z = Zaehler()
+th = M.Thread(z, log=lambda *a: None).start()
+_t.sleep(1.2)
+th.stop()
+check("Thread: ~2 Takte in 1,2 s, dazwischen ≥ 10× Startwache", 2 <= z.takte <= 4 and z.erfasst >= 10, (z.takte, z.erfasst))
 
 # Merker lokal + X: (Wiederöffnen an einem anderen PC)
 lok1, lok2, xo = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
