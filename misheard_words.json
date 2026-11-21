@@ -890,6 +890,19 @@
    "mean": "Spornbildung$1",
    "mode": "auto",
    "source": "Peter 02.11.2026 (KaiScribe-Gruppe: „Spornbildung statt Sporenbildung“)"
+  },
+  {
+   "hear": [
+    "(?<![A-Za-zÄÖÜäöüß])[Gg]anz[\\s-]+[Aa]ufnahme(n?)(?![a-zäöüß])"
+   ],
+   "regex": true,
+   "show": [
+    "ganz Aufnahme",
+    "Ganz-Aufnahme"
+   ],
+   "mean": "Ganzaufnahme$1",
+   "mode": "auto",
+   "source": "Abnahme 3.20.3 am Testpatienten 21.11.2026 (STT schrieb „ganz Aufnahme der Wirbelsäule AP“ → Vorlage „Gesamte Wirbelsäule“ statt „Ganzaufnahme der Wirbelsäule a.-p.“; kaiscribe-georg-2011-abnahme)"
   }
  ]
 }

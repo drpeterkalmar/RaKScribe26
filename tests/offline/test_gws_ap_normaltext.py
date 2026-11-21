@@ -89,5 +89,14 @@ check("SQUIRREL: Sätze an Stelle von „Normale Stellung.“, Beschriftung und 
 check("SQUIRREL: Ergebnis „Hochgradige rechtskonvexe Skoliose der BWS.“ wie bisher",
       e.report.split("## Ergebnis\n")[1].startswith("Hochgradige rechtskonvexe Skoliose der BWS."), e.report)
 
+# ── 5. Abnahme 21.11.2026: STT schreibt „ganz Aufnahme der Wirbelsäule AP“ → Fehlhör-Liste → a.p.-Vorlage ──
+import detect as _det  # noqa: E402
+import misheard as _mh  # noqa: E402
+_roh = "ganz Aufnahme der Wirbelsäule AP. : unauffällig."
+_korr = _mh.apply(_roh, _mh.compile_rules(json.loads((ROOT / "misheard_words.json").read_text(encoding="utf-8"))))
+_korr = _korr[0] if isinstance(_korr, tuple) else _korr
+check("„ganz Aufnahme der Wirbelsäule AP“ (STT) → „Ganzaufnahme …“ → Vorlage Ganzaufnahme der Wirbelsäule a.-p.",
+      _det.detect_template(_korr, T) == AP, (_korr, _det.detect_template(_korr, T)))
+
 print(f"\n{'GRÜN' if not fails else f'{fails} FEHLER'}")
 sys.exit(1 if fails else 0)

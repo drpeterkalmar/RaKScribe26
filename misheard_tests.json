@@ -310,6 +310,23 @@
    "in": "Plantarer Fersensporn und Fersensporen beidseits.",
    "keep": true,
    "out": "Plantarer Fersensporn und Fersensporen beidseits."
+  },
+  {
+   "in": "ganz Aufnahme der Wirbelsäule AP. : unauffällig.",
+   "out": "Ganzaufnahme der Wirbelsäule AP. : unauffällig."
+  },
+  {
+   "in": "Ganz-Aufnahme der Wirbelsäule",
+   "out": "Ganzaufnahme der Wirbelsäule"
+  },
+  {
+   "in": "ganz Aufnahmen der Beine",
+   "out": "Ganzaufnahmen der Beine"
+  },
+  {
+   "in": "ganz aufgenommen",
+   "out": "ganz aufgenommen",
+   "keep": true
   }
  ]
 }
