@@ -214,7 +214,7 @@
   "aktuell": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella in regelrechter Position. Unauffällige Weichteile.\nZusätzlich kleiner Gelenkerguss.\n\n## Ergebnis\nGeringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).",
   "llm": "## Kniegelenk rechts\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Kleiner Gelenkerguss. Patella in regelrechter Position. Unauffällige Weichteile.\n\n## Ergebnis\n1. Geringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Kleiner Gelenkerguss rechts.",
   "ergebnis": {
-   "report": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGeringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Kleiner Gelenkerguss. Im Übrigen normale Form und Stellung. Patella in regelrechter Position.\n\n## Ergebnis\n1. Geringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Kleiner Gelenkerguss rechts.",
+   "report": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Kleiner Gelenkerguss. Patella in regelrechter Position.\n\n## Ergebnis\n1. Geringgradige Gonarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Kleiner Gelenkerguss rechts.",
    "hinweise": [],
    "leer": false,
    "aufrufe": 1

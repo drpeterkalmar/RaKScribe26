@@ -1525,6 +1525,21 @@
      "export function widSeite(t: string): string {"
     ]
    }
+  },
+  {
+   "id": "stellung-zuerst",
+   "titel": "Erste Zeile = Stellung: „Im Übrigen normale (Form und) Stellung …“ hinter einer Pathologie, die die Stellung nicht betrifft (Fibroostose, Arthrose …), kommt ohne „Im Übrigen“ an den Anfang; bei Fraktur/Fehlstellung bleibt sie dahinter (37c)",
+   "quelle": "Georg Riegler 20.11.2026 (Sammelliste 37c) + Abnahme 3.20.2 am Testpatienten 451898, 21.11.2026",
+   "datum": "2026-11-21",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def _stellung_vor(text, spans):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "function stellungVor(text: string, spans: [number, number][]): [string, string] {"
+    ]
+   }
   }
  ]
 }

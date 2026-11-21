@@ -1278,13 +1278,29 @@ const vorlageZurueck = (rest: string, templates?: VorlagenMap): string | null =>
   return c.get(worte(rest)) ?? null;
 };
 
+// 37c (Georg 20.11.2026; Abnahme 3.20.2 am 21.11.): Stellungssatz hinter nicht-stellungsbezogener Pathologie → nach vorn (Sync: befund_regeln.py)
+export const STELLUNG_UEBRIGEN = /^Im [Üü]brigen,?\s+(normale[rn]?\s+(?:Form\s+und\s+)?Stellung\b[\s\S]*)$/u;
+function stellungVor(text: string, spans: [number, number][]): [string, string] {
+  for (let k = 1; k < spans.length; k++) {
+    const [x, y] = spans[k];
+    const m = STELLUNG_UEBRIGEN.exec(text.slice(x, y));
+    if (!m) continue;
+    if (spans.slice(0, k).some(([p, q]) => bejaht(text.slice(p, q).toLowerCase(), STELLUNG_PATHO))) return [text, ''];
+    const satz = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+    const ohne = satzWeg(text, x, y);
+    const a = spans[0][0];
+    return [ohne.slice(0, a) + satz + ' ' + ohne.slice(a), `Stellung zuerst: ${satz.slice(0, 50)}`];
+  }
+  return [text, ''];
+}
+
 export function befundAnfang(text: string, templates?: VorlagenMap): [string, string] {
   const spans = saetzeMitLage(text || '');
   if (!spans.length) return [text, ''];
   const [a, b] = spans[0];
   const s = text.slice(a, b);
   const m = UEBRIGEN_ANFANG.exec(s);
-  if (!m) return [text, ''];
+  if (!m) return stellungVor(text, spans);
   const ansonsten = m[1].toLowerCase().startsWith('ansonsten');
   for (const [x, y] of spans.slice(1)) {
     const t = text.slice(x, y);
@@ -1381,6 +1397,7 @@ const daumen = (zeilen: string[], dk: string, aend: string[]): void => {
 const KOMBI_TITEL_RE = /^## Beckenübersicht und Hüfte (rechts|links)(?: in 2 Ebenen)?[ \t]*$/u;
 export const KOMBI_TITEL = '## Becken sowie Hüftgelenk in 2 Ebenen {seite}';
 
+const SEITE_ADJ = /((?:^|[.!?]\s+|\n)(?:Rechts|Links|Beidseits)\s+)(Degenerative[nrs]?|Geringe[nrs]?|Geringgradige[nrs]?|Mäßige[nrs]?|Mäßiggradige[nrs]?|Deutliche[nrs]?|Ausgeprägte[nrs]?|Beginnende[nrs]?|Fortgeschrittene[nrs]?|Zarte[nrs]?|Kleine[nrs]?|Diskrete[nrs]?)(?=\s+[A-ZÄÖÜ])/gu;
 const KNIE_BDS_TITEL = /knie[a-zäöüß]*.*(?:beidseit|bds)/iu;
 const ANMERKUNG_ZEILE = /^(?:Anmerkung:|Weitere Winkelmessungen|HKA = |LCE = )/u;
 const seitenRang = (z: string): number => { const sd = widSeite(z); return sd === 'rechts' ? 0 : sd === 'links' ? 2 : 1; };
@@ -1448,6 +1465,8 @@ export function grundregeln(report: string, diktat = '', templates?: VorlagenMap
     }
   }
   let out = zeilen.join('\n');
+  const klein = out.replace(SEITE_ADJ, (_m, a: string, b: string) => a + b.toLowerCase());
+  if (klein !== out) { aend.push('Adjektiv nach Seitenwort klein'); out = klein; }
   const si = out.replace(SI_ARTHROSE, (_m, n: string) => 'SI-Gelenksarthrose' + n);
   if (si !== out) { aend.push('Schreibweise SI-Gelenksarthrose'); out = si; }
   if (out.includes('Kellgren')) {

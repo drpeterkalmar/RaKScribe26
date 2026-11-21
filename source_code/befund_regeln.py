@@ -1593,6 +1593,26 @@ def _vorlage_zurueck(rest, templates):
     return c.get(_worte(rest))
 
 
+# 37c (Georg 20.11.2026; Abnahme 3.20.2 am 21.11., Knie beidseits: „Zarte Fibroostose … Im Übrigen normale Form und
+# Stellung …“): die erste Zeile ist die Stellung – steht der Stellungssatz eingeschränkt hinter Pathologien, die die
+# Stellung NICHT betreffen, kommt er ohne „Im Übrigen“ nach vorn.
+STELLUNG_UEBRIGEN = re.compile(r"^Im [Üü]brigen,?\s+(normale[rn]?\s+(?:Form\s+und\s+)?Stellung\b.*)$", re.S)
+
+
+def _stellung_vor(text, spans):
+    for k, (x, y) in enumerate(spans[1:], 1):
+        m = STELLUNG_UEBRIGEN.match(text[x:y])
+        if not m:
+            continue
+        if any(_bejaht(text[p:q].lower(), _STELLUNG_PATHO) for p, q in spans[:k]):
+            return text, ""
+        satz = m.group(1)[:1].upper() + m.group(1)[1:]
+        ohne = _satz_weg(text, x, y)
+        a = spans[0][0]
+        return ohne[:a] + satz + " " + ohne[a:], f"Stellung zuerst: {satz[:50]}"
+    return text, ""
+
+
 def befund_anfang(text, templates=None):
     """Befundtext einer Untersuchung → (text, Änderung oder ""). Beginnt er mit „Im Übrigen“/„Ansonsten“: hinter die erste
     passende Pathologie stellen, sonst das Wort weglassen."""
@@ -1603,7 +1623,7 @@ def befund_anfang(text, templates=None):
     s = text[a:b]
     m = UEBRIGEN_ANFANG.match(s)
     if not m:
-        return text, ""
+        return _stellung_vor(text, spans)
     ansonsten = m.group(1).lower().startswith("ansonsten")
     for x, y in spans[1:]:
         t = text[x:y]
@@ -1702,6 +1722,9 @@ _KOMBI_TITEL = re.compile(r"^## Beckenübersicht und Hüfte (rechts|links)(?: in
 KOMBI_TITEL = "## Becken sowie Hüftgelenk in 2 Ebenen {seite}"
 
 
+_SEITE_ADJ = re.compile(r"((?:^|[.!?]\s+|\n)(?:Rechts|Links|Beidseits)\s+)(Degenerative[nrs]?|Geringe[nrs]?|Geringgradige[nrs]?|"
+                        r"Mäßige[nrs]?|Mäßiggradige[nrs]?|Deutliche[nrs]?|Ausgeprägte[nrs]?|Beginnende[nrs]?|"
+                        r"Fortgeschrittene[nrs]?|Zarte[nrs]?|Kleine[nrs]?|Diskrete[nrs]?)(?=\s+[A-ZÄÖÜ])")
 _KNIE_BDS_TITEL = re.compile(r"knie[a-zäöüß]*.*(?:beidseit|bds)", re.I)
 _ANMERKUNG_ZEILE = re.compile(r"^(?:Anmerkung:|Weitere Winkelmessungen|HKA = |LCE = )")
 
@@ -1775,6 +1798,11 @@ def grundregeln(report, diktat="", templates=None):
             aend.append("Knie beidseits: Ergebnis rechts zuerst")
             erg = True
     out = "\n".join(zeilen)
+    # Abnahme 21.11.: „Links Degenerative Veränderungen …“ → Adjektiv nach Seitenwort am Satzanfang klein
+    klein = _SEITE_ADJ.sub(lambda m: m.group(1) + m.group(2).lower(), out)
+    if klein != out:
+        aend.append("Adjektiv nach Seitenwort klein")
+        out = klein
     # 38: SI-Gelenksarthrose; 42: an der Wirbelsäule kein K&L-Grad
     si = _SI_ARTHROSE.sub(lambda m: "SI-Gelenksarthrose" + m.group(1), out)
     if si != out:
