@@ -332,6 +332,9 @@ def band_text(bausteine, an=True):
     return "IB Lab: " + " · ".join(f"{b.label} ✓" for b in bausteine)
 
 
+FROG_KI_BILD = "am KI-Bild prüfen"   # ris-mods ibl/frog_ergebnis (1.3.15): Widerspruch / „keine Diagnose …“ → rote Prüfzeile
+
+
 def anzeige_hinweise(bausteine):
     """Hinweise des Abholers (nur Anzeige, nie in den Befund) + Zahl nicht zugeordneter Messgrößen."""
     out = []
@@ -340,6 +343,8 @@ def anzeige_hinweise(bausteine):
               for h in b.hinweise]
         if b.modul == "squirrel":          # 20.11.2026: Metall, Verlauf nicht zuordenbar, Konvexität fehlt = rote Prüfzeile
             hs = [f"⚠ {h}" if "prüfen" in h and not h.startswith("⚠") else h for h in hs]
+        elif b.modul == "frog":            # 3.20.1 (Georg 20.11., RH 30; Abholer 1.3.15): Widerspruch der Winkel bzw. Messwerte
+            hs = [f"⚠ {h}" if FROG_KI_BILD in h and not h.startswith("⚠") else h for h in hs]   # ohne Diagnose = rot
         out += hs
         if b.nicht_zugeordnet:
             out.append(f"{b.name}: {len(b.nicht_zugeordnet)} Messgröße(n) nicht zugeordnet (Katalog ergänzen)")

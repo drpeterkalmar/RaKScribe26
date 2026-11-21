@@ -92,8 +92,12 @@ check("41a: Messwert-Sätze am Ende der Fuß-Beschreibung, Vorlagensätze bleibe
 check("41a: kein Ergebnispunkt aus FROG – Normal-Ergebnis bleibt, Schlussanmerkung als „Anmerkung: …“",
       ergebnis_teil(erg.report) == T["fuß_in_2_ebenen"]["ergebnis"].rstrip(".") + " rechts.\n\nAnmerkung: " + SCHLUSS
       and erg.vollstaendig, ergebnis_teil(erg.report))
-check("41a: Prüfzeile „bitte am KI-Bild prüfen“ bleibt sichtbar (rot in KaiScribe)",
-      any("bitte am KI-Bild prüfen" in h for h in I.anzeige_hinweise(I.aus_liste([OHNE]))))
+check("41a: Prüfzeile „bitte am KI-Bild prüfen“ bleibt sichtbar und ist rot („⚠ …“, 3.20.1)",
+      any(h.startswith("⚠ ") and "bitte am KI-Bild prüfen" in h for h in I.anzeige_hinweise(I.aus_liste([OHNE]))),
+      I.anzeige_hinweise(I.aus_liste([OHNE])))
+_seite = dict(OHNE, hinweise=["FROG: Seite fehlt im SR – „rechts“ nur aus Hersteller-Zusatzdaten übernommen, bitte am Bild prüfen."])
+check("41a: andere FROG-Hinweise (Seite, Hersteller) bleiben gelb (kein „⚠“)",
+      not any(h.startswith("⚠") for h in I.anzeige_hinweise(I.aus_liste([_seite]))), I.anzeige_hinweise(I.aus_liste([_seite])))
 vorfuss = I._frog_plan(b, "Vorfuß rechts in 2 Ebenen", "rechts", "", [])
 check("41a: Vorfuß → nur die d.p.-Werte", vorfuss is not None and vorfuss[0] == [MW[0]], vorfuss)
 ohne_mw = copy.deepcopy(OHNE)

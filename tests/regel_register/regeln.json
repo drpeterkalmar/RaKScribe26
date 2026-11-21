@@ -1343,9 +1343,11 @@
    "pruefwort": {
     "source_code/ibl_bausteine.py": [
      "bt[\"ohne_diagnose\"] = bool(x.get(\"ohne_diagnose\")) and bool(bt[\"messwerte\"])",
-     "def frog_ohne_diagnose(b):"
+     "def frog_ohne_diagnose(b):",
+     "FROG_KI_BILD = \"am KI-Bild prüfen\""
     ]
-   }
+   },
+   "notiz": "3.20.1 (Abnahme 21.11.2026): die Prüfzeile „… bitte am KI-Bild prüfen“ ist rot (vorher nur bei SQUIRREL)."
   },
   {
    "id": "georg-nur-text-aus",
