@@ -821,6 +821,19 @@
   },
   {
    "hear": [
+    "R(?:h?o|oh|ow)[sß](?:k|c)ore?(?=[\\s-]*\\d)"
+   ],
+   "regex": true,
+   "show": [
+    "Roskore 8",
+    "Roscore 7"
+   ],
+   "mean": "Rho-Score",
+   "mode": "auto",
+   "source": "Abnahme 3.20.1 am Testpatienten 21.11.2026 (STT hörte „Rho Score 8“ als „Roskore 8“, Rho-Befund fehlte; kaiscribe-georg-2011-abnahme)"
+  },
+  {
+   "hear": [
     "Rho"
    ],
    "mean": "Rho",

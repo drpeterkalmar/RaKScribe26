@@ -243,6 +243,19 @@
    "out": "Rho-Score 9"
   },
   {
+   "in": "Osteochondrose L5 S1. Roskore 8.",
+   "out": "Osteochondrose L5 S1. Rho-Score 8."
+  },
+  {
+   "in": "Roscore 7",
+   "out": "Rho-Score 7"
+  },
+  {
+   "in": "Die Roskorelation bleibt",
+   "out": "Die Roskorelation bleibt",
+   "keep": true
+  },
+  {
    "in": "Rohdaten und Ro unklar",
    "out": "Rohdaten und Ro unklar",
    "keep": true
