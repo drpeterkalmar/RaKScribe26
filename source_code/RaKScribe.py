@@ -3653,7 +3653,9 @@ class RaKScribeApp(ctk.CTk):
                           text_color=RECORDING_RED if any(h.startswith("⚠") for h in self._ibl_hinweise) else WARN_AMBER)
         if self._ibl_hinweise:  # Protokoll ohne Befundinhalt (Umbau Schritt 23): nur Zahl und Module
             module = sorted({h.split(":", 1)[0] for h in self._ibl_hinweise if ":" in h[:24]})
-            log(f"[IBL] Hinweise: {len(self._ibl_hinweise)}" + (f" ({', '.join(module)})" if module else ""))
+            rot = sum(1 for h in self._ibl_hinweise if h.startswith("⚠"))   # 3.20.1: rote Prüfzeilen belegbar (Abnahme)
+            log(f"[IBL] Hinweise: {len(self._ibl_hinweise)}" + (f" ({', '.join(module)})" if module else "")
+                + f", rot (Prüfzeile): {rot}")
 
     def _ibl_umgeschaltet(self):
         einstellung_schreiben("ibl_uebernehmen", self._ibl_an())
