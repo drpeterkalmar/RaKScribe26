@@ -205,6 +205,6 @@ müssen; Klicks über die Strecke hinaus waren nicht vorgesehen). Seit 3.19.16 l
   Zeilen seit dem letzten Start.
 - Sauber-Prüfung ris-mods: 3fc58d2 und 3e8db91 jeweils alles grün außer 2 Tests in `autark` (Cron-Doktor, nicht geändert).
   Ursache: `os.nice(10)` im Startparameter scheitert, wenn der Prüflauf schon maximal „nett“ läuft → robust gemacht (b371c3e),
-  `nice -n 19` 124/124 grün; dritter Lauf siehe Abschluss.
+  `nice -n 19` 124/124 grün. **Sauber-Prüfung b371c3e: ok (3044 Tests, 05:59).**
 - Knie-Text (KI): „Ansonsten die Gelenkflächen normal geformt und kongruent.“ neben „Rechts sind die Gelenkflächen …“ – inhaltlich
   richtig, sprachlich holprig; Georg bitte beim ersten echten Knie-beidseits-Fall ansehen.
