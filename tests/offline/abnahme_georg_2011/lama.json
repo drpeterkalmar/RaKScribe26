@@ -1,0 +1,37 @@
+{
+ "format": "ibl-abholer/1",
+ "accession_number": "ACCNO",
+ "modul": "lama",
+ "modul_name": "IB Lab LAMA",
+ "version": 1,
+ "aktualisiert": "ZEIT",
+ "vorbefund": {
+  "befundteil": [
+   "Beinlänge rechts 93,8 cm (IB Lab LAMA).",
+   "Femurlänge rechts 52,9 cm (IB Lab LAMA).",
+   "Tibialänge rechts 41,0 cm (IB Lab LAMA).",
+   "HKA-Winkel rechts 0,4° (IB Lab LAMA).",
+   "Mechanische Achsabweichung (MAD) rechts -2,0 mm (IB Lab LAMA).",
+   "Beinlänge links 92,7 cm (IB Lab LAMA).",
+   "Femurlänge links 52,7 cm (IB Lab LAMA).",
+   "Tibialänge links 40,1 cm (IB Lab LAMA).",
+   "HKA-Winkel links 0,7° (IB Lab LAMA).",
+   "Mechanische Achsabweichung (MAD) links 3,1 mm (IB Lab LAMA).",
+   "Beinlängendifferenz 1,1 cm (IB Lab LAMA)."
+  ],
+  "ergebnis_punkte": [
+   "Beinlängendifferenz von 11 mm, links kürzer.",
+   "Beidseits regelrechte Beinachse (rechts HKA 0,4°, MAD −2,0 mm; links HKA 0,7°, MAD 3,1 mm).",
+   "HKA = Hüft-Knie-Sprunggelenk-Winkel, MAD = mechanische Achsabweichung (Mikulicz-Linie/Traglinie des Ganzbeines). Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS zu entnehmen."
+  ],
+  "hinweise_fuer_befunder": [],
+  "nicht_zugeordnet": [],
+  "angewandte_regeln": [
+   "lama-beinlaengendifferenz",
+   "lama-beinachse",
+   "lama-schlussanmerkung"
+  ]
+ },
+ "_quelle": "ris-mods ibl/tests/fixtures_lama/letzte10_20261117.json Fall 5 (anonym)",
+ "_abholer": "1.3.15"
+}
