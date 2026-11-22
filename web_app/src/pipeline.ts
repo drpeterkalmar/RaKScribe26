@@ -3,7 +3,7 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { bloecke, blockText, umbauSegment, umbauBlock, titelUebernehmen, vorrang, saetze, fehlende, ergaenzen, pruefzeile, streichen, ergebnisFehlt, verneintVorrang } from './befundfeld.ts';
@@ -111,7 +111,15 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
     ctx.status(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
   }
   const teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));
-  return rhoAnsEnde(befundeZusammenfuegen(teile));   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
+  return osteopen(rhoAnsEnde(befundeZusammenfuegen(teile)), text);   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
+};
+
+// kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → „Osteopenischer Knochenaspekt.“ statt Mineralisations-
+// Normalsatz in allen Untersuchungen, ganz am Schluss. Sync: pipeline.py _osteopen.
+const osteopen = (report: string, diktat: string): string => {
+  const [out, teile] = osteopenErsetzen(report, diktat);
+  if (teile.length) console.log(`[RHO] Osteopenischer Knochenaspekt statt Mineralisations-Normalsatz in ${teile.length} Untersuchung(en)`);
+  return out;
 };
 
 // v3.4.0 (Peter 07.10., „manchmal ist weniger mehr“): Nur-Text-Modus — rechts nur die korrigierte Spracherkennung
@@ -143,7 +151,7 @@ export const befundUmbauen = async (aktuellIn: string, stand: string, ctx: Pipel
     teile.push(streichen(await befundFuerSegment(seg, ctx, umbauBlock(eigene, gestrichen, ohneStand), gestrichen), gestrichen));
     titel.push(b.titel);
   }
-  let report = titelUebernehmen(befundeZusammenfuegen(teile), titel);
+  let report = osteopen(titelUebernehmen(befundeZusammenfuegen(teile), titel), vor.join(' '));
   const hinweise: string[] = [];
   const fehlt = fehlende(vor, report);
   for (const s of fehlt) { report = ergaenzen(report, s)[0]; hinweise.push(pruefzeile(s)); }

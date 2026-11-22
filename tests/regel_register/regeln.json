@@ -1556,6 +1556,29 @@
      "_SQ_GWS = re.compile(r\"(?m)(?:(?<=Wirbelsäule: )|^)Normale Stellung"
     ]
    }
+  },
+  {
+   "id": "rho-osteopen",
+   "titel": "Rho-Score ≥ 7 (Rho-Schlussbefund im Befund): Mineralisations-Normalsatz in der Beschreibung ALLER Untersuchungen des Auftrags raus, stattdessen „Osteopenischer Knochenaspekt.“; Score < 7 / kein Rho / Rho gesperrt → Normalsatz bleibt; Diktat (Mineralisation/Osteopenie/Osteoporose) geht vor; Ergebnis unverändert",
+   "quelle": "Georg Riegler 22.11.2026: „Wir haben immer den Standardsatz Regelrechte Knochenmineralisation oder so ähnlich bei den Röntgenuntersuchungen. Wenn der Rho score grösser/gleich 7 ist muss der Satz raus. Anstattdessen: Osteopenischer Knochenaspekt“ – „Überall ersetzen“ (kaiscribe-rho-osteopen-n1)",
+   "datum": "2026-11-22",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "OSTEOPEN_SATZ = \"Osteopenischer Knochenaspekt.\"",
+     "def osteopen_ersetzen(report, diktat=\"\"):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const OSTEOPEN_SATZ = 'Osteopenischer Knochenaspekt.';",
+     "export function osteopenErsetzen(report: string, diktat = ''): [string, string[]] {"
+    ],
+    "source_code/pipeline.py": [
+     "erg.report, teile = br.osteopen_ersetzen(erg.report, erg.raw if diktat is None else diktat)"
+    ],
+    "web_app/src/pipeline.ts": [
+     "const [out, teile] = osteopenErsetzen(report, diktat);"
+    ]
+   }
   }
  ]
 }

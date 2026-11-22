@@ -70,6 +70,8 @@ jobs:
         run: python tests/offline/test_regionen.py
       - name: Mehrere Untersuchungen ohne Seite (LWS + Becken, Georg 19.11.2026)
         run: python tests/offline/test_mehrfach_seitenlos.py
+      - name: Rho ≥ 7 → Osteopenischer Knochenaspekt (Georg 22.11.2026)
+        run: python tests/offline/test_rho_osteopen.py
       - name: EXE-Import ohne Seiteneffekte (UI + main)
         run: python tests/offline/test_import.py
       - name: Toter Code bleibt weg, Prompt-Hinweis einmal

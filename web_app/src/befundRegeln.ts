@@ -351,6 +351,95 @@ export function rhoAnsEnde(report: string): string {
   return befundeZusammenfuegen([rest, block]);
 }
 
+// kaiscribe-rho-osteopen-n1 (Georg 22.11.2026, „Überall ersetzen“): Rho-Schlussbefund (Score ≥ 7) im Befund →
+// Mineralisations-Normalsatz in der Beschreibung aller Untersuchungen durch „Osteopenischer Knochenaspekt.“; weitere
+// Normalsätze dazu im selben Teil fallen weg; Diktat nennt die Knochendichte selbst → nichts; Ergebnis unverändert.
+// Sync: befund_regeln.py osteopen_ersetzen (Fixtures „rho“ → „osteopen“).
+export const OSTEOPEN_SATZ = 'Osteopenischer Knochenaspekt.';
+const OSTEO_WORT = /mineral|kalksalz|knochenstruktur|spongiosa/i;
+const OSTEO_NORMAL = /^(?:regelrecht|unauffällig|normal|regulär|altersentsprechend|altersgerecht|homogen)(?:e|er|em|en|es)?$/;
+const OSTEO_ERLAUBT = new Set((
+  'im übrigen ansonsten sonst die der das des den mitdargestellten mitabgebildeten abgebildeten dargestellten erfassten ' +
+  'miterfassten übrigen skelettabschnitte skelettanteile knochen knöchernen ist sind stellt stellen sich dar zeigt zeigen ' +
+  'bezüglich hinsichtlich mineralgehalt mineralisation knochenmineralisation knochenmineralgehalt kalksalzgehalt ' +
+  'knochenstruktur knochenstrukturen spongiosastruktur und sowie bei scharfer scharf abgrenzbarkeit abgrenzbar ' +
+  'spongiosabälkchen soweit erfasst mitabgebildet beckens femurs').split(' '));
+const OSTEO_VORSATZ = /^(im übrigen|ansonsten|sonst)\s+/i;
+const OSTEO_DIKTIERT = /mineral|osteopen|osteopor|kalksalz|entkalk|kalkarm|knochenarm|knochendicht|knochenatroph|demineral/i;
+const OSTEO_IM_BEFUND = /osteopen|osteopor|demineral|kalksalzminder|kalkarm|vermindert[\p{L}]*\s+(?:knochen)?mineral/iu;
+
+const osteoNormal = (satz: string): boolean => {
+  const w = satz.toLowerCase().match(/[a-zäöüß]+/g) || [];
+  return w.length > 0 && OSTEO_WORT.test(satz) && w.some(x => OSTEO_NORMAL.test(x))
+    && w.every(x => OSTEO_ERLAUBT.has(x) || OSTEO_NORMAL.test(x));
+};
+
+const osteoSatz = (satz: string, erster: boolean): string | null => {
+  const kern = satz.trim();
+  if (osteoNormal(kern)) {
+    if (!erster) return '';
+    const m = kern.match(OSTEO_VORSATZ);
+    return m ? m[0] + OSTEOPEN_SATZ[0].toLowerCase() + OSTEOPEN_SATZ.slice(1) : OSTEOPEN_SATZ;
+  }
+  const p = kern.indexOf(', ');
+  if (p >= 0) {
+    const kopf = kern.slice(0, p), rest = kern.slice(p + 2).trim();
+    if (rest && osteoNormal(kopf)) return (erster ? OSTEOPEN_SATZ + ' ' : '') + rest[0].toUpperCase() + rest.slice(1);
+  }
+  return null;
+};
+
+const rhoAb7ImBefund = (report: string): boolean => {
+  if (!report.includes(`## ${RHO_TITEL}`) || !report.includes(RHO_ERGEBNIS)) return false;
+  const m = report.match(/Der Score von (≥\s*7|\d{1,2})(?![\p{L}\p{N}_])/u);
+  return !m || !/^\d+$/.test(m[1]) || Number(m[1]) >= RHO_AB;
+};
+
+export function osteopenErsetzen(report: string, diktat = ''): [string, string[]] {
+  if (!report || !rhoAb7ImBefund(report)) return [report, []];
+  if (OSTEO_DIKTIERT.test(rhoErkennen(diktat || '')[0] || '')) return [report, []];
+  const zeilen = report.split('\n');
+  const teile: [number, string][] = [];
+  let titel = '', imBefund = true, rho = false;
+  zeilen.forEach((z, i) => {
+    const st = z.trim();
+    if (st.startsWith('## ')) {
+      const kopf = st.slice(3).trim().replace(/:$/, '').toLowerCase();
+      if (kopf === 'befund') imBefund = true;
+      else if (kopf === 'ergebnis') imBefund = false;
+      else { titel = st.slice(3).trim(); imBefund = true; rho = st === `## ${RHO_TITEL}`; }
+      return;
+    }
+    if (imBefund && !rho && st) teile.push([i, titel]);
+  });
+  if (teile.some(([i]) => OSTEO_IM_BEFUND.test(zeilen[i]))) return [report, []];
+  const geaendert: string[] = [], ersetzt = new Set<string>(), weg = new Set<number>();
+  for (const [i, t] of teile) {
+    const stuecke = zeilen[i].split(/(?<=[.!?])(\s+)(?=[A-ZÄÖÜ])/);
+    const neu: string[] = [];
+    let anders = false;
+    for (let k = 0; k < stuecke.length; k += 2) {
+      const r = osteoSatz(stuecke[k], !ersetzt.has(t));
+      if (r === null) neu.push(stuecke[k]);
+      else { anders = true; ersetzt.add(t); if (r) neu.push(r); }
+      if (k + 1 < stuecke.length) neu.push(stuecke[k + 1]);
+    }
+    if (anders) {
+      zeilen[i] = neu.join('').replace(/\s{2,}/g, ' ').trim();
+      if (!zeilen[i]) weg.add(i);
+      if (!geaendert.includes(t)) geaendert.push(t);
+    }
+  }
+  if (!geaendert.length) return [report, []];
+  const out: string[] = [];
+  zeilen.forEach((z, k) => {
+    if (weg.has(k)) return;
+    if (!z.trim() && out.length && !out[out.length - 1].trim() && weg.has(k - 1)) return;
+    out.push(z);
+  });
+  return [out.join('\n'), geaendert];
+}
+
 export const befundeZusammenfuegen = (reports: string[]): string =>
   reports.map(r => (r || '').trim()).filter(Boolean).join('\n\n\n');
 

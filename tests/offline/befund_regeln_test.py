@@ -80,6 +80,10 @@ for c in F["georg_2011"]["faelle"]:   # kaiscribe-georg-2011-n1 (Georg 20.11.202
     g = br.grundregeln(c["in"], c["diktat"], TPL)[0]
     check(g == c["out"], f"georg_2011: {c['name']}", g)
     check(br.grundregeln(g, c["diktat"], TPL)[0] == g, f"georg_2011 zweimal gleich: {c['name'][:50]}", "nicht idempotent")
+for c in F["rho"]["osteopen"]:   # kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → Osteopenischer Knochenaspekt
+    g = br.osteopen_ersetzen(c["report"], c["diktat"])[0]
+    check(g == c["out"], f"rho osteopen: {c['name'][:50]}", g)
+    check(br.osteopen_ersetzen(g, c["diktat"])[0] == g, f"rho osteopen zweimal gleich: {c['name'][:40]}", "nicht idempotent")
 for c in F["rho"]["ans_ende"]:   # kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund am Schluss
     g = br.rho_ans_ende(c["in"])
     check(g == c["out"], f"rho ans Ende: {c['in'][:30]!r}", g)

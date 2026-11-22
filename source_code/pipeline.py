@@ -375,6 +375,18 @@ def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):
         [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
 
 
+def _osteopen(erg, ctx, diktat=None):
+    """kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho-Schlussbefund (Score ≥ 7) im Befund → Mineralisations-
+    Normalsatz aller Untersuchungen durch „Osteopenischer Knochenaspekt.“ ersetzen (ganz am Schluss, nach den Wächtern
+    und IB Lab). Diktat nennt die Knochendichte selbst → nichts. Restructure: „Diktat“ = Peters eigene Sätze (vor).
+    Sync: pipeline.ts befundAusDiktat/befundUmbauen."""
+    if erg.report:
+        erg.report, teile = br.osteopen_ersetzen(erg.report, erg.raw if diktat is None else diktat)
+        if teile:
+            ctx.log(f"[RHO] Osteopenischer Knochenaspekt statt Mineralisations-Normalsatz in {len(teile)} Untersuchung(en)")
+    return erg
+
+
 def befund_aus_diktat(diktat, ctx, beim_start=None):
     """Diktat → Ergebnis. Ein-Regionen-Diktat: Fehler werden geworfen (wie bisher); Mehr-Regionen-Diktat:
     gescheiterte Regionen stehen in Ergebnis.fehler, die übrigen im Report (Gutachten P2-6)."""
@@ -396,9 +408,9 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
         wahlen = [None if w.art == "baustein" else w for w in wahlen]
     vorlagen = [w.vorlage for w in wahlen if w is not None]
     if len(segmente) <= 1:
-        return ibl_anwenden(Ergebnis(raw=raw, report=befund_fuer_segment(segmente[0] if segmente else raw, ctx,
-                                                                         wahlen[0] if wahlen else None),
-                                     segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx)
+        return _osteopen(ibl_anwenden(Ergebnis(raw=raw, report=befund_fuer_segment(segmente[0] if segmente else raw, ctx,
+                                                                                   wahlen[0] if wahlen else None),
+                                               segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx)
     ctx.log(f"[MULTI] {len(segmente)} Regionen")
     with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
         futures = [ex.submit(befund_fuer_segment, seg, ctx, w) for seg, w in zip(segmente, wahlen)]
@@ -413,8 +425,8 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             teile.append(e)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
     report = br.rho_ans_ende(report)   # kaiscribe-georg-2011-n1 (Georg 20.11., Punkt 19): Rho-Befund immer am Schluss
-    return ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
-                                 cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx)
+    return _osteopen(ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
+                                           cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx)
 
 
 def nur_text_aus_diktat(diktat, ctx):
@@ -469,7 +481,7 @@ def befund_umbauen(aktuell, stand, ctx):
     report = br.befunde_zusammenfuegen(teile)
     if len(teile) == len(titel):
         report = bf.titel_uebernehmen(report, titel)
-    erg = ibl_anwenden(Ergebnis(raw=text, report=report, segmente=segmente), ctx)
+    erg = _osteopen(ibl_anwenden(Ergebnis(raw=text, report=report, segmente=segmente), ctx), ctx, " ".join(vor))
     hinweise = []
     fehlt = bf.fehlende(vor, erg.report)
     for s in fehlt:               # Peters Angabe ging verloren → wörtlich zurück, rot zum Prüfen

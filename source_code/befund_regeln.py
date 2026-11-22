@@ -478,6 +478,117 @@ def rho_ans_ende(report):
     return befunde_zusammenfuegen([rest, block])
 
 
+# kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): „Wir haben immer den Standardsatz Regelrechte Knochenmineralisation oder so
+# ähnlich bei den Röntgenuntersuchungen. Wenn der Rho score grösser/gleich 7 ist muss der Satz raus. Anstattdessen:
+# Osteopenischer Knochenaspekt“ – „Überall ersetzen“ (alle Untersuchungen des Auftrags, auch Mehrfach). Steht der
+# Rho-Schlussbefund (Score ≥ 7) im Befund, wird in der Beschreibung JEDER Untersuchung der Mineralisations-Normalsatz
+# (alle Formen aus templates.json/Prompt) durch OSTEOPEN_SATZ ersetzt; weitere Normalsätze dazu im selben Teil fallen weg
+# (nie doppelt). „Im Übrigen …“/„Ansonsten …“ bleibt davor. Diktat nennt Mineralisation/Osteopenie/Osteoporose selbst →
+# nichts. Ergebnis bleibt unverändert. Sync: web_app/src/befundRegeln.ts osteopenErsetzen (Fixtures „rho“ → „osteopen“).
+OSTEOPEN_SATZ = "Osteopenischer Knochenaspekt."
+_OSTEO_WORT = re.compile(r"mineral|kalksalz|knochenstruktur|spongiosa", re.I)
+_OSTEO_NORMAL = re.compile(r"^(?:regelrecht|unauffällig|normal|regulär|altersentsprechend|altersgerecht|homogen)"
+                           r"(?:e|er|em|en|es)?$")
+_OSTEO_ERLAUBT = frozenset((
+    "im übrigen ansonsten sonst die der das des den mitdargestellten mitabgebildeten abgebildeten dargestellten erfassten "
+    "miterfassten übrigen skelettabschnitte skelettanteile knochen knöchernen ist sind stellt stellen sich dar zeigt zeigen "
+    "bezüglich hinsichtlich mineralgehalt mineralisation knochenmineralisation knochenmineralgehalt kalksalzgehalt "
+    "knochenstruktur knochenstrukturen spongiosastruktur und sowie bei scharfer scharf abgrenzbarkeit abgrenzbar "
+    "spongiosabälkchen soweit erfasst mitabgebildet beckens femurs").split())
+_OSTEO_VORSATZ = re.compile(r"^(im übrigen|ansonsten|sonst)\s+", re.I)
+# Diktat bzw. Befund nennt die Knochendichte selbst → Diktat gilt, nichts ersetzen (nie doppelt)
+_OSTEO_DIKTIERT = re.compile(r"mineral|osteopen|osteopor|kalksalz|entkalk|kalkarm|knochenarm|knochendicht|"
+                             r"knochenatroph|demineral", re.I)
+_OSTEO_IM_BEFUND = re.compile(r"osteopen|osteopor|demineral|kalksalzminder|kalkarm|vermindert\w*\s+(?:knochen)?mineral",
+                              re.I)
+
+
+def _osteo_normal(satz):
+    """Ist der Satz(teil) nur der Mineralisations-Normalsatz („Mineralgehalt und Knochenstruktur regelrecht.“)?"""
+    w = re.findall(r"[a-zäöüß]+", satz.lower())
+    return (bool(w) and _OSTEO_WORT.search(satz) is not None and any(_OSTEO_NORMAL.match(x) for x in w)
+            and all(x in _OSTEO_ERLAUBT or _OSTEO_NORMAL.match(x) for x in w))
+
+
+def _osteo_satz(satz, erster):
+    """Ein Satz → (neuer Satz | '' (weg) | None (bleibt)). erster: noch kein Ersatz in diesem Teil."""
+    kern = satz.strip()
+    if _osteo_normal(kern):
+        if not erster:
+            return ""
+        m = _OSTEO_VORSATZ.match(kern)
+        return f"{m.group(0)}{OSTEOPEN_SATZ[0].lower()}{OSTEOPEN_SATZ[1:]}" if m else OSTEOPEN_SATZ
+    kopf, komma, rest = kern.partition(", ")           # „Mineralgehalt regelrecht, keine Fraktur.“
+    if komma and rest.strip() and _osteo_normal(kopf):
+        rest = rest.strip()
+        return (OSTEOPEN_SATZ + " " if erster else "") + rest[0].upper() + rest[1:]
+    return None
+
+
+def _rho_ab7_im_befund(report):
+    if f"## {RHO_TITEL}" not in report or RHO_ERGEBNIS not in report:
+        return False
+    m = re.search(r"Der Score von (≥\s*7|\d{1,2})\b", report)
+    return m is None or not m.group(1).isdigit() or int(m.group(1)) >= RHO_AB
+
+
+def osteopen_ersetzen(report, diktat=""):
+    """Rho-Schlussbefund (Score ≥ 7) im Befund → Mineralisations-Normalsatz in der Beschreibung aller Untersuchungen durch
+    „Osteopenischer Knochenaspekt.“ ersetzen. → (report, [Titel der geänderten Teile])."""
+    if not report or not _rho_ab7_im_befund(report):
+        return report, []
+    if _OSTEO_DIKTIERT.search(rho_erkennen(diktat or "")[0] or ""):
+        return report, []
+    zeilen = report.split("\n")
+    teile, titel, im_befund, rho = [], "", True, False      # (Zeilenindex, Titel) je Zeile der Beschreibung
+    for i, z in enumerate(zeilen):
+        st = z.strip()
+        if st.startswith("## "):
+            kopf = st[3:].strip().rstrip(":").lower()
+            if kopf == "befund":
+                im_befund = True
+            elif kopf == "ergebnis":
+                im_befund = False
+            else:
+                titel, im_befund, rho = st[3:].strip(), True, st == f"## {RHO_TITEL}"
+            continue
+        if im_befund and not rho and st:
+            teile.append((i, titel))
+    if any(_OSTEO_IM_BEFUND.search(zeilen[i]) for i, _ in teile):
+        return report, []
+    geaendert, ersetzt, weg = [], set(), set()
+    for i, t in teile:
+        stuecke = re.split(r"(?<=[.!?])(\s+)(?=[A-ZÄÖÜ])", zeilen[i])
+        neu, anders = [], False
+        for k in range(0, len(stuecke), 2):
+            r = _osteo_satz(stuecke[k], t not in ersetzt)
+            if r is None:
+                neu.append(stuecke[k])
+            else:
+                anders = True
+                ersetzt.add(t)
+                if r:
+                    neu.append(r)
+            if k + 1 < len(stuecke):
+                neu.append(stuecke[k + 1])
+        if anders:
+            zeilen[i] = re.sub(r"\s{2,}", " ", "".join(neu)).strip()
+            if not zeilen[i]:
+                weg.add(i)
+            if t not in geaendert:
+                geaendert.append(t)
+    if not geaendert:
+        return report, []
+    out = []
+    for k, z in enumerate(zeilen):
+        if k in weg:
+            continue
+        if not z.strip() and out and not out[-1].strip() and (k - 1) in weg:
+            continue                                   # weggefallener Absatz: keine doppelte Leerzeile
+        out.append(z)
+    return "\n".join(out), geaendert
+
+
 def befunde_zusammenfuegen(reports):
     """Mehrere Einzelbefunde (je ## Titel/## Befund/## Ergebnis) untereinander."""
     return "\n\n\n".join(r.strip() for r in reports if r and r.strip())
