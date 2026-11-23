@@ -225,6 +225,14 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
             and wahl.leistung.seite in ("rechts", "links"):   # RH 49: Seite der Hüfte laut CAS in die Überschrift
         out = re.sub(r"(?m)^## Beckenübersicht und Hüfte(?: in 2 Ebenen)?[ \t]*$",
                      f"## Beckenübersicht und Hüfte {wahl.leistung.seite}", out)
+    if template_key == KOMBI_PROTHESE and wahl is not None and wahl.art == "kombi":
+        # Punkt 59: Kombi mit Prothese → „Becken sowie Hüftgelenk in 2 Ebenen <Seite> nach Hüft-TEP“ (Seite aus dem Diktat
+        # am TEP-Wort, sonst CAS; nie geraten)
+        m = _PROTHESE_DIKTAT.search(seg)
+        seite = br.wid_seite(seg[max(0, m.start() - 50):m.end() + 30]) if m else ""
+        seite = seite or (wahl.leistung.seite if wahl.leistung is not None and wahl.leistung.seite in ("rechts", "links") else "")
+        out = re.sub(r"(?m)^## Beckenübersicht mit einseitiger Hüftprothese[^\n]*$",
+                     "## Becken sowie Hüftgelenk in 2 Ebenen" + (f" {seite}" if seite else "") + " nach Hüft-TEP", out, count=1)
     return _grundregeln(out, seg, ctx)
 
 
@@ -325,7 +333,8 @@ def cas_wahlen(segmente, ctx):
             w = cv.Wahl(ziel.vorlage, "inhalt", ziel, w.erkannt)
         wahlen.append(w)
     segmente, wahlen, inhalt_hinweise = _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx)
-    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise + _strahl_hinweise(segmente, wahlen)
+    hinweise = cv.hinweise(segmente, wahlen, ctx.cas, ctx.templates) + inhalt_hinweise + _strahl_hinweise(segmente, wahlen) \
+        + _seite_hinweise(segmente, wahlen)
     if inhalt_hinweise:   # Protokoll ohne Diktatinhalt (Umbau Schritt 23): nur die Zahl
         ctx.log(f"[CAS] {len(inhalt_hinweise)} Prüfzeile(n) zur Satz-Zuordnung")
     # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
@@ -348,6 +357,23 @@ _STRAHL = re.compile(r"(?<![a-zäöüß])(?:dig(?:itus)?\.?\s*)?(?:i{1,3}|iv|v|[
 STRAHL_FEHLT = "{name}: Nummer (I–V) nicht diktiert – bitte im Befund ergänzen (wird nicht geraten)"
 
 
+SEITE_FEHLT = "{name}: Seite weder in der CAS-Leistung noch im Diktat – bitte prüfen (wird nicht geraten)"
+
+
+def _seite_hinweise(segmente, wahlen):
+    """kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 55, RH 60): seitenlose CAS-Leistung einer paarigen Region
+    (z. B. „Hüft-OP“) und keine Seite im Diktat → rote Prüfzeile (Bildkopf/Ausschluss nur mit Beleg, sonst nie raten)."""
+    out = []
+    for seg, w in zip(segmente, wahlen):
+        l = w.leistung if w is not None else None
+        if l is None or l.seite or not (l.regionen & cv.PAARIG) or br.diktierte_seite(seg) or w.art == "kombi":
+            continue
+        h = SEITE_FEHLT.format(name=l.label)
+        if h not in out:
+            out.append(h)
+    return out
+
+
 def _strahl_hinweise(segmente, wahlen):
     out = []
     for seg, w in zip(segmente, wahlen):
@@ -357,22 +383,52 @@ def _strahl_hinweise(segmente, wahlen):
 
 
 KOMBI_BECKEN_HUEFTE = "beckenübersicht_und_hüfte"
-_BECKEN_FAMILIE = {"beckenübersicht_stehend", "hüftgelenk_in_2_ebenen", KOMBI_BECKEN_HUEFTE}
+KOMBI_PROTHESE = "beckenübersicht_mit_einseitiger_hüftprothese"
+_BECKEN_FAMILIE = {"beckenübersicht_stehend", "hüftgelenk_in_2_ebenen", KOMBI_BECKEN_HUEFTE, "hüftprothese", KOMBI_PROTHESE,
+                   "beckenübersicht_mit_beidseitiger_hüftprothese"}
+# kaiscribe-schulter-ergebnis-n1 (Georg FINAL 23.11.2026, Punkt 59, RH 30): Kombibefund per DIKTAT – nennt der Arzt die
+# Untersuchungen am Anfang in EINEM Titel verbunden („Beckenübersicht und Hüfte rechts“, „Becken und Hüftgelenk … nach
+# Hüft-TEP“), wird es EIN Befund (Kombi-Vorlage, mit Prothese die Prothesen-Kombi), beide CAS-Leistungen gedeckt. Ohne das
+# Signal bleiben getrennte Teile (nur CAS bü + Hüft-OP ist KEIN Signal). Weitere Kombis (HWS und BWS, Knie und Ganzbein)
+# vorbereitet in KOMBI_LISTE, aktiv nur Becken + Hüfte.
+KOMBI_LISTE = {"becken_huefte": {"aktiv": True,
+                                 "signal": r"becken(?:übersicht)?(?:\s+[a-zäöüß]+){0,2}\s+(?:und|sowie|mit)\s+(?:der\s+|dem\s+|den\s+)?hüft"},
+               "hws_bws": {"aktiv": False, "signal": r"(?:hws|halswirbelsäule)\s+(?:und|sowie)\s+(?:bws|brustwirbelsäule)"},
+               "knie_ganzbein": {"aktiv": False, "signal": r"knie\w*\s+(?:und|sowie)\s+ganzbein"}}
+_KOMBI_SIGNAL = re.compile(KOMBI_LISTE["becken_huefte"]["signal"], re.I)
+_PROTHESE_DIKTAT = re.compile(r"(?<![a-zäöüß])tep(?![a-zäöüß])|prothes|endoprothes", re.I)
 
 
 def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):
     """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 26, RH 49: „Beckenübersicht und Hüftgelenk rechts“ → zwei Befunde,
     Titel/Seite falsch): wählt ein Abschnitt die Kombi-Vorlage Becken + Hüfte (v3.18.7) und gehören alle Abschnitte zu
     Becken/Hüfte, bleibt es EIN Befund mit der Kombi-Vorlage; die Seite kommt von der Hüft-Leistung laut CAS."""
-    if not any(w.vorlage == KOMBI_BECKEN_HUEFTE for w in wahlen) or not all(w.vorlage in _BECKEN_FAMILIE for w in wahlen):
+    gesamt = " ".join(s.strip() for s in segmente)
+    signal = KOMBI_LISTE["becken_huefte"]["aktiv"] and _KOMBI_SIGNAL.search(gesamt[:140]) is not None
+    if not (any(w.vorlage == KOMBI_BECKEN_HUEFTE for w in wahlen) or (signal and len(segmente) >= 2)) \
+            or not all(w.vorlage in _BECKEN_FAMILIE for w in wahlen):
         return segmente, wahlen, inhalt_hinweise
     if len(segmente) < 2:            # ein Abschnitt mit der Kombi-Vorlage deckt beide CAS-Leistungen
         return segmente, wahlen, [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
     huefte = next((w.leistung for w in wahlen if w.leistung is not None and w.leistung.seite), None) or \
         next((l for l in ctx.cas.alle if l.vorlage == "hüftgelenk_in_2_ebenen"), None)
-    ctx.log(f"[CAS] Becken + Hüfte: {len(segmente)} Abschnitte → ein Befund mit der Kombi-Vorlage")
-    return [" ".join(s.strip() for s in segmente)], [cv.Wahl(KOMBI_BECKEN_HUEFTE, "kombi", huefte, KOMBI_BECKEN_HUEFTE)], \
+    vorlage = KOMBI_PROTHESE if (signal and _PROTHESE_DIKTAT.search(gesamt) and KOMBI_PROTHESE in ctx.templates
+                                 and not re.search(r"beidseit\w*\s+(?:hüft-?)?(?:tep|totalendo|prothes)", gesamt, re.I)) \
+        else KOMBI_BECKEN_HUEFTE
+    ctx.log(f"[CAS] Becken + Hüfte: {len(segmente)} Abschnitte → ein Befund mit der Kombi-Vorlage {vorlage}"
+            + (" (Diktat nennt die Kombi)" if signal else ""))
+    return [gesamt], [cv.Wahl(vorlage, "kombi", huefte, vorlage)], \
         [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
+
+
+def _pruefen(erg, ctx):
+    """kaiscribe-schulter-ergebnis-n1 (Punkte 60/60b): rote Prüfzeilen statt stiller Normalvorlage – leeres Ergebnis,
+    „Regelrechte Darstellung“ trotz Pathologie im Befund. Nur Anzeige."""
+    if erg.report and not erg.fehler:
+        neu = [h for h in br.pruefzeilen_2311(erg.report, erg.raw, ctx.templates) if h not in (erg.cas_hinweise or [])]
+        if neu:
+            erg.cas_hinweise = list(erg.cas_hinweise or []) + neu
+    return erg
 
 
 def _osteopen(erg, ctx, diktat=None):
@@ -408,9 +464,9 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
         wahlen = [None if w.art == "baustein" else w for w in wahlen]
     vorlagen = [w.vorlage for w in wahlen if w is not None]
     if len(segmente) <= 1:
-        return _osteopen(ibl_anwenden(Ergebnis(raw=raw, report=befund_fuer_segment(segmente[0] if segmente else raw, ctx,
-                                                                                   wahlen[0] if wahlen else None),
-                                               segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx)
+        return _pruefen(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=br.teile_zusammenlegen(befund_fuer_segment(
+            segmente[0] if segmente else raw, ctx, wahlen[0] if wahlen else None), raw)[0],
+            segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx), ctx)
     ctx.log(f"[MULTI] {len(segmente)} Regionen")
     with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
         futures = [ex.submit(befund_fuer_segment, seg, ctx, w) for seg, w in zip(segmente, wahlen)]
@@ -424,9 +480,14 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             ausnahmen.append(e)
             teile.append(e)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
+    if not fehler:   # kaiscribe-schulter-ergebnis-n1 (Punkte 58a/64): nie doppelte Teile, kein nicht diktierter Unterarm
+        report, zus = br.teile_zusammenlegen(report, raw)
+        if zus:
+            ctx.log("[MULTI] " + " · ".join(zus))
     report = br.rho_ans_ende(report)   # kaiscribe-georg-2011-n1 (Georg 20.11., Punkt 19): Rho-Befund immer am Schluss
-    return _osteopen(ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen, segmente=segmente,
-                                           cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx)
+    return _pruefen(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen,
+                                                    segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen),
+                                           ctx), ctx), ctx)
 
 
 def nur_text_aus_diktat(diktat, ctx):
@@ -440,7 +501,8 @@ def nur_text_aus_diktat(diktat, ctx):
     if ctx.korrektur:
         raw = (ctx.korrektur(raw) or raw).strip()
     raw = bs.saetze_einsetzen(raw, ORDI_BAUSTEINE if ctx.bausteine is None else ctx.bausteine)
-    return Ergebnis(raw=raw, report=raw, segmente=[raw])
+    # kaiscribe-schulter-ergebnis-n1 (Punkte 49a/52): Überschriften auch im Nur-Text-Weg als „## …“ (fett)
+    return Ergebnis(raw=raw, report=br.nur_text_ueberschriften(raw), segmente=[raw])
 
 
 def befund_umbauen(aktuell, stand, ctx):

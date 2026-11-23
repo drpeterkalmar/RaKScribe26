@@ -80,6 +80,16 @@ for c in F["georg_2011"]["faelle"]:   # kaiscribe-georg-2011-n1 (Georg 20.11.202
     g = br.grundregeln(c["in"], c["diktat"], TPL)[0]
     check(g == c["out"], f"georg_2011: {c['name']}", g)
     check(br.grundregeln(g, c["diktat"], TPL)[0] == g, f"georg_2011 zweimal gleich: {c['name'][:50]}", "nicht idempotent")
+for c in F["georg_2311"]["faelle"]:   # kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
+    g = br.grundregeln(c["in"], c["diktat"], TPL)[0]
+    check(g == c["out"], f"georg_2311: {c['name']}", g)
+    check(br.grundregeln(g, c["diktat"], TPL)[0] == g, f"georg_2311 zweimal gleich: {c['name'][:50]}", "nicht idempotent")
+for c in F["georg_2311"]["teile"]:
+    g = br.teile_zusammenlegen(c["in"], c["diktat"])[0]
+    check(g == c["out"], f"georg_2311 Teile: {c['name']}", g)
+for c in F["georg_2311"]["nur_text"]:
+    g = br.nur_text_ueberschriften(c["in"])
+    check(g == c["out"], f"georg_2311 Nur Text: {c['name']}", g)
 for c in F["rho"]["osteopen"]:   # kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → Osteopenischer Knochenaspekt
     g = br.osteopen_ersetzen(c["report"], c["diktat"])[0]
     check(g == c["out"], f"rho osteopen: {c['name'][:50]}", g)
@@ -161,8 +171,8 @@ check(sys_exe is not None and sys_exe == sys_web, "systemInstruction EXE == Web"
 
 print("── SYNC: gemeinsame Daten (Umbau Schritt 20, Gutachten P2-2/P2-13)")
 PH = json.loads((ROOT / "phrases.json").read_text())
-check({"chirp", "medical_exe", "medical_web"} <= set(PH) and (len(PH["chirp"]), len(PH["medical_exe"]), len(PH["medical_web"])) == (79, 292, 565),
-      "phrases.json: chirp 79, medical_exe 292, medical_web 565", {k: len(v) for k, v in PH.items() if k != "_doc"})
+check({"chirp", "medical_exe", "medical_web"} <= set(PH) and (len(PH["chirp"]), len(PH["medical_exe"]), len(PH["medical_web"])) == (85, 292, 565),
+      "phrases.json: chirp 85, medical_exe 292, medical_web 565", {k: len(v) for k, v in PH.items() if k != "_doc"})
 check(len(set(PH["medical_web"])) == len(PH["medical_web"]) and len(set(PH["chirp"])) == len(PH["chirp"]), "Phrasenlisten ohne Doppelte (Web/chirp)")
 stt_py = (ROOT / "source_code/stt.py").read_text()
 stt_ts = (ROOT / "web_app/src/stt.ts").read_text()

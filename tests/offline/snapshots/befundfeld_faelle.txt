@@ -72,6 +72,62 @@
   "cursor": 513
  },
  {
+  "art": "ergaenzen",
+  "name": "62: „zweitens …“ in 3er-Liste → neuer 2., alte 2./3. → 3./4.",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.",
+  "neu": "zweitens kleine Chondrocalcinose",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Kleine Chondrocalcinose.\n3. Erguss.\n4. Baker-Zyste.",
+  "cursor": 134
+ },
+ {
+  "art": "ergaenzen",
+  "name": "62: „Punkt 1 …“ → neuer 1.",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.",
+  "neu": "Punkt 1 Fibroostose am Patellapol",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Fibroostose am Patellapol.\n2. Gonarthrose rechts.\n3. Erguss.\n4. Baker-Zyste.",
+  "cursor": 113
+ },
+ {
+  "art": "ergaenzen",
+  "name": "62: „an dritter Stelle …“",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.",
+  "neu": "an dritter Stelle Osteophyt am Tibiaplateau",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Osteophyt am Tibiaplateau.\n4. Baker-Zyste.",
+  "cursor": 147
+ },
+ {
+  "art": "ergaenzen",
+  "name": "62: „neuer Punkt 5 …“ in 3er-Liste → ans Ende (4.)",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.",
+  "neu": "neuer Punkt 5 Weichteilödem",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.\n4. Weichteilödem.",
+  "cursor": 151
+ },
+ {
+  "art": "ergaenzen",
+  "name": "62: Einzelpunkt + „zweitens …“ → 1./2.",
+  "text": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",
+  "neu": "zweitens kleiner Gelenkerguss",
+  "ergebnis": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Regelrechte Darstellung des Kniegelenkes.\n2. Kleiner Gelenkerguss.",
+  "cursor": 588
+ },
+ {
+  "art": "ergaenzen",
+  "name": "62: 2er-Liste + „zweitens …“",
+  "text": "## Knie\n\n## Befund\nX.\n\n## Ergebnis\n1. Gonarthrose.\n2. Erguss.",
+  "neu": "zweitens Baker-Zyste",
+  "ergebnis": "## Knie\n\n## Befund\nX.\n\n## Ergebnis\n1. Gonarthrose.\n2. Baker-Zyste.\n3. Erguss.",
+  "cursor": 66
+ },
+ {
+  "art": "ergaenzen",
+  "name": "62: ohne Ordnungswort → wie bisher Befundteil",
+  "text": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.",
+  "neu": "kleiner Erguss",
+  "ergebnis": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\nKleiner Erguss.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.",
+  "cursor": 86
+ },
+ {
   "art": "vorrang",
   "name": "Ergänzung + getippte Änderung",
   "stand": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die Gelenkflächen sind normal geformt und kongruent. Der Gelenkspalt ist allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Kniegelenkes.",

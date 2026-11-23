@@ -17,6 +17,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "source_code"))
 import cas_vorlagen as cv  # noqa: E402
 import ibl_bausteine as I  # noqa: E402
+
+I.KOALA_KNIE_AUTOMATIK = True   # Punkt 61: der alte KOALA-Weg bleibt hinter dem Schalter geprüft (live AUS)
 import pipeline as pl  # noqa: E402
 
 T = json.loads((ROOT / "templates.json").read_text(encoding="utf-8"))

@@ -266,7 +266,9 @@ _BULLET_RE = re.compile(r"^\s*[-*•–]\s+")
 # ohne Nummer unter dem Ergebnis (zählt nicht mit: ein einzelner LAMA-Punkt bleibt unnummeriert). Sync: befundRegeln.ts
 # v3.19.8 (Georg 17.11.2026, IB Lab FROG): ebenso „Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS …“.
 # v3.19.13 (Georg 18.11.2026, IB Lab HIPPO): ebenso „LCE = lateraler Center-Edge-Winkel …“ / „AI = …“ / „CCD = …“.
-_UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel"
+# kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 65): unnummeriert bleibt nur die Einleitung „Vergleich zur
+# Voruntersuchung vom …:“ (endet mit Doppelpunkt); ein Verlaufsvergleich als Aussage ist der 1. Punkt (georg_2311).
+_UNNUM_RE = re.compile(r"^(?:im\s+)?vergleich\s+zu[rm]?\s+vor[^\n]*:$|^HKA = Hüft-Knie-Sprunggelenk-Winkel"
                        r"|^Weitere Winkelmessungen sind den KI-Auswertungsbildern"
                        r"|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)"
                        r"|^Anmerkung:", re.I)   # kaiscribe-georg-2011-n1 (Punkt 9): „Anmerkung: …“-Block
@@ -1542,8 +1544,22 @@ def kl_bereinigen(report, diktat, erlaubt=()):
         return ""
 
     zeilen = report.split("\n")
+    adj_ok = not kl_grade(diktat) and not erlaubt
     for i, z in enumerate(zeilen):
         if "(IB Lab" in z or "kellgren" not in z.lower():
+            continue
+        # kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 70, RH 94: „geringgradige MTP-I-Arthrose“ → KI Grad 3):
+        # mehrere Grad-Adjektive im Diktat → der Grad zum Adjektiv DIESER Diagnose (gleiche Zeile), nie ein anderer
+        g_zeile = _kl_grad_zeile(_KL_KI.sub("", z)) if adj_ok else None
+        if g_zeile and g_zeile in ok:
+            def zeile(m, g=g_zeile):
+                roh = (m.group(1) or m.group(2)).lower()
+                ist = _KL_WERT.get(roh, "X")
+                if ist == g:
+                    return m.group(0)
+                aend.append(f"K&L-Grad {ist} → {g} (Adjektiv derselben Diagnose)")
+                return re.sub(_KL_G_KI + r"(?=\s+nach)", g, m.group(0), count=1, flags=re.I)
+            zeilen[i] = _KL_KI.sub(zeile, z)
             continue
         zeilen[i] = _KL_KI.sub(ersetzen, z)
     return "\n".join(zeilen), aend
@@ -1946,7 +1962,8 @@ def grundregeln(report, diktat="", templates=None):
         out = "\n".join(zeilen)
     if erg:
         out = ergebnis_nummerieren(out)
-    return out, aend
+    out, x = georg_2311(out, diktat, templates)   # kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
+    return out, aend + x
 
 
 # 13 (RH 78): Schreibvarianten für die Nachprüfung „Befund fehlt im Text“ – c/k/z (Chondrocalcinose ↔ Chondrokalzinose)
@@ -1983,3 +2000,760 @@ def phrase_vorhanden(phrase, text):
                     return True
         return False
     return all(da(w) for w in worte)
+
+
+# ══ kaiscribe-schulter-ergebnis-n1 (Georg Riegler 22./23.11.2026, Punkte 48–70) ═══════════════════════════════════════
+# Läuft am Ende von grundregeln (EXE: je Abschnitt und nach den IB-Lab-Texten; Web: je Abschnitt). Ohne Treffer bleibt der
+# Text Zeichen für Zeichen gleich, zweimal angewandt gleich. Sync: befundRegeln.ts georg2311, Fixtures „georg_2311“.
+#  48a Schulter (Röntgen): Gelenksätze (glenohumeral/K&L) → AC-Gelenk → „Ansonsten die Gelenkflächen regelrecht
+#      konturiert.“ → Enthesiopathie-Satz.
+#  48b Röntgen, alle Orte: „Enthesiopathie(zeichen) <Ort>“ im BEFUND → „<Grad> kortikale Unregelmäßigkeiten und vermehrte
+#      Sklerosierung am <Ort>.“ – Grad nur diktiert (gering→Geringe, mäßig→Mäßige, hochgradig→Hochgradige), sonst ohne.
+#  48c Schulter-Ergebnis: Omarthrose → AC-Gelenk → Enthesiopathie.
+#  50  Sono: diktierte Bursa-Pathologie streicht den Bursa-Normalsatz, der diktierte Satz steht an dessen Stelle;
+#      „Kein Nachweis eines Step-sign …“ nur weg bei positivem Step-sign/Impingement.
+#  51  Röntgen: Fraktur/Ausriss an die Stelle der Kortikalis-Beschreibung, unmittelbar danach KORTIKALIS_UEBRIGEN;
+#      „Im Übrigen“/„Ansonsten“ nur nach einer Pathologie (sonst ohne das Wort).
+#  53b Nervensono: Nerv unauffällig → eigener Ergebnispunkt „Unauffälliger Befund am N. <Name> <Seite>.“ (zuerst).
+#  55b/60 Wortlaut: „Keine Zeichen einer periprothetischen Fraktur.“, „keine sichere periprothetische Fraktur“, „des Materials“.
+#  58b/60b HIPPO: Beckenschiefstand ≥ 10 mm zusätzlich ins Ergebnis („Beckenschiefstand von 12 mm, links tiefer.“), das
+#      Normal-Ergebnis entfällt; < 10 mm nur Beschreibung; HIPPO-Sätze nie im Wirbelsäulen-Teil.
+#  60/68 Hüfte: Prothese, Coxarthrose oder auffälliger LCE-/AI-Winkel einer Seite → Normalsatz „Ordnungsgemäße Stellung der
+#      normal geformten Hüftköpfe“ (bzw. Gelenkspalt-Satz) gilt nur noch für die andere Seite; beide Seiten → Satz raus.
+#  56  Diktat „Dunn“ → Überschrift „… sowie Dunn-Aufnahme“ (beidseits: „Dunn-Aufnahmen beidseits“).
+#  65  Verlaufsvergleich („unverändert zur Voruntersuchung …“) IMMER 1. Ergebnispunkt.
+#  69/70 K&L: Grad im Ergebnis IMMER aus dem Adjektiv derselben Diagnose (beginnend 1, gering 2, mäßig 3, hochgradig 4)
+#      bzw. aus dem diktierten Grad; fehlt die Klammer, kommt sie dazu; „A links und B rechts“ → zwei Punkte; im Befund der
+#      K&L-Standardsatz je Seite statt des Diagnose-Satzes. Wirbelsäule/AC/ISG/Symphyse nie; Rhizarthrose ohne Klammer.
+KORTIKALIS_UEBRIGEN = "Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung."
+ENTHESIO_SATZ = "kortikale Unregelmäßigkeiten und vermehrte Sklerosierung"
+NERV_UNAUFFAELLIG = "Unauffälliger Befund am N. {name}{seite}."
+DUNN_TITEL = " sowie Dunn-Aufnahme"
+DUNN_TITEL_BDS = " sowie Dunn-Aufnahmen beidseits"
+# 56: Zusatzprojektionen, die (künftig auch aus dem Bildkopf) in die Überschrift kommen – aktiv nur Dunn (Georg 23.11.)
+ZUSATZPROJEKTIONEN = {"dunn": {"aktiv": True, "diktat": r"(?<![a-zäöüß])dunn(?![a-zäöüß])", "region": r"hüft|becken"}}
+_SCHNITT_TITEL = re.compile(r"sonogra|ultraschall|(?<![a-zäöüß])(?:mr|mrt|ct)(?![a-zäöüß])|magnetres|computertomo", re.I)
+_SONO_TITEL = re.compile(r"sonogra|ultraschall", re.I)
+_SCHULTER_TITEL = re.compile(r"schulter", re.I)
+_BECKEN_TITEL = re.compile(r"becken|hüft", re.I)
+_ANS_KONTUR = re.compile(r"^(?:ansonsten|im übrigen),?\s+(?:sind\s+)?die gelenkfl[äa]chen\s+(?:sind\s+)?regelrecht konturiert")
+_ENTH_RX = re.compile(r"enthesiopath")
+_AC_RX = re.compile(r"(?<![a-zäöüß])ac-|(?<![a-zäöüß])acg(?![a-zäöüß])|acromioclavicular|akromioklavikular")
+_GELENK_RX = re.compile(r"glenohumeral|omarthros|gelenks?spalt|osteophyt|humeruskopf")
+_ENTH_SATZ = re.compile(r"^(?:(?:im übrigen|ansonsten),?\s+)?(?:(?:geringe|mäßige|zarte|diskrete)\s+)?(?:zeichen\s+(?:einer|der)\s+)?"
+                        r"(?:(gering\w*|leicht\w*|mäßig\w*|mittelgradig\w*|hochgradig\w*|ausgeprägt\w*|deutlich\w*|beginnend\w*)\s+)?"
+                        r"enthesiopathi\w*\s+(.+?)\s*\.?$", re.I)
+_ENTH_ADJ = [(r"gering|leicht", "Geringe"), (r"mäßig|mittelgradig", "Mäßige"), (r"hochgradig|ausgeprägt", "Hochgradige"),
+             (r"beginnend", "Beginnende"), (r"deutlich", "Deutliche")]
+_ENTH_DIKTAT = re.compile(r"(gering\w*|leicht\w*|mäßig\w*|mittelgradig\w*|hochgradig\w*|ausgeprägt\w*|deutlich\w*|beginnend\w*)"
+                          r"\s+(?:\w+\s+)?enthesiopath", re.I)
+_BURSA_PATHO = re.compile(r"bursitis|bursaverdick|bursa[a-zäöüß -]{0,40}(?:verdick|flüssigkeit|erguss|distendiert|distension)|"
+                          r"(?:flüssigkeit|erguss)[a-zäöüß ]{0,30}bursa|step-?sign[a-zäöüß ]{0,15}positiv|positive[sn]? step-?sign")
+_BURSA_NORMAL = re.compile(r"bursa[^.]*(?:ohne|kein\w*)\s[^.]*(?:wandverdick|flüssigkeit|erguss|bursitis|verdick)|"
+                           r"(?:kein\w*|ohne)\s[^.]*(?:bursitis|flüssigkeit[^.]*bursa)")
+_STEP_NORMAL = re.compile(r"^(?:(?:im übrigen|ansonsten),?\s+)?kein nachweis eines step-?sign")
+_STEP_PATHO = re.compile(r"step-?sign[a-zäöüß ]{0,15}positiv|positive[sn]? step-?sign|impingement")
+_FRAKTUR_RX = re.compile(r"fraktur|ausriss|fissur|infraktion|(?<![a-zäöüß])fragment")
+_NICHT_DISLOZIERT = re.compile(r"(?<![a-zäöüß])nicht[- ](?:disloziert|dislociert|verschoben|verlagert)[a-zäöüß]*")
+_KL_ADJ_SEITE = re.compile(r"(?<![a-zäöüß])(" + "|".join(r for _g, r in _KL_ADJ) + r")\s+(?:rechts|links|beidseits)(?![a-zäöüß])",
+                           re.I)
+_PATHO_EXTRA = re.compile(r"status post|zustand nach|(?<![a-zäöüß])(?:st\.|z\.)\s?[pn]\.|enthesi|unregelmäßig|prothes|(?<![a-zäöüß])tep(?![a-zäöüß])|"
+                          r"ausriss|fragment|verdick|bursitis|degenerat|stenose|hypertroph|zyste|erosion|lockerung|sklerosier|"
+                          r"osteophyt|randanbau|randzack|dysplas|steiles pfannendach|überdachung|coxa (?:valga|vara)|beckenschief|"
+                          r"beinlängen|fibroostos|tendinos|ruptur|ganglion|lipom|tumor|raumforder|hämatom|serom|abszess")
+_NERV_TITEL = re.compile(r"(?:sonogra|ultraschall)[^\n]*(?:(?<![a-zäöüß])n\.|nerv)", re.I)
+_NERV_NAME = re.compile(r"(?:(?<![a-zäöüß])n\.|nervus|nerv)\s*(medianus|ulnaris|radialis|ischiadicus|peroneus|fibularis|tibialis|"
+                        r"femoralis|suralis|pudendus|saphenus|obturatorius|axillaris|musculocutaneus|suprascapularis|"
+                        r"iliohypogastricus|ilioinguinalis|cutaneus femoris lateralis|femoralis cutaneus lateralis)", re.I)
+_NERV_PATHO = re.compile(r"verdick|auftreib|aufgetrieben|schwell|kompression|engpass|neurom|ödem|vergrößer|erhöht|hypoechogen|"
+                         r"hyperäm|läsion|neuritis|irritation|luxation|instabil|einengung|kaliberschwank|neuropath|kompressions")
+_BS_GROSS = re.compile(r"Beckenschiefstand von (\d+) mm(?:,\s*(rechts|links) tiefer(?:stehend)?)?")
+_HIPPO_SATZ = re.compile(r"^(?:Geringer Beckenschiefstand|Beckenschiefstand von|Kein Beckenschiefstand|Beinlängendifferenz von|"
+                         r"Keine Beinlängendifferenz)")
+_VERLAUF = re.compile(r"unverändert\w*[^.]{0,60}(?:vor(?:untersuchung|befund|aufnahme)|vergleich)|"
+                      r"vergleich zu[rm]? vor(?:untersuchung|aufnahme|befund)|befund(?:änderung|konstanz|progredienz)|"
+                      r"zur voruntersuchung|größenkonstant", re.I)
+_HUEFTKOPF_BDS = re.compile(r"^(?:(?:Im [Üü]brigen|Ansonsten),?\s+)?(?:[Oo]rdnungsgemäße|[Nn]ormale|[Rr]egelrechte) Stellung der normal "
+                            r"geformten Hüftköpfe\.$")
+_HUEFTKOPF_EIN = re.compile(r"^(?:(?:Im [Üü]brigen|Ansonsten),?\s+)?(?:[Oo]rdnungsgemäße|[Nn]ormale|[Rr]egelrechte) Stellung des normal "
+                            r"geformten (rechten|linken) Hüftkopfes\.$")
+_HUEFT_SPALT = re.compile(r"^(?:(?:Im [Üü]brigen|Ansonsten),?\s+)?(?:(Rechts|Links) )?[Nn]ormal konfigurierte, glatte Gelenkflächen mit "
+                          r"allseits normal weitem Gelenkspalt\.$")
+_HUEFT_EIN_FORM = re.compile(r"^(?:(?:Im [Üü]brigen|Ansonsten),?\s+)?Anatomisch normale Form des Hüftgelenkes mit regelrechter "
+                             r"Stellung des Hüftkopfes in der Pfanne\.$")
+_HUEFT_BETROFFEN = re.compile(r"prothes|(?<![a-zäöüß])tep(?![a-zäöüß])|endoprothes|coxarthros|koxarthros|dysplas|steiles pfannendach|"
+                              r"grenzwertige überdachung|lce-winkel beträgt|ai-winkel beträgt|acetabulumindex beträgt|"
+                              r"(?<![a-zäöüß])(?:lce|ai)(?:-winkel)?\s+(?:von\s+)?(?:rechts\s+|links\s+)?\d")
+_KL_AUSNAHME = re.compile(r"(?<![a-zäöüß])(?:ac|acg|si|isg)(?![a-zäöüß])|acromioclavicular|akromioklavikular|iliosakral|sakroiliakal|"
+                          r"symphys|facetten|spondyl|unkovertebral|uncovertebral|wirbel|rhizarthros|daumensattel", re.I)
+_KL_DOPPEL = re.compile(r"^((?:[A-ZÄÖÜ][a-zäöüß]+\s+)?)([A-ZÄÖÜa-zäöüß-]*[Aa]rthrose)\s+(rechts|links)\s+und\s+([a-zäöüß]+)\s+"
+                        r"(?:(?:[A-ZÄÖÜa-zäöüß-]*[Aa]rthrose)\s+)?(rechts|links)\s*\.?$")
+_WORT_ERSETZEN = [
+    (re.compile(r"(?<![A-Za-zÄÖÜäöüß])([Kk])einerlei Zeichen einer (?:peri)?(?:prothetischen|peripherischen|periprothetischen) Fraktur"),
+     lambda m: m.group(1) + "eine Zeichen einer periprothetischen Fraktur"),
+    (re.compile(r"(?<![A-Za-zÄÖÜäöüß])(?:peripherischen|prothetischen)(?= Fraktur)"), lambda m: "periprothetischen"),
+    (re.compile(r"(?<![A-Za-zÄÖÜäöüß])([Kk])ein(?:e)? sicheres? periprothetische[n]? Fraktur"),
+     lambda m: m.group(1) + "eine sichere periprothetische Fraktur"),
+    (re.compile(r"(?<![A-Za-zÄÖÜäöüß])des Material post(?![A-Za-zÄÖÜäöüß])|(?<![A-Za-zÄÖÜäöüß])des Material(?=[.,;])"),
+     lambda m: "des Materials"),
+]
+
+
+def _patho_satz(s):
+    t = re.sub(r"^(?:im übrigen|ansonsten),?\s+", "", (s or "").lower())
+    return has_pathology(t) or _bejaht(t, _PATHO_EXTRA)
+
+
+def _zerlegen(text):
+    """Befundtext → Zeilen als Satzlisten (None = Leerzeile)."""
+    return [None if not z.strip() else [z[a:b].strip() for a, b in saetze_mit_lage(z)] for z in text.split("\n")]
+
+
+def _flach(L):
+    return [(i, k) for i, z in enumerate(L) if z for k in range(len(z))]
+
+
+def _zusammen(L):
+    out, leer = [], False
+    for z in L:
+        if z is None:
+            if not leer or not out:
+                out.append("")
+            leer = True
+        elif z:
+            out.append(" ".join(z))
+            leer = False
+    return "\n".join(out)
+
+
+def _umstellen(L, raus, nach, neue):
+    """Sätze (flache Indizes raus) herausnehmen und neue hinter den Satz mit flachem Index nach (−1 = vorn) setzen."""
+    pos = _flach(L)
+    ziel = pos[nach] if 0 <= nach < len(pos) else None
+    M = [None if z is None else [(s, (i, k)) for k, s in enumerate(z)] for i, z in enumerate(L)]
+    weg = {pos[r] for r in raus}
+    for i, z in enumerate(M):
+        if z is not None:
+            M[i] = [x for x in z if x[1] not in weg]
+    if ziel is None:
+        i0 = next((i for i, z in enumerate(M) if z is not None), None)
+        if i0 is None:
+            return L
+        M[i0] = [(s, None) for s in neue] + M[i0]
+    else:
+        z = M[ziel[0]]
+        j = next(j for j, x in enumerate(z) if x[1] == ziel)
+        M[ziel[0]] = z[:j + 1] + [(s, None) for s in neue] + z[j + 1:]
+    return [None if z is None else ([s for s, _ in z] if z else []) for z in M]
+
+
+def _saetze_von(L):
+    return [L[i][k] for i, k in _flach(L)]
+
+
+def _schulter_ordnen(L):
+    s = _saetze_von(L)
+    kat = []
+    for x in s:
+        t = x.lower()
+        if _ANS_KONTUR.match(t):
+            kat.append("ans")
+        elif ENTHESIO_SATZ.lower() in t or _bejaht(t, _ENTH_RX):
+            kat.append("ent")
+        elif _AC_RX.search(t):
+            kat.append("ac")
+        elif _GELENK_RX.search(t) or _KL_TAB_RE.search(x):
+            kat.append("g")
+        else:
+            kat.append("")
+    if "ans" not in kat and "ent" not in kat:
+        return L
+    g = [i for i, k in enumerate(kat) if k == "g"]
+    letzt_g = g[-1] if g else -1
+    acs = [i for i, k in enumerate(kat) if k == "ac" and i < letzt_g]
+    raus = [i for i, k in enumerate(kat) if k in ("ans", "ent")] + acs
+    anker = [i for i, k in enumerate(kat) if k in ("g", "ac") and i not in raus]
+    if not anker:
+        return L
+    neu = [s[i] for i in acs] + [s[i] for i, k in enumerate(kat) if k == "ans"] + [s[i] for i, k in enumerate(kat) if k == "ent"]
+    reihe = [i for i in range(len(s)) if i not in raus]
+    p = reihe.index(anker[-1]) + 1
+    if [s[i] for i in reihe[:p]] + neu + [s[i] for i in reihe[p:]] == s:
+        return L
+    return _umstellen(L, raus, anker[-1], neu)
+
+
+def _enthesio(satz, dk):
+    m = _ENTH_SATZ.match(satz)
+    if not m or not m.group(2):
+        return None
+    ort = m.group(2).strip().rstrip(".")
+    ol = ort.lower()
+    if re.match(r"(?:am|an der|an den|an|im bereich)\s", ol):
+        pass
+    elif ol.startswith("des "):
+        ort = "am " + ort[4:]
+    elif ol.startswith("der "):
+        ort = "an der " + ort[4:]
+    elif ol.startswith("vom "):
+        ort = "am " + ort[4:]
+    elif ol.startswith("von der "):
+        ort = "an der " + ort[8:]
+    else:
+        ort = "am " + ort
+    adj = m.group(1)
+    if not adj:
+        md = _ENTH_DIKTAT.search(dk or "")
+        adj = md.group(1) if md else ""
+    wort = next((w for rx, w in _ENTH_ADJ if adj and re.match(rx, adj, re.I)), "")
+    return (f"{wort} {ENTHESIO_SATZ} {ort}." if wort else f"{ENTHESIO_SATZ[0].upper()}{ENTHESIO_SATZ[1:]} {ort}.")
+
+
+def _bursa(L, dk):
+    s = _saetze_von(L)
+    n = next((i for i, x in enumerate(s) if "bursa" in x.lower() and _BURSA_NORMAL.search(x.lower())
+              and not _STEP_NORMAL.match(x.lower())), None)
+    st = next((i for i, x in enumerate(s) if _STEP_NORMAL.match(x.lower())), None)
+    rest = " ".join(x.lower() for i, x in enumerate(s) if i not in (n, st))
+    aend = []
+    raus, neu, nach = [], [], -1
+    if st is not None and (_bejaht(dk, _STEP_PATHO) or _bejaht(rest, _STEP_PATHO)):
+        raus.append(st)
+        aend.append(f"Step-sign-Normalsatz gestrichen: {s[st][:50]}")
+    if n is not None and (_bejaht(dk, _BURSA_PATHO) or _bejaht(rest, _BURSA_PATHO)):
+        p = next((i for i, x in enumerate(s) if i not in (n, st) and _bejaht(x.lower(), _BURSA_PATHO)), None)
+        raus.append(n)
+        aend.append(f"Bursa-Normalsatz gestrichen: {s[n][:50]}")
+        if p is not None:
+            raus.append(p)
+            neu = [s[p]]
+            vor = [i for i in range(n) if i not in raus]
+            nach = vor[-1] if vor else -1
+    if not raus:
+        return L, []
+    return _umstellen(L, sorted(set(raus)), nach, neu), aend
+
+
+def _fraktur(L):
+    s = _saetze_von(L)
+    f = [i for i, x in enumerate(s) if _bejaht(_NICHT_DISLOZIERT.sub("", x.lower()), _FRAKTUR_RX) and not UEBRIGEN_ANFANG.match(x)]
+    k = next((i for i, x in enumerate(s) if "kortikalis" in x.lower() and re.search(r"glatt|scharf|regelrecht", x.lower())
+              and i not in f), None)
+    if not f or k is None:
+        return L, []
+    nach_k = [i for i in f if i > k]
+    if not nach_k:
+        if k == f[-1] + 1 and s[k] == KORTIKALIS_UEBRIGEN:
+            return L, []
+        return _umstellen(L, [k], f[-1], [KORTIKALIS_UEBRIGEN]), ["Kortikalis-Satz direkt hinter die Fraktur"]
+    vor = [i for i in range(k) if i not in nach_k]
+    return (_umstellen(L, nach_k + [k], vor[-1] if vor else -1, [s[i] for i in nach_k] + [KORTIKALIS_UEBRIGEN]),
+            ["Fraktur an die Stelle der Kortikalis-Beschreibung"])
+
+
+def _uebrigen_nur_nach_patho(L, templates):
+    s = _saetze_von(L)
+    aend = []
+    for j in range(1, len(s)):
+        m = UEBRIGEN_ANFANG.match(s[j])
+        if not m or any(_patho_satz(x) for x in s[:j]):
+            continue
+        rest = s[j][m.end():]
+        if _WID_VERB.match(rest.split(" ", 1)[0].lower()):
+            neu = _vorlage_zurueck(rest, templates)
+            if neu is None:
+                continue
+        else:
+            neu = rest[:1].upper() + rest[1:]
+        aend.append(f"ohne „{m.group(1)}“ (keine Pathologie davor): {neu[:50]}")
+        pos = _flach(L)[j]
+        L[pos[0]][pos[1]] = neu
+        s[j] = neu
+    return L, aend
+
+
+def _seiten_aus(t, titel_seite=""):
+    t = (t or "").lower()
+    if re.search(r"beidseit|(?<![a-zäöüß])bds(?![a-zäöüß])|beider", t):
+        return {"rechts", "links"}
+    out = set()
+    if _WID_RECHTS.search(t):
+        out.add("rechts")
+    if _WID_LINKS.search(t):
+        out.add("links")
+    return out or ({titel_seite} if titel_seite in ("rechts", "links") else set())
+
+
+def _huefte_seiten(L, titel):
+    """60/68: Hüftseiten mit Prothese, Coxarthrose oder auffälligem LCE-/AI-Winkel → Normalsätze nur für die andere Seite."""
+    ts = wid_seite(titel)
+    s = _saetze_von(L)
+    betr = set()
+    for x in s:
+        t = x.lower()
+        if _HUEFTKOPF_BDS.match(x) or _HUEFTKOPF_EIN.match(x) or _HUEFT_SPALT.match(x) or _HUEFT_EIN_FORM.match(x):
+            continue
+        for m in _HUEFT_BETROFFEN.finditer(t):
+            vor = re.split(r"[.;:,\n]", t[max(0, m.start() - 60):m.start()])[-1]
+            if _NEG_NAH.search(vor):
+                continue
+            betr |= _seiten_aus(t, ts)
+    if not betr:
+        return L, []
+    aend = []
+    einzeln = "becken" not in titel.lower()          # ein Hüftgelenk (Titel mit Seite), kein Becken
+    beide = betr >= {"rechts", "links"}
+    andere = ({"rechts", "links"} - betr).pop() if not beide else ""
+    adj = {"rechts": "rechten", "links": "linken"}
+    for idx, (i, k) in reversed(list(enumerate(_flach(L)))):
+        x = L[i][k]
+        neu = x
+        if _HUEFTKOPF_BDS.match(x):
+            neu = "" if beide else f"Ordnungsgemäße Stellung des normal geformten {adj[andere]} Hüftkopfes."
+        elif _HUEFTKOPF_EIN.match(x):
+            seite = "rechts" if _HUEFTKOPF_EIN.match(x).group(1) == "rechten" else "links"
+            if seite in betr:
+                neu = ""
+        elif _HUEFT_SPALT.match(x):
+            sm = _HUEFT_SPALT.match(x).group(1)
+            if sm:
+                if sm.lower() in betr:
+                    neu = ""
+            elif einzeln:
+                if ts in betr or not ts:
+                    neu = ""
+            elif beide:
+                neu = ""
+            else:
+                neu = f"{andere.capitalize()} normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt."
+        elif _HUEFT_EIN_FORM.match(x) and einzeln and (ts in betr or not ts):
+            neu = ""
+        if neu != x:
+            aend.append(f"Hüfte {'/'.join(sorted(betr))}: {x[:45]} → {neu[:45] or 'gestrichen'}")
+            if neu:
+                L[i][k] = neu
+            else:
+                del L[i][k]
+    return L, aend
+
+
+def _kl_grad_zeile(z):
+    m = _KL_ADJ_RE.search(z or "")
+    if not m:
+        return None
+    w = m.group(1)
+    return next((g for g, r in _KL_ADJ if re.fullmatch(r, w, re.I)), None)
+
+
+def _befund_ops(text, titel, dk, templates):
+    """Befundtext eines Teils → (text, Änderungen)."""
+    L = _zerlegen(text)
+    if not _flach(L):
+        return text, []
+    aend = []
+    schnitt = bool(_SCHNITT_TITEL.search(titel))
+    if not schnitt:
+        for i, k in _flach(L):
+            x = L[i][k]
+            if _bejaht(x.lower(), _ENTH_RX) and not x.lower().startswith(("kein", "ohne")):
+                neu = _enthesio(x, dk)
+                if neu and neu != x:
+                    L[i][k] = neu
+                    aend.append(f"Enthesiopathie beschreibend: {neu[:50]}")
+        if _SCHULTER_TITEL.search(titel):
+            L2 = _schulter_ordnen(L)
+            if L2 is not L:
+                L = L2
+                aend.append("Schulter: Gelenk → AC → „Ansonsten …“ → Enthesiopathie")
+        if not _WS_TITEL.search(titel) and not _THORAX_TITEL.search(titel):
+            L, x = _fraktur(L)
+            aend += x
+    if _SONO_TITEL.search(titel):
+        L, x = _bursa(L, dk)
+        aend += x
+    if _BECKEN_TITEL.search(titel) and not schnitt:
+        L, x = _huefte_seiten(L, titel)
+        aend += x
+    L, x = _uebrigen_nur_nach_patho(L, templates)
+    aend += x
+    if not aend:
+        return text, []
+    lead = text[:len(text) - len(text.lstrip("\n"))]
+    trail = text[len(text.rstrip("\n")):]
+    return lead + _zusammen(L).strip("\n") + trail, aend
+
+
+def _teile(zeilen):
+    """[(titel_index, titel, (b0, b1) | None, (e0, e1) | None)] je Untersuchung (Zeilenbereiche ohne Überschrift)."""
+    out, akt = [], None
+    for i, z in enumerate(zeilen):
+        s = z.strip()
+        if not s.startswith("## "):
+            continue
+        k = s[3:].strip().lower().rstrip(":")
+        if k in ("befund", "ergebnis"):
+            if akt is None:
+                akt = [-1, "", None, None]
+                out.append(akt)
+            j = i + 1
+            while j < len(zeilen) and not zeilen[j].lstrip().startswith("## "):
+                j += 1
+            akt[2 if k == "befund" else 3] = (i + 1, j)
+        else:
+            akt = [i, s[3:].strip(), None, None]
+            out.append(akt)
+    return out
+
+
+def _erg_zeilen(zeilen, e):
+    return [i for i in range(e[0], e[1]) if zeilen[i].strip()]
+
+
+def _punkt(z):
+    return _NUM_RE.sub("", z).strip()
+
+
+def georg_2311(report, diktat="", templates=None):
+    """→ (report, Änderungen). Siehe Kopf dieses Abschnitts."""
+    if not report or "## " not in report:
+        return report, []
+    out = report
+    aend = []
+    for rx, f in _WORT_ERSETZEN:
+        neu = rx.sub(f, out)
+        if neu != out:
+            aend.append("Wortlaut periprothetisch/Material")
+            out = neu
+    dk = (diktat or "").lower()
+    zeilen = out.split("\n")
+    erg_neu = False
+    teile = _teile(zeilen)
+    becken_da = any(_BECKEN_TITEL.search(t) and not _SCHNITT_TITEL.search(t) for _i, t, _b, _e in teile)
+    # Befund je Teil (rückwärts, Zeilenzahl ändert sich)
+    for ti, titel, b, e in reversed(teile):
+        if b is None:
+            continue
+        text = "\n".join(zeilen[b[0]:b[1]])
+        neu, x = _befund_ops(text, titel, dk, templates)
+        if x:
+            zeilen[b[0]:b[1]] = neu.split("\n")
+            aend += x
+    # 58b: HIPPO-Sätze nie im Wirbelsäulen-Teil (gehören in die Beckenübersicht)
+    teile = _teile(zeilen)
+    if becken_da:
+        wandern = []
+        for ti, titel, b, e in teile:
+            if not _WS_TITEL.search(titel):
+                continue
+            for rng in (b, e):
+                if rng is None:
+                    continue
+                for i in range(rng[0], rng[1]):
+                    t = _punkt(zeilen[i])
+                    if _HIPPO_SATZ.match(t):
+                        wandern.append(satzform(t))
+                        zeilen[i] = "\x00"
+        if wandern:
+            zeilen = [z for z in zeilen if z != "\x00"]
+            teile = _teile(zeilen)
+            ziel = next((t for t in teile if _BECKEN_TITEL.search(t[1]) and not _SCHNITT_TITEL.search(t[1]) and t[2]), None)
+            if ziel is not None:
+                b0, b1 = ziel[2]
+                schon = "\n".join(zeilen[b0:b1])
+                rein = [w for w in dict.fromkeys(wandern) if w not in schon]
+                k = next((i for i in range(b0, b1) if zeilen[i].strip()), None)
+                if rein and k is not None:
+                    zeilen[k] = " ".join(rein) + " " + zeilen[k].lstrip()
+                aend.append(f"HIPPO-Sätze aus dem Wirbelsäulen-Teil in die Beckenübersicht ({len(wandern)})")
+            erg_neu = True
+            teile = _teile(zeilen)
+    # Ergebnis je Teil
+    for ti, titel, b, e in reversed(teile):
+        if e is None:
+            continue
+        idx = _erg_zeilen(zeilen, e)
+        bef = "\n".join(zeilen[b[0]:b[1]]) if b else ""
+        punkte = [zeilen[i] for i in idx]
+        alt = list(punkte)
+        schnitt = bool(_SCHNITT_TITEL.search(titel))
+        # 58b/60b: Beckenschiefstand ≥ 10 mm ins Ergebnis
+        if _BECKEN_TITEL.search(titel) and not schnitt:
+            m = next((m for m in _BS_GROSS.finditer(bef) if int(m.group(1)) >= 10), None)
+            if m and not any("beckenschiefstand" in p.lower() for p in punkte):
+                satz = f"Beckenschiefstand von {m.group(1)} mm" + (f", {m.group(2)} tiefer." if m.group(2) else ".")
+                punkte = [p for p in punkte if not (_WID_NORMAL_ERG.search(p) and not has_pathology(p))]
+                punkte.insert(0, satz)
+                aend.append(f"HIPPO ≥ 10 mm ins Ergebnis: {satz}")
+        # 69/70: K&L je Diagnose
+        if not schnitt and not _WS_TITEL.search(titel):
+            punkte, x = _kl_ergebnis(punkte, dk)
+            aend += x
+        # 48c Schulter: Omarthrose → AC → Enthesiopathie
+        if _SCHULTER_TITEL.search(titel) and not schnitt:
+            def rang(p):
+                t = p.lower()
+                return 0 if re.search(r"omarthros|glenohumeral", t) else 1 if _AC_RX.search(t) else 2 if "enthesiopath" in t else None
+            slots = [k for k, p in enumerate(punkte) if rang(p) is not None]
+            sortiert = sorted((punkte[k] for k in slots), key=rang)
+            for k, p in zip(slots, sortiert):
+                punkte[k] = p
+        # 53b Nerv unauffällig
+        if _NERV_TITEL.search(titel):
+            mn = _NERV_NAME.search(titel) or _NERV_NAME.search(bef)
+            if mn:
+                name = mn.group(1).lower()
+                nerv_patho = any(_bejaht(x.lower(), _NERV_PATHO) and (name in x.lower() or "nerv" in x.lower())
+                                 for x in [(diktat or "")[a:c] for a, c in diktat_saetze(diktat or "")]
+                                 + [bef[a:c] for a, c in saetze_mit_lage(bef)])
+                if not nerv_patho and not any(name in p.lower() and "unauffällig" in p.lower() for p in punkte):
+                    sd = wid_seite(titel) or (diktierte_seite(dk) if diktierte_seite(dk) in ("rechts", "links") else "")
+                    satz = NERV_UNAUFFAELLIG.format(name=name, seite=(" " + sd) if sd else "")
+                    punkte = [p for p in punkte if _punkt(p).rstrip(".").lower() not in ("unauffälliger befund",
+                                                                                          "regelrechte darstellung")]
+                    punkte.insert(0, satz)
+                    aend.append(f"Nerv unauffällig: {satz}")
+        # 65 Verlauf zuerst
+        v = [k for k, p in enumerate(punkte) if _VERLAUF.search(_punkt(p)) and not _UNNUM_RE.match(_punkt(p))]
+        if v and v[0] != 0:
+            p = punkte.pop(v[0])
+            punkte.insert(0, p)
+            aend.append(f"Verlauf als 1. Punkt: {_punkt(p)[:50]}")
+        if punkte != alt:
+            erg_neu = True
+            if idx:
+                zeilen[idx[0]:idx[-1] + 1] = punkte
+            else:
+                zeilen[e[0]:e[0]] = punkte
+    # 69: Befund-Deskriptor je Seite (nach dem Ergebnis, eigene Schleife)
+    teile = _teile(zeilen)
+    for ti, titel, b, e in reversed(teile):
+        if not dk or b is None or e is None or _SCHNITT_TITEL.search(titel) or _WS_TITEL.search(titel):
+            continue
+        neu, x = _kl_befund("\n".join(zeilen[b[0]:b[1]]), [zeilen[i] for i in _erg_zeilen(zeilen, e)], titel)
+        if x:
+            zeilen[b[0]:b[1]] = neu.split("\n")
+            aend += x
+    # 56 Dunn
+    if ZUSATZPROJEKTIONEN["dunn"]["aktiv"] and re.search(ZUSATZPROJEKTIONEN["dunn"]["diktat"], dk):
+        for ti, titel, b, e in _teile(zeilen):
+            if ti >= 0 and re.search(ZUSATZPROJEKTIONEN["dunn"]["region"], titel, re.I) and "dunn" not in titel.lower():
+                bds = re.search(r"dunn[^.]{0,40}(?:beidseit|bds)|(?:beidseit|bds)[^.]{0,40}dunn", dk)
+                zeilen[ti] = zeilen[ti].rstrip() + (DUNN_TITEL_BDS if bds else DUNN_TITEL)
+                aend.append("Titel mit Dunn-Aufnahme")
+    out = "\n".join(zeilen)
+    if erg_neu:
+        out = ergebnis_nummerieren(out)
+    return out, aend
+
+
+def _kl_ergebnis(punkte, dk):
+    """69: „A links und B rechts“ → zwei Punkte; fehlt die K&L-Klammer einer DIKTIERTEN Arthrose mit Grad-Adjektiv, kommt
+    sie dazu (diktierter Grad vor dem Adjektiv derselben Diagnose). Den falschen Grad korrigiert kl_bereinigen (70)."""
+    if not dk or not arthrose_diktiert(dk):
+        return punkte, []
+    aend, out = [], []
+    diktiert = kl_grade(dk)
+    adj = set(kl_adjektiv_grade(dk))      # „… Coxarthrose links und geringgradige rechts“: Adjektiv + Seite zählt mit
+    adj |= {g for m in _KL_ADJ_SEITE.finditer(dk) for g, r in _KL_ADJ if re.fullmatch(r, m.group(1), re.I)}
+    for p in punkte:
+        t = _punkt(p)
+        md = _KL_DOPPEL.match(t)
+        if md and _kl_grad_zeile(t):
+            adj1, diag, s1, adj2, s2 = md.groups()
+            if s1 != s2:
+                a = f"{adj1}{diag} {s1}."
+                b2 = f"{adj2[:1].upper()}{adj2[1:]} {diag} {s2}."
+                out += [a, b2]
+                aend.append(f"Arthrose je Seite: {a} / {b2}")
+                continue
+        out.append(p)
+    fertig = []
+    for p in out:
+        t = _punkt(p)
+        if _KL_AUSNAHME.search(t) or not _ARTHROSE_KI.search(t) or _VERNEINT.search(t.split("rthros")[0]) \
+                or _KL_KI.search(t) or re.search(r"kellgren", t, re.I):
+            fertig.append(p)
+            continue
+        g = diktiert[0] if len(diktiert) == 1 else (_kl_grad_zeile(t) if not diktiert else None)
+        if g and (diktiert or g in adj):
+            kern = p.rstrip()
+            kern = kern[:-1] if kern.endswith(".") else kern
+            p = f"{kern} {kl_klammer(g)}."
+            aend.append(f"K&L-Klammer ergänzt (Grad {g})")
+        fertig.append(p)
+    return fertig, aend
+
+
+# eigener Arthrose-Deskriptor der KI („Verschmälerung des medialen Gelenkspaltes mit Osteophyten …“) → Standardsatz statt
+_KL_KOMP = re.compile(r"(?<![a-zäöüß])(medial|lateral|femoropatellar|femorotibial|retropatellar|patellofemoral)")
+_KL_EIGEN = re.compile(r"osteophyt|gelenks?spalt\w*verschmäler|verschmälerung des [a-zäöüß]+ gelenks?spalt|subchondral")
+
+
+def _kl_befund(text, punkte, titel):
+    """69: je Ergebnis-Diagnose mit K&L-Grad der Standardsatz im Befund (Seite davor, wenn der Teil nicht genau diese eine
+    Seite hat): an die Stelle des Diagnose-Satzes („Hochgradige Coxarthrose links …“), sonst hinter den Satz derselben
+    Seite mit „degenerativ“, sonst hinter den ersten Satz."""
+    je = []
+    for p in punkte:
+        t = _punkt(p)
+        m = _KL_KI.search(t)
+        if not m or _KL_AUSNAHME.search(t):
+            continue
+        g = int(_KL_WERT.get((m.group(1) or m.group(2) or "").lower(), "0") or 0)
+        if g in KL_TABELLE and g:
+            je.append((wid_seite(t), g))
+    if not je:
+        return text, []
+    L = _zerlegen(text)
+    fehlt = [(sd, g) for sd, g in dict.fromkeys(je)
+             if not any(KL_TABELLE[g][:-1].lower() in x.lower() for x in _saetze_von(L))]
+    if not fehlt:
+        return text, []
+    mehr = len({sd for sd, _g in je}) > 1
+    ts = wid_seite(titel)
+    aend = []
+    for sd, g in fehlt:
+        satz = KL_TABELLE[g]
+        s = _saetze_von(L)
+        passt = lambda x: not sd or wid_seite(x) in (sd, "")
+        diag = [i for i, x in enumerate(s) if (_bejaht(x.lower(), _ARTHROSE_KI) or _bejaht(x.lower(), _KL_EIGEN))
+                and not _KL_TAB_RE.search(x) and not _KL_AUSNAHME.search(x) and passt(x)
+                and (not mehr or wid_seite(x) == sd or not wid_seite(x))]
+        vor = [sd] if (sd and (mehr or ts != sd)) else []
+        mk = _KL_KOMP.search(s[diag[0]].lower()) if diag else None    # Kompartiment bleibt („Medial …“, kl-knie-betont)
+        vor += [mk.group(1)] if mk else []
+        neu = (" ".join(vor)[:1].upper() + " ".join(vor)[1:] + " " + satz[:1].lower() + satz[1:]) if vor else satz
+        if diag:
+            L = _umstellen(L, diag[:1], diag[0] - 1, [neu])
+        else:
+            deg = next((i for i, x in enumerate(s) if "degenerativ" in x.lower() and sd and wid_seite(x) == sd), None)
+            L = _umstellen(L, [], deg if deg is not None else (0 if s else -1), [neu])
+        aend.append(f"K&L-Standardsatz im Befund: {neu[:50]}")
+    lead = text[:len(text) - len(text.lstrip("\n"))]
+    trail = text[len(text.rstrip("\n")):]
+    return lead + _zusammen(L).strip("\n") + trail, aend
+
+
+def teile_zusammenlegen(report, diktat=""):
+    """58a: zwei Untersuchungsteile mit derselben Überschrift → EIN Teil (Befundsätze/Ergebnispunkte ohne Doppel).
+    64: ein „Unterarm“-Teil neben Handgelenk/Ellbogen, obwohl „Unterarm“ nicht diktiert ist → fällt weg.
+    → (report, Änderungen). Sync: befundRegeln.ts teileZusammenlegen."""
+    if not report or report.count("## ") < 4:
+        return report, []
+    bloecke = [b for b in re.split(r"\n{2,}(?=## (?!Befund\b|Ergebnis\b))", report.strip()) if b.strip()]
+    if len(bloecke) < 2:
+        return report, []
+    def kopf(b):
+        z = b.strip().split("\n", 1)[0].strip()
+        return z[3:].strip().lower() if z.startswith("## ") and z[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis") else ""
+    aend, out, gesehen = [], [], {}
+    titel_alle = [kopf(b) for b in bloecke]
+    for b in bloecke:
+        k = kopf(b)
+        if k and "unterarm" in k and "unterarm" not in (diktat or "").lower() and diktat \
+                and any(re.search(r"handgelenk|ellbogen", t) for t in titel_alle if t != k):
+            aend.append("Teil „Unterarm“ ohne diktierten Unterarm entfernt")
+            continue
+        if k and k in gesehen:
+            ziel = gesehen[k]
+            out[ziel] = _bloecke_vereinen(out[ziel], b)
+            aend.append(f"doppelter Teil zusammengelegt: {k[:40]}")
+            continue
+        if k:
+            gesehen[k] = len(out)
+        out.append(b)
+    if not aend:
+        return report, []
+    return ergebnis_nummerieren("\n\n\n".join(x.strip() for x in out)), aend
+
+
+def _abschnitte_von(b):
+    teile = {"befund": [], "ergebnis": []}
+    akt = None
+    for z in b.split("\n"):
+        s = z.strip()
+        k = s[3:].strip().lower().rstrip(":") if s.startswith("## ") else None
+        if k in teile:
+            akt = k
+            continue
+        if akt and s:
+            teile[akt].append(s)
+    return teile
+
+
+def _bloecke_vereinen(a, b):
+    ta, tb = _abschnitte_von(a), _abschnitte_von(b)
+    alt_text = " ".join(ta["befund"])
+    dazu = []
+    for z in tb["befund"]:
+        for x0, x1 in saetze_mit_lage(z):
+            x = z[x0:x1].strip()
+            if x and x not in alt_text and vorlage_normalisieren(x) not in vorlage_normalisieren(alt_text):
+                dazu.append(x)
+    erg_alt = [_punkt(z) for z in ta["ergebnis"]]
+    erg_dazu = [_punkt(z) for z in tb["ergebnis"] if _punkt(z) not in erg_alt
+                and not (_WID_NORMAL_ERG.search(_punkt(z)) and any(not _WID_NORMAL_ERG.search(e) for e in erg_alt))]
+    if any(not _WID_NORMAL_ERG.search(e) for e in erg_dazu):
+        erg_alt = [e for e in erg_alt if not (_WID_NORMAL_ERG.search(e) and not has_pathology(e))]
+    kopf = a.strip().split("\n", 1)[0]
+    bef = " ".join(ta["befund"] + dazu) if len(ta["befund"]) <= 1 else "\n".join(ta["befund"] + ([" ".join(dazu)] if dazu else []))
+    return f"{kopf}\n\n## Befund\n{bef}\n\n## Ergebnis\n" + "\n".join(erg_alt + erg_dazu)
+
+
+def pruefzeilen_2311(report, diktat="", templates=None):
+    """60/60b: sichtbare Prüfzeilen (nur Anzeige) – Teil mit leerem Ergebnis, „Regelrechte Darstellung“ trotz Pathologie
+    im Befund (Befund nicht geformt). Sync: befundRegeln.ts pruefzeilen2311."""
+    out = []
+    zeilen = (report or "").split("\n")
+    for ti, titel, b, e in _teile(zeilen):
+        name = titel or "Befund"
+        if e is not None and not _erg_zeilen(zeilen, e):
+            out.append(f"{name}: Ergebnis leer – bitte prüfen")
+            continue
+        if b is None or e is None:
+            continue
+        punkte = [_punkt(zeilen[i]) for i in _erg_zeilen(zeilen, e)]
+        nur_normal = punkte and all(_WID_NORMAL_ERG.search(p) and not has_pathology(p) for p in punkte if not _UNNUM_RE.match(p))
+        bef = " ".join(zeilen[b[0]:b[1]])
+        vorlagen = _vorlagen_saetze(templates)[0] if templates else set()
+        patho = [bef[x:y] for x, y in saetze_mit_lage(bef) if _patho_satz(bef[x:y]) and not _HIPPO_SATZ.match(bef[x:y])
+                 and not _BS_GROSS.search(bef[x:y]) and not UEBRIGEN_ANFANG.match(bef[x:y])
+                 and OSTEOPEN_SATZ not in bef[x:y] and vorlage_normalisieren(bef[x:y]) not in vorlagen
+                 and not re.match(r"^(?:normale?|regelrechte?|unauffällige?)\b", bef[x:y], re.I)]
+        if nur_normal and patho:
+            out.append(f"{name}: Befund nicht geformt – „Regelrechte Darstellung“ trotz Pathologie, bitte prüfen")
+    return out
+
+
+# 49a/52 (Georg 22./23.11.2026, Foto Sono Weichteile mit „Nur Text“ AN: „Die Überschriften immer fett“): im Nur-Text-Weg
+# werden Überschriften-Zeilen zu „## …“ (Anzeige fett, Zwischenablage/HTML <h2>, Brief wie jede Untersuchung):
+# „Ergebnis:“/„Befund:“ (auch „Ergebnis: Text …“ → Überschrift + Text darunter) und kurze Untersuchungstitel, die mit
+# Doppelpunkt enden („Sonographie Weichteile:“). Sonst bleibt der Text Zeichen für Zeichen. Sync: befundRegeln.ts.
+_NT_KOPF = re.compile(r"^\s*(?:\*\*)?\s*(Befund|Ergebnis|Beurteilung)\s*:?\s*(?:\*\*)?\s*$", re.I)
+_NT_KOPF_TEXT = re.compile(r"^\s*(?:\*\*)?\s*(Ergebnis|Beurteilung)\s*:\s*(?:\*\*)?\s*(\S.*)$", re.I)
+_NT_TITEL = re.compile(r"^\s*(?:\*\*)?\s*([A-ZÄÖÜ][^.:;!?\n]{2,80}?)\s*:\s*(?:\*\*)?\s*$")
+_NT_UNTERSUCHUNG = re.compile(r"röntgen|sonogra|ultraschall|(?<![a-zäöüß])(?:mr|mrt|ct)(?![a-zäöüß])|aufnahme|übersicht|"
+                              r"ebenen|ganzbein|mammogra|weichteil|gelenk|wirbelsäule|thorax|abdomen|schulter|hüft|knie|"
+                              r"becken|hand|fuß|fuss|ellbogen|sprung|unterarm|unterschenkel|oberarm|oberschenkel|nerv|"
+                              r"(?<![a-zäöüß])(?:hws|bws|lws|gws|n\.)(?![a-zäöüß])", re.I)
+
+
+def nur_text_ueberschriften(text):
+    if not text or "## " in text:
+        return text
+    aus, geaendert = [], False
+    for z in text.split("\n"):
+        m = _NT_KOPF.match(z)
+        mt = _NT_KOPF_TEXT.match(z)
+        mu = _NT_TITEL.match(z)
+        if m:
+            aus.append("## " + m.group(1)[:1].upper() + m.group(1)[1:].lower())
+        elif mt:
+            aus += ["## " + mt.group(1)[:1].upper() + mt.group(1)[1:].lower(), mt.group(2)]
+        elif mu and len(mu.group(1).split()) <= 8 and _NT_UNTERSUCHUNG.search(mu.group(1)):
+            aus.append("## " + mu.group(1).strip())
+        else:
+            aus.append(z)
+            continue
+        geaendert = True
+    return "\n".join(aus) if geaendert else text

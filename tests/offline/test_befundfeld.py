@@ -126,6 +126,14 @@ def faelle_bauen():
         ("leeres Feld", "", "Knie rechts unauffällig"),
         ("nur Ergebnis-Abschnitt", "## Knie\n\n## Ergebnis\nUnauffällig.", "kleiner Erguss"),
         ("Satzzeichen bleibt, klein → groß", KNIE, "Erguss?"),
+        # kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 62): Ordnungswort → neuer Ergebnispunkt, Rest rückt nach
+        ("62: „zweitens …“ in 3er-Liste → neuer 2., alte 2./3. → 3./4.", "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.", "zweitens kleine Chondrocalcinose"),
+        ("62: „Punkt 1 …“ → neuer 1.", "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.", "Punkt 1 Fibroostose am Patellapol"),
+        ("62: „an dritter Stelle …“", "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.", "an dritter Stelle Osteophyt am Tibiaplateau"),
+        ("62: „neuer Punkt 5 …“ in 3er-Liste → ans Ende (4.)", "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.", "neuer Punkt 5 Weichteilödem"),
+        ("62: Einzelpunkt + „zweitens …“ → 1./2.", KNIE, "zweitens kleiner Gelenkerguss"),
+        ("62: 2er-Liste + „zweitens …“", "## Knie\n\n## Befund\nX.\n\n## Ergebnis\n1. Gonarthrose.\n2. Erguss.", "zweitens Baker-Zyste"),
+        ("62: ohne Ordnungswort → wie bisher Befundteil", "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Gonarthrose rechts.\n2. Erguss.\n3. Baker-Zyste.", "kleiner Erguss"),
     ]:
         r = bf.ergaenzen(text, neu)
         out.append({"art": "ergaenzen", "name": name, "text": text, "neu": neu, "ergebnis": r[0], "cursor": r[1]})

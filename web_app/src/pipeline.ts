@@ -3,7 +3,7 @@
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { bloecke, blockText, umbauSegment, umbauBlock, titelUebernehmen, vorrang, saetze, fehlende, ergaenzen, pruefzeile, streichen, ergebnisFehlt, verneintVorrang } from './befundfeld.ts';
@@ -111,7 +111,8 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
     ctx.status(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
   }
   const teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));
-  return osteopen(rhoAnsEnde(befundeZusammenfuegen(teile)), text);   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
+  // kaiscribe-schulter-ergebnis-n1 (Punkte 58a/64): nie doppelte Teile, kein nicht diktierter Unterarm (Sync: pipeline.py)
+  return osteopen(rhoAnsEnde(teileZusammenlegen(befundeZusammenfuegen(teile), text)[0]), text);   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
 };
 
 // kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → „Osteopenischer Knochenaspekt.“ statt Mineralisations-
@@ -125,8 +126,9 @@ const osteopen = (report: string, diktat: string): string => {
 // v3.4.0 (Peter 07.10., „manchmal ist weniger mehr“): Nur-Text-Modus — rechts nur die korrigierte Spracherkennung
 // (Fehlhör-Liste + Call 0 sind schon gelaufen), kein Befund. Satz-Bausteine werden trotzdem eingesetzt.
 // Sync: source_code/pipeline.py nur_text_aus_diktat.
+// kaiscribe-schulter-ergebnis-n1 (Punkte 49a/52): Überschriften auch im Nur-Text-Weg als „## …“ (fett)
 export const nurTextAusDiktat = (text: string, ctx: Pick<PipelineKontext, 'bausteine'>): string =>
-  saetzeEinsetzen(text.trim(), ctx.bausteine ?? ORDI_BAUSTEINE);
+  nurTextUeberschriften(saetzeEinsetzen(text.trim(), ctx.bausteine ?? ORDI_BAUSTEINE));
 
 // 3.19.16 Restructure (Peter 20.11.2026): aktuellen Text im Befundfeld über die Befundkette neu aufbauen, Peters
 // Änderungen seit dem letzten KaiScribe-Stand (stand) haben Vorrang, Überschriften bleiben, unveränderte Abschnitte

@@ -292,9 +292,9 @@
    "out": "## Ergebnis\nGonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
   },
   {
-   "name": "Voruntersuchung unnummeriert",
+   "name": "Verlaufsvergleich als Aussage = nummerierter Punkt (Georg 23.11.2026, Punkt 65; vorher unnummeriert)",
    "in": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\nOmarthrose rechts.",
-   "out": "## Ergebnis\nVergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\nOmarthrose rechts."
+   "out": "## Ergebnis\n1. Vergleich zur Voruntersuchung vom 01.09.2026: größenkonstant.\n2. Omarthrose rechts."
   },
   {
    "name": "LAMA-Schlussanmerkung unnummeriert, zwei Punkte nummeriert (Georg 17.11.2026)",
@@ -1694,13 +1694,13 @@
     "out": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\nNormale Stellung der dargestellten Skelettabschnitte. Patella in regelrechter Position. Mineralgehalt und Knochenstruktur sind regelrecht. Links geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Rechts zarte Fibroostose am Patellapol. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent. Rechts ist der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n1. Zarte Fibroostose am Patellapol rechts.\n2. Geringe Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
    },
    {
-    "name": "37c Knie beidseits: Stellungssatz („Im Übrigen normale Form und Stellung …“) hinter Fibroostose/Arthrose → zuerst, „Links Degenerative“ → klein (Abnahme 3.20.2, 21.11.2026)",
+    "name": "37c Knie beidseits: Stellungssatz („Im Übrigen normale Form und Stellung …“) hinter Fibroostose/Arthrose → zuerst, „Links Degenerative“ → klein (Abnahme 3.20.2, 21.11.2026) – seit kaiscribe-schulter-ergebnis-n1 (Punkt 69): diktierte „geringe Gonarthrose“ → K&L-Klammer Grad 2 + Standardsatz links",
     "diktat": "Kniegelenke beidseits: links geringe Gonarthrose, rechts zarte Fibroostose am Patellapol.",
     "in": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\n\nZarte Fibroostose am Patellapol rechts. Links Degenerative Veränderungen des Kniegelenkes. Im Übrigen normale Form und Stellung der dargestellten Skelettabschnitte beidseits. Patella beidseits in regelrechter Position. Mineralgehalt und Knochenstruktur sind beidseits regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent, der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n\n1. Zarte Fibroostose am Patellapol rechts.\n2. Geringe Gonarthrose links.",
-    "out": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte beidseits. Zarte Fibroostose am Patellapol rechts. Links degenerative Veränderungen des Kniegelenkes. Patella beidseits in regelrechter Position. Mineralgehalt und Knochenstruktur sind beidseits regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent, der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n\n1. Zarte Fibroostose am Patellapol rechts.\n2. Geringe Gonarthrose links."
+    "out": "## Kniegelenke beidseits in 2 Ebenen\n\n## Befund\n\nNormale Form und Stellung der dargestellten Skelettabschnitte beidseits. Zarte Fibroostose am Patellapol rechts. Links degenerative Veränderungen des Kniegelenkes. Links geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Patella beidseits in regelrechter Position. Mineralgehalt und Knochenstruktur sind beidseits regelrecht. Im Übrigen glatte und scharfe Kontur der Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Rechts sind die Gelenkflächen normal geformt und kongruent, der Gelenkspalt allseits normal weit. Kein Hinweis auf freie Gelenkkörper. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\n\n1. Zarte Fibroostose am Patellapol rechts.\n2. Geringe Gonarthrose links (Arthrose Grad 2 nach Kellgren & Lawrence)."
    },
    {
-    "name": "37c Fraktur mit Dislokation: Stellungssatz bleibt eingeschränkt dahinter",
+    "name": "37c Fraktur mit Dislokation: Stellungssatz bleibt eingeschränkt dahinter – seit kaiscribe-schulter-ergebnis-n1 (Punkt 69): diktierte „geringe Gonarthrose“ → K&L-Klammer Grad 2 + Standardsatz links",
     "diktat": "Distale Radiusfraktur",
     "in": "## Unterarm rechts\n\n## Befund\nDistale Radiusfraktur mit Dislokation. Im Übrigen normale Form und Stellung der übrigen Abschnitte.\n\n## Ergebnis\nX.",
     "out": "## Unterarm rechts\n\n## Befund\nDistale Radiusfraktur mit Dislokation. Im Übrigen normale Form und Stellung der übrigen Abschnitte.\n\n## Ergebnis\nX."
@@ -1716,6 +1716,239 @@
     "diktat": "Ganzaufnahme der Wirbelsäule AP: flachbogige linkskonvexe Skoliose, sonst unauffällig",
     "in": "## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nAlignementlinien regelrecht. Flachbogige linkskonvexe Seitausbiegung. Im Übrigen normale Stellung.\n\n## Ergebnis\nFlachbogige linkskonvexe Skoliose.",
     "out": "## Ganzaufnahme der Wirbelsäule a.-p.\n\n## Befund\nWirbelsäule: Alignementlinien regelrecht. Flachbogige linkskonvexe Skoliose. Im Übrigen normale Stellung.\n\n## Ergebnis\nFlachbogige linkskonvexe Skoliose."
+   }
+  ]
+ },
+ "georg_2311": {
+  "_doc": "kaiscribe-schulter-ergebnis-n1 (Georg Riegler 22./23.11.2026, Punkte 48–70): grundregeln → georg_2311 (je zweimal angewandt gleich), teile_zusammenlegen (58a/64, RH 92 Positiv-Referenz), nur_text_ueberschriften (49a/52). Diktate anonymisiert/nachgebaut, keine Patiententexte. Sync: befund_regeln.py ≡ befundRegeln.ts.",
+  "faelle": [
+   {
+    "name": "48a/b/c Schulter re: Omarthrose K&L 2 + Enthesiopathiezeichen Tuberculum majus + AC-Arthrose (Georg 22.11.)",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Ansonsten die Gelenkflächen regelrecht konturiert. Enthesiopathiezeichen am Tuberculum majus. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. AC-Gelenksarthrose.\n\nNormale Weichteile.\n\n## Ergebnis\n1. Enthesiopathie am Tuberculum majus rechts.\n2. AC-Gelenksarthrose rechts.\n3. Geringgradige Omarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).",
+    "diktat": "Schulter rechts. Omarthrose Kellgren Lawrence 2. Enthesiopathiezeichen Tuberculum majus. AC-Gelenksarthrose.",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form der am Schultergelenk beteiligten Skelettabschnitte. Der Humeruskopf steht in regelrechter Artikulation. Mineralgehalt und Knochenstruktur sind normal. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. AC-Gelenksarthrose. Ansonsten die Gelenkflächen regelrecht konturiert. Kortikale Unregelmäßigkeiten und vermehrte Sklerosierung am Tuberculum majus.\n\nNormale Weichteile.\n\n## Ergebnis\n1. Geringgradige Omarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. AC-Gelenksarthrose rechts.\n3. Enthesiopathie am Tuberculum majus rechts."
+   },
+   {
+    "name": "48b Enthesiopathie mit diktiertem Grad „gering“ → „Geringe kortikale …“",
+    "in": "## Ellbogengelenk links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Geringe Enthesiopathie am Epicondylus humeri radialis.\n\n## Ergebnis\nGeringe Enthesiopathie am Epicondylus humeri radialis links.",
+    "diktat": "Ellbogen links. Geringe Enthesiopathie am Epicondylus humeri radialis.",
+    "out": "## Ellbogengelenk links in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Geringe kortikale Unregelmäßigkeiten und vermehrte Sklerosierung am Epicondylus humeri radialis.\n\n## Ergebnis\nGeringe Enthesiopathie am Epicondylus humeri radialis links."
+   },
+   {
+    "name": "48b Enthesiopathie ohne Grad → ohne Adjektiv (nie raten), „des“ → „am“",
+    "in": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Enthesiopathie des Tuber calcanei.\n\n## Ergebnis\nEnthesiopathie am Tuber calcanei rechts.",
+    "diktat": "Ferse rechts. Enthesiopathie Tuber calcanei.",
+    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Kortikale Unregelmäßigkeiten und vermehrte Sklerosierung am Tuber calcanei.\n\n## Ergebnis\nEnthesiopathie am Tuber calcanei rechts."
+   },
+   {
+    "name": "48b Gegenprobe: „Keine Enthesiopathie“ bleibt",
+    "in": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus. Keine Enthesiopathie.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus.",
+    "diktat": "Calcaneus unauffällig",
+    "out": "## Calcaneus rechts in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus. Keine Enthesiopathie.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus."
+   },
+   {
+    "name": "50 RH 71: Bursitiszeichen (oben angehängt) → Bursa-Normalsatz raus, Satz an seine Stelle",
+    "in": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nGeringgradige Bursitiszeichen perifokal im Bereich der Supraspinatussehne. Regelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Die Bursa subacromialis-subdeltoidea ohne Wandverdickung oder vermehrter Flüssigkeitsansammlung. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\n\n## Ergebnis\nGeringgradige Bursitiszeichen perifokal im Bereich der Supraspinatussehne.",
+    "diktat": "Sono Schulter rechts. Geringgradige Bursitiszeichen perifokal im Bereich der Supraspinatussehne.",
+    "out": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Geringgradige Bursitiszeichen perifokal im Bereich der Supraspinatussehne. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\n\n## Ergebnis\nGeringgradige Bursitiszeichen perifokal im Bereich der Supraspinatussehne."
+   },
+   {
+    "name": "50 Bursaflüssigkeit → Bursa-Normalsatz raus",
+    "in": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Die Bursa subacromialis-subdeltoidea ohne Wandverdickung oder vermehrter Flüssigkeitsansammlung. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\nVermehrte Flüssigkeit in der Bursa subacromialis-subdeltoidea.\n\n## Ergebnis\nBursitis subacromialis.",
+    "diktat": "vermehrte Flüssigkeit in der Bursa subacromialis",
+    "out": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Vermehrte Flüssigkeit in der Bursa subacromialis-subdeltoidea. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\n\n## Ergebnis\nBursitis subacromialis."
+   },
+   {
+    "name": "50 Step-sign positiv → Step-sign-Normalsatz raus",
+    "in": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Die Bursa subacromialis-subdeltoidea ohne Wandverdickung oder vermehrter Flüssigkeitsansammlung. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\nPositives Step-sign bei Armabduktion.\n\n## Ergebnis\nSubacromiales Impingement.",
+    "diktat": "Step-sign positiv, Impingement",
+    "out": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Positives Step-sign bei Armabduktion. Das Lig. acromioclaviculare nicht verdickt. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\n\n## Ergebnis\nSubacromiales Impingement."
+   },
+   {
+    "name": "50 Gegenprobe normal: Sono Schulter unauffällig bleibt",
+    "in": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Die Bursa subacromialis-subdeltoidea ohne Wandverdickung oder vermehrter Flüssigkeitsansammlung. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\n\n## Ergebnis\nRegelrechte Darstellung der Schulter.",
+    "diktat": "Sono Schulter rechts unauffällig",
+    "out": "## Sonographie des Schultergelenkes rechts\n\n## Befund\nRegelrechte Darstellung des Caput longum des M. biceps brachii ohne Nachweis einer Tendinose oder einer Tendovaginitis. Die Subscapularissehne, Supraspinatussehne und die Infraspinatussehne intakt ohne Nachweis einer Tendinose oder einer Rissbildung. Die Bursa subacromialis-subdeltoidea ohne Wandverdickung oder vermehrter Flüssigkeitsansammlung. Das Lig. acromioclaviculare nicht verdickt. Kein Nachweis eines Step-sign (Anschieben der Bursa subacromialis-subdeltoidea am Acromion) bei aktiver und passiver Armabduktion. Das AC-Gelenk regelrecht ohne Nachweis einer Gelenkshypertrophie oder einer vermehrten Vaskularisation.\n\n## Ergebnis\nRegelrechte Darstellung der Schulter."
+   },
+   {
+    "name": "51 RH 57: Malleolus-Ausriss am Ende → an die Kortikalis-Stelle, danach „Im Übrigen glatte …“",
+    "in": "## Sprunggelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte bei ordnungsgemäßer Konfiguration der Malleolengabel. Glatte und scharfe Abgrenzung der kongruenten Gelenkflächen. Normal weiter Gelenkspalt. Die mitdargestellten Skelettabschnitte sind bezüglich Mineralgehalt und Knochenstruktur normal. Sie weisen eine glatte und scharfe Kortikalisbegrenzung ohne pathologische Konturunterbrechungen auf. Kein Hinweis auf intra- oder periartikuläre Verkalkungen. Unauffällige Weichteile.\nStatus post knöcherner Bandausriss am Malleolus lateralis mit quer durch die kaudale Spitze verlaufender Fraktur, 9 mm Fragment, ohne wesentliche Dislokation.\n\n## Ergebnis\nStatus post knöcherner Bandausriss am Malleolus lateralis rechts.",
+    "diktat": "Status post knöcherner Bandausriss am Malleolus lateralis mit quer durch die kaudale Spitze verlaufender Fraktur 9 mm Fragment ohne wesentliche Dislokation",
+    "out": "## Sprunggelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung der dargestellten Skelettabschnitte bei ordnungsgemäßer Konfiguration der Malleolengabel. Glatte und scharfe Abgrenzung der kongruenten Gelenkflächen. Normal weiter Gelenkspalt. Die mitdargestellten Skelettabschnitte sind bezüglich Mineralgehalt und Knochenstruktur normal. Status post knöcherner Bandausriss am Malleolus lateralis mit quer durch die kaudale Spitze verlaufender Fraktur, 9 mm Fragment, ohne wesentliche Dislokation. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Kein Hinweis auf intra- oder periartikuläre Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nStatus post knöcherner Bandausriss am Malleolus lateralis rechts."
+   },
+   {
+    "name": "51 Fraktur MT V im Fuß-Befund (am Ende) → vor Gelenk-/Weichteilsätze",
+    "in": "## Fuß links in 2 Ebenen\n\n## Befund\nDas Fußskelett ist nach Form, Größe, Anzahl und Stellung der Phalangen, Ossa metatarsalia und der Fußwurzelknochen normal. Das Fußgewölbe ist regulär ausgebildet bei ordnungsgemäßen Gelenkwinkeln. Mineralgehalt und Knochenstruktur sind regelrecht. Glatte und scharfe Abgrenzbarkeit der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die gelenkbildenden Flächen sind regelrecht geformt, glatt und scharf begrenzt und stehen normal weit zueinander. Keine intra- und periartikulären Verkalkungen. Die Weichteile sind unauffällig.\nNicht dislozierte Fraktur der Basis des Os metatarsale V.\n\n## Ergebnis\nNicht dislozierte Fraktur der Basis des Os metatarsale V links.",
+    "diktat": "Fuß links: nicht dislozierte Fraktur Basis Os metatarsale V",
+    "out": "## Fuß links in 2 Ebenen\n\n## Befund\nDas Fußskelett ist nach Form, Größe, Anzahl und Stellung der Phalangen, Ossa metatarsalia und der Fußwurzelknochen normal. Das Fußgewölbe ist regulär ausgebildet bei ordnungsgemäßen Gelenkwinkeln. Mineralgehalt und Knochenstruktur sind regelrecht. Nicht dislozierte Fraktur der Basis des Os metatarsale V. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung. Normale Breite der Kompakta. Die gelenkbildenden Flächen sind regelrecht geformt, glatt und scharf begrenzt und stehen normal weit zueinander. Keine intra- und periartikulären Verkalkungen. Die Weichteile sind unauffällig.\n\n## Ergebnis\nNicht dislozierte Fraktur der Basis des Os metatarsale V links."
+   },
+   {
+    "name": "51 Gegenprobe Normal: kein „Im Übrigen“ ohne Pathologie (Calcaneus, Mineralgehalt, Kortikalis)",
+    "in": "## Calcaneus in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Im Übrigen Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus.",
+    "diktat": "Calcaneus unauffällig",
+    "out": "## Calcaneus in 2 Ebenen\n\n## Befund\nNormale Form des Calcaneus mit regelrechten Winkelmaßen. Mineralgehalt und Knochenstruktur sind regelrecht bei scharfer Abgrenzbarkeit der Spongiosabälkchen. Glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.\n\n## Ergebnis\nRegelrechte Darstellung des Calcaneus."
+   },
+   {
+    "name": "53b Nerv unauffällig allein → „Unauffälliger Befund am N. peroneus rechts.“",
+    "in": "## Hochauflösende Sonographie des N. peroneus rechts\n\n## Befund\nDarstellung des N. peroneus ab dem Abgang vom N. ischiadicus bis nach distal inklusive sämtlicher abgehender Endäste. Der Nervus peroneus zeigt einen unauffälligen Verlauf ohne Nachweis einer faszikulären oder nervalen Auftreibung.\n\n## Ergebnis\nUnauffälliger Befund.",
+    "diktat": "N. peroneus rechts unauffällig",
+    "out": "## Hochauflösende Sonographie des N. peroneus rechts\n\n## Befund\nDarstellung des N. peroneus ab dem Abgang vom N. ischiadicus bis nach distal inklusive sämtlicher abgehender Endäste. Der Nervus peroneus zeigt einen unauffälligen Verlauf ohne Nachweis einer faszikulären oder nervalen Auftreibung.\n\n## Ergebnis\nUnauffälliger Befund am N. peroneus rechts."
+   },
+   {
+    "name": "53b Nerv unauffällig + Nebenbefund Tractus iliotibialis → Nerv-Punkt zuerst",
+    "in": "## Hochauflösende Sonographie des N. peroneus rechts\n\n## Befund\nDarstellung des N. peroneus ab dem Abgang vom N. ischiadicus bis nach distal inklusive sämtlicher abgehender Endäste. Der Nervus peroneus zeigt einen unauffälligen Verlauf ohne Nachweis einer faszikulären oder nervalen Auftreibung.\nGeringe Verdickung des Tractus iliotibialis am Ansatz am Tuberculum Gerdy.\n\n## Ergebnis\nGeringe Tendinopathie des Tractus iliotibialis am Tuberculum Gerdy rechts.",
+    "diktat": "N. peroneus unauffällig. Geringe Verdickung Tractus iliotibialis am Tuberculum Gerdy",
+    "out": "## Hochauflösende Sonographie des N. peroneus rechts\n\n## Befund\nDarstellung des N. peroneus ab dem Abgang vom N. ischiadicus bis nach distal inklusive sämtlicher abgehender Endäste. Der Nervus peroneus zeigt einen unauffälligen Verlauf ohne Nachweis einer faszikulären oder nervalen Auftreibung.\nGeringe Verdickung des Tractus iliotibialis am Ansatz am Tuberculum Gerdy.\n\n## Ergebnis\n1. Unauffälliger Befund am N. peroneus rechts.\n2. Geringe Tendinopathie des Tractus iliotibialis am Tuberculum Gerdy rechts."
+   },
+   {
+    "name": "53b Nerv pathologisch → kein Unauffällig-Satz",
+    "in": "## Hochauflösende Sonographie des N. ulnaris links\n\n## Befund\nDer N. ulnaris im Sulcus nervi ulnaris auf 14 mm² verdickt.\n\n## Ergebnis\nNeuropathie des N. ulnaris im Sulcus links.",
+    "diktat": "N. ulnaris links im Sulcus verdickt 14 mm²",
+    "out": "## Hochauflösende Sonographie des N. ulnaris links\n\n## Befund\nDer N. ulnaris im Sulcus nervi ulnaris auf 14 mm² verdickt.\n\n## Ergebnis\nNeuropathie des N. ulnaris im Sulcus links."
+   },
+   {
+    "name": "58b/60b HIPPO 12 mm → Ergebnis „Beckenschiefstand von 12 mm, links tiefer.“ (BLD 9 mm nur Beschreibung), Normal-Ergebnis weg",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nBeckenschiefstand von 12 mm, links tieferstehend. Beinlängendifferenz von 9 mm, rechts kürzer. Mineralgehalt und Knochenstruktur sind regelrecht. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.",
+    "diktat": "",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nBeckenschiefstand von 12 mm, links tieferstehend. Beinlängendifferenz von 9 mm, rechts kürzer. Mineralgehalt und Knochenstruktur sind regelrecht. Regelrechte Abbildung beider Pfannendächer. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Keine intra- oder periartikulären Verkalkungen. Unauffällige Weichteile.\n\n## Ergebnis\nBeckenschiefstand von 12 mm, links tiefer."
+   },
+   {
+    "name": "58b HIPPO 4 mm → nicht ins Ergebnis",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nGeringer Beckenschiefstand von 4 mm, rechts tieferstehend. Beinlängendifferenz von 4 mm, links kürzer. Mineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.",
+    "diktat": "",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nGeringer Beckenschiefstand von 4 mm, rechts tieferstehend. Beinlängendifferenz von 4 mm, links kürzer. Mineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens."
+   },
+   {
+    "name": "58b RH 59: HIPPO-Sätze im LWS-Ergebnis → in die Beckenübersicht",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose der Lendenwirbelsäule.\n\n## Ergebnis\n1. Osteochondrose L5/S1.\n2. Geringer Beckenschiefstand von 4 mm, rechts tieferstehend.\n3. Beinlängendifferenz von 4 mm, links kürzer.",
+    "diktat": "",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nGeringer Beckenschiefstand von 4 mm, rechts tieferstehend. Beinlängendifferenz von 4 mm, links kürzer. Mineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose der Lendenwirbelsäule.\n\n## Ergebnis\nOsteochondrose L5/S1."
+   },
+   {
+    "name": "68 LCE 18° rechts → Hüftkopf-Satz nur noch links",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nDer LCE-Winkel beträgt rechts 18°. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nHüftdysplasie rechts.",
+    "diktat": "",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nDer LCE-Winkel beträgt rechts 18°. Ordnungsgemäße Stellung des normal geformten linken Hüftkopfes. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nHüftdysplasie rechts."
+   },
+   {
+    "name": "68 AI 12° links → Hüftkopf-Satz nur noch rechts",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nDer AI-Winkel beträgt links 12°. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nSteiles Pfannendach links.",
+    "diktat": "",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nDer AI-Winkel beträgt links 12°. Ordnungsgemäße Stellung des normal geformten rechten Hüftkopfes. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nSteiles Pfannendach links."
+   },
+   {
+    "name": "68 beide Seiten auffällig → Satz raus",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nDer LCE-Winkel beträgt rechts 18° und links 19°. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nHüftdysplasie beidseits.",
+    "diktat": "",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nDer LCE-Winkel beträgt rechts 18° und links 19°. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nHüftdysplasie beidseits."
+   },
+   {
+    "name": "68 Gegenprobe normal: Satz bleibt",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nOrdnungsgemäße Stellung der normal geformten Hüftköpfe. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.",
+    "diktat": "Becken unauffällig",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nOrdnungsgemäße Stellung der normal geformten Hüftköpfe. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens."
+   },
+   {
+    "name": "60 RH 30: TEP rechts + Coxarthrose links, Verlauf → Normalsätze raus, Verlauf 1., Wortlaut periprothetisch",
+    "in": "## Hüftgelenk in 2 Ebenen mit Status post Hüfttotalendoprothese rechts\n\n## Befund\nStatus post Hüft-TEP rechts. Kein sicheres Lockerungszeichen. Kein sicheres periprothetischen Fraktur. Mäßiggradige Coxarthrose links. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Unauffällige Weichteile.\n\n## Ergebnis\n1. Status post Hüft-TEP rechts ohne Lockerungszeichen.\n2. Mäßiggradige Coxarthrose links.\n3. Im Vergleich zur Voruntersuchung vom 08.07.2026 Befundänderung.",
+    "diktat": "Im Vergleich zur Voruntersuchung vom 08.07.2026 Befundänderung. Status post Hüft-TEP rechts kein sicheres Lockerungszeichen kein sicheres periprothetischen Fraktur. Unveränderte mäßiggradige Coxarthrose links. Mäßiggradige Fibroostosen Glutealsehnen links mehr als rechts",
+    "out": "## Hüftgelenk in 2 Ebenen mit Status post Hüfttotalendoprothese rechts\n\n## Befund\nStatus post Hüft-TEP rechts. Kein sicheres Lockerungszeichen. Keine sichere periprothetische Fraktur. Links mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Unauffällige Weichteile.\n\n## Ergebnis\n1. Im Vergleich zur Voruntersuchung vom 08.07.2026 Befundänderung.\n2. Status post Hüft-TEP rechts ohne Lockerungszeichen.\n3. Mäßiggradige Coxarthrose links (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "55b Prothese: „keinerlei Zeichen einer prothetischen Fraktur“ → „Keine Zeichen einer periprothetischen Fraktur.“, „des Material post“",
+    "in": "## Hüftprothese rechts\n\n## Befund\nZustand nach Hüft-TEP rechts. Keinerlei Zeichen einer prothetischen Fraktur. Regelrechte Lage des Material post.\n\n## Ergebnis\nRegelrechte Lage der Hüftprothese ohne Lockerungszeichen.",
+    "diktat": "",
+    "out": "## Hüftprothese rechts\n\n## Befund\nZustand nach Hüft-TEP rechts. Keine Zeichen einer periprothetischen Fraktur. Regelrechte Lage des Materials.\n\n## Ergebnis\nRegelrechte Lage der Hüftprothese ohne Lockerungszeichen."
+   },
+   {
+    "name": "69 RH 88: „hochgradige Coxarthrose links und geringgradige rechts“ → K&L-Satz je Seite, zwei Ergebnispunkte Grad 4/2",
+    "in": "## Beckenübersicht und Hüftgelenke beidseits in 2 Ebenen\n\n## Befund\nHochgradige Coxarthrose links und geringgradige rechts. Mineralgehalt und Knochenstruktur sind regelrecht. Ordnungsgemäße Stellung der normal geformten Hüftköpfe. Normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt. Unauffällige Weichteile.\n\n## Ergebnis\nHochgradige Coxarthrose links und geringgradige rechts.",
+    "diktat": "Becken und Hüften beidseits. Hochgradige Coxarthrose links und geringgradige rechts.",
+    "out": "## Beckenübersicht und Hüftgelenke beidseits in 2 Ebenen\n\n## Befund\nLinks aufgehobener Gelenksspalt mit ausgeprägter subchondraler Sklerosierung, Zystenbildung und ausgeprägten Osteophyten. Rechts geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung. Mineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\n1. Hochgradige Coxarthrose links (Arthrose Grad 4 nach Kellgren & Lawrence).\n2. Geringgradige Coxarthrose rechts (Arthrose Grad 2 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "70 RH 94: „geringgradige MTP-I-Arthrose links“ → Grad 2 (nicht 3), auch wenn andere Adjektive im Diktat",
+    "in": "## Vorfuß links in 2 Ebenen\n\n## Befund\nGeringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung im MTP-I-Gelenk links.\n\n## Ergebnis\n1. Geringgradige MTP-I-Arthrose links.\n2. Mäßiggradiger plantarer Fersensporn links.",
+    "diktat": "geringgradige MTP-I-Arthrose links. Mäßiggradiger plantarer Fersensporn. hochgradige Weichteilschwellung",
+    "out": "## Vorfuß links in 2 Ebenen\n\n## Befund\nGeringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung im MTP-I-Gelenk links.\n\n## Ergebnis\n1. Geringgradige MTP-I-Arthrose links (Arthrose Grad 2 nach Kellgren & Lawrence).\n2. Mäßiggradiger plantarer Fersensporn links."
+   },
+   {
+    "name": "70 Finger: „geringe Fingerpolyarthrose“ → Grad 2",
+    "in": "## Hand rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nGeringe Arthrose im DIP-Gelenk Dig. II rechts.",
+    "diktat": "geringe Arthrose DIP Dig. II rechts",
+    "out": "## Hand rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht. Geringe Osteophytenbildung mit geringer Gelenksspaltverschmälerung und geringer Randzuschärfung.\n\n## Ergebnis\nGeringe Arthrose im DIP-Gelenk Dig. II rechts (Arthrose Grad 2 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "70 Rhizarthrose gering → keine K&L-Klammer (Georg 20.11.: „Geringe Rhizarthrose beidseits.“)",
+    "in": "## Daumen beidseits\n\n## Befund\nMineralgehalt regelrecht.\n\n## Ergebnis\nGeringe Rhizarthrose beidseits.",
+    "diktat": "geringe Rhizarthrose beidseits",
+    "out": "## Daumen beidseits\n\n## Befund\nMineralgehalt regelrecht.\n\n## Ergebnis\nGeringe Rhizarthrose beidseits."
+   },
+   {
+    "name": "65 Verlauf „unverändert zur Voruntersuchung vor 9 Jahren“ → 1. Punkt",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Zarte Fibroostose am Patellapol rechts.\n2. Unveränderter Befund im Vergleich zur Voruntersuchung vor 9 Jahren.",
+    "diktat": "Fibroostose Patellapol. unverändert zur Voruntersuchung vor 9 Jahren",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\n1. Unveränderter Befund im Vergleich zur Voruntersuchung vor 9 Jahren.\n2. Zarte Fibroostose am Patellapol rechts."
+   },
+   {
+    "name": "56 Diktat „Dunn“ → Titel „… sowie Dunn-Aufnahme“",
+    "in": "## Hüftgelenk rechts in 2 Ebenen\n\n## Befund\nAnatomisch normale Form.\n\n## Ergebnis\nRegelrechte Darstellung des Hüftgelenkes.",
+    "diktat": "Hüfte rechts in 2 Ebenen sowie Dunn-Aufnahme unauffällig",
+    "out": "## Hüftgelenk rechts in 2 Ebenen sowie Dunn-Aufnahme\n\n## Befund\nAnatomisch normale Form.\n\n## Ergebnis\nRegelrechte Darstellung des Hüftgelenkes."
+   },
+   {
+    "name": "61 Knie ohne diktierten Grad → kein K&L (KOALA aus)",
+    "in": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\nGonarthrose links.",
+    "diktat": "Knie links Gonarthrose",
+    "out": "## Kniegelenk links in 2 Ebenen\n\n## Befund\nNormale Form und Stellung.\n\n## Ergebnis\nGonarthrose links."
+   }
+  ],
+  "teile": [
+   {
+    "name": "58a RH 59: Beckenübersicht doppelt → ein Teil, Sätze/Punkte ohne Doppel",
+    "in": "## Beckenübersicht stehend\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Geringe Coxarthrose beidseits.\n\n## Ergebnis\nGeringe Coxarthrose beidseits.\n\n\n## Beckenübersicht stehend\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Geringe Fibroostose am Trochanter major rechts.\n\n## Ergebnis\n1. Geringe Coxarthrose beidseits.\n2. Geringe Fibroostose am Trochanter major rechts.\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "diktat": "Becken: geringe Coxarthrose beidseits. Becken: geringe Fibroostose Trochanter major rechts. LWS unauffällig",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Geringe Coxarthrose beidseits. Geringe Fibroostose am Trochanter major rechts.\n\n## Ergebnis\n1. Geringe Coxarthrose beidseits.\n2. Geringe Fibroostose am Trochanter major rechts.\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose.\n\n## Ergebnis\nRegelrechte Darstellung der LWS."
+   },
+   {
+    "name": "64 RH 124: Unterarm-Teil neben Handgelenk, Unterarm nicht diktiert → nur Handgelenk",
+    "in": "## Unterarm in 2 Ebenen\n\n## Befund\nDistale Radiusfraktur.\n\n## Ergebnis\nDistale Radiusfraktur links.\n\n\n## Handgelenk links in 2 Ebenen\n\n## Befund\nDistale Radiusfraktur.\n\n## Ergebnis\nDistale Radiusfraktur links.",
+    "diktat": "Handgelenk links: distale Radiusfraktur",
+    "out": "## Handgelenk links in 2 Ebenen\n\n## Befund\nDistale Radiusfraktur.\n\n## Ergebnis\nDistale Radiusfraktur links."
+   },
+   {
+    "name": "64 Gegenprobe: Unterarm diktiert → beide bleiben",
+    "in": "## Unterarm links in 2 Ebenen\n\n## Befund\nUnauffällig.\n\n## Ergebnis\nRegelrechte Darstellung des Unterarms.\n\n\n## Handgelenk links in 2 Ebenen\n\n## Befund\nDistale Radiusfraktur.\n\n## Ergebnis\nDistale Radiusfraktur links.",
+    "diktat": "Unterarm links unauffällig. Handgelenk links: distale Radiusfraktur",
+    "out": "## Unterarm links in 2 Ebenen\n\n## Befund\nUnauffällig.\n\n## Ergebnis\nRegelrechte Darstellung des Unterarms.\n\n\n## Handgelenk links in 2 Ebenen\n\n## Befund\nDistale Radiusfraktur.\n\n## Ergebnis\nDistale Radiusfraktur links."
+   },
+   {
+    "name": "RH 92 Positiv-Referenz: Mehrfach (Handgelenk/Ellbogen/HWS/Funktion) bleibt Zeichen für Zeichen",
+    "in": "## Handgelenk beidseits in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung beider Handgelenke.\n\n\n## Ellbogengelenk beidseits in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung beider Ellbogengelenke.\n\n\n## Halswirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose der HWS.\n\n## Ergebnis\n1. Mäßige Osteochondrose C5/C6.\n2. Mäßige Unkovertebralarthrose C5/C6.\n\n\n## Funktionsaufnahmen der Halswirbelsäule\n\n## Befund\nRegelrechte Stellung in maximaler Ante- und Retroflexion.\n\n## Ergebnis\nKein Hinweis auf eine segmentale Instabilität.",
+    "diktat": "Handgelenke beidseits unauffällig. Ellbogen beidseits unauffällig. HWS mäßige Osteochondrose C5/C6. Funktion regelrecht",
+    "out": "## Handgelenk beidseits in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung beider Handgelenke.\n\n\n## Ellbogengelenk beidseits in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung beider Ellbogengelenke.\n\n\n## Halswirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose der HWS.\n\n## Ergebnis\n1. Mäßige Osteochondrose C5/C6.\n2. Mäßige Unkovertebralarthrose C5/C6.\n\n\n## Funktionsaufnahmen der Halswirbelsäule\n\n## Befund\nRegelrechte Stellung in maximaler Ante- und Retroflexion.\n\n## Ergebnis\nKein Hinweis auf eine segmentale Instabilität."
+   }
+  ],
+  "nur_text": [
+   {
+    "name": "52 Nur Text: „Sonographie Weichteile:“ und „Ergebnis:“ → Überschriften",
+    "in": "Sonographie Weichteile:\nKein Hinweis auf eine Raumforderung.\nErgebnis:\nUnauffälliger Befund.",
+    "out": "## Sonographie Weichteile\nKein Hinweis auf eine Raumforderung.\n## Ergebnis\nUnauffälliger Befund."
+   },
+   {
+    "name": "49a „Ergebnis: Text“ in einer Zeile → Überschrift + Text",
+    "in": "Schultergelenk rechts in 2 Ebenen:\nGeringe Omarthrose.\nErgebnis: Geringe Omarthrose rechts.",
+    "out": "## Schultergelenk rechts in 2 Ebenen\nGeringe Omarthrose.\n## Ergebnis\nGeringe Omarthrose rechts."
+   },
+   {
+    "name": "Gegenprobe: „Lendenwirbelsäule: Osteochondrose L4/L5.“ bleibt",
+    "in": "Lendenwirbelsäule: Osteochondrose L4/L5.",
+    "out": "Lendenwirbelsäule: Osteochondrose L4/L5."
+   },
+   {
+    "name": "Gegenprobe: Text ohne Überschrift bleibt",
+    "in": "Reflux im Wasser-Schluck-Test.",
+    "out": "Reflux im Wasser-Schluck-Test."
    }
   ]
  }

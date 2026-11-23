@@ -34,6 +34,13 @@ import cas_vorlagen as cv
 
 # Modul → Regionen der passenden Untersuchung (None = jede). Modulnamen = öffentliche Produktnamen, Regionen wie
 # cas_vorlagen.REGIONEN.
+# kaiscribe-schulter-ergebnis-n1 (Punkt 61, Georg RH 120 23.11.2026: „Du übernimmst offensichtlich noch die
+# KOALA-Knieauswertung. Die muss raus“; Peter RH 65 20.11.; Freigabe Kanban #514 am 23.11. 20:19): KOALA (Knie) setzt
+# KaiScribe NICHT mehr automatisch ein – kein K&L-Grad, kein K&L-Satz, keine Spaltweiten, kein Ergebnispunkt, keine
+# KOALA-Hinweiszeile, kein Prompt-Block. Knie = nur Diktiertes (diktierter Grad/Adjektiv → K&L-Satz wie Register).
+# aus_liste() lässt KOALA-Bausteine weg; der alte Weg (18.11.2026, kl-koala) bleibt hinter dem Schalter erhalten.
+# #420 (KOALA nach K&L-Tabelle) entfällt damit. Andere Gelenke (K&L peripher, Rhizarthrose) unverändert.
+KOALA_KNIE_AUTOMATIK = False
 MODULE = {"frog": {"fuss"}, "lama": {"unterschenkel"}, "hippo": {"becken", "huefte"}, "koala": {"knie"},
           "squirrel": {"hws", "bws", "lws"}, "panda": {"hand"}, "rho": None, "rbfracture": None}
 # Diagnose (Wörter im Ergebnispunkt) → Wörter, mit denen ein Befundsatz dieselbe Eigenschaft als normal beschreibt
@@ -229,6 +236,8 @@ def aus_liste(liste):
         modul = str(d.get("modul") or "").strip().lower()
         accno = str(d.get("accno") or "").strip()
         if not re.fullmatch(r"[a-z0-9]+", modul) or not accno:
+            continue
+        if modul == "koala" and not KOALA_KNIE_AUTOMATIK:     # Punkt 61: KOALA-Knie-Automatik ganz raus
             continue
         try:
             version = int(d.get("version") or 0)

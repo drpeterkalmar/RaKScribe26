@@ -185,7 +185,8 @@ const BULLET_RE = /^\s*[-*•–]\s+/;
 // v3.19.x (Georg 17.11.2026, IB Lab LAMA): Schlussanmerkung „HKA = Hüft-Knie-Sprunggelenk-Winkel, …“ ohne Nummer. Sync: befund_regeln.py
 // v3.19.8 (Georg 17.11.2026, IB Lab FROG): ebenso „Weitere Winkelmessungen sind den KI-Auswertungsbildern im PACS …“.
 // v3.19.13 (Georg 18.11.2026, IB Lab HIPPO): auch „LCE = …“ / „AI = …“ / „CCD = …“. Sync: befund_regeln.py _UNNUM_RE
-const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor|^HKA = Hüft-Knie-Sprunggelenk-Winkel|^Weitere Winkelmessungen sind den KI-Auswertungsbildern|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)|^Anmerkung:/i;  // kaiscribe-georg-2011-n1 (Punkt 9)
+// kaiscribe-schulter-ergebnis-n1 (Punkt 65): unnummeriert nur die Einleitung „Vergleich zur Voruntersuchung vom …:“
+export const UNNUM_RE = /^(?:im\s+)?vergleich\s+zu[rm]?\s+vor[^\n]*:$|^HKA = Hüft-Knie-Sprunggelenk-Winkel|^Weitere Winkelmessungen sind den KI-Auswertungsbildern|^(?:LCE|AI|CCD) = (?:lateraler Center-Edge|Acetabulumindex|Caput-Collum)|^Anmerkung:/i;  // kaiscribe-georg-2011-n1 (Punkt 9)
 
 // v3.7.4 (Georg 09.10.): Ergebnis-Punkt beginnt groß und endet mit Punkt. Sync: befund_regeln.py satzform
 const SATZENDE = /[.!?:;]$/;
@@ -1167,6 +1168,8 @@ export function kurzsaetzeSichern(report: string, diktat: string, d: KurzsatzDat
 // Nach der KI: Grad-Angaben ohne Deckung → bei genau einem erlaubten Grad eingesetzt, sonst entfernt (Diagnose bleibt).
 // Sync: source_code/befund_regeln.py (kl_grade, kl_bereinigen), Fixtures befund_regeln_fixtures.json „kl“.
 // K&L-Deskriptor-Tabelle (freigegeben Georg/Peter, = befund_regeln.KL_TABELLE, Gen-Prompt Abschnitt ARTHROSE)
+// „(Arthrose Grad 3 nach Kellgren & Lawrence)“ — Ergebnisformat (Regel-Register kl-ergebnis). Sync: befund_regeln.py kl_klammer
+export const klKlammer = (grad: string): string => `(Arthrose Grad ${grad} nach Kellgren & Lawrence)`;
 export const KL_TABELLE: Record<number, string> = {
   0: 'Unauffälliger Gelenksspalt, keine Osteophyten.',
   1: 'Geringe Osteophytenbildung, fragliche Gelenksspaltverschmälerung.',
@@ -1250,8 +1253,21 @@ export function klBereinigen(report: string, diktat: string, erlaubt: string[] =
     aend.push(`K&L-Grad ${g} ohne Diktat/IB Lab entfernt`);
     return '';
   };
-  const zeilen = report.split('\n').map(z =>
-    z.includes('(IB Lab') || !z.toLowerCase().includes('kellgren') ? z : z.replace(KL_KI, ersetzen));
+  // kaiscribe-schulter-ergebnis-n1 (Punkt 70, RH 94): mehrere Grad-Adjektive → Grad zum Adjektiv DIESER Diagnose
+  const adjOk = !d.length && !e.length;
+  const zeilen = report.split('\n').map(z => {
+    if (z.includes('(IB Lab') || !z.toLowerCase().includes('kellgren')) return z;
+    const gZ = adjOk ? klGradZeile(z.replace(KL_KI, '')) : null;
+    if (gZ && ok.includes(gZ)) {
+      return z.replace(KL_KI, (m0: string, g1?: string, g2?: string) => {
+        const ist = KL_WERT[(g1 || g2 || '').toLowerCase()] ?? 'X';
+        if (ist === gZ) return m0;
+        aend.push(`K&L-Grad ${ist} → ${gZ} (Adjektiv derselben Diagnose)`);
+        return m0.replace(new RegExp(KL_G_KI + String.raw`(?=\s+nach)`, 'i'), gZ);
+      });
+    }
+    return z.replace(KL_KI, ersetzen);
+  });
   return [zeilen.join('\n'), aend];
 }
 
@@ -1585,7 +1601,609 @@ export function grundregeln(report: string, diktat = '', templates?: VorlagenMap
     out = zz.join('\n');
   }
   if (erg) out = ergebnisNummerieren(out);
+  const [out2, x2] = georg2311(out, diktat, templates);   // kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
+  return [out2, [...aend, ...x2]];
+}
+
+// ══ kaiscribe-schulter-ergebnis-n1 (Georg Riegler 22./23.11.2026, Punkte 48–70) – Sync: befund_regeln.py georg_2311,
+// Fixtures „georg_2311“. Beschreibung der Regeln siehe dort. Ohne Treffer bleibt der Text Zeichen für Zeichen gleich.
+export const KORTIKALIS_UEBRIGEN = 'Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.';
+export const ENTHESIO_SATZ = 'kortikale Unregelmäßigkeiten und vermehrte Sklerosierung';
+export const NERV_UNAUFFAELLIG = 'Unauffälliger Befund am N. {name}{seite}.';
+export const DUNN_TITEL = ' sowie Dunn-Aufnahme';
+export const DUNN_TITEL_BDS = ' sowie Dunn-Aufnahmen beidseits';
+export const ZUSATZPROJEKTIONEN: Record<string, { aktiv: boolean; diktat: string; region: string }> = {
+  dunn: { aktiv: true, diktat: '(?<![a-zäöüß])dunn(?![a-zäöüß])', region: 'hüft|becken' } };
+const SCHNITT_TITEL = /sonogra|ultraschall|(?<![a-zäöüß])(?:mr|mrt|ct)(?![a-zäöüß])|magnetres|computertomo/iu;
+const SONO_TITEL = /sonogra|ultraschall/iu;
+const SCHULTER_TITEL = /schulter/iu;
+const BECKEN_TITEL = /becken|hüft/iu;
+const ANS_KONTUR = /^(?:ansonsten|im übrigen),?\s+(?:sind\s+)?die gelenkfl[äa]chen\s+(?:sind\s+)?regelrecht konturiert/u;
+const ENTH_RX = /enthesiopath/u;
+const AC_RX = /(?<![a-zäöüß])ac-|(?<![a-zäöüß])acg(?![a-zäöüß])|acromioclavicular|akromioklavikular/u;
+const GELENK_RX = /glenohumeral|omarthros|gelenks?spalt|osteophyt|humeruskopf/u;
+const ADJW = '(gering[a-zäöüß]*|leicht[a-zäöüß]*|mäßig[a-zäöüß]*|mittelgradig[a-zäöüß]*|hochgradig[a-zäöüß]*|ausgeprägt[a-zäöüß]*|deutlich[a-zäöüß]*|beginnend[a-zäöüß]*)';
+const ENTH_SATZ = new RegExp('^(?:(?:im übrigen|ansonsten),?\\s+)?(?:(?:geringe|mäßige|zarte|diskrete)\\s+)?(?:zeichen\\s+(?:einer|der)\\s+)?(?:' + ADJW +
+  '\\s+)?enthesiopathi[a-zäöüß]*\\s+(.+?)\\s*\\.?$', 'iu');
+const ENTH_ADJ: [RegExp, string][] = [[/^(?:gering|leicht)/iu, 'Geringe'], [/^(?:mäßig|mittelgradig)/iu, 'Mäßige'],
+  [/^(?:hochgradig|ausgeprägt)/iu, 'Hochgradige'], [/^beginnend/iu, 'Beginnende'], [/^deutlich/iu, 'Deutliche']];
+const ENTH_DIKTAT = new RegExp(ADJW + '\\s+(?:[a-zäöüß0-9_]+\\s+)?enthesiopath', 'iu');
+const BURSA_PATHO = /bursitis|bursaverdick|bursa[a-zäöüß -]{0,40}(?:verdick|flüssigkeit|erguss|distendiert|distension)|(?:flüssigkeit|erguss)[a-zäöüß ]{0,30}bursa|step-?sign[a-zäöüß ]{0,15}positiv|positive[sn]? step-?sign/u;
+const BURSA_NORMAL = /bursa[^.]*(?:ohne|kein[a-zäöüß0-9_]*)\s[^.]*(?:wandverdick|flüssigkeit|erguss|bursitis|verdick)|(?:kein[a-zäöüß0-9_]*|ohne)\s[^.]*(?:bursitis|flüssigkeit[^.]*bursa)/u;
+const STEP_NORMAL = /^(?:(?:im übrigen|ansonsten),?\s+)?kein nachweis eines step-?sign/u;
+const STEP_PATHO = /step-?sign[a-zäöüß ]{0,15}positiv|positive[sn]? step-?sign|impingement/u;
+const FRAKTUR_RX = /fraktur|ausriss|fissur|infraktion|(?<![a-zäöüß])fragment/u;
+const NICHT_DISLOZIERT = /(?<![a-zäöüß])nicht[- ](?:disloziert|dislociert|verschoben|verlagert)[a-zäöüß]*/gu;
+const KL_ADJ_SEITE = new RegExp('(?<![a-zäöüß])(' + KL_ADJ.map(([, r]) => r).join('|') + ')\\s+(?:rechts|links|beidseits)(?![a-zäöüß])', 'giu');
+const PATHO_EXTRA = /status post|zustand nach|(?<![a-zäöüß])(?:st\.|z\.)\s?[pn]\.|enthesi|unregelmäßig|prothes|(?<![a-zäöüß])tep(?![a-zäöüß])|ausriss|fragment|verdick|bursitis|degenerat|stenose|hypertroph|zyste|erosion|lockerung|sklerosier|osteophyt|randanbau|randzack|dysplas|steiles pfannendach|überdachung|coxa (?:valga|vara)|beckenschief|beinlängen|fibroostos|tendinos|ruptur|ganglion|lipom|tumor|raumforder|hämatom|serom|abszess/u;
+const NERV_TITEL = /(?:sonogra|ultraschall)[^\n]*(?:(?<![a-zäöüß])n\.|nerv)/iu;
+const NERV_NAME = /(?:(?<![a-zäöüß])n\.|nervus|nerv)\s*(medianus|ulnaris|radialis|ischiadicus|peroneus|fibularis|tibialis|femoralis|suralis|pudendus|saphenus|obturatorius|axillaris|musculocutaneus|suprascapularis|iliohypogastricus|ilioinguinalis|cutaneus femoris lateralis|femoralis cutaneus lateralis)/iu;
+const NERV_PATHO = /verdick|auftreib|aufgetrieben|schwell|kompression|engpass|neurom|ödem|vergrößer|erhöht|hypoechogen|hyperäm|läsion|neuritis|irritation|luxation|instabil|einengung|kaliberschwank|neuropath|kompressions/u;
+const BS_GROSS = /Beckenschiefstand von (\d+) mm(?:,\s*(rechts|links) tiefer(?:stehend)?)?/gu;
+const HIPPO_SATZ = /^(?:Geringer Beckenschiefstand|Beckenschiefstand von|Kein Beckenschiefstand|Beinlängendifferenz von|Keine Beinlängendifferenz)/u;
+const VERLAUF = /unverändert[a-zäöüß0-9_]*[^.]{0,60}(?:vor(?:untersuchung|befund|aufnahme)|vergleich)|vergleich zu[rm]? vor(?:untersuchung|aufnahme|befund)|befund(?:änderung|konstanz|progredienz)|zur voruntersuchung|größenkonstant/iu;
+const UEB = '(?:(?:Im [Üü]brigen|Ansonsten),?\\s+)?';
+const HUEFTKOPF_BDS = new RegExp('^' + UEB + '(?:[Oo]rdnungsgemäße|[Nn]ormale|[Rr]egelrechte) Stellung der normal geformten Hüftköpfe\\.$', 'u');
+const HUEFTKOPF_EIN = new RegExp('^' + UEB + '(?:[Oo]rdnungsgemäße|[Nn]ormale|[Rr]egelrechte) Stellung des normal geformten (rechten|linken) Hüftkopfes\\.$', 'u');
+const HUEFT_SPALT = new RegExp('^' + UEB + '(?:(Rechts|Links) )?[Nn]ormal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt\\.$', 'u');
+const HUEFT_EIN_FORM = new RegExp('^' + UEB + 'Anatomisch normale Form des Hüftgelenkes mit regelrechter Stellung des Hüftkopfes in der Pfanne\\.$', 'u');
+const HUEFT_BETROFFEN = /prothes|(?<![a-zäöüß])tep(?![a-zäöüß])|endoprothes|coxarthros|koxarthros|dysplas|steiles pfannendach|grenzwertige überdachung|lce-winkel beträgt|ai-winkel beträgt|acetabulumindex beträgt|(?<![a-zäöüß])(?:lce|ai)(?:-winkel)?\s+(?:von\s+)?(?:rechts\s+|links\s+)?\d/gu;
+const KL_AUSNAHME = /(?<![a-zäöüß])(?:ac|acg|si|isg)(?![a-zäöüß])|acromioclavicular|akromioklavikular|iliosakral|sakroiliakal|symphys|facetten|spondyl|unkovertebral|uncovertebral|wirbel|rhizarthros|daumensattel/iu;
+const KL_DOPPEL = /^((?:[A-ZÄÖÜ][a-zäöüß]+\s+)?)([A-ZÄÖÜa-zäöüß-]*[Aa]rthrose)\s+(rechts|links)\s+und\s+([a-zäöüß]+)\s+(?:(?:[A-ZÄÖÜa-zäöüß-]*[Aa]rthrose)\s+)?(rechts|links)\s*\.?$/u;
+const NB2 = '(?<![A-Za-zÄÖÜäöüß])', NA2 = '(?![A-Za-zÄÖÜäöüß])';
+const WORT_ERSETZEN: [RegExp, (m: string, ...g: string[]) => string][] = [
+  [new RegExp(NB2 + '([Kk])einerlei Zeichen einer (?:peri)?(?:prothetischen|peripherischen|periprothetischen) Fraktur', 'gu'), (_m, k) => k + 'eine Zeichen einer periprothetischen Fraktur'],
+  [new RegExp(NB2 + '(?:peripherischen|prothetischen)(?= Fraktur)', 'gu'), () => 'periprothetischen'],
+  [new RegExp(NB2 + '([Kk])ein(?:e)? sicheres? periprothetische[n]? Fraktur', 'gu'), (_m, k) => k + 'eine sichere periprothetische Fraktur'],
+  [new RegExp(NB2 + 'des Material post' + NA2 + '|' + NB2 + 'des Material(?=[.,;])', 'gu'), () => 'des Materials'],
+];
+const cap = (s: string): string => s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : s;
+const ohneNum = (z: string): string => z.replace(NUM_RE, '').trim();
+
+const pathoSatz = (s: string): boolean => {
+  const t = (s || '').toLowerCase().replace(/^(?:im übrigen|ansonsten),?\s+/u, '');
+  return hasPathology(t) || bejaht(t, PATHO_EXTRA);
+};
+type Zeilen = (string[] | null)[];
+const zerlegen = (text: string): Zeilen =>
+  text.split('\n').map(z => (!z.trim() ? null : saetzeMitLage(z).map(([a, b]) => z.slice(a, b).trim())));
+const flach = (L: Zeilen): [number, number][] => {
+  const out: [number, number][] = [];
+  L.forEach((z, i) => { if (z) z.forEach((_s, k) => out.push([i, k])); });
+  return out;
+};
+const zusammen = (L: Zeilen): string => {
+  const out: string[] = [];
+  let leer = false;
+  for (const z of L) {
+    if (z === null) { if (!leer || !out.length) out.push(''); leer = true; }
+    else if (z.length) { out.push(z.join(' ')); leer = false; }
+  }
+  return out.join('\n');
+};
+const saetzeVon = (L: Zeilen): string[] => flach(L).map(([i, k]) => L[i]![k]);
+const umstellen = (L: Zeilen, raus: number[], nach: number, neue: string[]): Zeilen => {
+  const pos = flach(L);
+  const ziel = nach >= 0 && nach < pos.length ? pos[nach] : null;
+  const weg = new Set(raus.map(r => pos[r].join(',')));
+  const M: ([string, string | null][] | null)[] = L.map((z, i) => (z === null ? null : z.map((s, k) => [s, `${i},${k}`] as [string, string | null]).filter(x => !weg.has(x[1]!))));
+  if (ziel === null) {
+    const i0 = M.findIndex(z => z !== null);
+    if (i0 < 0) return L;
+    M[i0] = [...neue.map(s => [s, null] as [string, string | null]), ...M[i0]!];
+  } else {
+    const z = M[ziel[0]]!;
+    const j = z.findIndex(x => x[1] === ziel.join(','));
+    M[ziel[0]] = [...z.slice(0, j + 1), ...neue.map(s => [s, null] as [string, string | null]), ...z.slice(j + 1)];
+  }
+  return M.map(z => (z === null ? null : z.map(x => x[0])));
+};
+
+const schulterOrdnen = (L: Zeilen): Zeilen => {
+  const s = saetzeVon(L);
+  const kat = s.map(x => {
+    const t = x.toLowerCase();
+    if (ANS_KONTUR.test(t)) return 'ans';
+    if (t.includes(ENTHESIO_SATZ.toLowerCase()) || bejaht(t, ENTH_RX)) return 'ent';
+    if (AC_RX.test(t)) return 'ac';
+    if (GELENK_RX.test(t) || new RegExp(KL_TAB_RE.source, 'iu').test(x)) return 'g';
+    return '';
+  });
+  if (!kat.includes('ans') && !kat.includes('ent')) return L;
+  const g = kat.map((k, i) => (k === 'g' ? i : -1)).filter(i => i >= 0);
+  const letztG = g.length ? g[g.length - 1] : -1;
+  const acs = kat.map((k, i) => (k === 'ac' && i < letztG ? i : -1)).filter(i => i >= 0);
+  const raus = [...kat.map((k, i) => (k === 'ans' || k === 'ent' ? i : -1)).filter(i => i >= 0), ...acs];
+  const anker = kat.map((k, i) => ((k === 'g' || k === 'ac') && !raus.includes(i) ? i : -1)).filter(i => i >= 0);
+  if (!anker.length) return L;
+  const neu = [...acs.map(i => s[i]), ...s.filter((_x, i) => kat[i] === 'ans'), ...s.filter((_x, i) => kat[i] === 'ent')];
+  const reihe = s.map((_x, i) => i).filter(i => !raus.includes(i));
+  const p = reihe.indexOf(anker[anker.length - 1]) + 1;
+  const probe = [...reihe.slice(0, p).map(i => s[i]), ...neu, ...reihe.slice(p).map(i => s[i])];
+  if (probe.length === s.length && probe.every((x, i) => x === s[i])) return L;
+  return umstellen(L, raus, anker[anker.length - 1], neu);
+};
+
+const enthesio = (satz: string, dk: string): string | null => {
+  const m = ENTH_SATZ.exec(satz);
+  if (!m || !m[2]) return null;
+  let ort = m[2].trim().replace(/\.$/u, '');
+  const ol = ort.toLowerCase();
+  if (/^(?:am|an der|an den|an|im bereich)\s/u.test(ol)) { /* bleibt */ }
+  else if (ol.startsWith('des ')) ort = 'am ' + ort.slice(4);
+  else if (ol.startsWith('der ')) ort = 'an der ' + ort.slice(4);
+  else if (ol.startsWith('vom ')) ort = 'am ' + ort.slice(4);
+  else if (ol.startsWith('von der ')) ort = 'an der ' + ort.slice(8);
+  else ort = 'am ' + ort;
+  let adj = m[1] || '';
+  if (!adj) { const md = ENTH_DIKTAT.exec(dk || ''); adj = md ? md[1] : ''; }
+  const wort = adj ? (ENTH_ADJ.find(([rx]) => rx.test(adj))?.[1] ?? '') : '';
+  return wort ? `${wort} ${ENTHESIO_SATZ} ${ort}.` : `${ENTHESIO_SATZ[0].toUpperCase()}${ENTHESIO_SATZ.slice(1)} ${ort}.`;
+};
+
+const bursa = (L: Zeilen, dk: string): [Zeilen, string[]] => {
+  const s = saetzeVon(L);
+  const nI = s.findIndex(x => x.toLowerCase().includes('bursa') && BURSA_NORMAL.test(x.toLowerCase()) && !STEP_NORMAL.test(x.toLowerCase()));
+  const stI = s.findIndex(x => STEP_NORMAL.test(x.toLowerCase()));
+  const rest = s.filter((_x, i) => i !== nI && i !== stI).map(x => x.toLowerCase()).join(' ');
+  const aend: string[] = [];
+  const raus: number[] = [];
+  let neu: string[] = [], nach = -1;
+  if (stI >= 0 && (bejaht(dk, STEP_PATHO) || bejaht(rest, STEP_PATHO))) { raus.push(stI); aend.push(`Step-sign-Normalsatz gestrichen: ${s[stI].slice(0, 50)}`); }
+  if (nI >= 0 && (bejaht(dk, BURSA_PATHO) || bejaht(rest, BURSA_PATHO))) {
+    const p = s.findIndex((x, i) => i !== nI && i !== stI && bejaht(x.toLowerCase(), BURSA_PATHO));
+    raus.push(nI);
+    aend.push(`Bursa-Normalsatz gestrichen: ${s[nI].slice(0, 50)}`);
+    if (p >= 0) {
+      raus.push(p);
+      neu = [s[p]];
+      const vor = [...Array(nI).keys()].filter(i => !raus.includes(i));
+      nach = vor.length ? vor[vor.length - 1] : -1;
+    }
+  }
+  if (!raus.length) return [L, []];
+  return [umstellen(L, [...new Set(raus)].sort((a, b) => a - b), nach, neu), aend];
+};
+
+const fraktur = (L: Zeilen): [Zeilen, string[]] => {
+  const s = saetzeVon(L);
+  const f = s.map((x, i) => (bejaht(x.toLowerCase().replace(NICHT_DISLOZIERT, ''), FRAKTUR_RX) && !UEBRIGEN_ANFANG.test(x) ? i : -1)).filter(i => i >= 0);
+  const k = s.findIndex((x, i) => x.toLowerCase().includes('kortikalis') && /glatt|scharf|regelrecht/u.test(x.toLowerCase()) && !f.includes(i));
+  if (!f.length || k < 0) return [L, []];
+  const nachK = f.filter(i => i > k);
+  if (!nachK.length) {
+    if (k === f[f.length - 1] + 1 && s[k] === KORTIKALIS_UEBRIGEN) return [L, []];
+    return [umstellen(L, [k], f[f.length - 1], [KORTIKALIS_UEBRIGEN]), ['Kortikalis-Satz direkt hinter die Fraktur']];
+  }
+  const vor = [...Array(k).keys()].filter(i => !nachK.includes(i));
+  return [umstellen(L, [...nachK, k], vor.length ? vor[vor.length - 1] : -1, [...nachK.map(i => s[i]), KORTIKALIS_UEBRIGEN]),
+    ['Fraktur an die Stelle der Kortikalis-Beschreibung']];
+};
+
+const uebrigenNurNachPatho = (L: Zeilen, templates?: VorlagenMap): [Zeilen, string[]] => {
+  const s = saetzeVon(L);
+  const aend: string[] = [];
+  const pos = flach(L);
+  for (let j = 1; j < s.length; j++) {
+    const m = UEBRIGEN_ANFANG.exec(s[j]);
+    if (!m || s.slice(0, j).some(pathoSatz)) continue;
+    const rest = s[j].slice(m[0].length);
+    let neu: string | null;
+    if (WID_VERB.test(rest.split(' ', 1)[0].toLowerCase())) { neu = vorlageZurueck(rest, templates); if (neu === null) continue; }
+    else neu = rest.slice(0, 1).toUpperCase() + rest.slice(1);
+    aend.push(`ohne „${m[1]}“ (keine Pathologie davor): ${neu.slice(0, 50)}`);
+    L[pos[j][0]]![pos[j][1]] = neu;
+    s[j] = neu;
+  }
+  return [L, aend];
+};
+
+const seitenAus = (t0: string, titelSeite = ''): Set<string> => {
+  const t = (t0 || '').toLowerCase();
+  if (/beidseit|(?<![a-zäöüß])bds(?![a-zäöüß])|beider/u.test(t)) return new Set(['rechts', 'links']);
+  const out = new Set<string>();
+  if (WID_RECHTS.test(t)) out.add('rechts');
+  if (WID_LINKS.test(t)) out.add('links');
+  if (!out.size && (titelSeite === 'rechts' || titelSeite === 'links')) out.add(titelSeite);
+  return out;
+};
+
+const huefteSeiten = (L: Zeilen, titel: string): [Zeilen, string[]] => {
+  const ts = widSeite(titel);
+  const betr = new Set<string>();
+  for (const x of saetzeVon(L)) {
+    if (HUEFTKOPF_BDS.test(x) || HUEFTKOPF_EIN.test(x) || HUEFT_SPALT.test(x) || HUEFT_EIN_FORM.test(x)) continue;
+    const t = x.toLowerCase();
+    for (const m of t.matchAll(HUEFT_BETROFFEN)) {
+      const vor = t.slice(Math.max(0, m.index! - 60), m.index!).split(/[.;:,\n]/u).pop()!;
+      if (NEG_NAH.test(vor)) continue;
+      for (const sd of seitenAus(t, ts)) betr.add(sd);
+    }
+  }
+  if (!betr.size) return [L, []];
+  const aend: string[] = [];
+  const einzeln = !titel.toLowerCase().includes('becken');
+  const beide = betr.has('rechts') && betr.has('links');
+  const andere = beide ? '' : ['rechts', 'links'].find(x => !betr.has(x))!;
+  const adj: Record<string, string> = { rechts: 'rechten', links: 'linken' };
+  const pos = flach(L);
+  for (let idx = pos.length - 1; idx >= 0; idx--) {
+    const [i, k] = pos[idx];
+    const x = L[i]![k];
+    let neu = x;
+    if (HUEFTKOPF_BDS.test(x)) neu = beide ? '' : `Ordnungsgemäße Stellung des normal geformten ${adj[andere]} Hüftkopfes.`;
+    else if (HUEFTKOPF_EIN.test(x)) { const sd = HUEFTKOPF_EIN.exec(x)![1] === 'rechten' ? 'rechts' : 'links'; if (betr.has(sd)) neu = ''; }
+    else if (HUEFT_SPALT.test(x)) {
+      const sm = HUEFT_SPALT.exec(x)![1];
+      if (sm) { if (betr.has(sm.toLowerCase())) neu = ''; }
+      else if (einzeln) { if (betr.has(ts) || !ts) neu = ''; }
+      else if (beide) neu = '';
+      else neu = `${cap(andere)} normal konfigurierte, glatte Gelenkflächen mit allseits normal weitem Gelenkspalt.`;
+    } else if (HUEFT_EIN_FORM.test(x) && einzeln && (betr.has(ts) || !ts)) neu = '';
+    if (neu !== x) {
+      aend.push(`Hüfte ${[...betr].sort().join('/')}: ${x.slice(0, 45)} → ${neu.slice(0, 45) || 'gestrichen'}`);
+      if (neu) L[i]![k] = neu; else L[i]!.splice(k, 1);
+    }
+  }
+  return [L, aend];
+};
+
+const klGradZeile = (z: string): string | null => {
+  const m = new RegExp(KL_ADJ_RE.source, 'iu').exec(z || '');
+  if (!m) return null;
+  return KL_ADJ.find(([, r]) => new RegExp('^(?:' + r + ')$', 'iu').test(m[1]))?.[0] ?? null;
+};
+
+const befundOps = (text: string, titel: string, dk: string, templates?: VorlagenMap): [string, string[]] => {
+  let L = zerlegen(text);
+  if (!flach(L).length) return [text, []];
+  const aend: string[] = [];
+  const schnitt = SCHNITT_TITEL.test(titel);
+  if (!schnitt) {
+    for (const [i, k] of flach(L)) {
+      const x = L[i]![k];
+      if (bejaht(x.toLowerCase(), ENTH_RX) && !/^(?:kein|ohne)/u.test(x.toLowerCase())) {
+        const neu = enthesio(x, dk);
+        if (neu && neu !== x) { L[i]![k] = neu; aend.push(`Enthesiopathie beschreibend: ${neu.slice(0, 50)}`); }
+      }
+    }
+    if (SCHULTER_TITEL.test(titel)) {
+      const L2 = schulterOrdnen(L);
+      if (L2 !== L) { L = L2; aend.push('Schulter: Gelenk → AC → „Ansonsten …“ → Enthesiopathie'); }
+    }
+    if (!WS_TITEL.test(titel) && !THORAX_TITEL.test(titel)) { const [L2, x] = fraktur(L); L = L2; aend.push(...x); }
+  }
+  if (SONO_TITEL.test(titel)) { const [L2, x] = bursa(L, dk); L = L2; aend.push(...x); }
+  if (BECKEN_TITEL.test(titel) && !schnitt) { const [L2, x] = huefteSeiten(L, titel); L = L2; aend.push(...x); }
+  { const [L2, x] = uebrigenNurNachPatho(L, templates); L = L2; aend.push(...x); }
+  if (!aend.length) return [text, []];
+  const lead = text.slice(0, text.length - text.replace(/^\n+/u, '').length);
+  const trail = text.slice(text.replace(/\n+$/u, '').length);
+  return [lead + zusammen(L).replace(/^\n+|\n+$/gu, '') + trail, aend];
+};
+
+type Teil = [number, string, [number, number] | null, [number, number] | null];
+const teileVon = (zeilen: string[]): Teil[] => {
+  const out: Teil[] = [];
+  let akt: Teil | null = null;
+  zeilen.forEach((z, i) => {
+    const s = z.trim();
+    if (!s.startsWith('## ')) return;
+    const k = s.slice(3).trim().toLowerCase().replace(/:$/u, '');
+    if (k === 'befund' || k === 'ergebnis') {
+      if (akt === null) { akt = [-1, '', null, null]; out.push(akt); }
+      let j = i + 1;
+      while (j < zeilen.length && !zeilen[j].trimStart().startsWith('## ')) j++;
+      akt[k === 'befund' ? 2 : 3] = [i + 1, j];
+    } else { akt = [i, s.slice(3).trim(), null, null]; out.push(akt); }
+  });
+  return out;
+};
+const ergZeilen = (zeilen: string[], e: [number, number]): number[] => {
+  const out: number[] = [];
+  for (let i = e[0]; i < e[1]; i++) if (zeilen[i].trim()) out.push(i);
+  return out;
+};
+
+const klErgebnis = (punkte: string[], dk: string): [string[], string[]] => {
+  if (!dk || !arthroseDiktiert(dk)) return [punkte, []];
+  const aend: string[] = [], out: string[] = [];
+  const diktiert = klGrade(dk), adj = new Set(klAdjektivGrade(dk));
+  for (const m of dk.matchAll(KL_ADJ_SEITE)) for (const [g, r] of KL_ADJ) if (new RegExp('^(?:' + r + ')$', 'iu').test(m[1])) adj.add(g);
+  for (const p of punkte) {
+    const t = ohneNum(p);
+    const md = KL_DOPPEL.exec(t);
+    if (md && klGradZeile(t)) {
+      const [, adj1, diag, s1, adj2, s2] = md;
+      if (s1 !== s2) {
+        const a = `${adj1}${diag} ${s1}.`, b2 = `${adj2[0].toUpperCase()}${adj2.slice(1)} ${diag} ${s2}.`;
+        out.push(a, b2);
+        aend.push(`Arthrose je Seite: ${a} / ${b2}`);
+        continue;
+      }
+    }
+    out.push(p);
+  }
+  const fertig: string[] = [];
+  for (let p of out) {
+    const t = ohneNum(p);
+    if (KL_AUSNAHME.test(t) || !ARTHROSE_KI.test(t) || VERNEINT.test(t.split('rthros')[0]) || new RegExp(KL_KI.source, 'i').test(t) || /kellgren/i.test(t)) { fertig.push(p); continue; }
+    const g = diktiert.length === 1 ? diktiert[0] : (!diktiert.length ? klGradZeile(t) : null);
+    if (g && (diktiert.length || adj.has(g))) {
+      let kern = p.trimEnd();
+      if (kern.endsWith('.')) kern = kern.slice(0, -1);
+      p = `${kern} ${klKlammer(g)}.`;
+      aend.push(`K&L-Klammer ergänzt (Grad ${g})`);
+    }
+    fertig.push(p);
+  }
+  return [fertig, aend];
+};
+
+// eigener Arthrose-Deskriptor der KI → Standardsatz statt (Sync: befund_regeln.py _KL_EIGEN)
+const KL_KOMP = /(?<![a-zäöüß])(medial|lateral|femoropatellar|femorotibial|retropatellar|patellofemoral)/u;
+const KL_EIGEN = /osteophyt|gelenks?spalt[a-zäöüß]*verschmäler|verschmälerung des [a-zäöüß]+ gelenks?spalt|subchondral/u;
+const klBefund = (text: string, punkte: string[], titel: string): [string, string[]] => {
+  const je: [string, number][] = [];
+  for (const p of punkte) {
+    const t = ohneNum(p);
+    const m = new RegExp(KL_KI.source, 'i').exec(t);
+    if (!m || KL_AUSNAHME.test(t)) continue;
+    const g = Number(KL_WERT[(m[1] || m[2] || '').toLowerCase()] ?? '0') || 0;
+    if (g && KL_TABELLE[g]) je.push([widSeite(t), g]);
+  }
+  if (!je.length) return [text, []];
+  let L = zerlegen(text);
+  const uniq = [...new Map(je.map(x => [x.join('|'), x] as [string, [string, number]])).values()];
+  const fehlt = uniq.filter(([, g]) => !saetzeVon(L).some(x => x.toLowerCase().includes(KL_TABELLE[g].slice(0, -1).toLowerCase())));
+  if (!fehlt.length) return [text, []];
+  const mehr = new Set(je.map(x => x[0])).size > 1;
+  const ts = widSeite(titel);
+  const aend: string[] = [];
+  for (const [sd, g] of fehlt) {
+    const satz = KL_TABELLE[g];
+    const s = saetzeVon(L);
+    const passt = (x: string): boolean => !sd || ['', sd].includes(widSeite(x));
+    const diag = s.map((x, i) => ((bejaht(x.toLowerCase(), ARTHROSE_KI) || bejaht(x.toLowerCase(), KL_EIGEN)) && !new RegExp(KL_TAB_RE.source, 'iu').test(x) && !KL_AUSNAHME.test(x) && passt(x)
+      && (!mehr || widSeite(x) === sd || !widSeite(x)) ? i : -1)).filter(i => i >= 0);
+    const vor: string[] = sd && (mehr || ts !== sd) ? [sd] : [];
+    const mk = diag.length ? KL_KOMP.exec(s[diag[0]].toLowerCase()) : null;   // Kompartiment bleibt (kl-knie-betont)
+    if (mk) vor.push(mk[1]);
+    const vj = vor.join(' ');
+    const neu = vor.length ? `${vj[0].toUpperCase()}${vj.slice(1)} ${satz[0].toLowerCase()}${satz.slice(1)}` : satz;
+    if (diag.length) L = umstellen(L, diag.slice(0, 1), diag[0] - 1, [neu]);
+    else {
+      const deg = s.findIndex(x => x.toLowerCase().includes('degenerativ') && !!sd && widSeite(x) === sd);
+      L = umstellen(L, [], deg >= 0 ? deg : (s.length ? 0 : -1), [neu]);
+    }
+    aend.push(`K&L-Standardsatz im Befund: ${neu.slice(0, 50)}`);
+  }
+  const lead = text.slice(0, text.length - text.replace(/^\n+/u, '').length);
+  const trail = text.slice(text.replace(/\n+$/u, '').length);
+  return [lead + zusammen(L).replace(/^\n+|\n+$/gu, '') + trail, aend];
+};
+
+export function georg2311(report: string, diktat = '', templates?: VorlagenMap): [string, string[]] {
+  if (!report || !report.includes('## ')) return [report, []];
+  let out = report;
+  const aend: string[] = [];
+  for (const [rx, f] of WORT_ERSETZEN) {
+    const neu = out.replace(rx, f as (m: string, ...g: string[]) => string);
+    if (neu !== out) { aend.push('Wortlaut periprothetisch/Material'); out = neu; }
+  }
+  const dk = (diktat || '').toLowerCase();
+  let zeilen = out.split('\n');
+  let ergNeu = false;
+  let teile = teileVon(zeilen);
+  const beckenDa = teile.some(([, t]) => BECKEN_TITEL.test(t) && !SCHNITT_TITEL.test(t));
+  for (const [, titel, b] of [...teile].reverse()) {
+    if (!b) continue;
+    const text = zeilen.slice(b[0], b[1]).join('\n');
+    const [neu, x] = befundOps(text, titel, dk, templates);
+    if (x.length) { zeilen.splice(b[0], b[1] - b[0], ...neu.split('\n')); aend.push(...x); }
+  }
+  teile = teileVon(zeilen);
+  if (beckenDa) {
+    const wandern: string[] = [];
+    for (const [, titel, b, e] of teile) {
+      if (!WS_TITEL.test(titel)) continue;
+      for (const rng of [b, e]) {
+        if (!rng) continue;
+        for (let i = rng[0]; i < rng[1]; i++) {
+          const t = ohneNum(zeilen[i]);
+          if (HIPPO_SATZ.test(t)) { wandern.push(satzform(t)); zeilen[i] = '\u0000'; }
+        }
+      }
+    }
+    if (wandern.length) {
+      zeilen = zeilen.filter(z => z !== '\u0000');
+      teile = teileVon(zeilen);
+      const ziel = teile.find(t => BECKEN_TITEL.test(t[1]) && !SCHNITT_TITEL.test(t[1]) && t[2]);
+      if (ziel) {
+        const [b0, b1] = ziel[2]!;
+        const schon = zeilen.slice(b0, b1).join('\n');
+        const rein = [...new Set(wandern)].filter(w => !schon.includes(w));
+        let k = -1;
+        for (let i = b0; i < b1; i++) if (zeilen[i].trim()) { k = i; break; }
+        if (rein.length && k >= 0) zeilen[k] = rein.join(' ') + ' ' + zeilen[k].trimStart();
+        aend.push(`HIPPO-Sätze aus dem Wirbelsäulen-Teil in die Beckenübersicht (${wandern.length})`);
+      }
+      ergNeu = true;
+      teile = teileVon(zeilen);
+    }
+  }
+  for (const [, titel, b, e] of [...teile].reverse()) {
+    if (!e) continue;
+    const idx = ergZeilen(zeilen, e);
+    const bef = b ? zeilen.slice(b[0], b[1]).join('\n') : '';
+    let punkte = idx.map(i => zeilen[i]);
+    const alt = [...punkte];
+    const schnitt = SCHNITT_TITEL.test(titel);
+    if (BECKEN_TITEL.test(titel) && !schnitt) {
+      const m = [...bef.matchAll(BS_GROSS)].find(x => Number(x[1]) >= 10);
+      if (m && !punkte.some(p => p.toLowerCase().includes('beckenschiefstand'))) {
+        const satz = `Beckenschiefstand von ${m[1]} mm` + (m[2] ? `, ${m[2]} tiefer.` : '.');
+        punkte = punkte.filter(p => !(WID_NORMAL_ERG.test(p) && !hasPathology(p)));
+        punkte.unshift(satz);
+        aend.push(`HIPPO ≥ 10 mm ins Ergebnis: ${satz}`);
+      }
+    }
+    if (!schnitt && !WS_TITEL.test(titel)) { const [p2, x] = klErgebnis(punkte, dk); punkte = p2; aend.push(...x); }
+    if (SCHULTER_TITEL.test(titel) && !schnitt) {
+      const rang = (p: string): number | null => {
+        const t = p.toLowerCase();
+        return /omarthros|glenohumeral/u.test(t) ? 0 : AC_RX.test(t) ? 1 : t.includes('enthesiopath') ? 2 : null;
+      };
+      const slots = punkte.map((p, k) => (rang(p) !== null ? k : -1)).filter(k => k >= 0);
+      const sortiert = slots.map(k => punkte[k]).map((p, k) => [p, k] as [string, number])
+        .sort((x, y) => rang(x[0])! - rang(y[0])! || x[1] - y[1]).map(x => x[0]);
+      slots.forEach((k, j) => { punkte[k] = sortiert[j]; });
+    }
+    if (NERV_TITEL.test(titel)) {
+      const mn = NERV_NAME.exec(titel) || NERV_NAME.exec(bef);
+      if (mn) {
+        const name = mn[1].toLowerCase();
+        const saetze = [...diktatSaetze(diktat || '').map(([a, c]) => (diktat || '').slice(a, c)), ...saetzeMitLage(bef).map(([a, c]) => bef.slice(a, c))];
+        const nervPatho = saetze.some(x => bejaht(x.toLowerCase(), NERV_PATHO) && (x.toLowerCase().includes(name) || x.toLowerCase().includes('nerv')));
+        if (!nervPatho && !punkte.some(p => p.toLowerCase().includes(name) && p.toLowerCase().includes('unauffällig'))) {
+          const ds = diktierteSeite(dk);
+          const sd = widSeite(titel) || (ds === 'rechts' || ds === 'links' ? ds : '');
+          const satz = NERV_UNAUFFAELLIG.replace('{name}', name).replace('{seite}', sd ? ' ' + sd : '');
+          punkte = punkte.filter(p => !['unauffälliger befund', 'regelrechte darstellung'].includes(ohneNum(p).replace(/\.$/u, '').toLowerCase()));
+          punkte.unshift(satz);
+          aend.push(`Nerv unauffällig: ${satz}`);
+        }
+      }
+    }
+    const v = punkte.map((p, k) => (VERLAUF.test(ohneNum(p)) && !UNNUM_RE.test(ohneNum(p)) ? k : -1)).filter(k => k >= 0);
+    if (v.length && v[0] !== 0) {
+      const [p] = punkte.splice(v[0], 1);
+      punkte.unshift(p);
+      aend.push(`Verlauf als 1. Punkt: ${ohneNum(p).slice(0, 50)}`);
+    }
+    if (punkte.length !== alt.length || punkte.some((p, k) => p !== alt[k])) {
+      ergNeu = true;
+      if (idx.length) zeilen.splice(idx[0], idx[idx.length - 1] + 1 - idx[0], ...punkte);
+      else zeilen.splice(e[0], 0, ...punkte);
+    }
+  }
+  teile = teileVon(zeilen);
+  for (const [, titel, b, e] of [...teile].reverse()) {
+    if (!dk || !b || !e || SCHNITT_TITEL.test(titel) || WS_TITEL.test(titel)) continue;
+    const [neu, x] = klBefund(zeilen.slice(b[0], b[1]).join('\n'), ergZeilen(zeilen, e).map(i => zeilen[i]), titel);
+    if (x.length) { zeilen.splice(b[0], b[1] - b[0], ...neu.split('\n')); aend.push(...x); }
+  }
+  const dunn = ZUSATZPROJEKTIONEN.dunn;
+  if (dunn.aktiv && new RegExp(dunn.diktat, 'u').test(dk)) {
+    for (const [ti, titel] of teileVon(zeilen)) {
+      if (ti >= 0 && new RegExp(dunn.region, 'iu').test(titel) && !titel.toLowerCase().includes('dunn')) {
+        const bds = /dunn[^.]{0,40}(?:beidseit|bds)|(?:beidseit|bds)[^.]{0,40}dunn/u.test(dk);
+        zeilen[ti] = zeilen[ti].trimEnd() + (bds ? DUNN_TITEL_BDS : DUNN_TITEL);
+        aend.push('Titel mit Dunn-Aufnahme');
+      }
+    }
+  }
+  out = zeilen.join('\n');
+  if (ergNeu) out = ergebnisNummerieren(out);
   return [out, aend];
+}
+
+const abschnitteVon = (b: string): { befund: string[]; ergebnis: string[] } => {
+  const t = { befund: [] as string[], ergebnis: [] as string[] };
+  let akt: 'befund' | 'ergebnis' | null = null;
+  for (const z of b.split('\n')) {
+    const s = z.trim();
+    const k = s.startsWith('## ') ? s.slice(3).trim().toLowerCase().replace(/:$/u, '') : null;
+    if (k === 'befund' || k === 'ergebnis') { akt = k; continue; }
+    if (akt && s) t[akt].push(s);
+  }
+  return t;
+};
+const bloeckeVereinen = (a: string, b: string): string => {
+  const ta = abschnitteVon(a), tb = abschnitteVon(b);
+  const altText = ta.befund.join(' ');
+  const dazu: string[] = [];
+  for (const z of tb.befund) for (const [x0, x1] of saetzeMitLage(z)) {
+    const x = z.slice(x0, x1).trim();
+    if (x && !altText.includes(x) && !vorlageNormalisieren(altText).includes(vorlageNormalisieren(x))) dazu.push(x);
+  }
+  let ergAlt = ta.ergebnis.map(ohneNum);
+  const ergDazu = tb.ergebnis.map(ohneNum).filter(z => !ergAlt.includes(z) && !(WID_NORMAL_ERG.test(z) && ergAlt.some(e => !WID_NORMAL_ERG.test(e))));
+  if (ergDazu.some(e => !WID_NORMAL_ERG.test(e))) ergAlt = ergAlt.filter(e => !(WID_NORMAL_ERG.test(e) && !hasPathology(e)));
+  const kopf = a.trim().split('\n', 1)[0];
+  const bef = ta.befund.length <= 1 ? [...ta.befund, ...dazu].join(' ') : [...ta.befund, ...(dazu.length ? [dazu.join(' ')] : [])].join('\n');
+  return `${kopf}\n\n## Befund\n${bef}\n\n## Ergebnis\n` + [...ergAlt, ...ergDazu].join('\n');
+};
+
+export function teileZusammenlegen(report: string, diktat = ''): [string, string[]] {
+  if (!report || (report.match(/## /gu) || []).length < 4) return [report, []];
+  const bloecke = report.trim().split(/\n{2,}(?=## (?!Befund\b|Ergebnis\b))/u).filter(b => b.trim());
+  if (bloecke.length < 2) return [report, []];
+  const kopf = (b: string): string => {
+    const z = b.trim().split('\n', 1)[0].trim();
+    return z.startsWith('## ') && !['befund', 'ergebnis'].includes(z.slice(3).trim().toLowerCase().replace(/:$/u, '')) ? z.slice(3).trim().toLowerCase() : '';
+  };
+  const aend: string[] = [], out: string[] = [];
+  const gesehen = new Map<string, number>();
+  const titelAlle = bloecke.map(kopf);
+  for (const b of bloecke) {
+    const k = kopf(b);
+    if (k && k.includes('unterarm') && diktat && !diktat.toLowerCase().includes('unterarm') && titelAlle.some(t => t !== k && /handgelenk|ellbogen/u.test(t))) {
+      aend.push('Teil „Unterarm“ ohne diktierten Unterarm entfernt');
+      continue;
+    }
+    if (k && gesehen.has(k)) {
+      const z = gesehen.get(k)!;
+      out[z] = bloeckeVereinen(out[z], b);
+      aend.push(`doppelter Teil zusammengelegt: ${k.slice(0, 40)}`);
+      continue;
+    }
+    if (k) gesehen.set(k, out.length);
+    out.push(b);
+  }
+  if (!aend.length) return [report, []];
+  return [ergebnisNummerieren(out.map(x => x.trim()).join('\n\n\n')), aend];
+}
+
+export function pruefzeilen2311(report: string, templates?: VorlagenMap): string[] {   // Sync: pruefzeilen_2311 (ohne Diktat)
+  const out: string[] = [];
+  const zeilen = (report || '').split('\n');
+  const vorlagen = templates ? vorlagenSaetze(templates)[0] : new Map<string, Set<string>>();
+  for (const [, titel, b, e] of teileVon(zeilen)) {
+    const name = titel || 'Befund';
+    if (e && !ergZeilen(zeilen, e).length) { out.push(`${name}: Ergebnis leer – bitte prüfen`); continue; }
+    if (!b || !e) continue;
+    const punkte = ergZeilen(zeilen, e).map(i => ohneNum(zeilen[i]));
+    const zaehl = punkte.filter(p => !UNNUM_RE.test(p));
+    const nurNormal = punkte.length > 0 && zaehl.every(p => WID_NORMAL_ERG.test(p) && !hasPathology(p));
+    const bef = zeilen.slice(b[0], b[1]).join(' ');
+    BS_GROSS.lastIndex = 0;
+    const patho = saetzeMitLage(bef).map(([x, y]) => bef.slice(x, y)).filter(s => pathoSatz(s) && !HIPPO_SATZ.test(s)
+      && !new RegExp(BS_GROSS.source, 'u').test(s) && !UEBRIGEN_ANFANG.test(s) && !s.includes(OSTEOPEN_SATZ)
+      && !vorlagen.has(vorlageNormalisieren(s)) && !/^(?:normale?|regelrechte?|unauffällige?)(?![a-zäöüß])/iu.test(s));
+    if (nurNormal && patho.length) out.push(`${name}: Befund nicht geformt – „Regelrechte Darstellung“ trotz Pathologie, bitte prüfen`);
+  }
+  return out;
+}
+
+// 49a/52: Überschriften im Nur-Text-Weg als „## …“ (Sync: befund_regeln.py nur_text_ueberschriften)
+const NT_KOPF = /^\s*(?:\*\*)?\s*(Befund|Ergebnis|Beurteilung)\s*:?\s*(?:\*\*)?\s*$/iu;
+const NT_KOPF_TEXT = /^\s*(?:\*\*)?\s*(Ergebnis|Beurteilung)\s*:\s*(?:\*\*)?\s*(\S.*)$/iu;
+const NT_TITEL = /^\s*(?:\*\*)?\s*([A-ZÄÖÜ][^.:;!?\n]{2,80}?)\s*:\s*(?:\*\*)?\s*$/u;
+const NT_UNTERSUCHUNG = /röntgen|sonogra|ultraschall|(?<![a-zäöüß])(?:mr|mrt|ct)(?![a-zäöüß])|aufnahme|übersicht|ebenen|ganzbein|mammogra|weichteil|gelenk|wirbelsäule|thorax|abdomen|schulter|hüft|knie|becken|hand|fuß|fuss|ellbogen|sprung|unterarm|unterschenkel|oberarm|oberschenkel|nerv|(?<![a-zäöüß])(?:hws|bws|lws|gws|n\.)(?![a-zäöüß])/iu;
+export function nurTextUeberschriften(text: string): string {
+  if (!text || text.includes('## ')) return text;
+  let geaendert = false;
+  const aus: string[] = [];
+  for (const z of text.split('\n')) {
+    const m = NT_KOPF.exec(z), mt = NT_KOPF_TEXT.exec(z), mu = NT_TITEL.exec(z);
+    if (m) aus.push('## ' + m[1][0].toUpperCase() + m[1].slice(1).toLowerCase());
+    else if (mt) aus.push('## ' + mt[1][0].toUpperCase() + mt[1].slice(1).toLowerCase(), mt[2]);
+    else if (mu && mu[1].split(/\s+/u).filter(Boolean).length <= 8 && NT_UNTERSUCHUNG.test(mu[1])) aus.push('## ' + mu[1].trim());
+    else { aus.push(z); continue; }
+    geaendert = true;
+  }
+  return geaendert ? aus.join('\n') : text;
 }
 
 // 13 (RH 78): Schreibvarianten für die Nachprüfung „Befund fehlt im Text“ (Sync: befund_regeln.py)

@@ -5,7 +5,7 @@
 // tests/offline/snapshots/befundfeld_faelle.txt (pipeline_test.mjs ≡ tests/offline/test_befundfeld.py).
 import vorrangJson from '../../vorlagen_vorrang.json' with { type: 'json' };
 import { REGIONEN, REGIONEN_OHNE_SEITE, diktierteSeite, hasPathology, saetzeMitLage, vorlageNormalisieren, widerspruchBefunde,
-  widerspruchSaetze, type WiderspruchDaten } from './befundRegeln.ts';
+  widerspruchSaetze, type WiderspruchDaten, ergebnisNummerieren, UNNUM_RE } from './befundRegeln.ts';
 
 const WID_STANDARD = (vorrangJson as { widersprueche?: WiderspruchDaten }).widersprueche;
 const UEBERSCHRIFT = /^\s*##\s+(.*?)\s*$/;
@@ -122,11 +122,56 @@ const satz = (neu: string, gross: boolean): string => {
 };
 
 /** Ergänzung ohne Cursor einbauen; Titel und übriger Text bleiben Zeichen für Zeichen. → [Text, Cursor] */
+// kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 62): „zweitens …“ / „Punkt 2 …“ / „an zweiter Stelle …“ →
+// neuer Ergebnispunkt 2, die folgenden rücken nach. Sync: befundfeld.py ergebnis_ordinal/ergebnis_einfuegen.
+const ORDNUNG = ['erst', 'zweit', 'dritt', 'viert', 'fünft', 'sechst', 'siebt', 'acht', 'neunt', 'zehnt'];
+const ZAHLWORT = ['eins', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn'];
+const ORDINAL_RE = new RegExp('^\\s*(?:(?:(?:als\\s+)?neue[rn]?\\s+)?punkt\\s+(\\d{1,2}|' + ZAHLWORT.join('|') + ')(?![\\p{L}\\d_])' +
+  '|an\\s+(' + ORDNUNG.join('|') + ')er\\s+stelle|(' + ORDNUNG.join('|') + ')ens(?![\\p{L}\\d_]))\\s*[:,.\\-]?\\s*', 'iu');
+export function ergebnisOrdinal(neu: string): [number | null, string] {
+  const m = ORDINAL_RE.exec(neu || '');
+  if (!m || !(neu || '').slice(m[0].length).trim()) return [null, neu];
+  let n: number;
+  if (m[1]) { const g = m[1].toLowerCase(); n = /^\d+$/u.test(g) ? Number(g) : ZAHLWORT.indexOf(g) + 1; }
+  else n = ORDNUNG.indexOf((m[2] || m[3]).toLowerCase()) + 1;
+  return [n >= 1 ? n : null, neu.slice(m[0].length)];
+}
+export function ergebnisEinfuegen(report: string, neu: string, gross = true, cursor: number | null = null): [string, number] | null {
+  const [n, rest] = ergebnisOrdinal(neu);
+  if (n === null) return null;
+  const text = report || '';
+  const zeilen = text.split('\n');
+  const bl = bloecke(text).filter(b => b.ergebnis);
+  if (!bl.length) return null;
+  let wahl: Block | undefined = bl[bl.length - 1];
+  if (cursor !== null) {
+    const zeile = (text.slice(0, cursor).match(/\n/gu) || []).length;
+    wahl = bl.find(b => b.ergebnis![0] - 1 <= zeile && zeile < b.ergebnis![1]);
+    if (!wahl) return null;
+  } else {
+    const reg = regionen(rest);
+    const kand = bl.filter(b => reg.size && [...regionen(b.titel || '')].some(x => reg.has(x)));
+    if (kand.length) wahl = kand[0];
+  }
+  const [a, e] = wahl.ergebnis!;
+  const punkte: number[] = [];
+  for (let i = a; i < e; i++) if (zeilen[i].trim() && ![' ', '\t'].includes(zeilen[i].slice(0, 1)) && !UNNUM_RE.test(zeilen[i].replace(NUM, '').trim())) punkte.push(i);
+  const s = satz(rest, gross);
+  if (!s) return null;
+  const ziel = n - 1 < punkte.length ? punkte[n - 1] : (punkte.length ? punkte[punkte.length - 1] + 1 : (letzteInhaltszeile(zeilen, a, e) ?? (a - 1)) + 1);
+  zeilen.splice(ziel, 0, s);
+  const neuText = ergebnisNummerieren(zeilen.join('\n'));
+  const nz = neuText.split('\n');
+  return [neuText, zeilenOffset(nz, ziel) + nz[ziel].length];
+}
+
 export function ergaenzen(report: string, neu: string, gross = true): [string, number] {
   const text = report || '';
   const s = satz(neu, gross);
   if (!s) return [text, text.length];
   if (!text.trim()) return [s, s.length];
+  const eo = ergebnisEinfuegen(text, neu, gross);   // Punkt 62: „zweitens …“ → Ergebnispunkt 2
+  if (eo !== null) return eo;
   const [pos, a] = ergaenzungStelle(text, s);
   if (a === 'zeile') return [text.slice(0, pos) + '\n' + s + text.slice(pos), pos + 1 + s.length];
   if (a === 'davor') return [text.slice(0, pos) + s + '\n\n' + text.slice(pos), pos + s.length];

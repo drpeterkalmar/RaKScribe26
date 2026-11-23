@@ -1,5 +1,5 @@
 {
-  "_doc": "Phrasenlisten der Spracherkennung — EINE Datei für EXE (source_code/stt.py) und Web (web_app/src/stt.ts), Umbau Schritt 20 (Gutachten P2-2). medical_exe = Streaming-Boost der EXE (latest_long, 292 Begriffe, unverändert); medical_web = 6-s-Chunk-Boost der Web-App (latest_long, Boost 15; 692 Einträge ohne die doppelten → gleiche Wirkung); chirp = kuratiertes chirp_3-PhraseSet beider Apps (79, Boost 10; +11 akzessorische Knochen u. a., Georg 20.11.2026, kaiscribe-georg-2011-n1 Punkt 8/41b). Die beiden medical-Listen werden erst nach Peters Freigabe vereinigt (die EXE-Liste würde größer = anderer Boost). Prüfung: tests/offline/befund_regeln_test.py (Sync).",
+  "_doc": "Phrasenlisten der Spracherkennung — EINE Datei für EXE (source_code/stt.py) und Web (web_app/src/stt.ts), Umbau Schritt 20 (Gutachten P2-2). medical_exe = Streaming-Boost der EXE (latest_long, 292 Begriffe, unverändert); medical_web = 6-s-Chunk-Boost der Web-App (latest_long, Boost 15; 692 Einträge ohne die doppelten → gleiche Wirkung); chirp = kuratiertes chirp_3-PhraseSet beider Apps (85, Boost 10; +11 akzessorische Knochen u. a., Georg 20.11.2026, kaiscribe-georg-2011-n1 Punkt 8/41b; +6 Enkapsulation, Tuberculum Gerdy u. a., Georg 23.11.2026, kaiscribe-schulter-ergebnis-n1). Die beiden medical-Listen werden erst nach Peters Freigabe vereinigt (die EXE-Liste würde größer = anderer Boost). Prüfung: tests/offline/befund_regeln_test.py (Sync).",
   "chirp": [
     "flachbogig",
     "flachbogige Skoliose",
@@ -79,7 +79,13 @@
     "Jones-Fraktur",
     "SI-Gelenksarthrose",
     "skoliotische Asymmetrie",
-    "Recessus suprapatellaris"
+    "Recessus suprapatellaris",
+    "Enkapsulation",
+    "Tuberculum Gerdy",
+    "periprothetische Fraktur",
+    "Dunn-Aufnahme",
+    "unverändert zur Voruntersuchung",
+    "Bursitiszeichen"
   ],
   "medical_exe": [
     "Hochauflösender Nervenschall",

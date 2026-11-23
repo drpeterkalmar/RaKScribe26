@@ -100,9 +100,9 @@ ts = subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "syn
                     capture_output=True, text=True)
 check("Web stitchOverlaps: dieselben Fälle (sync_test.mjs)", ts.returncode == 0, ts.stdout[-500:] + ts.stderr[-500:])
 PHR = json.loads((ROOT / "phrases.json").read_text(encoding="utf-8"))
-check("Phrasenlisten aus phrases.json: Streaming 292, chirp_3 79 (Gutachten 68 + 11 Georg 20.11.2026)",
+check("Phrasenlisten aus phrases.json: Streaming 292, chirp_3 85 (Gutachten 68 + 11 Georg 20.11. + 6 Georg 23.11.2026)",
       stt.medical_phrases() == PHR["medical_exe"] and stt.chirp_phrases() == PHR["chirp"]
-      and (len(stt.medical_phrases()), len(stt.chirp_phrases())) == (292, 79))
+      and (len(stt.medical_phrases()), len(stt.chirp_phrases())) == (292, 85))
 src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 check("EXE nutzt stt.py (keine eigenen Listen/Worker mehr)", "_stt.chirp3_worker" in src and "CHIRP_PHRASES = [" not in src
       and "MEDICAL_PHRASES = [" not in src and "phrases=_stt.medical_phrases()" in src)

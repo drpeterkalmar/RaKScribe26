@@ -7,7 +7,7 @@
   "show / mean_show = Anzeige-Texte für den Prompt bei Regex-Regeln. group 'jargon' = Praxis-Kürzel (eigener Prompt-Abschnitt). Reihenfolge zählt.",
   "Kandidaten für neue Einträge: /usr/bin/python3 tools/misheard_mine.py (aus Benchmark-Läufen). Pflicht nach jeder Änderung: /usr/bin/python3 tests/offline/misheard_test.py (prüft Python UND TypeScript-Engine gegen misheard_tests.json)."
  ],
- "version": "2026-11-02a",
+ "version": "2026-11-23a",
  "rules": [
   {
    "hear": [
@@ -903,6 +903,98 @@
    "mean": "Ganzaufnahme$1",
    "mode": "auto",
    "source": "Abnahme 3.20.3 am Testpatienten 21.11.2026 (STT schrieb „ganz Aufnahme der Wirbelsäule AP“ → Vorlage „Gesamte Wirbelsäule“ statt „Ganzaufnahme der Wirbelsäule a.-p.“; kaiscribe-georg-2011-abnahme)"
+  },
+  {
+   "hear": [
+    "Einkapselung",
+    "Einkapselungen",
+    "in capsula",
+    "in Kapsula",
+    "Inkapsulation",
+    "Enkapsulierung"
+   ],
+   "mean": "Enkapsulation",
+   "mode": "auto",
+   "source": "kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026), Punkt 49b (RH 64): nie „Einkapselung“"
+  },
+  {
+   "hear": [
+    "Kärntner Bergl",
+    "Kärntner Bergel",
+    "Kärntner Berg",
+    "Gerdy Tuberkel",
+    "Gerdy-Tuberkel",
+    "Gerdi Tuberkel",
+    "Gerdys Tuberkel"
+   ],
+   "mean": "Tuberculum Gerdy",
+   "mode": "auto",
+   "source": "kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026), Punkt 53a (Nervensono N. peroneus): Ansatz Tractus iliotibialis"
+  },
+  {
+   "hear": [
+    "(?<![A-Za-zÄÖÜäöüß])(?:[Pp]eripherische|(?<![Pp]eri)[Pp]rothetische)(n?) Fraktur"
+   ],
+   "regex": true,
+   "show": [
+    "peripherischen Fraktur",
+    "prothetischen Fraktur"
+   ],
+   "mean": "periprothetische$1 Fraktur",
+   "mode": "auto",
+   "source": "kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026), Punkt 55b (RH 60): „Keine Zeichen einer periprothetischen Fraktur.“"
+  },
+  {
+   "hear": [
+    "Unfälle zu einer Form der suchung",
+    "Unfälle zu einer Vorder suchung",
+    "Unfälle zur Voruntersuchung",
+    "unfälle zu der Voruntersuchung"
+   ],
+   "mean": "unverändert zur Voruntersuchung",
+   "mode": "auto",
+   "source": "kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026), Punkt 65"
+  },
+  {
+   "hear": [
+    "Unfälle zuvor"
+   ],
+   "mean": "unverändert zur Voruntersuchung",
+   "mode": "llm",
+   "note": "nur als Verlaufsvergleich (Punkt 65, Georg 23.11.2026)"
+  },
+  {
+   "hear": [
+    "Kokosnuss",
+    "coxo große",
+    "Koxo große",
+    "Koxo"
+   ],
+   "mean": "Coxarthrose",
+   "mode": "llm",
+   "note": "im Hüftkontext (Punkt 69, Georg 23.11.2026)"
+  },
+  {
+   "hear": [
+    "(?<![A-Za-zÄÖÜäöüß])(?:[Dd]an|[Dd]on|[Dd]unn)[\\s-]+[Aa]ufnahme(n?)(?![a-zäöüß])"
+   ],
+   "regex": true,
+   "show": [
+    "Dan Aufnahme",
+    "Don-Aufnahme"
+   ],
+   "mean": "Dunn-Aufnahme$1",
+   "mode": "auto",
+   "source": "kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026), Punkt 56 (RH 47)"
+  },
+  {
+   "hear": [
+    "dann Aufnahme",
+    "dann Aufnahmen"
+   ],
+   "mean": "Dunn-Aufnahme",
+   "mode": "llm",
+   "note": "im Hüftkontext (Punkt 56, Georg 23.11.2026)"
   }
  ]
 }

@@ -141,8 +141,8 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   await transcribeAudio(wav, false, { sttKey, phrasen });
   const chirp = gesendet[0].body.config.adaptation.phraseSets[0].inlinePhraseSet.phrases;
   const chunk = gesendet[1].body.config.speechContexts[0];
-  check(chirp.map(p => p.value).join('|') === PHR.chirp.join('|') && chirp.every(p => p.boost === 10) && PHR.chirp.length === 79,
-        'chirp_3: PhraseSet = phrases.json chirp (79, Boost 10)');
+  check(chirp.map(p => p.value).join('|') === PHR.chirp.join('|') && chirp.every(p => p.boost === 10) && PHR.chirp.length === 85,
+        'chirp_3: PhraseSet = phrases.json chirp (85, Boost 10)');
   check(chunk.phrases.join('|') === PHR.medical_web.join('|') && chunk.boost === 15 && new Set(chunk.phrases).size === chunk.phrases.length,
         '6-s-Chunk: speechContexts = phrases.json medical_web (ohne Doppelte, Boost 15)');
 }
@@ -201,7 +201,10 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
   };
   const seg = 'Knie rechts mäßiggradige Gonarthrose';
   const rep = await befundAusDiktat(seg, ctxBasis);
-  check(rep === nachbearbeiten(C2) && bodies.length === 2, 'LLM-Pfad: Call 1 + Call 2, Ergebnis = nachbearbeitete Validierung', rep);
+  // kaiscribe-schulter-ergebnis-n1 (Punkt 69): diktierte „mäßiggradige Gonarthrose“ → K&L-Klammer Grad 3 + Standardsatz
+  check(bodies.length === 2 && rep.startsWith('## Kniegelenk rechts in 2 Ebenen') && rep.includes('Mäßiggradige Gonarthrose rechts (Arthrose Grad 3 nach Kellgren & Lawrence).')
+        && rep.includes('Medial mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung.') && !rep.includes('Verschmälerung des medialen'),
+        'LLM-Pfad: Call 1 + Call 2, Ergebnis = nachbearbeitete Validierung (+ K&L-Grad 3 und Standardsatz)', rep);
   check(bodies.every(b => b.url === VERTEX_ENDPOINT && b.headers['x-goog-api-key'] === 'AQ.dummy'), 'beide Aufrufe: EU-Endpoint + Schlüssel');
   const p1 = bodies[0].body.contents[0].parts[0].text;
   check(bodies[0].body.systemInstruction.parts[0].text === SYS_MSG && p1.includes('<untersuchung>Kniegelenk in 2 Ebenen</untersuchung>')

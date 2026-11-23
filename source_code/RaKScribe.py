@@ -2519,7 +2519,10 @@ class RaKScribeApp(ctk.CTk):
         v = getattr(self, "gross_satzanfang_var", None)
         gross = bool(v.get()) if v is not None else True
         vorher = self.result_text.get("1.0", "end-1c")
-        neu, cursor = _einf.einfuegen(vorher, ziel[0], ziel[1], text, gross=gross)
+        # kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 62): Cursor im Ergebnis + „zweitens …“ → neuer Punkt 2,
+        # die folgenden rücken nach (nie doppelte Nummern, nie überschreiben); mit Markierung bleibt es beim Ersetzen
+        e = _bf.ergebnis_einfuegen(vorher, text, gross, cursor=ziel[0]) if ziel[0] == ziel[1] else None
+        neu, cursor = e if e is not None else _einf.einfuegen(vorher, ziel[0], ziel[1], text, gross=gross)
         self._feld_setzen(neu, vorher)   # 3.19.16: Strg+Z im Befundfeld holt den Stand davor zurück
         self._einfuegen_ziel = self._einbau = None  # v3.18.9: verbraucht — danach wieder die normalen Statusmeldungen
         log(f"[EINFÜGEN] {ERGAENZUNG}: {len(text.strip())} Zeichen an Stelle {tuple(ziel)} eingefügt.")
@@ -2906,8 +2909,15 @@ class RaKScribeApp(ctk.CTk):
             if erg.leer:
                 self.after(0, lambda: self._ende_kein_text(gen))
                 return
+            if getattr(self, "_einbau", None) == _bf.GERUEST and erg.report and not erg.fehler:
+                # kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkte 63/67, RH 120/130): Diktat zu EINER Region
+                # ändert nur diesen Teil – die übrigen Gerüst-Teile (LAMA-Sätze, GWS-Teile) bleiben wörtlich
+                erg.report, gh = _bf.geruest_erhalten(getattr(self, "_vor_lauf", "") or "", erg.report, self.final_transcript)
+                if gh:
+                    erg.cas_hinweise = list(erg.cas_hinweise or []) + gh
+                    log(f"[BEFUNDFELD] Gerüst-Teile behalten/wiederhergestellt: {len(gh)}")
             report, fehler, ausnahmen = erg.report, erg.fehler, erg.ausnahmen
-            if cas is not None:
+            if cas is not None or erg.cas_hinweise:
                 self._ui(gen, lambda h=erg.cas_hinweise: self._cas_hinweise_zeigen(h))
             if getattr(self, "_cas", None) is not None:  # v3.13.0: Stand der IB-Lab-Werte gehört zu diesem Befund
                 self._ui(gen, lambda e=erg: self._ibl_nach_lauf(e))

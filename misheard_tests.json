@@ -327,6 +327,39 @@
    "in": "ganz aufgenommen",
    "out": "ganz aufgenommen",
    "keep": true
+  },
+  {
+   "in": "Einkapselung des Kalkdepots",
+   "out": "Enkapsulation des Kalkdepots"
+  },
+  {
+   "in": "in capsula",
+   "out": "Enkapsulation"
+  },
+  {
+   "in": "Verdickung am Kärntner Bergl",
+   "out": "Verdickung am Tuberculum Gerdy"
+  },
+  {
+   "in": "keinerlei Zeichen einer prothetischen Fraktur",
+   "out": "keinerlei Zeichen einer periprothetischen Fraktur"
+  },
+  {
+   "in": "kein Hinweis auf peripherische Fraktur",
+   "out": "kein Hinweis auf periprothetische Fraktur"
+  },
+  {
+   "in": "keine periprothetische Fraktur",
+   "out": "keine periprothetische Fraktur",
+   "keep": true
+  },
+  {
+   "in": "Unfälle zu einer Form der suchung vor 9 Jahren",
+   "out": "unverändert zur Voruntersuchung vor 9 Jahren"
+  },
+  {
+   "in": "zusätzlich Don-Aufnahme beidseits",
+   "out": "zusätzlich Dunn-Aufnahme beidseits"
   }
  ]
 }

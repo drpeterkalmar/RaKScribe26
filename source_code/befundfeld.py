@@ -152,6 +152,68 @@ def _satz(neu, gross):
     return s
 
 
+# ── kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 62): „zweitens …“ / „Punkt 2 …“ / „neuer Punkt 2 …“ /
+# „an zweiter Stelle …“ ins bestehende Ergebnis → wird Punkt 2, alle folgenden rücken nach (nie doppelte Nummern, nie
+# überschreiben). Ohne Ordnungswort bleibt alles wie bisher (Ergänzung ans Ende des Befundteils).
+_ORDNUNG = ["erst", "zweit", "dritt", "viert", "fünft", "sechst", "siebt", "acht", "neunt", "zehnt"]
+_ZAHLWORT = ["eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"]
+_ORDINAL_RE = re.compile(
+    r"^\s*(?:(?:(?:als\s+)?neue[rn]?\s+)?punkt\s+(\d{1,2}|" + "|".join(_ZAHLWORT) + r")(?![\wäöüß])"
+    r"|an\s+(" + "|".join(_ORDNUNG) + r")er\s+stelle"
+    r"|(" + "|".join(_ORDNUNG) + r")ens(?![\wäöüß]))\s*[:,.\-]?\s*", re.I)
+
+
+def ergebnis_ordinal(neu):
+    """„zweitens Erguss“ → (2, „Erguss“); ohne Ordnungswort (None, neu)."""
+    m = _ORDINAL_RE.match(neu or "")
+    if not m or not (neu or "")[m.end():].strip():
+        return None, neu
+    if m.group(1):
+        g = m.group(1).lower()
+        n = int(g) if g.isdigit() else _ZAHLWORT.index(g) + 1
+    else:
+        n = _ORDNUNG.index((m.group(2) or m.group(3)).lower()) + 1
+    return (n if n >= 1 else None), neu[m.end():]
+
+
+def ergebnis_einfuegen(report, neu, gross=True, cursor=None):
+    """Punkt 62: Satz mit Ordnungswort als Punkt n ins Ergebnis (Abschnitt am Cursor, sonst der passende bzw. letzte mit
+    Ergebnis), folgende Punkte rücken nach, dann neu nummeriert. → (Text, Cursor) oder None (kein Ordnungswort/Ergebnis)."""
+    n, rest = ergebnis_ordinal(neu)
+    if n is None:
+        return None
+    text = report or ""
+    zeilen = text.split("\n")
+    bl = [b for b in bloecke(text) if b["ergebnis"]]
+    if not bl:
+        return None
+    wahl = bl[-1]
+    if cursor is not None:                      # Cursor-Diktat: nur wenn der Cursor im Ergebnis steht
+        zeile = text[:cursor].count("\n")
+        wahl = next((b for b in bl if b["ergebnis"][0] - 1 <= zeile < b["ergebnis"][1]), None)
+        if wahl is None:
+            return None
+    else:
+        reg = _regionen(rest)
+        kand = [b for b in bl if reg and _regionen(b["titel"] or "") & reg]
+        if kand:
+            wahl = kand[0]
+    a, e = wahl["ergebnis"]
+    punkte = [i for i in range(a, e) if zeilen[i].strip() and zeilen[i][:1] not in (" ", "\t")
+              and not br._UNNUM_RE.match(_NUM.sub("", zeilen[i]).strip())]
+    s = _satz(rest, True if gross is None else gross)
+    if not s:
+        return None
+    if n - 1 < len(punkte):
+        ziel = punkte[n - 1]
+    else:
+        ziel = (punkte[-1] + 1) if punkte else (_letzte_inhaltszeile(zeilen, a, e) or (a - 1)) + 1
+    zeilen.insert(ziel, s)
+    neu_text = br.ergebnis_nummerieren("\n".join(zeilen))
+    nz = neu_text.split("\n")
+    return neu_text, _zeilen_offset(nz, ziel) + len(nz[ziel])
+
+
 def ergaenzen(report, neu, gross=True):
     """Ergänzung ohne Cursor einbauen (ergaenzung_stelle). Titel und übriger Text bleiben Zeichen für Zeichen.
     → (neuer Text, Cursor hinter der Ergänzung)."""
@@ -161,6 +223,9 @@ def ergaenzen(report, neu, gross=True):
         return text, len(text)
     if not text.strip():
         return s, len(s)
+    e = ergebnis_einfuegen(text, neu, gross)   # Punkt 62: „zweitens …“ → Ergebnispunkt 2
+    if e is not None:
+        return e
     pos, art = ergaenzung_stelle(text, s)
     if art == "zeile":
         return text[:pos] + "\n" + s + text[pos:], pos + 1 + len(s)
@@ -367,3 +432,112 @@ def ergebnis_fehlt(vor, report):
     if not erg.strip():
         return []
     return [s for s in vor if br.has_pathology(s) and not inhalt_da(s, erg, 0.5)]
+
+
+# ── kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkte 63 + 67, RH 120 Ganzbein, RH 130 GWS + Funktion) ─────────
+# Das IB-Lab-Gerüst stand richtig da (Ganzbein mit LAMA-Sätzen; GWS korrekt in HWS/BWS/LWS geteilt). Das Diktat betraf
+# nur EINE Region – der neue Befund aus dem Diktat ersetzte trotzdem alles: die LAMA-Sätze waren weg (KI schrieb
+# „irgendetwas“ zum Ganzbein), bzw. aus vier Teilen wurde ein Teil „Funktionsaufnahmen“ mit dem SQUIRREL-Satz.
+# Regel: KaiScribe ergänzt das Diktat, löscht nie ohne Rückfrage.
+#  - Gerüst-Teil ohne Gegenstück im neuen Befund → bleibt wörtlich (an seiner Stelle).
+#  - Gerüst-Teil, dessen Region NICHT diktiert ist → bleibt wörtlich (statt des neu geschriebenen Teils).
+#  - diktierter Teil: der neue Teil gilt; IB-Lab-Messsätze des Gerüsts (Werte mit mm/°, HKA/LCE/Cobb …), die dort fehlen,
+#    kommen zurück + Prüfzeile („Diff-Wächter“).
+#  - neue Teile ohne Gerüst-Gegenstück (z. B. „Funktionsaufnahmen der LWS“) kommen ZUSÄTZLICH hinter den Teil derselben
+#    Region; IB-Lab-Sätze, die schon in einem behaltenen Gerüst-Teil stehen (SQUIRREL), fallen dort heraus.
+_MESS = re.compile(r"\d+(?:[.,]\d+)?\s*(?:mm|cm|°|%)|(?<![a-zäöüß])(?:hka|lce|ccd|cobb|mikulicz|traglinie)", re.I)
+
+
+def _teil_text(text, b):
+    return "\n".join(text.split("\n")[b["start"]:b["ende"]]).strip("\n")
+
+
+def _teil_schluessel(titel):
+    t = (titel or "").lower()
+    return frozenset(_regionen(t)), "funktion" in t, "ganzbein" in t
+
+
+def _passt(g, n):
+    if (g["titel"] or "").strip().lower() == (n["titel"] or "").strip().lower():
+        return True
+    kg, kn = _teil_schluessel(g["titel"]), _teil_schluessel(n["titel"])
+    return bool(kg[0]) and kg == kn
+
+
+def _mess_saetze(teil):
+    return [s for s, art in saetze(teil, mit_ergebnis=True) if _MESS.search(s)]
+
+
+def geruest_erhalten(geruest, neu, diktat=""):
+    """→ (Befund, Prüfzeilen). Ohne Gerüst bzw. ohne mehrere Teile unverändert."""
+    g_text, n_text = (geruest or "").strip(), (neu or "").strip()
+    if not g_text or not n_text:
+        return neu, []
+    gb = [b for b in bloecke(g_text) if b["titel"] and (b["befund"] or b["ergebnis"])]
+    nb = [b for b in bloecke(n_text) if b["titel"] and (b["befund"] or b["ergebnis"])]
+    if not gb or not nb:
+        return neu, []
+    dk = (diktat or "").lower()
+    dreg = _regionen(dk)
+    benutzt, out, hinweise = set(), [], []
+    for g in gb:
+        k = next((j for j, n in enumerate(nb) if j not in benutzt and _passt(g, n)), None)
+        gt = _teil_text(g_text, g)
+        if k is None:
+            out.append(("g", gt, g))
+            continue
+        benutzt.add(k)
+        nt = _teil_text(n_text, nb[k])
+        diktiert = bool(_teil_schluessel(g["titel"])[0] & dreg) or ("ganzbein" in dk and "ganzbein" in (g["titel"] or "").lower())
+        if not diktiert:
+            out.append(("g", gt, g))
+            if nt.strip() != gt.strip():
+                hinweise.append(f"{g['titel']}: nicht diktiert – Teil aus dem Gerüst unverändert behalten")
+            continue
+        for s in _mess_saetze(gt):
+            if not inhalt_da(s, nt, 0.9):
+                nt = ergaenzen(nt, s)[0]
+                hinweise.append(pruefzeile(s) + " (aus dem Gerüst wiederhergestellt)")
+        out.append(("n", nt, nb[k]))
+    behalten = " ".join(t for art, t, _b in out if art == "g")
+    for j, n in enumerate(nb):
+        if j in benutzt:
+            continue
+        nt = _teil_text(n_text, n)
+        for s in _mess_saetze(nt):
+            if s in behalten:
+                nt = streichen_wort(nt, s)
+        nt = _doppelte_punkte_weg(nt, [t for art, t, _b in out if art == "g"])
+        reg = _teil_schluessel(n["titel"])[0]
+        stelle = max((i for i, (_a, _t, b) in enumerate(out) if reg & _teil_schluessel(b["titel"])[0]), default=len(out) - 1)
+        out.insert(stelle + 1, ("n", nt, n))
+    ergebnis = "\n\n\n".join(t.strip() for _a, t, _b in out)
+    if ergebnis.strip() == n_text:
+        return neu, []
+    return br.ergebnis_nummerieren(ergebnis), hinweise
+
+
+def streichen_wort(text, satz):
+    """Einen Satz (wörtlich) samt Leerzeichen aus dem Text nehmen; leer gewordene Zeilen fallen weg."""
+    i = text.find(satz)
+    if i < 0:
+        return text
+    vor, nach = text[:i], text[i + len(satz):]
+    if nach[:1] == " ":
+        nach = nach[1:]
+    elif vor[-1:] == " ":
+        vor = vor[:-1]
+    return vor + nach
+
+
+def _doppelte_punkte_weg(teil, andere):
+    """Ergebnispunkte eines Teils, die wörtlich (ohne Nummer) schon in einem anderen Teil stehen, fallen heraus."""
+    schon = {_NUM.sub("", z).strip() for t in andere for z in t.split("\n") if z.strip()}
+    zeilen, im_erg, aus = teil.split("\n"), False, []
+    for z in zeilen:
+        if _UEBERSCHRIFT.match(z):
+            im_erg = _art(z) == "ergebnis"
+        elif im_erg and z.strip() and _NUM.sub("", z).strip() in schon:
+            continue
+        aus.append(z)
+    return "\n".join(aus)
