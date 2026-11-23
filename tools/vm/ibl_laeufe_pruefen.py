@@ -1,9 +1,9 @@
 """Kam der IB-Lab-Text in den KaiScribe-Befund? (kaiscribe-frog-einsetzen-n1, Georg 19.11.2026, RH 127) — läuft auf der
 Automaten-VM als rakauto (X: nur lesen; keine Datenbank, keine Bilder).
 
-  py -3.12 ibl_laeufe_pruefen.py [--von JJJJMMTT] [--module FROG,HIPPO] [--ordner X:\\RaKScribe\\Daten]
+  py -3.12 ibl_laeufe_pruefen.py [--von JJJJMMTT] [--module FROG,HIPPO] [--ordner X:\\KaiScribe\\Daten]
 
-Je Lauf-Datei (X:\\RaKScribe\\Daten\\laeufe\\<Nr>_<Zeit>.json) mit einem der Module eine Zeile – nur Zähler/Kategorien,
+Je Lauf-Datei (X:\\KaiScribe\\Daten\\laeufe\\<Nr>_<Zeit>.json) mit einem der Module eine Zeile – nur Zähler/Kategorien,
 nie Befundtext, Nr oder Benutzer:
   IBL_LAUF <JJJJMMTT-HHMM> rechner=<PC> kaiscribe=<Version> bruecke=<Version laut bruecke_<PC>.log> module=<…>
            zeilen=<eingesetzte Zeilen> frog_satz=ja|nein hippo_satz=ja|nein schluss=ja|nein urteil=OK|LEER|ALT
@@ -66,7 +66,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--von", default="20261119")
     ap.add_argument("--module", default="FROG,HIPPO")
-    ap.add_argument("--ordner", default=r"X:\RaKScribe\Daten")
+    ap.add_argument("--ordner", default=r"X:\KaiScribe\Daten")
     ap.add_argument("--ablage", default=r"X:\IBL-Vorbefunde")
     a = ap.parse_args()
     module = [m.strip().upper() for m in a.module.split(",") if m.strip()]

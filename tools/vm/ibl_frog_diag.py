@@ -2,7 +2,7 @@
 """Nur lesen (X:). Je Lauf heute mit FROG: Kategorien aus Lauf-Datei, Abholer-Ablage und Brücken-Protokoll. Keine Nr, keine Namen, kein Befundtext."""
 import glob, json, os, re, sys
 von = sys.argv[1] if len(sys.argv) > 1 else "20261120"
-L = r"X:\RaKScribe\Daten\laeufe"; A = r"X:\IBL-Vorbefunde"; P = r"X:\RaKScribe\Daten\protokolle"
+L = r"X:\KaiScribe\Daten\laeufe"; A = r"X:\IBL-Vorbefunde"; P = r"X:\KaiScribe\Daten\protokolle"
 SCHLUSS = "Weitere Winkelmessungen"
 schl_gezeigt = False
 for p in sorted(glob.glob(os.path.join(L, "*.json"))):
