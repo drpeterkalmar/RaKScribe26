@@ -1,6 +1,6 @@
 # kaiscribe-schulter-ergebnis-n1 – Georgs Punkte 48–70 (22./23.11.2026)
 
-**Für Georg (Stand 23.11. nachts, gebaut + getestet, noch NICHT auf X: – erst nach dem Testlauf an 451898):**
+**Für Georg (Stand 23.11. nachts: 3.23.0 gebaut, getestet, Web live; EXE noch NICHT auf X: – erst nach dem Testlauf an 451898):**
 1. Schulter: Gelenk → AC → „Ansonsten die Gelenkflächen …“ → Enthesiopathie; „Enthesiopathie <Ort>“ wird im Befund „(Grad) kortikale Unregelmäßigkeiten und vermehrte Sklerosierung am <Ort>“; Ergebnis Omarthrose → AC → Enthesiopathie.
 2. Sono: diktierte Bursitis/Bursaflüssigkeit/Step-sign streicht den Bursa-Normalsatz (Satz steht an seiner Stelle). Röntgen: Fraktur an die Kortikalis-Stelle, danach „Im Übrigen glatte …“; „Im Übrigen“ nur nach einer Pathologie.
 3. Hüfte/Becken: TEP, Coxarthrose oder auffälliger LCE/AI → Hüftkopf-/Gelenkspalt-Normalsatz nur noch für die andere Seite; Beckenschiefstand ab 10 mm ins Ergebnis; „Regelrechte Darstellung“ trotz Pathologie → rote Prüfzeile; „Beckenübersicht und Hüfte …“ in einem Titel = ein Kombibefund; doppelte Teile werden zusammengelegt.
@@ -12,7 +12,8 @@
 
 ---
 ## Technik (für den Einspiel-Job)
-- Version beim Zusammenführen: **3.23.0** (VERSION; Web live über deploy.yml, EXE-Release per `build-exe.yml`). Tests: alle Gates
+- **3.23.0** = main 9876a85; GitHub-Tests grün, Web live (Deploy 2× GitHub-Artefakt-Störung, 3. Lauf grün, Bundle belegt); EXE nur
+  Vorabversion `test-45277048366` (sha256 9b41b309…ab53a), Latest bleibt 3.22.6 bis zur Abnahme. Tests: alle Gates
   aus test.yml grün mit /usr/bin/python3 außer den schon auf main roten `test_cas_auftrag` (ris-mods-Import, Py 3.9) und
   `test_maske_ablauf` (Umgebung); Node pipeline/speechmike/audio/llm_anbieter, `tsc`, `eslint` grün. Neu:
   `tests/offline/test_schulter_ergebnis.py` (26 Prüfungen, in CI), Fixtures `georg_2311` (30 + 4 Teile + 4 Nur-Text, EXE = Web, je zweimal gleich),

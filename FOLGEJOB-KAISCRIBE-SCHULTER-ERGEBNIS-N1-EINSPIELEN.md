@@ -9,7 +9,11 @@ schreiben. Ordi-Zeit (Mo–Do vor 17:30, Fr vor 13:30): erst danach; Tausch-Sper
 > **MELDUNGSRUHE (Peter 11.11.2026):** nichts selbst an Telegram. Was nur Peter kann → `kanban.py peter …` + Zeile „👉 …“.
 
 ## Was eingespielt wird
-GitHub-Release **3.23.0** (main, Asset `KaiScribe.exe`; sha256 aus dem Release). Inhalt siehe Bericht Punkte 1–8.
+main **9876a85 = 3.23.0** (Web live seit 23.11. ~23:20, Bundle mit Prompt-Marker `2026-11-23-georg-schulter-ergebnis` belegt).
+EXE bisher nur als **Vorabversion `test-45277048366`** (Build aus main, VERSION 3.23.0; Asset `KaiScribe.exe`, sha256
+`9b41b3097f4f336eb2c7232a14eb1172ef93bbc4bf31c0ec195c57afa0aab53a`) – bewusst NICHT „Latest“ (Release erst nach 451898).
+Nach grüner Abnahme: `gh workflow run build-exe.yml --ref main -f release=true` → Release 3.23.0 Latest, dann X:-Tausch mit
+dessen sha256. Inhalt siehe Bericht Punkte 1–8.
 KOALA-Knie-Automatik ist AUS (`ibl_bausteine.KOALA_KNIE_AUTOMATIK = False`, Kanban #514 erledigt).
 
 ## Ablauf
