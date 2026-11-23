@@ -1649,6 +1649,8 @@ GEORG_STREICHEN = [
     ("infiltrat", r"infiltrat", None, [r"(?<![a-zäöüß])kein(?:e[nmrs]?)?(?![a-zäöüß])[^.]*infiltrat"]),
     ("beckenschiefstand", r"beckenschiefstand|beckenkippung|beckenhochstand|becken[a-zäöüß ]{0,15}schief", None,
      [r"symmetrische form des beckenskelett", r"becken(?:schaufeln|kämme)[^.]*gleich ?hoch"]),
+    # kaiscribe-schulter-ergebnis-n1 (Punkt 60/69, RH 30/88): diktierte Coxarthrose → „Keine Coxarthrosezeichen.“ raus
+    ("coxarthrose", r"co[xk]arthros", None, [r"^(?:(?:im übrigen|ansonsten),?\s+)?keine co[xk]arthrosezeichen"]),
     ("skoliose", r"skolio|seitausbieg|cobb", _WS_TITEL,
      [r"^(?:(?:im übrigen|ansonsten),?\s+)?normaler achsenverlauf",
       r"^(?:(?:im übrigen|ansonsten),?\s+)?(?:annähernd\s+)?achsengerechte stellung"]),
@@ -2627,6 +2629,8 @@ def _kl_befund(text, punkte, titel):
             L = _umstellen(L, diag[:1], diag[0] - 1, [neu])
         else:
             deg = next((i for i, x in enumerate(s) if "degenerativ" in x.lower() and sd and wid_seite(x) == sd), None)
+            if deg is None:   # sonst hinter den Gelenk-Satz („Gelenkflächen …/Gelenkspalt …“), sonst hinter den ersten Satz
+                deg = next((i for i, x in enumerate(s) if re.search(r"gelenkfl|gelenks?spalt", x.lower())), None)
             L = _umstellen(L, [], deg if deg is not None else (0 if s else -1), [neu])
         aend.append(f"K&L-Standardsatz im Befund: {neu[:50]}")
     lead = text[:len(text) - len(text.lstrip("\n"))]

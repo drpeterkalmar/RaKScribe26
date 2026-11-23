@@ -74,6 +74,8 @@ jobs:
         run: python tests/offline/test_rho_osteopen.py
       - name: Rho-Überschrift + Nummerierung (Georg 22.11.2026, Punkt 47 RH 49)
         run: python tests/offline/test_rho_titel_nummer.py
+      - name: Georg 22./23.11. Punkte 48–70 (Schulter, Ergebnis, KOALA aus, Gerüst bleibt, Kombi per Diktat)
+        run: python tests/offline/test_schulter_ergebnis.py
       - name: EXE-Import ohne Seiteneffekte (UI + main)
         run: python tests/offline/test_import.py
       - name: Toter Code bleibt weg, Prompt-Hinweis einmal

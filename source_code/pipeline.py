@@ -225,12 +225,13 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
             and wahl.leistung.seite in ("rechts", "links"):   # RH 49: Seite der Hüfte laut CAS in die Überschrift
         out = re.sub(r"(?m)^## Beckenübersicht und Hüfte(?: in 2 Ebenen)?[ \t]*$",
                      f"## Beckenübersicht und Hüfte {wahl.leistung.seite}", out)
-    if template_key == KOMBI_PROTHESE and wahl is not None and wahl.art == "kombi":
+    if template_key == KOMBI_PROTHESE and ((wahl is not None and wahl.art == "kombi") or _KOMBI_SIGNAL.search(seg[:140])):
         # Punkt 59: Kombi mit Prothese → „Becken sowie Hüftgelenk in 2 Ebenen <Seite> nach Hüft-TEP“ (Seite aus dem Diktat
         # am TEP-Wort, sonst CAS; nie geraten)
         m = _PROTHESE_DIKTAT.search(seg)
         seite = br.wid_seite(seg[max(0, m.start() - 50):m.end() + 30]) if m else ""
-        seite = seite or (wahl.leistung.seite if wahl.leistung is not None and wahl.leistung.seite in ("rechts", "links") else "")
+        seite = seite or (wahl.leistung.seite if wahl is not None and wahl.leistung is not None
+                          and wahl.leistung.seite in ("rechts", "links") else "")
         out = re.sub(r"(?m)^## Beckenübersicht mit einseitiger Hüftprothese[^\n]*$",
                      "## Becken sowie Hüftgelenk in 2 Ebenen" + (f" {seite}" if seite else "") + " nach Hüft-TEP", out, count=1)
     return _grundregeln(out, seg, ctx)
@@ -405,9 +406,9 @@ def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):
     Becken/Hüfte, bleibt es EIN Befund mit der Kombi-Vorlage; die Seite kommt von der Hüft-Leistung laut CAS."""
     gesamt = " ".join(s.strip() for s in segmente)
     signal = KOMBI_LISTE["becken_huefte"]["aktiv"] and _KOMBI_SIGNAL.search(gesamt[:140]) is not None
-    if not (any(w.vorlage == KOMBI_BECKEN_HUEFTE for w in wahlen) or (signal and len(segmente) >= 2)) \
-            or not all(w.vorlage in _BECKEN_FAMILIE for w in wahlen):
-        return segmente, wahlen, inhalt_hinweise
+    if not all(w.vorlage in _BECKEN_FAMILIE for w in wahlen) or not (
+            (len(segmente) >= 2 and signal) or (len(segmente) < 2 and any(w.vorlage == KOMBI_BECKEN_HUEFTE for w in wahlen))):
+        return segmente, wahlen, inhalt_hinweise   # Punkt 59: mehrere Abschnitte nur mit Kombi-Signal im Diktat
     if len(segmente) < 2:            # ein Abschnitt mit der Kombi-Vorlage deckt beide CAS-Leistungen
         return segmente, wahlen, [h for h in inhalt_hinweise if "nicht eindeutig zuzuordnen" not in h]
     huefte = next((w.leistung for w in wahlen if w.leistung is not None and w.leistung.seite), None) or \

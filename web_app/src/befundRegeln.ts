@@ -1327,6 +1327,8 @@ export const GEORG_STREICHEN: [string, string, RegExp | null, string[]][] = [
   ['infiltrat', 'infiltrat', null, ['(?<![a-zäöüß])kein(?:e[nmrs]?)?(?![a-zäöüß])[^.]*infiltrat']],
   ['beckenschiefstand', 'beckenschiefstand|beckenkippung|beckenhochstand|becken[a-zäöüß ]{0,15}schief', null,
     ['symmetrische form des beckenskelett', 'becken(?:schaufeln|kämme)[^.]*gleich ?hoch']],
+  // kaiscribe-schulter-ergebnis-n1 (Punkt 60/69): diktierte Coxarthrose → „Keine Coxarthrosezeichen.“ raus (Sync: befund_regeln.py)
+  ['coxarthrose', 'co[xk]arthros', null, ['^(?:(?:im übrigen|ansonsten),?\\s+)?keine co[xk]arthrosezeichen']],
   ['skoliose', 'skolio|seitausbieg|cobb', WS_TITEL,
     ['^(?:(?:im übrigen|ansonsten),?\\s+)?normaler achsenverlauf', '^(?:(?:im übrigen|ansonsten),?\\s+)?(?:annähernd\\s+)?achsengerechte stellung']],
 ];
@@ -1973,7 +1975,8 @@ const klBefund = (text: string, punkte: string[], titel: string): [string, strin
     const neu = vor.length ? `${vj[0].toUpperCase()}${vj.slice(1)} ${satz[0].toLowerCase()}${satz.slice(1)}` : satz;
     if (diag.length) L = umstellen(L, diag.slice(0, 1), diag[0] - 1, [neu]);
     else {
-      const deg = s.findIndex(x => x.toLowerCase().includes('degenerativ') && !!sd && widSeite(x) === sd);
+      let deg = s.findIndex(x => x.toLowerCase().includes('degenerativ') && !!sd && widSeite(x) === sd);
+      if (deg < 0) deg = s.findIndex(x => /gelenkfl|gelenks?spalt/u.test(x.toLowerCase()));   // hinter den Gelenk-Satz
       L = umstellen(L, [], deg >= 0 ? deg : (s.length ? 0 : -1), [neu]);
     }
     aend.push(`K&L-Standardsatz im Befund: ${neu.slice(0, 50)}`);

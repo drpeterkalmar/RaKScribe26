@@ -26,7 +26,9 @@ SKILL = ["1", "2", "3"] + [f"3{c}" for c in "abcdefghijklmnopqrstuvwxyz"] + ["3a
 PFLICHT = SKILL + ["kl-0", "kl-1", "kl-2", "kl-3", "kl-4", "kl-wann", "kl-rh38", "kl-ergebnis", "kl-knie-fp", "kl-knie-betont",
                    "kl-bsp-schulter", "kl-bsp-ellbogen", "kl-bsp-knie", "kl-koala", "ergebnis-format", "ibl-frog", "ibl-text-immer", "ibl-lama",
                    "ibl-panda", "ibl-rho", "ibl-squirrel", "ibl-squirrel-diktat", "ibl-squirrel-achse", "wid-erguss", "wid-ki-pathologie", "val-kl",
-                   "mehrfach-untersuchung", "gws-ap-normaltext", "rho-osteopen", "rho-titel-nummer"]
+                   "mehrfach-untersuchung", "gws-ap-normaltext", "rho-osteopen", "rho-titel-nummer",
+                   # kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
+                   "georg-schulter-reihenfolge", "georg-enthesiopathie", "georg-ueberschriften-fett", "georg-stt-2311", "georg-sono-bursa", "georg-fraktur-kortikalis", "georg-im-uebrigen-nur-nach-patho", "georg-nerv-unauffaellig", "georg-hueft-op-seite", "georg-dunn", "georg-doppelte-teile", "georg-hippo-10mm", "georg-kombi-diktat", "georg-nie-unter-normalvorlage", "georg-koala-aus", "georg-ergebnis-einfuegen", "georg-geruest-bleibt", "georg-unterarm", "georg-verlauf-zuerst", "georg-hippo-stellung", "georg-kl-adjektiv-zeile"]
 
 regeln = REG["regeln"]
 ids = [r["id"] for r in regeln]

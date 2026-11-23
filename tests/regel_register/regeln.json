@@ -193,7 +193,7 @@
   },
   {
    "id": "kl-koala",
-   "titel": "IB Lab KOALA → Kniebefund nach Tabelle (KL 2–4, engeres Kompartiment, kein Text bei KL 0/1, < 18, Prothese)",
+   "titel": "AUS seit 23.11.2026 (Punkt 61, Kanban #514, georg-koala-aus): früher IB Lab KOALA → Kniebefund nach Tabelle (KL 2–4, engeres Kompartiment, kein Text bei KL 0/1, < 18, Prothese) – Code bleibt hinter dem Schalter KOALA_KNIE_AUTOMATIK",
    "quelle": "Georg Riegler (GO 18.11.2026 ~20:00)",
    "datum": "2026-11-18",
    "status": "ergänzt",
@@ -202,13 +202,15 @@
      "KOALA_STELLUNG = \"Normale Stellung der dargestellten Skelettabschnitte.\"",
      "return f\"Patient {b.alter} Jahre (unter 18)\"",
      "return \"Knieprothese\"",
-     "aus mehreren a.p.-Aufnahmen – kein KOALA-Text, bitte am Bild prüfen"
+     "aus mehreren a.p.-Aufnahmen – kein KOALA-Text, bitte am Bild prüfen",
+     "KOALA_KNIE_AUTOMATIK = False"
     ]
-   }
+   },
+   "notiz": "23.11.2026: Georg RH 120 „Die muss raus“, Peter Ok #514 → automatisch aus; #420 entfällt."
   },
   {
    "id": "ergebnis-format",
-   "titel": "Ergebnis nummeriert „1. 2. 3.“, ein Punkt ohne Nummer, Voruntersuchung unnummeriert",
+   "titel": "Ergebnis nummeriert „1. 2. 3.“, ein Punkt ohne Nummer; unnummeriert nur die Voruntersuchungs-EINLEITUNG „Vergleich zur Voruntersuchung vom …:“ – ein Verlaufsvergleich als Aussage ist der 1. Punkt (geändert 23.11.2026, georg-verlauf-zuerst)",
    "quelle": "Georg 09.10. / Peter 12.11. (Einzelpunkt)",
    "datum": "2026-11-12",
    "status": "vorhanden",
@@ -219,7 +221,8 @@
     "source_code/befund_regeln.py": [
      "def ergebnis_nummerieren("
     ]
-   }
+   },
+   "notiz": "23.11.2026 Georg Punkt 65: „unverändert zur Voruntersuchung …“ IMMER 1. Punkt (vorher: Voruntersuchung unnummeriert)."
   },
   {
    "id": "ibl-frog",
@@ -903,17 +906,17 @@
   },
   {
    "id": "9",
-   "titel": "Voruntersuchungsvergleich oben im Befundtext, im Ergebnis unnummeriert",
+   "titel": "Voruntersuchungsvergleich oben im Befundtext, im Ergebnis unnummeriert – GEÄNDERT 23.11.2026 (Georg Punkt 65, georg-verlauf-zuerst): im Ergebnis ist ein Verlaufsvergleich der 1. Punkt (nur die Einleitung „Vergleich zur Voruntersuchung vom …:“ bleibt unnummeriert)",
    "quelle": "Skill radiology-shoulder-dictation (Georg Riegler / Peter Kalmar)",
    "datum": "2026-10-05",
    "status": "ergänzt",
    "pruefwort": {
     "radiology_prompt.txt": [
      "\"Vergleich zur Voruntersuchung vom [Datum]:\" steht OBEN im Befundtext",
-     "Ein Voruntersuchungsvergleich steht als unnummerierter Satz."
+     "Ein diktierter Verlaufsvergleich (\"unverändert zur Voruntersuchung\", \"im Vergleich zur Voruntersuchung vom … Befundänderung/keine Befundänderung\") steht IMMER als 1. Punkt im Ergebnis"
     ]
    },
-   "notiz": "Ergebnis-Teil war da; Stelle im Befundtext ergänzt 18.11."
+   "notiz": "Ergebnis-Teil war da; Stelle im Befundtext ergänzt 18.11. · bis 23.11.2026 Prüfwort „Ein Voruntersuchungsvergleich steht als unnummerierter Satz.“"
   },
   {
    "id": "10",
@@ -1602,6 +1605,417 @@
     ]
    },
    "notiz": "RH 49 lief mit 3.19.15 (Rho noch im Hüft-Teil). Seit 3.20.0 eigener Schlussbefund; live 3.22.4 belegt 23.11. (1123-059/073: Rho-Titel fett+unterstrichen 11 pt, Rho-Ergebnis ohne Nummer, Haupt-Ergebnis 1., 2.). „Amerkung“ kommt in keinem Code vor (von Hand getippt). Formatierer-Weg (IB-Lab-Screening ohne diktiertes Rho) → ris-mods Folgejob rho-titel-formatierer-n1."
+  },
+  {
+   "id": "georg-schulter-reihenfolge",
+   "titel": "Schulter (Röntgen): Befund Gelenksätze (Glenohumeral/K&L) → AC-Gelenk → „Ansonsten die Gelenkflächen regelrecht konturiert.“ (erst nach allen Gelenksätzen) → Enthesiopathie-Satz; Ergebnis Omarthrose → AC-Gelenk → Enthesiopathie",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 48a/c (Foto Schulter, Diktat Omarthrose K&L 2 + Enthesiopathiezeichen Tuberculum majus + AC-Arthrose)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def _schulter_ordnen(L):",
+     "return 0 if re.search(r\"omarthros|glenohumeral\", t) else 1 if _AC_RX.search(t) else 2 if \"enthesiopath\" in t else None"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const schulterOrdnen = (L: Zeilen): Zeilen => {"
+    ],
+    "radiology_prompt.txt": [
+     "Gelenksätze (Glenohumeralgelenk/K&L-Satz) → AC-Gelenk → \"Ansonsten die Gelenkflächen regelrecht konturiert.\" (erst NACH allen Gelenksätzen) → Enthesiopathie-Satz"
+    ],
+    "befund_regeln_fixtures.json": [
+     "48a/b/c Schulter re: Omarthrose K&L 2 + Enthesiopathiezeichen Tuberculum majus + AC-Arthrose (Georg 22.11.)"
+    ]
+   }
+  },
+  {
+   "id": "georg-enthesiopathie",
+   "titel": "Diktat „Enthesiopathie(zeichen) <Ort>“ → im BEFUND „<Grad> kortikale Unregelmäßigkeiten und vermehrte Sklerosierung am <Ort>.“ – nur diktiertes Adjektiv (gering→Geringe, mäßig→Mäßige, hochgradig→Hochgradige), ohne Grad ohne Adjektiv, nie raten; alle Orte; im ERGEBNIS bleibt „<Grad> Enthesiopathie am <Ort> <Seite>.“",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 48b",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "ENTHESIO_SATZ = \"kortikale Unregelmäßigkeiten und vermehrte Sklerosierung\"",
+     "def _enthesio(satz, dk):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const ENTHESIO_SATZ = 'kortikale Unregelmäßigkeiten und vermehrte Sklerosierung';"
+    ],
+    "radiology_prompt.txt": [
+     "\"<Grad> kortikale Unregelmäßigkeiten und vermehrte Sklerosierung am <Ort>.\""
+    ]
+   }
+  },
+  {
+   "id": "georg-ueberschriften-fett",
+   "titel": "„Ergebnis Doppelpunkt“ → Abschnitt „Ergebnis:“; Überschriften (Untersuchungstitel, „Ergebnis:“) IMMER fett – auch im Nur-Text-Modus (Zeilen werden „## …“: Anzeige fett, Zwischenablage <h2>)",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkte 49a + 52 (Foto Sono Weichteile mit Nur Text AN: „Die Überschriften immer fett“)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def nur_text_ueberschriften(text):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function nurTextUeberschriften(text: string): string {"
+    ],
+    "source_code/pipeline.py": [
+     "return Ergebnis(raw=raw, report=br.nur_text_ueberschriften(raw), segmente=[raw])"
+    ],
+    "web_app/src/pipeline.ts": [
+     "nurTextUeberschriften(saetzeEinsetzen(text.trim(), ctx.bausteine ?? ORDI_BAUSTEINE));"
+    ]
+   },
+   "notiz": "Word-Brief: fett setzt der Formatierer (ris-mods ki_format, Hausstil „Ergebnis:“ fett) – Belegen im Abnahme-Lauf 451898 mit Nur Text AN."
+  },
+  {
+   "id": "georg-stt-2311",
+   "titel": "STT/Fehlhör-Liste + chirp_3-Boost + Prompt: „Einkapselung/in capsula“ → „Enkapsulation“; „Kärntner Bergl“/„Gerdy Tuberkel“ → „Tuberculum Gerdy“; „prothetische/peripherische Fraktur“ → „periprothetische Fraktur“; „Unfälle zu einer Form der suchung“ → „unverändert zur Voruntersuchung“ (auto), „Unfälle zuvor“, „Kokosnuss/Koxo“ → Coxarthrose, „dann Aufnahme“ → Dunn-Aufnahme (nur Hinweis); „Don/Dan-Aufnahme“ → „Dunn-Aufnahme“",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkte 49b, 53a, 55b, 56, 65, 69",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "misheard_words.json": [
+     "\"mean\": \"Enkapsulation\"",
+     "\"mean\": \"Tuberculum Gerdy\"",
+     "\"mean\": \"periprothetische$1 Fraktur\"",
+     "\"mean\": \"unverändert zur Voruntersuchung\"",
+     "\"mean\": \"Dunn-Aufnahme$1\""
+    ],
+    "phrases.json": [
+     "\"Enkapsulation\"",
+     "\"Tuberculum Gerdy\"",
+     "\"periprothetische Fraktur\""
+    ],
+    "radiology_prompt.txt": [
+     "\"Enkapsulation\" (nie \"Einkapselung\"); \"Tuberculum Gerdy\" (nie \"Kärntner Bergl\")"
+    ]
+   }
+  },
+  {
+   "id": "georg-sono-bursa",
+   "titel": "Sonographie (alle Vorlagen): diktierte Bursa-Pathologie (Bursitis/Bursitiszeichen, Bursaverdickung, Wandverdickung, Flüssigkeit in der Bursa, Step-sign positiv) streicht den Bursa-Normalsatz, der diktierte Satz steht an dessen Stelle; „Kein Nachweis eines Step-sign …“ nur weg bei positivem Step-sign/Impingement (Widerspruchsregel Punkt 18 auf alle Sono-Vorlagen)",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 50 (RH 71: „Das geht nicht“)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def _bursa(L, dk):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const bursa = (L: Zeilen, dk: string): [Zeilen, string[]] => {"
+    ],
+    "befund_regeln_fixtures.json": [
+     "50 RH 71: Bursitiszeichen (oben angehängt) → Bursa-Normalsatz raus, Satz an seine Stelle",
+     "50 Gegenprobe normal: Sono Schulter unauffällig bleibt"
+    ]
+   }
+  },
+  {
+   "id": "georg-fraktur-kortikalis",
+   "titel": "Röntgen: Fraktur/knöcherne Pathologie an die Stelle der Kortikalis-Beschreibung (vor Gelenk-, Weichteil- und „übrige Knochen“-Sätzen), UNMITTELBAR danach „Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.“",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 51 (RH 57, Foto: „Ich beschreibe eine Fraktur, die muss weiter oben …“)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "KORTIKALIS_UEBRIGEN = \"Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const KORTIKALIS_UEBRIGEN = 'Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.';"
+    ],
+    "befund_regeln_fixtures.json": [
+     "51 RH 57: Malleolus-Ausriss am Ende → an die Kortikalis-Stelle, danach „Im Übrigen glatte …“"
+    ]
+   }
+  },
+  {
+   "id": "georg-im-uebrigen-nur-nach-patho",
+   "titel": "„Im Übrigen“/„Ansonsten“ NUR nach einer Pathologie – ohne vorangehende Pathologie ohne das Wort (Foto RH 57: Calcaneus, Mineralgehalt, Kortikalis)",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 51",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def _uebrigen_nur_nach_patho(L, templates):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const uebrigenNurNachPatho = (L: Zeilen, templates?: VorlagenMap): [Zeilen, string[]] => {"
+    ],
+    "befund_regeln_fixtures.json": [
+     "51 Gegenprobe Normal: kein „Im Übrigen“ ohne Pathologie (Calcaneus, Mineralgehalt, Kortikalis)"
+    ]
+   }
+  },
+  {
+   "id": "georg-nerv-unauffaellig",
+   "titel": "Nervensonographie: Nerv unauffällig → im ERGEBNIS IMMER eigener Punkt „Unauffälliger Befund am N. <Name> <Seite>.“ (zuerst), auch neben anderer Pathologie; Nerv pathologisch → kein Unauffällig-Satz; alle Nerven-Vorlagen",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 53b (Foto Nervensono N. peroneus)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "NERV_UNAUFFAELLIG = \"Unauffälliger Befund am N. {name}{seite}.\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const NERV_UNAUFFAELLIG = 'Unauffälliger Befund am N. {name}{seite}.';"
+    ],
+    "befund_regeln_fixtures.json": [
+     "53b Nerv unauffällig + Nebenbefund Tractus iliotibialis → Nerv-Punkt zuerst",
+     "53b Nerv pathologisch → kein Unauffällig-Satz"
+    ]
+   }
+  },
+  {
+   "id": "georg-hueft-op-seite",
+   "titel": "Seitenlose CAS-Leistung einer paarigen Region (Hüft-OP u. ä.): Seite aus dem Diktat; fehlt sie dort und in der Leistung → rote Prüfzeile, nie raten (Bildkopf/Ausschluss nur mit Beleg – Bildkopf noch nicht angebunden); Kombi mit Prothese → Titel „Becken sowie Hüftgelenk in 2 Ebenen <Seite> nach Hüft-TEP“; Prothesen-Wortlaut „Keine Zeichen einer periprothetischen Fraktur.“",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 55 (RH 60)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/pipeline.py": [
+     "SEITE_FEHLT = \"{name}: Seite weder in der CAS-Leistung noch im Diktat – bitte prüfen (wird nicht geraten)\"",
+     "\"## Becken sowie Hüftgelenk in 2 Ebenen\" + (f\" {seite}\" if seite else \"\") + \" nach Hüft-TEP\""
+    ],
+    "source_code/befund_regeln.py": [
+     "lambda m: m.group(1) + \"eine Zeichen einer periprothetischen Fraktur\""
+    ],
+    "tests/offline/test_schulter_ergebnis.py": [
+     "55a: Hüft-OP ohne Seite (Leistung + Diktat) → rote Prüfzeile, nichts geraten"
+    ]
+   }
+  },
+  {
+   "id": "georg-dunn",
+   "titel": "Zusatzprojektion Dunn-Aufnahme in die Überschrift: „<Titel> sowie Dunn-Aufnahme“ (beidseits: „sowie Dunn-Aufnahmen beidseits“) – aus dem Diktat; Liste ZUSATZPROJEKTIONEN vorbereitet (Bildkopf), aktiv nur Dunn",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 56 (RH 47)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "ZUSATZPROJEKTIONEN = {\"dunn\": {\"aktiv\": True,",
+     "DUNN_TITEL = \" sowie Dunn-Aufnahme\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export const DUNN_TITEL = ' sowie Dunn-Aufnahme';"
+    ]
+   },
+   "notiz": "Bildkopf (SeriesDescription/ProtocolName über Brücke/VM) noch nicht angebunden – nur Diktat; RH 47 Bildkopf nicht gelesen (kein Header-Zugriff erlaubt)."
+  },
+  {
+   "id": "georg-doppelte-teile",
+   "titel": "Nie doppelte Untersuchungsteile: zwei Teile mit derselben Überschrift → EIN Teil (Sätze/Punkte ohne Doppel); HIPPO-Sätze (Beckenschiefstand/Beinlängendifferenz) nie im Wirbelsäulen-Teil, sondern in der Beckenübersicht",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 58a/b (RH 59: Beckenübersicht doppelt, HIPPO gelb unten im LWS-Teil)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def teile_zusammenlegen(report, diktat=\"\"):",
+     "HIPPO-Sätze aus dem Wirbelsäulen-Teil in die Beckenübersicht"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function teileZusammenlegen(report: string, diktat = ''): [string, string[]] {"
+    ],
+    "befund_regeln_fixtures.json": [
+     "58a RH 59: Beckenübersicht doppelt → ein Teil, Sätze/Punkte ohne Doppel",
+     "58b RH 59: HIPPO-Sätze im LWS-Ergebnis → in die Beckenübersicht"
+    ]
+   }
+  },
+  {
+   "id": "georg-hippo-10mm",
+   "titel": "HIPPO (Punkt 6 FINAL, jetzt wirksam): Beckenschiefstand ≥ 10 mm zusätzlich als Ergebnispunkt „Beckenschiefstand von 12 mm, links tiefer.“ (Normal-Ergebnis entfällt), < 10 mm nur Beschreibung, Beinlängendifferenz nur Beschreibung; „Regelrechte Darstellung“ nie bei ≥ 10 mm",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 58b/60b (RH 30 zweiter Versuch: 12 mm, Ergebnis „Regelrechte Darstellung des Beckens.“)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "HIPPO ≥ 10 mm ins Ergebnis: {satz}"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "HIPPO ≥ 10 mm ins Ergebnis: ${satz}"
+    ],
+    "befund_regeln_fixtures.json": [
+     "58b/60b HIPPO 12 mm → Ergebnis „Beckenschiefstand von 12 mm, links tiefer.“ (BLD 9 mm nur Beschreibung), Normal-Ergebnis weg",
+     "58b HIPPO 4 mm → nicht ins Ergebnis"
+    ]
+   },
+   "notiz": "Ursache 3.22.4: der Abholer (ris-mods hippo_ergebnis.py) setzt Beckenschiefstand NIE ins Ergebnis, KaiScribe übernahm den Ergebnispunkt nur aus dem Abholer – Punkt 6 FINAL war damit nicht wirksam."
+  },
+  {
+   "id": "georg-kombi-diktat",
+   "titel": "Kombibefund per DIKTAT: „Beckenübersicht und Hüfte …“/„Becken und Hüftgelenk … nach Hüft-OP/TEP“ in EINEM Titel → EIN Kombibefund (Kombi-Vorlage, mit Prothese die Prothesen-Kombi), beide CAS-Leistungen gedeckt; getrennt diktiert oder ohne Signal → getrennte Teile; Kombi-Liste vorbereitet (HWS+BWS, Knie+Ganzbein), aktiv nur Becken+Hüfte",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 59 (Georg FINAL, RH 30)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/pipeline.py": [
+     "KOMBI_LISTE = {\"becken_huefte\": {\"aktiv\": True,",
+     "\"hws_bws\": {\"aktiv\": False,"
+    ],
+    "tests/offline/test_schulter_ergebnis.py": [
+     "59: Diktat „Beckenübersicht und Hüfte rechts …“ → EIN Kombibefund (ein KI-Aufruf, ein Teil)",
+     "59: nur CAS bü + Hüft-OP ohne Kombi-Signal im Diktat → zwei Teile"
+    ]
+   }
+  },
+  {
+   "id": "georg-nie-unter-normalvorlage",
+   "titel": "Nie Diktat unter eine Normalvorlage hängen: pathologisches Diktat ersetzt die betroffenen Normalsätze (Prothese/Coxarthrose-Seite → Hüftkopf-/Gelenkspalt-Normalsätze nur noch für die andere Seite, „Keine Coxarthrosezeichen“ raus); „Regelrechte Darstellung“ trotz Pathologie bzw. leeres Ergebnis → rote Prüfzeile „Befund nicht geformt – bitte prüfen“; Wortlaut „Keine sichere periprothetische Fraktur.“, „des Materials“",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 60 (RH 30, SCHWERER FEHLER)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def pruefzeilen_2311(report, diktat=\"\", templates=None):",
+     "Befund nicht geformt – „Regelrechte Darstellung“ trotz Pathologie, bitte prüfen",
+     "(\"coxarthrose\", r\"co[xk]arthros\", None,"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function pruefzeilen2311(report: string, templates?: VorlagenMap): string[] {"
+    ],
+    "befund_regeln_fixtures.json": [
+     "60 RH 30: TEP rechts + Coxarthrose links, Verlauf → Normalsätze raus, Verlauf 1., Wortlaut periprothetisch"
+    ]
+   },
+   "notiz": "Lauf-Datei RH 30 (23.11. 13:33, 3.22.4, nur lesen): Hüft-Teil = Diktatsätze oben + „Im Übrigen …“-Normalsätze der Hüftköpfe; Becken-Teil = vollständige Normalvorlage + HIPPO, Ergebnis „Regelrechte Darstellung des Beckens.“ – kein Fallback/Timeout, sondern Widerspruchs-Wächter ohne Seitenlogik + fehlende Kombi."
+  },
+  {
+   "id": "georg-koala-aus",
+   "titel": "KOALA-Knie-Automatik ganz raus: kein K&L-Grad, kein K&L-Standardsatz, keine Spaltweiten, kein KOALA-Ergebnispunkt, keine KOALA-Hinweiszeile, kein Prompt-Block – Knie nur Diktiertes (diktierter Grad/Adjektiv → K&L-Satz wie Register); andere Gelenke unverändert; #420 entfällt",
+   "quelle": "Georg Riegler 23.11.2026 RH 120 („Du übernimmst offensichtlich noch die KOALA-Knieauswertung. Die muss raus“), Peter RH 65 20.11.; Freigabe Peter Kanban #514 23.11.2026 20:19 (kaiscribe-schulter-ergebnis-n1, Punkt 61)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "KOALA_KNIE_AUTOMATIK = False",
+     "if modul == \"koala\" and not KOALA_KNIE_AUTOMATIK:"
+    ],
+    "tests/offline/test_schulter_ergebnis.py": [
+     "61: KOALA-Baustein vorhanden, Diktat ohne Grad → kein KOALA-Text, kein K&L-Grad, kein KOALA im Prompt"
+    ]
+   },
+   "notiz": "RH 120 (23.11. 13:40, Lauf-Datei nur lesen): Module HIPPO+KOALA+LAMA links; Knie-Ergebnis mit Kellgren-Grad aus KOALA. Release erst nach echtem Lauf an 451898."
+  },
+  {
+   "id": "georg-ergebnis-einfuegen",
+   "titel": "Ergebnis-Einfügen per Diktat: „zweitens …“/„Punkt 2 …“/„neuer Punkt 2 …“/„an zweiter Stelle …“ → neuer Punkt 2, alle folgenden rücken nach; nie doppelte Nummern, nie überschreiben; erstens…zehntens; ohne Ordnungswort wie bisher (Ergänzung); Einzelpunkt → 1./2.",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 62",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befundfeld.py": [
+     "def ergebnis_einfuegen(report, neu, gross=True, cursor=None):"
+    ],
+    "web_app/src/befundfeld.ts": [
+     "export function ergebnisEinfuegen(report: string, neu: string, gross = true, cursor: number | null = null): [string, number] | null {"
+    ],
+    "tests/offline/snapshots/befundfeld_faelle.txt": [
+     "62: „zweitens …“ in 3er-Liste → neuer 2., alte 2./3. → 3./4."
+    ]
+   }
+  },
+  {
+   "id": "georg-geruest-bleibt",
+   "titel": "Nachdiktat zu EINER Region ändert NUR diesen Teil: Gerüst-Teile ohne Gegenstück bzw. nicht diktiert bleiben wörtlich (LAMA-Sätze nie entfernt, GWS-Teile bleiben), neue Teile (Funktionsaufnahmen der LWS) zusätzlich hinter der Region; Diff-Wächter: fehlender IB-Lab-Messsatz → zurück + Prüfzeile; SQUIRREL nie in den Funktionsaufnahmen; Ergebnis = Summe aller Teile",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkte 63 (RH 120 Ganzbein) + 67 (RH 130 GWS + Funktion); Positiv-Referenz RH 92/RH 130-Split",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befundfeld.py": [
+     "def geruest_erhalten(geruest, neu, diktat=\"\"):"
+    ],
+    "source_code/RaKScribe.py": [
+     "erg.report, gh = _bf.geruest_erhalten(getattr(self, \"_vor_lauf\", \"\") or \"\", erg.report, self.final_transcript)"
+    ],
+    "tests/offline/test_schulter_ergebnis.py": [
+     "63 RH 120: Ganzbein nicht diktiert → Gerüst-Teil mit LAMA-Sätzen wörtlich, Knie aus dem Diktat",
+     "67 RH 130: GWS-Teile bleiben, „Funktionsaufnahmen der LWS“ ZUSÄTZLICH hinter der LWS (4 Teile)"
+    ]
+   },
+   "notiz": "Lauf-Dateien RH 120 (1 Lauf) und RH 130 (2 Läufe) nur gelesen: das Gerüst (vor dem Diktat) wird nicht protokolliert; der Diktat-Lauf baute den Befund im Modus „IB-Lab-Gerüst“ ganz neu (RH 130: 6 bzw. 2 Diktatwörter → 1 Teil Funktionsaufnahmen mit SQUIRREL). EXE only (Gerüst gibt es nur mit IB Lab)."
+  },
+  {
+   "id": "georg-unterarm",
+   "titel": "Ergebnis/Titel nennen nur untersuchte Regionen (CAS-Leistung/Diktat): ein „Unterarm“-Teil neben Handgelenk/Ellbogen ohne diktierten Unterarm fällt weg; Prompt: nie Region aus Vorbefund/Vorlage/KI ergänzen",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 64 (RH 124)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "Teil „Unterarm“ ohne diktierten Unterarm entfernt"
+    ],
+    "radiology_prompt.txt": [
+     "Ergebnis nennt nur untersuchte Regionen laut CAS-Leistung/Diktat"
+    ],
+    "befund_regeln_fixtures.json": [
+     "64 RH 124: Unterarm-Teil neben Handgelenk, Unterarm nicht diktiert → nur Handgelenk"
+    ]
+   },
+   "notiz": "Lauf-Datei RH 124 (nur lesen): Vorlage unterarm_in_2_ebenen gewählt, KI schrieb zusätzlich einen Teil „Handgelenk links“ mit demselben Inhalt."
+  },
+  {
+   "id": "georg-verlauf-zuerst",
+   "titel": "Diktierter Verlaufsvergleich („unverändert zur Voruntersuchung …“, „im Vergleich zur Voruntersuchung vom … Befundänderung“) IMMER 1. Ergebnispunkt (Wortlaut aus Diktat), übrige rücken nach; unnummeriert bleibt nur die Einleitung „Vergleich zur Voruntersuchung vom …:“",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 65",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_UNNUM_RE = re.compile(r\"^(?:im\\s+)?vergleich\\s+zu[rm]?\\s+vor[^\\n]*:$|",
+     "Verlauf als 1. Punkt: {_punkt(p)[:50]}"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "Verlauf als 1. Punkt: ${ohneNum(p).slice(0, 50)}"
+    ],
+    "radiology_prompt.txt": [
+     "steht IMMER als 1. Punkt im Ergebnis, Wortlaut aus dem Diktat"
+    ]
+   }
+  },
+  {
+   "id": "georg-hippo-stellung",
+   "titel": "LCE- oder AI-Winkel auffällig (HIPPO-Satz „Der LCE-/AI-Winkel beträgt …“ oder diktiert) bzw. Prothese/Coxarthrose einer Seite → „Ordnungsgemäße Stellung der normal geformten Hüftköpfe.“ nur noch für die unauffällige Seite („… des normal geformten linken Hüftkopfes.“), beide Seiten → Satz raus; kein Ersatzsatz",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkt 68",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "f\"Ordnungsgemäße Stellung des normal geformten {adj[andere]} Hüftkopfes.\""
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "`Ordnungsgemäße Stellung des normal geformten ${adj[andere]} Hüftkopfes.`"
+    ],
+    "befund_regeln_fixtures.json": [
+     "68 LCE 18° rechts → Hüftkopf-Satz nur noch links",
+     "68 beide Seiten auffällig → Satz raus",
+     "68 Gegenprobe normal: Satz bleibt"
+    ]
+   },
+   "notiz": "ris-mods ibl/hippo_ergebnis.py braucht kein Feld „entfaellt_stellung“: KaiScribe erkennt die Seite am HIPPO-Satz selbst."
+  },
+  {
+   "id": "georg-kl-adjektiv-zeile",
+   "titel": "K&L deterministisch je Diagnose: Grad im Ergebnis IMMER aus dem Adjektiv DERSELBEN Diagnose (beginnend 1, gering/geringgradig 2, mäßig/mäßiggradig/mittelgradig 3, hochgradig/ausgeprägt 4) bzw. diktiertem Grad; fehlende Klammer kommt dazu; „A links und B rechts“ → zwei Punkte; Befund: K&L-Standardsatz je Seite statt Diagnose-Satz bzw. eigenem KI-Deskriptor (Kompartiment bleibt); Wirbelsäule/AC/ISG/Symphyse nie, Rhizarthrose ohne Klammer",
+   "quelle": "Georg Riegler 22./23.11.2026 (kaiscribe-schulter-ergebnis-n1, Sammelliste Punkte 48–70), Punkte 69 (RH 88: Coxarthrose li hochgradig/re gering ohne K&L) + 70 (RH 94: geringgradige MTP-I-Arthrose → Grad 3 FALSCH)",
+   "datum": "2026-11-23",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def _kl_ergebnis(punkte, dk):",
+     "def _kl_befund(text, punkte, titel):",
+     "K&L-Grad {ist} → {g} (Adjektiv derselben Diagnose)"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "K&L-Grad ${ist} → ${gZ} (Adjektiv derselben Diagnose)"
+    ],
+    "befund_regeln_fixtures.json": [
+     "69 RH 88: „hochgradige Coxarthrose links und geringgradige rechts“ → K&L-Satz je Seite, zwei Ergebnispunkte Grad 4/2",
+     "70 RH 94: „geringgradige MTP-I-Arthrose links“ → Grad 2 (nicht 3), auch wenn andere Adjektive im Diktat"
+    ]
+   },
+   "notiz": "Ursache RH 94 (Lauf-Datei nur lesen): Diktat mit mehreren Grad-Adjektiven (gering, mäßig, hochgradig) → kl_bereinigen ließ den KI-Grad 3 „stehen“ (mehrere erlaubte Grade). RH 88: KI schrieb den Diagnose-Satz ohne Grad und ohne Tabellensatz; die K&L-Regel stand im Prompt (nicht verloren), der Wächter prüfte nur vorhandene Klammern."
   }
  ]
 }
