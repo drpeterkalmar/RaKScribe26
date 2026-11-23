@@ -26,7 +26,7 @@ SKILL = ["1", "2", "3"] + [f"3{c}" for c in "abcdefghijklmnopqrstuvwxyz"] + ["3a
 PFLICHT = SKILL + ["kl-0", "kl-1", "kl-2", "kl-3", "kl-4", "kl-wann", "kl-rh38", "kl-ergebnis", "kl-knie-fp", "kl-knie-betont",
                    "kl-bsp-schulter", "kl-bsp-ellbogen", "kl-bsp-knie", "kl-koala", "ergebnis-format", "ibl-frog", "ibl-text-immer", "ibl-lama",
                    "ibl-panda", "ibl-rho", "ibl-squirrel", "ibl-squirrel-diktat", "ibl-squirrel-achse", "wid-erguss", "wid-ki-pathologie", "val-kl",
-                   "mehrfach-untersuchung", "gws-ap-normaltext", "rho-osteopen"]
+                   "mehrfach-untersuchung", "gws-ap-normaltext", "rho-osteopen", "rho-titel-nummer"]
 
 regeln = REG["regeln"]
 ids = [r["id"] for r in regeln]

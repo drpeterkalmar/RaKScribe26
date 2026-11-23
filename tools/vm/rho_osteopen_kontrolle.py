@@ -1,4 +1,4 @@
-r"""rho_osteopen_kontrolle.py 1.0 (kaiscribe-rho-osteopen-kontrolle, 23.11.2026) – NUR LESEN, Automaten-VM als rakauto.
+r"""rho_osteopen_kontrolle.py 1.1 (kaiscribe-rho-osteopen-kontrolle, 23.11.2026; 1.1 Weg am Befundtext, kaiscribe-rho-titel-nummer-n1) – NUR LESEN, Automaten-VM als rakauto.
 
 Georg 22.11.2026: Rho-Score ≥ 7 → „Osteopenischer Knochenaspekt.“ statt Mineralisations-Normalsatz in ALLEN
 Röntgen-Teilen. Je Brief eines Tages (CAS LETTERS, nur SELECT über casdb, READ ONLY) mit Rho-Text
@@ -147,7 +147,10 @@ def brief_auswerten(text):
     unters = [t for t in teile if not t["rho"] and t["zeilen"]]
     text = (text or "").replace(U, "").replace(UE, "")
     return {
-        "ki": RHO_TITEL in norm(text), "fmt": "niedrige knochenmineraldichte" in norm(text),
+        # 1.1 (kaiscribe-rho-titel-nummer-n1): Formatierer bekommt denselben Titel „… (KI)“ → Weg am Befundtext erkennen:
+        # KaiScribe „mittels CE-zertifizierter …“ / „Skala 1–10“ (Halbgeviertstrich), Formatierer „Skala 1-10“ (Bindestrich)
+        "ki": RHO_TITEL in norm(text) and "mittels ce-zertifizierter" in norm(text),
+        "fmt": "niedrige knochenmineraldichte" in norm(text) or "(skala 1-10)" in norm(text),
         "teile": len(unters), "mit_o": sum(1 for t in unters if t["o"]), "normal": sum(t["n"] for t in unters),
         "teile_mit_n": sum(1 for t in unters if t["n"]), "sonst_osteo": sum(t["p"] for t in unters),
         "code": "".join(code)[:120]}

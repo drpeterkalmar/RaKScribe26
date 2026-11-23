@@ -1579,6 +1579,29 @@
      "const [out, teile] = osteopenErsetzen(report, diktat);"
     ]
    }
+  },
+  {
+   "id": "rho-titel-nummer",
+   "titel": "Rho-Schlussbefund: eigene Überschrift „Opportunistisches Knochendichtescreening (KI)“ (im Brief fett+unterstrichen wie jede Untersuchung), Rho-Ergebnis = ein Punkt OHNE Nummer (nie „2.“, Einzelpunkt-Regel v3.18.3); Haupt-Ergebnis ab 2 Punkten 1., 2., „Anmerkung: …“ zählt nicht mit",
+   "quelle": "Georg Riegler 22.11.2026, Punkt 47 (Foto RH 49 vom 20.11.): „Die Überschrift bei opp gross machen und mit Punkt 1. Starten“ (kaiscribe-rho-titel-nummer-n1)",
+   "datum": "2026-11-22",
+   "status": "vorhanden",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "RHO_TITEL = \"Opportunistisches Knochendichtescreening (KI)\"",
+     "if len(zaehlbar) == 1:  # v3.18.3 (Peter 12.11.2026): EIN Ergebnispunkt wird nie nummeriert"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "if (zaehlbar.length === 1) { // v3.18.3 (Peter 12.11.2026): EIN Ergebnispunkt wird nie nummeriert"
+    ],
+    "befund_regeln_fixtures.json": [
+     "RH 49 (Georg 22.11., Punkt 47)"
+    ],
+    "tests/offline/test_rho_titel_nummer.py": [
+     "b): Rho-Ergebnis = ein Punkt ohne Nummer (nie „2.“)"
+    ]
+   },
+   "notiz": "RH 49 lief mit 3.19.15 (Rho noch im Hüft-Teil). Seit 3.20.0 eigener Schlussbefund; live 3.22.4 belegt 23.11. (1123-059/073: Rho-Titel fett+unterstrichen 11 pt, Rho-Ergebnis ohne Nummer, Haupt-Ergebnis 1., 2.). „Amerkung“ kommt in keinem Code vor (von Hand getippt). Formatierer-Weg (IB-Lab-Screening ohne diktiertes Rho) → ris-mods Folgejob rho-titel-formatierer-n1."
   }
  ]
 }

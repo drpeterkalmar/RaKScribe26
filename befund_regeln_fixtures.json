@@ -380,6 +380,11 @@
    "name": "Zahl/Großbuchstabe am Anfang bleibt",
    "in": "## Ergebnis\nAC-Gelenksarthrose rechts\nTEP-Lockerung",
    "out": "## Ergebnis\n1. AC-Gelenksarthrose rechts.\n2. TEP-Lockerung."
+  },
+  {
+   "name": "RH 49 (Georg 22.11., Punkt 47): Haupt-Ergebnis 2 Punkte → 1., 2., Anmerkung ohne Nummer, Rho-Einzelpunkt ohne Nummer (nie „2.“)",
+   "in": "## Beckenübersicht und Hüftgelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nMäßige Coxarthrose rechts\nSteiles Pfannendach rechts.\n\nAnmerkung: LCE = lateraler Center-Edge-Winkel.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nX.\n\n## Ergebnis\n2. Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+   "out": "## Beckenübersicht und Hüftgelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\n1. Mäßige Coxarthrose rechts.\n2. Steiles Pfannendach rechts.\n\nAnmerkung: LCE = lateraler Center-Edge-Winkel.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nX.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
   }
  ],
  "titel_seite": [
