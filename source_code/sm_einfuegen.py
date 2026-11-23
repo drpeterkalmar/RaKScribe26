@@ -114,6 +114,23 @@ def senf_inhalt(zeile):
     return z
 
 
+SENF_ZEILE_MAX = 1200      # sm-senf-laenge-n1 (Peter 23.11.2026): bis 3.22.5 hart bei 300 Zeichen gekappt → „… stationär. (V“
+
+
+def senf_kuerzen(z, grenze=SENF_ZEILE_MAX):
+    """Zeile ≤ grenze bleibt ganz. Länger: am letzten Satzende („. “ oder „; “) vor der Grenze abschneiden + „…“;
+    ohne Satzende am letzten Leerzeichen – nie mitten im Wort."""
+    z = str(z or "")
+    if len(z) <= grenze:
+        return z
+    kopf = z[:grenze]
+    pos = max(kopf.rfind(". "), kopf.rfind("; "))
+    if pos > 0:
+        return kopf[:pos + 1].rstrip() + " …"
+    pos = kopf.rfind(" ")
+    return (kopf[:pos] if pos > 0 else kopf).rstrip() + " …"
+
+
 def senf_zeilen(d):
     """Ablage-Inhalt (dict) → ("fertig", [Zeilen fürs Diktat]) | ("warten", []) | ("nichts", []).
     Nur „fertig“ ergibt Text; solange weitere Serien laufen, wird gewartet."""
@@ -128,7 +145,7 @@ def senf_zeilen(d):
         return "warten", []
     bef = str(d.get("befund") or "").strip().lower()
     zeilen = [z for z in (" ".join(str(x).split()) for x in (d.get("zeilen") or [])) if z and not _MESS.match(z)]
-    zeilen = [z for z in (senf_inhalt(x)[:300] for x in zeilen) if z][:6]
+    zeilen = [z for z in (senf_kuerzen(senf_inhalt(x)) for x in zeilen) if z][:6]
     if bef == "unauffaellig":
         return "fertig", [SENF_UNAUFFAELLIG]
     if bef == "nicht_beurteilbar":
