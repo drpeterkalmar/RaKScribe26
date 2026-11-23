@@ -242,6 +242,33 @@ oeffnen(api, uhr, hwnd=101, pid=8, text=api.texte["E100"])
 takte(w, uhr, 50, 1.0)
 check("Wiederöffnen derselben Nummer → nichts doppelt (Merker)", len(api.einfuege_aufrufe) == 1, api.einfuege_aufrufe)
 
+# kaiscribe-sm-waechter-bleibt-n1: zwei KaiScribe-Prozesse (z. B. stiller Wächter + neue Instanz/Gast) sehen dasselbe
+# SpeechMagic-Fenster, gleicher Merker-Ordner (lokal je PC/Benutzer + X:) → genau EIN Einfügen
+gemein = tempfile.mkdtemp()
+w1, api, uhr, logs1, _, _ = neu_waechter(senf=SENF, ordner=gemein)
+w2, _, _, logs2, _, _ = neu_waechter(senf=SENF, ordner=gemein)
+w2.api, w2.jetzt, w2.merker = api, uhr, M.Merker(gemein, None, jetzt=uhr)
+takte(w1, uhr, 1)
+w2.takt()
+oeffnen(api, uhr)
+api.mikro = "aufnahme"                 # Peter diktiert: beide erkennen das Fenster, beide warten (Merker noch leer)
+for _ in range(3):
+    uhr.t += 0.5
+    w1.takt()
+    w2.takt()
+api.mikro = "frei"
+for _ in range(6):
+    uhr.t += 0.5
+    w1.takt()
+    w2.takt()
+check("zwei Wächter, ein Diktat → genau ein Einfügen (Merker vor dem Einfügen neu gelesen)",
+      len(api.einfuege_aufrufe) == 1 and api.texte["E100"].count("[SENF] Gelenkerguss") == 1,
+      (len(api.einfuege_aufrufe), logs1, logs2))
+check("… der zweite loggt „schon eingefügt (Merker)“ statt einzufügen",
+      any("schon eingefügt (Merker)" in l for l in logs1 + logs2), logs1 + logs2)
+check("Wächter-Sperre: außerhalb von Windows immer frei (Tests), Name je Sitzung (Local\\)",
+      M.waechter_sperre() is True and M.WAECHTER_MUTEX.startswith("Local\\"))
+
 # Übernehmen (Taste): nur die Marken weg, danach keine Warnung beim Schließen
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 takte(w, uhr, 1)

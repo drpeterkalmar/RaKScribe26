@@ -1,5 +1,5 @@
 """Gate kaiscribe-senf-anzeige-n1 (Peter 20.11.2026): Opus-Senf als schreibgeschützter Hinweis im KaiScribe-Fenster.
-Teil 1: source_code/senf_anzeige.py (Kürzel, Ablage lesen, Anzeige je Status, Nachladen 15 s / max. 10 min, Frist 1 s).
+Teil 1: source_code/senf_anzeige.py (Kürzel, Ablage lesen, Anzeige je Status, Nachladen 5 s / max. 10 min, Frist 1 s).
 Teil 2: echter EXE-Ablauf (exe_stubs): kp sieht das Feld, rg nicht; Diktat + EOL → Befund, CAS-Datei und Zwischenablage
 ohne Senf; KaiScribe kopiert den Senf nie von sich aus, nur auf Knopf/Strg+C (Nachtrag 20.11.: markier-/kopierbar);
 das Feld ist kein Einfügeziel; Ablage fehlt/hängt → kein Hänger.
@@ -141,15 +141,38 @@ le = Lese(("fehlt", None), ("da", {"status": "laeuft"}), ("da", {"status": "laeu
           ("da", {"status": "fertig", "befund": "unauffaellig", "zeilen": []}))
 v = senf.Verfolgung("a", "20261121004", A, 1000.0, lese=le, starte=sofort)
 out, ende = lauf(v)
-check("Verfolgung: keine Datei → „läuft“, alle 15 s nachladen, Ergebnis eingeblendet, dann Schluss",
-      out == [(0, ("laeuft", "Senf läuft…")), (45.0, ("fertig", "Senf: unauffällig"))] and ende == 45.0 and le.n == 4,
+check("Verfolgung: keine Datei → „läuft“, alle 5 s nachladen (sm-waechter-bleibt-n1, vorher 15 s), Ergebnis eingeblendet, dann Schluss",
+      out == [(0, ("laeuft", "Senf läuft…")), (15.0, ("fertig", "Senf: unauffällig"))] and ende == 15.0 and le.n == 4,
       (out, ende, le.n))
+# kaiscribe-sm-waechter-bleibt-n1 (23.11., RH 20): Auftrag 08:40:13, Senf fertig 08:42:04 (+111 s), EOL 08:42:12 (+119 s).
+# Mit 15 s gelesen bei +105 und +120 → verpasst; mit 5 s spätestens bei +115 → vor EOL im Feld.
+uhr = [0.0]
+
+
+def lese_rh20(o, n):
+    return ("da", {"status": "fertig", "befund": "auffaellig", "zeilen": [SENF_ZEILE]}) if uhr[0] >= 111 else ("fehlt", None)
+
+
+for nach, soll in ((15, False), (senf.NACHLADEN_S, True)):
+    v = senf.Verfolgung("a", "20261123020", A, 0.0, lese=lese_rh20, starte=sofort, nachladen=nach)
+    uhr[0], gesehen = 0.0, None
+    while uhr[0] <= 119:
+        a, w = v.takt(uhr[0])
+        if a is not None and a[0] == "fertig":
+            gesehen = uhr[0]
+            break
+        if w is None:
+            break
+        uhr[0] += w / 1000.0
+    check(f"RH 20 nachgestellt, Nachladen {nach} s: Senf {'vor' if soll else 'erst nach'} EOL (+119 s) im Feld",
+          (gesehen is not None) == soll and (gesehen is None or gesehen <= 116), gesehen)
+
 le = Lese(("da", {"status": "laeuft"}))
 v = senf.Verfolgung("a", "20261121005", A, 1000.0, lese=le, starte=sofort)
 out, ende = lauf(v)
-check("Verfolgung: läuft länger als 10 min → aufhören, „Senf: kein Ergebnis“, höchstens 41 Lesungen",
+check("Verfolgung: läuft länger als 10 min → aufhören, „Senf: kein Ergebnis“, höchstens 121 Lesungen",
       out[0] == (0, ("laeuft", "Senf läuft…")) and out[-1][1] == ("kein", "Senf: kein Ergebnis")
-      and ende is not None and ende <= 600 and le.n <= 41, (out, ende, le.n))
+      and ende is not None and ende <= 600 and le.n <= 121, (out, ende, le.n))
 le = Lese(("aus", None))
 v = senf.Verfolgung("a", "20261121006", A, 1000.0, lese=le, starte=sofort)
 out, ende = lauf(v)
@@ -165,9 +188,9 @@ a1 = v.takt(1000.0)
 a2 = v.takt(1000.5)
 a3 = v.takt(1001.2)
 a4 = v.takt(1016.2)
-check("Frist 1 s: Lesen hängt → erst warten (100 ms), dann Feld aus, Nachladen in 15 s",
-      a1 == (None, senf.PRUEF_MS) and a2 == (None, senf.PRUEF_MS) and a3 == (("aus", ""), 15000), (a1, a2, a3))
-check("… hängt der erste Versuch noch, startet kein zweiter (kein Thread-Stau)", len(gestartet) == 1 and a4[1] == 15000,
+check("Frist 1 s: Lesen hängt → erst warten (100 ms), dann Feld aus, Nachladen in 5 s",
+      a1 == (None, senf.PRUEF_MS) and a2 == (None, senf.PRUEF_MS) and a3 == (("aus", ""), 5000), (a1, a2, a3))
+check("… hängt der erste Versuch noch, startet kein zweiter (kein Thread-Stau)", len(gestartet) == 1 and a4[1] == 5000,
       (len(gestartet), a4))
 gestartet[0]()                         # Netz wieder da: der alte Thread kommt zurück (Ergebnis verworfen)
 v.takt(1031.2)

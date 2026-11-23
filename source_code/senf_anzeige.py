@@ -24,7 +24,8 @@ import umzug as _umzug
 SENF_ORDNER_STANDARD = "X:\\" + _umzug.ALT + "\\Daten\\senf"
 SENF_ANZEIGE_STANDARD = ("kp",)
 LESE_FRIST_S = 1.0          # länger → wie „keine Ablage“ (Feld aus), der Thread darf im Hintergrund weiterhängen
-NACHLADEN_S = 15            # solange „läuft“ bzw. noch keine Datei: alle 15 s
+NACHLADEN_S = 5             # solange „läuft“ bzw. noch keine Datei: alle 5 s (kaiscribe-sm-waechter-bleibt-n1, vorher
+                            # 15 s: RH 20 am 23.11. kam der Senf 8 s vor EOL und wurde knapp verpasst)
 NACHLADEN_MAX_S = 600       # … höchstens 10 min nach dem Öffnen
 PRUEF_MS = 100              # wie oft der UI-Takt auf den Lese-Thread schaut (nur Abfrage, kein Warten)
 MAX_ZEICHEN = 2000          # Schutz gegen eine kaputte/riesige Datei
@@ -197,7 +198,7 @@ class Verfolgung:
         if not lauf["fertig"]:
             if jetzt - lauf["start"] <= self.frist:
                 return None, PRUEF_MS
-            self.zeitueberschreitungen += 1          # Netz zäh → Feld aus, in 15 s noch einmal (max. 10 min)
+            self.zeitueberschreitungen += 1          # Netz zäh → Feld aus, in NACHLADEN_S noch einmal (max. 10 min)
             self._haengt, self._lauf = lauf, None
             return self._weiter(jetzt, ("aus", ""))
         self._lauf = None
@@ -214,7 +215,7 @@ class Verfolgung:
         return self._setzen((zustand, text)), None
 
     def _weiter(self, jetzt, a):
-        """Noch nicht endgültig: in 15 s wieder — außer die 10 min sind um."""
+        """Noch nicht endgültig: in NACHLADEN_S wieder — außer die 10 min sind um."""
         if jetzt - self.t0 + self.nachladen > self.max_s:
             if a[0] == LAEUFT:
                 a = (KEIN, TEXT_KEIN)       # nach 10 min immer noch nichts → klar sagen statt ewig „läuft“

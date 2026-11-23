@@ -3353,16 +3353,28 @@ class RaKScribeApp(ctk.CTk):
     # ── senf-ibl-speechmagic-paste-n1 (Peter 21.11.2026): Senf + auffällige IB-Lab-Sätze ins SpeechMagic-Diktatfenster ──
     # Eigener Hintergrund-Thread (sm_einfuegen.Thread), nur Kürzel aus SM_SENF/SM_IBL und nur mit zentraler Freigabe-Datei.
     # Die Oberfläche bekommt nur die Sicherheitsnetz-Warnung (Warteschlange, im Tk-Takt abgeholt) – nie blockierend.
+    # kaiscribe-sm-waechter-bleibt-n1 (Peter 23.11. 09:25): in der EXE wacht ein eigener unsichtbarer Prozess
+    # (KaiScribe.exe --sm-waechter, sm_waechter_main) – das Fenster startet ihn nur, falls keiner läuft (beim Start und
+    # jede Minute), und „Fenster zu“ beendet ihn nie. Im Thread dieses Fensters nur noch im Selbsttest / aus dem Quelltext.
     def _sm_start(self):
         import collections
         self._sm_warnungen = collections.deque()          # append/popleft sind threadsicher
         self._sm_thread = None
+        self._sm_prozess = None
         try:
             api = _sme.win32_oder_none()
             if api is None:
                 if sys.platform == "win32":
                     log("[SM] Win32 nicht verfügbar – Wächter aus")
                 return                                   # kein Windows (Tests am Mac/Linux) → aus
+            exe = _bs.exe_pfad()
+            if exe and not os.environ.get("RAKSCRIBE_SELFTEST"):
+                self._sm_prozess = exe
+                self._sm_prozess_sichern()
+                return
+            if not _sme.waechter_sperre():              # nie zwei Wächter je Sitzung (z. B. Gast-Selbsttest im Ordi)
+                log("[SM] Wächter läuft schon in dieser Windows-Sitzung – hier aus")
+                return
             lokal = os.path.join(_cas.ordner_standard(), "speechmagic")
             merker = _sme.Merker(lokal, _sme.MERKER_X_STANDARD)
             w = _sme.Waechter(api, CFG, merker, log=log, warnen=lambda nr, text: self._sm_warnungen.append((nr, text)),
@@ -3380,6 +3392,16 @@ class RaKScribeApp(ctk.CTk):
         except Exception:
             log_exception("[SM] Start")
         self.after(1000, self._sm_ui_takt)
+
+    def _sm_prozess_sichern(self):
+        """Wächter-Prozess da? Sonst starten. Jede Minute wieder (stirbt er, ist er spätestens dann zurück)."""
+        try:
+            if _sme.waechter_noetig(CFG) and _sme.waechter_laeuft() is False:
+                ok = _sme.waechter_starten(self._sm_prozess)
+                log(f"[SM] Wächter-Prozess {'gestartet' if ok else 'NICHT gestartet'} ({_sme.WAECHTER_ARG})")
+        except Exception:
+            log_exception("[SM] Wächter-Prozess prüfen")
+        self.after(_sme.PRUEF_S * 1000, self._sm_prozess_sichern)
 
     def _sm_ui_takt(self):
         try:
@@ -3941,7 +3963,7 @@ class RaKScribeApp(ctk.CTk):
 
     # ── kaiscribe-senf-anzeige-n1 (Peter 20.11.2026): Opus-Senf als schreibgeschützter Hinweis, nur Kürzel aus SENF_ANZEIGE ──
     # Ablage der VM X:\RaKScribe\Daten\senf\<Nr>.json (ris-mods opus_senf 1.7.0), NUR lesen, im Hintergrund-Thread mit
-    # Frist 1 s (senf_anzeige.Verfolgung). „läuft“/noch keine Datei → alle 15 s nachladen, höchstens 10 min. Kein Netz /
+    # Frist 1 s (senf_anzeige.Verfolgung). „läuft“/noch keine Datei → alle 5 s nachladen, höchstens 10 min. Kein Netz /
     # keine Ablage → Zeile aus. Der Text steht NUR in self.senf_box: nie in transcript_text/result_text, EOL-Datei, Lauf-Datei
     # oder Zwischenablage — kopiert wird ausschließlich in senf_kopieren() (Knopf bzw. Strg+C im Feld).
     def _senf_box_einrichten(self):
@@ -4004,6 +4026,9 @@ class RaKScribeApp(ctk.CTk):
         self.after(10, lambda: self._senf_takt(v))
 
     def _senf_stop(self):
+        v = getattr(self, "_senf", None)
+        if v is not None and v.zustand != _senf.FERTIG:   # kaiscribe-sm-waechter-bleibt-n1: verpasst? → im Log sichtbar
+            log(f"[SENF] {v.nr}: Auftrag zu, Senf noch nicht da ({v.zustand or 'nichts gelesen'}, {v.lesungen} Lesungen)")
         self._senf = None
         self._senf_zeigen("aus", "")
 
@@ -5034,7 +5059,109 @@ def _wav_argumente(argv):
         os.environ["RAKSCRIBE_WAV_SCHLUESSEL"] = os.path.abspath(wert("--schluessel"))
 
 
+def sm_waechter_main(nachfolger=False):
+    """kaiscribe-sm-waechter-bleibt-n1: KaiScribe.exe --sm-waechter — unsichtbarer SpeechMagic-Wächter ohne KaiScribe-Fenster
+    (kein Fenster, keine Taskleiste; nur die rote Sicherheitsnetz-Warnung erscheint bei Bedarf). Genau einer je
+    Windows-Sitzung (Mutex). Richtet seinen Autostart selbst ein. Neue EXE → Nachfolger starten, enden."""
+    frist = time.time() + (_sme.NACHFOLGER_WARTEN_S if nachfolger else 0)
+    while not _sme.waechter_sperre():
+        if time.time() >= frist:
+            return                                       # es wacht schon einer → still enden
+        time.sleep(1)
+    global CFG
+    try:
+        CFG = _cfg.load_config(CONFIG_FILE_PATH)
+    except Exception:
+        log_exception("[SM] Wächter-Prozess: config.ini")
+        return
+    if not _sme.waechter_noetig(CFG):
+        log("[SM] Wächter-Prozess: SM_SENF und SM_IBL aus – endet")
+        return
+    api = _sme.win32_oder_none()
+    if api is None:
+        log("[SM] Wächter-Prozess: Win32 nicht verfügbar – endet")
+        return
+    import collections
+    exe = _bs.exe_pfad()
+    warnungen = collections.deque()
+    lokal = os.path.join(_cas.ordner_standard(), "speechmagic")
+    merker = _sme.Merker(lokal, _sme.MERKER_X_STANDARD)
+    w = _sme.Waechter(api, CFG, merker, log=log, warnen=lambda nr, text: warnungen.append((nr, text)),
+                      ausloeser=os.path.join(_cas.ordner_standard(), _sme.UEBERNEHMEN_DATEI))
+    t = _sme.Thread(w, log=log).start()
+    log(f"[SM] Wächter-Prozess {app_version()} gestartet (pid {os.getpid()}{', Nachfolger' if nachfolger else ''}; "
+        f"Senf {', '.join(CFG.sm_senf) or 'aus'}; IB Lab {', '.join(CFG.sm_ibl) or 'aus'})")
+    taste = str(getattr(CFG, "sm_uebernehmen_taste", _sme.UEBERNEHMEN_TASTE_STANDARD) or "").strip().lower()
+    if taste and taste not in ("aus", "-", "0", "nein"):
+        try:
+            keyboard.add_hotkey(taste, w.uebernehmen_anfordern, suppress=True)
+            log(f"[SM] Taste „Übernehmen“: {taste}")
+        except Exception:
+            log_exception("[SM] Taste Übernehmen")
+
+    def autostart():
+        try:
+            m = _bs.WaechterAutostart(USER_KEY_DIR, log=log).sichern(exe)
+            if m:
+                log(m)
+        except Exception:
+            log_exception("[SM] Autostart Wächter")
+    threading.Thread(target=autostart, daemon=True).start()
+
+    root = tk.Tk()                                       # nur für die Warnung; selbst nie sichtbar
+    root.withdraw()
+    root.title("KaiScribe SM-Wächter")
+    pruefung = _sme.Pruefung(_sme.exe_stand(exe))
+
+    def ende(grund):
+        log(f"[SM] Wächter-Prozess endet: {grund}")
+        t.stop()
+        try:
+            root.destroy()
+        except Exception:
+            pass
+
+    def warn_takt():
+        try:
+            while warnungen:
+                nr, text = warnungen.popleft()
+                top = tk.Toplevel(root)
+                top.title("KaiScribe – SENF-Zeile noch im Diktat")
+                top.attributes("-topmost", True)
+                top.configure(bg="#7A1010")
+                tk.Label(top, text=text, bg="#7A1010", fg="white", font=(UI_FONT, 13, "bold"), justify="left",
+                         wraplength=520, padx=18, pady=14).pack()
+                tk.Button(top, text="Verstanden", command=top.destroy, padx=14).pack(pady=(0, 12))
+        except Exception:
+            log_exception("[SM] Warnung")
+        root.after(1000, warn_takt)
+
+    def pruef_takt():
+        try:
+            if not t.laeuft():
+                return ende("Wächter-Thread steht")
+            aktion, grund = pruefung.pruefen(_sme.exe_stand(exe), _sme.waechter_noetig(CFG), _sme.diktat_offen(w))
+            if aktion == "nachfolger":
+                ok = _sme.waechter_starten(exe, nachfolger=True)
+                return ende(f"{grund} – Nachfolger {'gestartet' if ok else 'NICHT gestartet (KaiScribe startet ihn)'}")
+            if aktion == "ende":
+                return ende(grund)
+        except Exception:
+            log_exception("[SM] Wächter-Prüfung")
+        root.after(_sme.PRUEF_S * 1000, pruef_takt)
+
+    root.protocol("WM_SAVE_YOURSELF", lambda: ende("Windows-Abmeldung"))
+    root.after(1000, warn_takt)
+    root.after(_sme.PRUEF_S * 1000, pruef_takt)
+    root.mainloop()
+
+
 def main():
+    # kaiscribe-sm-waechter-bleibt-n1: KaiScribe.exe --sm-waechter [--nachfolger] = nur der unsichtbare SpeechMagic-Wächter
+    waechter, nachfolger = _sme.waechter_gewuenscht(sys.argv[1:])
+    if waechter:
+        sm_waechter_main(nachfolger)
+        return
     # v3.11.0: nur EINE RaKScribe je Windows-Sitzung (zwei würden um denselben CAS-Auftrag konkurrieren). Ein zweiter
     # Start holt die laufende nach vorne; der Autostart-Starter (--minimiert) endet dann still.
     minimiert = _bs.minimiert_gewuenscht(sys.argv[1:])

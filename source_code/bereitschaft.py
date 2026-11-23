@@ -467,6 +467,109 @@ class Autostart:
         return f"[AUTOSTART] Starter auf die aktuelle Vorlage gebracht ({ziel})"
 
 
+# ── kaiscribe-sm-waechter-bleibt-n1: Autostart des SpeechMagic-Wächters (eigener Prozess, kein Fenster) ─────────────
+WAECHTER_LNK = "KaiScribe SM-Waechter.lnk"
+WAECHTER_STARTER = "sm_waechter_start.vbs"
+WAECHTER_KENNUNG = "KaiScribe-SM-Waechter-Starter 1"
+WAECHTER_BESCHREIBUNG = "KaiScribe: Senf/IB Lab ins SpeechMagic-Diktat (unsichtbarer Wächter)"
+
+
+def waechter_starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, ruhe_s=RUHE_S, arg="--sm-waechter"):
+    """Wartet nach der Anmeldung, bis die EXE erreichbar ist (X: erst nach dem CAS-Login), dann Ruhe (CasmedNeu.bat
+    verbindet X: neu) und startet sie unsichtbar als Wächter. Läuft schon einer, endet der neue sofort (Mutex)."""
+    zeilen = [
+        f"' {WAECHTER_KENNUNG} – angelegt vom KaiScribe-SpeechMagic-Wächter (SM_SENF/SM_IBL in config.ini).",
+        "' Startet nach der Windows-Anmeldung den unsichtbaren Wächter, sobald die KaiScribe-EXE erreichbar ist.",
+        f"' Gibt nach {_dauer(frist_s)} still auf. Protokoll: {STARTER_LOG} im selben Ordner.",
+        "Option Explicit",
+        f'Const EXE = "{_vbs(exe)}"',
+        f"Const TAKT_S = {int(takt_s)}",
+        f"Const FRIST_S = {int(frist_s)}",
+        f"Const RUHE_S = {int(ruhe_s)}",
+        "Dim fso, sh, beginn",
+        'Set fso = CreateObject("Scripting.FileSystemObject")',
+        'Set sh = CreateObject("WScript.Shell")',
+        "beginn = Now",
+        "Do Until fso.FileExists(EXE)",
+        "  If DateDiff(\"s\", beginn, Now) > FRIST_S Then",
+        '    Notiz "SM-Wächter: EXE nicht erreichbar – aufgegeben"',
+        "    WScript.Quit 0",
+        "  End If",
+        "  WScript.Sleep TAKT_S * 1000",
+        "Loop",
+        "WScript.Sleep RUHE_S * 1000",
+        "Do Until fso.FileExists(EXE)",
+        "  WScript.Sleep TAKT_S * 1000",
+        "  If DateDiff(\"s\", beginn, Now) > FRIST_S Then WScript.Quit 0",
+        "Loop",
+        f'sh.Run """" & EXE & """ {arg}", 0, False',
+        'Notiz "SM-Wächter gestartet"',
+        "",
+        "Sub Notiz(text)",
+        "  On Error Resume Next",
+        "  Dim pfad, f",
+        f'  pfad = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "{STARTER_LOG}")',
+        "  Set f = fso.OpenTextFile(pfad, 8, True, -1)",
+        '  f.WriteLine Now & "  " & text',
+        "  f.Close",
+        "End Sub",
+    ]
+    return "\r\n".join(zeilen) + "\r\n"
+
+
+class WaechterAutostart:
+    """Verknüpfung „KaiScribe SM-Waechter.lnk“ im Benutzer-Autostart → wscript → sm_waechter_start.vbs → EXE --sm-waechter.
+    Unabhängig vom Menü-Haken „Mit Windows starten“ (der startet das Fenster minimiert)."""
+
+    def __init__(self, daten_ordner, startup_ordner=None, log=None, ausfuehren=None, wscript=None):
+        self.daten_ordner = daten_ordner
+        self.ordner = startup_ordner or autostart_ordner()
+        self.log = log or (lambda *a: None)
+        self.wscript = wscript or wscript_pfad()
+        self.ausfuehren = ausfuehren or (lambda skript: _wscript_ausfuehren(skript, self.wscript))
+
+    @property
+    def lnk(self):
+        return os.path.join(self.ordner, WAECHTER_LNK)
+
+    @property
+    def starter(self):
+        return os.path.join(self.daten_ordner, WAECHTER_STARTER)
+
+    def sichern(self, exe):
+        """Starter auf DIESE EXE und Verknüpfung anlegen, falls nötig. → Text fürs Protokoll oder None (alles da)."""
+        if not exe:
+            return None
+        soll = waechter_starter_vbs(exe)
+        try:
+            ist = vbs_lesen(self.starter)
+        except OSError:
+            ist = None
+        meldungen = []
+        if ist != soll:
+            vbs_schreiben(self.starter, soll)
+            meldungen.append(f"Starter {'neu' if ist is None else 'nachgezogen'} ({exe})")
+        if not os.path.exists(self.lnk):
+            hilfe = os.path.join(self.daten_ordner, "sm_" + HILFSSKRIPT)
+            code = None
+            try:
+                vbs_schreiben(hilfe, verknuepfung_vbs(self.lnk, self.wscript, f'//B //Nologo "{self.starter}"',
+                                                      self.daten_ordner, symbol=exe, beschreibung=WAECHTER_BESCHREIBUNG))
+                os.makedirs(self.ordner, exist_ok=True)
+                code = self.ausfuehren(hilfe)
+            except Exception as e:
+                code = f"{type(e).__name__}"
+            finally:
+                _weg(hilfe)
+            meldungen.append(f"Verknüpfung {'angelegt' if os.path.exists(self.lnk) else f'NICHT angelegt (Rückgabe {code})'}"
+                             f": {self.lnk}")
+        return ("[SM] Autostart Wächter: " + "; ".join(meldungen)) if meldungen else None
+
+    def entfernen(self):
+        for p in (self.lnk, self.starter):
+            _weg(p)
+
+
 # ── Einzelinstanz ──────────────────────────────────────────────────────────────────────────────────────────────────────
 _MUTEX = []
 

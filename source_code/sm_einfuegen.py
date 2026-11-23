@@ -544,6 +544,23 @@ class Waechter:
         self._einfuegen(s)
 
     def _einfuegen(self, s):
+        # kaiscribe-sm-waechter-bleibt-n1: Merker unmittelbar vor dem Einfügen neu lesen – hat eine andere KaiScribe
+        # (anderer Prozess, z. B. Gast-Selbsttest oder der vorige stille Wächter) dasselbe schon eingefügt, nicht noch einmal
+        try:
+            schon = set(self.merker.lesen(s.nr).get("eingefuegt") or {})
+        except Exception:
+            schon = set()
+        weg = [k for k in s.ibl_offen if k in schon] + (["senf"] if s.senf_offen and "senf" in schon else [])
+        if weg:
+            for k in weg:
+                if k == "senf":
+                    s.senf_offen, s.senf_fertig, s.senf_eingefuegt = [], True, True
+                else:
+                    s.ibl_offen.pop(k, None)
+                    s.ibl_erledigt.add(k)
+            self.log(f"[SM] {s.nr}: {', '.join(weg)} schon eingefügt (Merker) – nicht noch einmal")
+            if not s.senf_offen and not s.ibl_offen:
+                return
         schluessel = list(s.ibl_offen) + (["senf"] if s.senf_offen else [])
         zeilen = [z for k in s.ibl_offen for z in s.ibl_offen[k]] + list(s.senf_offen)
         text = self.api.text(s.edit)
@@ -974,6 +991,9 @@ class Thread:
     def stop(self):
         self._stop.set()
 
+    def laeuft(self):
+        return self.t is not None and self.t.is_alive() and not self._stop.is_set()
+
     def _lauf(self):
         try:
             self.w.merker.aufraeumen()
@@ -994,3 +1014,145 @@ class Thread:
                 fehler += 1
                 if fehler in (1, 10, 100):
                     self.log(f"[SM] Takt-Fehler {type(e).__name__}: {e}")
+
+
+# ───────────────────── kaiscribe-sm-waechter-bleibt-n1: eigener Wächter-Prozess ─────────────────────
+# Peter 23.11.2026 09:25 (wie am 21.11. beschlossen): Der Senf muss im SpeechMagic-Diktat auftauchen, OHNE dass KaiScribe
+# offen ist. Bis 3.22.4 lief der Wächter im KaiScribe-Fenster und endete mit „Fenster zu“ (live 23.11. 08:13:50: Senf 004
+# nie eingefügt). Jetzt: eigener unsichtbarer Prozess `KaiScribe.exe --sm-waechter` (kein Fenster, keine Taskleiste),
+# genau einer je Windows-Sitzung (benannter Mutex), gestartet vom Autostart bei der Windows-Anmeldung und von jeder
+# KaiScribe (Start + jede Minute), falls keiner läuft. Fenster zu beendet ihn nie. Liegt eine neue EXE an derselben Stelle,
+# startet er sie als Nachfolger und endet (nie mitten in einem offenen SpeechMagic-Diktat).
+WAECHTER_ARG = "--sm-waechter"
+NACHFOLGER_ARG = "--nachfolger"
+WAECHTER_MUTEX = "Local\\KaiScribe-SM-Waechter"   # je Windows-Sitzung (Local\)
+NACHFOLGER_WARTEN_S = 30    # Nachfolger wartet so lange, bis der Vorgänger den Mutex freigibt
+PRUEF_S = 60                # Wächter-Prozess: neue EXE?  KaiScribe-Fenster: läuft der Wächter noch?
+_SPERRE = []
+
+
+def _k32():
+    import ctypes
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateMutexW.argtypes = [ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR]
+    k32.CreateMutexW.restype = wintypes.HANDLE
+    k32.OpenMutexW.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
+    k32.OpenMutexW.restype = wintypes.HANDLE
+    k32.CloseHandle.argtypes = [wintypes.HANDLE]
+    return ctypes, k32
+
+
+def waechter_sperre(name=WAECHTER_MUTEX):
+    """True = dieser Prozess führt den Wächter (benannter Mutex, gehört ihm bis zum Prozessende – auch bei Absturz gibt
+    Windows ihn frei). False = in dieser Sitzung wacht schon ein anderer. Außerhalb von Windows: True."""
+    if _SPERRE:
+        return True
+    try:
+        ctypes, k32 = _k32()
+    except (ImportError, AttributeError, OSError):
+        return True
+    h = k32.CreateMutexW(None, False, name)
+    schon_da = ctypes.get_last_error() == 183   # ERROR_ALREADY_EXISTS
+    if not h:
+        return True
+    if schon_da:
+        k32.CloseHandle(h)
+        return False
+    _SPERRE.append(h)
+    return True
+
+
+def waechter_laeuft(name=WAECHTER_MUTEX):
+    """Läuft in dieser Windows-Sitzung ein Wächter (Mutex vorhanden)? Außerhalb von Windows: None (unbekannt)."""
+    if _SPERRE:
+        return True
+    try:
+        ctypes, k32 = _k32()
+    except (ImportError, AttributeError, OSError):
+        return None
+    h = k32.OpenMutexW(0x00100000, False, name)    # SYNCHRONIZE
+    if h:
+        k32.CloseHandle(h)
+        return True
+    return False
+
+
+def waechter_noetig(cfg):
+    """Ein Wächter-Prozess lohnt nur, wenn SM_SENF oder SM_IBL jemanden nennen (Standard kp). Die zentrale Freigabe-Datei
+    prüft er selbst laufend (X: fehlt beim Anmelden oft noch)."""
+    return bool(list(getattr(cfg, "sm_senf", SM_STANDARD) or []) or list(getattr(cfg, "sm_ibl", SM_STANDARD) or []))
+
+
+def kind_umgebung(umgebung):
+    """Umgebung für den Start der EXE aus der EXE: PyInstaller-onefile gibt seinen Entpack-Ordner sonst an das Kind weiter –
+    endet das Fenster, löscht es den Ordner unter dem laufenden Wächter weg. Also zurücksetzen (PyInstaller ≥ 6.9) und die
+    alten Variablen entfernen."""
+    env = {k: v for k, v in dict(umgebung).items() if not (k.startswith("_PYI") or k in ("_MEIPASS2", "_MEIPASS"))}
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    return env
+
+
+def waechter_befehl(exe, nachfolger=False):
+    return [exe, WAECHTER_ARG] + ([NACHFOLGER_ARG] if nachfolger else [])
+
+
+def waechter_starten(exe, nachfolger=False, popen=None, umgebung=None):
+    """Wächter-Prozess losgelöst starten (kein Konsolenfenster, überlebt den Starter). → True, wenn gestartet."""
+    if not exe:
+        return False
+    import subprocess
+    popen = popen or subprocess.Popen
+    flags = 0
+    for n in ("DETACHED_PROCESS", "CREATE_NEW_PROCESS_GROUP", "CREATE_NO_WINDOW"):
+        flags |= getattr(subprocess, n, 0)
+    try:
+        popen(waechter_befehl(exe, nachfolger), creationflags=flags, close_fds=True, cwd=os.path.dirname(exe) or None,
+              env=kind_umgebung(os.environ if umgebung is None else umgebung),
+              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def waechter_gewuenscht(argv):
+    a = [str(x).strip().lower() for x in (argv or ())]
+    return WAECHTER_ARG in a, NACHFOLGER_ARG in a
+
+
+def exe_stand(pfad, stat=os.stat):
+    """(Größe, Änderungszeit) der EXE – None ohne Pfad (Start aus dem Quelltext) oder wenn nicht lesbar."""
+    if not pfad:
+        return None
+    try:
+        st = stat(pfad)
+        return (st.st_size, int(st.st_mtime))
+    except OSError:
+        return None
+
+
+class Pruefung:
+    """Wächter-Prozess: wann endet er? Neue EXE an derselben Stelle (zweimal gleich gesehen = fertig kopiert) → Nachfolger
+    starten und enden; SM_SENF/SM_IBL leer → enden. Nie, solange ein SpeechMagic-Diktat offen ist. → (aktion, grund),
+    aktion: None | "nachfolger" | "ende"."""
+
+    def __init__(self, stand_start):
+        self.start = stand_start
+        self.zuletzt = stand_start
+
+    def pruefen(self, stand_jetzt, noetig, diktat_offen):
+        neu = (self.start is not None and stand_jetzt is not None and stand_jetzt != self.start
+               and stand_jetzt == self.zuletzt)
+        if stand_jetzt is not None:
+            self.zuletzt = stand_jetzt
+        if diktat_offen:
+            return None, ""
+        if neu:
+            return "nachfolger", "neue KaiScribe-EXE liegt bereit"
+        if not noetig:
+            return "ende", "SM_SENF und SM_IBL aus"
+        return None, ""
+
+
+def diktat_offen(waechter):
+    return any(s is not None for s in list(getattr(waechter, "sitzungen", {}).values()))
