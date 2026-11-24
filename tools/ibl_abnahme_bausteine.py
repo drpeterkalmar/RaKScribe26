@@ -66,6 +66,20 @@ def hippo_datei(accno, version, nr=52):
                           "befundtext": {"hippo": dict(b["befundtext"], format=1)}}}
 
 
+def hippo_becken_datei(accno, version, mm=13):
+    """kaiscribe-rho-regel-becken-n1 (Georg FINAL 20.11.): mm=13 → RH 101 nachgestellt (13 mm re tiefer, BLD 20 mm als
+    ergebnis_becken, Abholer ≥ 1.3.18), mm=9 → Fall 61 (9 mm, nur Beschreibung)."""
+    d = hippo_datei(accno, version, nr=61)
+    if mm == 13:
+        bt = d["vorbefund"]["befundtext"]["hippo"]
+        bt["saetze"] = ["Beckenschiefstand von 13 mm, rechts tieferstehend.", "Beinlängendifferenz von 20 mm."]
+        bt["ergebnis_becken"] = list(bt["saetze"])
+        d["vorbefund"]["befundteil"] = [z.replace("9 mm", "13 mm").replace("Beinlängendifferenz 3 mm",
+                                                                               "Beinlängendifferenz 20 mm")
+                                        for z in d["vorbefund"]["befundteil"]]
+    return d
+
+
 def schreiben(ordner, d):
     p = os.path.join(ordner, f"{d['accession_number']}_{d['modul']}.json")
     tmp = p + ".tmp"
@@ -83,9 +97,11 @@ def main(argv=None):
     ap.add_argument("--frog-ohne")
     ap.add_argument("--lama")
     ap.add_argument("--squirrel")
+    ap.add_argument("--hippo-becken", help="AccNo: HIPPO-Becken-Baustein (--mm 13 = RH 101 nachgestellt, 9 = Fall 61)")
+    ap.add_argument("--mm", type=int, default=13, choices=(13, 9))
     ap.add_argument("--version", type=int, default=1)
     a = ap.parse_args(argv)
-    for acc in filter(None, (a.frog, a.hippo, a.frog_ohne, a.lama, a.squirrel)):
+    for acc in filter(None, (a.frog, a.hippo, a.frog_ohne, a.lama, a.squirrel, a.hippo_becken)):
         if not re.fullmatch(r"\d{12}", acc):
             sys.exit(f"AccNo {acc!r}: 12 Ziffern (Diktatnummer + Ziffer der Leistung)")
     if a.frog:
@@ -101,6 +117,12 @@ def main(argv=None):
         print("  erwartet Befund (Ende der Beschreibung):", " ".join(bt["messwerte"]))
         print("  erwartet Ergebnis: kein FROG-Punkt / Anmerkung:", bt["schluss"])
         print("  erwartet Prüfzeile (rot):", f["vorbefund"]["hinweise_fuer_befunder"][-1])
+    if a.hippo_becken:
+        f = hippo_becken_datei(a.hippo_becken, a.version, a.mm)
+        print(f"HIPPO-Becken {a.mm} mm", schreiben(a.ziel, f))
+        bt = f["vorbefund"]["befundtext"]["hippo"]
+        print("  erwartet Befund:  ", " ".join(bt["saetze"]))
+        print("  erwartet Ergebnis:", " / ".join(bt.get("ergebnis_becken") or ["(kein Becken-Punkt)"]), "/", bt["schluss"])
     if a.lama:
         f = vorrat_datei("lama", a.lama, a.version)
         print("LAMA ", schreiben(a.ziel, f))
