@@ -68,6 +68,9 @@ class Config:
     # nur für diese Kürzel (Standard kp, „aus“ = niemand); zusätzlich zentrale Freigabe-Datei (sm_einfuegen.py).
     sm_senf: List[str] = field(default_factory=lambda: ["kp"])
     sm_ibl: List[str] = field(default_factory=lambda: ["kp"])
+    # chirp-fachwortliste-n1 (Peter 24.11.2026): zusätzliche Fachwortliste aus SpeechMagic-Briefen für chirp_3
+    # (phrases.json chirp_sm, stt.CHIRP_SM_BOOST), nur für diese Kürzel. Standard aus (Messung 24.11.: bei kp nicht besser).
+    chirp_sm: List[str] = field(default_factory=list)
     sm_uebernehmen_taste: str = "ctrl+alt+s"   # Nachtrag 21.11. 21:13: „Übernehmen“ = [SENF]-Marken weg (aus = keine Taste)
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
@@ -160,6 +163,8 @@ def load_config(path):
         cfg.sm_senf = _senf.kuerzel_liste(sek.get("SM_SENF", ""))      # kp | kp, mh | aus
     if "SM_IBL" in sek:
         cfg.sm_ibl = _senf.kuerzel_liste(sek.get("SM_IBL", ""))
+    if "CHIRP_SM" in sek:
+        cfg.chirp_sm = _senf.kuerzel_liste(sek.get("CHIRP_SM", ""), standard=())   # kp | kp, rg | aus
     cfg.sm_uebernehmen_taste = (sek.get("SM_UEBERNEHMEN_TASTE", "") or cfg.sm_uebernehmen_taste).strip().lower()
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):

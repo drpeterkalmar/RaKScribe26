@@ -4231,6 +4231,17 @@ class RaKScribeApp(ctk.CTk):
         self._kurzhinweis("Senf kopiert" if ok else "Senf nicht kopiert – Zwischenablage gesperrt", 3000)
         return ok
 
+    def _chirp_sm_an(self):
+        """chirp-fachwortliste-n1 (Peter 24.11.2026): SpeechMagic-Fachwortliste für chirp_3 nur, wenn der Befunder des
+        offenen CAS-Diktats in config.ini CHIRP_SM steht (Standard: aus = niemand). Ohne CAS-Auftrag → aus."""
+        a = getattr(self, "_cas", None)
+        liste = getattr(CFG, "chirp_sm", [])
+        an = a is not None and _senf.aktiv(a.benutzer, liste)
+        if an:
+            log(f"[CHIRP3] Fachwortliste SpeechMagic an ({a.benutzer}, {len(_stt.chirp_sm_phrases())} Phrasen, "
+                f"Boost {_stt.CHIRP_SM_BOOST})")
+        return an
+
     def _senf_start(self, a):
         self._senf = None
         self._senf_zeigen("aus", "")
@@ -5402,6 +5413,7 @@ def main():
         _wav_modus_einrichten()
     ctk.set_appearance_mode("dark")
     app = RaKScribeApp(minimiert=minimiert)
+    _stt.SM_AKTIV = getattr(app, "_chirp_sm_an", None)   # chirp-fachwortliste-n1: Fachwortliste nur für Kürzel in CHIRP_SM
     if minimiert:
         # Nur als Symbol in die Taskleiste, ohne Fenster im Vordergrund (kein Fokus-Klau, z. B. bei der CAS-Anmeldung).
         # CTk 6.0.0 versteckt das Fenster in mainloop() (withdraw für die dunkle Titelleiste) und zeigt es nur ohne

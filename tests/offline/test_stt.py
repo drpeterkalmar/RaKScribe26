@@ -107,5 +107,56 @@ src = (ROOT / "source_code" / "RaKScribe.py").read_text(encoding="utf-8")
 check("EXE nutzt stt.py (keine eigenen Listen/Worker mehr)", "_stt.chirp3_worker" in src and "CHIRP_PHRASES = [" not in src
       and "MEDICAL_PHRASES = [" not in src and "phrases=_stt.medical_phrases()" in src)
 
+# chirp-fachwortliste-n1 (Peter 24.11.2026): SpeechMagic-Fachwortliste als Schalter je Kürzel, Standard aus
+import re  # noqa: E402
+SM = stt.chirp_sm_phrases()
+alle = stt.chirp_phrases() + SM
+check("chirp_sm: Liste aus phrases.json, ohne die 85 kuratierten, keine Doppelten",
+      200 <= len(SM) <= 400 and SM == [p for p in PHR["chirp_sm"] if p.lower() not in {c.lower() for c in PHR["chirp"]}]
+      and len({p.lower() for p in alle}) == len(alle), str(len(SM)))
+check("chirp_sm: Google-Grenzen (chirp_3 ≤ 1.000 Phrasen, ≤ 100 Zeichen je Phrase, Boost ≤ 20)",
+      len(alle) <= 1000 and max(len(p) for p in alle) <= 100 and 0 < stt.CHIRP_SM_BOOST <= stt.CHIRP_BOOST <= 20)
+check("chirp_sm: keine Titel/Anreden/Ziffern (Namensschutz, Liste nur Fachwörter)",
+      not [p for p in SM if re.search(r"\d|\b(Dr|Prof|Frau|Herr|Herrn|Prim|OA|Pat|Mag)\b", p)])
+gesehen.clear()
+stt.chirp3_request("tok", "eu", "QUJD", urlopen=urlopen)
+ps0 = gesehen["body"]["config"]["adaptation"]["phraseSets"]
+stt.chirp3_request("tok", "eu", "QUJD", urlopen=urlopen, sm=True)
+ps1 = gesehen["body"]["config"]["adaptation"]["phraseSets"]
+check("chirp3_request: ohne Schalter genau wie bisher (1 PhraseSet, 85 × Boost 10)",
+      len(ps0) == 1 and [p["value"] for p in ps0[0]["inlinePhraseSet"]["phrases"]] == stt.chirp_phrases())
+check("chirp3_request sm=True: + 2. PhraseSet = chirp_sm mit eigenem Boost, kuratierte unverändert",
+      len(ps1) == 2 and ps1[0] == ps0[0] and [p["value"] for p in ps1[1]["inlinePhraseSet"]["phrases"]] == SM
+      and {p["boost"] for p in ps1[1]["inlinePhraseSet"]["phrases"]} == {stt.CHIRP_SM_BOOST})
+kw = []
+alt_stub = lambda token, loc, b64: kw.append("alt") or "x"  # noqa: E731
+neu_stub = lambda token, loc, b64, sm=False: kw.append(sm) or "x"  # noqa: E731
+p1 = np.zeros(16000, dtype=np.int16)
+stt.SM_AKTIV = None
+stt.chirp3_worker(p1, 16000, "eu", "t", request=alt_stub)
+stt.SM_AKTIV = lambda: False
+stt.chirp3_worker(p1, 16000, "eu", "t", request=alt_stub)
+stt.SM_AKTIV = lambda: 1 / 0
+stt.chirp3_worker(p1, 16000, "eu", "t", request=alt_stub)
+check("chirp3_worker: Schalter aus/fehlt/Fehler → Request ohne sm-Argument (alte Attrappen der Tests bleiben gültig)",
+      kw == ["alt", "alt", "alt"], str(kw))
+stt.SM_AKTIV = lambda: True
+stt.chirp3_worker(np.zeros(60 * 16000, dtype=np.int16), 16000, "eu", "t", request=neu_stub)
+stt.SM_AKTIV = None
+check("chirp3_worker: Schalter an → jedes Segment mit sm=True", kw[3:] == [True, True], str(kw))
+sys.path.insert(0, str(ROOT / "source_code"))
+import tempfile, config as _cfg  # noqa: E401,E402
+with tempfile.TemporaryDirectory() as td:
+    werte = {}
+    for name, zeile in (("fehlt", ""), ("kp", "CHIRP_SM = kp\n"), ("zwei", "CHIRP_SM = kp, RG\n"), ("aus", "CHIRP_SM = aus\n")):
+        pf = pathlib.Path(td) / (name + ".ini")
+        pf.write_text("[SETTINGS]\n" + zeile, encoding="utf-8")
+        werte[name] = _cfg.load_config(str(pf)).chirp_sm
+check("config.ini CHIRP_SM: Standard aus (niemand), kp | kp, rg | aus",
+      werte == {"fehlt": [], "kp": ["kp"], "zwei": ["kp", "rg"], "aus": []}, str(werte))
+check("EXE: Schalter je Befunder des CAS-Diktats (SM_AKTIV ← _chirp_sm_an, Logzeile [CHIRP3] Fachwortliste)",
+      "_stt.SM_AKTIV = getattr(app, \"_chirp_sm_an\", None)" in src and "def _chirp_sm_an(self)" in src
+      and "_senf.aktiv(a.benutzer, liste)" in src and "[CHIRP3] Fachwortliste SpeechMagic an" in src)
+
 print("\n" + ("✅ SPRACHERKENNUNG PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

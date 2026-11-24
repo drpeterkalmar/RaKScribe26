@@ -474,11 +474,11 @@ def stt_urlopen(req, timeout=60):
     return urllib.request.urlopen(neu, timeout=timeout)
 
 
-def chirp3_test(_token_ignoriert, loc, wav_b64, timeout=60):
+def chirp3_test(_token_ignoriert, loc, wav_b64, timeout=60, sm=False):
     """stt.chirp3_request im Testprojekt (als request= für stt.chirp3_worker)."""
     sys.path.insert(0, str(ROOT / "source_code"))
     import stt as _stt
-    return _stt.chirp3_request(_token(), loc, wav_b64, timeout=timeout, urlopen=stt_urlopen)
+    return _stt.chirp3_request(_token(), loc, wav_b64, timeout=timeout, urlopen=stt_urlopen, sm=sm)
 
 
 def buche_vertex(modell, ort, antwort):

@@ -2,6 +2,9 @@
 
 - medical_phrases(): Phrasen für das Streaming (Live-Anzeige, latest_long) — aus phrases.json (medical_exe).
 - chirp_phrases(): kuratiertes chirp_3-PhraseSet (identisch zur Web-App) — aus phrases.json (chirp).
+- chirp_sm_phrases(): chirp-fachwortliste-n1 (24.11.2026) – aus SpeechMagic-Briefen gewonnene Fachwortliste
+  (phrases.json → chirp_sm), ZUSÄTZLICH zu den 85 kuratierten, mit niedrigerem Boost CHIRP_SM_BOOST; nur wenn der
+  Schalter (config.ini CHIRP_SM = Kürzel-Liste) für den Befunder des Diktats an ist (SM_AKTIV, von der EXE gesetzt).
 - chirp3_request / chirp3_worker: komplettes Diktat an chirp_3 (STT v2, Location eu); > 50 s in Segmenten
   50 s + 4 s Rückhören, Überlappung per Wortvergleich zusammengefügt (stitch_overlaps).
 Der Streaming-Teil (Mikrofon → Live-Anzeige) liegt in aufnahme.py (Umbau Schritt 6).
@@ -44,8 +47,29 @@ def chirp_phrases():
     return _phrasen()["chirp"]
 
 
-def chirp3_request(token, loc, wav_b64, timeout=60, urlopen=None):
-    """Ein chirp_3-Request (≤ 60 s Audio). urlopen ist für Tests austauschbar."""
+# chirp-fachwortliste-n1: Boost der SpeechMagic-Fachwortliste (die 85 kuratierten bleiben bei 10). Gemessen am
+# 24.11.2026 im Testprojekt (tools/vm/chirp_fachwort/cfw_messen.py, Bericht BERICHT-CHIRP-FACHWORTLISTE-N1.md).
+CHIRP_BOOST = 10
+CHIRP_SM_BOOST = 5
+
+
+def chirp_sm_phrases():
+    """chirp-fachwortliste-n1: Fachwortliste aus den SpeechMagic-Briefen (phrases.json → chirp_sm), ohne die schon
+    kuratierten (Groß/Klein egal). chirp_3 nimmt bis 1.000 Phrasen (Google-Doku 24.11.2026)."""
+    schon = set(p.lower() for p in chirp_phrases())
+    return [p for p in _phrasen().get("chirp_sm", []) if p.lower() not in schon]
+
+
+def chirp_phrase_sets(sm=False):
+    """PhraseSets für chirp_3: kuratiert (Boost 10), mit sm=True zusätzlich die SpeechMagic-Liste (eigener Boost)."""
+    sets = [{"inlinePhraseSet": {"phrases": [{"value": p, "boost": CHIRP_BOOST} for p in chirp_phrases()]}}]
+    if sm:
+        sets.append({"inlinePhraseSet": {"phrases": [{"value": p, "boost": CHIRP_SM_BOOST} for p in chirp_sm_phrases()]}})
+    return sets
+
+
+def chirp3_request(token, loc, wav_b64, timeout=60, urlopen=None, sm=False):
+    """Ein chirp_3-Request (≤ 60 s Audio). urlopen ist für Tests austauschbar. sm=True: + SpeechMagic-Fachwortliste."""
     urlopen = urlopen or urllib.request.urlopen
     host = 'speech' if loc == 'global' else loc + '-speech'
     url = (f"https://{host}.googleapis.com/v2/projects/rakscribe/"
@@ -53,8 +77,7 @@ def chirp3_request(token, loc, wav_b64, timeout=60, urlopen=None):
     cfg = {"languageCodes": ["de-DE"], "model": "chirp_3",
            "autoDecodingConfig": {},
            "features": {"enableAutomaticPunctuation": True},
-           "adaptation": {"phraseSets": [{"inlinePhraseSet": {"phrases": [
-               {"value": p, "boost": 10} for p in chirp_phrases()]}}]}}
+           "adaptation": {"phraseSets": chirp_phrase_sets(sm)}}
     body = json.dumps({"config": cfg, "content": wav_b64}).encode()
     req = urllib.request.Request(url, data=body, headers={
         "Authorization": "Bearer " + token,
@@ -100,18 +123,31 @@ def wav_b64(pcm_int16, samplerate):
 
 # kaiscribe-sonnet-n2: Zähler für die an Chirp geschickten Audiosekunden (nutzung.Zaehler.stt), von der EXE gesetzt
 ZAEHLER = None
+# chirp-fachwortliste-n1: von der EXE gesetzt – () → True, wenn für den Befunder dieses Diktats die SpeechMagic-
+# Fachwortliste an ist (config.ini CHIRP_SM). None/Fehler → aus (nur die 85 kuratierten Phrasen, wie bisher).
+SM_AKTIV = None
 
 
-def chirp3_worker(pcm_int16, samplerate, loc, token, request=None):
-    """Komplettes Diktat (int16-Array) → Text. 50-s-Segmente mit 4 s Rückhören (chirp_3: max. 60 s je Request)."""
+def sm_aktiv():
+    try:
+        return bool(SM_AKTIV()) if SM_AKTIV is not None else False
+    except Exception:
+        return False
+
+
+def chirp3_worker(pcm_int16, samplerate, loc, token, request=None, sm=None):
+    """Komplettes Diktat (int16-Array) → Text. 50-s-Segmente mit 4 s Rückhören (chirp_3: max. 60 s je Request).
+    sm=None → Schalter SM_AKTIV der EXE; nur bei an bekommt request das Argument sm=True (alte Attrappen bleiben gültig)."""
     request = request or chirp3_request
+    sm = sm_aktiv() if sm is None else bool(sm)
     SEG = 50 * samplerate      # 50s Segmente
     OV = 4 * samplerate        # 4s Rueckhoeren
     texts = []
     start = 0
     while start < len(pcm_int16):
         end = min(start + SEG, len(pcm_int16))
-        txt = request(token, loc, wav_b64(pcm_int16[start:end], samplerate))
+        b64 = wav_b64(pcm_int16[start:end], samplerate)
+        txt = request(token, loc, b64, sm=True) if sm else request(token, loc, b64)
         if ZAEHLER is not None:          # auch ein leeres/fehlgeschlagenes Stück hat Google bekommen
             try:
                 ZAEHLER((end - start) / float(samplerate))
