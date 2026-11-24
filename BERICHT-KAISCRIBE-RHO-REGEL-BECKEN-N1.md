@@ -56,3 +56,9 @@ grep „BEGIN PRIVATE KEY“ in den Änderungen = 0.
 - **HIPPO:** Mit 3.27.1 war M13 (13 mm re tiefer, BLD 20 mm) rot. Die Brücke 2.5.35 reicht `befundtext.hippo.ergebnis_becken` nicht an KaiScribe durch, deshalb kam nur die Rückfall-Regel (13 mm) ins Ergebnis, die BLD fehlte. Fix **3.28.1**: `ibl_bausteine.text_nachladen` ergänzt das Feld aus der Abholer-Datei (gleiche AccNo/Fassung, nie bei Kind). Mit 3.28.1 grün: „1. Beckenschiefstand von 13 mm, rechts tieferstehend. 2. Beinlängendifferenz von 20 mm.“ + Anmerkung, kein „Regelrechte Darstellung“. Gegenprobe M9 (9 mm) → nur Beschreibung, Normal-Ergebnis bleibt.
 - Die Abholer-Version auf der VM wurde nicht gelesen (vom Büro-PC aus nicht lesbar). Der Baustein war für die Abnahme nachgestellt (`tools/ibl_abnahme_bausteine.py --hippo-becken`) und ist wieder entfernt. Brücken-Fix: Karte #565. D (ris-mods RHO_REGEL.md Querverweis) nicht gemacht.
 - Kanban #533 → fertig.
+
+## Teil 2 – Nachprüfung 25.11.2026 00:30 (Job kaiscribe-rho-regel-becken-n1-einspielen, Hetzner)
+- Einspielen und Abnahme R1–R3/H1 waren schon in der Abend-Runde erledigt (siehe oben, 3.28.1 live, enthält 3.26.0 und 3.27.0). Kein zweiter Tausch, kein zweiter Abnahmelauf nötig (Ordi nachts nicht angefasst).
+- Live-Anzeige kp (Nachtrag 3.27.0): Abnahme B steht in BERICHT-KAISCRIBE-LIVE-ANZEIGE-AUS-KP-N1.md (Messwert 2,8 s). Teil C (Kostenrechnung aus nutzung-JSON/rakscribe.log 17.–23.11.) und B4 (rg-Log lesen) sind dort als offen an `kaiscribe-stt-tagesdeckel-n1-einspielen` weitergegeben.
+- **Offen: D** (ris-mods `ibl/RHO_REGEL.md` Querverweis „seit 3.26.0 umgesetzt: befund_regeln.rho_regel/rho_regel_anwenden (+ befundRegeln.ts), Register rho-eine-regel; Ausgänge: diktierter Schlussbefund, Osteopen, Anzeige des IB-Lab-Rho-Bausteins“). Dieser Job hat nur eine RaKScribe26-Arbeitskopie, ris-mods ist hier nur Lese-Spiegel. Nur Doku, `--keine-tests`; Folgejob/Karte nötig.
+- Offen: Abholer-Version auf der VM (≥ 1.3.18) nicht gelesen.
