@@ -22,11 +22,14 @@ STANDARD_INHALT = (
     "# Befund-KI: gemini (Vertex AI, gemini-3.5-flash am EU-Endpoint — Schlüssel aus kaiscribe-praxis-key.json)\n"
     "LLM_PROVIDER = gemini\n"
     "LLM_MODEL = gemini-3.5-flash\n"
-    "# Anbieter: anthropic (Standard seit 16.11.2026: Claude Sonnet 5.5, Text maskiert; jedes Problem → Gemini als\n"
-    "# Rückfall; Schlüssel anthropic_api_key in kaiscribe-praxis-key.json) | gemini\n"
+    "# Anbieter: anthropic (Standard seit 16.11.2026: Claude Sonnet 5.5, Text maskiert; Schlüssel anthropic_api_key in\n"
+    "# kaiscribe-praxis-key.json) | gemini (Handschalter)\n"
     "LLM_ANBIETER = anthropic\n"
     "ANTHROPIC_MODELL = claude-sonnet-5-5\n"
-    "ANTHROPIC_FRIST = 20\n"
+    "ANTHROPIC_FRIST = 45\n"
+    "# KI_RUECKFALL = aus (Standard seit 24.11.2026): kein automatischer Gemini-Aufruf; Claude ein zweites Mal, dann\n"
+    "# ohne KI (Diktat unformatiert + rote Prüfzeile). an = alter Weg (Problem → Gemini)\n"
+    "KI_RUECKFALL = aus\n"
 )
 
 
@@ -45,7 +48,10 @@ class Config:
     llm_anbieter: str = "anthropic"
     llm_anbieter_korrektur: str = ""
     anthropic_modell: str = "claude-sonnet-5-5"
-    anthropic_frist: int = 20
+    anthropic_frist: int = 45   # kaiscribe-ohne-gemini-n1 (24.11.2026): 45 s statt 20 s (kein Gemini mehr dahinter)
+    # kaiscribe-ohne-gemini-n1 (Peter 23.11.2026 „no gemini please derzeit“): KI_RUECKFALL = aus (Standard) → nie Gemini
+    # automatisch; an = alter Weg (Anthropic-Problem → derselbe Aufruf über Gemini)
+    ki_rueckfall: bool = False
     rag_beispiele: int = 0      # v3.2: Praxis-Beispiele aus practice_reports.db, Standard AUS
     # v3.18.5 (Nachtrag RH 99): Lauf-Protokoll je Befund (STT-Text, Vorschlag, Modell, Prompt-Stand), auch ohne EOL;
     # LAUF_ORDNER = aus → nie. Fehlt das Laufwerk, schreibt KaiScribe nichts. kaiscribe-umzug-n1-exe: X:\KaiScribe, solange
@@ -78,6 +84,21 @@ def _int(sek, name, standard, warnungen):
     except ValueError:
         warnungen.append(f"config.ini: {name} = {roh!r} ist keine Zahl — Standardwert {standard} wird verwendet.")
         return standard
+
+
+ALT_FRIST = 20   # bis 3.23.x mitgelieferter Standard (darunter lief Gemini) — steht in den config.ini der Ordi-PCs
+
+
+def _an_aus(sek, name, standard, warnungen):
+    roh = sek.get(name, "").strip().lower()
+    if not roh:
+        return standard
+    if roh in ("an", "ein", "ja", "1", "true", "gemini"):
+        return True
+    if roh in ("aus", "nein", "0", "false"):
+        return False
+    warnungen.append(f"config.ini: {name} = {roh!r} unbekannt (an|aus) — {'an' if standard else 'aus'} wird verwendet.")
+    return standard
 
 
 ANBIETER = ("gemini", "anthropic")   # später: lokales Modell (VM) als dritter Anbieter
@@ -126,7 +147,10 @@ def load_config(path):
     cfg.llm_anbieter = _anbieter(sek, "LLM_ANBIETER", "anthropic", cfg.warnungen)
     cfg.llm_anbieter_korrektur = _anbieter(sek, "LLM_ANBIETER_KORREKTUR", "", cfg.warnungen)
     cfg.anthropic_modell = (sek.get("ANTHROPIC_MODELL", "") or cfg.anthropic_modell).strip()
-    cfg.anthropic_frist = max(3, _int(sek, "ANTHROPIC_FRIST", 20, cfg.warnungen))
+    cfg.anthropic_frist = max(3, _int(sek, "ANTHROPIC_FRIST", 45, cfg.warnungen))
+    if cfg.anthropic_frist == ALT_FRIST:   # ohne-gemini-n1: alte Standardzeile „ANTHROPIC_FRIST = 20“ der PCs → neuer Standard
+        cfg.anthropic_frist = 45
+    cfg.ki_rueckfall = _an_aus(sek, "KI_RUECKFALL", False, cfg.warnungen)
     cfg.lauf_ordner = (sek.get("LAUF_ORDNER", "") or cfg.lauf_ordner).strip().strip('"')
     cfg.ibl_ablage = (sek.get("IBL_ABLAGE", "") or cfg.ibl_ablage).strip().strip('"')
     if "SENF_ANZEIGE" in sek:

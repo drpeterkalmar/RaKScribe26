@@ -11,6 +11,9 @@ Rückfall. Jeder Rückfall wird gezählt, und die an Chirp (Google-Spracherkennu
   tagesbericht_<JJJJ-MM-TT>.txt daneben. Hochrechnung Chirp (Monat bisher / Tage × Monatstage) > WARN_EUR → Warnzeile
   „WARNUNG“ und warnung_<JJJJ-MM>.txt (seit sonnet-n3-beleg inkl. Live-Anzeige/Streaming, die kostet bei Google auch) (für die Kanban-Karte am Mac, tools/mac/kaiscribe_chirp_warnung.py). Seit
   sonnet-n3-beleg: gezählt ab dem ersten Tag mit Daten im Monat, Warnung erst ab MIN_TAGE gezählten Tagen.
+- kaiscribe-ohne-gemini-n1 (24.11.2026): kein Gemini-Rückfall mehr → „ki.ohne_ki“ (je Rolle in „ohne_ki_rolle“, je Grund-
+  Kategorie in „ohne_ki_grund“) und „ki.zweitversuch“ (Claude erst im zweiten Versuch). Alte Dateien mit „rueckfall“ werden
+  weiter gelesen (KI_RUECKFALL = an zählt wie bisher).
 - Fehler beim Schreiben sind nie fatal (Laufwerk weg → still nichts).
 """
 import calendar
@@ -107,7 +110,19 @@ class Zaehler:
 
         def fn(td):
             ki = td.setdefault("ki", {})
-            if info.get("rueckfall"):
+            if info.get("zweitversuch"):     # jeder zweite Anthropic-Versuch; _ok = er hat den Text geliefert
+                ki["zweitversuch"] = ki.get("zweitversuch", 0) + 1
+                if not info.get("ohne_ki"):
+                    ki["zweitversuch_ok"] = ki.get("zweitversuch_ok", 0) + 1
+            if info.get("ohne_ki"):
+                ki["ohne_ki"] = ki.get("ohne_ki", 0) + 1
+                ro = td.setdefault("ohne_ki_rolle", {})
+                r = str(info.get("rolle") or "?")[:8]
+                ro[r] = ro.get(r, 0) + 1
+                gr = td.setdefault("ohne_ki_grund", {})
+                k = _grund_kategorie(info["ohne_ki"])
+                gr[k] = gr.get(k, 0) + 1
+            elif info.get("rueckfall"):
                 ki["rueckfall"] = ki.get("rueckfall", 0) + 1
                 gr = td.setdefault("rueckfall_grund", {})
                 k = _grund_kategorie(info["rueckfall"])
@@ -143,13 +158,13 @@ def monat_summen(ordner, monat):
 
 
 def _summe(tage, nur_tag=None):
-    s = {"anthropic": 0, "gemini": 0, "rueckfall": 0, "befunde": 0, "usd": 0.0, "chirp_s": 0.0, "stream_s": 0.0,
-         "gruende": {}}
+    s = {"anthropic": 0, "gemini": 0, "rueckfall": 0, "ohne_ki": 0, "zweitversuch": 0, "zweitversuch_ok": 0, "befunde": 0, "usd": 0.0,
+         "chirp_s": 0.0, "stream_s": 0.0, "gruende": {}, "ohne_gruende": {}, "ohne_rollen": {}}
     for tag, td in (tage or {}).items():
         if nur_tag and tag != nur_tag:
             continue
         ki = td.get("ki", {})
-        for k in ("anthropic", "gemini", "rueckfall"):
+        for k in ("anthropic", "gemini", "rueckfall", "ohne_ki", "zweitversuch", "zweitversuch_ok"):
             s[k] += int(ki.get(k, 0) or 0)
         s["befunde"] += int(td.get("befunde", 0) or 0)
         s["usd"] += float(td.get("anthropic_usd", 0) or 0)
@@ -157,6 +172,10 @@ def _summe(tage, nur_tag=None):
         s["stream_s"] += float((td.get("stt_s") or {}).get("streaming", 0) or 0)
         for g, n in (td.get("rueckfall_grund") or {}).items():
             s["gruende"][g] = s["gruende"].get(g, 0) + int(n or 0)
+        for g, n in (td.get("ohne_ki_grund") or {}).items():
+            s["ohne_gruende"][g] = s["ohne_gruende"].get(g, 0) + int(n or 0)
+        for g, n in (td.get("ohne_ki_rolle") or {}).items():
+            s["ohne_rollen"][g] = s["ohne_rollen"].get(g, 0) + int(n or 0)
     return s
 
 
@@ -212,10 +231,16 @@ def tagesbericht(ordner, tag):
     def ges(dct, k):
         return sum(v[k] for v in dct.values())
     h_rf, m_rf = ges(heute, "rueckfall"), ges(mon, "rueckfall")
-    gruende = {}
-    for v in heute.values():
-        for g, n in v["gruende"].items():
-            gruende[g] = gruende.get(g, 0) + n
+    def zus(dct, k):
+        aus = {}
+        for v in dct.values():
+            for g, n in v[k].items():
+                aus[g] = aus.get(g, 0) + n
+        return aus
+
+    def liste(d):
+        return " (" + ", ".join(f"{g}: {n}" for g, n in sorted(d.items())) + ")" if d else ""
+    gruende = zus(heute, "gruende")
     chirp_m = ges(mon, "chirp_s")
     erster = erster_tag(alle)
     stream_m = ges(mon, "stream_s")
@@ -224,7 +249,11 @@ def tagesbericht(ordner, tag):
          f"Befund-KI heute: {ges(heute, 'befunde')} Befunde, Aufrufe Claude {ges(heute, 'anthropic')}, "
          f"Rückfälle auf Gemini {h_rf}" + (" (" + ", ".join(f"{g}: {n}" for g, n in sorted(gruende.items())) + ")"
                                            if gruende else "") + f", nur Gemini {ges(heute, 'gemini')}",
+         f"Ohne KI (kein Rückfall) heute {ges(heute, 'ohne_ki')}" + liste(zus(heute, "ohne_gruende"))
+         + (" je Rolle" + liste(zus(heute, "ohne_rollen")) if ges(heute, "ohne_ki") else "")
+         + f", zweite Claude-Versuche {ges(heute, 'zweitversuch')} (davon geklappt {ges(heute, 'zweitversuch_ok')})",
          f"Befund-KI Monat {monat}: Aufrufe Claude {ges(mon, 'anthropic')}, Rückfälle auf Gemini {m_rf}, "
+         f"ohne KI {ges(mon, 'ohne_ki')}, zweite Versuche {ges(mon, 'zweitversuch')}, "
          f"Anthropic {ges(mon, 'usd'):.2f} $ (heute {ges(heute, 'usd'):.2f} $)",
          f"Spracherkennung Chirp: heute {ges(heute, 'chirp_s') / 60:.1f} min, Monat {chirp_m / 60:.1f} min "
          f"≈ {chirp_eur(chirp_m):.2f} € (× {CHIRP_USD_MIN} $/min)",
@@ -234,6 +263,7 @@ def tagesbericht(ordner, tag):
     for pc in sorted(alle):
         h = heute[pc]
         z.append(f"  {pc}: heute Befunde {h['befunde']}, Claude {h['anthropic']}, Rückfall {h['rueckfall']}, "
+                 f"ohne KI {h['ohne_ki']}, "
                  f"Gemini {h['gemini']}, Chirp {h['chirp_s'] / 60:.1f} min, Live {h['stream_s'] / 60:.1f} min")
     warnung = warnung_noetig(hoch, tag, erster)
     if warnung:

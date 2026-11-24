@@ -144,6 +144,12 @@ jobs:
         run: python tests/offline/test_gws_seitlich.py
       - name: GWS a.p.-Normaltext ohne Skoliose (Peter 20.11.2026, #459) – ohne/mit Diktat, mit SQUIRREL
         run: python tests/offline/test_gws_ap_normaltext.py
+      - name: Befund-KI-Weiche ohne Gemini-Rückfall (zweiter Claude-Versuch, dann ohne KI; Handschalter gemini) (kaiscribe-ohne-gemini-n1)
+        run: python tests/offline/test_llm_anbieter.py
+      - name: EXE-Ablauf ohne KI (zweimal Frist → Diktat unverändert + rote Prüfzeile, nichts eingefügt, kein Gemini) (kaiscribe-ohne-gemini-n1)
+        run: python tests/offline/test_ohne_ki_ui.py
+      - name: Nutzungszähler + Tagesbericht (ohne KI je Rolle/Grund, Zweitversuche) (kaiscribe-ohne-gemini-n1)
+        run: python tests/offline/test_nutzung.py
       - name: Regel-Register (jede freigegebene Befundregel mit Wortlaut in Prompt/Validator/Regeln, Skill 1–13/3a–3af)
         run: python tests/offline/test_regel_register.py
       - name: Kontext aus der Datenbank des RIS + IB-Lab-Gerüst vor dem Diktat (v3.14.0)

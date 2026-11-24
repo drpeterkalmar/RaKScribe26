@@ -16,12 +16,20 @@ Anthropic-Weg (Peters Entscheid 03.11.2026: Claude direkt bei Anthropic NUR mit 
   Nummern, Adressen darf der Befund weglassen wie bei Gemini (das lässt sie selbst weg, Messung 13.11.: 0/5 bzw. 1/5) —
   sonst ginge jeder Befund mit Zuweiser im Diktat doppelt (erst Claude, dann Gemini auf Google-Kosten).
 
+kaiscribe-ohne-gemini-n1 (Peter 23.11.2026 „no gemini please derzeit“): KI_RUECKFALL = aus (Standard) → nie mehr ein
+automatischer Gemini-Aufruf. Statt Rückfall: Frist 45 s, bei Netzfehler/Zeitüberschreitung/HTTP 429/5xx/overloaded und bei
+Rueckfall/MaskeUnsicher EIN zweiter Anthropic-Versuch nach kurzer Pause; geht auch der schief → OhneKi (der Aufrufer nimmt
+den Diktattext ohne KI: Call 0 → Rohtext, Befund → Diktat unformatiert + rote Prüfzeile, Prüfung → entfällt).
+KI_RUECKFALL = an = alter Weg (ein Versuch, dann Gemini). LLM_ANBIETER = gemini bleibt als Handschalter.
+
 ki_maske.py ist eine KOPIE von ~/dev/ris-mods/bruecke/ki_maske.py (KaiFormat); tests/offline/test_llm_anbieter.py
 prüft die Gleichheit, solange ris-mods daneben liegt.
 """
 import json
 import re
+import socket
 import time
+import urllib.error
 import urllib.request
 
 import ki_maske
@@ -29,7 +37,8 @@ import ki_maske
 ANBIETER = ("gemini", "anthropic")
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_MODELL = "claude-sonnet-5-5"   # Standard seit sonnet-n2 (vorher Haiku nur Messung)
-ANTHROPIC_FRIST_S = 20          # Live-Diktat darf nicht hängen: danach Gemini
+ANTHROPIC_FRIST_S = 45          # ohne-gemini-n1: live wird im Hintergrund diktiert, der Roboter wartet (vorher 20 s → Gemini)
+ZWEITVERSUCH_PAUSE_S = 2.0      # Pause vor dem einen zweiten Anthropic-Versuch
 MAX_TOKENS = 4000
 
 # $ je 1 Mio Token (Input, Cache-Lesen, Cache-Schreiben 5 min, Output) — Anthropic-Preisliste; Haiku 5.5 bis 100k Prompt.
@@ -54,7 +63,63 @@ _VAL_ANFANG = "Du bist ein radiologischer Qualitätskontrolleur"
 
 
 class Rueckfall(Exception):
-    """Anthropic-Antwort nicht verwendbar → Gemini. Text = Kategorie (ohne Patientendaten)."""
+    """Anthropic-Antwort nicht verwendbar (→ zweiter Versuch, dann ohne KI bzw. mit KI_RUECKFALL = an Gemini).
+    Text = Kategorie (ohne Patientendaten)."""
+
+
+class OhneKi(Exception):
+    """ohne-gemini-n1: Anthropic auch im zweiten Versuch nicht verwendbar, KI_RUECKFALL = aus → kein Gemini. Der Aufrufer
+    nimmt den Text ohne KI weiter (nie einen Befund verlieren). grund = Kategorie (ohne Werte), rolle = korr/gen/val."""
+
+    def __init__(self, grund, rolle="gen"):
+        super().__init__(grund)
+        self.grund, self.rolle = grund, rolle
+
+
+# Wortlaut der roten Prüfzeile (Regel-Register „ohne-ki-pruefzeile“; Web: llmAnbieter.ts OHNE_KI_ZEILE)
+OHNE_KI_ZEILE = "KI nicht verfügbar – Diktat unformatiert übernommen, bitte prüfen."
+
+
+class HttpFehler(Exception):
+    """HTTP-Fehler von Anthropic (nur Statuscode/Typ, nie der Inhalt)."""
+
+    def __init__(self, status, typ=""):
+        super().__init__(f"Anthropic HTTP {status}" + (f" {typ}" if typ else ""))
+        self.status, self.typ = status, typ
+
+
+def kategorie(e):
+    """Fehler → kurze Kategorie ohne Patientendaten (Log, Zähler): Frist, HTTP 429/5xx/…, Netz, Platzhalter, Maske,
+    abgebrochen, unvollständig, Schlüssel, Fehlerantwort."""
+    if isinstance(e, ki_maske.MaskeUnsicher):
+        return "Maske unsicher"
+    if isinstance(e, HttpFehler):
+        return f"HTTP {e.status}" + (" overloaded" if "overloaded" in (e.typ or "") and e.status != 529 else "")
+    if isinstance(e, Rueckfall):
+        t = str(e)
+        for wort, kat in (("Platzhalter", "Platzhalter"), ("abgebrochen", "abgebrochen"), ("unvollständig", "unvollständig"),
+                          ("Schlüssel", "Schlüssel"), ("overloaded", "overloaded"), ("Fehlerantwort", "Fehlerantwort"),
+                          ("Frist", "Frist")):
+            if wort in t:
+                return kat
+        return re.sub(r"\(\d+ von \d+\)", "", t).strip()[:40] or "Rueckfall"
+    if isinstance(e, (socket.timeout, TimeoutError)) or "timed out" in str(e).lower():
+        return "Frist"
+    if isinstance(e, urllib.error.URLError) and isinstance(getattr(e, "reason", None), (socket.timeout, TimeoutError)):
+        return "Frist"
+    if isinstance(e, (urllib.error.URLError, ConnectionError, OSError)):
+        return "Netz"
+    return f"Anthropic-Ausfall ({type(e).__name__})"
+
+
+def zweiter_versuch_sinnvoll(e):
+    """Ein zweiter Versuch nur bei Netzfehler/Zeitüberschreitung/HTTP 429/5xx/overloaded und Rueckfall/MaskeUnsicher —
+    nicht bei fehlendem Schlüssel und nicht bei HTTP 400/401/403/404 (dieselbe Anfrage scheitert wieder)."""
+    if isinstance(e, HttpFehler):
+        return e.status == 429 or e.status >= 500 or "overloaded" in (e.typ or "")
+    if isinstance(e, Rueckfall):
+        return "Schlüssel" not in str(e)
+    return True
 
 
 def kosten_usd(modell, usage):
@@ -173,8 +238,16 @@ def anthropic_sender(key_fn, urlopen=None):
             raise Rueckfall("kein Anthropic-Schlüssel")
         req = urllib.request.Request(ANTHROPIC_URL, data=json.dumps(body).encode(), method="POST", headers={
             "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-        with (urlopen or urllib.request.urlopen)(req, timeout=frist) as r:
-            return json.loads(r.read())
+        try:
+            with (urlopen or urllib.request.urlopen)(req, timeout=frist) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:      # nur Status + Fehlertyp weiter (z. B. 529 overloaded_error)
+            typ = ""
+            try:
+                typ = str((json.loads(e.read() or b"{}").get("error") or {}).get("type") or "")[:40]
+            except Exception:
+                pass
+            raise HttpFehler(e.code, typ) from None
     return senden
 
 
@@ -186,7 +259,8 @@ def maskiert_anthropic(prompt, sys_msg, sender, modell=ANTHROPIC_MODELL, frist=A
     data = sender(anthropic_body(fest, rest, sys_msg, modell), frist)
     dauer = time.time() - t0
     if data.get("type") == "error" or "error" in data:
-        raise Rueckfall("Anthropic-Fehlerantwort")
+        typ = str(((data.get("error") or {}) if isinstance(data.get("error"), dict) else {}).get("type") or "")
+        raise Rueckfall("Anthropic-Fehlerantwort" + (" overloaded" if "overloaded" in typ else ""))
     if data.get("stop_reason") not in ("end_turn", "stop_sequence"):
         raise Rueckfall(f"Antwort abgebrochen ({data.get('stop_reason')})")
     roh = anthropic_text(data)
@@ -201,24 +275,32 @@ def maskiert_anthropic(prompt, sys_msg, sender, modell=ANTHROPIC_MODELL, frist=A
 
 
 class Weiche:
-    """LLM-Aufruf je Anbieter mit Rückfall. gemini_fn(prompt, sys_msg) → Text (wirft bei Fehler).
-    beobachter(info) bekommt je Aufruf {rolle, anbieter, modell, s, usage, usd, rueckfall, platzhalter, pflicht}."""
+    """LLM-Aufruf je Anbieter. gemini_fn(prompt, sys_msg) → Text (wirft bei Fehler) — nur für LLM_ANBIETER = gemini bzw.
+    KI_RUECKFALL = an. rueckfall=False (Standard seit ohne-gemini-n1): Anthropic, bei Problemen EIN zweiter Versuch, dann
+    OhneKi (nie Gemini). beobachter(info) bekommt je Aufruf {rolle, anbieter, modell, s, usage, usd, rueckfall, ohne_ki,
+    zweitversuch, platzhalter, pflicht}."""
 
     def __init__(self, anbieter="anthropic", modell=ANTHROPIC_MODELL, gemini_fn=None, sender=None, log=None,
-                 frist=ANTHROPIC_FRIST_S, beobachter=None):
+                 frist=ANTHROPIC_FRIST_S, beobachter=None, rueckfall=False, pause=ZWEITVERSUCH_PAUSE_S, schlafen=None):
         self.anbieter = (anbieter or "anthropic").strip().lower()
         if self.anbieter not in ANBIETER:
             self.anbieter = "gemini"
         self.modell = modell or ANTHROPIC_MODELL
         self.gemini_fn, self.sender, self.frist = gemini_fn, sender, frist
+        self.rueckfall = bool(rueckfall)
+        self.pause, self.schlafen = pause, schlafen or time.sleep
         self.log = log or (lambda *a: None)
         self.beobachter = beobachter
-        self.zaehler = {"anthropic": 0, "rueckfall": 0}
+        self.zaehler = {"anthropic": 0, "rueckfall": 0, "ohne_ki": 0, "zweitversuch": 0}
         self.namen = []          # bekannte Namen des laufenden Auftrags (CAS: Zuweiser/Befunder) → immer maskiert
         self.zuletzt = ""        # sonnet-n2: wer den letzten Text wirklich geschrieben hat (Lauf-Protokoll „modell“)
 
     def name(self):
         return "gemini/gemini-3.5-flash" if self.anbieter == "gemini" else f"anthropic/{self.modell}"
+
+    def rueckfall_text(self):
+        """Für die [INIT]-Zeile: „Rückfall: aus“ bzw. „Rückfall: Gemini“ (nur bei anthropic sinnvoll)."""
+        return "Rückfall: Gemini" if self.rueckfall else "Rückfall: aus"
 
     def _melden(self, info):
         if self.beobachter:
@@ -227,24 +309,48 @@ class Weiche:
             except Exception:
                 pass
 
+    def _anthropic(self, prompt, sys_msg, pruefen, strip):
+        return maskiert_anthropic(prompt, sys_msg, self.sender, self.modell, self.frist, pruefen, strip, self.namen)
+
     def __call__(self, prompt, sys_msg=None, pruefen=None, rolle="gen", strip=None, gemini=None):
-        if self.anbieter == "anthropic" and self.sender is not None:
-            try:
-                text, info = maskiert_anthropic(prompt, sys_msg, self.sender, self.modell, self.frist, pruefen, strip,
-                                                self.namen)
-                self.zaehler["anthropic"] += 1
-                self.zuletzt = f"anthropic/{self.modell}"
-                self.log(f"[KI] {rolle}: Anbieter=anthropic {self.modell} maskiert ({info['s']:.1f} s, "
-                         f"{info['platzhalter']} Platzhalter)")
-                self._melden(dict(info, rolle=rolle, rueckfall=None))
-                return text
-            except Exception as e:
-                if isinstance(e, SystemExit):     # Kostengrenze der Tests nicht verschlucken
-                    raise
-                grund = str(e) if isinstance(e, (Rueckfall, ki_maske.MaskeUnsicher)) else f"Anthropic-Ausfall ({type(e).__name__})"
-                self.zaehler["rueckfall"] += 1
-                self.log(f"[KI] {rolle}: Anthropic nicht verwendet — {grund} → Gemini (Rückfall)")
-                self._melden({"rolle": rolle, "anbieter": "gemini", "rueckfall": grund})
+        if self.anbieter == "anthropic" and (self.sender is not None or not self.rueckfall):
+            versuche = 1 if self.rueckfall else 2
+            fehler = None
+            for nr in range(1, versuche + 1):
+                try:
+                    if self.sender is None:
+                        raise Rueckfall("kein Anthropic-Schlüssel")
+                    text, info = self._anthropic(prompt, sys_msg, pruefen, strip)
+                    self.zaehler["anthropic"] += 1
+                    if nr > 1:
+                        self.zaehler["zweitversuch"] += 1
+                    self.zuletzt = f"anthropic/{self.modell}"
+                    self.log(f"[KI] {rolle}: Anbieter=anthropic {self.modell} maskiert ({info['s']:.1f} s, "
+                             f"{info['platzhalter']} Platzhalter)" + (" — im zweiten Versuch" if nr > 1 else ""))
+                    self._melden(dict(info, rolle=rolle, rueckfall=None, zweitversuch=nr > 1))
+                    return text
+                except Exception as e:
+                    if isinstance(e, SystemExit):     # Kostengrenze der Tests nicht verschlucken
+                        raise
+                    fehler = e
+                    if nr < versuche and zweiter_versuch_sinnvoll(e):
+                        self.log(f"[KI] {rolle}: Anthropic-Versuch 1 nicht verwendbar — {kategorie(e)} → zweiter Versuch")
+                        self.schlafen(self.pause)
+                        continue
+                    break
+            grund = kategorie(fehler)
+            if not self.rueckfall:
+                self.zaehler["ohne_ki"] += 1
+                self.zuletzt = "ohne KI"
+                self.log(f"[KI] {rolle}: Anthropic nicht verwendet — {grund} → ohne KI (kein Rückfall)")
+                self._melden({"rolle": rolle, "anbieter": "ohne_ki", "rueckfall": None, "ohne_ki": grund,
+                              "zweitversuch": versuche > 1 and nr > 1})
+                raise OhneKi(grund, rolle)
+            grund_alt = str(fehler) if isinstance(fehler, (Rueckfall, ki_maske.MaskeUnsicher)) \
+                else f"Anthropic-Ausfall ({type(fehler).__name__})" if not isinstance(fehler, HttpFehler) else grund
+            self.zaehler["rueckfall"] += 1
+            self.log(f"[KI] {rolle}: Anthropic nicht verwendet — {grund_alt} → Gemini (Rückfall)")
+            self._melden({"rolle": rolle, "anbieter": "gemini", "rueckfall": grund_alt})
         t0 = time.time()
         text = (gemini or self.gemini_fn)(prompt, sys_msg)
         self.zuletzt = "gemini/gemini-3.5-flash" + (" (Rückfall)" if self.anbieter != "gemini" else "")

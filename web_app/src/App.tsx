@@ -42,7 +42,7 @@ import { SpeechMikeVerbindung, webHid, BELEGUNG, ledFuer, sendefaehig } from './
 import { diktatAnzeige, type Abschnitt } from './segmente.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
-import { kiAnbieterAusSpeicher, anthropicSchluesselNachladen } from './llmAnbieter.ts';  // Befund-KI-Anbieter (Standard Claude seit sonnet-n2)
+import { kiAnbieterAusSpeicher, anthropicSchluesselNachladen, OHNE_KI_ZEILE } from './llmAnbieter.ts';  // Befund-KI-Anbieter (Standard Claude seit sonnet-n2)
 
 // Types: Template / TemplatesMap in src/detect.ts
 
@@ -501,8 +501,11 @@ export default function App() {
   const aufnahmeLaufRef = useRef<Lauf | null>(null);
   const sttKontext = (lauf: Lauf): SttKontext => ({ sttKey: sttKeyJson, phrasen: PHRASEN, signal: lauf.signal, status: lauf.nurAktuell(setStatusText) });
   // Umbau Schritt 18: Kontext für Gemini-Aufrufe (src/gemini.ts) und Befund-Kette (src/pipeline.ts)
+  // ohne-gemini-n1: Befund dieses Laufs ohne KI (Diktat unformatiert) → Prüfzeile statt „Bereit“, nicht kopieren
+  const ohneKiRef = useRef(false);
   const genKontext = (lauf: Lauf, signal: AbortSignal): PipelineKontext => ({
     apiKey: vertexApiKey, prompt: GEN_PROMPT, signal, status: lauf.nurAktuell(setStatusText), ki: kiAnbieterAusSpeicher(),
+    ohneKi: lauf.nurAktuell(() => { ohneKiRef.current = true; }),
     misheard: { compiled: MISHEARD_COMPILED, block: MISHEARD_PROMPT_BLOCK },
     templates, vorrang: vorrangData as VorrangDaten, displayNames: DISPLAY_NAMES,
   });
@@ -572,23 +575,31 @@ export default function App() {
     setStructuredReport(text);
   };
   const standLeeren = () => { standErstRef.current = standKsRef.current = transkriptKsRef.current = rueckRef.current = null; };
+  const ohneKiFertig = (sonst: () => void) => () => {
+    if (!ohneKiRef.current) { sonst(); return; }
+    setStatus('ready');
+    setStatusText('⚠ ' + OHNE_KI_ZEILE);
+  };
   // art: 'neu' = neuer Befund (Stände merken), sonst Ergänzung/Cursor (Peters Text → kein neuer KaiScribe-Stand)
-  const befundUi = (kontrolle = false, art: 'neu' | 'ergaenzung' = 'neu'): BefundUi => ({
+  const befundUi = (kontrolle = false, art: 'neu' | 'ergaenzung' = 'neu'): BefundUi => (ohneKiRef.current = false, {
     transkript: setTranscript,
     befund: (t: string) => {
       if (art === 'neu') {
         feldSetzen(t, vorLaufRef.current ?? '');
-        standKsRef.current = t;
-        if (standErstRef.current === null) standErstRef.current = t;
+        if (!ohneKiRef.current) {   // ohne-gemini-n1: unformatiertes Diktat ist kein KaiScribe-Stand (Restructure baut es neu)
+          standKsRef.current = t;
+          if (standErstRef.current === null) standErstRef.current = t;
+        }
       } else feldSetzen(t);
       einbauRef.current = null;
     },
     status: setStatusText,
-    fertig: kontrolle
+    fertig: ohneKiFertig(kontrolle
       ? () => { setStatus('ready'); setStatusText('Befund prüfen – EOL schickt ihn weiter'); setBefundWartet(true); }
-      : () => { setStatus('ready'); setStatusText('Bereit'); },
+      : () => { setStatus('ready'); setStatusText('Bereit'); }),
     fehler: (meldung: string) => { setStatus('ready'); setStatusText('Fehler bei der Verarbeitung.'); alert(meldung); },
     kopieren: kontrolle ? () => undefined : async (report: string) => {
+      if (ohneKiRef.current) return false;   // ohne-gemini-n1: unformatiertes Diktat nie automatisch weiter
       const ok = await copyTextToClipboard(report);
       if (ok) gesendetRef.current = true;
       return ok;

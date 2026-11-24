@@ -709,8 +709,9 @@ def _test_rueckfall(prompt, system, temperature):
 
 
 def claude_maskiert(prompt, system, modell, rolle, temperature=0.0):
-    """Ein Aufruf über llm_anbieter.Weiche (anthropic, maskiert) → (Text, Info). Rückfall = Gemini 3.5 Flash eu im
-    Testprojekt (ohne Weiche), genau wie die EXE bei Anthropic-Problemen."""
+    """Ein Aufruf über llm_anbieter.Weiche (anthropic, maskiert) → (Text, Info). Wie die EXE seit kaiscribe-ohne-gemini-n1:
+    kein Gemini-Rückfall, bei Problemen ein zweiter Claude-Versuch, dann llm_anbieter.OhneKi (Google-Testgrenze 0 $).
+    KAISCRIBE_TEST_KI_RUECKFALL=an = alter Weg (Gemini 3.5 Flash eu im Testprojekt)."""
     sys.path.insert(0, str(ROOT / "source_code"))
     import llm_anbieter as la
     import gemini as _g
@@ -724,7 +725,8 @@ def claude_maskiert(prompt, system, modell, rolle, temperature=0.0):
     w = la.Weiche("anthropic", modell, sender=_anthropic_test_sender(rolle), log=lambda *a: None,
                   frist=float(os.environ.get("KAISCRIBE_TEST_ANTHROPIC_FRIST", la.ANTHROPIC_FRIST_S)),
                   beobachter=lambda i: (infos.append(i), _weiche_protokoll(i)),
-                  gemini_fn=lambda p, s: _test_rueckfall(p, s, temperature))
+                  gemini_fn=lambda p, s: _test_rueckfall(p, s, temperature),
+                  rueckfall=os.environ.get("KAISCRIBE_TEST_KI_RUECKFALL", "aus").lower() == "an")
     text = w(prompt, system, pruefen=pruefen, rolle=rolle, strip=_g.strip_fences)
     return text, {"weiche": infos}
 

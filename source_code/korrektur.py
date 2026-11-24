@@ -21,12 +21,17 @@ def prompt(misheard_block, roh):
 
 def korrigieren_ki(roh, weiche, key, misheard_block="", log=None, **kw):
     """kaiscribe-haiku-ab-n1: Call 0 über die Anbieter-Weiche (llm_anbieter). Anthropic maskiert; jedes Problem dort
-    (auch Antwort < 60 % des Rohtextes) → Gemini-Weg korrigieren() (der selbst den Rohtext behält, wenn Gemini scheitert)."""
+    (auch Antwort < 60 % des Rohtextes) → mit KI_RUECKFALL = an Gemini-Weg korrigieren() (der selbst den Rohtext behält,
+    wenn Gemini scheitert). kaiscribe-ohne-gemini-n1 (Standard aus): zweiter Claude-Versuch, dann der Rohtext."""
     if weiche is None or weiche.anbieter == "gemini" or not roh:
         return korrigieren(roh, key, misheard_block, log=log, **kw)
-    return weiche(prompt(misheard_block, roh), None, rolle="korr", strip=_gem.strip_fences,
-                  pruefen=lambda t: _la.korrektur_plausibel(roh, t),
-                  gemini=lambda _p, _s: korrigieren(roh, key, misheard_block, log=log, **kw))
+    try:
+        return weiche(prompt(misheard_block, roh), None, rolle="korr", strip=_gem.strip_fences,
+                      pruefen=lambda t: _la.korrektur_plausibel(roh, t),
+                      gemini=lambda _p, _s: korrigieren(roh, key, misheard_block, log=log, **kw))
+    except _la.OhneKi:
+        (log or (lambda *a: None))("[KORREKTUR] ohne KI — verwende Rohtext")
+        return roh
 
 
 def korrigieren(roh, key, misheard_block="", endpoint=_gem.VERTEX_ENDPOINT, urlopen=None, log=None):

@@ -20,6 +20,7 @@ import cas_vorlagen as cv
 import detect
 import gemini
 import ibl_bausteine as iblb
+import llm_anbieter as la
 import normalbypass as nb
 import protokoll
 
@@ -82,6 +83,7 @@ class Ergebnis:
     cas_hinweise: List[str] = field(default_factory=list)  # v3.12.0: „LWS laut CAS, nicht diktiert“ usw. (nur Anzeige)
     vorlagen: List[str] = field(default_factory=list)      # v3.12.0: gewählte Vorlage je Abschnitt (nur mit CAS)
     ibl: Optional[iblb.Einsatz] = None            # v3.13.0: eingesetzte IB-Lab-Zeilen + Hinweise (nur mit Bausteinen)
+    ohne_ki: str = ""                            # ohne-gemini-n1: KI zweimal nicht verfügbar → Grund-Kategorie (report = Diktat)
 
     @property
     def vollstaendig(self):
@@ -444,6 +446,15 @@ def _osteopen(erg, ctx, diktat=None):
     return erg
 
 
+def _ohne_ki(raw, e, segmente, cas_hinweise, vorlagen, ctx):
+    """kaiscribe-ohne-gemini-n1 (Peter 23.11.2026, kein Gemini mehr): Befund-KI auch im zweiten Versuch nicht verfügbar →
+    das (fehlhör-korrigierte) Diktat UNVERÄNDERT als Befundtext plus rote Prüfzeile (OHNE_KI_ZEILE). Nie ein Befund
+    verloren, nie fremder Text; vollstaendig ist False → die EXE fügt nichts automatisch ins Zielprogramm ein."""
+    ctx.log(f"[KI] Befund ohne KI: {e.grund} → Diktat unformatiert im Befundfeld (rote Prüfzeile)")
+    return Ergebnis(raw=raw, report=raw, segmente=segmente, vorlagen=vorlagen, ohne_ki=e.grund,
+                    cas_hinweise=[la.OHNE_KI_ZEILE] + [h for h in (cas_hinweise or []) if h != la.OHNE_KI_ZEILE])
+
+
 def befund_aus_diktat(diktat, ctx, beim_start=None):
     """Diktat → Ergebnis. Ein-Regionen-Diktat: Fehler werden geworfen (wie bisher); Mehr-Regionen-Diktat:
     gescheiterte Regionen stehen in Ergebnis.fehler, die übrigen im Report (Gutachten P2-6)."""
@@ -465,8 +476,11 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
         wahlen = [None if w.art == "baustein" else w for w in wahlen]
     vorlagen = [w.vorlage for w in wahlen if w is not None]
     if len(segmente) <= 1:
-        return _pruefen(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=br.teile_zusammenlegen(befund_fuer_segment(
-            segmente[0] if segmente else raw, ctx, wahlen[0] if wahlen else None), raw)[0],
+        try:
+            teil = befund_fuer_segment(segmente[0] if segmente else raw, ctx, wahlen[0] if wahlen else None)
+        except la.OhneKi as e:
+            return _ohne_ki(raw, e, segmente, cas_hinweise, vorlagen, ctx)
+        return _pruefen(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=br.teile_zusammenlegen(teil, raw)[0],
             segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx), ctx)
     ctx.log(f"[MULTI] {len(segmente)} Regionen")
     with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
@@ -480,6 +494,9 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
                 ctx.ausnahme_log("Befund-Generierung (Region)")
             ausnahmen.append(e)
             teile.append(e)
+    ohne = next((e for e in ausnahmen if isinstance(e, la.OhneKi)), None)
+    if ohne is not None:   # ohne-gemini-n1: eine Region ohne KI → ganzes Diktat unformatiert (nichts geht verloren)
+        return _ohne_ki(raw, ohne, segmente, cas_hinweise, vorlagen, ctx)
     report, fehler = assemble_regions(segmente, teile, gemini.report_complete)
     if not fehler:   # kaiscribe-schulter-ergebnis-n1 (Punkte 58a/64): nie doppelte Teile, kein nicht diktierter Unterarm
         report, zus = br.teile_zusammenlegen(report, raw)

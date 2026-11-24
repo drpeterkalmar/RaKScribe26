@@ -2016,6 +2016,30 @@
     ]
    },
    "notiz": "Ursache RH 94 (Lauf-Datei nur lesen): Diktat mit mehreren Grad-Adjektiven (gering, mäßig, hochgradig) → kl_bereinigen ließ den KI-Grad 3 „stehen“ (mehrere erlaubte Grade). RH 88: KI schrieb den Diagnose-Satz ohne Grad und ohne Tabellensatz; die K&L-Regel stand im Prompt (nicht verloren), der Wächter prüfte nur vorhandene Klammern."
+  },
+  {
+   "id": "ohne-ki-pruefzeile",
+   "titel": "Kein Gemini-Rückfall: Befund-KI (Claude) zweimal nicht verfügbar → Diktat unverändert ins Befundfeld + rote Prüfzeile „KI nicht verfügbar – Diktat unformatiert übernommen, bitte prüfen.“ (nichts automatisch eingefügt); Call 0 → unkorrigierter Diktattext; Prüfung (Call 2) entfällt, Befund bleibt",
+   "quelle": "Peter Kalmar 23.11.2026 ~22:30 (Telegram): „Dauert die Antwort länger als 20 s, übernimmt Gemini — das kannst abstellen. no gemini please derzeit.“ (kaiscribe-ohne-gemini-n1)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/llm_anbieter.py": [
+     "OHNE_KI_ZEILE = \"KI nicht verfügbar – Diktat unformatiert übernommen, bitte prüfen.\"",
+     "→ ohne KI (kein Rückfall)"
+    ],
+    "web_app/src/llmAnbieter.ts": [
+     "export const OHNE_KI_ZEILE = 'KI nicht verfügbar – Diktat unformatiert übernommen, bitte prüfen.';",
+     "→ ohne KI (kein Rückfall)"
+    ],
+    "source_code/pipeline.py": [
+     "cas_hinweise=[la.OHNE_KI_ZEILE]"
+    ],
+    "source_code/config.py": [
+     "\"KI_RUECKFALL = aus\\n\""
+    ]
+   },
+   "notiz": "Rückweg: KI_RUECKFALL = an (config.ini) bzw. localStorage ki_rueckfall = an (Web). Handschalter LLM_ANBIETER = gemini bleibt. Spracherkennung (Chirp/Google STT) nicht betroffen."
   }
  ]
 }

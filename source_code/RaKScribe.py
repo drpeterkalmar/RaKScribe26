@@ -471,8 +471,9 @@ _chirp3_worker = _stt.chirp3_worker
 
 def _ki_weiche(anbieter):
     """kaiscribe-haiku-ab-n1: Anbieter-Weiche (llm_anbieter.py). gemini = wie bisher; anthropic = maskiert, Anthropic-
-    Schlüssel aus dem Praxis-Schlüssel (anthropic_api_key), jedes Problem → dieser Befund über Gemini."""
-    return _la.Weiche(anbieter, CFG.anthropic_modell, log=print, frist=CFG.anthropic_frist,
+    Schlüssel aus dem Praxis-Schlüssel (anthropic_api_key). kaiscribe-ohne-gemini-n1: KI_RUECKFALL = aus (Standard) →
+    Problem → ein zweiter Claude-Versuch, dann ohne KI (llm_anbieter.OhneKi); an = alter Weg über Gemini."""
+    return _la.Weiche(anbieter, CFG.anthropic_modell, log=print, frist=CFG.anthropic_frist, rueckfall=CFG.ki_rueckfall,
                       beobachter=lambda info: NUTZUNG is not None and NUTZUNG.ki(info),
                       gemini_fn=lambda p, s: _gem.generate(p, s, _load_vertex_key(), log=print),
                       sender=_la.anthropic_sender(lambda: _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad())))
@@ -2693,6 +2694,8 @@ class RaKScribeApp(ctk.CTk):
             except Exception as e:
                 log_exception("[BEFUNDFELD] Restructure")
                 msg = GEMINI_401_TEXT if ("401" in str(e) or "Unauthorized" in str(e)) else f"Restructure fehlgeschlagen:\n{e}"
+                if isinstance(e, _la.OhneKi):   # ohne-gemini-n1: kein Gemini – Text bleibt, wie er ist
+                    msg = f"Restructure: KI nicht verfügbar ({e.grund}) – dein Text bleibt unverändert, bitte später erneut."
                 self.after(0, lambda m=msg: self._ende_fehler(gen, m, "Restructure"))
                 return
             self.after(0, lambda: self._umbau_fertig(gen, aktuell, erg, ibl))
@@ -2909,7 +2912,13 @@ class RaKScribeApp(ctk.CTk):
             if erg.leer:
                 self.after(0, lambda: self._ende_kein_text(gen))
                 return
-            if getattr(self, "_einbau", None) == _bf.GERUEST and erg.report and not erg.fehler:
+            if erg.ohne_ki:
+                # kaiscribe-ohne-gemini-n1: KI zweimal nicht verfügbar → Diktat unformatiert; stand vorher etwas im Feld
+                # (Gerüst, Befund), bleibt es oben stehen und das Diktat kommt darunter (nie Löschen ohne Rückfrage)
+                vor = (getattr(self, "_vor_lauf", "") or "").rstrip()
+                if vor and vor not in ("... Befund wird geladen ...", "... Text wird korrigiert ..."):
+                    erg.report = vor + "\n\n" + erg.report
+            elif getattr(self, "_einbau", None) == _bf.GERUEST and erg.report and not erg.fehler:
                 # kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkte 63/67, RH 120/130): Diktat zu EINER Region
                 # ändert nur diesen Teil – die übrigen Gerüst-Teile (LAMA-Sätze, GWS-Teile) bleiben wörtlich
                 erg.report, gh = _bf.geruest_erhalten(getattr(self, "_vor_lauf", "") or "", erg.report, self.final_transcript)
@@ -2928,7 +2937,11 @@ class RaKScribeApp(ctk.CTk):
                 log("[PROCESS] Lauf abgebrochen — Befund verworfen, nichts eingefügt.")
                 return
             if report:
-                self._ui(gen, lambda r=report, f=bool(fehler): self._befund_setzen(r, fehler=f))
+                self._ui(gen, lambda r=report, f=bool(fehler or erg.ohne_ki): self._befund_setzen(r, fehler=f))
+            if erg.ohne_ki:   # ohne-gemini-n1: nichts automatisch einfügen; rote Prüfzeile steht schon (cas_hinweise)
+                self._ui(gen, lambda: self._kurzhinweis("⚠ " + _la.OHNE_KI_ZEILE, 20000))
+                self.after(0, lambda: self._ende_fehler(gen, None))
+                return
             if fehler:  # Mehr-Regionen-Befund unvollständig: fertige Teile stehen in der Box, NICHT einfügen
                 msg = ("Befund für Region " + ", ".join(f"„{f}“" for f in fehler)
                        + " konnte nicht erstellt werden — bitte erneut diktieren.\n\n"
@@ -5022,9 +5035,11 @@ def init_runtime():
         _af.ZAEHLER = lambda s: NUTZUNG.stt(s, "streaming")   # sonnet-n3-beleg: Live-Anzeige kostet bei Google auch
         print(f"[INIT] Nutzungszähler: {NUTZUNG.ordner} ({NUTZUNG.pc})")
     if KI_GEN.anbieter != "gemini" or KI_KORR.anbieter != "gemini":
-        print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, Rückfall Gemini"
+        print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, {KI_GEN.rueckfall_text()}, "
+              f"Frist {CFG.anthropic_frist} s"
               + ("" if _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad()) else
-                 " (WARNUNG: anthropic_api_key fehlt im Praxis-Schlüssel → alles über Gemini)"))
+                 (" (WARNUNG: anthropic_api_key fehlt im Praxis-Schlüssel → alles über Gemini)" if CFG.ki_rueckfall else
+                  " (WARNUNG: anthropic_api_key fehlt im Praxis-Schlüssel → Befunde ohne KI)")))
     # Initialisiere die Google Cloud Speech Engine beim Start
     if not init_google_speech():
         print("[INIT] Warnung: Google STT konnte beim Start nicht initialisiert werden.")

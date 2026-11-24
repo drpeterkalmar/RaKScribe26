@@ -2,6 +2,7 @@
 // Nachbearbeitung, Regionen zusammenfügen. Aus App.tsx herausgelöst, Inhalt unverändert.
 // Sync: source_code/pipeline.py (EXE). Test: web_app/pipeline_test.mjs.
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
+import { OhneKi, OHNE_KI_ZEILE } from './llmAnbieter.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
 import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
@@ -110,7 +111,17 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
     console.log(`[MULTI] ${segmente.length} Regionen: ${segmente.map(diktatLog).join(' | ')}`);
     ctx.status(`Strukturiere ${segmente.length} Regionen mit Gemini...`);
   }
-  const teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));
+  let teile: string[];
+  try {
+    teile = await Promise.all(segmente.map(seg => befundFuerSegment(seg, ctx)));
+  } catch (e: unknown) {
+    // kaiscribe-ohne-gemini-n1 (Sync: pipeline.py _ohne_ki): KI zweimal nicht verfügbar, kein Gemini → Diktat
+    // unverändert als Befundtext, rote Prüfzeile (ctx.ohneKi), nichts automatisch kopieren
+    if (!(e instanceof OhneKi)) throw e;
+    console.warn(`[KI] Befund ohne KI: ${e.grund} → Diktat unformatiert (${OHNE_KI_ZEILE})`);
+    ctx.ohneKi?.(e.grund);
+    return text;
+  }
   // kaiscribe-schulter-ergebnis-n1 (Punkte 58a/64): nie doppelte Teile, kein nicht diktierter Unterarm (Sync: pipeline.py)
   return osteopen(rhoAnsEnde(teileZusammenlegen(befundeZusammenfuegen(teile), text)[0]), text);   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
 };

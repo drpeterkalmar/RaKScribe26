@@ -3,12 +3,22 @@
 // Anthropic-Schlüssel aus rakscribe-praxis-key.json geladen ist ('anthropic_api_key'); localStorage 'llm_anbieter' =
 // 'gemini' schaltet von Hand zurück. Text vor dem Senden maskiert (kiMaske.ts = KaiFormat-Maske), Antwort lokal
 // zurückgesetzt; jedes Problem (Maske unsicher, Datum fehlt, unvollständig, Ausfall, Frist) → der Aufrufer nimmt Gemini.
+// kaiscribe-ohne-gemini-n1 (Peter 23.11.2026 „no gemini please derzeit“): Standard KI-Rückfall AUS → statt Gemini EIN
+// zweiter Anthropic-Versuch (Frist 45 s, Netz/HTTP 429/5xx/overloaded/Rueckfall/Maske), dann OhneKi: Call 0 → Rohtext,
+// Befund → Diktat unformatiert + Prüfzeile OHNE_KI_ZEILE, Prüfung entfällt. localStorage 'ki_rueckfall' = 'an' = alter Weg,
+// 'llm_anbieter' = 'gemini' bleibt Handschalter. Sync: source_code/llm_anbieter.py Weiche.
 // Feste Prompt-Anfänge gehen als 1-Stunden-Prompt-Cache hinaus. Pflicht-Platzhalter = nur Daten (⟦D…⟧), wie in Python.
 // tests/offline/test_ki_maske_web.py vergleicht festerAnfang/maskieren/korrekturPlausibel mit Python.
-import { Maske, PLATZHALTER, KLAMMER_AUF, KLAMMER_ZU } from './kiMaske.ts';
+import { Maske, MaskeUnsicher, PLATZHALTER, KLAMMER_AUF, KLAMMER_ZU } from './kiMaske.ts';
 
 export type Anbieter = 'gemini' | 'anthropic';
-export type KiAnbieter = { anbieter: Anbieter; korrektur: Anbieter; modell: string; anthropicKey: string; fristMs: number };
+export type KiAnbieter = { anbieter: Anbieter; korrektur: Anbieter; modell: string; anthropicKey: string; fristMs: number;
+  rueckfall?: boolean; pauseMs?: number };   // ohne-gemini-n1: rueckfall fehlt/false = kein Gemini
+
+export const ANTHROPIC_FRIST_MS = 45_000;
+export const ZWEITVERSUCH_PAUSE_MS = 2_000;
+// Wortlaut der roten Prüfzeile (Regel-Register „ohne-ki-pruefzeile“; EXE: llm_anbieter.OHNE_KI_ZEILE)
+export const OHNE_KI_ZEILE = 'KI nicht verfügbar – Diktat unformatiert übernommen, bitte prüfen.';
 
 export const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 export const ANTHROPIC_MODELL = 'claude-sonnet-5-5';
@@ -19,6 +29,34 @@ export const KORR_KOPF = '## ZU KORRIGIERENDES DIKTAT (der Text in <diktat> — 
 export const KORR_FUSS = '\n</diktat>\n\nGib NUR den korrigierten Text des Diktats aus.';
 
 export class Rueckfall extends Error {}
+export class HttpFehler extends Rueckfall {
+  status: number;
+  constructor(status: number) { super(`Anthropic HTTP ${status}`); this.status = status; }
+}
+/** Anthropic auch im zweiten Versuch nicht verwendbar, kein Rückfall → der Aufrufer nimmt den Text ohne KI. */
+export class OhneKi extends Error {
+  grund: string; rolle: string;
+  constructor(grund: string, rolle: string) { super(grund); this.grund = grund; this.rolle = rolle; }
+}
+
+/** Fehler → kurze Kategorie ohne Patientendaten (wie llm_anbieter.kategorie). */
+export const kategorie = (e: unknown): string => {
+  if (e instanceof HttpFehler) return `HTTP ${e.status}`;
+  const t = e instanceof Error ? e.message : String(e);
+  if (e instanceof MaskeUnsicher) return 'Maske unsicher';
+  if (e instanceof Rueckfall) {
+    for (const [w, k] of [['Platzhalter', 'Platzhalter'], ['abgebrochen', 'abgebrochen'], ['unvollständig', 'unvollständig'],
+      ['Schlüssel', 'Schlüssel'], ['Frist', 'Frist']] as const) if (t.includes(w)) return k;
+    return t.slice(0, 40) || 'Rueckfall';
+  }
+  return 'Netz';
+};
+/** Zweiter Versuch nur bei Netz/Frist/HTTP 429/5xx/overloaded, Rueckfall, Maske — nicht ohne Schlüssel, nicht HTTP 4xx. */
+export const zweiterVersuchSinnvoll = (e: unknown): boolean => {
+  if (e instanceof HttpFehler) return e.status === 429 || e.status >= 500;
+  if (e instanceof Rueckfall) return !e.message.includes('Schlüssel');
+  return true;
+};
 
 export const festerAnfang = (p: string): string => {
   if (p.startsWith(KORR_ANFANG)) {
@@ -105,7 +143,7 @@ export async function maskiertAnthropic(prompt: string, sysMsg: string | undefin
         'anthropic-dangerous-direct-browser-access': 'true' },
       body: JSON.stringify(anthropicBody(fest, rest, sysMsg, ki.modell)),
     });
-    if (!r.ok) throw new Rueckfall(`Anthropic HTTP ${r.status}`);
+    if (!r.ok) throw new HttpFehler(r.status);
     const data = await r.json() as { stop_reason?: string; content?: { type: string; text?: string }[] };
     if (data.stop_reason !== 'end_turn' && data.stop_reason !== 'stop_sequence') throw new Rueckfall(`Antwort abgebrochen (${data.stop_reason})`);
     const roh = stripFences((data.content || []).filter(b => b.type === 'text').map(b => b.text || '').join('').trim());
@@ -122,24 +160,47 @@ export async function maskiertAnthropic(prompt: string, sysMsg: string | undefin
   }
 }
 
-/** Anthropic versuchen (wenn eingestellt) → Text oder null (= Gemini nehmen). Protokoll nur mit Kategorie. */
+/** Anthropic versuchen (wenn eingestellt) → Text oder null (= Gemini nehmen: nur Handschalter bzw. ki.rueckfall).
+ *  ohne-gemini-n1: ohne Rückfall ein zweiter Versuch nach kurzer Pause, dann OhneKi (nie null → nie Gemini).
+ *  Protokoll nur mit Kategorie. */
 export async function versucheAnthropic(rolle: 'korr' | 'gen' | 'val', prompt: string, sysMsg: string | undefined,
   ki: KiAnbieter | undefined, pruefen?: (t: string) => boolean, signal?: AbortSignal): Promise<string | null> {
   if (!ki || (rolle === 'korr' ? ki.korrektur : ki.anbieter) !== 'anthropic') return null;
-  try {
-    const text = await maskiertAnthropic(prompt, sysMsg, ki, pruefen, signal);
-    zaehlen('anthropic');
-    return text;
-  } catch (e) {
-    if (signal?.aborted) throw e;
-    console.warn(`[KI] ${rolle}: Anthropic nicht verwendet — ${e instanceof Error ? e.message : String(e)} → Gemini`);
-    zaehlen('rueckfall');
-    return null;
+  const versuche = ki.rueckfall ? 1 : 2;
+  let fehler: unknown = null;
+  for (let nr = 1; nr <= versuche; nr++) {
+    try {
+      const text = await maskiertAnthropic(prompt, sysMsg, ki, pruefen, signal);
+      zaehlen('anthropic');
+      if (nr > 1) { zaehlen('zweitversuch_ok'); console.log(`[KI] ${rolle}: Anthropic im zweiten Versuch`); }
+      return text;
+    } catch (e) {
+      if (signal?.aborted) throw e;
+      fehler = e;
+      if (nr < versuche && zweiterVersuchSinnvoll(e)) {
+        console.warn(`[KI] ${rolle}: Anthropic-Versuch 1 nicht verwendbar — ${kategorie(e)} → zweiter Versuch`);
+        zaehlen('zweitversuch');
+        await new Promise(r => setTimeout(r, ki.pauseMs ?? ZWEITVERSUCH_PAUSE_MS));
+        if (signal?.aborted) throw e;
+        continue;
+      }
+      break;
+    }
   }
+  if (!ki.rueckfall) {
+    const grund = kategorie(fehler);
+    console.warn(`[KI] ${rolle}: Anthropic nicht verwendet — ${grund} → ohne KI (kein Rückfall)`);
+    zaehlen('ohne_ki');
+    throw new OhneKi(grund, rolle);
+  }
+  console.warn(`[KI] ${rolle}: Anthropic nicht verwendet — ${fehler instanceof Error ? fehler.message : String(fehler)} → Gemini`);
+  zaehlen('rueckfall');
+  return null;
 }
 
-/** sonnet-n2: Zähler je Tag im Browser (localStorage 'ki_nutzung' = {JJJJ-MM-TT: {anthropic, rueckfall}}, ohne Inhalte). */
-export const zaehlen = (art: 'anthropic' | 'rueckfall', speicher: Pick<Storage, 'getItem' | 'setItem'> | undefined =
+/** sonnet-n2: Zähler je Tag im Browser (localStorage 'ki_nutzung' = {JJJJ-MM-TT: {anthropic, rueckfall, ohne_ki,
+ *  zweitversuch, zweitversuch_ok}}, ohne Inhalte). */
+export const zaehlen = (art: 'anthropic' | 'rueckfall' | 'ohne_ki' | 'zweitversuch' | 'zweitversuch_ok', speicher: Pick<Storage, 'getItem' | 'setItem'> | undefined =
   typeof localStorage === 'undefined' ? undefined : localStorage, tag = new Date().toISOString().slice(0, 10)): void => {
   if (!speicher) return;
   try {
@@ -159,12 +220,13 @@ const eingestellt = (speicher: Pick<Storage, 'getItem'>): [Anbieter, Anbieter] =
 
 /** Einstellung aus dem Browser (Standard seit sonnet-n2: anthropic). Nur llm_anbieter = gemini schaltet ganz ab
  *  (undefined). webapp-schluessel-n1: fehlt der Schlüssel noch, kommt ein Anbieter ohne Schlüssel zurück → jeder Aufruf
- *  ist ein gezählter Rückfall auf Gemini (vorher ungezählt). */
+ *  ist ohne KI (ohne-gemini-n1; mit 'ki_rueckfall' = 'an' wie früher ein gezählter Rückfall auf Gemini). */
 export const kiAnbieterAusSpeicher = (speicher: Pick<Storage, 'getItem'> = localStorage): KiAnbieter | undefined => {
   const [a, k] = eingestellt(speicher);
   if (a === 'gemini' && k === 'gemini') return undefined;
   return { anbieter: a, korrektur: k, modell: speicher.getItem('anthropic_modell') || ANTHROPIC_MODELL,
-    anthropicKey: speicher.getItem('anthropic_api_key') || '', fristMs: 20_000 };
+    anthropicKey: speicher.getItem('anthropic_api_key') || '', fristMs: ANTHROPIC_FRIST_MS,
+    rueckfall: (speicher.getItem('ki_rueckfall') || 'aus').toLowerCase() === 'an' };
 };
 
 // kaiscribe-webapp-schluessel-n1 (17.11.2026, Kanban #351): fehlt der Anthropic-Schlüssel im Browser, holt die Web-App

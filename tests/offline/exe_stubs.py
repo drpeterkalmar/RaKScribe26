@@ -152,6 +152,12 @@ def lade_rakscribe(ruhig=True):
     try:
         exec(compile(code, str(ROOT / "source_code" / "RaKScribe.py"), "exec"), mod.__dict__)
         mod.init_runtime()  # Umbau Schritt 16: Start-Initialisierung wie main()
+        # kaiscribe-ohne-gemini-n1: die UI-Tests haben keinen Anthropic-Schlüssel und ersetzen den Gemini-Weg
+        # (_korr.korrigieren, _gem.generate) durch Attrappen — dafür wie bisher KI_RUECKFALL = an. Den neuen
+        # Standard (aus: zweiter Claude-Versuch, dann ohne KI) prüfen test_llm_anbieter.py und test_ohne_ki_ui.py.
+        mod.CFG.ki_rueckfall = True
+        mod.KI_GEN, mod.KI_KORR = mod._ki_weiche(mod.CFG.llm_anbieter), mod._ki_weiche(mod.CFG.llm_anbieter_korrektur
+                                                                                       or mod.CFG.llm_anbieter)
     finally:
         sys.__stdout__ = _out
     mod.messagebox = mb

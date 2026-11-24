@@ -49,8 +49,21 @@ w = la.Weiche("anthropic", gemini_fn=lambda p, s: "## Knie\n\n## Befund\nGemini.
 w(gp, "sys", rolle="gen")
 w(gp, "sys", rolle="gen")
 w2 = la.Weiche("anthropic", gemini_fn=lambda p, s: "## Knie\n\n## Befund\nGemini.\n\n## Ergebnis\n1. G.",
-               sender=lambda b, f: (_ for _ in ()).throw(TimeoutError("timed out")), beobachter=z10.ki)
-w2(gp, "sys", rolle="gen")
+               sender=lambda b, f: (_ for _ in ()).throw(TimeoutError("timed out")), beobachter=z10.ki, rueckfall=True)
+w2(gp, "sys", rolle="gen")   # KI_RUECKFALL = an (Rückweg): alter Zähler „rueckfall“
+# kaiscribe-ohne-gemini-n1 (Standard aus): Frist zweimal → ohne KI (Rolle + Kategorie), Frist einmal → Zweitversuch
+z14 = nutzung.Zaehler(d, "CASWS14", jetzt=lambda: T)
+w3 = la.Weiche("anthropic", gemini_fn=lambda p, s: 1 / 0, schlafen=lambda s: None, beobachter=z14.ki,
+               sender=lambda b, f: (_ for _ in ()).throw(TimeoutError("timed out")))
+for rolle in ("gen", "korr"):
+    try:
+        w3(gp, "sys", rolle=rolle)
+    except la.OhneKi:
+        pass
+n3 = []
+w4 = la.Weiche("anthropic", schlafen=lambda s: None, beobachter=z14.ki,
+               sender=lambda b, f: (n3.append(1), (_ for _ in ()).throw(TimeoutError("x")) if len(n3) == 1 else antwort(b))[1])
+w4(gp, "sys", rolle="gen")
 z8.stt(65.0)
 z10.stt(30.0)
 z10.stt(0)
@@ -66,8 +79,16 @@ check("CASWS10: Rückfall gezählt mit Kategorie (ohne Werte)", t10["ki"].get("r
 alles = json.dumps([roh8, roh10], ensure_ascii=False)
 check("Zählerdateien ohne Diktat/Datum/Text", "12.3.2025" not in alles and "Erguss" not in alles and "Knie" not in alles)
 
+roh14 = json.loads(pathlib.Path(d, "2026-11_CASWS14.json").read_text(encoding="utf-8"))
+t14 = roh14["tage"]["2026-11-16"]
+check("ohne-gemini-n1: ohne KI je Rolle + Kategorie, Zweitversuch gezählt, kein Rückfall", t14["ki"].get("ohne_ki") == 2
+      and t14["ohne_ki_rolle"] == {"gen": 1, "korr": 1} and t14["ohne_ki_grund"] == {"Frist": 2}
+      and t14["ki"].get("zweitversuch") == 3 and t14["ki"].get("zweitversuch_ok") == 1 and t14["ki"].get("anthropic") == 1 and "rueckfall" not in t14["ki"], t14)
 text, warn = nutzung.tagesbericht(d, "2026-11-16")
-check("Tagesbericht: Befunde, Claude, Rückfälle, je PC", "3 Befunde" in text and "Aufrufe Claude 2" in text
+check("Tagesbericht: Zeile „Ohne KI (kein Rückfall)“ mit Grund + Rolle, Zweitversuch, Monat", "Ohne KI (kein Rückfall) heute 2 (Frist: 2) "
+      "je Rolle (gen: 1, korr: 1), zweite Claude-Versuche 3 (davon geklappt 1)" in text and "ohne KI 2, zweite Versuche 3" in text
+      and "CASWS14: heute Befunde 2, Claude 1, Rückfall 0, ohne KI 2" in text, text)
+check("Tagesbericht: Befunde, Claude, Rückfälle, je PC", "5 Befunde" in text and "Aufrufe Claude 3" in text
       and "Rückfälle auf Gemini 1" in text and "CASWS08" in text and "CASWS10" in text, text)
 check("Tagesbericht: Chirp-Minuten + €", "Monat 1.6 min" in text and "€" in text and not warn, text)
 check("Tagesbericht-Datei geschrieben", pathlib.Path(d, "tagesbericht_2026-11-16.txt").exists())
