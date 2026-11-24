@@ -221,7 +221,7 @@ def takte(w, uhr, n=3, s=0.5):
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 takte(w, uhr, 1)                                    # erster Takt: nichts offen
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 txt = api.texte["E100"]
 check("kp öffnet SpeechMagic-Diktat → Senf + FROG-Sätze stehen am Ende des Diktats",
       "[SENF] Gelenkerguss" in txt and "RH 31" not in txt and "Pes cavus links" in txt, txt)
@@ -233,7 +233,7 @@ takte(w, uhr, 40, 1.0)
 check("einmal je Diktatnummer: weitere Takte fügen nichts mehr ein", len(api.einfuege_aufrufe) == 1)
 # Peter löscht den Senf und schließt → keine Warnung; Wiederöffnen → nichts doppelt
 api.texte["E100"] = api.texte["E100"].split("[SENF")[0]
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 schliessen(api)
 takte(w, uhr, 2)
 check("Senf gelöscht, Diktat zu → keine Warnung", warn == [], warn)
@@ -254,7 +254,7 @@ check("senf_zeilen unauffällig + a_-Eintrag: Vara-Zeile nach „[SENF] unauffä
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=UN1)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 check("v1 unauffällig → nur „[SENF] unauffällig“ im Diktat", api.texte["E100"].strip().endswith("[SENF] unauffällig") and "Vara" not in api.texte["E100"],
       api.texte["E100"])
 senf_box["d"] = UN2
@@ -285,7 +285,7 @@ cfg2 = types.SimpleNamespace(sm_senf=["kp"], sm_ibl=[], senf_ordner="S", ibl_abl
 w, api, uhr, logs, warn, senf_box = neu_waechter(cfg=cfg2, senf=UN1)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 senf_box["d"] = UN2
 takte(w, uhr, 40, 1.0)
 check("SM_IBL aus: „IB Lab: KL 3 re.“ kommt über den Senf-Abgleich", "[SENF] IB Lab: KL 3 re." in api.texte["E100"], api.texte["E100"])
@@ -293,7 +293,7 @@ check("SM_IBL aus: „IB Lab: KL 3 re.“ kommt über den Senf-Abgleich", "[SENF
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=UN1)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 uhr.t += 901
 senf_box["d"] = UN2
 takte(w, uhr, 10, 1.0)
@@ -318,7 +318,7 @@ check("Grenze im Code 1200, kein hartes [:300] mehr",
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=dict(SENF, zeilen=["RH 146 · Knie re · " + LANG]))
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 takte(w, uhr, 40, 1.0)
 check("langer Senf im Diktat: vollständig und genau einmal (kein doppeltes Einfügen)",
       len(api.einfuege_aufrufe) == 1 and api.texte["E100"].count(LANG) == 1, (api.einfuege_aufrufe, api.texte["E100"][-80:]))
@@ -355,11 +355,208 @@ check("… der zweite loggt „schon eingefügt (Merker)“ statt einzufügen",
 check("Wächter-Sperre: außerhalb von Windows immer frei (Tests), Name je Sitzung (Local\\)",
       M.waechter_sperre() is True and M.WAECHTER_MUTEX.startswith("Local\\"))
 
+# ── kaiscribe-sm-einfuegen-wiederholen-n1 (Peter 24.11.2026): SpeechMagic lädt das Diktat erst nach dem Fenster und
+# überschreibt/speichert ein zu frühes Einfügen nicht → Ruhe-Prüfung, Nachkontrolle nach 3 s, bis zu 3 Versuche,
+# Wiederöffnen nach Fehlschlag bzw. nach „Marke steht noch drin“ ──
+SENF_Z = M.senf_zeilen(SENF)[1]
+cfg_s = types.SimpleNamespace(sm_senf=["kp"], sm_ibl=[], senf_ordner="S", ibl_ablage=ABL,
+                              sm_schalter_ordner=os.path.join(tmp, "Bruecke"))
+
+
+class Laedt(Api):
+    """SpeechMagic-Attrappe: lädt den gespeicherten Text erst `lade_s` nach dem Öffnen und überschreibt dabei das Feld;
+    `schlucken` = so viele Einfügungen gehen verloren (sofort: `sofort`, sonst 1 s später überschrieben)."""
+
+    def __init__(self, uhr, lade_s=None, gespeichert="Diktat vom Arzt.\r\n", schlucken=0, sofort=True):
+        super().__init__(uhr)
+        self.lade_s, self.gespeichert, self.schlucken, self.sofort = lade_s, gespeichert, schlucken, sofort
+        self.offen_seit, self.geladen, self.ueberschreib = {}, set(), {}
+
+    def text(self, edit):
+        t0 = self.offen_seit.get(edit)
+        if self.lade_s is not None and t0 is not None and edit not in self.geladen and self.uhr.t - t0 >= self.lade_s:
+            self.texte[edit] = self.gespeichert           # Laden überschreibt alles, was bis dahin im Feld stand
+            self.geladen.add(edit)
+        u = self.ueberschreib.get(edit)
+        if u and self.uhr.t >= u[0]:
+            self.texte[edit] = u[1]
+            del self.ueberschreib[edit]
+        return self.texte.get(edit)
+
+    def einfuegen(self, edit, text):
+        vorher = self.texte.get(edit, "")
+        ok, g = super().einfuegen(edit, text)
+        if self.schlucken > 0:
+            self.schlucken -= 1
+            if self.sofort:
+                self.texte[edit] = vorher                 # Paste verpufft
+            else:
+                self.ueberschreib[edit] = (self.uhr.t + 1.0, vorher)   # erst da, 1 s später überschrieben
+        return ok, g
+
+
+def neu_laedt(**kw):
+    w, _, uhr, logs, warn, box = neu_waechter(cfg=cfg_s, senf=SENF, ordner=kw.pop("ordner", None))
+    api = Laedt(uhr, **kw)
+    w.api = api
+    return w, api, uhr, logs, warn, box
+
+
+def oeffnen_l(api, uhr, hwnd=100, pid=7, text=""):
+    oeffnen(api, uhr, hwnd=hwnd, pid=pid, text=text)
+    api.offen_seit[f"E{hwnd}"] = uhr.t
+
+
+# 1. Feld lädt nach dem Öffnen nach (überschreibt) → erst einfügen, wenn ruhig
+w, api, uhr, logs, warn, box = neu_laedt(lade_s=1.5)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+t_auf = uhr.t
+zeiten = []
+for _ in range(20):
+    uhr.t += 0.5
+    n = len(api.einfuege_aufrufe)
+    w.takt()
+    if len(api.einfuege_aufrufe) > n:
+        zeiten.append(uhr.t - t_auf)
+t = api.texte["E100"]
+check("Ruhe: Feld lädt 1,5 s nach dem Öffnen nach → genau EIN Einfügen, erst danach (Diktat + Senf beide da)",
+      len(api.einfuege_aufrufe) == 1 and t.startswith("Diktat vom Arzt.") and all(z in t for z in SENF_Z), (zeiten, t, logs))
+check("… frühestens 2 s nach dem Öffnen und ≥ 1 s nach dem Laden (zwei gleiche Lesungen)",
+      zeiten and zeiten[0] >= max(M.RUHE_ALTER_S, 1.5 + M.RUHE_GLEICH_S), zeiten)
+check("… Log „Versuch 1/3 … eingefügt“ und „Kontrolle nach 3 s – steht drin“",
+      any("Versuch 1/3" in l and "eingefügt" in l for l in logs) and any("Kontrolle nach 3 s – steht drin" in l for l in logs),
+      logs)
+# Ruhe gilt für jedes Einfügen: solange sich der Text ändert (Arzt tippt), wird nicht eingefügt
+w, api, uhr, logs, warn, box = neu_laedt()
+takte(w, uhr, 1)
+oeffnen_l(api, uhr, text="a")
+for i in range(12):
+    api.texte["E100"] += "x"                              # jede Lesung anders
+    uhr.t += 0.5
+    w.takt()
+n_tippen = len(api.einfuege_aufrufe)
+takte(w, uhr, 6)
+check("Ruhe: Text ändert sich laufend → nichts; steht er still → eingefügt (Log „noch nicht ruhig“ einmal)",
+      n_tippen == 0 and len(api.einfuege_aufrufe) == 1 and sum("noch nicht ruhig" in l for l in logs) == 1, logs)
+
+# 2. Fehlschlag „nicht im Text“ → Merker zurück, Versuch 2/3 nach 2 s, dann eingefügt
+w, api, uhr, logs, warn, box = neu_laedt(schlucken=1)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 6)
+check("Fehlschlag sofort: Merker zurückgenommen (kein „senf“ gemerkt)", "senf" not in w.merker.lesen(NR)["eingefuegt"]
+      and any("Versuch 1/3" in l and "NICHT eingefügt (nicht im Text)" in l and "nächster in 2 s" in l for l in logs), logs)
+takte(w, uhr, 12)
+t = api.texte["E100"]
+check("… Versuch 2/3 eingefügt, Senf genau einmal, Merker „senf“ wieder gesetzt",
+      len(api.einfuege_aufrufe) == 2 and t.count(SENF_Z[0]) == 1 and "senf" in w.merker.lesen(NR)["eingefuegt"]
+      and any("Versuch 2/3" in l and "eingefügt" in l and "NICHT" not in l for l in logs), (t, logs))
+# Nachtrag 10:49 (a): eingefügt, Prüfung bestanden, 1 s später von SpeechMagic überschrieben → Kontrolle nach 3 s
+w, api, uhr, logs, warn, box = neu_laedt(schlucken=1, sofort=False)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 6)
+n1 = len(api.einfuege_aufrufe)
+takte(w, uhr, 20)
+t = api.texte["E100"]
+check("Nachkontrolle: sofort drin, 1 s später überschrieben → nach 3 s erkannt, wiederholt, am Ende genau einmal drin",
+      n1 == 1 and len(api.einfuege_aufrufe) == 2 and t.count(SENF_Z[0]) == 1
+      and any("Kontrolle nach 3 s – 2 Zeile(n) nicht mehr im Text – Versuch 1/3" in l for l in logs), (t, logs))
+# Arzt bearbeitet in den 3 s (übernimmt = Marken weg) → zählt als da, kein zweites Einfügen
+w, api, uhr, logs, warn, box = neu_laedt()
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 5)
+api.texte["E100"] = M.ohne_marken(api.texte["E100"])
+takte(w, uhr, 20)
+check("Nachkontrolle: Marken in den 3 s übernommen → steht drin, nichts doppelt",
+      len(api.einfuege_aufrufe) == 1 and any("steht drin" in l for l in logs), logs)
+
+# 3. alle 3 Versuche scheitern → aufgegeben; nächstes Öffnen desselben Diktats → erneut, einmal
+gem = tempfile.mkdtemp()
+w, api, uhr, logs, warn, box = neu_laedt(schlucken=5, ordner=gem)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 40)
+check("3 Fehlschläge → genau 3 Versuche, „Versuch 3/3, aufgegeben; beim nächsten Öffnen erneut“, Merker ohne senf",
+      len(api.einfuege_aufrufe) == 3 and any("Versuch 3/3, aufgegeben" in l for l in logs)
+      and "senf" not in w.merker.lesen(NR)["eingefuegt"], (len(api.einfuege_aufrufe), logs))
+schliessen(api)
+takte(w, uhr, 2)
+check("… Diktat zu: keine Warnung (keine Marke im Text)", warn == [], warn)
+api.schlucken = 0
+uhr.t += 120
+oeffnen_l(api, uhr, hwnd=101, pid=8, text=api.texte["E100"])
+takte(w, uhr, 20)
+check("Wiederöffnen nach Fehlschlag → Senf jetzt eingefügt, genau einmal",
+      len(api.einfuege_aufrufe) == 4 and api.texte["E101"].count(SENF_Z[0]) == 1, (api.einfuege_aufrufe[-1:], logs[-4:]))
+api.texte["E101"] = M.ohne_marken(api.texte["E101"]).split("Gelenkerguss")[0]     # Arzt löscht den Senf
+takte(w, uhr, 3)
+schliessen(api, 101)
+takte(w, uhr, 2)
+uhr.t += 120
+oeffnen_l(api, uhr, hwnd=102, pid=9, text=api.texte["E101"])
+takte(w, uhr, 20)
+check("… danach übernommen/gelöscht und wieder geöffnet → nichts doppelt", len(api.einfuege_aufrufe) == 4, logs[-3:])
+
+# 4. Nachtrag 10:49 (b), RH 58: eingefügt + Kontrolle bestanden, geschlossen mit Marke, SpeechMagic hat es nicht gespeichert
+w, api, uhr, logs, warn, box = neu_laedt(lade_s=0.2)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 16)
+schliessen(api)
+takte(w, uhr, 2)
+check("RH 58: eingefügt, Kontrolle bestanden, zu mit Marke → Warnung, senf_offen", len(api.einfuege_aufrufe) == 1
+      and len(warn) == 1 and w.merker.lesen(NR)["senf_offen"] is True, (warn, logs))
+uhr.t += 1000
+oeffnen_l(api, uhr, hwnd=101, pid=8)                     # lädt den gespeicherten Stand – ohne Senf
+takte(w, uhr, 20)
+t = api.texte["E101"]
+check("… Wiederöffnen, Senf fehlt im Text (Arzt hat ihn nicht gelöscht) → erneut eingefügt, genau einmal",
+      len(api.einfuege_aufrufe) == 2 and t.startswith("Diktat vom Arzt.") and t.count(SENF_Z[0]) == 1
+      and any("zuletzt mit [SENF]-Marke geschlossen" in l for l in logs), (t, logs))
+# … Senf (mit Marke, vom Arzt ergänzt) steht beim Wiederöffnen da → nur gemerkt
+schliessen(api, 101)
+takte(w, uhr, 2)
+api.gespeichert = "Diktat vom Arzt.\r\n[SENF] Gelenkerguss, klein\r\n"
+uhr.t += 100
+oeffnen_l(api, uhr, hwnd=102, pid=9)
+takte(w, uhr, 20)
+check("… Marke steht beim Wiederöffnen (bearbeitet) → nicht neu eingefügt", len(api.einfuege_aufrufe) == 2,
+      (api.texte["E102"], logs[-3:]))
+# … zuletzt „übernommen bzw. gelöscht“ geschlossen → nie neu, auch wenn der Senf fehlt
+w, api, uhr, logs, warn, box = neu_laedt(lade_s=0.2)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 16)
+api.texte["E100"] = "Diktat vom Arzt.\r\n"                # Arzt löscht den Senf
+takte(w, uhr, 3)
+schliessen(api)
+takte(w, uhr, 2)
+uhr.t += 100
+oeffnen_l(api, uhr, hwnd=101, pid=8)
+takte(w, uhr, 20)
+check("… zuletzt „Senf übernommen bzw. gelöscht“ → beim Wiederöffnen nicht neu eingefügt",
+      len(api.einfuege_aufrufe) == 1 and "[SENF" not in api.texte["E101"] and w.merker.lesen(NR)["senf_offen"] is False,
+      logs[-4:])
+# … zu vor der Kontrolle, Zeilen schon wieder weg → nicht als eingefügt gemerkt, nächstes Öffnen erneut
+w, api, uhr, logs, warn, box = neu_laedt(schlucken=1, sofort=False)
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+takte(w, uhr, 5)
+uhr.t += 1.0
+w.takt()                                                 # Lesung: überschrieben
+schliessen(api)
+takte(w, uhr, 2)
+check("zu vor der Kontrolle, Zeilen fehlten → Merker zurück („beim nächsten Öffnen erneut“)",
+      "senf" not in w.merker.lesen(NR)["eingefuegt"] and any("vor der Kontrolle" in l for l in logs), logs[-3:])
+
 # Übernehmen (Taste): nur die Marken weg, danach keine Warnung beim Schließen
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 api.texte["E100"] = "Kniegelenk rechts: kein Erguss.\n" + api.texte["E100"]
 w.uebernehmen_anfordern()
 takte(w, uhr, 1)
@@ -369,7 +566,7 @@ check("Übernehmen: Marken entfernt, Senf-Inhalt + Diktat + IB-Lab-Sätze bleibe
       and "Pes cavus links" in t, t)
 check("… Log nennt die Zahl der Marken (ohne Text)", any("Übernehmen – 2 Marke(n) entfernt" in l for l in logs), logs)
 api.texte["E100"] += "\nGelenkerguss mit Begleitsynovitis."      # Peter ergänzt frei
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 schliessen(api)
 takte(w, uhr, 2)
 check("… übernommen und frei ergänzt → beim Schließen KEINE Warnung (nur die Marke zählt, nie der Inhalt)", warn == [], warn)
@@ -384,7 +581,7 @@ w.ausloeser = aus_datei
 w.existiert = lambda p, alt=w.existiert: os.path.exists(p) if p == aus_datei else alt(p)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 open(aus_datei, "w").write("x")
 takte(w, uhr, 1)
 check("Auslöser-Datei: Marken weg wie mit der Taste, Datei sofort gelöscht",
@@ -395,7 +592,7 @@ check("Auslöser-Datei: Marken weg wie mit der Taste, Datei sofort gelöscht",
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 schliessen(api)
 takte(w, uhr, 2)
 check("Sicherheitsnetz: [SENF]-Marke beim Schließen noch drin → Warnung mit Diktatnummer",
@@ -416,7 +613,7 @@ cfg = types.SimpleNamespace(sm_senf=[], sm_ibl=["kp"], senf_ordner="S", ibl_abla
 w, api, uhr, logs, warn, senf_box = neu_waechter(cfg=cfg, senf=SENF)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 5)
+takte(w, uhr, 6)
 check("SM_SENF = aus, SM_IBL = kp → nur die IB-Lab-Sätze", "Pes cavus links" in api.texte["E100"]
       and "[SENF" not in api.texte["E100"], api.texte["E100"])
 cfg2 = types.SimpleNamespace(sm_senf=["kp"], sm_ibl=[], senf_ordner="S", ibl_ablage=ABL,
@@ -424,7 +621,7 @@ cfg2 = types.SimpleNamespace(sm_senf=["kp"], sm_ibl=[], senf_ordner="S", ibl_abl
 w, api, uhr, logs, warn, senf_box = neu_waechter(cfg=cfg2, senf=SENF)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 5)
+takte(w, uhr, 6)
 check("SM_SENF = kp, SM_IBL = aus → nur der Senf", "[SENF" in api.texte["E100"] and "Pes cavus" not in api.texte["E100"])
 
 # Freigabe-Datei fehlt / Notschalter liegt → nichts
@@ -454,7 +651,7 @@ check("Pause/Stopp → jetzt eingefügt", len(api.einfuege_aufrufe) == 1 and "[S
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=dict(SENF, status="laeuft"))
 takte(w, uhr, 1)
 oeffnen(api, uhr, text="Diktat begonnen.")
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 n_ibl = len(api.einfuege_aufrufe)
 senf_box["d"] = SENF
 takte(w, uhr, 20, 1.0)
@@ -490,7 +687,7 @@ takte(w, uhr, 1)
 api.procs = [p for p in api.procs if p[0] != 9]
 api.wins.append((100, 7, TITEL))
 api.texte["E100"] = ""
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 check("residenter Prozess übernimmt: Befehlszeile des kurzen Startprozesses zählt (Nr 031, nicht 005)",
       len(api.einfuege_aufrufe) == 1 and any(NR in l and "erkannt" in l for l in logs), logs)
 # Live 21.11. (L1, Diktat 036): Startprozess lebt kürzer als ein Takt – nur die Startwache (50 ms) sieht ihn
@@ -505,7 +702,7 @@ api.procs = [p for p in api.procs if p[0] != 9]    # nach 0,2 s wieder weg
 uhr.t += 0.2
 api.wins.append((100, 7, TITEL))
 api.texte["E100"] = ""
-takte(w, uhr, 3)
+takte(w, uhr, 6)
 check("… Startprozess nur zwischen zwei Takten sichtbar → Nummer trotzdem richtig, eingefügt",
       len(api.einfuege_aufrufe) == 1 and any(NR in l and "erkannt" in l for l in logs), logs)
 w2, *_ = neu_waechter(senf=SENF, freigabe=False)
@@ -521,7 +718,7 @@ check("Diktat war schon vor KaiScribe offen → nicht angefasst", api.einfuege_a
 w, api, uhr, logs, warn, senf_box = neu_waechter(cfg=cfg2, senf=SENF)
 takte(w, uhr, 1)
 oeffnen(api, uhr, text="Diktat.\n" + "\n".join(M.senf_zeilen(SENF)[1]) + "\n")
-takte(w, uhr, 4)
+takte(w, uhr, 6)
 check("Senf steht schon im Diktat → nicht doppelt, nur gemerkt", api.einfuege_aufrufe == []
       and "senf" in w.merker.lesen(NR)["eingefuegt"], logs)
 # Merker nicht schreibbar → nie einfügen
@@ -529,7 +726,7 @@ w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF, ordner=os.path.join(
 open(os.path.join(tmp, "datei_statt_ordner"), "w").write("x")
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 5)
+takte(w, uhr, 6)
 check("Merker nicht schreibbar → nichts eingefügt (lieber nichts als doppelt)", api.einfuege_aufrufe == []
       and any("Merker nicht schreibbar" in l for l in logs), logs)
 
@@ -544,7 +741,7 @@ w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
 w.api = api = Kaputt(uhr)
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 5)
+takte(w, uhr, 6)
 check("Fehler beim Einfügen → nichts, Log, kein Absturz", any("Fehler RuntimeError" in l for l in logs), logs)
 
 # Thread: Takt alle 0,5 s, dazwischen Startwache alle 50 ms (nur wenn schnell())

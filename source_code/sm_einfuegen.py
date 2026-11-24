@@ -25,6 +25,10 @@ Ablauf (eigener Hintergrund-Thread, Takt 0,5 s, blockiert die Oberfläche nie):
      → warten). Text ans ENDE des Diktats (WM_PASTE an das Textfeld, ohne Fokuswechsel), Cursor/Markierung des Arztes
      danach genau wie vorher, Zwischenablage danach zurück. Jeder Text höchstens EINMAL je Diktatnummer (Merker lokal +
      auf X:, vor dem Einfügen geschrieben; steht der Text schon im Fenster, wird nur gemerkt). Jeder Fehler → nichts.
+     kaiscribe-sm-einfuegen-wiederholen-n1 (24.11.2026): SpeechMagic lädt das Diktat erst nach dem Fenster und
+     überschreibt ein zu frühes Einfügen → jedes Einfügen erst bei RUHIGEM Feld (Fenster ≥ 2 s alt, zwei Lesungen ≥ 1 s
+     gleich), 3 s danach Kontrolle; nachweislich nicht (mehr) im Text → Merker zurück, bis zu 3 Versuche im Abstand von
+     2 s, sonst beim nächsten Öffnen. Wiederöffnen nach „[SENF]-Marke steht noch drin“ und der Senf fehlt → erneut.
   4. Sicherheitsnetz (nur wegen der Marke, nie wegen des Inhalts): Schließt das Diktatfenster, während noch eine
      „[SENF“-Marke drinsteht → deutliche Warnung im
      KaiScribe-Fenster + Merker „senf_offen“ (für eine spätere Prüfung der Vidierliste). KaiScribe ändert den Brief nie.
@@ -57,6 +61,14 @@ STARTWACHE_S = 0.05        # live 21.11.: der Startprozess beim residenten CASSp
                            # Prozessliste (Toolhelp) alle 50 ms, Befehlszeile nur für NEUE CASSpeechMagic-PIDs
 START_FENSTER_S = 60        # Befehlszeile gilt nur, wenn ihr Prozess so kurz vor dem Fenster entstand
 TEXT_LESEN_S = 1.0          # Fenstertext nachlesen (für „steht schon da“ und das Sicherheitsnetz)
+# kaiscribe-sm-einfuegen-wiederholen-n1 (Peter 24.11.2026, CASWS08/CASWS10): SpeechMagic lädt Text/Audio des (wieder)
+# geöffneten Diktats erst NACH dem Erscheinen des Fensters und überschreibt das Textfeld bzw. speichert ein zu frühes
+# Einfügen nicht → Einfügen erst, wenn das Feld „ruhig“ ist, danach nachkontrollieren, bei Fehlschlag wiederholen.
+RUHE_ALTER_S = 2.0          # Fenster mindestens so alt …
+RUHE_GLEICH_S = 1.0         # … und zwei Lesungen im Abstand ≥ 1 s gleich (kein Laden mehr) – gilt für JEDES Einfügen
+KONTROLLE_S = 3.0           # nach dem Einfügen so viel später erneut lesen; fehlt es dann → wie Fehlschlag
+VERSUCHE = 3                # je Öffnen höchstens so viele Versuche …
+VERSUCH_ABSTAND_S = 2.0     # … im Abstand von 2 s; danach beim nächsten Öffnen desselben Diktats erneut
 IBL_NACHLADEN_S = 20
 IBL_MAX_S = 30 * 60         # IB-Lab-Ergebnisse höchstens so lange nach dem Öffnen nachreichen
 SCHALTER_S = 30             # Freigabe-/Notschalter-Datei so oft prüfen
@@ -259,9 +271,11 @@ def _zeilen_im_text(text):
 
 
 def neue_zeilen(zeilen, text):
-    """Zeilen, die noch nicht (als ganze Zeile) im Fenstertext stehen."""
+    """Zeilen, die noch nicht (als ganze Zeile) im Fenstertext stehen. Eine Senf-Zeile gilt auch ohne ihre Marke als da
+    (nach „Übernehmen“ steht „Gelenkerguss“ statt „[SENF] Gelenkerguss“ – nie noch einmal)."""
     da = _zeilen_im_text(text)
-    return [z for z in zeilen if " ".join(z.split()) not in da]
+    da |= {" ".join(ohne_marken(z).split()) for z in da}
+    return [z for z in zeilen if " ".join(z.split()) not in da and " ".join(ohne_marken(z).split()) not in da]
 
 
 def block(zeilen, text_vorher):
@@ -336,6 +350,33 @@ class Merker:
                 continue
         return ok
 
+    def zuruecknehmen(self, nr, schluessel):
+        """Einträge wieder austragen (Einfügen nachweislich gescheitert) – an JEDER Stelle, sonst gälte er über die andere
+        weiter. → True, wenn mindestens eine Stelle geschrieben wurde."""
+        weg = set(schluessel)
+        z = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(self.jetzt()))
+        ok = False
+        for o in self._ordner():
+            p = os.path.join(o, f"{nr}.json")
+            try:
+                with open(p, encoding="utf-8") as f:
+                    x = json.load(f)
+            except (OSError, ValueError):
+                continue
+            if not isinstance(x, dict):
+                continue
+            x["eingefuegt"] = {k: v for k, v in (x.get("eingefuegt") or {}).items() if k not in weg}
+            x["zeit"] = z
+            try:
+                tmp = f"{p}.{os.getpid()}.tmp"
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(x, f, ensure_ascii=False)
+                os.replace(tmp, p)
+                ok = True
+            except OSError:
+                continue
+        return ok
+
     def aufraeumen(self, tage=MERKER_TAGE):
         """Lokale Merker älter als tage löschen (nur <11 Ziffern>.json)."""
         n = 0
@@ -370,6 +411,24 @@ class Sitzung:
         self.senf_offen_v = None                # „v“ der gerade offenen (noch nicht eingefügten) Zeilen
         self.mikro_gemeldet = None
         self.edit = None
+        self.text_seit = None                   # Zeit der ERSTEN Lesung des aktuellen Textstands (Ruhe-Prüfung)
+        self.ruhe_gemeldet = False
+        self.versuch = 0                        # Einfüge-Versuche seit dem letzten bestätigten Einfügen (≤ VERSUCHE)
+        self.versuch_naechst = 0.0
+        self.aufgegeben = False                 # VERSUCHE erreicht → in dieser Sitzung nichts mehr (nächstes Öffnen erneut)
+        self.kontrolle = None                   # (Zeit, Zeilen, Schlüssel, Rücknahme-Stand) des letzten Einfügens
+        self.wieder_pruefen = False             # Wiederöffnen nach „Marke stand noch drin“: Senf fehlt → erneut einfügen
+
+    def text_neu(self, t, jetzt):
+        """Neue Lesung des Textfelds merken; ändert sich der Text, beginnt die Ruhe-Zeit von vorn."""
+        if self.text_seit is None or t != self.text:
+            self.text_seit = jetzt
+        self.text, self.text_zeit = t, jetzt
+
+    def ruhig(self, jetzt):
+        """Fenster ≥ RUHE_ALTER_S alt UND zwei Lesungen im Abstand ≥ RUHE_GLEICH_S gleich."""
+        return (self.text_seit is not None and jetzt - self.t0 >= RUHE_ALTER_S
+                and self.text_zeit - self.text_seit >= RUHE_GLEICH_S)
 
 
 class Waechter:
@@ -407,7 +466,7 @@ class Waechter:
         ok, n, grund = self.api.marken_entfernen(s.edit, (SENF_FOLGE, MARKE_KURZ))
         nach = self.api.text(s.edit)
         if nach is not None:
-            s.text = nach
+            s.text_neu(nach, self.jetzt())
         self.log(f"[SM] {s.nr}: Übernehmen – {n} Marke(n) entfernt" + ("" if ok else f", abgebrochen ({grund})"))
 
     # Schalter
@@ -513,6 +572,20 @@ class Waechter:
         self.vergeben.add(pid)
         d = self.merker.lesen(p["nr"])
         s = Sitzung(hwnd, titel, benutzer, p["nr"], jetzt, senf_an, ibl_an)
+        wieder = ""
+        senf_k = [k for k in d["eingefuegt"] if k == "senf" or _V_SCHLUESSEL.match(k)]
+        if senf_an and d.get("senf_offen") and senf_k:
+            # Nachtrag Peter 24.11. 10:49 (RH 58): zuletzt mit „[SENF]-Marke steht noch drin“ geschlossen – der Arzt hat
+            # den Senf also NICHT gelöscht. Fehlt er jetzt im Text (SpeechMagic hat das Einfügen nicht gespeichert), kommt
+            # er erneut; steht er (oder irgendeine [SENF]-Marke) noch da, wird nur gemerkt. Merker dafür zurücknehmen.
+            try:
+                self.merker.zuruecknehmen(p["nr"], senf_k)
+            except Exception:
+                pass
+            for k in senf_k:
+                d["eingefuegt"].pop(k, None)
+            s.wieder_pruefen = True
+            wieder = ", zuletzt mit [SENF]-Marke geschlossen – fehlt der Senf im Text, kommt er erneut"
         if "senf" in d["eingefuegt"]:
             s.senf_fertig = True
             s.senf_eingefuegt = True
@@ -521,13 +594,18 @@ class Waechter:
             s.senf_v = max(vs)
         s.ibl_erledigt = {k for k in d["eingefuegt"] if k.startswith("ibl:")}
         self.log(f"[SM] {p['nr']}: SpeechMagic-Diktat ({benutzer}) erkannt – Senf {'an' if senf_an else 'aus'}, "
-                 f"IB Lab {'an' if ibl_an else 'aus'}" + (", schon einmal eingefügt" if d["eingefuegt"] else ""))
+                 f"IB Lab {'an' if ibl_an else 'aus'}" + (", schon einmal eingefügt" if d["eingefuegt"] else "") + wieder)
         return s
 
     def _ende(self, hwnd):
         s = self.sitzungen.pop(hwnd, None)
         if s is None:
             return
+        if s.kontrolle is not None and neue_zeilen(s.kontrolle[1], s.text):
+            # vor der Nachkontrolle zu und die Zeilen fehlen in der letzten Lesung → nicht als eingefügt merken
+            self._zuruecknehmen(s, s.kontrolle[2], s.kontrolle[3])
+            self.log(f"[SM] {s.nr}: Diktat zu vor der Kontrolle, eingefügte Zeilen fehlten – beim nächsten Öffnen erneut")
+        s.kontrolle = None
         if hat_senf(s.text):
             self.log(f"[SM] {s.nr}: Diktat geschlossen, [SENF]-Marke steht noch drin – Warnung")
             try:
@@ -554,7 +632,9 @@ class Waechter:
         if jetzt - s.text_zeit >= TEXT_LESEN_S:
             t = self.api.text(s.edit)
             if t is not None:
-                s.text, s.text_zeit = t, jetzt
+                s.text_neu(t, jetzt)
+        if s.kontrolle is not None and jetzt >= s.kontrolle[0]:
+            self._kontrollieren(s, jetzt)
         # Senf
         if not s.senf_fertig and not s.senf_offen and jetzt >= s.senf_naechst:
             s.senf_naechst = jetzt + _senf.NACHLADEN_S
@@ -598,15 +678,69 @@ class Waechter:
                     s.ibl_offen[k] = zeilen
         if not s.senf_offen and not s.ibl_offen:
             return
+        if s.aufgegeben or s.kontrolle is not None or jetzt < s.versuch_naechst:
+            return
         m = self.api.mikrofon()
         if m != "frei":
             if s.mikro_gemeldet != m:
                 self.log(f"[SM] {s.nr}: Mikrofon {m} – warte mit dem Einfügen")
                 s.mikro_gemeldet = m
             return
-        self._einfuegen(s)
+        if not s.ruhig(jetzt):
+            if not s.ruhe_gemeldet and jetzt - s.t0 >= RUHE_ALTER_S:
+                self.log(f"[SM] {s.nr}: Textfeld noch nicht ruhig (lädt/ändert sich) – warte mit dem Einfügen")
+                s.ruhe_gemeldet = True
+            return
+        self._einfuegen(s, jetzt)
 
-    def _einfuegen(self, s):
+    def _zuruecknehmen(self, s, schluessel, stand):
+        """Einfügen gescheitert: Merker-Schlüssel austragen, offene Zeilen wiederherstellen (nächster Versuch/Öffnen)."""
+        try:
+            self.merker.zuruecknehmen(s.nr, schluessel)
+        except Exception:
+            pass
+        ibl, senf, senf_v, senf_eingefuegt = stand
+        for k, z in ibl.items():
+            s.ibl_erledigt.discard(k)
+            s.ibl_offen.setdefault(k, z)
+        if senf:
+            s.senf_offen, s.senf_offen_v, s.senf_fertig = list(senf), senf_v, False
+        s.senf_eingefuegt = senf_eingefuegt
+
+    def _fehlschlag(self, s, jetzt, schluessel, stand, wie):
+        self._zuruecknehmen(s, schluessel, stand)
+        if s.versuch >= VERSUCHE:
+            s.aufgegeben = True
+            self.log(f"[SM] {s.nr}: {wie} – Versuch {s.versuch}/{VERSUCHE}, aufgegeben; beim nächsten Öffnen erneut")
+        else:
+            s.versuch_naechst = jetzt + VERSUCH_ABSTAND_S
+            self.log(f"[SM] {s.nr}: {wie} – Versuch {s.versuch}/{VERSUCHE}, nächster in {VERSUCH_ABSTAND_S:g} s")
+
+    def _kontrollieren(self, s, jetzt):
+        """≥ KONTROLLE_S nach dem Einfügen: stehen die Zeilen noch drin? Sonst wie Fehlschlag (Wiederholung)."""
+        _, zeilen, schluessel, stand = s.kontrolle
+        t = self.api.text(s.edit)
+        if t is None:
+            return                                  # nicht lesbar → nächster Takt
+        s.text_neu(t, jetzt)
+        s.kontrolle = None
+        fehlt = neue_zeilen(zeilen, t)
+        if not fehlt:
+            self.log(f"[SM] {s.nr}: Kontrolle nach {KONTROLLE_S:g} s – steht drin (Versuch {s.versuch}/{VERSUCHE})")
+            s.versuch = 0
+            return
+        if len(fehlt) < len(zeilen):
+            # nur ein Teil weg → der Arzt hat bearbeitet, SpeechMagic überschreibt immer alles: nicht nachlegen
+            self.log(f"[SM] {s.nr}: Kontrolle nach {KONTROLLE_S:g} s – {len(zeilen) - len(fehlt)} von {len(zeilen)} "
+                     f"Zeile(n) noch da (bearbeitet) – nichts nachgelegt")
+            s.versuch = 0
+            return
+        self.eingefuegt_n = max(0, self.eingefuegt_n - 1)
+        self._fehlschlag(s, jetzt, schluessel, stand,
+                         f"Kontrolle nach {KONTROLLE_S:g} s – {len(zeilen)} Zeile(n) nicht mehr im Text")
+
+    def _einfuegen(self, s, jetzt=None):
+        jetzt = self.jetzt() if jetzt is None else jetzt
         # kaiscribe-sm-waechter-bleibt-n1: Merker unmittelbar vor dem Einfügen neu lesen – hat eine andere KaiScribe
         # (anderer Prozess, z. B. Gast-Selbsttest oder der vorige stille Wächter) dasselbe schon eingefügt, nicht noch einmal
         try:
@@ -630,8 +764,16 @@ class Waechter:
         text = self.api.text(s.edit)
         if text is None:
             return                                  # Fenster antwortet gerade nicht → nächster Takt
-        s.text = text
+        if text != s.text:
+            s.text_neu(text, jetzt)                 # hat sich seit der letzten Lesung geändert → noch nicht ruhig
+            return
         neu = neue_zeilen(zeilen, text)
+        if s.wieder_pruefen and s.senf_offen and hat_senf(text):
+            # Wiederöffnen nach „Marke stand noch drin“: irgendeine [SENF]-Marke steht noch → der Senf ist da (evtl.
+            # vom Arzt bearbeitet) – nie ein zweites Mal
+            senf = set(s.senf_offen)
+            neu = [z for z in neu if z not in senf]
+        stand = ({k: list(v) for k, v in s.ibl_offen.items()}, list(s.senf_offen), s.senf_offen_v, s.senf_eingefuegt)
         if not self.merker.schreiben(s.nr, schluessel):
             self.log(f"[SM] {s.nr}: Merker nicht schreibbar – nichts eingefügt (nie doppelt)")
             s.senf_offen, s.ibl_offen, s.senf_fertig, s.ibl_an = [], {}, True, False
@@ -641,20 +783,31 @@ class Waechter:
         s.ibl_offen, s.senf_offen = {}, []
         if hatte_senf:
             s.senf_fertig = True
+            s.wieder_pruefen = False
         if not neu:
             self.log(f"[SM] {s.nr}: {', '.join(schluessel)} steht schon im Diktat – nur gemerkt")
             s.senf_eingefuegt = s.senf_eingefuegt or hatte_senf
             return
+        s.versuch += 1
+        quelle = ', '.join(k.split('_')[-1] if k != 'senf' else 'Senf' for k in schluessel)
         ok, grund = self.api.einfuegen(s.edit, block(neu, text))
         nach = self.api.text(s.edit)
         if nach is not None:
-            s.text = nach
-        drin = ok and nach is not None and not neue_zeilen(neu, nach)
-        if drin:
+            s.text_neu(nach, jetzt)
+        fehlt = neue_zeilen(neu, nach) if nach is not None else None
+        if fehlt == []:
             self.eingefuegt_n += 1
             s.senf_eingefuegt = s.senf_eingefuegt or hatte_senf
-        self.log(f"[SM] {s.nr}: {len(neu)} Zeile(n) ({', '.join(k.split('_')[-1] if k != 'senf' else 'Senf' for k in schluessel)}) "
-                 + ("eingefügt, Cursor zurück, Zwischenablage zurück" if drin else f"NICHT eingefügt ({grund or 'nicht im Text'})"))
+            s.kontrolle = (jetzt + KONTROLLE_S, neu, schluessel, stand)
+            self.log(f"[SM] {s.nr}: Versuch {s.versuch}/{VERSUCHE} – {len(neu)} Zeile(n) ({quelle}) eingefügt, "
+                     f"Cursor zurück, Zwischenablage zurück; Kontrolle in {KONTROLLE_S:g} s")
+            return
+        wie = f"{len(neu)} Zeile(n) ({quelle}) NICHT eingefügt ({grund or 'nicht im Text'})"
+        if fehlt is None:
+            # Text danach nicht lesbar → nicht nachweisbar, ob es drin ist: gemerkt lassen (lieber nichts als doppelt)
+            self.log(f"[SM] {s.nr}: Versuch {s.versuch}/{VERSUCHE} – {wie}, Text danach nicht lesbar – keine Wiederholung")
+            return
+        self._fehlschlag(s, jetzt, schluessel, stand, wie)
 
 
 # ───────────────────────────── Windows ─────────────────────────────
