@@ -340,7 +340,8 @@ check("WAV-Modus: sounddevice → WavQuelle, Dialoge still", mod.sd is quelle an
 quelle.echtzeit = False
 
 
-def wav_app(schritte, nr, aid):
+def wav_app(schritte, nr, aid, benutzer="rg"):
+    """live-anzeige-aus-kp-n1: Standard rg (Live-Anzeige an wie bisher); kp = ohne Live-Anzeige (eigene Fälle unten)."""
     a = neue_app()
     a._speechmike = mod._sm.SpeechMikeLeser(on_taste=lambda t, g, roh: a.after(0, a.speechmike_taste, t, g, roh),
                                             log=lambda *x: None, hid_modul=None)
@@ -352,7 +353,7 @@ def wav_app(schritte, nr, aid):
     a._schliessen = lambda: (a.geschlossen.append(True), a._schliessen_echt())
     json.dump({"schritte": schritte, "max_s": 60}, open(os.environ["RAKSCRIBE_WAV_ABLAUF"], "w", encoding="utf-8"))
     with open(os.path.join(ORDNER, cas_mod.AUFTRAG), "w", encoding="utf-8") as f:
-        json.dump({"protokoll": 1, "auftrag_id": aid, "nr": nr, "benutzer": "kp", "bruecke_pid": 4242,
+        json.dump({"protokoll": 1, "auftrag_id": aid, "nr": nr, "benutzer": benutzer, "bruecke_pid": 4242,
                    "zeit": time.time(), "zeit_text": "", "testbefund": False}, f)
     a._cas_einmal()
     a._wav_ablauf_starten()
@@ -393,6 +394,36 @@ check("WAV-Ablauf mit STT-Ausfall: kein Befund, EOL schickt nichts, Schließen �
       not os.path.exists(os.path.join(ORDNER, "cas_ergebnis_20261015902.txt")) and ant.get("status") == "abgebrochen"
       and all(not t for n, t, _z in ges if n in ("nach_ins", "nach_eol")), f"{ant} {ges}")
 check("… Dialog „Kein Text diktiert“ nur protokolliert", any("Kein Text" in d for d in mod._WAV_DIALOGE), str(mod._WAV_DIALOGE))
+mod._WAV_FEHLER = "aus"
+
+# ───────────── 6b. live-anzeige-aus-kp-n1: WAV-Modus als kp (Abnahme-Weg 451898) – kein Streaming, Befund wie bisher
+CHIRP.clear(); STREAM.clear(); mod._WAV_DIALOGE.clear()
+mod.STT_NEUVERSUCH_S = 0.0
+mod.NICHT_ERKANNT_DIR = os.path.join(TMP, "nicht_erkannt")
+a, ges = wav_app([{"warte_auf": "cas", "timeout_s": 5}, {"taste": "RECORD", "danach_s": 0.1}, {"sprich": diktat_wav, "danach_s": 0.2},
+                  {"taste": "INS", "danach_s": 0.1}, {"warte_auf": "kontrolle", "timeout_s": 10}, {"merke": "nach_ins"},
+                  {"taste": "EOL", "danach_s": 0.2}, {"warte_auf": "kein_cas", "timeout_s": 5}, {"ende": True}],
+                 "20261015903", "w3", benutzer="kp")
+ant = json.load(open(os.path.join(ORDNER, "cas_antwort_w3.json"), encoding="utf-8"))
+check("kp im WAV-Modus: KEIN Streaming-Paket, chirp_3 genau einmal über das ganze Audio",
+      STREAM == [] and len(CHIRP) == 1 and CHIRP[0] >= 1.2 * 16000, f"{len(STREAM)} {CHIRP}")
+check("… Befund rechts nach INS, EOL → Brücke „fertig“ (wie rg)",
+      any(n == "nach_ins" and "## Befund" in t for n, t, _z in ges) and ant.get("status") == "fertig", f"{ges} {ant}")
+
+CHIRP.clear(); STREAM.clear(); mod._WAV_DIALOGE.clear()
+a, ges = wav_app([{"warte_auf": "cas", "timeout_s": 5}, {"fehler": "stt"}, {"taste": "RECORD", "danach_s": 0.1},
+                  {"sprich": diktat_wav, "danach_s": 0.2}, {"taste": "INS", "danach_s": 0.1},
+                  {"warte_auf": "fertig", "timeout_s": 10}, {"merke": "nach_ins"}, {"taste": "EOL", "danach_s": 0.2},
+                  {"merke": "nach_eol"}, {"ende": True}], "20261015904", "w4", benutzer="kp")
+ant = json.load(open(os.path.join(ORDNER, "cas_antwort_w4.json"), encoding="utf-8"))
+wavs = os.listdir(mod.NICHT_ERKANNT_DIR) if os.path.isdir(mod.NICHT_ERKANNT_DIR) else []
+check("kp mit STT-Ausfall: kein Befund, EOL schickt nichts, Brücke „abgebrochen“",
+      not os.path.exists(os.path.join(ORDNER, "cas_ergebnis_20261015904.txt")) and ant.get("status") == "abgebrochen"
+      and all(not t for n, t, _z in ges if n in ("nach_ins", "nach_eol")), f"{ant} {ges}")
+check("… nie still leer: rote Zeile „Spracherkennung nicht verfügbar …“, Audio als WAV behalten",
+      "Spracherkennung nicht verfügbar" in a.repariert_label.cfg.get("text", "")
+      and a.repariert_label.cfg.get("text_color") == mod.RECORDING_RED
+      and any(w.endswith("_20261015904.wav") for w in wavs), f"{a.repariert_label.cfg} {wavs}")
 mod._WAV_FEHLER = "aus"
 
 print("\n" + ("✅ AUDIO-DATEI PASS" if not fails else f"❌ {fails} FAIL"))

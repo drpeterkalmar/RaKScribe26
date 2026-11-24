@@ -71,6 +71,10 @@ class Config:
     # chirp-fachwortliste-n1 (Peter 24.11.2026): zusätzliche Fachwortliste aus SpeechMagic-Briefen für chirp_3
     # (phrases.json chirp_sm, stt.CHIRP_SM_BOOST), nur für diese Kürzel. Standard aus (Messung 24.11.: bei kp nicht besser).
     chirp_sm: List[str] = field(default_factory=list)
+    # kaiscribe-live-anzeige-aus-kp-n1 (Peter 24.11.2026 „Ja“ auf Vorschlag 1): für diese Kürzel KEINE Live-Anzeige
+    # (kein Google-Streaming, keine Abschnitts-Reparatur je SpeechMike-Pause) – der Text kommt erst nach Stopp/INS aus
+    # chirp_3. Standard kp; „aus“ = niemand (alle wieder mit Live-Anzeige = Rollback-Schalter). Ohne CAS-Auftrag → Live an.
+    live_anzeige_aus: List[str] = field(default_factory=lambda: ["kp"])
     sm_uebernehmen_taste: str = "ctrl+alt+s"   # Nachtrag 21.11. 21:13: „Übernehmen“ = [SENF]-Marken weg (aus = keine Taste)
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
@@ -165,6 +169,8 @@ def load_config(path):
         cfg.sm_ibl = _senf.kuerzel_liste(sek.get("SM_IBL", ""))
     if "CHIRP_SM" in sek:
         cfg.chirp_sm = _senf.kuerzel_liste(sek.get("CHIRP_SM", ""), standard=())   # kp | kp, rg | aus
+    if "LIVE_ANZEIGE_AUS" in sek:
+        cfg.live_anzeige_aus = _senf.kuerzel_liste(sek.get("LIVE_ANZEIGE_AUS", ""), standard=())  # kp | kp, rg | aus
     cfg.sm_uebernehmen_taste = (sek.get("SM_UEBERNEHMEN_TASTE", "") or cfg.sm_uebernehmen_taste).strip().lower()
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):

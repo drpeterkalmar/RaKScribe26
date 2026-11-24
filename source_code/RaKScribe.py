@@ -467,6 +467,12 @@ def _get_stt_access_token():
 _chirp3_request = _stt.chirp3_request
 _stitch_overlaps = _stt.stitch_overlaps
 _chirp3_worker = _stt.chirp3_worker
+# kaiscribe-live-anzeige-aus-kp-n1: ohne Live-Anzeige gibt es keinen Streaming-Text als Rettung → chirp_3 einmal
+# wiederholen (nach kurzer Wartezeit), sonst Audio behalten (WAV hier, Standard %APPDATA%\KaiScribe\nicht_erkannt) +
+# rote Zeile. Nie still leer.
+STT_NEUVERSUCH_S = 2.0
+STT_FEHLER_TEXT = "Spracherkennung nicht verfügbar – bitte erneut diktieren/prüfen"
+NICHT_ERKANNT_DIR = None
 
 
 def _ki_weiche(anbieter):
@@ -2300,7 +2306,7 @@ class RaKScribeApp(ctk.CTk):
             on_level=lambda rms: self.after(0, self.update_level_bar, rms),
             on_stream_fehler=lambda e: self._live_anzeige_fehler(gen, e),
             on_capture_fehler=lambda e: self._capture_fehler(gen, e),
-            log=log)
+            log=log, live=getattr(self, "_live_an", True))
         # Streaming-Text mit der Abschnittsnummer seiner Sitzung (v3.8.0: Anzeige nach SpeechMike-Pausen)
         a.on_text = lambda text, is_final: self.after(0, self.update_interim_text, text, is_final, gen, a.stream_abschnitt)
         self._aufnahme = a
@@ -2387,6 +2393,8 @@ class RaKScribeApp(ctk.CTk):
             self.stream_transcript = ""
             self.stream_interim = ""
             self._live_aus = False
+            self._live_an = self._live_anzeige_an()   # live-anzeige-aus-kp-n1: kp → kein Streaming, keine Reparatur
+            self._stt_fehler = False
             self._basis, self._abschnitte, self._live = basis, [], {}
             self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
             neu_befund = self._einbau in (_bf.NEU, _bf.GERUEST)
@@ -2410,7 +2418,9 @@ class RaKScribeApp(ctk.CTk):
             self.update_recording_timer()
 
             self._aufnahme_starten(gen)
-            log("[RECORD] Aufnahme- und Live-Anzeige-Thread gestartet.")
+            log("[RECORD] Aufnahme- und Live-Anzeige-Thread gestartet." if self._live_an
+                else "[RECORD] Aufnahme gestartet (Live-Anzeige aus).")
+            self._repariert_anzeigen()   # live aus: „● Aufnahme läuft“
             if self._maske_lauf:
                 self._maske_abschnitt_oeffnen()
                 log(f"[MASKE] Aufnahme ins Feld {self._maske.feld.id}")
@@ -2423,6 +2433,7 @@ class RaKScribeApp(ctk.CTk):
                 self._maske_abschnitt_schliessen(weiter=False)   # letzter Abschnitt gehört dem aktiven Feld
             self.is_recording = False
             self._aufnahme_stoppen()
+            self._stopp_zeit = time.time()   # live-anzeige-aus-kp-n1: Stopp → Text links (Log „Text links nach … s“)
             self._repariert_anzeigen()
 
             self.update_status("PROCESSING", "busy")
@@ -2466,7 +2477,7 @@ class RaKScribeApp(ctk.CTk):
         # ═══ CHIRP 3 Volltranskription (v2.9.10) ═══
         # Das Streaming dient nur der Live-Anzeige. Für die finale Transkription wird die KOMPLETTE Aufnahme
         # noch einmal an chirp_3 (STT v2, WER 2,4% vs 16,7%) geschickt.
-        chirp_text = None
+        chirp_text = all_pcm = None
         try:
             all_pcm = aufnahme.samples() if aufnahme is not None else None  # vollständiger Puffer, auch nach Streaming-Fehler
             if all_pcm is not None and len(all_pcm) > 16000:
@@ -2476,6 +2487,10 @@ class RaKScribeApp(ctk.CTk):
                 chirp_text = _chirp3_worker(all_pcm, 16000, 'eu', token) if token else None
         except Exception:
             log_exception("[CHIRP3] Volltranskription fehlgeschlagen — Streaming-Transkript bleibt.")
+        ohne_live = aufnahme is not None and not getattr(aufnahme, "live", True)
+        if ohne_live and not (chirp_text and chirp_text.strip()) and self._job.aktuell(gen) \
+                and all_pcm is not None and len(all_pcm) > 16000:
+            chirp_text = self._chirp_neuversuch(all_pcm, 0, len(all_pcm), "[CHIRP3]")   # live-anzeige-aus-kp-n1
         if not self._job.aktuell(gen):
             log("[PROCESS] Lauf abgebrochen — chirp_3-Ergebnis verworfen, keine Befund-Erstellung.")
             return
@@ -2489,10 +2504,27 @@ class RaKScribeApp(ctk.CTk):
             self.final_transcript = (basis + " " + self._neuer_text).strip()  # v3.8.0: Nachdiktat hängt an
             log(f"[CHIRP3] OK: {len(self.final_transcript)} Zeichen")
             text = self.final_transcript
-            self._ui(gen, lambda: (
-                self.transcript_text.delete("1.0", "end"),
+            t_stopp = getattr(self, "_stopp_zeit", None)
+
+            def links_zeigen():
+                self.transcript_text.delete("1.0", "end")
                 self.transcript_text.insert("1.0", text)
-            ))
+                if t_stopp:   # live-anzeige-aus-kp-n1: Messwert Stopp → Text links (Bericht)
+                    log(f"[CHIRP3] Text links nach {time.time() - t_stopp:.1f} s ab Stopp"
+                        + ("" if getattr(self, "_live_an", True) else " (Live-Anzeige aus)"))
+            self._ui(gen, links_zeigen)
+        elif ohne_live and all_pcm is not None and len(all_pcm) > 16000:
+            # live-anzeige-aus-kp-n1 (unter 1 s Audio wie bisher „Kein Text diktiert“): kein Streaming-Text zum Retten (Reparaturen je Pause gibt es ohne Live-Anzeige
+            # nicht; vorhandene nehmen wir trotzdem) → sonst Audio behalten + rote Zeile, nie still leer
+            rep = " ".join(t for t in (getattr(self, "_abschnitte", []) or []) if t).strip()
+            if rep:
+                self._neuer_text = rep
+                self.final_transcript = (basis + " " + rep).strip()
+                log(f"[CHIRP3] Kein Ergebnis – Text aus {len(rep)} Zeichen reparierter Abschnitte")
+            else:
+                self._stt_ausfall_merken(gen, all_pcm, "[CHIRP3]")
+                self._ui(gen, lambda: self._ende_fehler(gen, ""))
+                return
         else:
             log("[CHIRP3] Kein Ergebnis — nutze Streaming-Transkript weiter.")
             # Rettung: finale Streaming-Abschnitte, sonst der letzte Zwischenstand (wie bisher aus der Anzeige)
@@ -3420,6 +3452,11 @@ class RaKScribeApp(ctk.CTk):
         self.update_status("PAUSED", "recording")
         self.level_indicator.configure(width=0)
         self._diktat_anzeigen()
+        if not getattr(self, "_live_an", True):
+            # live-anzeige-aus-kp-n1 (Peter 24.11.: „das verwirrt eh nur“): keine Reparatur je Pause (kein chirp_3-Aufruf),
+            # links bleibt nur das bisherige Diktat; der Text kommt nach Stopp/INS aus der ganzen Aufnahme
+            self._repariert_anzeigen()
+            return
         if a is not None and ende - start >= _seg.MIN_SAMPLES:
             self._repariert_anzeigen(laeuft=True)
             threading.Thread(target=self._abschnitt_reparieren, args=(gen, a, k, start, ende), daemon=True).start()
@@ -3499,9 +3536,16 @@ class RaKScribeApp(ctk.CTk):
         lbl = getattr(self, "repariert_label", None)
         if lbl is None:
             return
-        if laeuft:
+        zustand = self._job.zustand
+        if getattr(self, "_stt_fehler", False) and zustand not in (_js.RECORDING, _js.PAUSED):
+            lbl.configure(text="⚠ " + STT_FEHLER_TEXT, text_color=RECORDING_RED)   # live-anzeige-aus-kp-n1: nie still leer
+        elif not getattr(self, "_live_an", True) and zustand == _js.RECORDING:
+            lbl.configure(text="● Aufnahme läuft", text_color=RECORDING_RED)
+        elif not getattr(self, "_live_an", True) and zustand == _js.PAUSED:
+            lbl.configure(text="● Aufnahme pausiert – Text kommt nach Stopp/INS", text_color=WARN_AMBER)
+        elif laeuft:
             lbl.configure(text="Repariere bisheriges Diktat …", text_color=TEXT_MUTED)
-        elif any(self._abschnitte) and self._job.zustand in (_js.RECORDING, _js.PAUSED):
+        elif any(getattr(self, "_abschnitte", []) or []) and zustand in (_js.RECORDING, _js.PAUSED):
             lbl.configure(text="✓ bis zur Pause repariert", text_color=READY_GREEN)
         else:
             lbl.configure(text="")
@@ -4243,6 +4287,60 @@ class RaKScribeApp(ctk.CTk):
                 f"Boost {_stt.CHIRP_SM_BOOST})")
         return an
 
+    def _live_anzeige_an(self):
+        """kaiscribe-live-anzeige-aus-kp-n1 (Peter 24.11.2026): Live-Anzeige (Google-Streaming + Reparatur je Pause) nur,
+        wenn der Befunder des offenen CAS-Diktats NICHT in config.ini LIVE_ANZEIGE_AUS steht (Standard kp; „aus“ =
+        niemand → Rollback). Ohne CAS-Auftrag (Kürzel unbekannt) bleibt sie an wie bisher."""
+        a = getattr(self, "_cas", None)
+        liste = getattr(CFG, "live_anzeige_aus", ["kp"])
+        benutzer = getattr(a, "benutzer", "") if a is not None else ""
+        if a is not None and _senf.aktiv(benutzer, liste):
+            log(f"[GOOGLE] Live-Anzeige aus für {benutzer} (LIVE_ANZEIGE_AUS) – kein Streaming, keine Abschnitts-Reparatur")
+            return False
+        return True
+
+    def _chirp_neuversuch(self, pcm, start, ende, marke):
+        """live-anzeige-aus-kp-n1: chirp_3 lieferte nichts → nach STT_NEUVERSUCH_S genau EIN zweiter Versuch aus dem
+        gespeicherten Puffer (je 50-s-Stück die übliche Frist des chirp_3-Requests). Rückgabe Text oder None."""
+        if pcm is None or ende - start < _seg.MIN_SAMPLES:
+            return None
+        log(f"{marke} Kein Ergebnis – chirp_3 wird einmal wiederholt ({(ende - start) / float(self.samplerate):.0f} s Audio)")
+        time.sleep(STT_NEUVERSUCH_S)
+        try:
+            token = _get_stt_access_token()
+            roh = _chirp3_worker(pcm[start:ende], self.samplerate, 'eu', token) if token else None
+        except Exception:
+            log_exception(f"{marke} chirp_3-Wiederholung fehlgeschlagen")
+            return None
+        if roh and roh.strip():
+            log(f"{marke} chirp_3-Wiederholung OK ({len(roh.strip())} Zeichen)")
+            return apply_misheard(roh.strip()) if marke == "[MASKE]" else roh.strip()
+        log(f"{marke} chirp_3-Wiederholung ohne Ergebnis")
+        return None
+
+    def _stt_ausfall_merken(self, gen, pcm, marke):
+        """live-anzeige-aus-kp-n1: Spracherkennung endgültig ohne Text → Audio als WAV behalten (CAS-Aufnahme bleibt
+        ohnehin für EOL), rote Zeile links. Nie still leer."""
+        pfad = ""
+        try:
+            if pcm is not None and len(pcm):
+                ordner = NICHT_ERKANNT_DIR or os.path.join(USER_KEY_DIR, "nicht_erkannt")
+                os.makedirs(ordner, exist_ok=True)
+                a = getattr(self, "_cas", None)
+                nr = str(getattr(a, "nr", "") or "ohne-cas") if a is not None else "ohne-cas"
+                pfad = os.path.join(ordner, f"{time.strftime('%Y%m%d-%H%M%S')}_{nr}.wav")
+                _ad.wav_schreiben(pfad, pcm, self.samplerate)
+        except Exception:
+            log_exception(f"{marke} Audio nicht gesichert")
+            pfad = ""
+        log(f"{marke} {STT_FEHLER_TEXT} – Audio behalten" + (f": {os.path.basename(pfad)}" if pfad else " (im Speicher)"))
+
+        def zeigen():
+            self._stt_fehler = True
+            self._repariert_anzeigen()
+            self._kurzhinweis("⚠ " + STT_FEHLER_TEXT, 10000)
+        self._ui(gen, zeigen)
+
     def _senf_start(self, a):
         self._senf = None
         self._senf_zeigen("aus", "")
@@ -4935,6 +5033,12 @@ class RaKScribeApp(ctk.CTk):
             text = apply_misheard(roh.strip()) if roh and roh.strip() else None
         except Exception:
             log_exception("[MASKE] Spracherkennung eines Felds fehlgeschlagen — Live-Text bleibt")
+        if text is None and not getattr(a, "live", True):
+            # live-anzeige-aus-kp-n1: kein Live-Text als Rettung → chirp_3 einmal wiederholen, sonst Audio behalten + rot
+            text = self._chirp_neuversuch(a.samples(), start, ende, "[MASKE]")
+            if text is None:
+                self._stt_ausfall_merken(gen, a.samples(), "[MASKE]")
+                text = ""
         if text is None:   # Rettung wie bisher: der Live-Text (Streaming) dieses Abschnitts
             text = apply_misheard(_seg.rettung("", [], {0: (getattr(self, "_live", {}) or {}).get(k, ["", ""])}))
         self._ui(gen, lambda: self._maske_abschnitt_text(k, text))
@@ -4952,6 +5056,7 @@ class RaKScribeApp(ctk.CTk):
         self._maske_abschnitt_schliessen(weiter=False)
         self.update_status("PAUSED", "recording")
         self.level_indicator.configure(width=0)
+        self._repariert_anzeigen()
         self._maske_anzeigen()
 
     def _maske_verarbeiten(self, gen):

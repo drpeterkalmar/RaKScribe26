@@ -326,6 +326,7 @@ S.pump(app, lambda: False, 0.2)
 check("EOL → an die Brücke, Maske zu", antwort("m2").get("status") == "fertig" and app._maske is None)
 
 # ───────────── 2b. Abbrechen mit Maske: interner Live-Text weg, Befund rechts bleibt; nächster Auftrag übernimmt nichts still
+mod.CFG.live_anzeige_aus = []   # live-anzeige-aus-kp-n1: dieser Fall prüft den Live-Text (Streaming) → Live-Anzeige an
 ablegen("20261015007", "m7")
 app._cas_einmal()
 leistungen("m7", "20261015007", [L_MAMS, L_SONO])
@@ -359,6 +360,7 @@ check("… INS ohne Maske und ohne Diktat → kein Befund aus fremdem Text (Hinw
       app.result_text.text == befund_m7 and "Kein Diktat" in app._letzter_hinweis, app._letzter_hinweis)
 app.reset_dictation()
 app.cas_abbrechen()
+mod.CFG.live_anzeige_aus = ["kp"]
 
 # ───────────── 2c. v3.15.4 (Peter 15.10.): SpeechMike Ambient ohne F1–F4, Tippen/Knöpfe in der Pause, Markieren
 class FakeLeser:

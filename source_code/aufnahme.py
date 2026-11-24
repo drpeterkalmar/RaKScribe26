@@ -12,6 +12,9 @@ ohne Anlaufzeit, kein abgeschnittenes erstes Wort) und beendet die Streaming-Sit
 (Google bricht eine Sitzung nach ~10 s ohne Audio ab). fortsetzen() beginnt einen neuen Abschnitt mit eigener Sitzung.
 Der Puffer enthält nur die aufgenommenen Abschnitte, lückenlos hintereinander → chirp_3 über die ganze Aufnahme wie bisher.
 
+kaiscribe-live-anzeige-aus-kp-n1 (24.11.2026): live=False (config.ini LIVE_ANZEIGE_AUS, Standard kp) → kein Streaming-
+Thread, keine Google-Streaming-Sitzung; Puffer, Pegel und Pausen/Abschnitte bleiben genau wie bisher.
+
 Ohne Windows/Google importierbar: sounddevice, Streaming-Aufruf und Request-Bau werden übergeben
 (tests/offline/test_capture.py stubbt sie).
 """
@@ -28,7 +31,7 @@ ZAEHLER = None
 
 class Aufnahme:
     def __init__(self, sd, samplerate, device, streaming, request_bauen, on_level=None, on_text=None,
-                 on_stream_fehler=None, on_capture_fehler=None, log=None, neustart_s=STREAM_NEUSTART_S):
+                 on_stream_fehler=None, on_capture_fehler=None, log=None, neustart_s=STREAM_NEUSTART_S, live=True):
         self.sd, self.samplerate, self.device = sd, samplerate, device
         self.streaming, self.request_bauen = streaming, request_bauen
         self.on_level = on_level or (lambda rms: None)
@@ -46,7 +49,8 @@ class Aufnahme:
         self.stream_abschnitt = 0   # Abschnitt der laufenden Streaming-Sitzung (für die Anzeige)
         self._lock = threading.Lock()
         self.laeuft = False         # Mikrofon soll aufnehmen
-        self.streaming_aktiv = True  # Live-Anzeige läuft (False nach Fehler)
+        self.live = bool(live)      # live-anzeige-aus-kp-n1: False = gar kein Google-Streaming
+        self.streaming_aktiv = self.live  # Live-Anzeige läuft (False nach Fehler bzw. ohne Live-Anzeige)
         self.stream_sessions = 0
         self.capture_thread = None
         self.stream_thread = None
@@ -56,8 +60,11 @@ class Aufnahme:
     def start(self):
         self.laeuft = True
         self.capture_thread = threading.Thread(target=self._capture, daemon=True)
-        self.stream_thread = threading.Thread(target=self._streaming, daemon=True)
         self.capture_thread.start()
+        if not self.live:
+            self.log("[GOOGLE] Live-Anzeige aus – kein Streaming gestartet (nur Aufnahme, Text nach Stopp aus chirp_3).")
+            return
+        self.stream_thread = threading.Thread(target=self._streaming, daemon=True)
         self.stream_thread.start()
 
     def stop(self):
