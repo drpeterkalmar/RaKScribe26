@@ -39,7 +39,7 @@ FAELLE = {
     "K": ("gws+flws", ["Ganzaufnahme der Wirbelsäule a.p. und seitlich. Flachbogige skoliotische Asymmetrie. "
                        "Altersentsprechende Degeneration.",
                        "wav:k2.wav"], False),   # Nachdiktat gesprochen: „Funktionsaufnahmen der Lendenwirbelsäule. Keine Instabilität.“
-    "G1": ("Ganzbein re.", ["Ganzbeinaufnahme im Stand. Beinachse varisch, Gonarthrose medial Grad zwei. "
+    "G1": ("uex", ["Ganzbeinaufnahme im Stand. Beinachse varisch, Gonarthrose medial Grad zwei. "
                             "Hüftgelenk altersentsprechend."], False),
     "H1": ("hws", ["Halswirbelsäule in zwei Ebenen. 50-prozentige Höhenminderung C5/6, Unkovertebralarthrose beidseits. "
                    "Im Übrigen unauffällige Wirbelkörper. Im Übrigen keine Fehlstellung."], False),
@@ -138,7 +138,7 @@ def pruefen(fall, txt):
         p["ergebnis_tendinosis"] = "tendinosis calcarea" in el or "kalk" in el
     elif fall == "C":
         p["bursitis_satz"] = "bursitis" in bl
-        normal = [s for s in re.split(r"(?<=\.)\s+", bef) if "bursa" in s.lower()
+        normal = [s for s in re.split(r"(?<=\.)\s+", bef) if "bursa" in s.lower() and "step-sign" not in s.lower()
                   and re.search(r"(?i)\bkein|unauffällig|regelrecht|nicht verdickt|ohne", s)]
         p["bursa_normalsatz_weg"] = not normal
     elif fall == "D":
