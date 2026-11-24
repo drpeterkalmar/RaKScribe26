@@ -215,6 +215,38 @@ check("HIPPO_PROMPT unterdrückt die Becken-Punkte nicht (KaiScribe setzt sie se
 
 # ── Snapshot aller Fälle ──
 zeilen = []
+# ── Abend-Abnahme 24.11.2026 (451898 Fall M13): Brücke ≤ 2.5.35 ohne „ergebnis_becken“ → KaiScribe holt es aus der Ablage ──
+import copy as _copy, os as _os, tempfile as _tf  # noqa: E401,E402
+_ab = _tf.mkdtemp()
+_roh = {"format": 1, "saetze": RH101_P[:], "ergebnis": "", "schluss": ENDE, "kind": False, "becken": True,
+        "ergebnis_becken": RH101_P[:]}
+with open(_os.path.join(_ab, "202611242061_hippo.json"), "w", encoding="utf-8") as _f:
+    json.dump({"format": "ibl-abholer/1", "accession_number": "202611242061", "modul": "hippo", "version": 1,
+               "vorbefund": {"befundteil": [], "ergebnis_punkte": [], "befundtext": {"hippo": _roh}}}, _f)
+_brk = _copy.deepcopy(next(f["baustein"] for f in FAELLE if f["nr"] == 61))
+_brk.update(accno="202611242061", ziffer=1, version=1,
+            befundtext={k: v for k, v in _roh.items() if k != "ergebnis_becken"})   # so liefert die Brücke 2.5.35
+_l, _g = I.text_nachladen([_copy.deepcopy(_brk)], _ab)
+check("M13: Brücke ohne ergebnis_becken → aus der Ablage ergänzt (nur dieses Feld)",
+      _g == ["HIPPO v1 (Becken ≥ 10 mm)"] and _l[0]["befundtext"]["ergebnis_becken"] == RH101_P
+      and _l[0]["befundtext"]["saetze"] == RH101_P and "befundtext_quelle" not in _l[0], (_g, _l[0].get("befundtext")))
+_e = I.einsetzen(bericht("beckenübersicht_stehend"), I.aus_liste(_l), diktat="Beckenübersicht.")
+check("M13: Ergebnis mit 13 mm UND 20 mm BLD als eigene Punkte, kein Normal-Ergebnis",
+      "1. Beckenschiefstand von 13 mm, rechts tieferstehend.\n2. Beinlängendifferenz von 20 mm." in _e.report
+      and "Regelrechte Darstellung des Beckens" not in _e.report, _e.report)
+_mit = _copy.deepcopy(_brk)
+_mit["befundtext"]["ergebnis_becken"] = []
+check("M13: Brücke liefert das Feld (auch leer) → unverändert, nichts nachgeladen",
+      I.text_nachladen([_copy.deepcopy(_mit)], _ab) == ([_mit], []))
+check("M13: Datei fehlt → unverändert", I.text_nachladen([_copy.deepcopy(_brk)], _os.path.join(_ab, "weg"))[1] == [])
+_kind = _copy.deepcopy(_brk)
+with open(_os.path.join(_ab, "202611242061_hippo.json"), encoding="utf-8") as _f:
+    _d = json.load(_f)
+_d["vorbefund"]["befundtext"]["hippo"]["kind"] = True
+with open(_os.path.join(_ab, "202611242061_hippo.json"), "w", encoding="utf-8") as _f:
+    json.dump(_d, _f)
+check("M13: Kind → nichts nachgeladen", I.text_nachladen([_kind], _ab)[1] == [])
+
 for f in FAELLE:
     b = I.aus_liste([f["baustein"]])
     reg = "hüftgelenk_in_2_ebenen" if f["nr"] in (58, 60, 62, 63) else (

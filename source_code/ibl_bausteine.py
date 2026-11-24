@@ -347,6 +347,20 @@ def text_nachladen(liste, ablage):
             if bt is not None:
                 d = dict(d, befundtext=bt, befundtext_quelle="ablage")
                 geholt.append(f"{str(d.get('name') or modul.upper())} v{version}")
+        elif (modul == "hippo" and isinstance(d.get("befundtext"), dict) and "ergebnis_becken" not in d["befundtext"]
+              and _ACCNO.fullmatch(accno)):
+            # Abend-Abnahme 24.11.2026 (451898 Fall M13): die Brücke ≤ 2.5.35 reicht befundtext.hippo ohne das Feld
+            # „ergebnis_becken“ (Abholer ≥ 1.3.18) durch → Beckenschiefstand/BLD ≥ 10 mm kamen nicht als eigene Punkte
+            # (nur die Rückfall-Regel georg-hippo-10mm, ohne BLD). Nur dieses Feld aus derselben Abholer-Datei ergänzen.
+            try:
+                version = int(d.get("version") or 0)
+            except (TypeError, ValueError):
+                version = 0
+            bt = _ablage_befundtext(ablage, accno, modul, version)
+            becken = [] if not bt or bt.get("kind") else _texte(bt.get("ergebnis_becken"))
+            if becken:
+                d = dict(d, befundtext=dict(d["befundtext"], ergebnis_becken=becken))
+                geholt.append(f"{str(d.get('name') or 'HIPPO')} v{version} (Becken ≥ 10 mm)")
         out.append(d)
     return out, geholt
 

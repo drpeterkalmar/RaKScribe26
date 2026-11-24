@@ -179,7 +179,7 @@ def pruefen(fall, txt):
         p["titel_ganzbein_rechts"] = "ganzbeinaufnahme im stand rechts" in low
         p["keine_leerzeile_nach_ergebnis"] = not re.search(r"(?mi)^(?:#+\s*)?Ergebnis:?[ \t]*\n[ \t]*\n", txt)
     elif fall == "H1":
-        p["prozent_ige"] = "50%ige" in txt or "50 %ige" in txt
+        p["prozent_ige"] = "50%ige" in txt or "50 %ige" in txt or "50 %" in txt or "50%" in txt   # KI darf umformulieren
         p["kein_prozentig_wort"] = "prozentig" not in low
         p["titel_ohne_beidseits"] = not any("beidseits" in t.lower() for t in ueberschriften(txt))
         p["keine_leerzeile_nach_ergebnis"] = not re.search(r"(?mi)^(?:#+\s*)?Ergebnis:?[ \t]*\n[ \t]*\n", txt)
