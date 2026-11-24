@@ -119,8 +119,9 @@ check("4a: „Im Übrigen“ nur beim ersten Satz der Folge",
       erg.report.count("Im Übrigen") == 1, erg.report)
 
 # ───────────────────────────── 2/7: Belege bestehender Regeln ─────────────────────────────
-erg = pl.befund_aus_diktat("Hüftgelenk rechts: geringe Coxarthrose. Rho 8.", kontext(lambda p: (
-    "## Hüftgelenk rechts in 2 Ebenen\n\n## Befund\nGeringe Coxarthrose.\n\n## Ergebnis\nGeringe Coxarthrose rechts.")))
+# kaiscribe-rho-regel-becken-n1 (EINE Rho-Regel): Rho nur bei LWS – Beleg daher an der LWS statt an der Hüfte (RH 49)
+erg = pl.befund_aus_diktat("LWS: geringe Osteochondrose L5/S1. Rho 8.", kontext(lambda p: (
+    "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nGeringe Osteochondrose L5/S1.\n\n## Ergebnis\nGeringe Osteochondrose L5/S1.")))
 teile = erg.report.split(f"## {br.RHO_TITEL}")
 check("2 (RH 49, rho-titel-nummer seit 3.20/3.22): Rho-Teil mit eigener Überschrift, ein Punkt ohne Nummer",
       len(teile) == 2 and br.RHO_ERGEBNIS in teile[1] and not re.search(r"(?m)^\d+\. Opportunistisch", erg.report), erg.report)

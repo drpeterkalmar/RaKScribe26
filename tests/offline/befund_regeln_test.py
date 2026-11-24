@@ -105,6 +105,15 @@ for c in F["rho"]["osteopen"]:   # kaiscribe-rho-osteopen-n1 (Georg 22.11.2026):
     g = br.osteopen_ersetzen(c["report"], c["diktat"])[0]
     check(g == c["out"], f"rho osteopen: {c['name'][:50]}", g)
     check(br.osteopen_ersetzen(g, c["diktat"])[0] == g, f"rho osteopen zweimal gleich: {c['name'][:40]}", "nicht idempotent")
+for c in F["rho"]["regel"]:   # kaiscribe-rho-regel-becken-n1 (Kanban #533): EINE Rho-Regel (Score ≥ 7, LWS, keine DEXA)
+    g = list(br.rho_regel_anwenden(c["report"], c["dexa"]))
+    check(g == [c["out"], c["grund"]], f"rho regel: {c['name'][:50]}", g)
+    check(br.osteopen_ersetzen(g[0], "")[0] == g[0] or br.RHO_TITEL in g[0], f"rho regel ohne Rho-Teil kein Osteopen: {c['name'][:30]}", g)
+for c in F["rho"]["regel_score"]:
+    g = list(br.rho_regel(c["score"], c["lws"], c["dexa"]))
+    check(g == c["out"], f"rho regel score: {c['score']!r}/{c['lws']}/{c['dexa']}", g)
+check(all(("Score 6" not in c["name"]) or br.RHO_TITEL not in c["out"] for c in F["rho"]["regel"])
+      and any("Score 6" in c["name"] for c in F["rho"]["regel"]), "rho regel: Score 6 erzeugt nichts (Register Rho-Ausgänge)")
 for c in F["rho"]["ans_ende"]:   # kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund am Schluss
     g = br.rho_ans_ende(c["in"])
     check(g == c["out"], f"rho ans Ende: {c['in'][:30]!r}", g)

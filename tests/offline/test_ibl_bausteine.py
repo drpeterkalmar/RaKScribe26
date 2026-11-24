@@ -211,6 +211,9 @@ for s, region in ((6, "Thorax"), (7, "LWS"), (9, "LWS")):
                        "von 10, kein Diagnostikum). Eine Knochendichtemessung (DXA) wird empfohlen."],
              hinweise=[f"Rho analysierte: {region} – bitte prüfen, ob das zur Aufnahme passt."])
     rep = bericht(f"{region} in 2 Ebenen", "Unauffällig.", "Unauffälliger Befund.")
+    if s < 7:     # kaiscribe-rho-regel-becken-n1 (EINE Rho-Regel): Score 6/Thorax → auch keine Anzeige mehr
+        check(f"   … Score {s} ({region}): kein Baustein, nichts in der Anzeige (Rho-Regel)", B(d) == [], B(d))
+        continue
     e = I.einsetzen(rep, B(d), diktat="Unauffällig.")
     g = I.geruest(B(d))
     check(f"   … Score {s} ({region}): kein Text, kein Gerüst, kein Prompt-Eintrag, Hinweis bleibt in der Anzeige",
@@ -225,6 +228,17 @@ check("k) Hinweise des Bausteins (RBfracture, Entwürfe) nie im Befund, nur Anze
           "16 Bit Rho: Ergebnistext ist ein Entwurf (Regel rho-score-8, endgültiger Baustein von Georg ausständig) – "
           "bitte prüfen."],
       str(I.anzeige_hinweise(B(RBF_D, RHO_D, FROG_BDS))))
+# kaiscribe-rho-regel-becken-n1 (Kanban #533, EINE Rho-Regel): auch die Anzeige folgt ihr – Score < 7 bzw. nicht LWS → nichts
+RHO_HAND = dict(RHO_D, accno="T-0124", befundteil=[], ergebnis=[],
+                hinweise=["16 Bit Rho: Ergebnistext ist ein Entwurf (Regel rho-score-9, endgültiger Baustein von Georg "
+                          "ausständig) – bitte prüfen.", "Rho analysierte: Hand – bitte prüfen, ob das zur Aufnahme passt."])
+RHO_6 = dict(RHO_D, accno="T-0126", befundteil=["Rho-Score 6 von 10 (16 Bit Rho)."], ergebnis=[],
+             hinweise=["Rho analysierte: LWS – bitte prüfen, ob das zur Aufnahme passt."])
+RHO_LWS9 = dict(RHO_HAND, accno="T-0127", hinweise=["Rho analysierte: LWS – bitte prüfen, ob das zur Aufnahme passt.",
+                                                    "16 Bit Rho: Regel rho-score-9 – bitte prüfen."])
+check("k2) Rho-Regel in der Anzeige: RH 124 Hand Score 9 und LWS Score 6 → kein Baustein; LWS Score 9 bleibt (nur Anzeige)",
+      [b.accno for b in B(RHO_HAND, RHO_6, RHO_LWS9)] == ["T-0127"] and not B(RHO_LWS9)[0].befundteil
+      and not B(RHO_LWS9)[0].ergebnis, [b.accno for b in B(RHO_HAND, RHO_6, RHO_LWS9)])
 rep = bericht("Fuß rechts in 2 Ebenen", "Hallux valgus.", "Hallux valgus.")
 e1 = I.einsetzen(rep, B(FROG_D), diktat="Hallux valgus.")
 e2 = I.einsetzen(e1.report, B(FROG_BDS), diktat="Hallux valgus.", entfernen=e1.eingesetzt[("T-0021", "frog")])

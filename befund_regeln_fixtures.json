@@ -756,6 +756,170 @@
     "diktat": "Rho 8",
     "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Höhe und Form der Wirbelkörper regelrecht. Osteopenischer Knochenaspekt.\n\nDie paravertebralen Weichteile unauffällig.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen."
    }
+  ],
+  "regel": [
+   {
+    "name": "LWS Score 8, DEXA frei → Rho-Teil bleibt",
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "grund": ""
+   },
+   {
+    "name": "LWS „Rho“ ohne Zahl (= ≥7, Georg 13.10.) → bleibt",
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von ≥7 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von ≥7 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "grund": ""
+   },
+   {
+    "name": "RH 124: Handgelenk Score 9 → kein Rho-Teil (nicht LWS)",
+    "report": "## Handgelenk links in 2 Ebenen\n\n## Befund\nKeine Fraktur. Mineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nUnauffälliger Befund.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 9 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Handgelenk links in 2 Ebenen\n\n## Befund\nKeine Fraktur. Mineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nUnauffälliger Befund.",
+    "grund": "Rho-Region nicht LWS"
+   },
+   {
+    "name": "Thorax Score 8 → kein Rho-Teil",
+    "report": "## Thorax p.a.\n\n## Befund\nHerz normal groß.\n\n## Ergebnis\nUnauffälliger Befund.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Thorax p.a.\n\n## Befund\nHerz normal groß.\n\n## Ergebnis\nUnauffälliger Befund.",
+    "grund": "Rho-Region nicht LWS"
+   },
+   {
+    "name": "LWS Score 6 im Rho-Teil → kein Rho-Teil",
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 6 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "grund": "Rho-Score 6 < 7"
+   },
+   {
+    "name": "LWS Score 8, DEXA im CAS-Auftrag → kein Rho-Teil",
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "gesperrt",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "grund": "Knochendichte in den letzten 2 Jahren"
+   },
+   {
+    "name": "LWS Score 8, DEXA unklar → kein Rho-Teil",
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "unklar",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "grund": "DEXA der letzten 2 Jahre unbekannt"
+   },
+   {
+    "name": "Becken + LWS (Rho am Schluss) Score 8 → bleibt",
+    "report": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.\n\n\n## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 8 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "grund": ""
+   },
+   {
+    "name": "Becken + Hand Score 9 → kein Rho-Teil, Rest bleibt",
+    "report": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.\n\n\n## Handgelenk links in 2 Ebenen\n\n## Befund\nKeine Fraktur. Mineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nUnauffälliger Befund.\n\n\n## Opportunistisches Knochendichtescreening (KI)\n\n## Befund\nOpportunistisches Knochendichtescreening mittels CE-zertifizierter, klinisch validierter KI-Software (Rho): Der Score von 9 (Skala 1–10) zeigt eine erhöhte Wahrscheinlichkeit für eine verminderte Knochendichte. Der Score korreliert in Studien eng mit dem DEXA-T-Score, ersetzt diesen jedoch nicht. Da keine Knochendichtemessung aus den letzten 2 Jahren vorliegt, wird eine weiterführende Abklärung mittels DEXA empfohlen.\n\n## Ergebnis\nOpportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.",
+    "dexa": "frei",
+    "out": "## Beckenübersicht stehend\n\n## Befund\nAnatomisch normale Form.\n\n## Ergebnis\nRegelrechte Darstellung des Beckens.\n\n\n## Handgelenk links in 2 Ebenen\n\n## Befund\nKeine Fraktur. Mineralgehalt und Knochenstruktur regelrecht.\n\n## Ergebnis\nUnauffälliger Befund.",
+    "grund": "Rho-Region nicht LWS"
+   },
+   {
+    "name": "ohne Rho → unverändert",
+    "report": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "dexa": "frei",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nNormale Lordose. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\nRegelrechte Darstellung der LWS.",
+    "grund": ""
+   }
+  ],
+  "regel_score": [
+   {
+    "score": "6",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     false,
+     "Rho-Score 6 < 7"
+    ]
+   },
+   {
+    "score": "7",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     true,
+     "Rho-Regel erfüllt"
+    ]
+   },
+   {
+    "score": "10",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     true,
+     "Rho-Regel erfüllt"
+    ]
+   },
+   {
+    "score": "11",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     false,
+     "kein Rho-Score 1–10"
+    ]
+   },
+   {
+    "score": "9",
+    "lws": false,
+    "dexa": "frei",
+    "out": [
+     false,
+     "Rho-Region nicht LWS"
+    ]
+   },
+   {
+    "score": "≥7",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     true,
+     "Rho-Regel erfüllt"
+    ]
+   },
+   {
+    "score": "",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     false,
+     "kein Rho-Score 1–10"
+    ]
+   },
+   {
+    "score": "8",
+    "lws": true,
+    "dexa": "gesperrt",
+    "out": [
+     false,
+     "Knochendichte in den letzten 2 Jahren"
+    ]
+   },
+   {
+    "score": "8",
+    "lws": true,
+    "dexa": "unklar",
+    "out": [
+     false,
+     "DEXA der letzten 2 Jahre unbekannt"
+    ]
+   },
+   {
+    "score": "x",
+    "lws": true,
+    "dexa": "frei",
+    "out": [
+     false,
+     "kein Rho-Score 1–10"
+    ]
+   }
   ]
  },
  "widerspruch": {

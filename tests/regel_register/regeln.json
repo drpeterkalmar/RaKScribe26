@@ -337,7 +337,42 @@
     "source_code/befund_regeln.py": [
      "RHO_ERGEBNIS = \"Opportunistisches Knochendichtescreening auffällig. Abklärung mittels DEXA empfohlen.\""
     ]
-   }
+   },
+   "notiz": "24.11.2026: auch die Anzeige folgt der EINEN Rho-Regel (siehe rho-eine-regel)"
+  },
+  {
+   "id": "rho-eine-regel",
+   "titel": "EINE Rho-Regel (Register „Rho-Ausgänge“): Rho erzeugt nur dann etwas Sichtbares, wenn Score ≥ 7 UND Region LWS UND keine DEXA in den 2 Jahren davor (DEXA-Leistung im CAS-Auftrag sperrt; sonst gilt das diktierte „Rho“ als Arzt-Auskunft). Ausgänge: diktierter Rho-Schlussbefund (rho_regel_anwenden), „Osteopenischer Knochenaspekt“ (hängt daran), Anzeige-Hinweise des IB-Lab-Rho-Bausteins (_rho_anzeigen). Score 6 / Hand / Thorax / DEXA → nichts (RH 124 Handgelenk Score 9)",
+   "quelle": "Georg Riegler 23.11.2026: „Das mit Rho haben wir schon immer gesagt. Die Regel muss sitzen!“ – Quelle ris-mods ibl/rho_regel.py 1.0.0 (cce497c), Register ris-mods ibl/RHO_REGEL.md; Kanban #533 (kaiscribe-rho-regel-becken-n1)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def rho_regel(score, lws, dexa):",
+     "def rho_regel_anwenden(report, dexa=\"frei\"):",
+     "RHO_AB = 7"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function rhoRegel(",
+     "export function rhoRegelAnwenden(report: string, dexa = 'frei'): [string, string] {",
+     "export const RHO_AB = 7;"
+    ],
+    "source_code/pipeline.py": [
+     "erg.report, grund = br.rho_regel_anwenden(erg.report, _rho_dexa(ctx))"
+    ],
+    "web_app/src/pipeline.ts": [
+     "const [mitRegel, grund] = rhoRegelAnwenden(report, 'frei');"
+    ],
+    "source_code/ibl_bausteine.py": [
+     "if not _rho_anzeigen(befundteil + ergebnis + hinweise):"
+    ],
+    "befund_regeln_fixtures.json": [
+     "RH 124: Handgelenk Score 9 → kein Rho-Teil (nicht LWS)",
+     "LWS Score 6 im Rho-Teil → kein Rho-Teil",
+     "Thorax Score 8 → kein Rho-Teil"
+    ]
+   },
+   "notiz": "Neuer Rho-Ausgang in KaiScribe = Eintrag hier + Fixture „Score 6 erzeugt nichts“ (befund_regeln_test prüft das); ris-mods-Register RHO_REGEL.md verweist hierher."
   },
   {
    "id": "ibl-ohne-norm",
@@ -1841,7 +1876,24 @@
      "58b HIPPO 4 mm → nicht ins Ergebnis"
     ]
    },
-   "notiz": "Ursache 3.22.4: der Abholer (ris-mods hippo_ergebnis.py) setzt Beckenschiefstand NIE ins Ergebnis, KaiScribe übernahm den Ergebnispunkt nur aus dem Abholer – Punkt 6 FINAL war damit nicht wirksam."
+   "notiz": "Ursache 3.22.4: der Abholer (ris-mods hippo_ergebnis.py) setzt Beckenschiefstand NIE ins Ergebnis, KaiScribe übernahm den Ergebnispunkt nur aus dem Abholer – Punkt 6 FINAL war damit nicht wirksam. 24.11.2026 (kaiscribe-rho-regel-becken-n1, Kanban #533): mit Abholer ≥ 1.3.18 kommt der Punkt aus befundtext.ergebnis_becken (dann auch Beinlängendifferenz ≥ 10 mm, Georg FINAL 20.11.); diese Regel bleibt der Rückfall ohne die Liste und doppelt nichts."
+  },
+  {
+   "id": "hippo-ergebnis-becken",
+   "titel": "HIPPO: befundtext.ergebnis_becken des Abholers (≥ 1.3.18) – Beckenschiefstand bzw. Beinlängendifferenz ab 10 mm – als EIGENE Ergebnispunkte nach dem Begriff-Punkt („Beckenschiefstand von 13 mm, rechts tieferstehend.“, „Beinlängendifferenz von 20 mm.“), ersetzt das Normal-Ergebnis; < 10 mm nur Beschreibung; Kinder nie; diktiertes Thema im Ergebnis → nicht doppelt; HIPPO_PROMPT unterdrückt sie nicht",
+   "quelle": "Georg Riegler FINAL 20.11.2026 (RH 101 13/20 mm, RH 30 12 mm), ris-mods ibl/hippo_ergebnis.py cce497c; Kanban #533 (kaiscribe-rho-regel-becken-n1)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/ibl_bausteine.py": [
+     "\"ergebnis_becken\": [] if x.get(\"kind\") else _texte(x.get(\"ergebnis_becken\"))",
+     "def _hippo_becken_punkte(b, zeilen, a, hinweise):",
+     "KaiScribe danach selbst als eigenen Ergebnispunkt mit Wert ein."
+    ],
+    "tests/offline/test_ibl_hippo_text.py": [
+     "RH 101: Begriff zuerst, dann 13 mm Beckenschiefstand und 20 mm BLD als eigene Punkte"
+    ]
+   }
   },
   {
    "id": "georg-kombi-diktat",

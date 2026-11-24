@@ -92,8 +92,21 @@ def ki_einzeln(p):
 BH = L("bhr", "Beckenübersicht + Hüfte re.", "beckenübersicht_und_hüfte", "rechts")
 erg = pl.befund_aus_diktat("Beckenübersicht und Hüfte rechts: mäßige Coxarthrose rechts, geringe Osteochondrose L5/S1 "
                            "miterfasst. Rho 8.", kontext(ki_einzeln, [BH], [hb]))
-pruefen("Einzel Becken+Hüfte re + HIPPO + Rho 8", erg.report)
-check("Einzel: Rho-Text mit Score 8 im Rho-Befund, nicht im Becken-Teil",
+# kaiscribe-rho-regel-becken-n1 (Kanban #533, EINE Rho-Regel): Becken/Hüfte ohne LWS → kein Rho-Teil, Hinweis
+check("Einzel Becken+Hüfte re + HIPPO + Rho 8: kein Rho-Teil (Rho-Regel: nur LWS), Hinweis in der Anzeige",
+      br.RHO_TITEL not in erg.report and "(Rho)" not in erg.report
+      and any("Rho: kein Rho-Text – Rho-Region nicht LWS" in h for h in erg.cas_hinweise), (erg.report, erg.cas_hinweise))
+LW = L("lws", "LWS", "lendenwirbelsäule_in_2_ebenen", None)
+
+
+def ki_lws(p):
+    v = T["lendenwirbelsäule_in_2_ebenen"]
+    return f"## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\n{v['body'].split(chr(10), 2)[2]}\n\n## Ergebnis\n{ZWEI}"
+
+
+erg = pl.befund_aus_diktat("LWS: mäßige Coxarthrose rechts, geringe Osteochondrose L5/S1. Rho 8.", kontext(ki_lws, [LW]))
+pruefen("Einzel LWS + Rho 8", erg.report)
+check("Einzel LWS: Rho-Text mit Score 8 im Rho-Befund, nicht im LWS-Teil",
       "Der Score von 8 (Skala 1–10)" in erg.report.split(f"## {br.RHO_TITEL}")[1]
       and "(Rho)" not in erg.report.split(f"## {br.RHO_TITEL}")[0], erg.report)
 
@@ -102,7 +115,12 @@ HR = L("hr", "Hüfte re.", "hüftgelenk_in_2_ebenen", "rechts", ziffer=2)
 hb2 = dict(copy.deepcopy(hb), ziffer=2)
 
 
+LW2 = L("lws", "LWS", "lendenwirbelsäule_in_2_ebenen", None, ziffer=2)
+
+
 def ki_mehrfach(p):
+    if "<untersuchung>Lendenwirbel" in p:
+        return ki_lws(p)
     if "<untersuchung>Beckenübersicht" in p:
         v = T["beckenübersicht_stehend"]
         return f"## Beckenübersicht stehend\n\n## Befund\n{v['body'].split(chr(10), 2)[2]}\n\n## Ergebnis\n{v['ergebnis']}"
@@ -110,10 +128,14 @@ def ki_mehrfach(p):
     return f"## Hüftgelenk rechts in 2 Ebenen\n\n## Befund\n{v['body'].split(chr(10), 2)[2]}\n\n## Ergebnis\n{ZWEI}"
 
 
+erg = pl.befund_aus_diktat("Hüfte rechts: mäßige Coxarthrose rechts. LWS: geringe Osteochondrose L5/S1, Rho 8.",
+                           kontext(ki_mehrfach, [HR, LW2], [dict(copy.deepcopy(hb), ziffer=1)]))
+pruefen("Mehrfach Hüfte re + HIPPO + LWS + Rho 8", erg.report)
+check("Mehrfach: 3 Einzelbefunde (Hüfte, LWS, Rho)", len(bloecke(erg.report)) == 3, erg.report)
 erg = pl.befund_aus_diktat("Beckenübersicht: unauffällig. Hüfte rechts: mäßige Coxarthrose rechts, geringe Osteochondrose "
                            "L5/S1 miterfasst, Rho 8.", kontext(ki_mehrfach, [BUE, HR], [hb2]))
-pruefen("Mehrfach Becken + Hüfte re + HIPPO + Rho 8", erg.report)
-check("Mehrfach: 3 Einzelbefunde (Becken, Hüfte, Rho)", len(bloecke(erg.report)) == 3, erg.report)
+check("Mehrfach Becken + Hüfte (ohne LWS) + Rho 8: 2 Einzelbefunde, kein Rho-Teil (Rho-Regel)",
+      len(bloecke(erg.report)) == 2 and br.RHO_TITEL not in erg.report, erg.report)
 
 # Rho als einziger Punkt seines Befunds bleibt auch nach erneutem Nummerieren ohne Nummer
 r = br.rho_einfuegen("## Hüftgelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\n1. A.\n2. B.", "8")

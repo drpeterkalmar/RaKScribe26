@@ -480,6 +480,58 @@ def rho_ans_ende(report):
     return befunde_zusammenfuegen([rest, block])
 
 
+# kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg 23.11.2026: „Das mit Rho haben wir schon immer gesagt. Die Regel muss
+# sitzen!“): EINE Rho-Regel für ALLE Rho-Ausgänge – dieselbe wie ris-mods ibl/rho_regel.py 1.0.0 (cce497c), Register
+# „Rho-Ausgänge“ ris-mods ibl/RHO_REGEL.md. Rho erzeugt nur dann etwas Sichtbares, wenn
+#     Score ≥ 7 (RHO_AB)  UND  Region LWS  UND  laut CAS keine Knochendichte (DEXA) in den 2 Jahren davor.
+# KaiScribe-Ausgänge (tests/regel_register/regeln.json „rho-eine-regel“): (1) diktierter Rho-Schlussbefund
+# (rho_einfuegen → rho_regel_anwenden), (2) „Osteopenischer Knochenaspekt“ (hängt am Schlussbefund), (3) Anzeige-Hinweise
+# des IB-Lab-Rho-Bausteins (ibl_bausteine.aus_liste, rho_regel mit dexa="frei", weil die Anzeige keine DEXA kennt).
+# KaiScribe kennt die DEXA-Vorgeschichte nicht: eine DEXA-Leistung im selben CAS-Auftrag sperrt („gesperrt“); sonst gilt
+# das Diktat „Rho“ als Auskunft des Arztes (Georgs Wortlaut „Da keine Knochendichtemessung aus den letzten 2 Jahren
+# vorliegt …“). Region: eine Untersuchung des Befunds ist die LWS (Titel). Score: diktierte Zahl; „Rho“ ohne Zahl = ≥ 7
+# (Georg 13.10.). Sync: web_app/src/befundRegeln.ts rhoRegel/rhoRegelAnwenden (Fixtures „rho“ → „regel“).
+_RHO_LWS = re.compile(r"lendenwirbel|lumbal|(?<![a-zäöüß])lws(?![a-zäöüß])", re.I)
+
+
+def rho_regel(score, lws, dexa):
+    """Die Rho-Regel (= ris-mods rho_regel.pruefen). score: Zahl/Text 1–10 oder „≥7“; lws: bool; dexa: "frei" | "gesperrt"
+    | "unklar". → (ja, grund) – grund ohne Patientendaten."""
+    s = str(score if score is not None else "").strip().replace("≥", "").replace(" ", "")
+    if not re.fullmatch(r"\d{1,2}", s) or not 1 <= int(s) <= 10:
+        return False, "kein Rho-Score 1–10"
+    if not lws:
+        return False, "Rho-Region nicht LWS"
+    if int(s) < RHO_AB:
+        return False, f"Rho-Score {int(s)} < {RHO_AB}"
+    if dexa != "frei":
+        return False, ("Knochendichte in den letzten 2 Jahren" if dexa == "gesperrt" else "DEXA der letzten 2 Jahre unbekannt")
+    return True, "Rho-Regel erfüllt"
+
+
+def rho_regel_anwenden(report, dexa="frei"):
+    """Rho-Schlussbefund im Befund → Rho-Regel prüfen; nicht erfüllt → der ganze Rho-Teil fällt weg (kein Text, kein
+    Ergebnis, damit auch kein „Osteopenischer Knochenaspekt“). → (report, grund ('' = nichts entfernt))."""
+    if not report or f"## {RHO_TITEL}" not in report:
+        return report, ""
+    zeilen = report.split("\n")
+    a = next(i for i, z in enumerate(zeilen) if z.strip() == f"## {RHO_TITEL}")
+    e = a + 1
+    while e < len(zeilen) and not (zeilen[e].strip().startswith("## ")
+                                   and zeilen[e].strip()[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis")):
+        e += 1
+    block = "\n".join(zeilen[a:e])                     # \b wie TS (?![\p{L}\p{N}_])
+    m = re.search(r"Der Score von (≥\s*7|\d{1,2})\b", block)
+    score = m.group(1) if m else "≥7"
+    titel = [z.strip()[3:] for z in zeilen[:a] + zeilen[e:] if z.strip().startswith("## ")
+             and z.strip()[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis")]
+    ja, grund = rho_regel(score, any(_RHO_LWS.search(t) for t in titel), dexa)
+    if ja:
+        return report, ""
+    rest = re.sub(r"\n{4,}", "\n\n\n", "\n".join(zeilen[:a] + zeilen[e:]).strip())
+    return rest, grund
+
+
 # kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): „Wir haben immer den Standardsatz Regelrechte Knochenmineralisation oder so
 # ähnlich bei den Röntgenuntersuchungen. Wenn der Rho score grösser/gleich 7 ist muss der Satz raus. Anstattdessen:
 # Osteopenischer Knochenaspekt“ – „Überall ersetzen“ (alle Untersuchungen des Auftrags, auch Mehrfach). Steht der

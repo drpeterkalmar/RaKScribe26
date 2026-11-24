@@ -352,6 +352,37 @@ export function rhoAnsEnde(report: string): string {
   return befundeZusammenfuegen([rest, block]);
 }
 
+// kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg 23.11.2026 „Die Regel muss sitzen!“): EINE Rho-Regel wie ris-mods
+// ibl/rho_regel.py – Score ≥ 7 UND Region LWS UND keine DEXA in den 2 Jahren davor; sonst kein Rho-Teil.
+// Sync: befund_regeln.py rho_regel/rho_regel_anwenden (Fixtures „rho“ → „regel“). Die Web-App kennt kein CAS → dexa "frei"
+// (das Diktat „Rho“ ist die Auskunft des Arztes).
+const RHO_LWS = /lendenwirbel|lumbal|(?<![a-zäöüß])lws(?![a-zäöüß])/i;
+export function rhoRegel(score: string | number | null | undefined, lws: boolean, dexa: string): [boolean, string] {
+  const s = String(score ?? '').trim().replace(/≥/g, '').replace(/ /g, '');
+  if (!/^\d{1,2}$/.test(s) || Number(s) < 1 || Number(s) > 10) return [false, 'kein Rho-Score 1–10'];
+  if (!lws) return [false, 'Rho-Region nicht LWS'];
+  if (Number(s) < RHO_AB) return [false, `Rho-Score ${Number(s)} < ${RHO_AB}`];
+  if (dexa !== 'frei') return [false, dexa === 'gesperrt' ? 'Knochendichte in den letzten 2 Jahren' : 'DEXA der letzten 2 Jahre unbekannt'];
+  return [true, 'Rho-Regel erfüllt'];
+}
+
+export function rhoRegelAnwenden(report: string, dexa = 'frei'): [string, string] {
+  if (!report || !report.includes(`## ${RHO_TITEL}`)) return [report, ''];
+  const zeilen = report.split('\n');
+  const a = zeilen.findIndex(z => z.trim() === `## ${RHO_TITEL}`);
+  const kopf = (z: string) => { const s = z.trim(); return s.startsWith('## ') && !['befund', 'ergebnis'].includes(s.slice(3).trim().toLowerCase().replace(/:+$/, '')); };
+  let e = a + 1;
+  while (e < zeilen.length && !kopf(zeilen[e])) e++;
+  const block = zeilen.slice(a, e).join('\n');
+  const m = block.match(/Der Score von (≥\s*7|\d{1,2})(?![\p{L}\p{N}_])/u);
+  const score = m ? m[1] : '≥7';
+  const andere = [...zeilen.slice(0, a), ...zeilen.slice(e)];
+  const lws = andere.filter(kopf).some(z => RHO_LWS.test(z.trim().slice(3)));
+  const [ja, grund] = rhoRegel(score, lws, dexa);
+  if (ja) return [report, ''];
+  return [andere.join('\n').trim().replace(/\n{4,}/g, '\n\n\n'), grund];
+}
+
 // kaiscribe-rho-osteopen-n1 (Georg 22.11.2026, „Überall ersetzen“): Rho-Schlussbefund (Score ≥ 7) im Befund →
 // Mineralisations-Normalsatz in der Beschreibung aller Untersuchungen durch „Osteopenischer Knochenaspekt.“; weitere
 // Normalsätze dazu im selben Teil fallen weg; Diktat nennt die Knochendichte selbst → nichts; Ergebnis unverändert.

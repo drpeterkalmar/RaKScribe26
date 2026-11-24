@@ -4,7 +4,7 @@
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { OhneKi, OHNE_KI_ZEILE } from './llmAnbieter.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, befundSchluss } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, rhoRegelAnwenden, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, befundSchluss } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { bloecke, blockText, umbauSegment, umbauBlock, titelUebernehmen, vorrang, saetze, fehlende, ergaenzen, pruefzeile, streichen, ergebnisFehlt, verneintVorrang } from './befundfeld.ts';
@@ -132,7 +132,11 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
 
 // kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → „Osteopenischer Knochenaspekt.“ statt Mineralisations-
 // Normalsatz in allen Untersuchungen, ganz am Schluss. Sync: pipeline.py _osteopen.
+// kaiscribe-rho-regel-becken-n1 (Kanban #533): vorher die EINE Rho-Regel (Score ≥ 7, LWS; Web ohne CAS → DEXA „frei“).
 const osteopen = (report: string, diktat: string): string => {
+  const [mitRegel, grund] = rhoRegelAnwenden(report, 'frei');
+  if (grund) console.log(`[RHO] kein Rho-Text – ${grund} (Rho-Regel)`);
+  report = mitRegel;
   const [out, teile] = osteopenErsetzen(report, diktat);
   if (teile.length) console.log(`[RHO] Osteopenischer Knochenaspekt statt Mineralisations-Normalsatz in ${teile.length} Untersuchung(en)`);
   return out;

@@ -444,12 +444,27 @@ def _pruefen(erg, ctx):
     return erg
 
 
+def _rho_dexa(ctx):
+    """kaiscribe-rho-regel-becken-n1: DEXA-Auskunft für die Rho-Regel. KaiScribe kennt die DEXA der letzten 2 Jahre nicht –
+    eine DEXA-Leistung im selben CAS-Auftrag sperrt („gesperrt“), sonst gilt das diktierte „Rho“ als Arzt-Auskunft („frei“)."""
+    cas = getattr(ctx, "cas", None)
+    return "gesperrt" if cas and any("dexa" in (l.regionen or set()) for l in cas.alle) else "frei"
+
+
 def _osteopen(erg, ctx, diktat=None):
     """kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho-Schlussbefund (Score ≥ 7) im Befund → Mineralisations-
     Normalsatz aller Untersuchungen durch „Osteopenischer Knochenaspekt.“ ersetzen (ganz am Schluss, nach den Wächtern
     und IB Lab). Diktat nennt die Knochendichte selbst → nichts. Restructure: „Diktat“ = Peters eigene Sätze (vor).
-    Sync: pipeline.ts befundAusDiktat/befundUmbauen."""
+    Sync: pipeline.ts befundAusDiktat/befundUmbauen.
+    kaiscribe-rho-regel-becken-n1 (Kanban #533): vorher die EINE Rho-Regel (Score ≥ 7, LWS, keine DEXA laut CAS) – nicht
+    erfüllt → Rho-Teil raus, Hinweis in der Anzeige."""
     if erg.report:
+        erg.report, grund = br.rho_regel_anwenden(erg.report, _rho_dexa(ctx))
+        if grund:
+            ctx.log(f"[RHO] kein Rho-Text – {grund} (Rho-Regel)")
+            hw = f"Rho: kein Rho-Text – {grund} (Rho-Regel: Score ≥ 7, LWS, keine DEXA in den letzten 2 Jahren)"
+            if hw not in (erg.cas_hinweise or []):
+                erg.cas_hinweise = list(erg.cas_hinweise or []) + [hw]
         erg.report, teile = br.osteopen_ersetzen(erg.report, erg.raw if diktat is None else diktat)
         if teile:
             ctx.log(f"[RHO] Osteopenischer Knochenaspekt statt Mineralisations-Normalsatz in {len(teile)} Untersuchung(en)")

@@ -175,12 +175,15 @@ def _befundtext(modul, x):
     """v3.19.8 (FROG, Georg Riegler 17.11.2026): Feld „befundtext“ der Brücke (Abholer ≥ 1.3.7, ris-mods
     ibl/frog_ergebnis.py) – nur Fassung 1 mit Inhalt; sonst None (dann gilt das Verhalten bis 3.19.7).
     v3.19.13 (HIPPO, Georg 18.11.2026, Abholer ≥ 1.3.11, ris-mods ibl/hippo_ergebnis.py): {"saetze", "ergebnis",
-    "schluss", "kind", "becken"}. SQUIRREL (Georg 20.11.2026, Abholer ≥ 1.3.14): {"saetze", "cobb_satz", "ergebnis",
+    "schluss", "kind", "becken"}, ab Abholer 1.3.18 dazu "ergebnis_becken" (Liste, ≥ 10 mm). SQUIRREL (Georg 20.11.2026, Abholer ≥ 1.3.14): {"saetze", "cobb_satz", "ergebnis",
     "schluss", "coronal", "anatomisch", "kind", "achse_normal_weg", "kruemmungen"}."""
     if modul == "hippo" and isinstance(x, dict) and x.get("format") == 1:
         bt = {"saetze": _texte(x.get("saetze")), "ergebnis": str(x.get("ergebnis") or "").strip(),
               "schluss": str(x.get("schluss") or "").strip(), "kind": bool(x.get("kind")),
-              "becken": bool(x.get("becken"))}
+              "becken": bool(x.get("becken")),
+              # kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg FINAL 20.11.2026, Abholer ≥ 1.3.18, ris-mods
+              # ibl/hippo_ergebnis.py): Beckenschiefstand/Beinlängendifferenz ab 10 mm als eigene Ergebnispunkte
+              "ergebnis_becken": [] if x.get("kind") else _texte(x.get("ergebnis_becken"))}
         return bt if bt["saetze"] else None
     if modul == "squirrel" and isinstance(x, dict) and x.get("format") == 1:
         # Georg 20.11.2026 „1a 2a 3a 4a 5ja“ (Abholer ≥ 1.3.14, ris-mods ibl/squirrel_ergebnis.py): Skoliose-Sätze, Cobb-Satz
@@ -222,6 +225,18 @@ def _alter(d):
 
 
 NUR_ANZEIGE = {"rho"}               # v3.19.10: Module, von denen KaiScribe nie Text einsetzt (nur Hinweise in der Anzeige)
+_RHO_SCORE = re.compile(r"rho-score[- ](\d{1,2})\b|Score (\d{1,2}) von 10", re.I)
+_RHO_REGION = re.compile(r"Rho analysierte:\s*([^–\-,.(]+)", re.I)
+
+
+def _rho_anzeigen(texte):
+    """kaiscribe-rho-regel-becken-n1: Rho-Baustein in der Anzeige nach der EINEN Rho-Regel (br.rho_regel; die Anzeige kennt
+    keine DEXA → nur Score und Region). Score/Region nicht genannt → anzeigen (der Abholer ≥ 1.3.18 schickt nur LWS)."""
+    t = " ".join(texte)
+    ms, mr = _RHO_SCORE.search(t), _RHO_REGION.search(t)
+    score = (ms.group(1) or ms.group(2)) if ms else "7"
+    lws = br._RHO_LWS.search(mr.group(1)) is not None if mr else True
+    return br.rho_regel(score, lws, "frei")[0]
 # kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkt 21b, RH 69/92): KI-Hinweise (RBfracture „KI: Verdacht auf …“) sind nie ein
 # Ergebnispunkt und stehen nicht im Befund – sie bleiben nur als Hinweis für den Arzt (Anzeige).
 NUR_HINWEIS = {"rbfracture"}
@@ -263,6 +278,10 @@ def aus_liste(liste):
             # die LWS; das prüft allein der Formatierer (ris-mods ibl_einfuegen, Screening-Baustein mit Georgs Wortlaut),
             # KaiScribe kennt die DEXA-Vorgeschichte nicht. Die Hinweise bleiben (nur Anzeige). Ab Brücke 2.5.21 kommt Rho
             # schon ohne Text an; das hier deckt ältere Brücken ab.
+            # kaiscribe-rho-regel-becken-n1 (Kanban #533, EINE Rho-Regel, RH 124 Handgelenk Score 9): auch die Anzeige ist
+            # ein Rho-Ausgang – Score < 7 oder Region nicht LWS → der Baustein fällt ganz weg (keine Hinweise).
+            if not _rho_anzeigen(befundteil + ergebnis + hinweise):
+                continue
             befundteil, ergebnis = [], []
         out.append(Baustein(accno=accno, modul=modul, name=str(d.get("name") or modul.upper()), version=version,
                             ziffer=ziffer, seiten=seiten, befundteil=befundteil,
@@ -1816,8 +1835,10 @@ HIPPO_PROMPT = ("HIPPO: Übernimm die Sätze der Becken-/Hüft-Vorlage wörtlich
                 "außer der Arzt hat dazu etwas diktiert – KaiScribe setzt nach dem Befund die IB-Lab-Sätze zu "
                 "Beckenschiefstand, Beinlängendifferenz und auffälligen Hüftwinkeln oben in die Beschreibung, nimmt die "
                 "Vorlagen-Sätze zu Beckenform, Beckenschaufeln, CCD-Winkel und Deckung der Hüftköpfe heraus und setzt die "
-                "Diagnosen als ersten Ergebnispunkt. Schreibe selbst keinen Satz und keine Diagnose zu Beckenschiefstand, "
-                "Beinlänge, Überdachung, Pfannendach, Hüftdysplasie oder CCD-Winkel, außer der Arzt hat es diktiert.")
+                "Diagnosen als ersten Ergebnispunkt; einen Beckenschiefstand bzw. eine Beinlängendifferenz ab 10 mm setzt "
+                "KaiScribe danach selbst als eigenen Ergebnispunkt mit Wert ein. Schreibe selbst keinen Satz und keine "
+                "Diagnose zu Beckenschiefstand, Beinlänge, Überdachung, Pfannendach, Hüftdysplasie oder CCD-Winkel, außer der "
+                "Arzt hat es diktiert.")
 _HIPPO_WEG = [re.compile(x) for x in (
     r"Anatomisch normale und symmetrische Form des Beckenskeletts\.",
     r"Beide Beckenschaufeln stehen gleich ?hoch\.",
@@ -1928,11 +1949,32 @@ def _hippo_einsetzen(zeilen, teile, i, b, e):
         neu = block.split("\n")
         zeilen[bs:be] = neu
         _verschieben(teile, i, len(neu) - (be - bs))
-    punkte = [punkt] if punkt else []
+    punkte = ([punkt] if punkt else []) + _hippo_becken_punkte(b, zeilen, a, e.hinweise)
     _verschieben(teile, i, _hippo_ergebnis(zeilen, a, punkte, bt["schluss"], b, e.hinweise), nur_ende=True)
     da = "\n".join(zeilen[a.start:a.ende])
     e.eingesetzt[b.schluessel] = [s for s in bt["saetze"] if s in da] + punkte + ([bt["schluss"]] if bt["schluss"] else [])
     e.zuordnung[b.modul] = a.titel or "Befund"
+
+
+_HIPPO_BECKEN_WORT = (("beckenschiefstand", re.compile(r"beckenschiefstand|beckenkippung|beckenhochstand", re.I)),
+                      ("beinlängendifferenz", re.compile(r"beinlängen|beinverkürz", re.I)))
+
+
+def _hippo_becken_punkte(b, zeilen, a, hinweise):
+    """kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg FINAL 20.11.2026, RH 101 13/20 mm, RH 30 12 mm): HIPPO-Punkte
+    „Beckenschiefstand von 13 mm, rechts tieferstehend.“ / „Beinlängendifferenz von 20 mm.“ (befundtext.ergebnis_becken,
+    nur ≥ 10 mm, Kinder nie) als EIGENE Ergebnispunkte nach dem Begriff-Punkt. Nennt das Ergebnis (Diktat) das Thema schon
+    mit anderem Wortlaut → nicht doppelt, Hinweis. Der HIPPO_PROMPT verbietet nur der KI eigene Sätze – er unterdrückt
+    diese Punkte nicht (KaiScribe setzt sie nach der KI ein)."""
+    erg = "\n".join(_NUM.sub("", z) for z in zeilen[a.ergebnis + 1:a.ende]) if a.ergebnis >= 0 else ""
+    out = []
+    for p in b.befundtext.get("ergebnis_becken") or []:
+        thema = next((rx for w, rx in _HIPPO_BECKEN_WORT if w in p.lower()), None)
+        if p not in erg and thema is not None and thema.search(erg):
+            hinweise.append(f"{b.name}: „{_kurz(p)}“ – Ergebnis nennt das schon, nicht doppelt angefügt (bitte prüfen)")
+            continue
+        out.append(p)                                  # derselbe Punkt schon da (frühere Fassung) → _hippo_ergebnis: einmal
+    return out
 
 
 def _vorlage_ergebnis(l, templates):
@@ -1945,10 +1987,12 @@ def _vorlage_ergebnis(l, templates):
 
 def _hippo_geruest(b, titel, vorlage=None, vorlage_ergebnis=""):
     """Gerüst vor dem Diktat: Vorlage der Becken-/Hüft-Leistung mit den HIPPO-Sätzen (bzw. ohne bekannte Vorlage nur die
-    Sätze) → (Befundzeilen, Ergebnispunkte: HIPPO-Punkt bzw. Normal-Ergebnis der Vorlage, Schlussanmerkung)."""
+    Sätze) → (Befundzeilen, Ergebnispunkte: HIPPO-Punkt bzw. Normal-Ergebnis der Vorlage, Becken/Bein ≥ 10 mm,
+    Schlussanmerkung)."""
     bt = b.befundtext
-    punkte = [bt["ergebnis"]] if bt["ergebnis"] else ([vorlage_ergebnis] if vorlage_ergebnis else [])
-    punkte += [bt["schluss"]] if bt["schluss"] else []
+    becken = list(bt.get("ergebnis_becken") or [])     # kaiscribe-rho-regel-becken-n1: ≥ 10 mm als eigene Punkte
+    punkte = [bt["ergebnis"]] if bt["ergebnis"] else ([vorlage_ergebnis] if vorlage_ergebnis and not becken else [])
+    punkte += becken + ([bt["schluss"]] if bt["schluss"] else [])
     if vorlage:
         rumpf = "\n".join(vorlage.split("\n")[1:]).strip("\n")
         if rumpf.strip():

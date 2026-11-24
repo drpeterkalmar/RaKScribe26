@@ -157,6 +157,62 @@ pb = I.prompt_block(B52, vorlage("beckenübersicht_stehend")[1])
 check("Gen-Prompt: HIPPO-Regel, keine Zahlen, keine Diagnosen", I.HIPPO_PROMPT in pb and "23°" not in pb
       and "Coxa valga" not in pb, pb)
 
+# ── kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg FINAL 20.11.2026): Becken/BLD ≥ 10 mm als eigene Ergebnispunkte ──
+def becken_baustein(saetze, ergebnis="", ergebnis_becken=None, kind=False, nr="T-101"):
+    d = json.loads(json.dumps(next(f["baustein"] for f in FAELLE if f["nr"] == 61)))
+    d["accno"] = nr
+    d["befundtext"] = {"format": 1, "saetze": saetze, "ergebnis": ergebnis, "schluss": ENDE, "kind": kind, "becken": True}
+    if ergebnis_becken is not None:
+        d["befundtext"]["ergebnis_becken"] = ergebnis_becken
+    return I.aus_liste([d])
+
+
+RH101_P = ["Beckenschiefstand von 13 mm, rechts tieferstehend.", "Beinlängendifferenz von 20 mm."]
+B101 = becken_baustein(["Beckenschiefstand von 13 mm, rechts tieferstehend.", "Beinlängendifferenz von 20 mm.",
+                        "Der LCE-Winkel beträgt rechts 18°."], "Hüftdysplasie rechts.", RH101_P)
+e = I.einsetzen(bericht("beckenübersicht_stehend"), B101, diktat="Beckenübersicht.")
+check("RH 101: Begriff zuerst, dann 13 mm Beckenschiefstand und 20 mm BLD als eigene Punkte, Schluss ohne Nummer",
+      e.report.endswith("## Ergebnis\n1. Hüftdysplasie rechts.\n2. Beckenschiefstand von 13 mm, rechts tieferstehend.\n"
+                        "3. Beinlängendifferenz von 20 mm.\n" + ENDE), e.report)
+check("RH 101: Sätze bleiben auch in der Beschreibung", "## Befund\nBeckenschiefstand von 13 mm, rechts tieferstehend. "
+      "Beinlängendifferenz von 20 mm." in e.report, e.report)
+e2 = I.einsetzen(e.report, B101, diktat="Beckenübersicht.", entfernen=e.eingesetzt[("T-101", "hippo")])
+check("RH 101: zweites Einsetzen ändert nichts (Becken-Punkte nicht doppelt)", e2.report == e.report, e2.report)
+B30 = becken_baustein(["Beckenschiefstand von 12 mm, links tieferstehend.", "Beinlängendifferenz von 4 mm."], "",
+                      ["Beckenschiefstand von 12 mm, links tieferstehend."], nr="T-30")
+e = I.einsetzen(bericht("beckenübersicht_stehend"), B30, diktat="Beckenübersicht.")
+check("RH 30: 12 mm ohne Begriff → eigener Punkt ersetzt das Normal-Ergebnis",
+      e.report.endswith("## Ergebnis\nBeckenschiefstand von 12 mm, links tieferstehend.\n" + ENDE)
+      and "Regelrechte Darstellung des Beckens" not in e.report, e.report)
+ki = bericht("beckenübersicht_stehend", ergebnis="Beginnende Coxarthrose beidseits.")
+e = I.einsetzen(ki, B30, diktat="Beginnende Coxarthrose beidseits.")
+check("RH 30 + Diktat: Becken-Punkt vor dem Diktierten, nummeriert",
+      "## Ergebnis\n1. Beckenschiefstand von 12 mm, links tieferstehend.\n2. Beginnende Coxarthrose beidseits.\n" + ENDE
+      in e.report, e.report)
+ki = bericht("beckenübersicht_stehend", ergebnis="Beckenschiefstand rechts.")
+e = I.einsetzen(ki, B30, diktat="Beckenschiefstand rechts.")
+check("Diktierter Beckenschiefstand im Ergebnis → IB-Lab-Punkt nicht doppelt, Hinweis",
+      "Beckenschiefstand von 12 mm" not in e.report.split("## Ergebnis")[1]
+      and any("nicht doppelt" in h for h in e.hinweise), (e.report, e.hinweise))
+e = I.einsetzen(bericht("beckenübersicht_stehend"), B61, diktat="Beckenübersicht.")
+check("9 mm (Fall 61): nur Beschreibung, kein Ergebnispunkt", "## Ergebnis\nRegelrechte Darstellung des Beckens.\n" + ENDE
+      in e.report and "Beckenschiefstand" not in e.report.split("## Ergebnis")[1], e.report)
+BK = becken_baustein(["Beckenschiefstand von 13 mm, rechts tieferstehend."], "", RH101_P[:1], kind=True, nr="T-K")
+e = I.einsetzen(bericht("beckenübersicht_stehend"), BK, diktat="Beckenübersicht.")
+check("Kind: kein Becken-Ergebnispunkt (auch wenn die Liste käme)",
+      "Beckenschiefstand" not in e.report.split("## Ergebnis")[1], e.report)
+g = I.geruest(B101, [{"kurz": "bü", "text": "Beckenübersicht", "vorlage": "beckenübersicht_stehend"}], T)
+check("Gerüst RH 101: Begriff + Becken-Punkte + Schluss",
+      g is not None and g.report.endswith("## Ergebnis\n1. Hüftdysplasie rechts.\n2. Beckenschiefstand von 13 mm, rechts "
+                                          "tieferstehend.\n3. Beinlängendifferenz von 20 mm.\n" + ENDE),
+      g.report if g else None)
+g = I.geruest(B30, [{"kurz": "bü", "text": "Beckenübersicht", "vorlage": "beckenübersicht_stehend"}], T)
+check("Gerüst RH 30: Becken-Punkt statt Normal-Ergebnis",
+      g is not None and g.report.endswith("## Ergebnis\nBeckenschiefstand von 12 mm, links tieferstehend.\n" + ENDE),
+      g.report if g else None)
+check("HIPPO_PROMPT unterdrückt die Becken-Punkte nicht (KaiScribe setzt sie selbst ein)",
+      "ab 10 mm setzt KaiScribe danach selbst als eigenen Ergebnispunkt" in I.HIPPO_PROMPT)
+
 # ── Snapshot aller Fälle ──
 zeilen = []
 for f in FAELLE:

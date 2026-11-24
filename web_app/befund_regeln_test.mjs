@@ -2,7 +2,7 @@
 // Pendant zu ../befund_regeln_test.py (das ruft dieses Skript auf).
 //   cd web_app && node --experimental-strip-types befund_regeln_test.mjs
 import { readFileSync } from 'node:fs';
-import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, abschnitteBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen, sttSatzzeichen, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, nachbearbeiten, befundSchluss } from './src/befundRegeln.ts';
+import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, abschnitteBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen, sttSatzzeichen, grundregeln, rhoAnsEnde, rhoRegel, rhoRegelAnwenden, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, nachbearbeiten, befundSchluss } from './src/befundRegeln.ts';
 
 const F = JSON.parse(readFileSync(new URL('../befund_regeln_fixtures.json', import.meta.url), 'utf8'));
 let fail = 0, n = 0;
@@ -43,6 +43,8 @@ for (const c of F.ursula_2011.schluss) {
 for (const c of F.georg_2311.teile) { const g = teileZusammenlegen(c.in, c.diktat)[0]; check(g === c.out, 'georg_2311 Teile: ' + c.name, g); }
 for (const c of F.georg_2311.nur_text) { const g = nurTextUeberschriften(c.in); check(g === c.out, 'georg_2311 Nur Text: ' + c.name, g); }
 for (const c of F.rho.osteopen) { const g = osteopenErsetzen(c.report, c.diktat)[0]; check(g === c.out, 'rho osteopen: ' + c.name.slice(0, 50), g); check(osteopenErsetzen(g, c.diktat)[0] === g, 'rho osteopen zweimal gleich: ' + c.name.slice(0, 40), 'nicht idempotent'); }
+for (const c of F.rho.regel) { const g = rhoRegelAnwenden(c.report, c.dexa); check(JSON.stringify(g) === JSON.stringify([c.out, c.grund]), 'rho regel: ' + c.name.slice(0, 50), g); }   // kaiscribe-rho-regel-becken-n1
+for (const c of F.rho.regel_score) { const g = rhoRegel(c.score, c.lws, c.dexa); check(JSON.stringify(g) === JSON.stringify(c.out), `rho regel score: ${c.score}/${c.lws}/${c.dexa}`, g); }
 for (const c of F.rho.ans_ende) { const g = rhoAnsEnde(c.in); check(g === c.out, 'rho ans Ende: ' + c.in.slice(0, 30), g); }
 for (const c of F.abschnitte.faelle) { const g = abschnitteBereinigen(c.in, c.diktat, TPL, WD)[0]; check(g === c.out, 'abschnitte: ' + c.name, g); }   // v3.18.13
 // v3.16.6: Kurzsätze (Daten aus vorlagen_vorrang.json, Standard = gebündelte Datei)
