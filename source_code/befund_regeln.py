@@ -2115,6 +2115,9 @@ _FRAKTUR_RX = re.compile(r"fraktur|ausriss|fissur|infraktion|(?<![a-zäöüß])f
 _NICHT_DISLOZIERT = re.compile(r"(?<![a-zäöüß])nicht[- ](?:disloziert|dislociert|verschoben|verlagert)[a-zäöüß]*")
 _KL_ADJ_SEITE = re.compile(r"(?<![a-zäöüß])(" + "|".join(r for _g, r in _KL_ADJ) + r")\s+(?:rechts|links|beidseits)(?![a-zäöüß])",
                            re.I)
+# Abend-Abnahme 24.11.2026 (Fall H): „Coxarthrose links hochgradig, rechts gering“ – Seite VOR dem Adjektiv zählt ebenso
+_KL_SEITE_ADJ = re.compile(r"(?<![a-zäöüß])(?:rechts|links|beidseits),?\s+(" + "|".join(r for _g, r in _KL_ADJ)
+                           + r")(?![a-zäöüß])", re.I)
 _PATHO_EXTRA = re.compile(r"status post|zustand nach|(?<![a-zäöüß])(?:st\.|z\.)\s?[pn]\.|enthesi|unregelmäßig|prothes|(?<![a-zäöüß])tep(?![a-zäöüß])|"
                           r"ausriss|fragment|verdick|bursitis|degenerat|stenose|hypertroph|zyste|erosion|lockerung|sklerosier|"
                           r"osteophyt|randanbau|randzack|dysplas|steiles pfannendach|überdachung|coxa (?:valga|vara)|beckenschief|"
@@ -2612,7 +2615,8 @@ def _kl_ergebnis(punkte, dk):
     aend, out = [], []
     diktiert = kl_grade(dk)
     adj = set(kl_adjektiv_grade(dk))      # „… Coxarthrose links und geringgradige rechts“: Adjektiv + Seite zählt mit
-    adj |= {g for m in _KL_ADJ_SEITE.finditer(dk) for g, r in _KL_ADJ if re.fullmatch(r, m.group(1), re.I)}
+    adj |= {g for rx in (_KL_ADJ_SEITE, _KL_SEITE_ADJ) for m in rx.finditer(dk) for g, r in _KL_ADJ
+            if re.fullmatch(r, m.group(1), re.I)}
     for p in punkte:
         t = _punkt(p)
         md = _KL_DOPPEL.match(t)

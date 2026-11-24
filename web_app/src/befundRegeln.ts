@@ -1672,6 +1672,8 @@ const STEP_PATHO = /step-?sign[a-zäöüß ]{0,15}positiv|positive[sn]? step-?si
 const FRAKTUR_RX = /fraktur|ausriss|fissur|infraktion|(?<![a-zäöüß])fragment/u;
 const NICHT_DISLOZIERT = /(?<![a-zäöüß])nicht[- ](?:disloziert|dislociert|verschoben|verlagert)[a-zäöüß]*/gu;
 const KL_ADJ_SEITE = new RegExp('(?<![a-zäöüß])(' + KL_ADJ.map(([, r]) => r).join('|') + ')\\s+(?:rechts|links|beidseits)(?![a-zäöüß])', 'giu');
+// Abend-Abnahme 24.11.2026 (Fall H): „Coxarthrose links hochgradig, rechts gering“ – Seite VOR dem Adjektiv zählt ebenso
+const KL_SEITE_ADJ = new RegExp('(?<![a-zäöüß])(?:rechts|links|beidseits),?\\s+(' + KL_ADJ.map(([, r]) => r).join('|') + ')(?![a-zäöüß])', 'giu');
 const PATHO_EXTRA = /status post|zustand nach|(?<![a-zäöüß])(?:st\.|z\.)\s?[pn]\.|enthesi|unregelmäßig|prothes|(?<![a-zäöüß])tep(?![a-zäöüß])|ausriss|fragment|verdick|bursitis|degenerat|stenose|hypertroph|zyste|erosion|lockerung|sklerosier|osteophyt|randanbau|randzack|dysplas|steiles pfannendach|überdachung|coxa (?:valga|vara)|beckenschief|beinlängen|fibroostos|tendinos|ruptur|ganglion|lipom|tumor|raumforder|hämatom|serom|abszess/u;
 const NERV_TITEL = /(?:sonogra|ultraschall)[^\n]*(?:(?<![a-zäöüß])n\.|nerv)/iu;
 const NERV_NAME = /(?:(?<![a-zäöüß])n\.|nervus|nerv)\s*(medianus|ulnaris|radialis|ischiadicus|peroneus|fibularis|tibialis|femoralis|suralis|pudendus|saphenus|obturatorius|axillaris|musculocutaneus|suprascapularis|iliohypogastricus|ilioinguinalis|cutaneus femoris lateralis|femoralis cutaneus lateralis)/iu;
@@ -1947,6 +1949,7 @@ const klErgebnis = (punkte: string[], dk: string): [string[], string[]] => {
   const aend: string[] = [], out: string[] = [];
   const diktiert = klGrade(dk), adj = new Set(klAdjektivGrade(dk));
   for (const m of dk.matchAll(KL_ADJ_SEITE)) for (const [g, r] of KL_ADJ) if (new RegExp('^(?:' + r + ')$', 'iu').test(m[1])) adj.add(g);
+  for (const m of dk.matchAll(KL_SEITE_ADJ)) for (const [g, r] of KL_ADJ) if (new RegExp('^(?:' + r + ')$', 'iu').test(m[1])) adj.add(g);
   for (const p of punkte) {
     const t = ohneNum(p);
     const md = KL_DOPPEL.exec(t);

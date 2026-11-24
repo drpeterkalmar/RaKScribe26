@@ -24,27 +24,27 @@ FAELLE = {
                       "majus. AC-Gelenksarthrose."], False),
     "B": ("schultr", ["Schulter rechts in zwei Ebenen. Kalkdepot mit Enkapsulation am Ansatz der Supraspinatussehne. "
                       "Ergebnis Doppelpunkt Tendinosis calcarea der Supraspinatussehne."], False),
-    "C": ("sosur", ["Sonographie der Schulter rechts. Geringgradige Bursitiszeichen perifokal im Bereich der "
+    "C": ("usschul", ["Sonographie der Schulter rechts. Geringgradige Bursitiszeichen perifokal im Bereich der "
                     "Supraspinatussehne."], False),
-    "D": ("fur", ["Fuß rechts in zwei Ebenen. Knöcherner Bandausriss am Malleolus lateralis, 9 mm Fragment."], False),
-    "E": ("sowe", ["Sonographie der Weichteile Oberschenkel rechts. Kein Hämatom, keine Raumforderung. "
-                   "Ergebnis Doppelpunkt Unauffälliger Weichteilbefund."], True),
+    "D": ("fussr", ["Fuß rechts in zwei Ebenen. Knöcherner Bandausriss am Malleolus lateralis, 9 mm Fragment."], False),
+    "E": ("usweich", ["Sonographie der Weichteile Oberschenkel rechts:\nKein Hämatom, keine Raumforderung.\n"
+                       "Ergebnis:\nUnauffälliger Weichteilbefund."], True),
     "F1": ("bü+hür", ["Beckenübersicht und Hüfte rechts in zwei Ebenen. Beginnende Coxarthrose rechts."], False),
     "F2": ("bü+hür", ["Beckenübersicht: unauffällig. Hüfte rechts in zwei Ebenen: beginnende Coxarthrose."], False),
-    "G": ("kgl", ["Knie links unauffällig."], False),
+    "G": ("kniel", ["Knie links unauffällig."], False),
     "H": ("bühü", ["Beckenübersicht und Hüften beidseits. Coxarthrose links hochgradig, rechts gering."], False),
-    "I": ("vfr", ["Vorfuß rechts in zwei Ebenen. Geringe Arthrose im MTP-I-Gelenk."], False),
-    "J": ("kgr", ["Kniegelenk rechts in zwei Ebenen. Geringe mediale Gonarthrose. Retropatellararthrose.",
-                  "Zweitens Chondrokalzinose."], False),
+    "I": ("vofur", ["Vorfuß rechts in zwei Ebenen. Geringe Arthrose im MTP-I-Gelenk."], False),
+    "J": ("knier", ["Kniegelenk rechts in zwei Ebenen. Geringe mediale Gonarthrose. Retropatellararthrose.",
+                    "wav:j2.wav"], False),     # Nachdiktat gesprochen: „Zweitens Chondrokalzinose.“
     "K": ("gws+flws", ["Ganzaufnahme der Wirbelsäule a.p. und seitlich. Flachbogige skoliotische Asymmetrie. "
                        "Altersentsprechende Degeneration.",
-                       "Funktionsaufnahmen der Lendenwirbelsäule: keine Instabilität."], False),
+                       "wav:k2.wav"], False),   # Nachdiktat gesprochen: „Funktionsaufnahmen der Lendenwirbelsäule. Keine Instabilität.“
     "G1": ("Ganzbein re.", ["Ganzbeinaufnahme im Stand. Beinachse varisch, Gonarthrose medial Grad zwei. "
                             "Hüftgelenk altersentsprechend."], False),
     "H1": ("hws", ["Halswirbelsäule in zwei Ebenen. 50-prozentige Höhenminderung C5/6, Unkovertebralarthrose beidseits. "
                    "Im Übrigen unauffällige Wirbelkörper. Im Übrigen keine Fehlstellung."], False),
-    "K1": ("kgr", ["Kniegelenk in zwei Ebenen. Beginnende Gonarthrose. Kein Erguss."], False),
-    "R1": ("hagl", ["Handgelenk links unauffällig. Rho 9."], False),
+    "K1": ("knier", ["Kniegelenk in zwei Ebenen. Beginnende Gonarthrose. Kein Erguss."], False),
+    "R1": ("handgell", ["Handgelenk links unauffällig. Rho 9."], False),
     "R2": ("lws", ["LWS: geringe Osteochondrose L5/S1. Rho 8."], False),
     "R3": ("lws", ["LWS: geringe Osteochondrose L5/S1. Rho 6."], False),
     "M13": ("bü", ["Beckenübersicht."], False),      # + HIPPO-Baustein 13 mm / BLD 20 mm (ibl_abnahme_bausteine --hippo-becken)
@@ -68,8 +68,13 @@ def faelle_eintragen(m):
     for name, (_, texte, nur_text) in FAELLE.items():
         schritte = [{"trigger": "nur_text_an"}] if nur_text else []
         for i, text in enumerate(texte):
-            schritte += [{"trigger": f"text_ins#{name.lower()}{i}|{text}"}, {"warte_auf": "kontrolle", "timeout_s": 300},
-                         {"warte_s": 3}, {"merke": "nach_ins" if i == len(texte) - 1 else f"nach_ins{i}"}]
+            merk = {"merke": "nach_ins" if i == len(texte) - 1 else f"nach_ins{i}"}
+            if text.startswith("wav:"):   # echtes Nachdiktat: kein Cursor-Ziel, Aufnahme, gesprochene Datei, INS
+                schritte += [{"trigger": "befund_fokus_weg"}, {"taste": "RECORD"}, {"sprich": text[4:]}, {"taste": "INS"},
+                             {"warte_auf": "kontrolle", "timeout_s": 300}, {"warte_s": 3}, merk]
+            else:
+                schritte += [{"trigger": f"text_ins#{name.lower()}{i}|{text}"},
+                             {"warte_auf": "kontrolle", "timeout_s": 300}, {"warte_s": 3}, merk]
         m.FAELLE[name] = {"titel": f"Abend-Abnahme {name}: getipptes Diktat → Befund → EOL → Ablage (Brieftext)",
                           "eol": True, "abschnitte": 1, "ablauf": m._START + schritte + m._EOL}
 
