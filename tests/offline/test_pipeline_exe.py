@@ -141,6 +141,10 @@ _hk_web = dict(zip(nur_bypass, web_reports)).get("Schulter rechts unauffällig. 
 check("Schulter-Normalbefund: Satz beginnt mit „Der Humeruskopf steht in regelrechter Artikulation.“ (EXE + Web)",
       all(re.search(r"(?:^|[.\n] ?)Der Humeruskopf steht in regelrechter Artikulation\.", t)
           and not re.search(r"(?<!Der )Humeruskopf in regelrechter", t) for t in (_hk, _hk_web)), _hk[:300])
+# #401 (Georg 16.11.2026: „Der AC-Gelenk …“ von Hand ergänzt): AC-Satz mit Artikel, EXE wie Web
+check("Schulter-Normalbefund: „Das AC-Gelenk ist altersentsprechend, keine Luxation.“, kein Satz ohne Artikel (EXE + Web)",
+      all("Das AC-Gelenk ist altersentsprechend, keine Luxation." in t
+          and not re.search(r"(?:^|[.\n] ?)(?:Der )?AC-Gelenk altersentsprechend", t) for t in (_hk, _hk_web)), _hk[:400])
 
 print("\n" + ("✅ PIPELINE EXE PASS" if not fails else f"❌ {fails} FAIL"))
 sys.exit(1 if fails else 0)

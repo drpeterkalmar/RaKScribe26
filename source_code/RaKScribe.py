@@ -625,6 +625,42 @@ ERGAENZUNG = "Ergänzung an Cursor-Stelle"
 ERGAENZUNG_STATUS = {"RECORDING": f"{ERGAENZUNG} · Aufnahme läuft",
                      "PAUSED": f"{ERGAENZUNG} · Pause – Record: weiter · INS: einfügen",
                      "PROCESSING": f"{ERGAENZUNG} wird eingefügt…"}
+# kaiscribe-sammel-2311 (Peter 23.11.2026, Videos RH 156/165: „funzt ned“): markierter Text im Befund wird durch das
+# Diktat ERSETZT – auch wenn die Markierung (Tk-„sel“) in der Pause durch PLAY, Fokuswechsel o. ä. verschwindet. Die
+# Markierung hält ein eigener Tag samt Text fest; nur ein echter Einzelklick ohne Auswahl im Befund hebt sie auf.
+MARKIERUNG_TAG = "ks_markierung"
+MARKIERUNG_FARBE = "#33406B"
+MARKIERUNG = "Ersetzt markierten Text ({n} Zeichen)"
+MARKIERUNG_STATUS = {"RECORDING": f"{MARKIERUNG} · Aufnahme läuft",
+                     "PAUSED": f"{MARKIERUNG} · Pause – Record: weiter · INS: ersetzen",
+                     "PROCESSING": f"{MARKIERUNG} …"}
+
+
+def _st_markierung(app):
+    """Selbsttest: gemerkte Markierung im Befund als [von, bis] (None = keine)."""
+    try:
+        return list(app._markierung() or []) or None
+    except Exception:
+        return None
+
+
+def markierung_stelle(text, von, bis, gemerkt):
+    """Wo steht der markierte Text (gemerkt) jetzt? → (von, bis, art). art: „gleich“ (an den Marken), „wiedergefunden“
+    (Feld wurde neu geschrieben, z. B. IB-Lab – das nächstgelegene wörtliche Vorkommen), „veraendert“ (der Text selbst
+    wurde inzwischen geändert – es bleibt die Stelle der Marken), „stelle“ (Cursor, keine Markierung)."""
+    text = text or ""
+    if not gemerkt:
+        return von, bis, "stelle"
+    if text[von:bis] == gemerkt:
+        return von, bis, "gleich"
+    treffer, i = [], text.find(gemerkt)
+    while i >= 0:
+        treffer.append(i)
+        i = text.find(gemerkt, i + 1)
+    if treffer:
+        p = min(treffer, key=lambda x: abs(x - von))
+        return p, p + len(gemerkt), "wiedergefunden"
+    return von, bis, "veraendert"
 # 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1: „wird manchmal alles gelöscht oder der Titel ändert sich“):
 # steht rechts schon Text, ist jedes Diktat eine Ergänzung (Titel und Text bleiben); neuer Befund nur bei leerem Feld.
 EINBAU_STATUS = {
@@ -1338,6 +1374,14 @@ class RaKScribeApp(ctk.CTk):
         self._setup_report_formatting()
         for k in ("<Control-z>", "<Control-Z>"):     # 3.19.16: ein Schritt zurück im Befundfeld
             self.result_text._textbox.bind(k, self._rueckgaengig)
+        try:   # kaiscribe-sammel-2311: Markierung als eigener Tag (sichtbar, auch wenn „sel“ weg ist)
+            tb = self.result_text._textbox
+            tb.tag_configure(MARKIERUNG_TAG, background=MARKIERUNG_FARBE)
+            tb.tag_raise("sel")
+            tb.bind("<<Selection>>", self._markierung_merken, add="+")
+            tb.bind("<ButtonRelease-1>", self._befund_klick, add="+")
+        except Exception:
+            log_exception("[EINFÜGEN] Markierung: Tag nicht eingerichtet")
 
         # Diktat-Fußzeile
         self.record_btn = ctk.CTkButton(left_foot, text=" Aufnahme Starten (F10) ", height=44, width=230,
@@ -1509,6 +1553,8 @@ class RaKScribeApp(ctk.CTk):
                     "nur_text": bool(self.nur_text_aktiv()),
                     "einfuegungen": getattr(self, "_einfuege_zaehler", 0),
                     "einfuegen_ziel": list(self._einfuegen_ziel) if getattr(self, "_einfuegen_ziel", None) else None,
+                    "ziel_text_n": len(getattr(self, "_ziel_text", "") or ""),   # kaiscribe-sammel-2311
+                    "markierung": _st_markierung(self),
                     "hinweis": getattr(self, "_letzter_hinweis", ""),
                     "repariert": str(self.repariert_label.cget("text")),
                     "zwischenablage": _zwischenablage_lesen()[:600],
@@ -1643,9 +1689,11 @@ class RaKScribeApp(ctk.CTk):
                 else:
                     self._maske_getippt(i, text)
                 self.after(800, lambda p=phase: dump(p))
-            elif phase.startswith(("befund_markieren#", "befund_fokus_weg")):
+            elif phase.startswith(("befund_markieren#", "befund_fokus_weg", "befund_klick#", "befund_sel_weg")):
                 # v3.15.4: Cursor/Markierung im Befund rechts (wie mit der Maus), z. B. befund_markieren#12|20;
                 # befund_fokus_weg = Fokus ins Diktat-Feld links (kein Ziel)
+                # kaiscribe-sammel-2311: befund_klick#N = echter Einzelklick ohne Auswahl an Stelle N (hebt die
+                # Markierung auf); befund_sel_weg = Auswahl verschwindet ohne Klick (wie PLAY/Fokuswechsel in RH 156)
                 tb = self.result_text._textbox
                 if phase.startswith("befund_markieren#"):
                     von, _, bis = phase.split("#")[1].partition("|")
@@ -1656,9 +1704,21 @@ class RaKScribeApp(ctk.CTk):
                     if bis > von:
                         tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
                     tb.mark_set("insert", f"1.0+{bis}c")
+                    self._markierung_merken()
+                elif phase.startswith("befund_klick#"):
+                    pos = int(phase.split("#")[1].split("|")[0] or 0)
+                    self._st_ziel = True
+                    tb.focus_set()
+                    tb.tag_remove("sel", "1.0", "end")
+                    tb.mark_set("insert", f"1.0+{pos}c")
+                    self._befund_klick()
+                elif phase.startswith("befund_sel_weg"):
+                    tb.tag_remove("sel", "1.0", "end")
+                    self.transcript_text._textbox.focus_set()
                 else:
                     self._st_ziel = False
                     tb.tag_remove("sel", "1.0", "end")
+                    tb.tag_remove(MARKIERUNG_TAG, "1.0", "end")   # „kein Ziel“ wie bisher (auch keine Markierung)
                     self.transcript_text._textbox.focus_set()
                 dump(phase)
             elif phase.startswith("diktat_setzen#"):
@@ -1831,6 +1891,7 @@ class RaKScribeApp(ctk.CTk):
                     tb.tag_remove("sel", "1.0", "end")
                     tb.tag_add("sel", f"1.0+{von}c", f"1.0+{bis}c")
                     tb.mark_set("insert", f"1.0+{bis}c")
+                    self._markierung_merken()
                 self._st_markiert = {"wo": art, "feld": i, "von": von, "bis": bis, "text": text[von:bis],
                                      "vorher": text[:von], "nachher": text[bis:]}
                 log(f"[SELBSTTEST] {art}: markiert {von}–{bis}")
@@ -2152,6 +2213,9 @@ class RaKScribeApp(ctk.CTk):
         label, dot, bg = STATUS_STYLE.get(raw, (text, {"busy": WARN_AMBER, "recording": RECORDING_RED}.get(type, READY_GREEN), "#1B2030"))
         if raw in ERGAENZUNG_STATUS and getattr(self, "_einfuegen_ziel", None) is not None:
             label = ERGAENZUNG_STATUS[raw]  # v3.18.9: Diktat geht wörtlich an die Cursor-Stelle im Befund
+            n = len(getattr(self, "_ziel_text", "") or "")
+            if n:                           # kaiscribe-sammel-2311: Markierung wird ersetzt
+                label = MARKIERUNG_STATUS[raw].format(n=n)
         elif raw in EINBAU_STATUS.get(getattr(self, "_einbau", None), {}):
             label = EINBAU_STATUS[self._einbau][raw]   # 3.19.16: „Ergänzung“ bzw. „Neuer Befund“
         if raw == "RECORDING" and getattr(self, "_live_aus", False):
@@ -2308,8 +2372,12 @@ class RaKScribeApp(ctk.CTk):
             log("[RECORD] Aufnahme wird gestartet...")
             self._maske_lauf = self._maske_aktiv()   # v3.15.0: Abschnitt je Feld statt eines Diktats
             self._maske_abschnitte, self._maske_offen_k = {}, None
+            self._ziel_text = ""
             self._einfuegen_ziel = None if self._maske_lauf else self._einfuege_ziel_ermitteln()
-            if self._einfuegen_ziel is not None:
+            if self._einfuegen_ziel is not None and self._ziel_text:
+                log(f"[EINFÜGEN] {MARKIERUNG.format(n=len(self._ziel_text))}: Diktat ersetzt Stelle "
+                    f"{self._einfuegen_ziel} (wörtlich, Nur Text {'an' if self.nur_text_aktiv() else 'aus'}).")
+            elif self._einfuegen_ziel is not None:
                 log(f"[EINFÜGEN] {ERGAENZUNG}: Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt "
                     f"(wörtlich, Nur Text {'an' if self.nur_text_aktiv() else 'aus'}).")
             self._einbau = self._einbau_bestimmen()
@@ -2485,16 +2553,25 @@ class RaKScribeApp(ctk.CTk):
         """v3.5.0 (Peter 07.10.): Steht der Cursor im Befund-Feld (Fokus dort, RaKScribe vorne, Befund nicht leer),
         wird das nächste Diktat als korrigierter Text an dieser Stelle eingefügt bzw. ersetzt die Markierung.
         Rückgabe (start, ende) als Zeichen-Offsets im Befundtext oder None (= normales Diktat)."""
+        self._ziel_text = ""
         try:
             tb = self.result_text._textbox
-            if not self.result_text.get("1.0", "end-1c").strip() or self._nur_geruest():
-                return None                       # v3.14.0: im IB-Lab-Gerüst wird normal diktiert, nicht eingefügt
-            if not getattr(self, "_st_ziel", False) and (self.focus_get() is not tb or not _fokus_ist_eigenes_fenster()):
+            if not self.result_text.get("1.0", "end-1c").strip():
                 return None
-            if tb.tag_ranges("sel"):
-                a, b = tb.index("sel.first"), tb.index("sel.last")
+            # kaiscribe-sammel-2311: eine Markierung (eigener Tag, hält auch ohne Fokus/„sel“) wird ersetzt – auch im
+            # IB-Lab-Gerüst; die markierte Stelle samt Text wird jetzt festgehalten
+            m = self._markierung()
+            if m is not None:
+                a, b = tb.index(f"1.0+{m[0]}c"), tb.index(f"1.0+{m[1]}c")
+                self._ziel_text = tb.get(a, b)
             else:
+                if self._nur_geruest():
+                    return None                   # v3.14.0: im IB-Lab-Gerüst wird normal diktiert, nicht eingefügt
+                if not (getattr(self, "_st_ziel", False) or getattr(self, "_klick_gilt", False)) \
+                        and (self.focus_get() is not tb or not _fokus_ist_eigenes_fenster()):
+                    return None
                 a = b = tb.index("insert")
+            self._klick_n_ziel = getattr(self, "_klick_n", 0)
             # Tk-Marken wandern mit, falls während der Aufnahme im Befund getippt wird
             tb.mark_set("diktat_a", a)
             tb.mark_gravity("diktat_a", "left")
@@ -2509,6 +2586,77 @@ class RaKScribeApp(ctk.CTk):
         r = self.result_text._textbox.count("1.0", index, "chars")
         return int((r[0] if isinstance(r, tuple) else r) or 0)
 
+    # ── kaiscribe-sammel-2311 (Peter 23.11.2026): Markierung festhalten ──────────────────────────────────────────────
+    # RH 156: Markierung beim Start erkannt, PLAY in der Pause → „sel“ weg, Cursor am Markierungsende → eingefügt statt
+    # ersetzt. RH 165: in der Pause markiert, beim Weiter-Diktieren nur noch 2 Zeichen der Markierung übrig. Jetzt:
+    # jede Auswahl im Befund wird als Tag MARKIERUNG_TAG gemerkt (bleibt sichtbar); sie geht nur durch einen echten
+    # Einzelklick ohne Auswahl im Befund weg (dann gilt der Cursor) oder durch eine neue Auswahl (die gilt dann).
+    def _markierung_merken(self, _evt=None):
+        """<<Selection>> im Befund: neue, nicht leere Auswahl = Markierung. Auswahl weg (Fokuswechsel, PLAY, anderes
+        Feld markiert) ändert nichts."""
+        try:
+            tb = self.result_text._textbox
+            r = tb.tag_ranges("sel")
+            if r and self._offset(str(r[-1])) > self._offset(str(r[0])):
+                tb.tag_remove(MARKIERUNG_TAG, "1.0", "end")
+                tb.tag_add(MARKIERUNG_TAG, str(r[0]), str(r[-1]))
+        except Exception:
+            pass
+
+    def _befund_klick(self, _evt=None):
+        """Maustaste im Befund losgelassen: ohne Auswahl = echter Einzelklick → Markierung aufgehoben, Cursor gilt."""
+        try:
+            tb = self.result_text._textbox
+            if not tb.tag_ranges("sel"):
+                tb.tag_remove(MARKIERUNG_TAG, "1.0", "end")
+                self._klick_n = getattr(self, "_klick_n", 0) + 1
+            else:
+                self._markierung_merken()
+        except Exception:
+            pass
+
+    def _markierung(self):
+        """Aktuelle Markierung im Befund als (von, bis) – frische Auswahl zuerst, sonst der gemerkte Tag; None = keine."""
+        tb = self.result_text._textbox
+        self._markierung_merken()
+        r = tb.tag_ranges(MARKIERUNG_TAG)
+        if not r:
+            return None
+        a, b = self._offset(str(r[0])), self._offset(str(r[-1]))
+        return (a, b) if b > a else None
+
+    def _markierung_setzen(self, von, bis):
+        tb = self.result_text._textbox
+        tb.tag_remove(MARKIERUNG_TAG, "1.0", "end")
+        if bis > von:
+            tb.tag_add(MARKIERUNG_TAG, f"1.0+{von}c", f"1.0+{bis}c")
+
+    def _markierung_sichern(self):
+        """Vor dem Neuschreiben des Felds (IB-Lab-Gerüst aktualisiert, Werte nachgekommen): (text, von) der Markierung."""
+        try:
+            m = self._markierung()
+            if m is None:
+                return None
+            return self.result_text.get("1.0", "end-1c")[m[0]:m[1]], m[0]
+        except Exception:
+            return None
+
+    def _markierung_wiederherstellen(self, gesichert):
+        """… danach: derselbe Text (nächstes wörtliches Vorkommen) ist wieder markiert; fehlt er, bleibt nichts markiert."""
+        if not gesichert:
+            return
+        try:
+            text, von = gesichert
+            a, b, art = markierung_stelle(self.result_text.get("1.0", "end-1c"), von, von + len(text), text)
+            if art in ("gleich", "wiedergefunden"):
+                self._markierung_setzen(a, b)
+                log(f"[EINFÜGEN] Markierung ({len(text)} Zeichen) nach Neuschreiben des Befunds gehalten.")
+            else:
+                self._markierung_setzen(0, 0)
+                log(f"[EINFÜGEN] Markierung ({len(text)} Zeichen) nach Neuschreiben des Befunds nicht mehr da.")
+        except Exception:
+            log_exception("[EINFÜGEN] Markierung wiederherstellen")
+
     def _einfuegen_an_ziel(self, gen, ziel, text):
         """Läuft im UI-Thread: korrigierten Text an der gemerkten Stelle einsetzen, Cursor dahinter."""
         if not self._job.aktuell(gen):
@@ -2520,13 +2668,23 @@ class RaKScribeApp(ctk.CTk):
         v = getattr(self, "gross_satzanfang_var", None)
         gross = bool(v.get()) if v is not None else True
         vorher = self.result_text.get("1.0", "end-1c")
+        # kaiscribe-sammel-2311: ersetzt wird genau der beim Start/Weiter festgehaltene markierte Text
+        gemerkt = getattr(self, "_ziel_text", "") or ""
+        von, bis, art = markierung_stelle(vorher, ziel[0], ziel[1], gemerkt)
+        ziel = (von, bis)
         # kaiscribe-schulter-ergebnis-n1 (Georg 23.11.2026, Punkt 62): Cursor im Ergebnis + „zweitens …“ → neuer Punkt 2,
         # die folgenden rücken nach (nie doppelte Nummern, nie überschreiben); mit Markierung bleibt es beim Ersetzen
         e = _bf.ergebnis_einfuegen(vorher, text, gross, cursor=ziel[0]) if ziel[0] == ziel[1] else None
         neu, cursor = e if e is not None else _einf.einfuegen(vorher, ziel[0], ziel[1], text, gross=gross)
         self._feld_setzen(neu, vorher)   # 3.19.16: Strg+Z im Befundfeld holt den Stand davor zurück
         self._einfuegen_ziel = self._einbau = None  # v3.18.9: verbraucht — danach wieder die normalen Statusmeldungen
-        log(f"[EINFÜGEN] {ERGAENZUNG}: {len(text.strip())} Zeichen an Stelle {tuple(ziel)} eingefügt.")
+        self._ziel_text = ""
+        self._ziel_art = art
+        if gemerkt:
+            log(f"[EINFÜGEN] Markierung ersetzt ({art}): {len(gemerkt)} markierte Zeichen durch {len(text.strip())} "
+                f"Zeichen an Stelle {tuple(ziel)}.")
+        else:
+            log(f"[EINFÜGEN] {ERGAENZUNG}: {len(text.strip())} Zeichen an Stelle {tuple(ziel)} eingefügt.")
         try:
             tb = self.result_text._textbox
             tb.mark_set("insert", f"1.0+{cursor}c")
@@ -2551,7 +2709,9 @@ class RaKScribeApp(ctk.CTk):
         # F10 ohne CAS: der Befund rechts ging schon per Kopieren/Strg+V hinaus → wie nach EOL (neuer Patient)
         fertig = bool(getattr(self, "_gesendet", False) or getattr(self, "_abgeschlossen", False))
         self._abgeschlossen = False
-        return _bf.modus(rechts, geruest=self._nur_geruest(), cursor=self._einfuegen_ziel is not None, abgeschlossen=fertig)
+        # kaiscribe-sammel-2311: Markierung im IB-Lab-Gerüst → sie wird ersetzt, das Gerüst wird kein neuer Befund
+        geruest = self._nur_geruest() and not (self._einfuegen_ziel is not None and getattr(self, "_ziel_text", ""))
+        return _bf.modus(rechts, geruest=geruest, cursor=self._einfuegen_ziel is not None, abgeschlossen=fertig)
 
     def _feld_setzen(self, text, vorher=None):
         """Befundfeld auf text setzen; vorher (Standard: jetziger Inhalt) kann Strg+Z zurückholen."""
@@ -2868,9 +3028,14 @@ class RaKScribeApp(ctk.CTk):
                 if not self._job.aktuell(gen):
                     log("[PROCESS] Lauf abgebrochen — Text verworfen, nichts eingefügt.")
                     return
+                n_mark = len(getattr(self, "_ziel_text", "") or "")
                 self.after(0, lambda t=erg.report: self._einfuegen_an_ziel(gen, ziel, t))
                 self.after(0, lambda: self._lauf_fertig(gen))
-                self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(f"{ERGAENZUNG} eingefügt", 6000))
+                self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(
+                    (f"Markierten Text ersetzt ({n_mark} Zeichen)"
+                     + (" – die Markierung war inzwischen verändert, bitte prüfen (Strg+Z = zurück)"
+                        if getattr(self, "_ziel_art", "") == "veraendert" else ""))
+                    if n_mark else f"{ERGAENZUNG} eingefügt", 6000 if not n_mark else 8000))
                 return
             if not nur_befund and getattr(self, "_einbau", None) == _bf.ERGAENZUNG:
                 # 3.19.16 (Peter 20.11.2026): rechts steht schon ein Befund, kein Cursor → das neu Diktierte (korrigiert
@@ -3290,10 +3455,35 @@ class RaKScribeApp(ctk.CTk):
             # v3.15.4 (Peter 15.10.: „warum kann ich nicht mehr rechts … in den Befund reindiktieren?“ — Ordi-Protokoll:
             # Record → Pause → in den Befund geklickt → Record = „weiter“, die Stelle wurde nie gelesen): in der Pause in
             # den Befund geklickt bzw. markiert → das Diktat dieser Aufnahme kommt an diese Stelle (wie seit 3.5.0)
-            z = self._einfuege_ziel_ermitteln()
-            if z is not None and z != self._einfuegen_ziel:
-                self._einfuegen_ziel = z
-                log(f"[EINFÜGEN] In der Pause in den Befund geklickt – Diktat wird an Stelle {z} eingefügt.")
+            # kaiscribe-sammel-2311 (Peter 23.11., RH 156/165): eine festgehaltene Markierung bleibt, solange in der
+            # Pause weder neu markiert noch ohne Auswahl in den Befund geklickt wurde (PLAY, Fokuswechsel, verlorene
+            # „sel“ zählen nicht) – das Diktat ersetzt sie
+            alt, alt_text = self._einfuegen_ziel, getattr(self, "_ziel_text", "") or ""
+            try:
+                m_neu = self._markierung()
+            except Exception:
+                m_neu = None
+            klick = getattr(self, "_klick_n", 0) != getattr(self, "_klick_n_ziel", 0)
+            if alt is not None and alt_text and m_neu is None and not klick:
+                log(f"[EINFÜGEN] Weiter diktieren: Markierung ({len(alt_text)} Zeichen) bleibt und wird ersetzt.")
+            else:
+                self._klick_gilt = klick and bool(alt_text)   # Klick im Befund zählt auch ohne Fokus danach
+                try:
+                    z = self._einfuege_ziel_ermitteln()
+                finally:
+                    self._klick_gilt = False
+                if z is None:
+                    self._ziel_text = alt_text          # nichts Neues → bisheriges Ziel gilt weiter
+                elif z == alt and self._ziel_text == alt_text:
+                    if alt_text:
+                        log(f"[EINFÜGEN] Weiter diktieren: Markierung ({len(alt_text)} Zeichen) bleibt und wird ersetzt.")
+                else:
+                    self._einfuegen_ziel = z
+                    if self._ziel_text:
+                        log(f"[EINFÜGEN] In der Pause neu markiert – Diktat ersetzt Stelle {z} "
+                            f"({len(self._ziel_text)} Zeichen).")
+                    else:
+                        log(f"[EINFÜGEN] In der Pause in den Befund geklickt – Diktat wird an Stelle {z} eingefügt.")
         log("[SPEECHMIKE] Weiter diktieren (gleiche Aufnahme).")
         self.update_status("RECORDING", "recording")
         self._repariert_anzeigen()
@@ -3653,8 +3843,10 @@ class RaKScribeApp(ctk.CTk):
         if self._nur_geruest() and e.report.strip() == (self._ibl_geruest_text or "").strip():
             return True
         neu = not frei
+        gesichert = self._markierung_sichern()      # kaiscribe-sammel-2311: Markierung überlebt das Aktualisieren
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", e.report)
+        self._markierung_wiederherstellen(gesichert)
         self._ibl_geruest_text = e.report
         self._stand_ks, self._transkript_ks = e.report, ""     # 3.19.16: KaiScribe-Stand (Restructure-Diff)
         if getattr(self, "_stand_erst", None) is None or getattr(self, "_stand_erst_geruest", False):
@@ -3816,8 +4008,10 @@ class RaKScribeApp(ctk.CTk):
                            diktat=self.final_transcript or self.transcript_text.get("1.0", "end-1c"),
                            cas_leistungen=list(a.leistungen or []), templates=RADIOLOGY_TEMPLATES, entfernen=alte)
         e.report = _ibl.anmerkung_absetzen(e.report)   # kaiscribe-georg-2011-n1 (Punkt 9)
+        gesichert = self._markierung_sichern()      # kaiscribe-sammel-2311: Markierung überlebt das Nachtragen
         self.result_text.delete("1.0", "end")
         self.result_text.insert("1.0", e.report)
+        self._markierung_wiederherstellen(gesichert)
         self._ibl_im_befund = {**(getattr(self, "_ibl_im_befund", {}) or {}), **e.behandelt}
         self._ibl_zeilen = {**zeilen, **e.eingesetzt}
         hinweise = list(e.hinweise)

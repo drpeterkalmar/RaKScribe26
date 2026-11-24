@@ -463,6 +463,23 @@ def fall_m(state, work, hwnd=None):
     ph("sm_RECORD#e6")
     m["e_ins2"] = ph("sm_INS#e2", 1.5)
     ph("nur_text_aus#e1")
+    # kaiscribe-sammel-2311 (Peter 23.11., RH 156): markiert → RECORD → Pause → Auswahl weg ohne Klick (PLAY/Fokus) →
+    # RECORD (weiter) → INS: die Markierung wird ERSETZT (vorher: an das Markierungsende eingefügt)
+    ph("chirp#markierung neu|markierung neu")
+    m["r_mark"] = ph("befund_suchen#prüft nur die Übergabe")
+    m["r_rec"] = ph("sm_RECORD#r1")
+    ph("sm_RECORD#r2", 1.0)
+    m["r_sel_weg"] = ph("befund_sel_weg#r1")
+    m["r_weiter"] = ph("sm_RECORD#r3")
+    m["r_ins"] = ph("sm_INS#r1", 1.5)
+    # … RH 165-Gegenprobe: echter Einzelklick ohne Auswahl in der Pause → an der Klick-Stelle eingefügt
+    ph("chirp#klick neu|klick neu")
+    ph("befund_suchen#an CAS")
+    ph("sm_RECORD#r4")
+    ph("sm_RECORD#r5", 1.0)
+    m["r_klick"] = ph("befund_klick#0")
+    ph("sm_RECORD#r6")
+    m["r_ins2"] = ph("sm_INS#r2", 1.5)
     m["e_abbrechen"] = ph("cas_abbrechen#m5")
     m["e_antwort"] = antwort("uitestm5")
     # v3.15.4 (Peter 15.10.: Häkchen im Optionen-Menü schwarz auf dunkelblau): ☰ anklicken, Menü fotografieren, ESC
@@ -1186,6 +1203,17 @@ re2 = str((MM.get("e_ins2") or {}).get("result_voll") or "")
 cm("… mit „Nur Text“: die Markierung im Befund wird durch das Diktat ersetzt (kein Befundumbau), nichts an CAS vor EOL",
    "## Befund\nErsetzt ohne Diktat und ohne Patientenbezug. Zusätzlich kleiner Gelenkerguss" in re2
    and (MM.get("e_nt") or {}).get("nur_text") is True and (MM.get("e_antwort") or {}).get("status") != "fertig", re2[:400])
+rr = str((MM.get("r_ins") or {}).get("result_voll") or "")
+cm("kaiscribe-sammel-2311 RH 156: markiert → Record → Pause → Auswahl weg (ohne Klick) → weiter → INS: Markierung ERSETZT",
+   (MM.get("r_rec") or {}).get("ziel_text_n") == len("prüft nur die Übergabe")
+   and "Ersetzt markierten Text (22 Zeichen)" in str((MM.get("r_rec") or {}).get("status_text"))
+   and (MM.get("r_sel_weg") or {}).get("markierung") is not None
+   and (MM.get("r_weiter") or {}).get("ziel_text_n") == 22
+   and "prüft nur die Übergabe" not in rr and "Dieser Text markierung neu von RaKScribe" in rr,
+   json.dumps({k: (MM.get(k) or {}).get("status_text") for k in ("r_rec", "r_weiter")}, ensure_ascii=False) + rr[:400])
+rk = str((MM.get("r_ins2") or {}).get("result_voll") or "")
+cm("… echter Einzelklick ohne Auswahl in der Pause hebt die Markierung auf → an der Klick-Stelle eingefügt, „an CAS“ bleibt",
+   (MM.get("r_klick") or {}).get("markierung") is None and rk.startswith("Klick neu") and "an CAS" in rk, rk[:300])
 mf = MM.get("menu") or {}
 cm("v3.15.4 ☰-Menü: Häkchen weiß (selectcolor), Foto O_menu_haekchen.png; „Nur Text“-Schalter mit hellem Knopf und Rahmen",
    (MM.get("offen") or {}).get("menu_haken") == "#FFFFFF" and str(((MM.get("offen") or {}).get("nur_text_switch") or {})

@@ -202,7 +202,26 @@ class FakeTb:
         return 0 if i == "1.0" else len(self.box.text)
 
     def tag_ranges(self, tag):
-        return ("a", "b") if tag == "sel" and self.sel else ()
+        if tag == "sel":
+            return ("sel.first", "sel.last") if self.sel and self.sel[1] > self.sel[0] else ()
+        r = getattr(self, "tags", {}).get(tag)
+        return (f"1.0+{r[0]}c", f"1.0+{r[1]}c") if r and r[1] > r[0] else ()
+
+    def tag_add(self, tag, a, b):        # kaiscribe-sammel-2311: Markierungs-Tag (ein Bereich je Tag)
+        if tag == "sel":
+            self.sel = (self._o(a), self._o(b))
+        else:
+            self.tags = getattr(self, "tags", {})
+            self.tags[tag] = (self._o(a), self._o(b))
+
+    def tag_remove(self, tag, a=None, b=None):
+        if tag == "sel":
+            self.sel = None
+        else:
+            getattr(self, "tags", {}).pop(tag, None)
+
+    def get(self, a, b):
+        return self.box.text[self._o(a):self._o(b)]
 
     def index(self, i):
         return f"1.0+{self._o(i)}c"

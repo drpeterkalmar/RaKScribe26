@@ -1081,6 +1081,9 @@ _VORLAGEN_SAETZE = {}
 # kaiscribe-humeruskopf-artikel-n1 (Georg 16.11.2026 „Der Humeruskopf. Bitte ändern“). Sync: befundRegeln.ts VORLAGEN_ALTFORMEN.
 VORLAGEN_ALTFORMEN = {
     "Der Humeruskopf steht in regelrechter Artikulation.": ("Humeruskopf in regelrechter Artikulation.",),
+    # #401 (Georg 16.11.2026 in 2 Briefen von Hand „Der AC-Gelenk …“ ergänzt): Satz mit Artikel; alte Formen bleiben erkannt
+    "Das AC-Gelenk ist altersentsprechend, keine Luxation.": ("AC-Gelenk altersentsprechend, keine Luxation.",
+                                                              "Der AC-Gelenk altersentsprechend, keine Luxation."),
 }
 
 

@@ -85,7 +85,7 @@ def checks(report):
     c.append(("Ellbogen-Ergebnis: 'Extensorensehnen'", "extensorensehnen" in ee, ee))
     # Standardtext = Template (Georg: "nimmt einen anderen Standardtext")
     c.append(("Schulter-Befund: Template-Sätze erhalten", all(x in sb for x in (
-        "Der Humeruskopf steht in regelrechter Artikulation", "AC-Gelenk altersentsprechend, keine Luxation",
+        "Der Humeruskopf steht in regelrechter Artikulation", "Das AC-Gelenk ist altersentsprechend, keine Luxation",
         "Unauffällige Darstellung der übrigen angrenzenden Skelettanteile")), sb[:200]))
     c.append(("Schulter-Befund: 'Keine Kalzifikationen' ersetzt", "Keine Kalzifikationen" not in sb and "17 mm" in sb, sb[-200:]))
     c.append(("Ellbogen-Befund: Template-Sätze erhalten", "Mineralgehalt und Knochenstruktur regelrecht" in eb and "Weichteilmantel" in eb, eb[:200]))

@@ -331,6 +331,42 @@ for leist, diktat, soll, ki in (
           and bool(prompts) == ki and (not ki or "<untersuchung>Kniegelenk in 2 Ebenen mit Patella axial</untersuchung>"
                                         in prompts[0] or leist is KNIEL), titel)
 
+# #377 (BERICHT-FUNKTION-N1 Abschnitt 4, gleiche Ursache wie RH 97): CAS „Sprunggelenk li.gehalt.Aufnah.“ (sglg/sgrg/sgbg,
+# Brücke: sprunggelenk_gehaltene_aufnahmen), Diktat „Sprunggelenk links …“ → bisher „Sprunggelenk in 2 Ebenen“, die
+# gehaltenen Aufnahmen fehlten still. Jetzt: die CAS-Vorlage erweitert die diktierte Grund-Vorlage („… mit …“) → sie gilt.
+SGH = "sprunggelenk_gehaltene_aufnahmen"
+SGLG = L("sglg", "Sprunggelenk li.gehalt.Aufnah.", "Röntgen", SGH, "links")
+SGRG = L("sgrg", "Sprunggelenk re.gehalt.Aufnah.", "Röntgen", SGH, "rechts")
+SGBG = L("sgbg", "Sprunggelenke bds.gehalt.Aufn.", "Röntgen", SGH, None)
+SPRUFUL = L("spruful", "Sprunggel.li.und ganzer Fuß", "Röntgen", "sprunggelenk_mit_fuss", "links")
+OSGL = L("x-osg-li", "Sprunggelenk links", "Röntgen", "sprunggelenk_in_2_ebenen", "links")
+check("#377 erweitert_von: gehaltene/mit Fuß/Patella axial → Grund-Vorlage; Grund-Vorlage selbst/Mortise → None",
+      [cv.erweitert_von(k, T) for k in (SGH, "sprunggelenk_mit_fuss", KPAT, "sprunggelenk_in_2_ebenen",
+                                        "sprunggelenk_mortise_view", "sonografie_nerv_allgemein")]
+      == ["sprunggelenk_in_2_ebenen", "sprunggelenk_in_2_ebenen", "kniegelenk_in_2_ebenen", None, None, None])
+for leist, diktat, soll in (
+        ([SGLG], "Sprunggelenk links: Weichteilschwellung lateral, keine Fraktur.", [SGH]),
+        ([SGLG], "OSG links unauffällig", [SGH]),
+        ([SGRG], "Unauffällig.", [SGH]),
+        ([SGRG], "Sprunggelenk rechts gehaltene Aufnahmen: vermehrte Aufklappbarkeit lateral.", [SGH]),
+        ([SPRUFUL], "Sprunggelenk links unauffällig", ["sprunggelenk_mit_fuss"]),
+        ([OSGL], "Sprunggelenk links: Weichteilschwellung.", ["sprunggelenk_in_2_ebenen"]),
+        ([SGLG, FUSSL], "Sprunggelenk links unauffällig. Fuß links: Hallux valgus.", [SGH, "fuß_in_2_ebenen"])):
+    _, w, h = wahlen(leist, diktat)
+    check(f"#377 Vorlagenwahl: {diktat[:36]}… → {soll}", [x.vorlage for x in w] == soll and h == [],
+          [(x.vorlage, x.art) for x in w] + h)
+for leist, diktat, soll, ki in (
+        (SGLG, "Sprunggelenk links: Weichteilschwellung lateral, keine Fraktur.",
+         "Sprunggelenk links in 2 Ebenen mit gehaltenen Aufnahmen", True),
+        (SGRG, "Sprunggelenk rechts unauffällig", "Sprunggelenk rechts in 2 Ebenen mit gehaltenen Aufnahmen", False),
+        (SGBG, "Sprunggelenke beidseits unauffällig", "Sprunggelenk beidseits in 2 Ebenen mit gehaltenen Aufnahmen", False),
+        (OSGL, "Sprunggelenk links unauffällig", "Sprunggelenk links in 2 Ebenen", False)):
+    prompts = []
+    erg = pl.befund_aus_diktat(diktat, kontext_seite(cv.CasHinweis([leist], T), prompts))
+    titel = erg.report.splitlines()[0]
+    check(f"#377 Titel {leist['kurz']} ({'KI' if ki else 'Normalbefund'}): „{soll}“", titel == "## " + soll
+          and bool(prompts) == ki, f"{titel} / KI {bool(prompts)}")
+
 # kaiscribe-funktion-n1 (Echtfehler RH 97, 17.11.2026, KaiScribe 3.19.4, maskiert): CAS „HWS ap u. seitl. incl.Funktion“
 # (Brücke: Funktions-Vorlage) + „Schultergelenk rechts“, Diktat Schulter + HWS → die Funktionsaufnahmen fehlten komplett
 # (Titel und Befund), weil das Diktat „HWS …“ die Grund-Vorlage als die genauere durchsetzte.

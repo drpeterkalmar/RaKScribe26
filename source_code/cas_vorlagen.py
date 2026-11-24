@@ -181,6 +181,25 @@ ZUSATZ_VORLAGEN = {
 }
 
 
+def _name_klein(key, templates):
+    return " ".join(_anzeige(key, templates).split()).rstrip(":").strip().lower()
+
+
+def erweitert_von(v, templates):
+    """#377 (RH 97 gleiche Ursache wie Funktion): Grund-Vorlage, die die CAS-Vorlage v nur um einen Zusatz „ mit …“
+    erweitert („Sprunggelenk in 2 Ebenen mit gehaltenen Aufnahmen“ → sprunggelenk_in_2_ebenen, ebenso „… mit Fuß“,
+    „Kniegelenk in 2 Ebenen mit Patella axial“), sonst None. Diktiert der Arzt die Grund-Untersuchung, bestätigt das die
+    genauere CAS-Vorlage – der Zusatz darf nicht still wegfallen."""
+    name = _name_klein(v, templates)
+    if not v or " mit " not in name:
+        return None
+    for k in templates:
+        g = _name_klein(k, templates)
+        if k != v and g and name.startswith(g + " mit "):
+            return k
+    return None
+
+
 def zusatz_vorlage(v, text, templates):
     """CAS-Vorlage v mit Zusatz aus dem Leistungstext („mit Patella axial“) → erweiterte Vorlage, sonst v."""
     for erweitert, (grund, muster) in ZUSATZ_VORLAGEN.items():
@@ -380,6 +399,9 @@ def abgleich(key, text, cas, templates):
             return l, key
     for l in cas.alle:   # #344: Diktat „Knie links …“ ↔ CAS „Knie li mit Patella axial“ → die erweiterte CAS-Vorlage
         if l.vorlage in ZUSATZ_VORLAGEN and ZUSATZ_VORLAGEN[l.vorlage][0] == key:
+            return l, l.vorlage
+    for l in cas.alle:   # #377: Diktat „Sprunggelenk links …“ ↔ CAS „Sprunggelenk li. gehaltene Aufn.“ → CAS-Vorlage
+        if l.vorlage and erweitert_von(l.vorlage, templates) == key:
             return l, l.vorlage
     for l in cas.alle:   # kaiscribe-funktion-n1: Diktat „HWS …“ ↔ nur „Funktionsaufnahmen HWS“ laut CAS → Funktions-Vorlage
         if l.funktion_grund and l.funktion_grund == key:

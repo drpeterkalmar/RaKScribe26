@@ -865,6 +865,9 @@ type VorlagenMap = Record<string, { body?: string; display_name?: string } | und
 // Sync: befund_regeln.py VORLAGEN_ALTFORMEN.
 export const VORLAGEN_ALTFORMEN: Record<string, string[]> = {
   'Der Humeruskopf steht in regelrechter Artikulation.': ['Humeruskopf in regelrechter Artikulation.'],
+  // #401 (Georg 16.11.2026: „Der AC-Gelenk …“ von Hand ergänzt): Satz mit Artikel, alte Formen bleiben erkannt
+  'Das AC-Gelenk ist altersentsprechend, keine Luxation.': ['AC-Gelenk altersentsprechend, keine Luxation.',
+    'Der AC-Gelenk altersentsprechend, keine Luxation.'],
 };
 const VORLAGEN_SAETZE = new WeakMap<object, [Map<string, Set<string>>, Map<string, Set<string>>]>();
 const vorlagenSaetze = (templates: VorlagenMap, d?: WiderspruchDaten): [Map<string, Set<string>>, Map<string, Set<string>>] => {

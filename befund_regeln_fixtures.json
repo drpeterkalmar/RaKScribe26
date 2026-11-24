@@ -1521,6 +1521,18 @@
     "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n"
    },
    {
+    "name": "Schulter (#401): Tossy im Abschnitt ↔ „Das AC-Gelenk ist altersentsprechend, keine Luxation.“ → gestrichen",
+    "diktat": "",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. Das AC-Gelenk ist altersentsprechend, keine Luxation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n"
+   },
+   {
+    "name": "Schulter (#401): Georgs Handform „Der AC-Gelenk altersentsprechend …“ bei Tossy → ebenso gestrichen",
+    "diktat": "",
+    "in": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. Der AC-Gelenk altersentsprechend, keine Luxation. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n",
+    "out": "## Schultergelenk rechts in 2 Ebenen\n\n## Befund\nLuxation des AC-Gelenkes Tossy 3. Mineralgehalt und Knochenstruktur sind regelrecht.\n\n## Ergebnis\n1. Luxation des AC-Gelenkes Tossy 3.\n"
+   },
+   {
     "name": "Zwei Regionen: nur die betroffene ändert sich",
     "diktat": "",
     "in": "## Halswirbelsäule in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nUnauffälliger Befund.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMineralgehalt und Knochenstruktur sind regelrecht. Unauffällige Weichteile.\n\n## Ergebnis\nKniegelenkserguss rechts.\n",
