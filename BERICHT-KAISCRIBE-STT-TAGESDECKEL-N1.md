@@ -1,7 +1,7 @@
 # kaiscribe-stt-tagesdeckel-n1: harter Tagesdeckel für die Google-Spracherkennung (Di 24.11.2026), Teil 1
 
 ## Kurzbericht
-1. **Eingebaut und auf main, noch nicht eingespielt.** Einspielen und der echte Lauf an 451898 kommen im Folgeauftrag
+1. **Fertig in KaiScribe 3.28.0 (origin/main 99dcd35), noch nicht eingespielt.** Einspielen und der echte Lauf an 451898 kommen im Folgeauftrag
    `kaiscribe-stt-tagesdeckel-n1-einspielen` (`FOLGEJOB-KAISCRIBE-STT-TAGESDECKEL-N1-EINSPIELEN.md`), außerhalb der
    Ordi-Zeit. Bis dahin ist am PC nichts aktiv.
 2. **Zähler:** KaiScribe zählt jede Audiosekunde, die an Google geht. Das umfasst chirp_3, die Live-Anzeige, Fehlversuche

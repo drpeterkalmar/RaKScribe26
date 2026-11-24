@@ -1,7 +1,6 @@
 # Teil 2 zu kaiscribe-stt-tagesdeckel-n1: Einspielen + echter Lauf an 451898
 
-Code: KaiScribe mit Tagesdeckel (die Version steht in `VERSION` auf origin/main, gesetzt beim Zusammenführen von
-kaiscribe-stt-tagesdeckel-n1). Den Inhalt beschreibt `BERICHT-KAISCRIBE-STT-TAGESDECKEL-N1.md`. Die Version enthält
+Code: **KaiScribe 3.28.0 = origin/main 99dcd35** (Code-Commit 45bfd37). Den Inhalt beschreibt `BERICHT-KAISCRIBE-STT-TAGESDECKEL-N1.md`. Die Version enthält
 alles, was vorher auf main war (3.27.1 = Live-Anzeige aus für kp + K&L-Fix). Läuft `kaiscribe-schulter-ergebnis-n1-abnahme`
 bzw. `kaiscribe-rho-regel-becken-n1-einspielen` noch mit einer älteren Version: erst danach tauschen, nicht dazwischen.
 
@@ -16,7 +15,7 @@ Regeln:
 ## A. Einspielen
 1. Windows-UI-Test (test-exe-windows.yml) muss grün sein. Danach EXE bauen. Neu im Bau ist `--hidden-import=stt_deckel`,
    das steht schon in build-exe.yml.
-2. Tausch wie gehabt: `kaiscribe_x_tauschen.ps1 -Schritt exe -Tag <VERSION>`.
+2. Tausch wie gehabt: `kaiscribe_x_tauschen.ps1 -Schritt exe -Tag 3.28.0`.
 3. Nach dem Start im `[INIT]`-Block muss stehen:
    `[INIT] Tagesdeckel Spracherkennung: 240 min/Tag (…\KaiScribe\stt_tagesdeckel_<PC>.json), heute X min`.
 4. Die config.ini neben der EXE nicht ändern, der Standard 240 ist eingebaut.
