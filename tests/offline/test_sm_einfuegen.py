@@ -5,7 +5,7 @@ Teil 1: reine Logik (Befehlszeile, Titel, Senf-Zeilen, IB-Lab-Ablage → Sätze)
 Teil 3: Win32-Einfügen (Markierung + Zwischenablage) mit Attrappen für SendMessage und win32clipboard.
 Teil 4: KaiScribe-Fenster startet den Wächter nur unter Windows; Konfiguration SM_SENF/SM_IBL.
 Synthetische Texte, keine Patientendaten.  Aufruf: python3 tests/offline/test_sm_einfuegen.py"""
-import copy, json, os, pathlib, sys, tempfile, types
+import copy, json, os, pathlib, re, sys, tempfile, types
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "source_code"))
@@ -169,6 +169,12 @@ class Api:
 
     def mikrofon(self):
         return self.mikro
+
+    def pegel(self):
+        # kaiscribe-sm-senf-diktatpause-n1: Sprachpegel der CASSpeechMagic-Aufnahme (Peak, Sitzungen); Standard still
+        self.pegel_aufrufe = getattr(self, "pegel_aufrufe", 0) + 1
+        p = self.pegel_wert(self.uhr.t) if callable(getattr(self, "pegel_wert", None)) else getattr(self, "pegel_wert", 0.0)
+        return (p, getattr(self, "sitzungen", 1)) if p is not None else (None, 0)
 
     def marken_entfernen(self, edit, marken):
         t = self.texte.get(edit, "")
@@ -337,13 +343,13 @@ w2.api, w2.jetzt, w2.merker = api, uhr, M.Merker(gemein, None, jetzt=uhr)
 takte(w1, uhr, 1)
 w2.takt()
 oeffnen(api, uhr)
-api.mikro = "aufnahme"                 # Peter diktiert: beide erkennen das Fenster, beide warten (Merker noch leer)
+api.pegel_wert = 0.3                   # Peter diktiert: beide erkennen das Fenster, beide warten (Merker noch leer)
 for _ in range(3):
     uhr.t += 0.5
     w1.takt()
     w2.takt()
-api.mikro = "frei"
-for _ in range(6):
+api.pegel_wert = 0.0
+for _ in range(14):
     uhr.t += 0.5
     w1.takt()
     w2.takt()
@@ -437,8 +443,8 @@ for i in range(12):
     w.takt()
 n_tippen = len(api.einfuege_aufrufe)
 takte(w, uhr, 6)
-check("Ruhe: Text ändert sich laufend → nichts; steht er still → eingefügt (Log „noch nicht ruhig“ einmal)",
-      n_tippen == 0 and len(api.einfuege_aufrufe) == 1 and sum("noch nicht ruhig" in l for l in logs) == 1, logs)
+check("Ruhe: Text ändert sich laufend → nichts; steht er still → eingefügt (Log „Feld nicht ruhig“ einmal)",
+      n_tippen == 0 and len(api.einfuege_aufrufe) == 1 and sum("Feld nicht ruhig" in l for l in logs) == 1, logs)
 
 # 2. Fehlschlag „nicht im Text“ → Merker zurück, Versuch 2/3 nach 2 s, dann eingefügt
 w, api, uhr, logs, warn, box = neu_laedt(schlucken=1)
@@ -632,20 +638,140 @@ for frei, aus, name in ((False, False, "Freigabe-Datei fehlt"), (True, True, "No
     takte(w, uhr, 10, 1.0)
     check(f"{name} → nichts eingefügt", api.einfuege_aufrufe == [])
 
-# nicht während der Aufnahme
+# nicht während der Aufnahme (kaiscribe-sm-senf-diktatpause-n1: Sprachpegel statt Mikrofonanzeige)
+SM_MIK = "aktiv (CASSpeechMagic.exe)"
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=SENF)
-api.mikro = "aktiv (CASSpeechMagic.exe)"
+api.mikro, api.pegel_wert = SM_MIK, 0.4
 takte(w, uhr, 1)
 oeffnen(api, uhr)
-takte(w, uhr, 20, 1.0)
-check("Aufnahme läuft → wartet, fügt nichts ein (Log einmal)", api.einfuege_aufrufe == []
-      and sum("Mikrofon aktiv" in l for l in logs) == 1, logs)
-api.mikro = "unbekannt"
-takte(w, uhr, 5, 1.0)
-check("Mikrofon-Zustand unbekannt → ebenfalls nichts", api.einfuege_aufrufe == [])
-api.mikro = "frei"
-takte(w, uhr, 2, 1.0)
-check("Pause/Stopp → jetzt eingefügt", len(api.einfuege_aufrufe) == 1 and "[SENF" in api.texte["E100"])
+takte(w, uhr, 40, 0.5)
+check("es wird gesprochen (Pegel 0,4) → wartet, fügt nichts ein (Log „es wird gesprochen“ einmal)",
+      api.einfuege_aufrufe == [] and sum("es wird gesprochen" in l for l in logs) == 1, logs)
+api.pegel_wert = None
+takte(w, uhr, 20, 0.5)
+check("Pegel nicht messbar → ebenfalls nichts (Log „nicht messbar“)", api.einfuege_aufrufe == []
+      and any("Sprachpegel nicht messbar" in l for l in logs), logs)
+api.pegel_wert, api.sitzungen = 0.0, 0
+takte(w, uhr, 20, 0.5)
+check("keine CASSpeechMagic-Aufnahmesitzung gefunden, Anzeige sagt SpeechMagic aktiv → unbekannt, nichts",
+      api.einfuege_aufrufe == [])
+api.sitzungen = 1
+api.mikro = "aktiv (Teams.exe)"
+takte(w, uhr, 20, 0.5)
+check("fremde App nimmt auf (Anzeige) → nichts, auch bei stillem SpeechMagic", api.einfuege_aufrufe == []
+      and any("andere App nimmt auf" in l for l in logs), logs)
+api.mikro = SM_MIK
+takte(w, uhr, 6, 0.5)
+check("Pause (Pegel still) → jetzt eingefügt, Log „Pause erkannt“", len(api.einfuege_aufrufe) == 1
+      and "[SENF" in api.texte["E100"] and any("Pause erkannt" in l for l in logs), logs)
+
+
+# ── kaiscribe-sm-senf-diktatpause-n1 (Georg 24.11.2026, RH 105–126): CASSpeechMagic belegt das Mikrofon vom Öffnen bis
+# zum Schließen → die Mikrofonanzeige meldet immer „aktiv“; Pause = Sprachpegel ≥ 2 s still UND Feld ≥ 2 s unverändert ──
+def lauf(w, api, uhr, sek, schritt=0.5, sprache=None, erkennung=None):
+    """sek Sekunden takten; sprache(t_rel) → Pegel; erkennung(t_rel) → True = SM schreibt gerade erkannten Text.
+    → Zeitpunkte (relativ zum Öffnen) der Einfügungen."""
+    zeiten = []
+    for _ in range(int(sek / schritt)):
+        uhr.t += schritt
+        rel = uhr.t - api.t_auf
+        if sprache:
+            api.pegel_wert = sprache(rel)
+        if erkennung and erkennung(rel):
+            api.texte["E100"] = api.texte.get("E100", "") + "wort "
+        n = len(api.einfuege_aufrufe)
+        w.takt()
+        if len(api.einfuege_aufrufe) > n:
+            zeiten.append(rel)
+    return zeiten
+
+
+def neu_pause(text="", mik=SM_MIK):
+    w, api, uhr, logs, warn, box = neu_waechter(cfg=cfg_s, senf=SENF)
+    api.mikro = mik
+    takte(w, uhr, 1)
+    oeffnen(api, uhr, text=text)
+    api.t_auf = uhr.t
+    return w, api, uhr, logs
+
+
+# RH 126: Georg wartet bewusst, Mikrofon „aktiv (CASSpeechMagic)“ ab dem Öffnen, kein Pegel → eingefügt
+w, api, uhr, logs = neu_pause(text="Diktat vom Arzt.\r\n")
+z = lauf(w, api, uhr, 10, sprache=lambda t: 0.003)
+check("RH 126: Mikrofon ab dem Öffnen „aktiv (CASSpeechMagic)“, niemand spricht → eingefügt, genau einmal, ≥ 2 s nach dem Öffnen",
+      len(z) == 1 and z[0] >= M.PAUSE_S and all(x in api.texte["E100"] for x in SENF_Z), (z, logs))
+check("… Log „Pause erkannt (x s still …)“", any(re.search(r"Pause erkannt \(\d+\.\d s still", l) for l in logs), logs)
+
+# Aufnahme startet 1 s nach dem Öffnen (Georg), Dauersprechen 60 s → nie
+w, api, uhr, logs = neu_pause()
+z = lauf(w, api, uhr, 60, sprache=lambda t: 0.0 if t < 1.0 else 0.35, erkennung=lambda t: t > 1.5)
+check("Aufnahme 1 s nach dem Öffnen, 60 s Dauersprechen → nie eingefügt", z == [] and api.einfuege_aufrufe == [], (z, logs))
+check("… Log „es wird gesprochen“", any("es wird gesprochen" in l for l in logs), logs)
+# Sprechen mit kurzen Atempausen (≤ 1 s still) → nie
+w, api, uhr, logs = neu_pause()
+z = lauf(w, api, uhr, 40, sprache=lambda t: 0.0 if t < 1.0 or (t % 3.0) < 1.0 else 0.3, erkennung=lambda t: t > 1.5)
+check("Sprechen mit Atempausen ≤ 1 s → nie eingefügt", z == [], (z, logs))
+
+# Pause 3 s mitten im Diktat → eingefügt (erst wenn Pegel ≥ 2 s still UND Feld ≥ 2 s unverändert)
+w, api, uhr, logs = neu_pause()
+spricht = lambda t: 0.3 if 1.0 <= t < 10.0 or 13.0 <= t < 30.0 else 0.0   # noqa: E731
+erk = lambda t: 1.5 <= t < 10.5 or 13.5 <= t < 30.5                          # noqa: E731  Erkennung hinkt 0,5 s nach
+z = lauf(w, api, uhr, 40, sprache=spricht, erkennung=erk)
+check("Pause 3 s mitten im Diktat (10–13 s) → genau einmal eingefügt, in der Pause",
+      len(z) == 1 and 12.0 <= z[0] < 13.0 and len(api.einfuege_aufrufe) == 1, (z, logs))
+check("… frühestens 2 s nach dem letzten Pegel und 2 s nach der letzten Textänderung",
+      z and z[0] - 10.0 >= M.PAUSE_S and z[0] - 10.5 >= M.RUHE_GLEICH_S - 0.5, z)
+check("… nach der Pause kein zweites Einfügen, Senf genau einmal im Text",
+      api.texte["E100"].count(SENF_Z[0]) == 1, api.texte["E100"][-120:])
+
+# Pegel still, aber die Erkennung schreibt noch (Text ändert sich) → warten, Log „Feld nicht ruhig“
+w, api, uhr, logs = neu_pause()
+z = lauf(w, api, uhr, 20, sprache=lambda t: 0.3 if 1.0 <= t < 3.0 else 0.0, erkennung=lambda t: 1.5 <= t < 8.0)
+check("Pegel still, Erkennung schreibt noch bis 8 s → erst danach eingefügt (Feld ≥ 2 s unverändert)",
+      len(z) == 1 and z[0] >= 8.0 + M.RUHE_GLEICH_S - 0.5 and any("Feld nicht ruhig" in l for l in logs), (z, logs))
+
+# Pegel unbekannt (Core Audio nicht lesbar) → nie
+w, api, uhr, logs = neu_pause()
+z = lauf(w, api, uhr, 30, sprache=lambda t: None)
+check("Pegel unbekannt → nie eingefügt", z == [], (z, logs))
+# ein einzelner stiller Wert nach „unbekannt“ reicht nicht: Pause beginnt erst mit der ersten gültigen Messung
+w, api, uhr, logs = neu_pause()
+z = lauf(w, api, uhr, 10, sprache=lambda t: None if t < 5.0 else 0.0)
+check("nach „unbekannt“ zählt die Pause erst ab der ersten stillen Messung (≥ 2 s danach)",
+      len(z) == 1 and z[0] >= 5.0 + M.PAUSE_S - 0.5, (z, logs))
+
+# RH 58 (SpeechMagic überschreibt das Einfügen 1 s später) mit Mikrofon „aktiv (CASSpeechMagic)“ → Kontrolle fängt es ab
+w, _, uhr, logs, warn, box = neu_waechter(cfg=cfg_s, senf=SENF)
+api = Laedt(uhr, schlucken=1, sofort=False)
+api.mikro = SM_MIK
+w.api = api
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+api.t_auf = uhr.t
+lauf(w, api, uhr, 30, sprache=lambda t: 0.0)
+t = api.texte["E100"]
+check("RH 58 bei SpeechMagic-Mikrofon „aktiv“: überschrieben → Kontrolle, erneut in der Pause, am Ende genau einmal",
+      len(api.einfuege_aufrufe) == 2 and t.count(SENF_Z[0]) == 1
+      and any("nicht mehr im Text – Versuch 1/3" in l for l in logs), (t, logs))
+# … während des Wiederholungs-Abstands wird gesprochen → zweiter Versuch erst in der nächsten Pause
+w, _, uhr, logs, warn, box = neu_waechter(cfg=cfg_s, senf=SENF)
+api = Laedt(uhr, schlucken=1, sofort=False)
+api.mikro = SM_MIK
+w.api = api
+takte(w, uhr, 1)
+oeffnen_l(api, uhr)
+api.t_auf = uhr.t
+z = lauf(w, api, uhr, 40, sprache=lambda t: 0.3 if 4.0 <= t < 20.0 else 0.0)
+check("RH 58 + Sprechen ab 4 s: Wiederholung nie während gesprochen wird, erst in der Pause danach",
+      len(z) == 2 and z[1] >= 20.0 + M.PAUSE_S - 0.5 and api.texte["E100"].count(SENF_Z[0]) == 1, (z, logs))
+check("Pegel-Messung nur, solange etwas einzufügen ist (nicht dauernd)",
+      api.pegel_aufrufe < 40 / 0.5, api.pegel_aufrufe)
+check("Win32.pegel: Core Audio nicht lesbar (hier: kein Windows) → (None, 0) = unbekannt, nie Ausnahme",
+      M.Win32.pegel(types.SimpleNamespace(_sm_pids={7}, _pids=lambda: [7])) == (None, 0))
+check("Selbsttest zeigt den Sprachpegel (für die Abnahme am PC)",
+      "pegel={api.pegel()}" in (ROOT / "source_code/RaKScribe.py").read_text(encoding="utf-8"))
+check("Konstanten: Pause 2 s, Feld 2 s, Schwelle < 0,05", M.PAUSE_S == 2.0 and M.RUHE_GLEICH_S == 2.0
+      and 0 < M.PEGEL_STILL < 0.05)
 
 # Senf kommt später: läuft → fertig (nachladen alle 15 s)
 w, api, uhr, logs, warn, senf_box = neu_waechter(senf=dict(SENF, status="laeuft"))

@@ -29,6 +29,11 @@ Ablauf (eigener Hintergrund-Thread, Takt 0,5 s, blockiert die Oberfläche nie):
      überschreibt ein zu frühes Einfügen → jedes Einfügen erst bei RUHIGEM Feld (Fenster ≥ 2 s alt, zwei Lesungen ≥ 1 s
      gleich), 3 s danach Kontrolle; nachweislich nicht (mehr) im Text → Merker zurück, bis zu 3 Versuche im Abstand von
      2 s, sonst beim nächsten Öffnen. Wiederöffnen nach „[SENF]-Marke steht noch drin“ und der Senf fehlt → erneut.
+     kaiscribe-sm-senf-diktatpause-n1 (24.11.2026, Georg RH 126): CASSpeechMagic belegt das Mikrofon schon beim Öffnen
+     des Fensters und bis zum Schließen – die Windows-Mikrofonanzeige meldet damit IMMER „aktiv“, 3.26.1 fügte nie ein.
+     Pause jetzt über den SPRACHPEGEL: Core-Audio-Peak der Aufnahme-Sitzung(en) von CASSpeechMagic (alle aktiven
+     Aufnahmegeräte). Einfügen nur, wenn ≥ PAUSE_S kein Pegel ≥ PEGEL_STILL UND das Textfeld ≥ RUHE_GLEICH_S unverändert
+     (Erkennung fertig). Pegel nicht messbar → nie. Die Mikrofonanzeige zählt nur noch für FREMDE Apps (dann warten).
   4. Sicherheitsnetz (nur wegen der Marke, nie wegen des Inhalts): Schließt das Diktatfenster, während noch eine
      „[SENF“-Marke drinsteht → deutliche Warnung im
      KaiScribe-Fenster + Merker „senf_offen“ (für eine spätere Prüfung der Vidierliste). KaiScribe ändert den Brief nie.
@@ -65,7 +70,13 @@ TEXT_LESEN_S = 1.0          # Fenstertext nachlesen (für „steht schon da“ u
 # geöffneten Diktats erst NACH dem Erscheinen des Fensters und überschreibt das Textfeld bzw. speichert ein zu frühes
 # Einfügen nicht → Einfügen erst, wenn das Feld „ruhig“ ist, danach nachkontrollieren, bei Fehlschlag wiederholen.
 RUHE_ALTER_S = 2.0          # Fenster mindestens so alt …
-RUHE_GLEICH_S = 1.0         # … und zwei Lesungen im Abstand ≥ 1 s gleich (kein Laden mehr) – gilt für JEDES Einfügen
+RUHE_GLEICH_S = 2.0         # … und das Textfeld ≥ 2 s unverändert (Erkennung fertig, kein Laden) – für JEDES Einfügen
+# kaiscribe-sm-senf-diktatpause-n1 (Nachtrag 24.11. 14:30): echte Diktatpause = Sprachpegel, nicht die Mikrofonanzeige
+PAUSE_S = 2.0               # so lange ununterbrochen still (gemessen), bevor eingefügt wird
+PEGEL_STILL = 0.02          # Peak (0…1) darunter = still (≈ −34 dBFS; Sprache am SpeechMike typ. 0,1–0,8)
+PEGEL_LUECKE_S = 1.5        # länger keine Messung (z. B. während der Kontrolle) → Pause beginnt neu
+PEGEL_PROBEN = 8            # je Takt so viele Peak-Lesungen …
+PEGEL_ABSTAND_S = 0.02      # … im Abstand von 20 ms (Sprache zwischen zwei Silben nicht „überhören“)
 KONTROLLE_S = 3.0           # nach dem Einfügen so viel später erneut lesen; fehlt es dann → wie Fehlschlag
 VERSUCHE = 3                # je Öffnen höchstens so viele Versuche …
 VERSUCH_ABSTAND_S = 2.0     # … im Abstand von 2 s; danach beim nächsten Öffnen desselben Diktats erneut
@@ -410,6 +421,10 @@ class Sitzung:
         self.senf_nach = 0.0                    # nächste Nachlese nach dem Einfügen
         self.senf_offen_v = None                # „v“ der gerade offenen (noch nicht eingefügten) Zeilen
         self.mikro_gemeldet = None
+        self.still_seit = None                  # Beginn der aktuell gemessenen Stille (None = spricht/unbekannt)
+        self.still_max = 0.0                    # höchster Peak in der aktuellen Stille (Log, Schwelle einstellen)
+        self.pegel_zeit = None                  # Zeit der letzten Pegel-Messung
+        self.gemeldet = set()                   # Warte-Gründe, die schon geloggt sind (je Einfüge-Runde einmal)
         self.edit = None
         self.text_seit = None                   # Zeit der ERSTEN Lesung des aktuellen Textstands (Ruhe-Prüfung)
         self.ruhe_gemeldet = False
@@ -426,7 +441,7 @@ class Sitzung:
         self.text, self.text_zeit = t, jetzt
 
     def ruhig(self, jetzt):
-        """Fenster ≥ RUHE_ALTER_S alt UND zwei Lesungen im Abstand ≥ RUHE_GLEICH_S gleich."""
+        """Fenster ≥ RUHE_ALTER_S alt UND Textfeld seit ≥ RUHE_GLEICH_S unverändert (Lesungen gleich)."""
         return (self.text_seit is not None and jetzt - self.t0 >= RUHE_ALTER_S
                 and self.text_zeit - self.text_seit >= RUHE_GLEICH_S)
 
@@ -629,7 +644,8 @@ class Waechter:
             s.edit = self.api.textfeld(s.hwnd)
             if s.edit is None:
                 return
-        if jetzt - s.text_zeit >= TEXT_LESEN_S:
+        offen = bool(s.senf_offen or s.ibl_offen)
+        if jetzt - s.text_zeit >= (TAKT_S if offen else TEXT_LESEN_S) - 1e-6:
             t = self.api.text(s.edit)
             if t is not None:
                 s.text_neu(t, jetzt)
@@ -680,18 +696,61 @@ class Waechter:
             return
         if s.aufgegeben or s.kontrolle is not None or jetzt < s.versuch_naechst:
             return
-        m = self.api.mikrofon()
-        if m != "frei":
-            if s.mikro_gemeldet != m:
-                self.log(f"[SM] {s.nr}: Mikrofon {m} – warte mit dem Einfügen")
-                s.mikro_gemeldet = m
+        pause = self._pause(s, jetzt)
+        if pause is None:
             return
         if not s.ruhig(jetzt):
             if not s.ruhe_gemeldet and jetzt - s.t0 >= RUHE_ALTER_S:
-                self.log(f"[SM] {s.nr}: Textfeld noch nicht ruhig (lädt/ändert sich) – warte mit dem Einfügen")
+                self.log(f"[SM] {s.nr}: Pause {pause:.1f} s, aber Feld nicht ruhig (Erkennung/Laden ändert den Text) – "
+                         f"warte mit dem Einfügen")
                 s.ruhe_gemeldet = True
             return
+        self.log(f"[SM] {s.nr}: Pause erkannt ({pause:.1f} s still, Peak ≤ {s.still_max:.3f}), Feld "
+                 f"{s.text_zeit - s.text_seit:.1f} s unverändert – füge ein")
+        s.gemeldet.clear()
+        s.ruhe_gemeldet = False
         self._einfuegen(s, jetzt)
+
+    def _warte(self, s, grund, text):
+        if grund not in s.gemeldet:
+            s.gemeldet.add(grund)
+            self.log(f"[SM] {s.nr}: {text} – warte mit dem Einfügen")
+
+    def _pause(self, s, jetzt):
+        """Echte Diktatpause? → Dauer der gemessenen Stille (≥ PAUSE_S) oder None (warten, Grund einmal geloggt).
+        Sprachpegel der CASSpeechMagic-Aufnahme (api.pegel → (Peak, Sitzungen) bzw. (None, 0)); die Mikrofonanzeige
+        (api.mikrofon) zählt nur für fremde Apps – CASSpeechMagic belegt das Mikrofon vom Öffnen bis zum Schließen."""
+        m = self.api.mikrofon()
+        sm_mik = m.startswith("aktiv") and EXE_NAME[:-4] in m.lower()
+        if m.startswith("aktiv") and not sm_mik:
+            s.still_seit = None
+            self._warte(s, "fremd", f"Mikrofon {m} (andere App nimmt auf)")
+            return None
+        lesen = getattr(self.api, "pegel", None)
+        try:
+            p, n = lesen() if lesen else (None, 0)
+        except Exception:
+            p, n = None, 0
+        if p is not None and n == 0:
+            # keine Aufnahme-Sitzung von CASSpeechMagic: still nur, wenn die Anzeige auch „frei“ sagt
+            p = 0.0 if m == "frei" else None
+        luecke = s.pegel_zeit is None or jetzt - s.pegel_zeit > PEGEL_LUECKE_S
+        s.pegel_zeit = jetzt
+        if p is None:
+            s.still_seit = None
+            self._warte(s, "unbekannt", f"Mikrofon {m}, Sprachpegel nicht messbar")
+            return None
+        if p >= PEGEL_STILL:
+            s.still_seit = None
+            self._warte(s, "spricht", f"Mikrofon aktiv, es wird gesprochen (Peak {p:.3f})")
+            return None
+        if s.still_seit is None or luecke:
+            s.still_seit, s.still_max = jetzt, p
+        s.still_max = max(s.still_max, p)
+        still = jetzt - s.still_seit
+        if still < PAUSE_S - 1e-6:
+            return None
+        return still
 
     def _zuruecknehmen(self, s, schluessel, stand):
         """Einfügen gescheitert: Merker-Schlüssel austragen, offene Zeilen wiederherstellen (nächster Versuch/Öffnen)."""
@@ -813,7 +872,8 @@ class Waechter:
 # ───────────────────────────── Windows ─────────────────────────────
 class Win32:
     """Fenster/Prozesse über user32/kernel32/ntdll (ctypes), Zwischenablage über win32clipboard, Mikrofon über die
-    Windows-Datenschutzanzeige (Registry CapabilityAccessManager, nur lesen)."""
+    Windows-Datenschutzanzeige (Registry CapabilityAccessManager, nur lesen), Sprachpegel über Core Audio (ole32,
+    IAudioMeterInformation der Aufnahme-Sitzungen von CASSpeechMagic, nur lesen)."""
 
     def __init__(self, eigene_pid=None):
         import ctypes
@@ -1131,6 +1191,111 @@ class Win32:
     def mikrofon(self):
         """„aktiv“, wenn irgendeine App gerade das Mikrofon nutzt (Windows-Datenschutzanzeige), „frei“, sonst „unbekannt“."""
         return mikrofon_zustand(_winreg_leser())
+
+    def pegel(self, proben=PEGEL_PROBEN, abstand_s=PEGEL_ABSTAND_S):
+        """→ (höchster Peak 0…1 über `proben` Lesungen, Anzahl Aufnahme-Sitzungen von CASSpeechMagic) bzw. (None, 0),
+        wenn Core Audio nicht lesbar ist (→ nie einfügen)."""
+        try:
+            return core_audio_pegel(set(self._sm_pids) or set(self._pids()), proben, abstand_s)
+        except Exception:
+            return None, 0
+
+
+_CLSID_MMDEVENUM = "BCDE0395-E52F-467C-8E3D-C4579291692E"
+_IID_MMDEVENUM = "A95664D2-9614-4F35-A746-DE8DB63617E6"
+_IID_SESSIONMGR2 = "77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"
+_IID_SESSIONCTL2 = "BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D"
+_IID_METER = "C02216F6-8C67-4B5B-9D00-D008E73E0064"
+
+
+def core_audio_pegel(pids, proben=PEGEL_PROBEN, abstand_s=PEGEL_ABSTAND_S):
+    """Core Audio per ctypes (ohne comtypes/pycaw): alle aktiven Aufnahmegeräte → Sitzungen → die von `pids` →
+    IAudioMeterInformation.GetPeakValue. → (Peak, Sitzungen); Fehler werfen (Aufrufer: unbekannt)."""
+    import ctypes
+    import uuid
+    from ctypes import wintypes
+    c = ctypes
+
+    def guid(t):
+        return c.byref(c.create_string_buffer(uuid.UUID(t).bytes_le, 16))     # byref hält den Puffer am Leben
+
+    def rufe(p, i, typen, *args, rest=c.c_long):
+        fn = c.WINFUNCTYPE(rest, c.c_void_p, *typen)(c.cast(p, c.POINTER(c.POINTER(c.c_void_p)))[0][i])
+        hr = fn(p, *args)
+        if rest is c.c_long and hr < 0:
+            raise OSError(f"HRESULT {hr & 0xFFFFFFFF:#010x} (vtable {i})")
+        return hr
+
+    frei = []
+
+    def obj():
+        p = c.c_void_p()
+        frei.append(p)
+        return p
+    PP = c.POINTER(c.c_void_p)
+    ole = c.WinDLL("ole32")
+    ole.CoInitializeEx.argtypes = [c.c_void_p, wintypes.DWORD]
+    ole.CoInitializeEx.restype = c.c_long
+    ole.CoCreateInstance.argtypes = [c.c_void_p, c.c_void_p, wintypes.DWORD, c.c_void_p, PP]
+    ole.CoCreateInstance.restype = c.c_long
+    hr = ole.CoInitializeEx(None, 0)                 # COINIT_MULTITHREADED; anders schon initialisiert → trotzdem nutzbar
+    init = hr in (0, 1)
+    try:
+        en = obj()
+        hr = ole.CoCreateInstance(guid(_CLSID_MMDEVENUM), None, 23, guid(_IID_MMDEVENUM), c.byref(en))
+        if hr < 0 or not en.value:
+            raise OSError(f"MMDeviceEnumerator {hr & 0xFFFFFFFF:#010x}")
+        coll = obj()
+        rufe(en, 3, [c.c_int, wintypes.DWORD, PP], 1, 1, c.byref(coll))       # EnumAudioEndpoints(eCapture, ACTIVE)
+        anz = wintypes.UINT(0)
+        rufe(coll, 3, [c.POINTER(wintypes.UINT)], c.byref(anz))
+        meter = []
+        for i in range(anz.value):
+            dev, mgr, sen = obj(), obj(), obj()
+            try:
+                rufe(coll, 4, [wintypes.UINT, PP], i, c.byref(dev))
+                rufe(dev, 3, [c.c_void_p, wintypes.DWORD, c.c_void_p, PP], guid(_IID_SESSIONMGR2), 23, None, c.byref(mgr))
+                rufe(mgr, 5, [PP], c.byref(sen))                                 # GetSessionEnumerator
+                n = c.c_int(0)
+                rufe(sen, 3, [c.POINTER(c.c_int)], c.byref(n))
+            except OSError:
+                continue
+            for j in range(n.value):
+                ctl, ctl2 = obj(), obj()
+                try:
+                    rufe(sen, 4, [c.c_int, PP], j, c.byref(ctl))
+                    zust = c.c_int(0)
+                    rufe(ctl, 3, [c.POINTER(c.c_int)], c.byref(zust))            # GetState: 2 = abgelaufen
+                    if zust.value == 2:
+                        continue
+                    rufe(ctl, 0, [c.c_void_p, PP], guid(_IID_SESSIONCTL2), c.byref(ctl2))
+                    pid = wintypes.DWORD(0)
+                    rufe(ctl2, 14, [c.POINTER(wintypes.DWORD)], c.byref(pid))     # GetProcessId
+                    if pid.value not in pids:
+                        continue
+                    m = obj()
+                    rufe(ctl, 0, [c.c_void_p, PP], guid(_IID_METER), c.byref(m))
+                    meter.append(m)
+                except OSError:
+                    continue
+        peak = 0.0
+        for k in range(max(1, proben) if meter else 0):
+            for m in meter:
+                f = c.c_float(0.0)
+                rufe(m, 3, [c.POINTER(c.c_float)], c.byref(f))                   # GetPeakValue
+                peak = max(peak, float(f.value))
+            if k + 1 < proben:
+                time.sleep(abstand_s)
+        return peak, len(meter)
+    finally:
+        for p in reversed(frei):
+            if p.value:
+                try:
+                    rufe(p, 2, [], rest=c.c_ulong)                                 # Release
+                except Exception:
+                    pass
+        if init:
+            ole.CoUninitialize()
 
 
 def _winreg_leser():

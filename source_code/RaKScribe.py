@@ -738,7 +738,8 @@ def _hid_version():
 
 def _sm_selbsttest(app):
     """Selbsttest (senf-ibl-speechmagic-paste-n1): Win32-Teil des SpeechMagic-Wächters auf echtem Windows einmal
-    durchlaufen (Prozesse, Fenster, Mikrofon-Anzeige) – ohne etwas einzufügen."""
+    durchlaufen (Prozesse, Fenster, Mikrofon-Anzeige, Sprachpegel (Peak, Sitzungen) der CASSpeechMagic-Aufnahme) –
+    ohne etwas einzufügen."""
     try:
         api = _sme.win32_oder_none()
         if api is None:
@@ -746,7 +747,7 @@ def _sm_selbsttest(app):
         p = api.prozesse()
         f = api.fenster()
         return (f"ok thread={'ja' if getattr(app, '_sm_thread', None) is not None else 'nein'} prozesse={len(p)} "
-                f"fenster={len(f)} mikrofon={api.mikrofon()}")
+                f"fenster={len(f)} mikrofon={api.mikrofon()} pegel={api.pegel()}")
     except Exception as e:
         return f"FEHLER: {type(e).__name__}: {e}"
 

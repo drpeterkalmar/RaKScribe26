@@ -172,6 +172,9 @@ class Api:
     def mikrofon(self):
         return "frei"
 
+    def pegel(self):
+        return 0.0, 1
+
     def einfuegen(self, edit, text):
         self.einfuege.append(text)
         self.texte[edit] = self.texte.get(edit, "") + text
