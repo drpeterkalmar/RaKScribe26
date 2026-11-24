@@ -69,3 +69,10 @@
   - echter Lauf an 451898 (normal, dann Grenze mit vorübergehend `STT_TAGESDECKEL_MIN = 1`, ohne Google-Kosten)
   - Meldeweg trocken am Mac
   - Grenze-Zeile wieder entfernen
+
+## Teil 2 teilweise (in kaiscribe-schulter-ergebnis-n1-abnahme, 24.11.2026)
+- 3.28.1 (enthält 3.28.0) ist seit 23:43 auf X: (Release Latest). Damit ist A erledigt, nur nicht mit 3.28.0 selbst.
+- `[INIT] Tagesdeckel Spracherkennung: 240 min/Tag (C:\Users\cas\AppData\Roaming\KaiScribe\stt_tagesdeckel_CASWS14.json), heute 0.0 min`
+  (Testkopie), live nach dem Tausch „heute 0.8 min“. Testkopie und Live-Instanz teilen sich die Zählerdatei.
+- **B1 grün:** Nach einem kp-Lauf hat die Datei `tag 2026-11-24, s 30.0, kuerzel.kp 30.0, art.chirp 30.0`, 0 Zeilen `[STT-DECKEL]`.
+- Offen für `kaiscribe-stt-tagesdeckel-n1-einspielen`: B3 (Grenze mit `STT_TAGESDECKEL_MIN = 1`), B4 (Meldeweg trocken), B5 (rg) sowie 3.28.2 (eu-speech) bauen und tauschen.

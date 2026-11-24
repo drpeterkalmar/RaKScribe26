@@ -49,3 +49,10 @@ grep „BEGIN PRIVATE KEY“ in den Änderungen = 0.
 - ris-mods `ibl/RHO_REGEL.md`: Querverweis auf den KaiScribe-Ausgang nachtragen → Teil 2 D.
 
 👉 nichts für Peter aus Teil 1.
+
+## Teil 2 – Abnahme + Einspielen (in kaiscribe-schulter-ergebnis-n1-abnahme, 24.11.2026)
+- Eingespielt als **3.28.1** (enthält 3.26.0) auf X: 23:43, Release Latest. Ein eigener Auftrag `…-einspielen` existierte nicht; die Arbeit lief in derselben Abnahme-Runde.
+- Abnahme 451898 (echte KI, Brief): **R1** Handgelenk Rho 9 → kein Rho-Text (`[RHO] kein Rho-Text – Rho-Region nicht LWS`). **R2** LWS Rho 8 → eigener Teil „Opportunistisches Knochendichtescreening (KI)“ (Score 8, Ergebnis ohne Nummer) + „Osteopenischer Knochenaspekt.“. **R3** Rho 6 → nichts, Normalsatz bleibt.
+- **HIPPO:** Mit 3.27.1 war M13 (13 mm re tiefer, BLD 20 mm) rot. Die Brücke 2.5.35 reicht `befundtext.hippo.ergebnis_becken` nicht an KaiScribe durch, deshalb kam nur die Rückfall-Regel (13 mm) ins Ergebnis, die BLD fehlte. Fix **3.28.1**: `ibl_bausteine.text_nachladen` ergänzt das Feld aus der Abholer-Datei (gleiche AccNo/Fassung, nie bei Kind). Mit 3.28.1 grün: „1. Beckenschiefstand von 13 mm, rechts tieferstehend. 2. Beinlängendifferenz von 20 mm.“ + Anmerkung, kein „Regelrechte Darstellung“. Gegenprobe M9 (9 mm) → nur Beschreibung, Normal-Ergebnis bleibt.
+- Die Abholer-Version auf der VM wurde nicht gelesen (vom Büro-PC aus nicht lesbar). Der Baustein war für die Abnahme nachgestellt (`tools/ibl_abnahme_bausteine.py --hippo-becken`) und ist wieder entfernt. Brücken-Fix: Karte #565. D (ris-mods RHO_REGEL.md Querverweis) nicht gemacht.
+- Kanban #533 → fertig.

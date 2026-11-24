@@ -42,3 +42,9 @@
   - Abnahme an 451898 mit den Log-Zeilen „kein Streaming gestartet“, „chirp_3 OK“ und „Einfügen rechts OK“
   - Messwert Stopp→Text
   - genaue Kostenrechnung
+
+## Teil 2 – Abnahme (in kaiscribe-schulter-ergebnis-n1-abnahme, 24.11.2026, KaiScribe 3.27.1/3.28.1, live 3.28.1 seit 23:43)
+- Echter Praxisweg (CAS-Diktat 451898 als kp, gesprochen, 36 s): `[GOOGLE] Live-Anzeige aus – kein Streaming gestartet (nur Aufnahme, Text nach Stopp aus chirp_3).`, `[CHIRP3] OK: 155 Zeichen`, **`[CHIRP3] Text links nach 2.8 s ab Stopp (Live-Anzeige aus)`**. In allen Läufen gab es 0 Zeilen „Streaming-Request beendet“.
+- WAV-Modus als kp: E1 2,9 s, E4b 2,4 s/0,8 s, J 1,7 s, K 1,8 s (Stopp → Text). Nachdiktat ohne Cursor → `[BEFUNDFELD] Ergänzung: … eingebaut (Titel und Text unverändert)`. Markierung → `[EINFÜGEN] Markierung ersetzt (gleich)`.
+- Rückfall E5 (simulierter chirp-Ausfall): einmal wiederholt, dann `Spracherkennung nicht verfügbar – bitte erneut diktieren/prüfen – Audio behalten`, WAV `%APPDATA%\KaiScribe\nicht_erkannt\…` (444 844 B), kein Befund, Brücke „abgebrochen“.
+- Nicht gemacht: Cursor-Einfügen (Klick an eine Stelle), rg-Log lesen (B4), Kostenrechnung C (Logs 17.–23.11.). Das ist an `kaiscribe-stt-tagesdeckel-n1-einspielen` weitergegeben, die Messwerte aus dem Praxisbetrieb an die Morgenkontrolle.

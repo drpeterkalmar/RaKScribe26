@@ -66,3 +66,8 @@ Danke für die Liste! In KaiScribe 3.25 ist (sobald heute Abend eingespielt und 
   nichts vidiert. Außerdem fehlt in der Teststrecke ein Kürzel für „Ganzbein re.“ (nur R325 in Kassenkatalogen 70/440/590/620). Werkzeug steht:
   `tools/buero/ursula_abnahme.py` (Fälle G1 Ganzbein, H1 HWS, K1 Knie; main 67040ea). Nachholen im nächsten CAS-Testfenster (ab 20:15) – Karte #542.
 - A (Belege RH-Fälle) nicht gemacht (Ordi-Zeit/Fenster). Kein Rückweg: kein Fehler gefunden, nur Abnahme nicht möglich.
+
+## Abnahme 451898 nachgeholt (kaiscribe-schulter-ergebnis-n1-abnahme, 24.11.2026, KaiScribe 3.27.1/3.28.1, live 3.28.1)
+- **H1** HWS grün: „50%ige Höhenminderung C5/6“ (3.28.1) bzw. die KI schrieb „um 50 %“ (3.27.1), nie „prozentig“. Titel „Halswirbelsäule in 2 Ebenen“ ohne „beidseits“, keine Leerzeile nach „Ergebnis:“, „Im Übrigen“ nie doppelt.
+- **K1** Knie grün (Titel Kniegelenk rechts).
+- **G1** nicht prüfbar: Im Katalog PRIVAT des Testpatienten gibt es kein Kürzel mit „Ganzbein re.“, `uex`/`uex1` haben keine Seite. Bleibt offline belegt (`ursula-seite-laut-cas`). Karte #542 bleibt.

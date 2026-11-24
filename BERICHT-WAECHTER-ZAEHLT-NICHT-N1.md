@@ -46,3 +46,11 @@ Kanban #541 erst danach fertig.
 Offene Lücke ohne Büro-PC: ob auf CASWS10 außer dem Wächter wirklich kein Fenster-Mutex existierte, ist nur aus dem
 Prozessbild (VM-Lauf) geschlossen; die Abnahme belegt es mit `-Schritt lage` (Wächter-PID) + Brücken-Log
 (`[rakscribe] gestartet:` statt 15 s Warten).
+
+## Teil 2 – Einspielen + Probe (kaiscribe-schulter-ergebnis-n1-abnahme, 24.11.2026 21:01–23:57)
+- **Brücke 2.5.35** (ris-mods e384203) auf X: und Büro-PC: `kaiscribe_x_tauschen.ps1 2.1 -Schritt py` 21:01 → `KS_TAUSCH=ok XQ=2.5.35 DQ=2.5.35 vorher=2.5.27`.
+  Nachzuholen: Für e384203 gab es vor dem Einspielen keinen grünen `windows_pruefung.py`-Lauf. Ich habe ihn am 25.11. ~00:05 gestartet (Ergebnis siehe unten), außerdem Karte #565.
+- **EXE 3.28.1** (enthält den 3.25.1-Starter-Fix) 23:43 per Skript 2.1. Das Fenster kam von selbst: starter.log „gestartet (minimiert) … 17 s nach dem Start“, Wächter 3.28.1 als Nachfolger.
+- **Probe 451898:** Fenster sanft zu, es liefen nur die Wächter (Mutex `Local\RaKScribe26-Einzelinstanz` fehlte). Dann CAS-Diktat (kp, gesprochen). bruecke.log: `[rakscribe] gestartet: X:\KaiScribe\Programm\KaiScribe.exe` → `angenommen von RaKScribe 3.28.1 (pid 11460) nach 8.0 s` → Ablage + JobFinished. 0× keine Antwort/Original. Brief richtig.
+- **Starter von Hand** (nur Wächter lief): `gestartet (minimiert)` statt „KaiScribe läuft schon“.
+- Offen: Morgenkontrolle 25.11. ab 07:35 an allen Befund-PCs (`keine_antwort` seit 06:00 = 0), Folgejob `waechter-zaehlt-nicht-n1-kontrolle`. Erst danach #541 fertig.
