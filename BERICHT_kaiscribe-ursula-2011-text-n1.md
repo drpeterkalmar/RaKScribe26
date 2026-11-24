@@ -56,3 +56,13 @@ Danke für die Liste! In KaiScribe 3.25 ist (sobald heute Abend eingespielt und 
 - Offen: nicht diktierte Untersuchungen aus dem Auftrag – Georg entscheidet (Karte #542).
 
 👉 Georg: nicht diktierte CAS-Untersuchung – Normaltext lassen oder streichen? (Karte #542), bis Fr 27.11.
+
+## Abnahme (24.11.2026, Job sm-senf-laenge-n1-einspielen)
+- **Einspielen ok:** EXE 3.25.0 (Release, sha256 `8b66829709dd…d2af`, Bau + Windows-UI-Test grün) per `kaiscribe_x_tauschen.ps1 -Schritt exe -Tag 3.25.0`
+  auf X: um 05:57 (Sicherung `KaiScribe.exe.vor3.25.0-20261124-055710.alt`, Rückweg `-Schritt zurueck`). Wächter 05:59 auf 3.25.0 (Nachfolger).
+  Autostart-Falle #541 wieder: Fenster erst von Hand 06:03 (`--minimiert`) → „KaiScribe 3.25.0“, `[INIT] … Rückfall: aus`, 0 Fehlerzeilen.
+  3.24.1 war live → Tausch war ein Schritt vorwärts (3.25.0 enthält 3.24.1).
+- **Abnahme 451898 (Teil C) offen:** am Büro-PC war CAS ab 06:05 abgemeldet (Test-Anmeldung „CAS-Testende“), kein Eintrag angelegt, nichts zu stornieren,
+  nichts vidiert. Außerdem fehlt in der Teststrecke ein Kürzel für „Ganzbein re.“ (nur R325 in Kassenkatalogen 70/440/590/620). Werkzeug steht:
+  `tools/buero/ursula_abnahme.py` (Fälle G1 Ganzbein, H1 HWS, K1 Knie; main 67040ea). Nachholen im nächsten CAS-Testfenster (ab 20:15) – Karte #542.
+- A (Belege RH-Fälle) nicht gemacht (Ordi-Zeit/Fenster). Kein Rückweg: kein Fehler gefunden, nur Abnahme nicht möglich.
