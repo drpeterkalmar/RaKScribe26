@@ -45,6 +45,15 @@ check("Starter: prüft vor dem Start, ob KaiScribe schon läuft (KaiScribe.exe +
       "If KaiScribeLaeuft() Then" in st and ("WHERE Name LIKE 'KaiScribe.exe' OR Name LIKE 'KaiScribe (%' "
                                              "OR Name LIKE 'rakscribe26%' OR Name = 'rakscribe26.exe'") in st
       and "p.GetOwner(benutzer, domaene)" in st and 'CreateObject("WScript.Network").UserName' in st)
+_kl = st[st.index("Function KaiScribeLaeuft()"):]
+_kl = _kl[:_kl.index("End Function")]
+check("Starter (waechter-zaehlt-nicht-n1, CASWS10 24.11.): der SpeechMagic-Wächter (--sm-waechter) zählt NICHT als "
+      "„KaiScribe läuft“ – Befehlszeile klein, InStr, erst danach GetOwner; Null-Befehlszeile = kein Wächter",
+      'zeile = LCase(p.CommandLine & "")' in _kl and 'If InStr(zeile, "--sm-waechter") = 0 Then' in _kl
+      and _kl.index('InStr(zeile, "--sm-waechter")') < _kl.index("p.GetOwner(benutzer, domaene)")
+      and "Dim wmi, p, rc, benutzer, domaene, ich, zeile" in _kl and bs.WAECHTER_ARG == "--sm-waechter"
+      and _kl.count("If ") == _kl.count("End If") + _kl.count(" Then KaiScribeLaeuft = True")
+      + _kl.count("Then Exit Function"), _kl)
 check("Starter: endet, wenn der Haken aus ist (Skript gelöscht)", "If Not fso.FileExists(WScript.ScriptFullName) Then" in st)
 check("Starter: keine Kopie der EXE, außer der EXE nur die CAS-Abfrage (PowerShell, unsichtbar, wartet)",
       "CopyFile" not in st and st.count("sh.Run") == 2 and "rc = sh.Run(CAS_PS, 0, True)" in st

@@ -29,6 +29,7 @@ import cas_auftrag as _cas  # gleicher Ordner und gleiche atomaren JSON-Dateien 
 import umzug as _umzug  # kaiscribe-umzug-n1-exe: Prozessnamen alt + neu
 
 MINIMIERT = "--minimiert"
+WAECHTER_ARG = "--sm-waechter"   # = sm_einfuegen.WAECHTER_ARG; der Wächter zählt im Starter nie als „KaiScribe läuft“
 STARTER = "warte_auf_x.vbs"
 VERKNUEPFUNG = "KaiScribe.lnk"
 ALT_VERKNUEPFUNG = "RaKScribe.lnk"        # bis 3.19; nachziehen() ersetzt sie durch KaiScribe.lnk
@@ -266,7 +267,7 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
         "",
         "Function KaiScribeLaeuft()",
         "  ' nur Prozesse dieses Benutzers; im Zweifel False — dann verhindert die EXE selbst eine zweite Instanz",
-        "  Dim wmi, p, rc, benutzer, domaene, ich",
+        "  Dim wmi, p, rc, benutzer, domaene, ich, zeile",
         "  KaiScribeLaeuft = False",
         "  On Error Resume Next",
         '  ich = ""',
@@ -274,10 +275,15 @@ def starter_vbs(exe, takt_s=TAKT_S, frist_s=FRIST_S, cas_max_s=CAS_MAX_S, ruhe_s
         r'  Set wmi = GetObject("winmgmts:{impersonationLevel=impersonate}!\\.\root\cimv2")',
         "  If Err.Number <> 0 Then Exit Function",
         "  For Each p In wmi.ExecQuery(WQL)",
-        '    benutzer = ""',
-        "    rc = -1",
-        "    rc = p.GetOwner(benutzer, domaene)",
-        '    If rc = 0 And ich <> "" And LCase(benutzer) = ich Then KaiScribeLaeuft = True',
+        "    ' waechter-zaehlt-nicht-n1: der unsichtbare SpeechMagic-Wächter (" + WAECHTER_ARG + ") ist kein KaiScribe-Fenster",
+        '    zeile = ""',
+        '    zeile = LCase(p.CommandLine & "")',
+        '    If InStr(zeile, "' + WAECHTER_ARG + '") = 0 Then',
+        '      benutzer = ""',
+        "      rc = -1",
+        "      rc = p.GetOwner(benutzer, domaene)",
+        '      If rc = 0 And ich <> "" And LCase(benutzer) = ich Then KaiScribeLaeuft = True',
+        "    End If",
         "  Next",
         "End Function",
         "",
