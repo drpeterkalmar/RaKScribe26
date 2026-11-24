@@ -173,7 +173,9 @@ def init_google_speech():
     _SA_CREDENTIALS = credentials
     _STT_TOKEN_CACHE.leeren()  # neuer Schlüssel → kein Token des alten Service-Accounts weiterverwenden
     try:
-        speech_client = speech.SpeechClient(credentials=credentials)
+        # kaiscribe-live-anzeige-eu-n1: Live-Anzeige nur über den EU-Endpunkt (eu-speech.googleapis.com), nie global
+        speech_client = speech.SpeechClient(credentials=credentials, client_options=_stt.live_client_options())
+        print(f"[INIT] Live-Anzeige (Speech v1) über {_stt.client_host(speech_client) or _stt.LIVE_API_ENDPOINT} (EU)")
         
         GOOGLE_CONFIG = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,

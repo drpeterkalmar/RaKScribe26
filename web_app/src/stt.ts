@@ -89,12 +89,15 @@ type SttErgebnis = { results?: { alternatives?: { transcript?: string }[] }[]; e
 export const transkriptAus = (data: SttErgebnis): string =>
   (data?.results || []).map(r => (r?.alternatives?.[0]?.transcript || '').trim()).filter(Boolean).join(' ');
 
+export const LIVE_RECOGNIZE_URL = 'https://eu-speech.googleapis.com/v1/speech:recognize';
+
 // Chunk-Transkription (6-s-Chunks während der Aufnahme, latest_long) — nur Live-Anzeige
 export async function transcribeChunkWithGoogle(wavBlob: Blob, ctx: SttKontext): Promise<string> {
   const token = await getSttToken(ctx.sttKey, ctx.signal);
   ctx.status?.('Transkribiere (Google Cloud STT)...');
   const base64Data = await blobToBase64(wavBlob);
-  const response = await fetchWithRetry('https://speech.googleapis.com/v1/speech:recognize', {
+  // kaiscribe-live-anzeige-eu-n1: EU-Endpunkt (Daten bleiben in der EU), nie der globale Host (wie stt.py LIVE_API_ENDPOINT)
+  const response = await fetchWithRetry(LIVE_RECOGNIZE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({

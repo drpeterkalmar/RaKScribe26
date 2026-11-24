@@ -10,6 +10,9 @@
 - kaiscribe-stt-tagesdeckel-n1 (24.11.2026): DECKEL (stt_deckel.Deckel, von der EXE gesetzt) – vor dem ganzen Diktat
   die Schleifenbremse, vor jedem 50-s-Stück die Tagesgrenze; gesperrt → None (kein Google-Aufruf) und letzte_sperre()
   liefert im selben Thread „grenze“/„schleife“ (die EXE behält dann das Audio und zeigt die rote Zeile).
+- kaiscribe-live-anzeige-eu-n1 (24.11.2026): LIVE_API_ENDPOINT – die Live-Anzeige (Speech v1, latest_long, Streaming)
+  läuft über den EU-Endpunkt eu-speech.googleapis.com (Daten bleiben in der EU), nie über den globalen Host.
+  live_client_options() → client_options für speech.SpeechClient. Rückfall-Schutz: tests/offline/test_live_eu.py.
 Der Streaming-Teil (Mikrofon → Live-Anzeige) liegt in aufnahme.py (Umbau Schritt 6).
 Tests: tests/offline/test_stt.py, sync_fixtures.json (gleiche Fälle für die Web-App).
 """
@@ -53,6 +56,34 @@ def chirp_phrases():
 
 # chirp-fachwortliste-n1: Boost der SpeechMagic-Fachwortliste (die 85 kuratierten bleiben bei 10). Gemessen am
 # 24.11.2026 im Testprojekt (tools/vm/chirp_fachwort/cfw_messen.py, Bericht BERICHT-CHIRP-FACHWORTLISTE-N1.md).
+# kaiscribe-live-anzeige-eu-n1: Live-Anzeige (Speech v1) nur über den EU-Endpunkt. Laut Google-Doku (speech-to-text/
+# docs/v1/endpoints) bleiben die Daten nur beim regionalen Endpunkt in Europa, ohne Funktionsänderung der API.
+# Web-App: web_app/src/stt.ts (gleicher Host). Nie auf den globalen Host zurück (Patientendaten nur EU).
+LIVE_API_ENDPOINT = "eu-speech.googleapis.com"
+
+
+def live_client_options():
+    """client_options für speech.SpeechClient (Live-Anzeige) → EU-Endpunkt. ClientOptions aus google.api_core (kommt
+    mit google-cloud-speech); ohne die Bibliothek (Tests) das gleichwertige dict, das der Client ebenso annimmt."""
+    try:
+        from google.api_core.client_options import ClientOptions
+        return ClientOptions(api_endpoint=LIVE_API_ENDPOINT)
+    except Exception:
+        return {"api_endpoint": LIVE_API_ENDPOINT}
+
+
+def client_host(client):
+    """Host, den ein Google-Client tatsächlich anspricht (für die [INIT]-Zeile als Beleg); None, wenn unbekannt."""
+    for weg in (lambda c: c.api_endpoint, lambda c: c.transport._host, lambda c: c._transport._host):
+        try:
+            h = weg(client)
+            if h:
+                return str(h)
+        except Exception:
+            pass
+    return None
+
+
 CHIRP_BOOST = 10
 CHIRP_SM_BOOST = 5
 

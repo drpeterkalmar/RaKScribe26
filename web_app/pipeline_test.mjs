@@ -145,6 +145,12 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
         'chirp_3: PhraseSet = phrases.json chirp (85, Boost 10)');
   check(chunk.phrases.join('|') === PHR.medical_web.join('|') && chunk.boost === 15 && new Set(chunk.phrases).size === chunk.phrases.length,
         '6-s-Chunk: speechContexts = phrases.json medical_web (ohne Doppelte, Boost 15)');
+  // kaiscribe-live-anzeige-eu-n1: Live-Anzeige (v1, latest_long) über den EU-Endpunkt, nie über den globalen Host
+  check(gesendet[1].url === 'https://eu-speech.googleapis.com/v1/speech:recognize'
+        && gesendet[1].body.config.model === 'latest_long' && gesendet[1].body.config.useEnhanced === true,
+        '6-s-Chunk (Live-Anzeige): eu-speech.googleapis.com/v1, latest_long + useEnhanced', gesendet[1].url);
+  check(gesendet.every(g => !/\/\/speech\.googleapis\.com/.test(g.url)), 'kein Aufruf an den globalen Host speech.googleapis.com',
+        gesendet.map(g => g.url).join(' '));
 }
 
 // ── 2b. Langes Diktat (> 59 s): Segmente 50 s + 4 s Rückhören direkt aus der WAV (ohne AudioContext) ────
