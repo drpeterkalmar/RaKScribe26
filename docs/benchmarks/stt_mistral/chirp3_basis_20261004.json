@@ -1,0 +1,122 @@
+{
+ "quelle": "docs/benchmarks/stt_ab_g35t_results.json (Hauptordner, 04.10.2026, tools/stt_ab_g35t.py), Schlüssel 'chirp_3 +PhraseSet (IST)'",
+ "hinweis": "chirp_3 STT v2 eu, CHIRP_PHRASES Boost 10 (Stand 04.10.); keine neuen Google-Aufrufe (stt-mistral-vergleich-n1)",
+ "dauer_s": {
+  "test-audio-bws.ogg": 29.76,
+  "test_diktat.ogg": 8.36,
+  "test_diktat2.ogg": 18.76,
+  "test-audio.ogg": 36.38,
+  "mamma_diktat.ogg": 18.12,
+  "schulter_diktat.ogg": 18.76
+ },
+ "laeufe": [
+  {
+   "file": "mamma_diktat.ogg",
+   "run": 0,
+   "dt": 1.83,
+   "txt": "Mammasonographie beidseits thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig, BI-RADS 2."
+  },
+  {
+   "file": "mamma_diktat.ogg",
+   "run": 1,
+   "dt": 2.24,
+   "txt": "Mammasonographie beidseits thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig, BI-RADS 2."
+  },
+  {
+   "file": "mamma_diktat.ogg",
+   "run": 2,
+   "dt": 1.72,
+   "txt": "Mammasonographie beidseits thrombosierte Hautvenen links im axillären Quadranten auslaufend in die linke Axilla bis 18 mm Durchmesser im Sinne eines Morbus Mondor, ansonsten beidseits unauffällig, BI-RADS 2."
+  },
+  {
+   "file": "schulter_diktat.ogg",
+   "run": 0,
+   "dt": 1.64,
+   "txt": "Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig."
+  },
+  {
+   "file": "schulter_diktat.ogg",
+   "run": 1,
+   "dt": 1.71,
+   "txt": "Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig."
+  },
+  {
+   "file": "schulter_diktat.ogg",
+   "run": 2,
+   "dt": 2.57,
+   "txt": "Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig."
+  },
+  {
+   "file": "test-audio-bws.ogg",
+   "run": 0,
+   "dt": 2.48,
+   "txt": "BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante DH4 gegenüber Oberkante DH8, multisegmentale Schmorlsche Impressionen mit Edgren-Vaino-Zeichen als Zeichen für Zustand nach Morbus Scheuermann. Ansonsten unauffällig."
+  },
+  {
+   "file": "test-audio-bws.ogg",
+   "run": 1,
+   "dt": 2.29,
+   "txt": "BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante DH4 gegenüber Oberkante DH8, multisegmentale Schmorlsche Impressionen mit Edgren-Vaino-Zeichen als Zeichen für Zustand nach Morbus Scheuermann. Ansonsten unauffällig."
+  },
+  {
+   "file": "test-audio-bws.ogg",
+   "run": 2,
+   "dt": 2.48,
+   "txt": "BWS Röntgen flachbogig rechtskonvexe Skoliose, der laterale Cobb-Winkel beträgt 9,5° gemessen an der Oberkante DH4 gegenüber Oberkante DH8, multisegmentale Schmorlsche Impressionen mit Edgren-Vaino-Zeichen als Zeichen für Zustand nach Morbus Scheuermann. Ansonsten unauffällig."
+  },
+  {
+   "file": "test-audio.ogg",
+   "run": 0,
+   "dt": 2.69,
+   "txt": "Befund Nervus ulnaris. Deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} bei Ellbogen Flexion. Aggravation der Kompression {Punkt}"
+  },
+  {
+   "file": "test-audio.ogg",
+   "run": 1,
+   "dt": 2.9,
+   "txt": "Befund Nervus ulnaris. Deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} bei Ellbogen Flexion. Aggravation der Kompression {Punkt}"
+  },
+  {
+   "file": "test-audio.ogg",
+   "run": 2,
+   "dt": 2.46,
+   "txt": "Befund Nervus ulnaris. Deutlich vergrößerte Querschnittsfläche des Nervs am Sulcus nervi ulnaris mit 15 Quadratmillimeter {Punkt} zusätzlicher hypertropher Musculus anconeus epitrochlearis als anatomische Variante mit Kompression des Nervs am Sulcus {Punkt} bei Ellbogen Flexion. Aggravation der Kompression {Punkt}"
+  },
+  {
+   "file": "test_diktat.ogg",
+   "run": 0,
+   "dt": 1.23,
+   "txt": "Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ansonsten unauffälliger Befund"
+  },
+  {
+   "file": "test_diktat.ogg",
+   "run": 1,
+   "dt": 1.41,
+   "txt": "Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ansonsten unauffälliger Befund"
+  },
+  {
+   "file": "test_diktat.ogg",
+   "run": 2,
+   "dt": 1.24,
+   "txt": "Handgelenk Röntgen rechts nicht dislozierte Fraktur des Scaphoid Taille ansonsten unauffälliger Befund"
+  },
+  {
+   "file": "test_diktat2.ogg",
+   "run": 0,
+   "dt": 1.77,
+   "txt": "Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig."
+  },
+  {
+   "file": "test_diktat2.ogg",
+   "run": 1,
+   "dt": 1.85,
+   "txt": "Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig."
+  },
+  {
+   "file": "test_diktat2.ogg",
+   "run": 2,
+   "dt": 1.69,
+   "txt": "Röntgen und Sonographie des linken Schultergelenkes. Tenosynovitis der langen Bizepssehne. Tendinopathie und Tendinosis calcarea der Supraspinatussehne mit Begleitbursitis. Ansonsten unauffällig."
+  }
+ ]
+}
