@@ -9,9 +9,10 @@ Punkten durch Georgs Regeln schon gelöst (Rho-Titel, Zehennummer, nicht diktier
 echten Läufen (Lauf-JSON/Log der VM) steht als Teil A im Folgeauftrag (`FOLGEJOB-KAISCRIBE-URSULA-2011-TEXT-N1-EINSPIELEN.md`).
 
 ## Version
-Ein Paket: **KaiScribe 3.25.0** (Version wird beim Zusammenführen gesetzt, siehe Commit „v3.25.0: Ursulas Durchsicht …“ auf
-main). Nicht eingespielt: Einspielen + Abnahme 451898 laufen gebündelt im wartenden KaiScribe-Einspielauftrag
-(`sm-senf-laenge-n1-einspielen`, Nachtrag).
+Ein Paket: **KaiScribe 3.25.0** = main `319d107` (Code `d802c66`, enthält 3.24.1). Tests nach dem Rebase grün.
+**Noch nicht live:** Einspielen + Abnahme 451898 laufen gebündelt im wartenden KaiScribe-Einspielauftrag
+`sm-senf-laenge-n1-einspielen` (Nachtrag 24.11. ~04:00 gesetzt, kein eigener Folgeauftrag). Release-Regel (Georg): erst nach
+echtem Lauf am Testpatienten mit Brieftext aktiv, sonst Rollback – siehe Abnahmeblatt Teil C.
 
 ## Je Punkt
 | # | RH | Stand | Ursache / Beleg | Regel (Register) |
