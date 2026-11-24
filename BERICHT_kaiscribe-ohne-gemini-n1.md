@@ -1,4 +1,4 @@
-# BERICHT kaiscribe-ohne-gemini-n1 – kein Gemini-Rückfall mehr in KaiScribe (Version @@VERSION@@)
+# BERICHT kaiscribe-ohne-gemini-n1 – kein Gemini-Rückfall mehr in KaiScribe (Version 3.24.0)
 
 Anlass: Peter 23.11.2026 ~22:30 „Dauert die Antwort länger als 20 s, übernimmt Gemini — das kannst abstellen. no gemini
 please derzeit.“ Teil 1 (Bau, Hetzner, Di 24.11. nachts) ohne Büro-PC; Einspielen + Abnahme 451898 = Teil 2 (siehe unten).
@@ -9,7 +9,7 @@ Keine Patientendaten in diesem Bericht.
 2. Statt Rückfall: Frist 45 s, bei Frist/Netz/HTTP 429/5xx/overloaded/Platzhalter/Maske EIN zweiter Claude-Versuch (2 s Pause).
 3. Geht auch der schief: Call 0 → Rohtext; Befund → Diktat unverändert ins Befundfeld + rote Prüfzeile, nichts eingefügt; Prüfung entfällt.
 4. Zähler/Tagesbericht: „ohne KI“ je Rolle + Grund, zweite Versuche; Log `… → ohne KI (kein Rückfall)`, `[INIT] … Rückfall: aus, Frist 45 s`.
-5. Version @@VERSION@@ auf main, alle Offline-Gates grün (63 Python + 4 Web + tsc + eslint); Web geht mit dem Push live, EXE erst nach 451898.
+5. Version 3.24.0 auf main, alle Offline-Gates grün (63 Python + 4 Web + tsc + eslint); Web geht mit dem Push live, EXE erst nach 451898.
 6. Rückweg: `KI_RUECKFALL = an` (config.ini) bzw. im Browser `localStorage.ki_rueckfall = 'an'`; Notschalter `LLM_ANBIETER = gemini` bleibt.
 
 ## Rückfall-Statistik seit 16.11. (Messung)
@@ -68,5 +68,5 @@ Einspielen + Abnahme 451898 + Messung auf X: (nur lesen) laufen gebündelt als N
 KaiScribe-Einspiel-Auftrag `sm-senf-laenge-n1-einspielen` (ein Einspielen und eine Abnahme-Runde je Programm und Abend);
 lehnt die Queue den Nachtrag ab, als eigener Folgeauftrag `kaiscribe-ohne-gemini-n1-einspielen` (`--ressource
 ordi,automaten-vm`). Inhalt: `FOLGEJOB-KAISCRIBE-OHNE-GEMINI-N1-EINSPIELEN.md`. EXE: Vorabversion `test-<Lauf>` aus
-`build-exe.yml` (main, VERSION @@VERSION@@), Release Latest erst nach grüner Abnahme.
+`build-exe.yml` (main, VERSION 3.24.0), Release Latest erst nach grüner Abnahme.
 Arbeitsdateien Teil 1: `~/cj/work/kaiscribe-ohne-gemini-n1/` (Testliste, Versions-Skript).

@@ -1,4 +1,4 @@
-# kaiscribe-ohne-gemini-n1-einspielen – KaiScribe @@VERSION@@ (kein Gemini-Rückfall) einspielen + Abnahme 451898
+# kaiscribe-ohne-gemini-n1-einspielen – KaiScribe 3.24.0 (kein Gemini-Rückfall) einspielen + Abnahme 451898
 
 Von `kaiscribe-ohne-gemini-n1` (Teil 1 Di 24.11.2026 nachts am Hetzner, ohne Büro-PC; Bericht `BERICHT_kaiscribe-ohne-gemini-n1.md`).
 Peter 23.11. ~22:30: „no gemini please derzeit“. Release-Regel (Georg): **erst echter Lauf am Testpatienten 451898 mit
@@ -9,11 +9,11 @@ Brieftext aktiv** – Log zeigt `Rückfall: aus` und einen Befund über `anthrop
 > **MELDUNGSRUHE (Peter 11.11.2026):** nichts selbst an Telegram/Mail. Was nur Peter kann → `kanban.py peter …` + „👉 …“.
 
 ## Was eingespielt wird
-main **@@VERSION@@** (Versions-Commit „v@@VERSION@@: Kein Gemini-Rückfall …“) (Web ist mit dem Push schon live – im Bundle `ki_rueckfall`/„ohne KI (kein Rückfall)“
+main **3.24.0** (Versions-Commit „v3.24.0: Kein Gemini-Rückfall …“) (Web ist mit dem Push schon live – im Bundle `ki_rueckfall`/„ohne KI (kein Rückfall)“
 belegen). EXE: Vorabversion aus Teil 1 (siehe Bericht, Abschnitt Teil 2) bzw. `build-exe.yml` mit `release=true` erst
-nach grüner Abnahme → Release @@VERSION@@ Latest, dann X:-Tausch mit dessen sha256
-(`kaiscribe_x_tauschen.ps1 -Schritt exe -Tag @@VERSION@@ -Sha <sha>`, `.alt` bleibt = Rollback `-Schritt zurueck`).
-Enthält alles bis @@VERSION@@ (auch 3.22.6 SM-Senf-Länge, 3.23.0 Georg 48–70, 3.23.1 Senf-Abgleich), falls die noch nicht auf X: sind.
+nach grüner Abnahme → Release 3.24.0 Latest, dann X:-Tausch mit dessen sha256
+(`kaiscribe_x_tauschen.ps1 -Schritt exe -Tag 3.24.0 -Sha <sha>`, `.alt` bleibt = Rollback `-Schritt zurueck`).
+Enthält alles bis 3.24.0 (auch 3.22.6 SM-Senf-Länge, 3.23.0 Georg 48–70, 3.23.1 Senf-Abgleich), falls die noch nicht auf X: sind.
 
 ## 1. Messung zuerst (VM/X:, nur lesen) – Lücke aus Teil 1
 `X:\KaiScribe\Daten\nutzung\2026-11_*.json` (bzw. `X:\RaKScribe\Daten\nutzung`) + `tagesbericht_*` seit 16.11.:
