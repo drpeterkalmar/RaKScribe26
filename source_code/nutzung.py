@@ -14,6 +14,10 @@ Rückfall. Jeder Rückfall wird gezählt, und die an Chirp (Google-Spracherkennu
 - kaiscribe-ohne-gemini-n1 (24.11.2026): kein Gemini-Rückfall mehr → „ki.ohne_ki“ (je Rolle in „ohne_ki_rolle“, je Grund-
   Kategorie in „ohne_ki_grund“) und „ki.zweitversuch“ (Claude erst im zweiten Versuch). Alte Dateien mit „rueckfall“ werden
   weiter gelesen (KI_RUECKFALL = an zählt wie bisher).
+- kaiscribe-stt-tagesdeckel-n1 (24.11.2026): stt_deckel(art, info) – Tagesdeckel der Spracherkennung meldet „warn80“ (80 %
+  der Tagesgrenze), „grenze“ (erreicht) bzw. „schleife“ (Schleifenbremse) → td["stt_deckel"] = {art: n, "min": …,
+  "limit_min": …} → im Tagesbericht je PC eine Zeile „STT-DECKEL <PC> …“ (die liest die Chirp-Warnung am Mac → Karte für
+  Hermes).
 - Fehler beim Schreiben sind nie fatal (Laufwerk weg → still nichts).
 """
 import calendar
@@ -147,6 +151,38 @@ class Zaehler:
         self._aendern(fn)
 
 
+    def stt_deckel(self, art, info=None):
+        """Tagesdeckel der Spracherkennung (stt_deckel.Deckel.melden): art = warn80 | grenze | schleife, nur Zahlen."""
+        info = info or {}
+        art = re.sub(r"[^a-z0-9]", "", str(art or "?"))[:10] or "?"
+
+        def fn(td):
+            d = td.setdefault("stt_deckel", {})
+            d[art] = int(d.get(art, 0) or 0) + 1
+            for k in ("min", "limit_min"):
+                if isinstance(info.get(k), (int, float)):
+                    d[k] = round(float(info[k]), 1)
+        self._aendern(fn)
+
+
+DECKEL_ARTEN = {"warn80": "80 % der Tagesgrenze erreicht", "grenze": "Tagesgrenze erreicht – keine Spracherkennung mehr",
+                "schleife": "Schleifenbremse (dieselbe Aufnahme > 3× an Google)"}
+
+
+def deckel_zeilen(alle, tag):
+    """Tagesbericht-Zeilen „STT-DECKEL <PC> …“ für alle PCs mit Deckel-Meldung an diesem Tag."""
+    z = []
+    for pc in sorted(alle):
+        d = ((alle[pc].get("tage") or {}).get(tag) or {}).get("stt_deckel") or {}
+        arten = [a for a in ("grenze", "warn80", "schleife") if d.get(a)]
+        if not arten:
+            continue
+        z.append(f"STT-DECKEL {pc}: " + "; ".join(DECKEL_ARTEN[a] + (f" ({d[a]}×)" if a == "schleife" else "")
+                                                for a in arten)
+                 + (f" – {d['min']:.0f} von {d['limit_min']:.0f} min Audio" if "min" in d and "limit_min" in d else ""))
+    return z
+
+
 def monat_summen(ordner, monat):
     """Alle PC-Dateien eines Monats → {pc: daten}."""
     aus = {}
@@ -260,6 +296,7 @@ def tagesbericht(ordner, tag):
          f"Live-Anzeige (Google-Streaming): heute {ges(heute, 'stream_s') / 60:.1f} min, Monat {stream_m / 60:.1f} min "
          f"≈ {stream_eur(stream_m):.2f} € (× {STREAM_USD_MIN} $/min)",
          f"Google-Spracherkennung gesamt hochgerechnet {hoch:.2f} €/Monat (aus {n_tage} Tag{'en' if n_tage != 1 else ''})"]
+    z.extend(deckel_zeilen(alle, tag))          # tagesdeckel-n1 (vor den PC-Zeilen: der VM-Leser nimmt nur 40 Zeilen)
     for pc in sorted(alle):
         h = heute[pc]
         z.append(f"  {pc}: heute Befunde {h['befunde']}, Claude {h['anthropic']}, Rückfall {h['rueckfall']}, "

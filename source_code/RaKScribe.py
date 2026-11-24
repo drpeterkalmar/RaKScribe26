@@ -46,6 +46,7 @@ import ibl_bausteine as _ibl  # v3.13.0: IB-Lab-Vorbefund-Bausteine der Brücke 
 import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Diktat (Autostart, Einzelinstanz)
 import maske as _mk  # v3.15.0: Mammo-Maske — Felder per SpeechMike-Taste, Vorbefund schon eingetragen (ohne KI)
 import audiodatei as _ad  # v3.16.0: „Audio laden“ + WAV-Modus (Audio-Datei statt Mikrofon, echtes STT + Gemini)
+import stt_deckel as _deckel  # kaiscribe-stt-tagesdeckel-n1: harter Tagesdeckel + Schleifenbremse Google-Spracherkennung
 import umzug as _umzug  # kaiscribe-umzug-n1-exe: %APPDATA%\\RaKScribe → KaiScribe, X:\\KaiScribe vor X:\\RaKScribe
 
 # =========================================================================
@@ -473,6 +474,23 @@ _chirp3_worker = _stt.chirp3_worker
 STT_NEUVERSUCH_S = 2.0
 STT_FEHLER_TEXT = "Spracherkennung nicht verfügbar – bitte erneut diktieren/prüfen"
 NICHT_ERKANNT_DIR = None
+# kaiscribe-stt-tagesdeckel-n1: stt_deckel.Deckel (init_runtime), Zähler %APPDATA%\KaiScribe\stt_tagesdeckel_<PC>.json
+DECKEL = None
+DECKEL_TEXTE = {"grenze": _deckel.GRENZE_TEXT, "schleife": _deckel.SCHLEIFE_TEXT}
+
+
+def _deckel_melden(art, info):
+    """stt_deckel → Nutzungszähler (X:\KaiScribe\Daten\nutzung) → Tagesbericht-Zeile „STT-DECKEL …“ → Chirp-Warnung
+    am Mac legt eine Karte für Hermes an. Nur Zahlen."""
+    if NUTZUNG is not None:
+        NUTZUNG.stt_deckel(art, info)
+
+
+def _deckel_einrichten(ordner, limit_min):
+    global DECKEL
+    DECKEL = _deckel.Deckel(ordner, limit_min=limit_min, log=log, melden=_deckel_melden)
+    _stt.DECKEL = _af.DECKEL = DECKEL
+    return DECKEL
 
 
 def _ki_weiche(anbieter):
@@ -1988,6 +2006,7 @@ class RaKScribeApp(ctk.CTk):
         if getattr(self, "_cas", None) is not None:
             self._cas_aufnahmen = [_ad.DateiAufnahme(pcm)]   # EOL legt dieses Audio als <Nr>.wav ab
         chirp_text = None
+        self._deckel_kuerzel()
         try:
             token = _get_stt_access_token()
             chirp_text = _chirp3_worker(pcm, self.samplerate, 'eu', token) if token else None
@@ -1995,6 +2014,11 @@ class RaKScribeApp(ctk.CTk):
             log_exception("[AUDIO] chirp_3 fehlgeschlagen")
         if not self._job.aktuell(gen):
             log("[AUDIO] Lauf abgebrochen — Ergebnis verworfen.")
+            return
+        if not (chirp_text and chirp_text.strip()) and _stt.letzte_sperre():   # tagesdeckel-n1
+            self._stt_ausfall_merken(gen, pcm, "[AUDIO]")
+            self._ui(gen, lambda: self.transcript_text.delete("1.0", "end"))
+            self.after(0, lambda: self._ende_fehler(gen, ""))
             return
         if not (chirp_text and chirp_text.strip()):
             self._ui(gen, lambda: self.transcript_text.delete("1.0", "end"))
@@ -2394,6 +2418,7 @@ class RaKScribeApp(ctk.CTk):
             self.stream_interim = ""
             self._live_aus = False
             self._live_an = self._live_anzeige_an()   # live-anzeige-aus-kp-n1: kp → kein Streaming, keine Reparatur
+            self._deckel_kuerzel()
             self._stt_fehler = False
             self._basis, self._abschnitte, self._live = basis, [], {}
             self._kontroll_gen, self._befund_wartet, self._gesendet = None, False, False
@@ -2488,6 +2513,7 @@ class RaKScribeApp(ctk.CTk):
         except Exception:
             log_exception("[CHIRP3] Volltranskription fehlgeschlagen — Streaming-Transkript bleibt.")
         ohne_live = aufnahme is not None and not getattr(aufnahme, "live", True)
+        gesperrt = _stt.letzte_sperre() if not (chirp_text and chirp_text.strip()) else None   # tagesdeckel-n1
         if ohne_live and not (chirp_text and chirp_text.strip()) and self._job.aktuell(gen) \
                 and all_pcm is not None and len(all_pcm) > 16000:
             chirp_text = self._chirp_neuversuch(all_pcm, 0, len(all_pcm), "[CHIRP3]")   # live-anzeige-aus-kp-n1
@@ -2526,6 +2552,10 @@ class RaKScribeApp(ctk.CTk):
                 self._ui(gen, lambda: self._ende_fehler(gen, ""))
                 return
         else:
+            if gesperrt and all_pcm is not None and len(all_pcm) > 16000:
+                # tagesdeckel-n1 (mit Live-Anzeige, z. B. rg): Audio sichern + rote Zeile; ein schon angezeigter Live-Text
+                # wird wie bisher gerettet (kostet nichts mehr)
+                self._stt_ausfall_merken(gen, all_pcm, "[CHIRP3]")
             log("[CHIRP3] Kein Ergebnis — nutze Streaming-Transkript weiter.")
             # Rettung: finale Streaming-Abschnitte, sonst der letzte Zwischenstand (wie bisher aus der Anzeige)
             if basis or getattr(self, "_abschnitte", []):  # v3.8.0: Nachdiktat / reparierte Abschnitte nach Pausen
@@ -3538,7 +3568,8 @@ class RaKScribeApp(ctk.CTk):
             return
         zustand = self._job.zustand
         if getattr(self, "_stt_fehler", False) and zustand not in (_js.RECORDING, _js.PAUSED):
-            lbl.configure(text="⚠ " + STT_FEHLER_TEXT, text_color=RECORDING_RED)   # live-anzeige-aus-kp-n1: nie still leer
+            fehler = self._stt_fehler if isinstance(self._stt_fehler, str) else STT_FEHLER_TEXT   # tagesdeckel-n1
+            lbl.configure(text="⚠ " + fehler, text_color=RECORDING_RED)   # live-anzeige-aus-kp-n1: nie still leer
         elif not getattr(self, "_live_an", True) and zustand == _js.RECORDING:
             lbl.configure(text="● Aufnahme läuft", text_color=RECORDING_RED)
         elif not getattr(self, "_live_an", True) and zustand == _js.PAUSED:
@@ -4299,10 +4330,19 @@ class RaKScribeApp(ctk.CTk):
             return False
         return True
 
+    def _deckel_kuerzel(self):
+        """tagesdeckel-n1: Befunder des offenen CAS-Diktats für den Zähler je Kürzel (ohne CAS „?“)."""
+        if DECKEL is not None:
+            a = getattr(self, "_cas", None)
+            DECKEL.kuerzel = (getattr(a, "benutzer", "") or "") if a is not None else ""
+
     def _chirp_neuversuch(self, pcm, start, ende, marke):
         """live-anzeige-aus-kp-n1: chirp_3 lieferte nichts → nach STT_NEUVERSUCH_S genau EIN zweiter Versuch aus dem
-        gespeicherten Puffer (je 50-s-Stück die übliche Frist des chirp_3-Requests). Rückgabe Text oder None."""
+        gespeicherten Puffer (je 50-s-Stück die übliche Frist des chirp_3-Requests). Rückgabe Text oder None.
+        tagesdeckel-n1: hat der Deckel den ersten Versuch gestoppt (Tagesgrenze/Schleifenbremse) → kein zweiter."""
         if pcm is None or ende - start < _seg.MIN_SAMPLES:
+            return None
+        if _stt.letzte_sperre():
             return None
         log(f"{marke} Kein Ergebnis – chirp_3 wird einmal wiederholt ({(ende - start) / float(self.samplerate):.0f} s Audio)")
         time.sleep(STT_NEUVERSUCH_S)
@@ -4333,12 +4373,13 @@ class RaKScribeApp(ctk.CTk):
         except Exception:
             log_exception(f"{marke} Audio nicht gesichert")
             pfad = ""
-        log(f"{marke} {STT_FEHLER_TEXT} – Audio behalten" + (f": {os.path.basename(pfad)}" if pfad else " (im Speicher)"))
+        text = DECKEL_TEXTE.get(_stt.letzte_sperre(), STT_FEHLER_TEXT)   # tagesdeckel-n1: eigener Text bei Sperre
+        log(f"{marke} {text} – Audio behalten" + (f": {os.path.basename(pfad)}" if pfad else " (im Speicher)"))
 
         def zeigen():
-            self._stt_fehler = True
+            self._stt_fehler = text
             self._repariert_anzeigen()
-            self._kurzhinweis("⚠ " + STT_FEHLER_TEXT, 10000)
+            self._kurzhinweis("⚠ " + text, 10000)
         self._ui(gen, zeigen)
 
     def _senf_start(self, a):
@@ -5033,6 +5074,8 @@ class RaKScribeApp(ctk.CTk):
             text = apply_misheard(roh.strip()) if roh and roh.strip() else None
         except Exception:
             log_exception("[MASKE] Spracherkennung eines Felds fehlgeschlagen — Live-Text bleibt")
+        if text is None and getattr(a, "live", True) and _stt.letzte_sperre():
+            self._stt_ausfall_merken(gen, a.samples(), "[MASKE]")   # tagesdeckel-n1: Live-Text wird unten gerettet
         if text is None and not getattr(a, "live", True):
             # live-anzeige-aus-kp-n1: kein Live-Text als Rettung → chirp_3 einmal wiederholen, sonst Audio behalten + rot
             text = self._chirp_neuversuch(a.samples(), start, ende, "[MASKE]")
@@ -5345,6 +5388,10 @@ def init_runtime():
         _stt.ZAEHLER = NUTZUNG.stt
         _af.ZAEHLER = lambda s: NUTZUNG.stt(s, "streaming")   # sonnet-n3-beleg: Live-Anzeige kostet bei Google auch
         print(f"[INIT] Nutzungszähler: {NUTZUNG.ordner} ({NUTZUNG.pc})")
+    # kaiscribe-stt-tagesdeckel-n1: Tagesdeckel immer (auch ohne Nutzungszähler), Zähler lokal in %APPDATA%\KaiScribe
+    _deckel_einrichten(lambda: USER_KEY_DIR, CFG.stt_tagesdeckel_min)
+    print(f"[INIT] Tagesdeckel Spracherkennung: {DECKEL.limit_min} min/Tag ({DECKEL.pfad()}), heute "
+          f"{DECKEL.verbraucht_s() / 60:.1f} min")
     if KI_GEN.anbieter != "gemini" or KI_KORR.anbieter != "gemini":
         print(f"[INIT] Befund-KI: {KI_GEN.name()}, Korrektur: {KI_KORR.name()} — maskiert, {KI_GEN.rueckfall_text()}, "
               f"Frist {CFG.anthropic_frist} s"

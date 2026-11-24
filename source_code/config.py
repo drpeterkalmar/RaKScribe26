@@ -75,6 +75,9 @@ class Config:
     # (kein Google-Streaming, keine Abschnitts-Reparatur je SpeechMike-Pause) – der Text kommt erst nach Stopp/INS aus
     # chirp_3. Standard kp; „aus“ = niemand (alle wieder mit Live-Anzeige = Rollback-Schalter). Ohne CAS-Auftrag → Live an.
     live_anzeige_aus: List[str] = field(default_factory=lambda: ["kp"])
+    # kaiscribe-stt-tagesdeckel-n1 (Peter 24.11.2026): harter Tagesdeckel Google-Spracherkennung je PC in Minuten Audio
+    # (chirp_3 + Live-Anzeige, Wiederholungen mitgezählt; Tageswechsel 00:00 Wien). Normal 15–30 min/Tag → greift nie.
+    stt_tagesdeckel_min: int = 240
     sm_uebernehmen_taste: str = "ctrl+alt+s"   # Nachtrag 21.11. 21:13: „Übernehmen“ = [SENF]-Marken weg (aus = keine Taste)
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
@@ -171,6 +174,11 @@ def load_config(path):
         cfg.chirp_sm = _senf.kuerzel_liste(sek.get("CHIRP_SM", ""), standard=())   # kp | kp, rg | aus
     if "LIVE_ANZEIGE_AUS" in sek:
         cfg.live_anzeige_aus = _senf.kuerzel_liste(sek.get("LIVE_ANZEIGE_AUS", ""), standard=())  # kp | kp, rg | aus
+    cfg.stt_tagesdeckel_min = _int(sek, "STT_TAGESDECKEL_MIN", 240, cfg.warnungen)
+    if cfg.stt_tagesdeckel_min <= 0:      # tagesdeckel-n1: kein „aus“ – ohne Deckel gäbe es bei chirp_3 keine Grenze
+        cfg.warnungen.append(f"config.ini: STT_TAGESDECKEL_MIN = {cfg.stt_tagesdeckel_min} — muss > 0 sein, "
+                             "Standardwert 240 wird verwendet.")
+        cfg.stt_tagesdeckel_min = 240
     cfg.sm_uebernehmen_taste = (sek.get("SM_UEBERNEHMEN_TASTE", "") or cfg.sm_uebernehmen_taste).strip().lower()
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):

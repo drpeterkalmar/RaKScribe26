@@ -7,6 +7,9 @@
   Schalter (config.ini CHIRP_SM = Kürzel-Liste) für den Befunder des Diktats an ist (SM_AKTIV, von der EXE gesetzt).
 - chirp3_request / chirp3_worker: komplettes Diktat an chirp_3 (STT v2, Location eu); > 50 s in Segmenten
   50 s + 4 s Rückhören, Überlappung per Wortvergleich zusammengefügt (stitch_overlaps).
+- kaiscribe-stt-tagesdeckel-n1 (24.11.2026): DECKEL (stt_deckel.Deckel, von der EXE gesetzt) – vor dem ganzen Diktat
+  die Schleifenbremse, vor jedem 50-s-Stück die Tagesgrenze; gesperrt → None (kein Google-Aufruf) und letzte_sperre()
+  liefert im selben Thread „grenze“/„schleife“ (die EXE behält dann das Audio und zeigt die rote Zeile).
 Der Streaming-Teil (Mikrofon → Live-Anzeige) liegt in aufnahme.py (Umbau Schritt 6).
 Tests: tests/offline/test_stt.py, sync_fixtures.json (gleiche Fälle für die Web-App).
 """
@@ -15,6 +18,7 @@ import io
 import json
 import os
 import sys
+import threading
 import urllib.request
 import wave
 
@@ -126,6 +130,23 @@ ZAEHLER = None
 # chirp-fachwortliste-n1: von der EXE gesetzt – () → True, wenn für den Befunder dieses Diktats die SpeechMagic-
 # Fachwortliste an ist (config.ini CHIRP_SM). None/Fehler → aus (nur die 85 kuratierten Phrasen, wie bisher).
 SM_AKTIV = None
+# kaiscribe-stt-tagesdeckel-n1: harter Tagesdeckel + Schleifenbremse (stt_deckel.Deckel), von der EXE gesetzt
+DECKEL = None
+_SPERRE = threading.local()
+
+
+def letzte_sperre():
+    """„grenze“ | „schleife“, wenn der letzte chirp3_worker-Aufruf in DIESEM Thread vom Deckel gestoppt wurde, sonst None."""
+    return getattr(_SPERRE, "grund", None)
+
+
+def _deckel_vorher(pcm=None):
+    if DECKEL is None:
+        return None
+    try:
+        return DECKEL.vorher(pcm)
+    except Exception:
+        return None
 
 
 def sm_aktiv():
@@ -135,10 +156,26 @@ def sm_aktiv():
         return False
 
 
+def _buchen(sekunden):
+    if ZAEHLER is not None:
+        try:
+            ZAEHLER(sekunden)
+        except Exception:
+            pass
+    if DECKEL is not None:          # tagesdeckel-n1: auch Fehlversuche/Wiederholungen zählen
+        try:
+            DECKEL.buchen(sekunden, "chirp")
+        except Exception:
+            pass
+
+
 def chirp3_worker(pcm_int16, samplerate, loc, token, request=None, sm=None):
     """Komplettes Diktat (int16-Array) → Text. 50-s-Segmente mit 4 s Rückhören (chirp_3: max. 60 s je Request).
     sm=None → Schalter SM_AKTIV der EXE; nur bei an bekommt request das Argument sm=True (alte Attrappen bleiben gültig)."""
     request = request or chirp3_request
+    _SPERRE.grund = _deckel_vorher(pcm_int16)        # tagesdeckel-n1: Schleifenbremse + Tagesgrenze vor dem Diktat
+    if _SPERRE.grund:
+        return None
     sm = sm_aktiv() if sm is None else bool(sm)
     SEG = 50 * samplerate      # 50s Segmente
     OV = 4 * samplerate        # 4s Rueckhoeren
@@ -146,13 +183,15 @@ def chirp3_worker(pcm_int16, samplerate, loc, token, request=None, sm=None):
     start = 0
     while start < len(pcm_int16):
         end = min(start + SEG, len(pcm_int16))
+        if start > 0:
+            _SPERRE.grund = _deckel_vorher()          # tagesdeckel-n1: Grenze auch mitten in einem langen Diktat
+            if _SPERRE.grund:
+                return None
         b64 = wav_b64(pcm_int16[start:end], samplerate)
-        txt = request(token, loc, b64, sm=True) if sm else request(token, loc, b64)
-        if ZAEHLER is not None:          # auch ein leeres/fehlgeschlagenes Stück hat Google bekommen
-            try:
-                ZAEHLER((end - start) / float(samplerate))
-            except Exception:
-                pass
+        try:
+            txt = request(token, loc, b64, sm=True) if sm else request(token, loc, b64)
+        finally:
+            _buchen((end - start) / float(samplerate))   # auch ein leeres/fehlgeschlagenes Stück hat Google bekommen
         if txt is None:
             return None
         texts.append(txt)

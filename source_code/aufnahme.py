@@ -15,6 +15,10 @@ Der Puffer enthält nur die aufgenommenen Abschnitte, lückenlos hintereinander 
 kaiscribe-live-anzeige-aus-kp-n1 (24.11.2026): live=False (config.ini LIVE_ANZEIGE_AUS, Standard kp) → kein Streaming-
 Thread, keine Google-Streaming-Sitzung; Puffer, Pegel und Pausen/Abschnitte bleiben genau wie bisher.
 
+kaiscribe-stt-tagesdeckel-n1 (24.11.2026): DECKEL (stt_deckel.Deckel, von der EXE gesetzt) – Tagesgrenze erreicht →
+keine neue Streaming-Sitzung, laufende Sitzung schickt nichts mehr (Puffer für chirp_3/WAV bleibt vollständig);
+die geschickten Sekunden werden je Sitzung gebucht.
+
 Ohne Windows/Google importierbar: sounddevice, Streaming-Aufruf und Request-Bau werden übergeben
 (tests/offline/test_capture.py stubbt sie).
 """
@@ -27,6 +31,14 @@ STREAM_NEUSTART_S = 240
 # kaiscribe-sonnet-n3-beleg: an den Google-Streaming-Dienst geschickte Audiosekunden (Live-Anzeige, Speech v1 latest_long)
 # → nutzung.Zaehler.stt(s, "streaming"); kostet wie Chirp, wurde bis dahin nicht gezählt
 ZAEHLER = None
+DECKEL = None
+
+
+def _deckel_erreicht():
+    try:
+        return DECKEL is not None and DECKEL.erreicht()
+    except Exception:
+        return False
 
 
 class Aufnahme:
@@ -136,10 +148,19 @@ class Aufnahme:
         """Pakete EINES Abschnitts. Ende: Zeitlimit (Rest geht in die nächste Sitzung), Stopp oder Pause (eigener Rest
         ist verschickt). Blöcke eines späteren Abschnitts bleiben für dessen Sitzung in der Warteschlange."""
         n = proben = 0
+        geprueft = 0.0
         while True:
             aktiv = self.laeuft and not self.pausiert and self.abschnitt == abschnitt
             if aktiv and time.time() >= ende:
                 break
+            if time.time() - geprueft >= 1.0:          # tagesdeckel-n1: höchstens 1× je Sekunde nachsehen
+                geprueft = time.time()
+                if _deckel_erreicht():
+                    self.log("[STT-DECKEL] Tagesgrenze erreicht – Live-Anzeige gestoppt (Aufnahme läuft weiter)")
+                    with self._lock:
+                        self.streaming_aktiv = False
+                        self._queue = []
+                    break
             with self._lock:
                 i = 0
                 while i < len(self._queue) and self._queue[i][0] == abschnitt:
@@ -161,9 +182,20 @@ class Aufnahme:
                 ZAEHLER(proben / float(self.samplerate or 16000))
             except Exception:
                 pass
+        if DECKEL is not None and proben:
+            try:
+                DECKEL.buchen(proben / float(self.samplerate or 16000), "streaming")
+            except Exception:
+                pass
 
     def _streaming(self):
         while self.streaming_aktiv and (self.laeuft or self._queue):
+            if _deckel_erreicht():
+                self.log("[STT-DECKEL] Tagesgrenze erreicht – keine Live-Anzeige (Aufnahme läuft weiter)")
+                with self._lock:
+                    self.streaming_aktiv = False
+                    self._queue = []
+                return
             if not self._queue and self.pausiert:
                 time.sleep(0.05)  # v3.8.0: in der Pause keine leere Sitzung offen halten
                 continue

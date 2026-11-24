@@ -10,7 +10,10 @@ Lauf-Dateien je Rechner/Modell/Version). Warnung, wenn
   - die eigene Hochrechnung aus den Monatszählern (source_code/nutzung.py, ab dem ersten Tag mit Daten, Chirp + Live-
     Anzeige/Streaming, sobald die EXE die Live-Sekunden zählt) > 6 € liegt
     (die EXE bis 3.19.4 teilt durch den Tag des Monats und rechnet den November viel zu niedrig).
-Dann genau EINE Kanban-Karte je Monat (Spalte peter). Dazu je Rechner der letzte Lauf (Modell, KaiScribe-Version) in den
+Dann genau EINE Kanban-Karte je Monat (Spalte peter).
+kaiscribe-stt-tagesdeckel-n1 (24.11.2026): steht im Tagesbericht (heute oder gestern) eine Zeile „STT-DECKEL <PC> …“
+(80 % der harten Tagesgrenze, Grenze erreicht oder Schleifenbremse), dann EINE Karte je Tag und PC für Hermes (Spalte
+tun, nicht Peter): nachsehen, warum so viel Audio an Google ging. Dazu je Rechner der letzte Lauf (Modell, KaiScribe-Version) in den
 Zustand; schreibt ein Rechner noch über Gemini (ohne „Rückfall“) oder mit KaiScribe < 3.19.0, einmal je Rechner und
 Version die Karte „KaiScribe an <PC> einmal schließen/neu starten“. Zustand: ~/.hermes/work/kaiscribe-chirp/zustand.json und Titelsuche
 in der Kartei (falls der Zustand fehlt). Keine Google-Quota-Änderung, keine Meldung.
@@ -73,6 +76,7 @@ def auswerten(aus, tag):
     monat = tag[:7]
     alle, laeufe = {}, []
     warn_datei, bericht, im_bericht = False, [], None
+    deckel = []      # tagesdeckel-n1: (tag, zeile) aus den Tagesberichten von heute und gestern
     for z in aus.splitlines():
         m = re.match(r"^NUTZUNG (\d{4}-\d\d) (\S+) (\d{4}-\d\d-\d\d) (.*)$", z)
         if m and m.group(1) == monat:
@@ -96,6 +100,8 @@ def auswerten(aus, tag):
         if z.startswith("TAGESBERICHT "):
             im_bericht = z.split()[1]
             continue
+        if z.startswith("| STT-DECKEL ") and im_bericht:
+            deckel.append((im_bericht, z[2:]))
         if z.startswith("| ") and im_bericht == tag:
             bericht.append(z[2:])
         elif not z.startswith("| "):
@@ -107,7 +113,7 @@ def auswerten(aus, tag):
     return {"monat": monat, "tag": tag, "chirp_min": chirp_s / 60.0, "stream_min": stream_s / 60.0,
             "eur": nutzung.chirp_eur(chirp_s) + nutzung.stream_eur(stream_s), "hoch_eur": hoch,
             "tage": nutzung.gezaehlte_tage(tag, erster), "erster": erster, "pcs": alle, "laeufe": laeufe,
-            "bericht": bericht, "warn_exe": warn_datei or any(b.startswith("WARNUNG") for b in bericht),
+            "bericht": bericht, "deckel": deckel, "warn_exe": warn_datei or any(b.startswith("WARNUNG") for b in bericht),
             "warn_eigen": nutzung.warnung_noetig(hoch, tag, erster)}
 
 
@@ -161,6 +167,41 @@ def karte_anlegen(e):
         json.dump(z, f, ensure_ascii=False, indent=1)
     os.replace(ZUSTAND + ".tmp", ZUSTAND)
     return r.stdout.strip()
+
+
+DECKEL_TITEL = "KaiScribe: Tagesdeckel Spracherkennung {pc} {tag}"
+
+
+def deckel_karten(e, anlegen=True):
+    """tagesdeckel-n1: je (Tag, PC) mit „STT-DECKEL“-Zeile EINE Karte für Hermes (Spalte tun). Rückgabe: neue Schlüssel."""
+    z = _zustand()
+    schon = z.setdefault("deckel_karten", {})
+    neu = []
+    for tag, zeile in e.get("deckel") or []:
+        m = re.match(r"^STT-DECKEL (\S+?):", zeile)
+        pc = m.group(1) if m else "?"
+        schluessel = "%s %s" % (tag, pc)
+        if schluessel in schon or schluessel in neu:
+            continue
+        if anlegen:
+            r = subprocess.run([sys.executable, KANBAN, "neu", DECKEL_TITEL.format(pc=pc, tag=tag), "--tun",
+                                "--was", "%s (Tagesbericht %s). Harte Schutzgrenze aus config.ini STT_TAGESDECKEL_MIN "
+                                "(Standard 240 min/PC/Tag), normal 15–30 min. Prüfen: rakscribe.log am PC (Zeilen "
+                                "[STT-DECKEL]), Schleife/Wiederholungen? Zähler %%APPDATA%%\\KaiScribe\\"
+                                "stt_tagesdeckel_<PC>.json, gesicherte Aufnahmen %%APPDATA%%\\KaiScribe\\nicht_erkannt."
+                                % (zeile, tag),
+                                "--kurz", "KaiScribe Tagesdeckel %s" % pc, "--auftrag", "kaiscribe-stt-tagesdeckel"],
+                               capture_output=True, text=True, timeout=60)
+            if r.returncode:
+                raise RuntimeError("kanban.py neu (Deckel): " + (r.stdout + r.stderr).strip()[-300:])
+            schon[schluessel] = datetime.datetime.now().isoformat(timespec="minutes")
+        neu.append(schluessel)
+    if anlegen and neu:
+        os.makedirs(os.path.dirname(ZUSTAND), exist_ok=True)
+        with open(ZUSTAND + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(z, f, ensure_ascii=False, indent=1)
+        os.replace(ZUSTAND + ".tmp", ZUSTAND)
+    return neu
 
 
 MIN_VERSION = (3, 19, 0)
@@ -237,10 +278,12 @@ def main(argv=None):
         if warn:
             print("KARTE (trocken): " + karte_text(e))
         print("ALTE_RECHNER %s" % (", ".join(rechner_merken(e, anlegen=False)) or "keine"))
+        print("DECKEL %s" % (", ".join(deckel_karten(e, anlegen=False)) or "keine"))
         return 0
     if warn and not karte_schon_da(e["monat"]):
         karte_anlegen(e)      # still: die Karte selbst ist die Meldung
     rechner_merken(e)
+    deckel_karten(e)          # tagesdeckel-n1: Karte für Hermes, nicht für Peter
     return 0
 
 
