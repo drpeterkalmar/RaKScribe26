@@ -3,7 +3,7 @@
 Auftrag Peter 24.11.: „1 ok, 2 ich vertraue dir, 3+4 ok, wenn gut bitte auch rg“. Grundlage: BERICHT_speechmagic-daten-inventur-n1
 (ris-mods, Kanban #526).
 
-**Kurz:** Die Liste ist gebaut (316 Einträge), maschinell auf Namen gefiltert und als Schalter je Kürzel eingebaut. Der
+**Kanban #557.** **Kurz:** Die Liste ist gebaut (316 Einträge), maschinell auf Namen gefiltert und als Schalter je Kürzel eingebaut. Der
 Schalter steht für alle auf **aus**. Gemessen habe ich im Testprojekt, Kosten unter dem Deckel von 5 €. Bei rg werden die Fehler
 weniger, aber noch nicht sicher belegt. Bei kp gibt es nur 6 Fälle mit Audio, und die werden mit Liste eher schlechter. Nach der
 Regel im Auftrag („wenn nicht besser: Schalter aus lassen“) ist deshalb nichts eingeschaltet: kein kp-Release, kein rg, keine
