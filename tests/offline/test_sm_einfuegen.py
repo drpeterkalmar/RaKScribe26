@@ -242,6 +242,63 @@ oeffnen(api, uhr, hwnd=101, pid=8, text=api.texte["E100"])
 takte(w, uhr, 50, 1.0)
 check("Wiederöffnen derselben Nummer → nichts doppelt (Merker)", len(api.einfuege_aufrufe) == 1, api.einfuege_aufrufe)
 
+# ── opus-senf-abgleich-ibl-vara-n1-einspielen: Abgleich IB Lab/Vara (a_…), später v 1 → 2 ──
+A_E = {"id": "a_0123456789ab", "art": "Abgleich", "befund": "", "zeilen": ["Vara: neutral (Score 50/100)"],
+       "abgleich": [{"art": "zusatz", "modul": "kl", "text": "IB Lab: KL 3 re."}]}
+UN1 = {"v": 1, "nr": NR, "status": "fertig", "zeit": "2026-11-24T20:00:00", "befund": "unauffaellig", "zeilen": [],
+       "weitere_laufen": False, "eintraege": []}
+UN2 = dict(UN1, v=2, eintraege=[A_E])
+check("senf_zeilen unauffällig + a_-Eintrag: Vara-Zeile nach „[SENF] unauffällig“, „IB Lab:“ nur ohne SM_IBL",
+      M.senf_zeilen(UN2, False) == ("fertig", ["[SENF] unauffällig", "[SENF] Vara: neutral (Score 50/100)", "[SENF] IB Lab: KL 3 re."])
+      and M.senf_zeilen(UN2, True) == ("fertig", ["[SENF] unauffällig", "[SENF] Vara: neutral (Score 50/100)"]), M.senf_zeilen(UN2, True))
+w, api, uhr, logs, warn, senf_box = neu_waechter(senf=UN1)
+takte(w, uhr, 1)
+oeffnen(api, uhr)
+takte(w, uhr, 3)
+check("v1 unauffällig → nur „[SENF] unauffällig“ im Diktat", api.texte["E100"].strip().endswith("[SENF] unauffällig") and "Vara" not in api.texte["E100"],
+      api.texte["E100"])
+senf_box["d"] = UN2
+takte(w, uhr, 40, 1.0)
+t = api.texte["E100"]
+check("Abgleich kommt später (v 2): GENAU eine Zeile „Vara“ nachgefügt, kein „IB Lab:“ (SM_IBL aktiv), Status nicht doppelt",
+      t.count("Vara: neutral (Score 50/100)") == 1 and "IB Lab" not in t and t.count("unauffällig") == 1
+      and len(api.einfuege_aufrufe) == 2, (t, api.einfuege_aufrufe))
+check("… Merker senf:v1 + senf:v2", {"senf:v1", "senf:v2"} <= set(w.merker.lesen(NR)["eingefuegt"]), w.merker.lesen(NR))
+takte(w, uhr, 60, 1.0)
+check("… weitere Takte fügen nichts mehr ein", len(api.einfuege_aufrufe) == 2)
+# Übernehmen (Marken weg) + Wiederöffnen mit demselben Merker → v2 nicht noch einmal
+api.texte["E100"] = M.ohne_marken(api.texte["E100"])
+schliessen(api)
+takte(w, uhr, 2)
+uhr.t += 120
+oeffnen(api, uhr, hwnd=101, pid=8, text=api.texte["E100"])
+takte(w, uhr, 60, 1.0)
+check("Wiederöffnen: Merker senf:v2 → nichts doppelt", len(api.einfuege_aufrufe) == 2, api.einfuege_aufrufe)
+# Wiederöffnen, Text ohne die Zeile (Peter hat sie gelöscht), v 3 mit neuer Zeile → nur die neue
+senf_box["d"] = dict(UN2, v=3, eintraege=[dict(A_E, zeilen=["Vara: neutral (Score 50/100)", "⚠ Prüfen: Seite re."])])
+takte(w, uhr, 40, 1.0)
+check("v 3: nur die neue ⚠-Zeile wird nachgefügt (Vara-Zeile steht schon als „Vara…“ ohne Marke)",
+      api.texte["E101"].count("⚠ Prüfen: Seite re.") == 1 and len(api.einfuege_aufrufe) == 3, api.texte["E101"])
+# kp ohne SM_IBL: „IB Lab:“-Zusatz wird mit eingefügt
+cfg2 = types.SimpleNamespace(sm_senf=["kp"], sm_ibl=[], senf_ordner="S", ibl_ablage=ABL,
+                             sm_schalter_ordner=os.path.join(tmp, "Bruecke"))
+w, api, uhr, logs, warn, senf_box = neu_waechter(cfg=cfg2, senf=UN1)
+takte(w, uhr, 1)
+oeffnen(api, uhr)
+takte(w, uhr, 3)
+senf_box["d"] = UN2
+takte(w, uhr, 40, 1.0)
+check("SM_IBL aus: „IB Lab: KL 3 re.“ kommt über den Senf-Abgleich", "[SENF] IB Lab: KL 3 re." in api.texte["E100"], api.texte["E100"])
+# Nachlese endet 15 min nach dem Öffnen
+w, api, uhr, logs, warn, senf_box = neu_waechter(senf=UN1)
+takte(w, uhr, 1)
+oeffnen(api, uhr)
+takte(w, uhr, 3)
+uhr.t += 901
+senf_box["d"] = UN2
+takte(w, uhr, 10, 1.0)
+check("nach 15 min keine Nachlese mehr", len(api.einfuege_aufrufe) == 1, api.einfuege_aufrufe)
+
 # sm-senf-laenge-n1 (Peter 23.11.2026, RH 146): bis 3.22.5 hart bei 300 Zeichen abgeschnitten („… stationär. (V“)
 LANG = ("Gelenkerguss im oberen Rezessus mit synovialer Verdickung, Fabella ohne Reizzeichen, keine Fraktur. " * 4
         + "Vergleich zur Voruntersuchung stationär. (Verlauf empfohlen)")

@@ -131,9 +131,17 @@ def senf_kuerzen(z, grenze=SENF_ZEILE_MAX):
     return (kopf[:pos] if pos > 0 else kopf).rstrip() + " …"
 
 
-def senf_zeilen(d):
+IBL_PRAEFIX = re.compile(r"^\s*IB\s*Lab\s*:", re.I)
+NACH_NACHLADEN_S = 15      # opus-senf-abgleich-ibl-vara-n1-einspielen: nach dem Einfügen weiterlesen, alle 15 s …
+NACH_MAX_S = 900           # … bis 15 min nach dem Öffnen
+_V_SCHLUESSEL = re.compile(r"^senf:v(\d+)$")
+
+
+def senf_zeilen(d, ibl_an=False):
     """Ablage-Inhalt (dict) → ("fertig", [Zeilen fürs Diktat]) | ("warten", []) | ("nichts", []).
-    Nur „fertig“ ergibt Text; solange weitere Serien laufen, wird gewartet."""
+    Nur „fertig“ ergibt Text; solange weitere Serien laufen, wird gewartet. Abgleich mit IB Lab/Vara (Eintrag a_…):
+    bei „unauffällig“ kommen dessen Zeilen nach „[SENF] unauffällig“. Zeilen „IB Lab: …“ NIE, wenn SM_IBL für den
+    Benutzer aktiv ist (der IB-Lab-Satz kommt schon über SM_IBL → keine Dopplung)."""
     if not isinstance(d, dict):
         return "warten", []
     st = str(d.get("status") or "").strip().lower()
@@ -145,9 +153,15 @@ def senf_zeilen(d):
         return "warten", []
     bef = str(d.get("befund") or "").strip().lower()
     zeilen = [z for z in (" ".join(str(x).split()) for x in (d.get("zeilen") or [])) if z and not _MESS.match(z)]
+    az, zus = _senf.abgleich_extras(d)
+    if bef == "unauffaellig":
+        zeilen = []                         # bisher: nur der feste Text – jetzt zusätzlich der Abgleich (a_…), sonst nichts
+    zeilen += [z for z in az + zus if z not in zeilen and not _MESS.match(z)]
+    if ibl_an:
+        zeilen = [z for z in zeilen if not IBL_PRAEFIX.match(z)]
     zeilen = [z for z in (senf_kuerzen(senf_inhalt(x)) for x in zeilen) if z][:6]
     if bef == "unauffaellig":
-        return "fertig", [SENF_UNAUFFAELLIG]
+        return "fertig", [SENF_UNAUFFAELLIG] + [SENF_FOLGE + z for z in zeilen]
     if bef == "nicht_beurteilbar":
         return "fertig", [SENF_NICHT_BEURTEILBAR] + [SENF_FOLGE + z for z in zeilen]
     if not zeilen:
@@ -350,6 +364,10 @@ class Sitzung:
         self.text = ""
         self.text_zeit = 0.0
         self.senf_eingefuegt = False
+        self.senf_v = None                      # Datei-Feld „v“, bis zu dem der Senf schon im Diktat steht (None = unbekannt)
+        self.senf_bekannt = set()               # Senf-Zeilen, die schon einmal eingefügt/gesehen wurden (nie wieder anbieten)
+        self.senf_nach = 0.0                    # nächste Nachlese nach dem Einfügen
+        self.senf_offen_v = None                # „v“ der gerade offenen (noch nicht eingefügten) Zeilen
         self.mikro_gemeldet = None
         self.edit = None
 
@@ -498,6 +516,9 @@ class Waechter:
         if "senf" in d["eingefuegt"]:
             s.senf_fertig = True
             s.senf_eingefuegt = True
+        vs = [int(m.group(1)) for m in (_V_SCHLUESSEL.match(k) for k in d["eingefuegt"]) if m]
+        if vs:
+            s.senf_v = max(vs)
         s.ibl_erledigt = {k for k in d["eingefuegt"] if k.startswith("ibl:")}
         self.log(f"[SM] {p['nr']}: SpeechMagic-Diktat ({benutzer}) erkannt – Senf {'an' if senf_an else 'aus'}, "
                  f"IB Lab {'an' if ibl_an else 'aus'}" + (", schon einmal eingefügt" if d["eingefuegt"] else ""))
@@ -538,12 +559,37 @@ class Waechter:
         if not s.senf_fertig and not s.senf_offen and jetzt >= s.senf_naechst:
             s.senf_naechst = jetzt + _senf.NACHLADEN_S
             art, d = self.lese_senf(getattr(self.cfg, "senf_ordner", _senf.SENF_ORDNER_STANDARD), s.nr)
-            zust, zeilen = senf_zeilen(d) if art == "da" else (("nichts", []) if art == "aus" else ("warten", []))
+            zust, zeilen = senf_zeilen(d, s.ibl_an) if art == "da" else (("nichts", []) if art == "aus" else ("warten", []))
             if zust == "fertig":
                 s.senf_offen = zeilen
+                s.senf_offen_v = _senf.datei_v(d)
+                s.senf_bekannt |= set(zeilen)
             elif zust == "nichts" or jetzt - s.t0 > _senf.NACHLADEN_MAX_S:
                 s.senf_fertig = True
                 self.log(f"[SM] {s.nr}: kein Senf zum Einfügen ({art if zust != 'nichts' else 'kein Ergebnis'})")
+        # Abgleich später (IB Lab/Vara kam nach dem Senf): „v“ steigt → nur neue Zeilen nachfügen, Merker senf:v<v>
+        if s.senf_an and s.senf_fertig and not s.senf_offen and jetzt >= s.senf_nach and jetzt - s.t0 <= NACH_MAX_S:
+            s.senf_nach = jetzt + NACH_NACHLADEN_S
+            art, d = self.lese_senf(getattr(self.cfg, "senf_ordner", _senf.SENF_ORDNER_STANDARD), s.nr)
+            if art == "da":
+                v = _senf.datei_v(d)
+                if s.senf_v is None:
+                    s.senf_v = s.senf_offen_v if s.senf_offen_v is not None else v     # Grundlage: nichts „nachholen“
+                    if s.senf_offen_v is None:
+                        s.senf_bekannt |= set(senf_zeilen(d, s.ibl_an)[1])
+                elif v > s.senf_v:
+                    zust, zeilen = senf_zeilen(d, s.ibl_an)
+                    if zust == "fertig":
+                        da = _zeilen_im_text(s.text)
+                        nach = [z for z in zeilen if z not in s.senf_bekannt
+                                and z not in (SENF_UNAUFFAELLIG, SENF_NICHT_BEURTEILBAR)
+                                and " ".join(z.replace(SENF_FOLGE, "").split()) not in da]
+                        s.senf_bekannt |= set(zeilen)
+                        k = f"senf:v{v}"
+                        s.senf_v = v
+                        if k not in s.ibl_erledigt and nach:
+                            s.ibl_offen[k] = nach     # läuft über denselben Weg wie IB-Lab-Sätze (Merker, Mikro, Cursor)
+                            self.log(f"[SM] {s.nr}: Senf Abgleich später (v{v}) – {len(nach)} Zeile(n) nachfügen")
         # IB Lab
         if s.ibl_an and jetzt >= s.ibl_naechst and jetzt - s.t0 <= IBL_MAX_S:
             s.ibl_naechst = jetzt + IBL_NACHLADEN_S
@@ -578,7 +624,8 @@ class Waechter:
             self.log(f"[SM] {s.nr}: {', '.join(weg)} schon eingefügt (Merker) – nicht noch einmal")
             if not s.senf_offen and not s.ibl_offen:
                 return
-        schluessel = list(s.ibl_offen) + (["senf"] if s.senf_offen else [])
+        schluessel = list(s.ibl_offen) + (["senf"] + ([f"senf:v{s.senf_offen_v}"] if s.senf_offen_v else [])
+                                          if s.senf_offen else [])
         zeilen = [z for k in s.ibl_offen for z in s.ibl_offen[k]] + list(s.senf_offen)
         text = self.api.text(s.edit)
         if text is None:

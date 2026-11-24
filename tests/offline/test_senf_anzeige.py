@@ -135,14 +135,14 @@ def lauf(v, t0=1000.0, schritte=200):
 v = senf.Verfolgung("a", "20261121003", A, 1000.0, lese=Lese(("da", {"status": "fertig", "befund": "auffaellig",
                                                                    "zeilen": [SENF_ZEILE]})), starte=sofort)
 out, ende = lauf(v)
-check("Verfolgung: Ergebnis gleich da → Zeile, fertig (kein Nachladen)",
-      out == [(0, ("fertig", SENF_ZEILE))] and ende == 0, (out, ende))
+check("Verfolgung: Ergebnis gleich da → Zeile; danach nur noch Nachlese alle 15 s bis 15 min (Abgleich später), keine neue Anzeige",
+      out == [(0, ("fertig", SENF_ZEILE))] and ende == 900.0, (out, ende))
 le = Lese(("fehlt", None), ("da", {"status": "laeuft"}), ("da", {"status": "laeuft"}),
           ("da", {"status": "fertig", "befund": "unauffaellig", "zeilen": []}))
 v = senf.Verfolgung("a", "20261121004", A, 1000.0, lese=le, starte=sofort)
 out, ende = lauf(v)
-check("Verfolgung: keine Datei → „läuft“, alle 5 s nachladen (sm-waechter-bleibt-n1, vorher 15 s), Ergebnis eingeblendet, dann Schluss",
-      out == [(0, ("laeuft", "Senf läuft…")), (15.0, ("fertig", "Senf: unauffällig"))] and ende == 15.0 and le.n == 4,
+check("Verfolgung: keine Datei → „läuft“, alle 5 s nachladen (sm-waechter-bleibt-n1, vorher 15 s), Ergebnis eingeblendet, dann Nachlese",
+      out == [(0, ("laeuft", "Senf läuft…")), (15.0, ("fertig", "Senf: unauffällig"))] and ende == 900.0 and le.n >= 4,
       (out, ende, le.n))
 # kaiscribe-sm-waechter-bleibt-n1 (23.11., RH 20): Auftrag 08:40:13, Senf fertig 08:42:04 (+111 s), EOL 08:42:12 (+119 s).
 # Mit 15 s gelesen bei +105 und +120 → verpasst; mit 5 s spätestens bei +115 → vor EOL im Feld.
@@ -173,6 +173,35 @@ out, ende = lauf(v)
 check("Verfolgung: läuft länger als 10 min → aufhören, „Senf: kein Ergebnis“, höchstens 121 Lesungen",
       out[0] == (0, ("laeuft", "Senf läuft…")) and out[-1][1] == ("kein", "Senf: kein Ergebnis")
       and ende is not None and ende <= 600 and le.n <= 121, (out, ende, le.n))
+# opus-senf-abgleich-ibl-vara-n1-einspielen: Abgleich IB Lab/Vara (Eintrag a_…), später v 1 → 2
+A_V1 = {"id": "a_0123456789ab", "art": "Abgleich", "befund": "", "zeilen": ["Vara: neutral (Score 50/100)"], "pruefen": False,
+        "abgleich": [{"art": "zusatz", "modul": "kl", "text": "IB Lab: KL 3 re."}, {"art": "vara", "modul": "vara", "text": "x"}]}
+d_un = {"status": "fertig", "befund": "unauffaellig", "zeilen": [], "v": 1, "eintraege": [A_V1]}
+check("Anzeige unauffällig + Abgleich: Vara-Zeile und IB-Lab-Übereinstimmung unter „Senf: unauffällig“",
+      senf.anzeige(d_un) == ("fertig", "Senf: unauffällig\nVara: neutral (Score 50/100)\nIB Lab: KL 3 re."), senf.anzeige(d_un))
+check("Anzeige unauffällig ohne a_-Eintrag bleibt „Senf: unauffällig“",
+      senf.anzeige({"status": "fertig", "befund": "unauffaellig", "eintraege": [{"id": "f_1", "zeilen": ["x"]}]})
+      == ("fertig", "Senf: unauffällig"))
+d_pr = {"status": "fertig", "befund": "auffaellig", "v": 2, "zeilen": ["⚠ Prüfen: Seite", SENF_ZEILE],
+        "eintraege": [dict(A_V1, zeilen=["⚠ Prüfen: Seite", "Vara: suspekt (Score 84/100)"], pruefen=True)]}
+t = senf.anzeige(d_pr)[1].split("\n")
+check("Anzeige auffällig + Abgleich: keine doppelten Zeilen, Vara-Zeile dabei", t.count("⚠ Prüfen: Seite") == 1
+      and "Vara: suspekt (Score 84/100)" in t and SENF_ZEILE in t, t)
+A_V2 = dict(A_V1, zeilen=["Vara: neutral (Score 50/100)"])
+d_v1 = {"status": "fertig", "befund": "unauffaellig", "zeilen": [], "v": 1, "eintraege": []}
+d_v2 = dict(d_v1, v=2, eintraege=[A_V2])
+le = Lese(("da", d_v1), ("da", d_v1), ("da", d_v1), ("da", d_v2))
+v = senf.Verfolgung("a", "20261121008", A, 1000.0, lese=le, starte=sofort)
+out, ende = lauf(v)
+check("Verfolgung: fertig v1 → nach 15 s Nachlese höheres v → Feld zeigt die Vara-Zeile (genau einmal neu)",
+      out == [(0, ("fertig", "Senf: unauffällig")),
+              (45.0, ("fertig", "Senf: unauffällig\nVara: neutral (Score 50/100)\nIB Lab: KL 3 re."))] and ende == 900.0, (out, ende))
+le = Lese(("da", d_v2), ("da", d_v1))
+v = senf.Verfolgung("a", "20261121008", A, 1000.0, lese=le, starte=sofort)
+out, ende = lauf(v)
+check("Verfolgung: niedrigeres v später (alte Spiegelung) → Anzeige bleibt", len(out) == 1 and "Vara" in out[0][1][1], out)
+v = senf.Verfolgung("a", "20261121009", A, 1000.0, lese=Lese(("da", d_v1)), starte=sofort)
+check("Verfolgung: Nachlese endet 15 min nach dem Öffnen", lauf(v)[1] == 900.0)
 le = Lese(("aus", None))
 v = senf.Verfolgung("a", "20261121006", A, 1000.0, lese=le, starte=sofort)
 out, ende = lauf(v)
@@ -314,7 +343,7 @@ def neue_app():
     def after(ms, fn=None, *a):
         if ms == senf.PRUEF_MS:
             time.sleep(0.005)
-        (app._spaet if ms == senf.NACHLADEN_S * 1000 else app._queue).append((fn, a))
+        (app._spaet if ms >= senf.NACHLADEN_S * 1000 else app._queue).append((fn, a))
     app.after = after
     app._cas, app._cas_aufnahmen, app._cas_test = None, [], False
     app._cas_kanal = cas.Kanal(ORDNER, pid=777, version="3.20.6", prozess_lebt=lambda pid: True)

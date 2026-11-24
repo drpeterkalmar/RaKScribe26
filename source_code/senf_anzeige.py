@@ -27,6 +27,8 @@ LESE_FRIST_S = 1.0          # länger → wie „keine Ablage“ (Feld aus), der
 NACHLADEN_S = 5             # solange „läuft“ bzw. noch keine Datei: alle 5 s (kaiscribe-sm-waechter-bleibt-n1, vorher
                             # 15 s: RH 20 am 23.11. kam der Senf 8 s vor EOL und wurde knapp verpasst)
 NACHLADEN_MAX_S = 600       # … höchstens 10 min nach dem Öffnen
+NACH_FERTIG_S = 15          # opus-senf-abgleich-ibl-vara-n1-einspielen: auch nach „fertig“ weiterlesen (IB Lab/Vara kommt später,
+NACH_FERTIG_MAX_S = 900     # Datei-Feld „v“ zählt hoch) – alle 15 s, höchstens 15 min nach dem Öffnen
 PRUEF_MS = 100              # wie oft der UI-Takt auf den Lese-Thread schaut (nur Abfrage, kein Warten)
 MAX_ZEICHEN = 2000          # Schutz gegen eine kaputte/riesige Datei
 
@@ -127,6 +129,32 @@ def _zeilen(d):
     return out
 
 
+def datei_v(d):
+    try:
+        return int(d.get("v") or 0) if isinstance(d, dict) else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def abgleich_extras(d):
+    """Eintrag(e) a_… (Abgleich mit IB Lab + Vara, ris-mods opus_senf 1.11.0) → (zeilen, zusaetze). zeilen = „⚠ Prüfen: …“,
+    „Vara: …“; zusaetze = Texte aus `abgleich` mit art „zusatz“ („IB Lab: KL 3 re.“). Ohne Eintrag ([], [])."""
+    zeilen, zus = [], []
+    for e in (d.get("eintraege") if isinstance(d, dict) else None) or []:
+        if not isinstance(e, dict) or not str(e.get("id") or "").startswith("a_"):
+            continue
+        for z in e.get("zeilen") or []:
+            z = " ".join(str(z).split())
+            if z and z not in zeilen:
+                zeilen.append(z)
+        for a in e.get("abgleich") or []:
+            if isinstance(a, dict) and str(a.get("art") or "").lower() == "zusatz":
+                t = " ".join(str(a.get("text") or "").split())
+                if t and t not in zus:
+                    zus.append(t)
+    return zeilen, zus
+
+
 def anzeige(d):
     """Ablage-Inhalt → (zustand, text). zustand: laeuft | fertig | kein."""
     if not isinstance(d, dict):
@@ -146,6 +174,11 @@ def anzeige(d):
         text = "\n".join([TEXT_NICHT_BEURTEILBAR] + zeilen)
     else:
         text = "\n".join(zeilen) if zeilen else TEXT_KEIN
+    az, zus = abgleich_extras(d)            # Abgleich mit IB Lab/Vara: auch bei „unauffällig“ zeigen (z. B. die Vara-Zeile)
+    vorhanden = set(text.split("\n"))
+    extra = [z for z in az + zus if z not in vorhanden]
+    if extra:
+        text += "\n" + "\n".join(extra)
     if d.get("weitere_laufen"):
         text += "\n" + TEXT_WEITERE
     return FERTIG, text[:MAX_ZEICHEN]
@@ -173,6 +206,7 @@ class Verfolgung:
         self.text = ""
         self.lesungen = 0
         self.zeitueberschreitungen = 0
+        self.fertig_v = None       # Datei-Feld „v“ der zuletzt angezeigten fertigen Fassung (None = noch keine)
 
     def _lesen_starten(self, jetzt):
         lauf = {"start": jetzt, "ergebnis": None, "fertig": False}
@@ -203,6 +237,8 @@ class Verfolgung:
             return self._weiter(jetzt, ("aus", ""))
         self._lauf = None
         art, d = lauf["ergebnis"] or ("aus", None)
+        if self.fertig_v is not None:                 # schon fertig angezeigt → nur noch auf höheres „v“ achten
+            return self._nach_fertig(jetzt, art, d)
         if art == "aus":
             return self._setzen(("aus", "")), None     # keine Ablage/kein Laufwerk → Feld aus, nicht weiter nachfragen
         if art == "fehlt":
@@ -212,7 +248,24 @@ class Verfolgung:
             return self._weiter(jetzt, (zustand, text))
         if zustand == LAEUFT:
             return self._weiter(jetzt, (zustand, text))
+        if zustand == FERTIG:
+            self.fertig_v = datei_v(d)
+            return self._nach_fertig(jetzt, None, None, (zustand, text))
         return self._setzen((zustand, text)), None
+
+    def _nach_fertig(self, jetzt, art, d, neu=None):
+        """Nach „fertig“: bis NACH_FERTIG_MAX_S nach dem Öffnen alle NACH_FERTIG_S weiterlesen; bei höherem „v“ neu zeigen."""
+        anz = None
+        if neu is not None:
+            anz = self._setzen(neu)
+        elif art == "da" and isinstance(d, dict) and datei_v(d) > self.fertig_v:
+            zustand, text = anzeige(d)
+            if zustand == FERTIG:
+                self.fertig_v = datei_v(d)
+                anz = self._setzen((zustand, text))
+        if jetzt - self.t0 + NACH_FERTIG_S > NACH_FERTIG_MAX_S:
+            return anz, None
+        return anz, int(NACH_FERTIG_S * 1000)
 
     def _weiter(self, jetzt, a):
         """Noch nicht endgültig: in NACHLADEN_S wieder — außer die 10 min sind um."""
