@@ -70,3 +70,10 @@ lehnt die Queue den Nachtrag ab, als eigener Folgeauftrag `kaiscribe-ohne-gemini
 ordi,automaten-vm`). Inhalt: `FOLGEJOB-KAISCRIBE-OHNE-GEMINI-N1-EINSPIELEN.md`. EXE: Vorabversion `test-<Lauf>` aus
 `build-exe.yml` (main, VERSION 3.24.0), Release Latest erst nach grüner Abnahme.
 Arbeitsdateien Teil 1: `~/cj/work/kaiscribe-ohne-gemini-n1/` (Testliste, Versions-Skript).
+
+**Stand nach Teil 1 (Di 24.11.2026 ~02:15):** main 701ef1c = 3.24.0. GitHub: Tests ✅, Build Windows EXE ✅, Windows
+UI-Test (EXE) ✅, Web-Deploy ✅ (automatischer Lauf am Bereitstellungs-Schritt gescheitert wie schon bei 546dbef, von Hand
+neu angestoßen → grün). **Web live belegt:** Bundle `index-CWWduZKJ.js` enthält 3.24.0, `ki_rueckfall`, „ohne KI (kein
+Rückfall)“ und den Prüfzeilen-Wortlaut. **EXE-Vorabversion `test-45301484134`** (nicht Latest), Asset `KaiScribe.exe` /
+`rakscribe26.exe`, sha256 `3b280598e86f34375e47241219e7a6fe1bc25cf411f9be0613299a8e0403528d`. Nachtrag an
+`sm-senf-laenge-n1-einspielen` gesetzt (Queue: angenommen, Job wartet) → dort ein Einspielen 3.24.0 statt 3.22.6.
