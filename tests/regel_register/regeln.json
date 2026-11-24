@@ -2040,6 +2040,154 @@
     ]
    },
    "notiz": "Rückweg: KI_RUECKFALL = an (config.ini) bzw. localStorage ki_rueckfall = an (Web). Handschalter LLM_ANBIETER = gemini bleibt. Spracherkennung (Chirp/Google STT) nicht betroffen."
+  },
+  {
+   "id": "ursula-prozent",
+   "titel": "Zahl + „-prozentig“ → „%ig“ („50-prozentiger“ → „50%iger“, auch „50 %-ige“, „50prozentige“), Befund und Ergebnis",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkt 4b (RH 44/92/106)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_PROZENTIG = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const PROZENTIG = "
+    ],
+    "befund_regeln_fixtures.json": [
+     "4b 50-prozentige → 50%ige (Befund + Ergebnis)"
+    ]
+   }
+  },
+  {
+   "id": "ursula-ws-ohne-seite",
+   "titel": "Wirbelsäule bekommt nie eine Seite in der Überschrift („HWS beidseits in 2 Ebenen“ → „HWS in 2 Ebenen“); diktierte Seite im Befundsatz bleibt; Titel mit paariger Region („LWS sowie Hüftgelenk links“) bleibt",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkt 4c",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_WS_PAARIG = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const WS_PAARIG = "
+    ],
+    "tests/offline/test_ursula_2011.py": [
+     "4c: HWS-Überschrift ohne „beidseits“"
+    ]
+   }
+  },
+  {
+   "id": "ursula-im-uebrigen-folge",
+   "titel": "„Im Übrigen …“ nicht mehrfach hintereinander: ein weiterer „Im Übrigen“-Satz ohne neue Pathologie dazwischen verliert das „Im Übrigen“ (Vorlagensatz zurück); nach einer neuen Pathologie bleibt es (georg-fraktur-kortikalis)",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkt 4a (Ursache: Widerspruchs-Wächter schränkt jeden widersprechenden Normalsatz einzeln mit „Im Übrigen“ ein)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def _uebrigen_folge(L, templates):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const uebrigenFolge = (L: Zeilen, templates?: VorlagenMap)"
+    ],
+    "befund_regeln_fixtures.json": [
+     "4a Gegenprobe: neue Pathologie dazwischen – zweites „Im Übrigen“ bleibt"
+    ]
+   }
+  },
+  {
+   "id": "ursula-schreibweisen",
+   "titel": "Schreibweisen nach der KI: „trochanter(e)“ als Adjektiv → „trochantär(e)“ (auch per-/inter-/sub-/peri-), „Trochanter major“/„Bursitis trochanterica“ bleiben; „Verklakung“ → „Verkalkung“",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkte 3 (RH 41) und 7 (RH 55)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_TROCHANTER = re.compile(",
+     "_VERKLAKUNG = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const TROCHANTER = ",
+     "const VERKLAKUNG = "
+    ],
+    "befund_regeln_fixtures.json": [
+     "3 Gegenprobe: Trochanter major, Bursitis trochanterica, Trochanterregion bleiben"
+    ]
+   }
+  },
+  {
+   "id": "ursula-th-wirbel",
+   "titel": "Brustwirbel „Th“ + Zahl (Th12, Th11/12) – „TH12“/„Th 12“ nach der KI → „Th12“; „T1-gewichtet“, „BWK 12“ bleiben (vor der KI schon Fehlhör-Liste DH/TH → Th)",
+   "quelle": "Peter Kalmar 23.11.2026 (Nachtrag Hermes 18:08, vorläufig: „eher Th, nicht wichtig“; Georg gefragt) – Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkt 10 (RH 59)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "_TH_WIRBEL = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "const TH_WIRBEL = "
+    ],
+    "misheard_words.json": [
+     "\"note\": \"Brustwirbel IMMER 'Th' + Zahl\""
+    ]
+   },
+   "notiz": "Widerspricht Georg per Nachtrag, gilt seine Antwort (eine Zeile in _TH_WIRBEL/TH_WIRBEL)."
+  },
+  {
+   "id": "ursula-ergebnis-kein-titel",
+   "titel": "Ergebnistext nie als Überschrift: „## <Satz>.“/„## 1. …“ im Ergebnis → Text, „## Ergebnis: Text“ → Überschrift + Text; folgt „## Befund“/„## Ergebnis“, bleibt es ein Untersuchungstitel („Hüftgelenke bds. ap/ax.“)",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkt 1 (RH 31, RH 119)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def ergebnis_text_sichern(report):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function ergebnisTextSichern(report: string): string {"
+    ]
+   }
+  },
+  {
+   "id": "ursula-schluss",
+   "titel": "Ende der Befundkette: keine Leerzeile zwischen „Ergebnis“ und dem Ergebnistext; Teil ohne jeden Inhalt (nur Überschrift) fällt weg; loses Regions-Wort als letzte Zeile eines Teils („Becken“) fällt weg; reiner IB-Lab-Teil und kurzer diktierter Teil bleiben",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkte 5 (RH 47, RH 120) und 8 (RH 37)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def befund_schluss(report):"
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function befundSchluss(report: string): [string, string[]] {"
+    ],
+    "source_code/pipeline.py": [
+     "def _schluss(erg, ctx):"
+    ],
+    "web_app/src/pipeline.ts": [
+     "befundSchluss(osteopen(rhoAnsEnde("
+    ]
+   },
+   "notiz": "Nicht diktierte CAS-Leistung MIT Normalbefund bleibt (georg-nicht-diktiert-normal) – Ursulas Wunsch „streichen“ widerspricht dieser Regel, Frage an Georg (Bericht)."
+  },
+  {
+   "id": "ursula-seite-laut-cas",
+   "titel": "Paarige Region: fehlt der KI-Überschrift die Seite, kommt die Seite der CAS-Leistung hinein („Ganzbeinaufnahme im Stand rechts“); vorhandene Seite bleibt; CAS und Diktat ohne Seite → rote Prüfzeile, auch beim nicht diktierten Teil",
+   "quelle": "Ursula Hofmeister 20.11.2026, Durchsicht der KaiScribe-Briefe (kaiscribe-ursula-2011-text-n1), Punkt 6 (RH 120)",
+   "datum": "2026-11-24",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_vorlagen.py": [
+     "def report_seite(report, seite):"
+    ],
+    "source_code/pipeline.py": [
+     "hinweise += [h for h in _seite_hinweise(segmente, wahlen) if h not in hinweise]"
+    ],
+    "tests/offline/test_ursula_2011.py": [
+     "6: nicht diktierter Ganzbein-Teil ohne Seite"
+    ]
+   }
   }
  ]
 }

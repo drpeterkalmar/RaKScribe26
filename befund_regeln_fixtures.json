@@ -1963,5 +1963,164 @@
     "out": "Reflux im Wasser-Schluck-Test."
    }
   ]
+ },
+ "ursula_2011": {
+  "_doc": "kaiscribe-ursula-2011-text-n1 (Ursula Hofmeister, Durchsicht der Briefe vom 20.11.2026): grundregeln → ursula_2011 (Punkte 3/4a/4b/4c/7/10, je zweimal angewandt gleich), nachbearbeiten → ergebnis_text_sichern (Punkt 1), befund_schluss (Punkte 5/8, zweimal gleich). Nachgebaute Texte, keine Patiententexte. Sync: befund_regeln.py ≡ befundRegeln.ts.",
+  "faelle": [
+   {
+    "name": "4b 50-prozentige → 50%ige (Befund + Ergebnis)",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n50-prozentige Gelenkspaltverschmälerung medial.\n\n## Ergebnis\n50-prozentige Gelenkspaltverschmälerung medial rechts.",
+    "diktat": "Knie rechts: 50-prozentige Gelenkspaltverschmälerung medial.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n50%ige Gelenkspaltverschmälerung medial.\n\n## Ergebnis\n50%ige Gelenkspaltverschmälerung medial rechts."
+   },
+   {
+    "name": "4b Varianten 30 %-iger, 25prozentig, 12,5-prozentigen",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nEin 30 %-iger Höhenverlust. 25prozentig verschmälert. Mit 12,5-prozentigen Anteilen.\n\n## Ergebnis\nGonarthrose rechts.",
+    "diktat": "",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nEin 30%iger Höhenverlust. 25%ig verschmälert. Mit 12,5%igen Anteilen.\n\n## Ergebnis\nGonarthrose rechts."
+   },
+   {
+    "name": "4b Gegenprobe: 50%ige und 50 % bleiben",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n50%ige Verschmälerung, Stenose von 50 %.\n\n## Ergebnis\nGonarthrose rechts.",
+    "diktat": "",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n50%ige Verschmälerung, Stenose von 50 %.\n\n## Ergebnis\nGonarthrose rechts."
+   },
+   {
+    "name": "4c HWS beidseits → HWS (Titel), Befundtext behält beidseits",
+    "in": "## HWS beidseits in 2 Ebenen\n\n## Befund\nUnkovertebralarthrose beidseits C5/6.\n\n## Ergebnis\nUnkovertebralarthrose C5/6 beidseits.",
+    "diktat": "HWS: Unkovertebralarthrose beidseits C5/6.",
+    "out": "## HWS in 2 Ebenen\n\n## Befund\nUnkovertebralarthrose beidseits C5/6.\n\n## Ergebnis\nUnkovertebralarthrose C5/6 beidseits."
+   },
+   {
+    "name": "4c LWS links, BWS bds. → ohne Seite",
+    "in": "## Lendenwirbelsäule links in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## BWS bds.\n\n## Befund\nSpondylose.\n\n## Ergebnis\nSpondylose der BWS.",
+    "diktat": "",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## BWS\n\n## Befund\nSpondylose.\n\n## Ergebnis\nSpondylose der BWS."
+   },
+   {
+    "name": "4c Gegenprobe: LWS sowie Hüftgelenk links und Kniegelenk rechts bleiben",
+    "in": "## LWS sowie Hüftgelenk links\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nGonarthrose rechts.",
+    "diktat": "",
+    "out": "## LWS sowie Hüftgelenk links\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nGonarthrose rechts."
+   },
+   {
+    "name": "4c Gegenprobe: rechtskonvexe Skoliose im Titel bleibt",
+    "in": "## Ganzaufnahme der Wirbelsäule a.-p. rechts-konvex\n\n## Befund\nText.\n\n## Ergebnis\nSkoliose.",
+    "diktat": "",
+    "out": "## Ganzaufnahme der Wirbelsäule a.-p. rechts-konvex\n\n## Befund\nText.\n\n## Ergebnis\nSkoliose."
+   },
+   {
+    "name": "4a drei Sätze „Im Übrigen …“ hintereinander → nur der erste",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßige Gonarthrose medial. Im Übrigen sind die Gelenkflächen glatt begrenzt. Im Übrigen sind Mineralgehalt und Knochenstruktur normal. Im Übrigen sind die Weichteile unauffällig.\n\n## Ergebnis\nMäßige Gonarthrose rechts medial.",
+    "diktat": "Knie rechts: mäßige Gonarthrose medial.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMedial mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Im Übrigen sind die Gelenkflächen glatt begrenzt. Mineralgehalt und Knochenstruktur sind normal. Die Weichteile sind unauffällig.\n\n## Ergebnis\nMäßige Gonarthrose rechts medial (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "4a Gegenprobe: neue Pathologie dazwischen – zweites „Im Übrigen“ bleibt",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMäßige Gonarthrose medial. Im Übrigen sind die Gelenkflächen glatt begrenzt. Fraktur der Patella. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.\n\n## Ergebnis\n1. Patellafraktur rechts.\n2. Mäßige Gonarthrose rechts medial.",
+    "diktat": "Knie rechts: mäßige Gonarthrose medial, Fraktur der Patella.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nMedial mäßiggradige Gelenksspaltverschmälerung mit multiplen Osteophyten und subchondraler Sklerosierung. Im Übrigen sind die Gelenkflächen glatt begrenzt. Fraktur der Patella. Im Übrigen glatte und scharfe Begrenzung der normal breiten Kortikalis ohne pathologische Konturunterbrechung.\n\n## Ergebnis\n1. Patellafraktur rechts.\n2. Mäßige Gonarthrose rechts medial (Arthrose Grad 3 nach Kellgren & Lawrence)."
+   },
+   {
+    "name": "4a Label-Stil „Kortikalis: im Übrigen …“ nach „Im Übrigen …“",
+    "in": "## Ganzbeinaufnahme im Stand rechts\n\n## Befund\nGonarthrose medial rechts. Im Übrigen normale Form. Kortikalis: im Übrigen glatte und scharfe Kontur, ohne pathologische Unterbrechung oder Stufenbildung.\n\n## Ergebnis\nVarusachse rechts.",
+    "diktat": "",
+    "out": "## Ganzbeinaufnahme im Stand rechts\n\n## Befund\nGonarthrose medial rechts. Im Übrigen normale Form. Kortikalis: glatte und scharfe Kontur, ohne pathologische Unterbrechung oder Stufenbildung.\n\n## Ergebnis\nVarusachse rechts."
+   },
+   {
+    "name": "3 trochantere/pertrochantere → trochantäre/pertrochantäre, trochanter → trochantär",
+    "in": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nTrochantere Verkalkung. Schmerzen trochanter. Keine pertrochantere Fraktur, keine intertrochanteren Veränderungen.\n\n## Ergebnis\nPeritrochantere Verkalkung links.",
+    "diktat": "",
+    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nTrochantäre Verkalkung. Schmerzen trochantär. Keine pertrochantäre Fraktur, keine intertrochantären Veränderungen.\n\n## Ergebnis\nPeritrochantäre Verkalkung links."
+   },
+   {
+    "name": "3 Gegenprobe: Trochanter major, Bursitis trochanterica, Trochanterregion bleiben",
+    "in": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nVerkalkung am Trochanter major. Bild wie bei Bursitis trochanterica. Trochanterregion unauffällig.\n\n## Ergebnis\nBursitis trochanterica links.",
+    "diktat": "",
+    "out": "## Hüftgelenk links in 2 Ebenen\n\n## Befund\nVerkalkung am Trochanter major. Bild wie bei Bursitis trochanterica. Trochanterregion unauffällig.\n\n## Ergebnis\nBursitis trochanterica links."
+   },
+   {
+    "name": "7 Verklakung → Verkalkung",
+    "in": "## Großzehe links in 2 Ebenen\n\n## Befund\nPunktförmige Verklakung plantar, verklakte Sehne.\n\n## Ergebnis\nVerklakung plantar.",
+    "diktat": "",
+    "out": "## Großzehe links in 2 Ebenen\n\n## Befund\nPunktförmige Verkalkung plantar, verkalkte Sehne.\n\n## Ergebnis\nVerkalkung plantar."
+   },
+   {
+    "name": "10 TH12, TH 11/12, Th 4 → Th12, Th11/12, Th4",
+    "in": "## Brustwirbelsäule in 2 Ebenen\n\n## Befund\nKeilwirbel TH12, Osteochondrose TH 11/12 und Th 4.\n\n## Ergebnis\nKeilwirbel TH12.",
+    "diktat": "",
+    "out": "## Brustwirbelsäule in 2 Ebenen\n\n## Befund\nKeilwirbel Th12, Osteochondrose Th11/12 und Th4.\n\n## Ergebnis\nKeilwirbel Th12."
+   },
+   {
+    "name": "10 Gegenprobe: Th12, T1-gewichtet, BWK 12 bleiben",
+    "in": "## Brustwirbelsäule in 2 Ebenen\n\n## Befund\nKeilwirbel Th12, T1-gewichtet, BWK 12.\n\n## Ergebnis\nKeilwirbel Th12.",
+    "diktat": "",
+    "out": "## Brustwirbelsäule in 2 Ebenen\n\n## Befund\nKeilwirbel Th12, T1-gewichtet, BWK 12.\n\n## Ergebnis\nKeilwirbel Th12."
+   }
+  ],
+  "nachbearbeiten": [
+   {
+    "name": "1 Ergebnistext als Überschrift → Text (RH 31)",
+    "in": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\n## Osteochondrose L4/5.",
+    "out": "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5.\n\n## Ergebnis\nOsteochondrose L4/5."
+   },
+   {
+    "name": "1 „## Ergebnis: Text“ → Überschrift + Text; nummerierte Überschrift-Punkte",
+    "in": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis: Osteochondrose L4/5.\n## 2. Spondylarthrose L5/S1.",
+    "out": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\n1. Osteochondrose L4/5.\n2. Spondylarthrose L5/S1."
+   },
+   {
+    "name": "1 Gegenprobe: zweiter Teil nach dem Ergebnis bleibt Überschrift",
+    "in": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## Beckenübersicht\n\n## Befund\nText.\n\n## Ergebnis\nCoxarthrose links.",
+    "out": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## Beckenübersicht\n\n## Befund\nText.\n\n## Ergebnis\nCoxarthrose links."
+   },
+   {
+    "name": "1 Gegenprobe: Titel mit Punkt am Ende („Hüftgelenke bds. ap/ax.“) nach einem Ergebnis bleibt Titel",
+    "in": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## Hüftgelenke bds. ap/ax.\n\n## Befund\nText.\n\n## Ergebnis\nCoxarthrose links.",
+    "out": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5.\n\n\n## Hüftgelenke bds. ap/ax.\n\n## Befund\nText.\n\n## Ergebnis\nCoxarthrose links."
+   }
+  ],
+  "schluss": [
+   {
+    "name": "8 Leerzeile zwischen Ergebnis und Text weg (auch nummeriert)",
+    "in": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\n\n1. Osteochondrose L4/5.\n2. Spondylarthrose L5/S1.",
+    "out": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\n1. Osteochondrose L4/5.\n2. Spondylarthrose L5/S1."
+   },
+   {
+    "name": "5 RH 120: Überschrift ohne Inhalt weg",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGonarthrose.\n\n## Ergebnis\nGonarthrose rechts.\n\n\n## Defileeaufnahme Patella einseitig",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGonarthrose.\n\n## Ergebnis\nGonarthrose rechts."
+   },
+   {
+    "name": "5 RH 68: Teile nur mit Befund/Ergebnis-Köpfen weg, HWS bleibt",
+    "in": "## HWS in 2 Ebenen\n\n## Befund\nOsteochondrose C5/6.\n\n## Ergebnis\nOsteochondrose C5/6.\n\n\n## Brustwirbelsäule ap/s\n\n## Befund\n\n## Ergebnis\n\n\n## LWS\n\n\n## Hüftgelenke bds. ap/ax.\n\n## Befund\n",
+    "out": "## HWS in 2 Ebenen\n\n## Befund\nOsteochondrose C5/6.\n\n## Ergebnis\nOsteochondrose C5/6."
+   },
+   {
+    "name": "5 RH 47: loses Wort „Becken“ am Ende weg",
+    "in": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5.\nBecken",
+    "out": "## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5."
+   },
+   {
+    "name": "5 loses „Kniegelenk links.“ als letzte Zeile des ersten Teils weg",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nGonarthrose rechts.\nKniegelenk links.\n\n\n## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nGonarthrose rechts.\n\n\n## LWS in 2 Ebenen\n\n## Befund\nText.\n\n## Ergebnis\nOsteochondrose L4/5."
+   },
+   {
+    "name": "5 Gegenprobe: kurzer diktierter Teil bleibt, reiner IB-Lab-Teil (LAMA) bleibt mit Titel",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGonarthrose.\n\n## Ergebnis\nGonarthrose rechts.\n\n\n## Ganzbeinaufnahme im Stand beidseits\n\n## Befund\n\n## Ergebnis\nRegelrechte Beinachse beidseits (HKA rechts 1,9°, links 0,9°).\n\nAnmerkung: HKA = Hüft-Knie-Sprunggelenk-Winkel.",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\nGonarthrose.\n\n## Ergebnis\nGonarthrose rechts.\n\n\n## Ganzbeinaufnahme im Stand beidseits\n\n## Befund\n\n## Ergebnis\nRegelrechte Beinachse beidseits (HKA rechts 1,9°, links 0,9°).\n\nAnmerkung: HKA = Hüft-Knie-Sprunggelenk-Winkel."
+   },
+   {
+    "name": "5 Gegenprobe: Sätze mit Region bleiben („Becken unauffällig.“, „Becken: Text“)",
+    "in": "## LWS in 2 Ebenen\n\n## Befund\nText.\nBecken unauffällig.\n\n## Ergebnis\nOsteochondrose L4/5.\nBecken: keine Coxarthrose.",
+    "out": "## LWS in 2 Ebenen\n\n## Befund\nText.\nBecken unauffällig.\n\n## Ergebnis\nOsteochondrose L4/5.\nBecken: keine Coxarthrose."
+   },
+   {
+    "name": "5 Gegenprobe: nur eine leere Überschrift (nichts sonst) bleibt",
+    "in": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\n## Ergebnis\n",
+    "out": "## Kniegelenk rechts in 2 Ebenen\n\n## Befund\n\n## Ergebnis\n"
+   }
+  ]
  }
 }

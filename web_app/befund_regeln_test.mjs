@@ -2,7 +2,7 @@
 // Pendant zu ../befund_regeln_test.py (das ruft dieses Skript auf).
 //   cd web_app && node --experimental-strip-types befund_regeln_test.mjs
 import { readFileSync } from 'node:fs';
-import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, abschnitteBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen, sttSatzzeichen, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften } from './src/befundRegeln.ts';
+import { csaBereinigen, splitRegionen, ergebnisNummerieren, befundUeberschriftSichern, ergebnisMitSeite, titelMitSeite, mammasonoBeidseits, promptVersion, stripPromptMarker, rhoErkennen, rhoEinfuegen, widersprucheBereinigen, abschnitteBereinigen, satzEinschraenken, widerspruchBefunde, widerspruchPrompt, ohneEmpfehlungen, kurzsaetzeSichern, klGrade, klBereinigen, klAdjektivGrade, arthroseBereinigen, sttSatzzeichen, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, nachbearbeiten, befundSchluss } from './src/befundRegeln.ts';
 
 const F = JSON.parse(readFileSync(new URL('../befund_regeln_fixtures.json', import.meta.url), 'utf8'));
 let fail = 0, n = 0;
@@ -30,6 +30,15 @@ for (const c of F.georg_2011.faelle) {   // kaiscribe-georg-2011-n1 (Georg 20.11
 for (const c of F.georg_2311.faelle) {   // kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
   const g = grundregeln(c.in, c.diktat, TPL)[0]; check(g === c.out, 'georg_2311: ' + c.name, g);
   check(grundregeln(g, c.diktat, TPL)[0] === g, 'georg_2311 zweimal gleich: ' + c.name.slice(0, 50), 'nicht idempotent');
+}
+for (const c of F.ursula_2011.faelle) {   // kaiscribe-ursula-2011-text-n1 (Ursula 20.11.2026, Punkte 3/4/7/10)
+  const g = grundregeln(c.in, c.diktat, TPL)[0]; check(g === c.out, 'ursula_2011: ' + c.name, g);
+  check(grundregeln(g, c.diktat, TPL)[0] === g, 'ursula_2011 zweimal gleich: ' + c.name.slice(0, 50), 'nicht idempotent');
+}
+for (const c of F.ursula_2011.nachbearbeiten) { const g = nachbearbeiten(c.in); check(g === c.out, 'ursula_2011 nachbearbeiten: ' + c.name, g); }
+for (const c of F.ursula_2011.schluss) {
+  const g = befundSchluss(c.in)[0]; check(g === c.out, 'ursula_2011 Schluss: ' + c.name, g);
+  check(befundSchluss(g)[0] === g, 'ursula_2011 Schluss zweimal gleich: ' + c.name.slice(0, 50), 'nicht idempotent');
 }
 for (const c of F.georg_2311.teile) { const g = teileZusammenlegen(c.in, c.diktat)[0]; check(g === c.out, 'georg_2311 Teile: ' + c.name, g); }
 for (const c of F.georg_2311.nur_text) { const g = nurTextUeberschriften(c.in); check(g === c.out, 'georg_2311 Nur Text: ' + c.name, g); }

@@ -4,7 +4,7 @@
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { OhneKi, OHNE_KI_ZEILE } from './llmAnbieter.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, befundSchluss } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { bloecke, blockText, umbauSegment, umbauBlock, titelUebernehmen, vorrang, saetze, fehlende, ergaenzen, pruefzeile, streichen, ergebnisFehlt, verneintVorrang } from './befundfeld.ts';
@@ -123,7 +123,11 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
     return text;
   }
   // kaiscribe-schulter-ergebnis-n1 (Punkte 58a/64): nie doppelte Teile, kein nicht diktierter Unterarm (Sync: pipeline.py)
-  return osteopen(rhoAnsEnde(teileZusammenlegen(befundeZusammenfuegen(teile), text)[0]), text);   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
+  // kaiscribe-ursula-2011-text-n1 (Punkte 5/8, Sync: pipeline.py _schluss): keine Leerzeile nach „Ergebnis“, keine leere
+  // Überschrift, kein loses Regions-Wort – ganz am Ende
+  const [fertig, schluss] = befundSchluss(osteopen(rhoAnsEnde(teileZusammenlegen(befundeZusammenfuegen(teile), text)[0]), text));   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
+  if (schluss.length) console.log('[SCHLUSS] ' + schluss.map(a => a.slice(0, 50)).join(' · '));
+  return fertig;
 };
 
 // kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → „Osteopenischer Knochenaspekt.“ statt Mineralisations-

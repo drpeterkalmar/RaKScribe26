@@ -84,6 +84,17 @@ for c in F["georg_2311"]["faelle"]:   # kaiscribe-schulter-ergebnis-n1 (Georg 22
     g = br.grundregeln(c["in"], c["diktat"], TPL)[0]
     check(g == c["out"], f"georg_2311: {c['name']}", g)
     check(br.grundregeln(g, c["diktat"], TPL)[0] == g, f"georg_2311 zweimal gleich: {c['name'][:50]}", "nicht idempotent")
+for c in F["ursula_2011"]["faelle"]:   # kaiscribe-ursula-2011-text-n1 (Ursula 20.11.2026, Punkte 3/4/7/10)
+    g = br.grundregeln(c["in"], c["diktat"], TPL)[0]
+    check(g == c["out"], f"ursula_2011: {c['name']}", g)
+    check(br.grundregeln(g, c["diktat"], TPL)[0] == g, f"ursula_2011 zweimal gleich: {c['name'][:50]}", "nicht idempotent")
+for c in F["ursula_2011"]["nachbearbeiten"]:   # Punkt 1: Ergebnistext nie als Überschrift
+    g = br.nachbearbeiten(c["in"])
+    check(g == c["out"], f"ursula_2011 nachbearbeiten: {c['name']}", g)
+for c in F["ursula_2011"]["schluss"]:   # Punkte 5/8: Schluss der Kette
+    g = br.befund_schluss(c["in"])[0]
+    check(g == c["out"], f"ursula_2011 Schluss: {c['name']}", g)
+    check(br.befund_schluss(g)[0] == g, f"ursula_2011 Schluss zweimal gleich: {c['name'][:50]}", "nicht idempotent")
 for c in F["georg_2311"]["teile"]:
     g = br.teile_zusammenlegen(c["in"], c["diktat"])[0]
     check(g == c["out"], f"georg_2311 Teile: {c['name']}", g)

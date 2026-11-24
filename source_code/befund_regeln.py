@@ -403,7 +403,7 @@ def mammasono_beidseits(report):
 def nachbearbeiten(report, nummerieren=True):
     """Deterministische Nachbearbeitung jedes Befundes (EXE + Web gleich): CSA-Regel, '## Befund' sichern,
     Ergebnis nummerieren. v3.7.2 (Peter 07.10.): wörtliche Ordi-Bausteine bleiben unnummeriert (nummerieren=False)."""
-    r = mammasono_beidseits(befund_ueberschrift_sichern(csa_bereinigen(report)))
+    r = mammasono_beidseits(befund_ueberschrift_sichern(csa_bereinigen(ergebnis_text_sichern(report) if nummerieren else report)))
     return ergebnis_nummerieren(r) if nummerieren else r
 
 
@@ -1968,7 +1968,8 @@ def grundregeln(report, diktat="", templates=None):
     if erg:
         out = ergebnis_nummerieren(out)
     out, x = georg_2311(out, diktat, templates)   # kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
-    return out, aend + x
+    out, y = ursula_2011(out, templates)          # kaiscribe-ursula-2011-text-n1 (Ursula 20.11.2026, Punkte 3/4/7/10)
+    return out, aend + x + y
 
 
 # 13 (RH 78): Schreibvarianten für die Nachprüfung „Befund fehlt im Text“ – c/k/z (Chondrocalcinose ↔ Chondrokalzinose)
@@ -2764,3 +2765,183 @@ def nur_text_ueberschriften(text):
             continue
         geaendert = True
     return "\n".join(aus) if geaendert else text
+
+
+# ══ kaiscribe-ursula-2011-text-n1 (Ursula Hofmeister, Durchsicht der KaiScribe-Briefe vom 20.11.2026) ══════════════
+# Sync: befundRegeln.ts (gleiche Regexe), Fixtures „ursula_2011“. Ohne Treffer bleibt der Text Zeichen für Zeichen gleich.
+#  4b  Zahl + „-prozentig“ → „%ig“ („50-prozentiger“ → „50%iger“, auch „50 %-ige“, „50prozentige“)
+#  4c  Wirbelsäule bekommt nie eine Seite in der Überschrift („HWS beidseits in 2 Ebenen“ → „HWS in 2 Ebenen“) – nicht bei
+#      Titeln, die auch eine paarige Region nennen („LWS sowie Hüftgelenk links“)
+#  4a  „Im Übrigen …“ nicht mehrfach hintereinander: folgt ein „Im Übrigen“-Satz einem anderen ohne neue Pathologie
+#      dazwischen, verliert er das „Im Übrigen“ (Vorlagensatz zurück); nach einer neuen Pathologie bleibt es (Kortikalis-
+#      Satz hinter der Fraktur, georg-fraktur-kortikalis)
+#  3/7 Schreibweisen: „trochanter(e)“ als Adjektiv → „trochantär(e)“ (auch per-/inter-/sub-/peri-), „Trochanter major“ und
+#      „Bursitis trochanterica“ bleiben; „Verklakung“ → „Verkalkung“
+#  10  Brustwirbel „Th“ + Zahl (Peter 23.11.2026): „TH12“/„Th 12“ → „Th12“
+#  1   (nachbearbeiten) Ergebnistext nie als Überschrift: „## Osteochondrose L4/5.“ im Ergebnis → Text; „## Ergebnis: Text“
+#      → „## Ergebnis“ + Text
+#  8/5 (befund_schluss, ganz am Ende der Kette): keine Leerzeile zwischen „## Ergebnis“ und dem Ergebnistext; Teile ohne
+#      jeden Inhalt (nur Überschrift) fallen weg; ein loses Regions-Wort als letzte Zeile eines Teils („Becken“) fällt weg
+_PROZENTIG = re.compile(r"(?<![\d,])(\d+(?:,\d+)?)[ \t]?-?[ \t]?(?:[Pp]rozent|%)[ \t]?-?[ \t]?ig(e[nrsm]?)?(?![a-zäöüß])")
+_WS_SEITE = re.compile(r"[ \t]*(?<![A-Za-z0-9_ÄÖÜäöüß-])(?:beidseits|beidseitig|bds\.|bds|rechts|links|re\.|li\.)"
+                       r"(?![A-Za-z0-9_ÄÖÜäöüß-])", re.I)
+_WS_PAARIG = re.compile(r"hüft|becken|knie|schulter|sprung|fu(?:ß|ss)|hand|finger|zehe|ellbogen|iliosakral|rippe|clavicula|"
+                        r"klavikula|(?<![a-zäöüß])(?:isg|sig)(?![a-zäöüß])", re.I)
+_IM_UEBRIGEN = re.compile(r"^Im [Üü]brigen,?\s+")
+_LABEL_UEBRIGEN = re.compile(r"^([A-ZÄÖÜ][^:.]{0,48}):\s+im [Üü]brigen\s+")
+_TROCHANTER = re.compile(r"(?<![A-Za-zÄÖÜäöüß])((?:[Pp]er|[Ii]nter|[Ss]ub|[Pp]eri)?)([Tt])rochanter(e[nrsm]?)?(?![A-Za-zäöüß])")
+_VERKLAKUNG = re.compile(r"(?<![A-Za-zÄÖÜäöüß])([Vv])erklak(ung(?:en)?|t(?:e[nrsm]?)?)(?![a-zäöüß])")
+_TH_WIRBEL = re.compile(r"(?<![A-Za-zÄÖÜäöüß])T[Hh][ \t]?(1[0-2]|[1-9])(?!\d)")
+
+
+def _trochantaer(m):
+    vor, t, endung = m.group(1), m.group(2), m.group(3) or ""
+    if not vor and t == "T" and not endung:
+        return m.group(0)                # „Trochanter major“ (Nomen) bleibt
+    return vor + t + "rochantär" + endung
+
+
+def _uebrigen_folge(L, templates):
+    """4a: „Im Übrigen …“ nur einmal je Folge (ohne neue Pathologie dazwischen)."""
+    s, pos, aend = _saetze_von(L), _flach(L), []
+    davor = False
+    for j, x in enumerate(s):
+        m, ml = _IM_UEBRIGEN.match(x), _LABEL_UEBRIGEN.match(x)
+        if m or ml:
+            if davor:
+                if m:
+                    rest = x[m.end():]
+                    neu = _vorlage_zurueck(rest, templates) if _WID_VERB.match(rest.split(" ", 1)[0].lower()) \
+                        else (_vorlage_zurueck(rest, templates) or rest[:1].upper() + rest[1:])
+                else:
+                    kurz = ml.group(1) + ": " + x[ml.end():]
+                    neu = _vorlage_zurueck(kurz, templates) or kurz
+                if neu:
+                    aend.append(f"„Im Übrigen“ nicht doppelt: {neu[:50]}")
+                    L[pos[j][0]][pos[j][1]] = neu
+                    s[j] = neu
+            davor = True
+        elif _patho_satz(x):
+            davor = False
+    return L, aend
+
+
+def ursula_2011(report, templates=None):
+    """→ (report, Änderungen). Siehe Kopf dieses Abschnitts (4a/4b/4c/3/7/10)."""
+    if not report:
+        return report, []
+    aend = []
+    zeilen = report.split("\n")
+    for i, z in enumerate(zeilen):
+        s = z.strip()
+        if s.startswith("## ") and s[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis") \
+                and _WS_TITEL.search(s) and not _WS_PAARIG.search(s) and _WS_SEITE.search(s[3:]):
+            neu = "## " + " ".join(_WS_SEITE.sub(" ", s[3:]).split())
+            if neu != s:
+                zeilen[i] = neu
+                aend.append(f"Wirbelsäule ohne Seite: {neu[3:]}")
+    for a, e in reversed(_abschnitt(zeilen, "befund")):
+        text = "\n".join(zeilen[a:e])
+        L = _zerlegen(text)
+        if not _flach(L):
+            continue
+        L, x = _uebrigen_folge(L, templates)
+        if x:
+            aend += x
+            lead = text[:len(text) - len(text.lstrip("\n"))]
+            trail = text[len(text.rstrip("\n")):]
+            zeilen[a:e] = (lead + _zusammen(L).strip("\n") + trail).split("\n")
+    out = "\n".join(zeilen)
+    for name, rx, ers in (("Prozent", _PROZENTIG, lambda m: m.group(1) + "%ig" + (m.group(2) or "")),
+                          ("trochantär", _TROCHANTER, _trochantaer),
+                          ("Verkalkung", _VERKLAKUNG, lambda m: m.group(1) + "erkalk" + m.group(2)),
+                          ("Th + Zahl", _TH_WIRBEL, lambda m: "Th" + m.group(1))):
+        neu = rx.sub(ers, out)
+        if neu != out:
+            aend.append(f"Schreibweise {name}")
+            out = neu
+    return out, aend
+
+
+def ergebnis_text_sichern(report):
+    """1 (RH 31/119): Ergebnistext nie als Überschrift – „## <Satz>.“ bzw. „## 1. …“ im Ergebnis → Text; „## Ergebnis: Text“
+    → „## Ergebnis“ + Text. Eine Zeile, auf die „## Befund“/„## Ergebnis“ folgt, ist ein Untersuchungstitel und bleibt."""
+    if not report or "## " not in report:
+        return report
+    out, im_erg = [], False
+    zeilen = report.split("\n")
+
+    def naechster_kopf(i):
+        for z2 in zeilen[i + 1:]:
+            if z2.strip().startswith("## "):
+                return z2.strip()[3:].strip().lower().rstrip(":")
+        return None
+
+    for i, z in enumerate(zeilen):
+        s = z.strip()
+        if not s.startswith("## "):
+            out.append(z)
+            continue
+        k = s[3:].strip()
+        m = re.match(r"^ergebnis\s*:\s*(\S.*)$", k, re.I)
+        if m:
+            out += ["## Ergebnis", m.group(1)]
+            im_erg = True
+            continue
+        kl = k.lower().rstrip(":")
+        if kl == "ergebnis":
+            im_erg = True
+        elif kl == "befund":
+            im_erg = False
+        elif im_erg and (k.endswith((".", "!", "?")) or re.match(r"^\d+[.)]\s", k)) \
+                and naechster_kopf(i) not in ("befund", "ergebnis"):     # „## Hüftgelenke bds. ap/ax.“ + Befund = Titel
+            out.append(k)
+            continue
+        else:
+            im_erg = False
+        out.append(z)
+    return "\n".join(out)
+
+
+_LOSE_REGION = re.compile(r"(?:" + _MOD + r"(?:(?:der|die|das|des)\s+)?(?:" + _REGION_ALT + "|" +
+                          "|".join(pat for _, pat in REGIONEN_OHNE_SEITE) + r")(?:\s+in\s+(?:2|zwei)\s+ebenen)?(?:\s+" +
+                          _SEITE + r")?)\s*[.:]?", re.I)
+
+
+def befund_schluss(report):
+    """8/5 (RH 37, RH 47, RH 120): ganz am Ende der Befundkette (nach IB Lab, Rho). → (report, Änderungen)."""
+    if not report or "## " not in report:
+        return report, []
+    zeilen, aend = report.split("\n"), []
+    i = 0
+    while i < len(zeilen):                       # 8: keine Leerzeile zwischen „## Ergebnis“ und dem Text
+        if zeilen[i].strip().lower().rstrip(":") == "## ergebnis":
+            j = i + 1
+            while j < len(zeilen) and not zeilen[j].strip():
+                j += 1
+            if j > i + 1 and j < len(zeilen) and not zeilen[j].lstrip().startswith("## "):
+                del zeilen[i + 1:j]
+                aend.append("Leerzeile nach „Ergebnis“ weg")
+        i += 1
+    kopf = lambda z: z.strip().startswith("## ") and z.strip()[3:].strip().lower().rstrip(":") not in ("befund", "ergebnis")  # noqa: E731
+    titel = [i for i, z in enumerate(zeilen) if kopf(z)]
+    teile = [(t, titel[k + 1] if k + 1 < len(titel) else len(zeilen)) for k, t in enumerate(titel)]
+    inhalt = lambda a, b: [j for j in range(a, b) if zeilen[j].strip() and not zeilen[j].strip().startswith("## ")]  # noqa: E731
+    weg = set()
+    for a, b in teile:                           # 5: loses Regions-Wort als letzte Zeile eines Teils
+        c = inhalt(a + 1, b)
+        if c and _LOSE_REGION.fullmatch(zeilen[c[-1]].strip()):
+            aend.append(f"loses Wort weg: {zeilen[c[-1]].strip()[:30]}")
+            weg.add(c[-1])
+    voll = [(a, b) for a, b in teile if [j for j in inhalt(a + 1, b) if j not in weg]]
+    if voll:
+        for a, b in teile:                       # 5: Teil ohne Inhalt (nur Überschrift) weg
+            if (a, b) not in voll:
+                aend.append(f"Überschrift ohne Inhalt weg: {zeilen[a].strip()[3:][:40]}")
+                weg.update(range(a, b))
+    if not weg:
+        return ("\n".join(zeilen), aend)
+    neu = [z for j, z in enumerate(zeilen) if j not in weg]
+    while neu and not neu[-1].strip():
+        neu.pop()
+    return "\n".join(neu), aend

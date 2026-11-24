@@ -220,6 +220,14 @@ def _befund_fuer_segment(seg, ctx, wahl=None):
     if bds:
         ctx.log(f"[CAS] beidseits laut CAS ({wahl.leistung.kurz}): Überschrift „beidseits“")
         out = cv.report_beidseits(out)
+    elif wahl is not None and wahl.leistung is not None and wahl.leistung.seite in ("rechts", "links") \
+            and wahl.leistung.regionen & cv.PAARIG:
+        # kaiscribe-ursula-2011-text-n1 (Ursula 20.11.2026, Punkt 6, RH 120): Seite der CAS-Leistung in die Überschrift,
+        # wenn die KI sie weggelassen hat (eine diktierte bzw. vorhandene Seite bleibt; fehlt sie auch im CAS → Prüfzeile)
+        neu = cv.report_seite(out, wahl.leistung.seite)
+        if neu != out:
+            ctx.log(f"[CAS] Seite laut CAS ({wahl.leistung.kurz}) in die Überschrift")
+            out = neu
     if not normal:   # v3.18.4: Bypass (Vorlage ohne KI) braucht keinen K&L-Wächter
         seite = wahl.leistung.seite if (wahl is not None and wahl.leistung is not None) else ""
         out = _kl_waechter(out, seg, template_key, ctx, seite, behalten=koala)
@@ -344,6 +352,8 @@ def cas_wahlen(segmente, ctx):
     segmente, wahlen, f_log = cv.funktion_ergaenzen(segmente, wahlen, ctx.cas, ctx.templates)
     # kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 84/77/37): nicht diktierte CAS-Untersuchung → eigener Normalbefund
     segmente, wahlen, hinweise, n_log = cv.nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, ctx.cas, ctx.templates)
+    # kaiscribe-ursula-2011-text-n1 (Punkt 6): auch ein nicht diktierter Teil ohne Seite (Ganzbein) → rote Prüfzeile
+    hinweise += [h for h in _seite_hinweise(segmente, wahlen) if h not in hinweise]
     for z in f_log + n_log:
         ctx.log("[CAS] " + z)
     for i, w in enumerate(wahlen, 1):
@@ -446,6 +456,17 @@ def _osteopen(erg, ctx, diktat=None):
     return erg
 
 
+def _schluss(erg, ctx):
+    """kaiscribe-ursula-2011-text-n1 (Ursula 20.11.2026, Punkte 5/8): ganz am Ende – keine Leerzeile nach „Ergebnis“, keine
+    Überschrift ohne Inhalt, kein loses Regions-Wort (nach IB Lab: reine IB-Lab-Teile haben dann ihren Text).
+    Nicht bei gescheiterten Regionen (Hinweistext bleibt). Sync: pipeline.ts befundAusDiktat."""
+    if erg.report and not erg.fehler:
+        erg.report, aend = br.befund_schluss(erg.report)
+        if aend:
+            ctx.log("[SCHLUSS] " + " · ".join(a[:50] for a in aend))
+    return erg
+
+
 def _ohne_ki(raw, e, segmente, cas_hinweise, vorlagen, ctx):
     """kaiscribe-ohne-gemini-n1 (Peter 23.11.2026, kein Gemini mehr): Befund-KI auch im zweiten Versuch nicht verfügbar →
     das (fehlhör-korrigierte) Diktat UNVERÄNDERT als Befundtext plus rote Prüfzeile (OHNE_KI_ZEILE). Nie ein Befund
@@ -480,8 +501,8 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
             teil = befund_fuer_segment(segmente[0] if segmente else raw, ctx, wahlen[0] if wahlen else None)
         except la.OhneKi as e:
             return _ohne_ki(raw, e, segmente, cas_hinweise, vorlagen, ctx)
-        return _pruefen(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=br.teile_zusammenlegen(teil, raw)[0],
-            segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx), ctx)
+        return _pruefen(_schluss(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=br.teile_zusammenlegen(teil, raw)[0],
+            segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen), ctx), ctx), ctx), ctx)
     ctx.log(f"[MULTI] {len(segmente)} Regionen")
     with ThreadPoolExecutor(max_workers=len(segmente)) as ex:
         futures = [ex.submit(befund_fuer_segment, seg, ctx, w) for seg, w in zip(segmente, wahlen)]
@@ -503,9 +524,9 @@ def befund_aus_diktat(diktat, ctx, beim_start=None):
         if zus:
             ctx.log("[MULTI] " + " · ".join(zus))
     report = br.rho_ans_ende(report)   # kaiscribe-georg-2011-n1 (Georg 20.11., Punkt 19): Rho-Befund immer am Schluss
-    return _pruefen(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen,
-                                                    segmente=segmente, cas_hinweise=cas_hinweise, vorlagen=vorlagen),
-                                           ctx), ctx), ctx)
+    return _pruefen(_schluss(_osteopen(ibl_anwenden(Ergebnis(raw=raw, report=report, fehler=fehler, ausnahmen=ausnahmen,
+                                                             segmente=segmente, cas_hinweise=cas_hinweise,
+                                                             vorlagen=vorlagen), ctx), ctx), ctx), ctx)
 
 
 def nur_text_aus_diktat(diktat, ctx):

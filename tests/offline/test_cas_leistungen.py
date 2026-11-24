@@ -214,7 +214,8 @@ erg = pl.befund_aus_diktat("Fuß links: Hallux valgus. LWS: Osteochondrose L4/5.
                            kontext(cv.CasHinweis([FUSSL, LWS], T), prompts))
 titel = [z[3:] for z in erg.report.splitlines() if z.startswith("## ") and z[3:] not in ("Befund", "Ergebnis")]
 check("Pipeline d): zwei Befunde mit kanonischen Titeln in Diktat-Reihenfolge, Vorlagen je Abschnitt",
-      titel == ["Fuß in 2 Ebenen", "Lendenwirbelsäule in 2 Ebenen"] and erg.vorlagen == ["fuß_in_2_ebenen",
+      # kaiscribe-ursula-2011-text-n1 (Punkt 6): KI-Titel ohne Seite → Seite der CAS-Leistung („Fuß li.“), WS ohne Seite
+      titel == ["Fuß links in 2 Ebenen", "Lendenwirbelsäule in 2 Ebenen"] and erg.vorlagen == ["fuß_in_2_ebenen",
                                                                                        "lendenwirbelsäule_in_2_ebenen"]
       and erg.cas_hinweise == [] and erg.vollstaendig, f"{titel} {erg.vorlagen}")
 check("… Gen-Prompt mit <cas_untersuchungen> (Liste + Regeln „keine erfinden“)", len(prompts) == 2 and all(
@@ -395,7 +396,7 @@ prompts = []
 erg = pl.befund_aus_diktat(RH97, kontext(cv.CasHinweis([HWSMF, SCHULTERR], T), prompts))
 funk_block = erg.report.split("## Funktionsaufnahmen der Halswirbelsäule", 1)[-1]
 check("RH 97: Schulter + HWS in 2 Ebenen + Funktionsaufnahmen (eigener Abschnitt NACH der HWS, Normaltext ohne KI)",
-      titel_von(erg.report) == ["Schultergelenk in 2 Ebenen", "Halswirbelsäule in 2 Ebenen",
+      titel_von(erg.report) == ["Schultergelenk rechts in 2 Ebenen", "Halswirbelsäule in 2 Ebenen",   # Seite laut CAS (Punkt 6)
                                 "Funktionsaufnahmen der Halswirbelsäule"]
       and erg.vorlagen == ["schultergelenk_in_2_ebenen", "halswirbelsäule_in_2_ebenen", FHWS]
       and "Regelrechte Stellung in maximaler Ante- und Retroflexion" in funk_block
@@ -579,7 +580,7 @@ app.befund_fertig()
 check("EOL: an CAS, grüne Bestätigung mit Nummer und Titeln (Band sichtbar, CAS-Band weg)",
       antwort("x1").get("status") == "fertig" and app.bestaetigung_band.sichtbar and not app.cas_band.sichtbar
       and app._bestaetigung_text == "✓  An CAS übergeben: 20261014003  ·  Halswirbelsäule in 2 Ebenen · Sonographie des "
-                                    "Schultergelenkes" and app.bestaetigung_label.cget("text") == app._bestaetigung_text,
+                                    "Schultergelenkes rechts" and app.bestaetigung_label.cget("text") == app._bestaetigung_text,
       getattr(app, "_bestaetigung_text", ""))
 
 ablegen("20261014004", "x2")

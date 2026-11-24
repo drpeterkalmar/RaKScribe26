@@ -102,6 +102,8 @@ jobs:
         run: python tests/offline/test_befundfeld.py
       - name: Markierung im Befund wird durch das Diktat ersetzt (RH 156/165, kaiscribe-sammel-2311)
         run: python tests/offline/test_markierung.py
+      - name: Ursulas Durchsicht 20.11.2026 (Ganzbein-Seite laut CAS, keine leere Überschrift, Ergebnis ohne Leerzeile, HWS ohne Seite, %ig)
+        run: python tests/offline/test_ursula_2011.py
       - name: Befund aus getipptem/eingefügtem Text
         run: python tests/offline/test_befund_aus_text.py
       - name: SpeechMike (Tasten, LEDs, Zustände — PY + TS, gleiche Fälle)

@@ -298,6 +298,19 @@ def report_beidseits(report):
     return "\n".join(out)
 
 
+def report_seite(report, seite):
+    """kaiscribe-ursula-2011-text-n1 (Punkt 6): Untersuchungs-Überschrift(en) ohne Seite → Seite der CAS-Leistung
+    („Ganzbeinaufnahme im Stand“ + rechts → „Ganzbeinaufnahme im Stand rechts“); eine vorhandene Seite bleibt."""
+    out = []
+    for z in (report or "").split("\n"):
+        k = z.strip()
+        if k.startswith("## ") and k[3:].strip().rstrip(":").lower() not in ("befund", "ergebnis") \
+                and not _TITEL_SEITE.search(k[3:]) and "beidseits" not in k.lower():
+            z = "## " + br.titel_mit_seite(k[3:].strip(), seite)
+        out.append(z)
+    return "\n".join(out)
+
+
 def beidseits_block(w):
     """<cas_beidseits> für den Gen-Prompt (nur mit beidseitiger CAS-Leistung; sonst bleibt der Prompt bit-gleich)."""
     return ("<cas_beidseits>\n"

@@ -295,7 +295,7 @@ export const mammasonoBeidseits = (report: string): string => (report || '').rep
 
 // v3.7.2 (Peter 07.10.): wörtliche Ordi-Bausteine bleiben unnummeriert (nummerieren = false). Sync: befund_regeln.py
 export const nachbearbeiten = (report: string, nummerieren = true): string => {
-  const r = mammasonoBeidseits(befundUeberschriftSichern(csaBereinigen(report)));
+  const r = mammasonoBeidseits(befundUeberschriftSichern(csaBereinigen(nummerieren ? ergebnisTextSichern(report) : report)));
   return nummerieren ? ergebnisNummerieren(r) : r;
 };
 
@@ -1607,7 +1607,8 @@ export function grundregeln(report: string, diktat = '', templates?: VorlagenMap
   }
   if (erg) out = ergebnisNummerieren(out);
   const [out2, x2] = georg2311(out, diktat, templates);   // kaiscribe-schulter-ergebnis-n1 (Georg 22./23.11.2026, Punkte 48–70)
-  return [out2, [...aend, ...x2]];
+  const [out3, x3] = ursula2011(out2, templates);          // kaiscribe-ursula-2011-text-n1 (Ursula 20.11.2026, Punkte 3/4/7/10)
+  return [out3, [...aend, ...x2, ...x3]];
 }
 
 // ══ kaiscribe-schulter-ergebnis-n1 (Georg Riegler 22./23.11.2026, Punkte 48–70) – Sync: befund_regeln.py georg_2311,
@@ -2234,4 +2235,154 @@ export function phraseVorhanden(phrase: string, text: string): boolean {
     return VERTAUSCHT.some(([p, q]) => [[p, q], [q, p]].some(([u, v]) => x.includes(u) && restC.includes(x.split(u).join(v))));
   };
   return [...w].every(da);
+}
+
+// ══ kaiscribe-ursula-2011-text-n1 (Ursula Hofmeister, Durchsicht der KaiScribe-Briefe vom 20.11.2026) – Sync:
+// befund_regeln.py ursula_2011 / ergebnis_text_sichern / befund_schluss, Fixtures „ursula_2011“. Beschreibung siehe dort.
+const PROZENTIG = /(?<![\d,])(\d+(?:,\d+)?)[ \t]?-?[ \t]?(?:[Pp]rozent|%)[ \t]?-?[ \t]?ig(e[nrsm]?)?(?![a-zäöüß])/gu;
+const WS_SEITE = /[ \t]*(?<![A-Za-z0-9_ÄÖÜäöüß-])(?:beidseits|beidseitig|bds\.|bds|rechts|links|re\.|li\.)(?![A-Za-z0-9_ÄÖÜäöüß-])/giu;
+const WS_PAARIG = /hüft|becken|knie|schulter|sprung|fu(?:ß|ss)|hand|finger|zehe|ellbogen|iliosakral|rippe|clavicula|klavikula|(?<![a-zäöüß])(?:isg|sig)(?![a-zäöüß])/iu;
+const IM_UEBRIGEN = /^Im [Üü]brigen,?\s+/u;
+const LABEL_UEBRIGEN = /^([A-ZÄÖÜ][^:.]{0,48}):\s+im [Üü]brigen\s+/u;
+const TROCHANTER = /(?<![A-Za-zÄÖÜäöüß])((?:[Pp]er|[Ii]nter|[Ss]ub|[Pp]eri)?)([Tt])rochanter(e[nrsm]?)?(?![A-Za-zäöüß])/gu;
+const VERKLAKUNG = /(?<![A-Za-zÄÖÜäöüß])([Vv])erklak(ung(?:en)?|t(?:e[nrsm]?)?)(?![a-zäöüß])/gu;
+const TH_WIRBEL = /(?<![A-Za-zÄÖÜäöüß])T[Hh][ \t]?(1[0-2]|[1-9])(?!\d)/gu;
+
+const uebrigenFolge = (L: Zeilen, templates?: VorlagenMap): [Zeilen, string[]] => {
+  const s = saetzeVon(L), pos = flach(L), aend: string[] = [];
+  let davor = false;
+  s.forEach((x, j) => {
+    const m = IM_UEBRIGEN.exec(x), ml = LABEL_UEBRIGEN.exec(x);
+    if (m || ml) {
+      if (davor) {
+        let neu: string | null;
+        if (m) {
+          const rest = x.slice(m[0].length);
+          neu = WID_VERB.test(rest.split(' ', 1)[0].toLowerCase()) ? vorlageZurueck(rest, templates)
+            : (vorlageZurueck(rest, templates) ?? rest.slice(0, 1).toUpperCase() + rest.slice(1));
+        } else {
+          const kurz = ml![1] + ': ' + x.slice(ml![0].length);
+          neu = vorlageZurueck(kurz, templates) ?? kurz;
+        }
+        if (neu) {
+          aend.push(`„Im Übrigen“ nicht doppelt: ${neu.slice(0, 50)}`);
+          L[pos[j][0]]![pos[j][1]] = neu;
+          s[j] = neu;
+        }
+      }
+      davor = true;
+    } else if (pathoSatz(x)) davor = false;
+  });
+  return [L, aend];
+};
+
+export function ursula2011(report: string, templates?: VorlagenMap): [string, string[]] {
+  if (!report) return [report, []];
+  const aend: string[] = [];
+  const zeilen = report.split('\n');
+  zeilen.forEach((z, i) => {
+    const s = z.trim();
+    if (s.startsWith('## ') && !['befund', 'ergebnis'].includes(s.slice(3).trim().toLowerCase().replace(/:+$/u, ''))
+      && WS_TITEL.test(s) && !WS_PAARIG.test(s) && new RegExp(WS_SEITE.source, 'iu').test(s.slice(3))) {
+      const neu = '## ' + s.slice(3).replace(WS_SEITE, ' ').split(/\s+/u).filter(Boolean).join(' ');
+      if (neu !== s) { zeilen[i] = neu; aend.push(`Wirbelsäule ohne Seite: ${neu.slice(3)}`); }
+    }
+  });
+  for (const [a, e] of abschnitt(zeilen, 'befund').reverse()) {
+    const text = zeilen.slice(a, e).join('\n');
+    const L0 = zerlegen(text);
+    if (!flach(L0).length) continue;
+    const [L, x] = uebrigenFolge(L0, templates);
+    if (x.length) {
+      aend.push(...x);
+      const lead = text.slice(0, text.length - text.replace(/^\n+/u, '').length);
+      const trail = text.slice(text.replace(/\n+$/u, '').length);
+      zeilen.splice(a, e - a, ...(lead + zusammen(L).replace(/^\n+|\n+$/gu, '') + trail).split('\n'));
+    }
+  }
+  let out = zeilen.join('\n');
+  const regeln: [string, RegExp, (m: string, ...g: string[]) => string][] = [
+    ['Prozent', PROZENTIG, (_m, z, e) => z + '%ig' + (e || '')],
+    ['trochantär', TROCHANTER, (m, vor, t, endung) => (!vor && t === 'T' && !endung) ? m : vor + t + 'rochantär' + (endung || '')],
+    ['Verkalkung', VERKLAKUNG, (_m, v, rest) => v + 'erkalk' + rest],
+    ['Th + Zahl', TH_WIRBEL, (_m, n) => 'Th' + n],
+  ];
+  for (const [name, rx, ers] of regeln) {
+    const neu = out.replace(rx, ers as (m: string, ...g: string[]) => string);
+    if (neu !== out) { aend.push(`Schreibweise ${name}`); out = neu; }
+  }
+  return [out, aend];
+}
+
+export function ergebnisTextSichern(report: string): string {
+  if (!report || !report.includes('## ')) return report;
+  const out: string[] = [];
+  let imErg = false;
+  const zeilen = report.split('\n');
+  const naechsterKopf = (i: number): string | null => {
+    for (const z2 of zeilen.slice(i + 1)) if (z2.trim().startsWith('## ')) return z2.trim().slice(3).trim().toLowerCase().replace(/:+$/u, '');
+    return null;
+  };
+  for (const [i, z] of zeilen.entries()) {
+    const s = z.trim();
+    if (!s.startsWith('## ')) { out.push(z); continue; }
+    const k = s.slice(3).trim();
+    const m = /^ergebnis\s*:\s*(\S.*)$/iu.exec(k);
+    if (m) { out.push('## Ergebnis', m[1]); imErg = true; continue; }
+    const kl = k.toLowerCase().replace(/:+$/u, '');
+    if (kl === 'ergebnis') imErg = true;
+    else if (kl === 'befund') imErg = false;
+    else if (imErg && (/[.!?]$/u.test(k) || /^\d+[.)]\s/u.test(k)) && !['befund', 'ergebnis'].includes(naechsterKopf(i) ?? '')) { out.push(k); continue; }
+    else imErg = false;
+    out.push(z);
+  }
+  return out.join('\n');
+}
+
+const LOSE_REGION = new RegExp('^(?:' + MOD + '(?:(?:der|die|das|des)\\s+)?(?:' + REGION_ALT + '|' +
+  REGIONEN_OHNE_SEITE.map(([, p]) => p).join('|') + ')(?:\\s+in\\s+(?:2|zwei)\\s+ebenen)?(?:\\s+' + SEITE + ')?)\\s*[.:]?$', 'iu');
+
+export function befundSchluss(report: string): [string, string[]] {
+  if (!report || !report.includes('## ')) return [report, []];
+  let zeilen = report.split('\n');
+  const aend: string[] = [];
+  for (let i = 0; i < zeilen.length; i++) {
+    if (zeilen[i].trim().toLowerCase().replace(/:+$/u, '') === '## ergebnis') {
+      let j = i + 1;
+      while (j < zeilen.length && !zeilen[j].trim()) j++;
+      if (j > i + 1 && j < zeilen.length && !zeilen[j].trimStart().startsWith('## ')) {
+        zeilen.splice(i + 1, j - i - 1);
+        aend.push('Leerzeile nach „Ergebnis“ weg');
+      }
+    }
+  }
+  const kopf = (z: string): boolean => z.trim().startsWith('## ') && !['befund', 'ergebnis'].includes(z.trim().slice(3).trim().toLowerCase().replace(/:+$/u, ''));
+  const titel = zeilen.map((z, i) => (kopf(z) ? i : -1)).filter(i => i >= 0);
+  const teile: [number, number][] = titel.map((t, k) => [t, k + 1 < titel.length ? titel[k + 1] : zeilen.length]);
+  const inhalt = (a: number, b: number): number[] => {
+    const o: number[] = [];
+    for (let j = a; j < b; j++) if (zeilen[j].trim() && !zeilen[j].trim().startsWith('## ')) o.push(j);
+    return o;
+  };
+  const weg = new Set<number>();
+  for (const [a, b] of teile) {
+    const c = inhalt(a + 1, b);
+    if (c.length && LOSE_REGION.test(zeilen[c[c.length - 1]].trim())) {
+      aend.push(`loses Wort weg: ${zeilen[c[c.length - 1]].trim().slice(0, 30)}`);
+      weg.add(c[c.length - 1]);
+    }
+  }
+  const voll = teile.filter(([a, b]) => inhalt(a + 1, b).some(j => !weg.has(j)));
+  if (voll.length) {
+    for (const t of teile) {
+      if (!voll.includes(t)) {
+        aend.push(`Überschrift ohne Inhalt weg: ${zeilen[t[0]].trim().slice(3, 43)}`);
+        for (let j = t[0]; j < t[1]; j++) weg.add(j);
+      }
+    }
+  }
+  if (!weg.size) return [zeilen.join('\n'), aend];
+  zeilen = zeilen.filter((_z, j) => !weg.has(j));
+  while (zeilen.length && !zeilen[zeilen.length - 1].trim()) zeilen.pop();
+  return [zeilen.join('\n'), aend];
 }
