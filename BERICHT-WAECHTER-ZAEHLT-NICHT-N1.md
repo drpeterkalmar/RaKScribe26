@@ -54,3 +54,32 @@ Prozessbild (VM-Lauf) geschlossen; die Abnahme belegt es mit `-Schritt lage` (W�
 - **Probe 451898:** Fenster sanft zu, es liefen nur die Wächter (Mutex `Local\RaKScribe26-Einzelinstanz` fehlte). Dann CAS-Diktat (kp, gesprochen). bruecke.log: `[rakscribe] gestartet: X:\KaiScribe\Programm\KaiScribe.exe` → `angenommen von RaKScribe 3.28.1 (pid 11460) nach 8.0 s` → Ablage + JobFinished. 0× keine Antwort/Original. Brief richtig.
 - **Starter von Hand** (nur Wächter lief): `gestartet (minimiert)` statt „KaiScribe läuft schon“.
 - Offen: Morgenkontrolle 25.11. ab 07:35 an allen Befund-PCs (`keine_antwort` seit 06:00 = 0), Folgejob `waechter-zaehlt-nicht-n1-kontrolle`. Erst danach #541 fertig.
+
+## Teil 3 – Morgenkontrolle 25.11. (waechter-zaehlt-nicht-n1-kontrolle, gelesen 07:35–09:45, nur lesen)
+**Morgenkontrolle 25.11.: keine_antwort 0, aber nicht belegt.** Bis 09:38 kein einziges CAS-Diktat über die Brücke. Ein Fenster-Start nach der Anmeldung kam ebenfalls nicht → #541 bleibt offen.
+
+- Brücken-Spiegel `X:\KaiScribe\Daten\protokolle\bruecke_<PC>.log` (Rückfall `X:\RaKScribe\…`: keine Dateien), Zeilen seit 06:00:
+  CASWS08 0 (zuletzt 24.11. 10:07) · CASWS10 0 (zuletzt 24.11. 08:09) · CASWS14 0 (zuletzt 25.11. 01:48, Nachttest) ·
+  RAKCLIENT04 0 (zuletzt 19.11.). Also: keine_antwort 0, angenommen 0, `[rakscribe] gestartet` 0 an allen PCs, weil es keine Diktate gab.
+  Aktiv waren heute nur die Formatierer-Logs von CASWS03 (bis 09:35) und CASWS15 (bis 09:30), also SpeechMagic-Befundung.
+- Geteiltes `X:\KaiScribe\Programm\rakscribe.log` seit 06:00: 80 Zeilen, alle `[SM]` (Wächter). Wächter **3.28.2** startete
+  07:25:47 und 07:27:27, beide frisch (also Anmeldungen, kein Nachfolger). Das passt zu Georgs Anmeldezeit vom 24.11. (07:25:57).
+  **Kein einziger Fenster-Start (`[INIT] Nutzungszähler`) seit 06:00.** Letzter Fenster-Start je PC: CASWS10 23.11. 17:33,
+  CASWS08 24.11. 10:11, CASWS14 25.11. 01:56. Die erste KaiScribe-Version des Tages ist damit an keinem Befund-PC belegbar
+  (Wächter 3.28.2 ist auf X: aktuell, nicht 3.28.1).
+- Starter (`%APPDATA%\KaiScribe\starter.log`) ist vom Büro-PC aus nicht lesbar (Admin-Freigabe `\\<PC>\c$` an allen
+  fünf PCs zu). Ob dort „gestartet (minimiert)“ oder „KaiScribe läuft schon“ steht, bleibt offen.
+- **Ursache (aus dem Code, sehr wahrscheinlich):** Der neue Starter (seit 3.25.1) kommt erst auf einen PC, wenn dort das
+  **KaiScribe-Fenster** einmal startet (`Bereitschaft.nachziehen` in `_autostart_nachziehen`, RaKScribe.py:1233). Der Wächter
+  (`sm_waechter_main`) sichert nur seinen eigenen Autostart und zieht den Fenster-Starter nicht nach. An CASWS10 lief das Fenster
+  seit 23.11. nicht mehr. Dort liegt also noch der alte `warte_auf_x.vbs`, der den Wächter als „läuft schon“ zählt. Ergebnis:
+  wieder nur der Wächter, wie am 24.11. Das ist ein Henne-Ei-Problem.
+- Folge für Georg heute: Das Sicherheitsnetz Brücke 2.5.35 greift beim ersten CAS-Diktat (startet KaiScribe, ca. 8 s, siehe
+  Probe 451898). Danach schreibt das Fenster den Starter neu, und ab der nächsten Anmeldung kommt das Fenster von selbst. Die Meldung
+  „KaiScribe startet wieder von selbst“ stimmt daher **heute noch nicht** und geht nicht raus.
+- Nebenwerte (Punkt 5): `[CHIRP3] Text links nach … s ab Stopp` seit 06:00: **n = 0** (kein Fenster-Diktat, kein Messwert).
+  `[SM] … Pause erkannt`: **14** · `Sprachpegel nicht messbar`: **0** (Beleg für BERICHT-SM-SENF-DIKTATPAUSE-N1 Teil 2).
+- Folgeauftrag: `FOLGEJOB-WAECHTER-ZAEHLT-NICHT-N2.md`. Der Wächter zieht den Fenster-Starter beim Start nach, danach
+  Morgenkontrolle mit echten Brücken-Diktaten. Arbeitsdateien (Leseskripte): `~/cj/work/waechter-zaehlt-nicht-n1-kontrolle/`.
+- Lesewege: Ordi-Hermes `peer run ordi` und VM `peer run vm` (sieht dasselbe X:). Die Zeilen im rakscribe.log haben das Format
+  `[YYYY-MM-DD HH:MM:SS]`, die Brücken-Logs `YYYY-MM-DD HH:MM:SS`.
