@@ -96,9 +96,16 @@ mit dem LF-/Cache-Weg. Der Fix bringt die EXE also auf genau den Stand, der gepr
 
 ## Offene Punkte
 
-- Bau 3.29.x + Einspielen + Abnahme an 451898 (echter Lauf, nie vidieren) macht der Folgeauftrag
-  `kaiscribe-kosten-je-befund-n1-einspielen`. Beleg am Tag danach: Tagesbericht-Zeile „Claude-Token“ mit
-  `Cache-Treffer` ≫ `neu` und `ohne 0`.
+- **Gebaut:** Release 3.29.1 (Fix + Zähler) und **3.29.2** (zusätzlich zeigt die Logzeile `[KI] gen: … maskiert (… s,
+  n Platzhalter, Cache treffer|neu|ohne)` den Cache-Status). Asset `KaiScribe.exe`/`rakscribe26.exe` 56.795.191 B,
+  sha256 `a32c0f731bd33760975209aa041cece75a390de762d3a27d5c9b6abc1bf6543c`. CI grün: Tests, Build Windows EXE,
+  Windows UI-Test (EXE) für 3.29.1 und 3.29.2 (Lauf 45703744315). Pages-Deploy für a36474d ist grün (das Web ändert
+  sich im Verhalten nicht).
+- **Noch nicht eingespielt:** Einspielen und Abnahme an 451898 (echter Lauf, nie vidieren; zwei Diktate, das zweite muss
+  `Cache treffer` zeigen) macht der Folgeauftrag `kaiscribe-kosten-je-befund-n1-einspielen`
+  (`FOLGEJOB-KAISCRIBE-KOSTEN-JE-BEFUND-N1-EINSPIELEN.md`). Er läuft nach dem DEXA-Tausch, sodass nur einmal mit der
+  neuesten Version getauscht wird. Beleg am Tag danach: Tagesbericht-Zeile „Claude-Token“ mit `Cache-Treffer` ≫ `neu`
+  und `ohne 0`.
 - Schon auf main rot, nicht durch diesen Job: `test_testkosten` (Übungs-E2E) und `test_ibl_nur_auffaellig` (PANDA-Snapshot)
   → Karte #578 (tun). `test_buero_anthropic` (Frist 20 → 45 s veraltet) ist hier behoben.
 - Testkonto B steht diesen Monat bei ≈ 149 von 150 $ (fast alles aus anderen Jobs). Weitere Live-Tests im November
