@@ -349,7 +349,8 @@ class Weiche:
                         self.zaehler["zweitversuch"] += 1
                     self.zuletzt = f"anthropic/{self.modell}"
                     self.log(f"[KI] {rolle}: Anbieter=anthropic {self.modell} maskiert ({info['s']:.1f} s, "
-                             f"{info['platzhalter']} Platzhalter)" + (" — im zweiten Versuch" if nr > 1 else ""))
+                             f"{info['platzhalter']} Platzhalter, Cache {info.get('cache', '?')})"
+                             + (" — im zweiten Versuch" if nr > 1 else ""))
                     self._melden(dict(info, rolle=rolle, rueckfall=None, zweitversuch=nr > 1))
                     return text
                 except Exception as e:

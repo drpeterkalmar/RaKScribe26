@@ -87,8 +87,8 @@ def sender(body, frist):
             "usage": {"input_tokens": 1500, "cache_read_input_tokens": 29203, "output_tokens": 400}}
 
 
-infos = []
-w = la.Weiche("anthropic", sender=sender, log=lambda *a: None, beobachter=infos.append, schlafen=lambda s: None)
+infos, logs = [], []
+w = la.Weiche("anthropic", sender=sender, log=logs.append, beobachter=infos.append, schlafen=lambda s: None)
 w(pipeline.gen_prompt(DIKTAT, TPL["allgemein"], geladen), gemini.SYS_MSG, pruefen=gemini.report_complete, rolle="gen")
 teile = gesendet[-1]["messages"][0]["content"]
 check("EXE-Weg (geladen aus CRLF): cache_control 1 h am festen Anfang", len(teile) == 2 and teile[0].get("cache_control")
@@ -96,6 +96,8 @@ check("EXE-Weg (geladen aus CRLF): cache_control 1 h am festen Anfang", len(teil
 check("Info: cache=treffer, fest=True, Kosten mit Cache-Lesen",
       infos[-1].get("cache") == "treffer" and infos[-1].get("fest") is True
       and abs(infos[-1]["usd"] - (1500 * 2 + 29203 * 0.2 + 400 * 10) / 1e6) < 1e-12, infos[-1])
+check("Logzeile [KI] gen nennt den Cache-Status (Abnahme-Beleg im rakscribe.log)",
+      any("maskiert (" in z and "Cache treffer)" in z for z in logs), logs)
 check("cache_art: treffer/neu/ohne", la.cache_art({"cache_read_input_tokens": 5}) == "treffer"
       and la.cache_art({"cache_creation_input_tokens": 5}) == "neu" and la.cache_art({"input_tokens": 9}) == "ohne"
       and la.cache_art(None) == "ohne")
