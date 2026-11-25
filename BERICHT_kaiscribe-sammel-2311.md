@@ -58,3 +58,10 @@ lesbar (Zeitüberschreitung/keine Verbindung), nichts zurückgesetzt.
 - Arbeitsdateien: `~/cj/work/kaiscribe-sammel-2311/` (Aufträge r1/r2, Antworten, tests.sh, gate.sh, version_hoch.sh).
 
 👉 Georg: AC-Satz „Das AC-Gelenk ist altersentsprechend, keine Luxation.“ ok? (Karte #401), bis Fr 27.11.
+
+## Kontrolle 24.11. (Job kaiscribe-sammel-2311-kontrolle, 25.11. 01:00–01:30, nur gelesen über Büro-PC + VM)
+- Nicht rot, aber kein Beleg: an den Befund-PCs lief am 24.11. KEIN Befund über das KaiScribe-Fenster (142 Diktate rg/kp nur über SpeechMagic/Wächter; Läufe nur CASWS14-Testpatient 21:04–23:49). Geteiltes rakscribe.log: 0 `[EINFÜGEN]`-Zeilen, 0 Traceback/EXCEPTION.
+- Versionen 24.11.: 3.25.0 ab 05:57 (CASWS08 2 Annahmen 09:34), 3.26.1 ab 12:42, 3.28.1 ab 23:43; Fenster + SM-Wächter jetzt 3.28.1 (alle ⊇ 3.24.1). CASWS10 ohne KaiScribe-Start (Brücke zuletzt 08:09) → #541.
+- #377: 0 Läufe mit sglg/sgrg/sgbg. #401: 5 Schulter-Läufe (alle Test): 2× neuer AC-Satz (3.26.2), 0× alte Form, 3× ohne (Abnahmefälle mit AC-Befund).
+- Wiederholung am ersten echten Tag: `FOLGEJOB-KAISCRIBE-SAMMEL-2311-KONTROLLE-F1.md` (ab 25.11. 17:45). Arbeitsdateien `~/cj/work/kaiscribe-sammel-2311-kontrolle/`.
+
