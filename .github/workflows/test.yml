@@ -184,6 +184,11 @@ jobs:
       - name: Web-Befund-KI (Claude maskiert, gezählter Rückfall, Schlüssel aus Drive nachladen)
         working-directory: web_app
         run: node --experimental-strip-types --no-warnings llm_anbieter_test.mjs
+      - name: Übungsmodus Web – harte Sperre (Zwischenablage/fremde Ziele 0 Aufrufe), Dienst-Client (kaiscribe-uebung-n1)
+        working-directory: web_app
+        run: node --experimental-strip-types --no-warnings uebung_test.mjs
+      - name: Übungsdienst VM (Maske anonym, Ablage Word+Vergleich, Lösung erst nach Abgabe, Sperre 0 Ausgänge) (kaiscribe-uebung-n1)
+        run: python tests/offline/test_uebung.py
       - name: Typprüfung Web
         working-directory: web_app
         run: npx tsc -p tsconfig.app.json --noEmit

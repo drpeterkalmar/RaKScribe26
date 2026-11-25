@@ -43,6 +43,8 @@ import { diktatAnzeige, type Abschnitt } from './segmente.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
 import { kiAnbieterAusSpeicher, anthropicSchluesselNachladen, OHNE_KI_ZEILE } from './llmAnbieter.ts';  // Befund-KI-Anbieter (Standard Claude seit sonnet-n2)
+// kaiscribe-uebung-n1 (25.11.2026): Übungsmodus – gespiegelter Ordi-Tag vom VM-Dienst, nichts wird gesendet (Sperre: uebung.ts)
+import { uebungBasis, jetztMs, UebungDienst, UEBUNG_BALKEN, UEBUNG_KUERZEL, tagAnzeige, type UebungFall, type UebungFallKurz, type DiffOp, type Zahlen } from './uebung.ts';
 
 // Types: Template / TemplatesMap in src/detect.ts
 
@@ -77,6 +79,8 @@ const KEY_VERSION = '2';
 // immer direkt aus dem Bundle — der frühere localStorage-Prompt (Editor gibt es seit v3.0 nicht mehr) entfällt.
 const GEN_PROMPT = stripPromptMarker(genPromptRaw);
 const APP_VERSION = appVersionRaw.trim();
+// Übungsmodus: ?uebung (App vom Übungsdienst) bzw. ?uebung=https://… (App von Pages) – sonst null (normaler Betrieb)
+const UEBUNG_BASIS: string | null = typeof window !== 'undefined' ? uebungBasis(window.location.href) : null;
 // kaiscribe-privat-n1 (05.11.2026): Download-Ziel beim Bau einstellbar – am neuen Ort (netcup) liegt die EXE neben der
 // Web-App (VITE_EXE_DOWNLOAD=./download/KaiScribe.exe, tools/web_netcup_bauen.sh). Ohne Angabe wie bisher das Release.
 // kaiscribe-umzug-n1-exe (20.11.2026): Asset heißt KaiScribe.exe (rakscribe26.exe liegt im Übergang daneben).
@@ -274,7 +278,7 @@ export default function App() {
 
   // Auto-copy helper with fallback
   const copyTextToClipboard = async (text: string, nachholen = true): Promise<boolean> => {
-    if (!text) return false;
+    if (!text || UEBUNG_BASIS) return false;   // Übung: nie in die Zwischenablage (der Weg ins CAS) – hart gesperrt
     try {
       if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
         const html = `<html><head><meta charset="utf-8"></head><body>${reportToHtml(text)}</body></html>`;
@@ -648,6 +652,12 @@ export default function App() {
 
   // Mikrofon, Audio-Graph und Stream schließen (Stopp und Neu/F9)
   const audioStoppen = () => {
+    if (UEBUNG_BASIS && ueAufnahmeStartRef.current) {   // Übung: Aufnahmedauer beim Übungsdienst buchen (eigener Deckel)
+      const s = Math.ceil((jetztMs() - ueAufnahmeStartRef.current) / 1000);
+      ueAufnahmeStartRef.current = 0;
+      if (ueStoppRef.current) { clearTimeout(ueStoppRef.current); ueStoppRef.current = null; }
+      void ueDienstRef.current?.stt(s).then(j => setUeSttRest(j.stt_rest_s)).catch(() => {});
+    }
     if (processorRef.current) {
       processorRef.current.onaudioprocess = null;  // keine verspäteten Blöcke nach dem Stopp
       processorRef.current.disconnect();
@@ -696,6 +706,15 @@ export default function App() {
         }
       }
 
+      if (UEBUNG_BASIS) {   // Übung: eigener STT-Deckel (60 min/Tag je Kürzel, an Ordi-Tagen vor 17:00 knapper)
+        const d = ueDienstRef.current;
+        if (!d?.token || !ueFallRef.current) { setStatusText('Übung: erst anmelden und links einen Fall wählen'); return; }
+        const j = await d.stt(0).catch(() => null);
+        setUeSttRest(j?.stt_rest_s ?? 0);
+        if (!j || j.stt_rest_s <= 0) { setStatusText('Übung: Spracherkennungs-Kontingent für heute aufgebraucht'); return; }
+        ueAufnahmeStartRef.current = jetztMs();
+        ueStoppRef.current = setTimeout(() => setUeZeitUm(z => z + 1), Math.max(5, j.stt_rest_s / (j.faktor || 2)) * 1000);
+      }
       const lauf = laeufeRef.current.neu();
       aufnahmeLaufRef.current = lauf;
       // 3.19.16: schon automatisch kopierter Befund (F10/Knopf) = fertig wie nach EOL → nächstes Diktat = neuer Befund
@@ -919,6 +938,7 @@ export default function App() {
 
   // Audio File Upload Handler — feeds uploaded audio through the same STT + Gemini pipeline
   const handleAudioUpload = async (file: File) => {
+    if (UEBUNG_BASIS) { setStatusText('Übung: bitte diktieren – Audio-Dateien sind hier aus'); return; }
     // Umbau Schritt 8 (Gutachten P2-7): keine zweite Kette parallel zu Aufnahme oder Verarbeitung
     if (statusRef.current === 'processing' || statusRef.current === 'recording' || statusRef.current === 'paused') {
       setStatusText(statusRef.current !== 'processing'
@@ -1097,6 +1117,87 @@ export default function App() {
   };
 
   // Refs to avoid stale closures in global keyboard event listeners (Umbau Schritt 19: useLatest)
+  // ── kaiscribe-uebung-n1: Übungsmodus ──
+  const ueDienstRef = useRef<UebungDienst | null>(UEBUNG_BASIS ? new UebungDienst(UEBUNG_BASIS) : null);
+  const ueAufnahmeStartRef = useRef<number>(0);
+  const ueStoppRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [ueAngemeldet, setUeAngemeldet] = useState<string>('');
+  const [ueKuerzel, setUeKuerzel] = useState<string>(() => localStorage.getItem('uebung_kuerzel') || 'kp');
+  const [ueKennwort, setUeKennwort] = useState<string>('');
+  const [ueFehler, setUeFehler] = useState<string>('');
+  const [ueTage, setUeTage] = useState<string[]>([]);
+  const [ueTag, setUeTag] = useState<string>('');
+  const [ueFaelle, setUeFaelle] = useState<UebungFallKurz[]>([]);
+  const [ueFall, setUeFall] = useState<UebungFall | null>(null);
+  const ueFallRef = useLatest(ueFall);
+  const [ueSttRest, setUeSttRest] = useState<number>(0);
+  const [ueErgebnis, setUeErgebnis] = useState<{ ablage: string; zahlen: Zahlen; befund: string } | null>(null);
+  const [ueLoesung, setUeLoesung] = useState<{ loesung: string; diff: DiffOp[]; zahlen: Zahlen } | null>(null);
+  const [ueVariante, setUeVariante] = useState<string>('anonym');
+  const [ueZeitUm, setUeZeitUm] = useState<number>(0);   // Übungs-Kontingent während der Aufnahme erreicht → stoppen
+  const uebungAnmelden = async () => {
+    const d = ueDienstRef.current;
+    if (!d) return;
+    setUeFehler('');
+    try {
+      const j = await d.anmelden(ueKuerzel, ueKennwort);
+      localStorage.setItem('uebung_kuerzel', j.kuerzel);
+      setUeKennwort('');
+      setUeAngemeldet(j.kuerzel);
+      setUeVariante(j.variante);
+      setUeSttRest(j.stt_rest_s);
+      const t = await d.tage();
+      setUeTage(t.tage);
+      if (t.tage[0]) await uebungTagWaehlen(t.tage[0]);
+    } catch (err) {
+      setUeFehler(fehlermeldung(err));
+    }
+  };
+  const uebungTagWaehlen = async (tag: string) => {
+    const d = ueDienstRef.current;
+    if (!d) return;
+    setUeTag(tag); setUeFall(null); setUeErgebnis(null); setUeLoesung(null);
+    try { setUeFaelle((await d.faelle(tag)).faelle); } catch (err) { setUeFehler(fehlermeldung(err)); setUeFaelle([]); }
+  };
+  const uebungFallWaehlen = async (id: string) => {
+    const d = ueDienstRef.current;
+    if (!d || statusRef.current !== 'ready') { setStatusText('Erst die laufende Aufnahme/Verarbeitung beenden'); return; }
+    handleReset();
+    setUeErgebnis(null); setUeLoesung(null);
+    try { setUeFall((await d.fall(ueTag, id)).fall); setStatusText('Fall geladen – F10 / Record: diktieren'); }
+    catch (err) { setUeFehler(fehlermeldung(err)); }
+  };
+  const uebungAbgeben = async () => {
+    const d = ueDienstRef.current, f = ueFallRef.current;
+    const text = structuredReportRef.current.trim();
+    if (!d || !f || !text) { setStatusText('Übung: erst einen Fall wählen und einen Befund erstellen'); return; }
+    try {
+      const j = await d.abgabe(ueTag, f.id, text, transcript);
+      setUeErgebnis({ ablage: j.ablage, zahlen: j.zahlen, befund: text });
+      setUeFaelle(l => l.map(x => x.id === f.id ? { ...x, abgegeben: true } : x));
+      setBefundWartet(false);
+      setStatusText(`Übung abgelegt (${j.ablage}) – nichts gesendet`);
+    } catch (err) {
+      setStatusText('Übung: Abgabe fehlgeschlagen – ' + fehlermeldung(err));
+    }
+  };
+  const uebungLoesung = async () => {
+    const d = ueDienstRef.current, f = ueFallRef.current;
+    if (!d || !f) return;
+    try { setUeLoesung(await d.loesung(ueTag, f.id)); } catch (err) { setStatusText(fehlermeldung(err)); }
+  };
+  const uebungWord = async () => {
+    const d = ueDienstRef.current, f = ueFallRef.current;
+    if (!d || !f) return;
+    try {
+      const b = await d.word(ueTag, f.id);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = ueErgebnis?.ablage || `${f.id}_${d.kuerzel}.docx`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (err) { setStatusText(fehlermeldung(err)); }
+  };
   const startRecordingRef = useLatest(startRecording);
   const stopRecordingRef = useLatest(stopRecording);
   const handleResetRef = useLatest(handleReset);
@@ -1114,6 +1215,7 @@ export default function App() {
   const befundFertig = async () => {
     const text = structuredReportRef.current.trim();
     if (!uiAktion(appZustand, 'eol') || !sendefaehig(text)) { setStatusText('Erst INS, Befund prüfen, dann EOL'); return; }
+    if (UEBUNG_BASIS) { await uebungAbgeben(); return; }   // Übung: EOL = in die Übungsablage, NICHT kopieren/senden
     if (!await copyTextToClipboard(text, false)) {
       setStatusText('Nicht kopiert – Browserfenster anklicken, dann EOL erneut');
       return;
@@ -1147,6 +1249,13 @@ export default function App() {
     else if (e === 'ins' && aktion === 'text_start') void befundAusText(true);
   };
   const smTasteRef = useLatest(smTaste);
+  const befundFertigRef = useLatest(befundFertig);
+  useEffect(() => {
+    if (ueZeitUm && (statusRef.current === 'recording' || statusRef.current === 'paused')) {
+      setStatusText('Übung: Spracherkennungs-Kontingent erreicht – Aufnahme gestoppt');
+      void stopRecordingRef.current();
+    }
+  }, [ueZeitUm, statusRef, stopRecordingRef]);
   useEffect(() => {
     const hid = webHid();
     if (!hid || !smAn) return;  // kein WebHID (Safari/iPhone/Firefox) oder im Menü ausgeschaltet → nichts öffnen
@@ -1203,6 +1312,9 @@ export default function App() {
       } else if (e.key === 'F9') {
         e.preventDefault();
         handleResetRef.current();
+      } else if (e.key === 'F12' && UEBUNG_BASIS) {   // Übung: F12 = EOL (Befund in die Übungsablage)
+        e.preventDefault();
+        void befundFertigRef.current();
       }
     };
 
@@ -1210,7 +1322,7 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [statusRef, keysReadyRef, startRecordingRef, stopRecordingRef, handleResetRef, einfuegeZielMerkenRef]);
+  }, [statusRef, keysReadyRef, startRecordingRef, stopRecordingRef, handleResetRef, einfuegeZielMerkenRef, befundFertigRef]);
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -1227,7 +1339,12 @@ export default function App() {
   const partialKey = !keysReady && (!!vertexApiKey || !!sttKeyJson);
 
   return (
-    <div className={`app ${keysReady ? '' : 'is-locked'}`}>
+    <div className={`app ${keysReady ? '' : 'is-locked'} ${UEBUNG_BASIS ? 'is-uebung' : ''}`}>
+      {UEBUNG_BASIS && (
+        <div className="uebung-balken" role="status">
+          {UEBUNG_BALKEN}{ueAngemeldet ? ` · ${ueAngemeldet} · ${ueVariante}${ueTag ? ' · Tag ' + tagAnzeige(ueTag) : ''} · STT noch ${Math.floor(ueSttRest / 60)} min` : ''}
+        </div>
+      )}
       {/* Top bar */}
       <header className="topbar">
         <div className="brand">
@@ -1332,7 +1449,41 @@ export default function App() {
       </header>
 
       {/* Workspace */}
-      <main className="workspace" aria-hidden={!keysReady}>
+      <main className={`workspace ${UEBUNG_BASIS ? 'mit-uebung' : ''}`} aria-hidden={!keysReady}>
+        {UEBUNG_BASIS && (
+          <section className="panel uebung-panel" aria-label="Übungsfälle">
+            <div className="panel-head">
+              <h2>Übung</h2>
+              {ueAngemeldet && ueTage.length > 0 && (
+                <select className="mic-select" value={ueTag} onChange={e => void uebungTagWaehlen(e.target.value)} aria-label="Übungstag">
+                  {ueTage.map(t => <option key={t} value={t}>{tagAnzeige(t)}</option>)}
+                </select>
+              )}
+            </div>
+            <div className="uebung-liste" role="list">
+              {!ueAngemeldet && <div className="muted">Bitte anmelden.</div>}
+              {ueAngemeldet && ueFaelle.length === 0 && <div className="muted">Keine Fälle für {ueAngemeldet} an diesem Tag.</div>}
+              {ueFaelle.map(f => (
+                <button key={f.id} role="listitem" className={`uebung-fall ${ueFall?.id === f.id ? 'on' : ''}`}
+                  onClick={() => void uebungFallWaehlen(f.id)} disabled={status !== 'ready'}>
+                  <strong>{f.id}</strong> <span className="muted">{f.zeit || ''}</span> {f.abgegeben ? <Check size={13} /> : null}
+                  <span className="uebung-fall-text">{(f.untersuchungen || []).join('; ') || '—'} · {f.alter ?? '?'} J. {f.geschlecht || ''}</span>
+                </button>
+              ))}
+            </div>
+            {ueFall && (
+              <div className="uebung-karte" aria-label="Fallkarte">
+                <div><strong>{ueFall.id}</strong> · {ueFall.alter ?? '?'} J. · {ueFall.geschlecht || '?'}</div>
+                <div><span className="muted">Leistung:</span> {(ueFall.untersuchungen || []).join('; ') || '—'}</div>
+                {ueFall.zuweisung && <div><span className="muted">Zuweisung:</span> {ueFall.zuweisung}</div>}
+                {(ueFall.ibl || []).map(b => <div key={b.modul}><span className="muted">IB Lab {b.modul}:</span> <span className="pre">{b.text}</span></div>)}
+                {ueFall.senf && <div><span className="muted">Senf:</span> <span className="pre">{ueFall.senf}</span></div>}
+                {ueFall.vorbefund && <div><span className="muted">Vorbefund {ueFall.vorbefund.datum || ''}:</span> <span className="pre">{ueFall.vorbefund.text}</span></div>}
+                {(ueFall.hinweise || []).map(h => <div key={h} className="muted">{h}</div>)}
+              </div>
+            )}
+          </section>
+        )}
         <section className="panel">
           <div className="panel-head">
             <h2><Mic size={16} /> Diktat</h2>
@@ -1378,7 +1529,7 @@ export default function App() {
             </button>
             <button
               onClick={() => audioUploadRef.current?.click()}
-              disabled={status === 'processing' || status === 'recording' || status === 'paused' || !keysReady}
+              disabled={status === 'processing' || status === 'recording' || status === 'paused' || !keysReady || !!UEBUNG_BASIS}
               className="btn btn-ghost"
               title="Sprachnachricht oder Audio-Datei hochladen (auch per Drag & Drop)"
             >
@@ -1433,12 +1584,27 @@ export default function App() {
               className="editor editor-report" placeholder="Noch kein Befund."
               title="Befund bearbeiten. Cursor setzen oder Text markieren und F10: das Diktat wird an dieser Stelle eingefügt." />
           )}
+          {UEBUNG_BASIS ? (
+            <div className="panel-foot">
+              {ueErgebnis ? (
+                <>
+                  <span className="hint">Abgelegt: {ueErgebnis.ablage} · Übereinstimmung {ueErgebnis.zahlen.aehnlich_prozent} %</span>
+                  <button onClick={() => void uebungLoesung()} className="btn btn-ghost">Lösung zeigen</button>
+                  <button onClick={() => void uebungWord()} className="btn btn-ghost"><Download size={16} /> Word</button>
+                </>
+              ) : <span className="hint">Übung: EOL / F12 legt den Befund ab – nichts wird gesendet</span>}
+              <button onClick={() => void befundFertig()} disabled={!structuredReport || !ueFall || status !== 'ready'} className="btn btn-primary">
+                <Check size={16} /> Abgeben <kbd>F12</kbd>
+              </button>
+            </div>
+          ) : (
           <div className="panel-foot">
             <span className="hint">Für RIS oder Word</span>
             <button onClick={handleCopyReport} disabled={!structuredReport} className="btn btn-primary">
               <Copy size={16} /> Befund kopieren
             </button>
           </div>
+          )}
         </section>
       </main>
 
@@ -1467,6 +1633,42 @@ export default function App() {
             )}
             {keyError && <div className="gate-error"><CircleAlert size={15} /> {keyError}</div>}
             <p className="gate-foot">Einmal laden genügt — der Schlüssel bleibt in diesem Browser gespeichert.<br />iPhone: im Dateidialog „Durchsuchen → Google Drive“.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Übung: Anmeldung je Kürzel */}
+      {UEBUNG_BASIS && keysReady && !ueAngemeldet && (
+        <div className="gate" role="dialog" aria-modal="true" aria-labelledby="ue-titel">
+          <div className="gate-card">
+            <h1 id="ue-titel">Übung – Anmeldung</h1>
+            <p className="gate-text">{UEBUNG_BALKEN}. Gespiegelter Ordi-Tag, Befunde landen nur in der Übungsablage.</p>
+            <select className="mic-select" value={ueKuerzel} onChange={e => setUeKuerzel(e.target.value)} aria-label="Kürzel">
+              {UEBUNG_KUERZEL.map(k => <option key={k} value={k}>{k}</option>)}
+            </select>
+            <input className="paste-area uebung-kennwort" type="password" value={ueKennwort} placeholder="Kennwort" aria-label="Kennwort"
+              onChange={e => setUeKennwort(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void uebungAnmelden(); }} autoFocus />
+            {ueFehler && <div className="gate-error"><CircleAlert size={15} /> {ueFehler}</div>}
+            <button className="btn btn-primary btn-wide" disabled={!ueKennwort} onClick={() => void uebungAnmelden()}>
+              <Check size={16} /> Anmelden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Übung: Lösung (echter vidierter Befund) mit markierten Unterschieden – erst nach der Abgabe */}
+      {UEBUNG_BASIS && ueLoesung && (
+        <div className="gate gate-top" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget) setUeLoesung(null); }}>
+          <div className="gate-card uebung-loesung">
+            <button className="icon-button gate-close" onClick={() => setUeLoesung(null)} aria-label="Schließen"><X size={18} /></button>
+            <h1>Lösung {ueFall?.id}</h1>
+            <p className="gate-text">Übereinstimmung {ueLoesung.zahlen.aehnlich_prozent} % · <del>nur im echten Befund</del> {ueLoesung.zahlen.fehlt} · <ins>nur in der Übung</ins> {ueLoesung.zahlen.neu}</p>
+            <div className="uebung-diff">
+              {ueLoesung.diff.map(([op, t], i) => op === '=' ? <span key={i}>{t} </span>
+                : op === '-' ? <del key={i}>{t} </del> : <ins key={i}>{t} </ins>)}
+            </div>
+            <h2>Echter Befund</h2>
+            <div className="pre uebung-echt">{ueLoesung.loesung}</div>
           </div>
         </div>
       )}

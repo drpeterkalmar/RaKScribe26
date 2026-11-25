@@ -296,3 +296,28 @@ kbd {
 /* v3.8.0: nach einer SpeechMike-Pause ist das bisher Diktierte repariert (chirp_3 + Fehlhör-Liste) */
 .repaired { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ok); white-space: nowrap; }
 .repaired.muted { color: var(--text-muted); font-weight: 400; }
+
+/* kaiscribe-uebung-n1: Übungsmodus – roter Dauerbalken, Fallliste links, Fallkarte, Lösung mit Unterschieden */
+.uebung-balken {
+  position: sticky; top: 0; z-index: 60; background: #b00020; color: #fff; font-weight: 700; text-align: center;
+  padding: 6px 12px; padding-top: calc(6px + env(safe-area-inset-top)); letter-spacing: .02em;
+}
+.is-uebung .topbar { top: 32px; }
+.workspace.mit-uebung { grid-template-columns: minmax(240px, 320px) 1fr 1fr; }
+.uebung-panel { gap: 8px; overflow: hidden; }
+.uebung-liste { display: flex; flex-direction: column; gap: 4px; overflow: auto; max-height: 38vh; padding: 0 10px; }
+.uebung-fall {
+  text-align: left; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: transparent;
+  color: inherit; cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font: inherit;
+}
+.uebung-fall.on { border-color: #b00020; box-shadow: 0 0 0 1px #b00020 inset; }
+.uebung-fall-text { flex-basis: 100%; font-size: 13px; opacity: .85; }
+.uebung-karte { border-top: 1px solid var(--line); padding: 8px 10px; overflow: auto; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.pre { white-space: pre-wrap; }
+.uebung-kennwort { min-height: 0; height: 44px; }
+.uebung-loesung { width: min(860px, 100%); text-align: left; max-height: 90vh; overflow: auto; }
+.uebung-diff { line-height: 1.6; white-space: pre-wrap; }
+.uebung-diff del, .uebung-loesung del { background: #fde2e2; color: #8a1020; }
+.uebung-diff ins, .uebung-loesung ins { background: #e0f4e4; color: #14532d; text-decoration: none; border-bottom: 2px solid #2e7d32; }
+.uebung-echt { font-size: 14px; opacity: .9; }
+@media (max-width: 900px) { .workspace.mit-uebung { grid-template-columns: 1fr; } }
