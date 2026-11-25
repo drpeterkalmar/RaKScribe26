@@ -142,11 +142,16 @@ def senf_lesen(nr):
 
 
 def ibl_lesen(nr):
-    out = []
-    for p in sorted(glob.glob(os.path.join(IBL_ORDNER, nr + "_*.txt"))):
-        modul = os.path.basename(p)[len(nr) + 1:-4].upper()
-        if not re.fullmatch(r"[A-Z0-9_]{2,20}", modul):
+    """Abholer-Dateien heißen nach der Accession-Nummer (Diktatnummer + 1 Ziffer je Leistung): <nr><z>_<modul>.txt."""
+    out, gesehen = [], set()
+    for p in sorted(glob.glob(os.path.join(IBL_ORDNER, nr + "*_*.txt"))):
+        m = re.fullmatch(re.escape(nr) + r"\d?_([a-z0-9]{2,20})\.txt", os.path.basename(p), re.I)
+        if not m:
             continue
+        modul = m.group(1).upper()
+        if modul in gesehen:
+            continue
+        gesehen.add(modul)
         try:
             with open(p, encoding="utf-8-sig", errors="replace") as f:
                 t = f.read().strip()

@@ -229,6 +229,12 @@ export const kiAnbieterAusSpeicher = (speicher: Pick<Storage, 'getItem'> = local
     rueckfall: (speicher.getItem('ki_rueckfall') || 'aus').toLowerCase() === 'an' };
 };
 
+/** kaiscribe-uebung-n1 (25.11.2026): Braucht die Kette Gemini überhaupt? Seit 3.24.0 (kein Rückfall) nicht, wenn Befund
+ *  UND Korrektur über Claude laufen und ein Claude-Schlüssel da ist. Dann darf eine gescheiterte Gemini-Schlüsselprüfung
+ *  (z. B. „Spend cap breached“ im Vertex-Projekt) die Aufnahme nicht sperren. */
+export const geminiNoetig = (ki: KiAnbieter | undefined): boolean =>
+  !ki || ki.rueckfall || !ki.anthropicKey || ki.anbieter !== 'anthropic' || ki.korrektur !== 'anthropic';
+
 // kaiscribe-webapp-schluessel-n1 (17.11.2026, Kanban #351): fehlt der Anthropic-Schlüssel im Browser, holt die Web-App
 // ihn beim Start selbst aus rakscribe-praxis-key.json in Drive — mit dem schon geladenen STT-Dienstkonto (Bereich
 // drive.readonly; die Datei ist nur für dieses Konto lesend freigegeben). Kein erneutes „Schlüssel laden“ nötig.

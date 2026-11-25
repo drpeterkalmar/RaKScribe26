@@ -120,6 +120,7 @@ def main():
     ap.add_argument("--faelle", type=int, default=3)
     ap.add_argument("--live", default="")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--resolve", default="", help="z. B. dexa.taild969f0.ts.net=100.76.169.124 (Mac löst ts.net nicht auf)")
     a = ap.parse_args()
     td = tempfile.mkdtemp(prefix="uebung_e2e_", dir=str(SHOTS))
     srv = ablage = None
@@ -130,15 +131,28 @@ def main():
         url, key, kennwort = a.url, pathlib.Path(os.environ["PRAXIS_KEY"]).read_text(), vw_kennwort(a.kuerzel)
     herkunft = re.match(r"^(https?://[^/]+)", url).group(1)
     anfragen, fremd = [], []
-    args = ["--mute-audio", "--use-angle=metal", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
+    args = ["--mute-audio", "--autoplay-policy=no-user-gesture-required", "--use-angle=metal", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
+    if a.resolve:
+        h, ip = a.resolve.split("=")
+        args.append(f"--host-resolver-rules=MAP {h} {ip}")
     if a.live:
-        args += ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", f"--use-file-for-fake-audio-capture={a.live}"]
+        args += ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
     with sync_playwright() as p:
         b = p.chromium.launch(args=args)
         ctx = b.new_context(viewport={"width": 1500, "height": 900}, accept_downloads=True,
                             permissions=["clipboard-read", "clipboard-write", "microphone"])
         if a.probe:
             abfangen(ctx)
+        if a.live:   # Mikrofon = WAV (Chromiums Datei-Attrappe greift headless nicht): getUserMedia liefert den WAV-Strom
+            import base64
+            b64 = base64.b64encode(pathlib.Path(a.live).read_bytes()).decode()
+            ctx.add_init_script("""(() => { const b64 = '%s';
+  const echt = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  navigator.mediaDevices.getUserMedia = async (c) => { if (!c || !c.audio) return echt(c);
+    const ctx = new AudioContext(); const bytes = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+    const buf = await ctx.decodeAudioData(bytes.buffer); const src = ctx.createBufferSource(); src.buffer = buf;
+    const ziel = ctx.createMediaStreamDestination(); src.connect(ziel); src.start(); return ziel.stream; };
+})();""" % b64)
         pg = ctx.new_page()
         pg.on("dialog", lambda d: (print("DIALOG:", d.message[:120]), d.dismiss()))
 

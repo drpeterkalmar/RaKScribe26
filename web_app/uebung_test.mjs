@@ -4,6 +4,7 @@
 // Dazu: Quelltext-Prüfung, dass App.tsx im Übungsmodus nie kopiert/sendet, und der Dienst-Client.
 //   cd web_app && node --experimental-strip-types --no-warnings uebung_test.mjs
 import { readFileSync } from 'node:fs';
+import { geminiNoetig } from './src/llmAnbieter.ts';
 import { uebungBasis, sperreEinrichten, UebungDienst, ERLAUBTE_HOSTS, UEBUNG_BALKEN } from './src/uebung.ts';
 
 let fail = 0, n = 0;
@@ -112,6 +113,12 @@ check(lf === 'Erst abgeben, dann Lösung', 'Client: Lösung vor Abgabe → Hinwe
 await d.stt(30);
 check(d.sttRestS === 3540 && JSON.parse(rufe.at(-1).init.body).sekunden === 30, 'Client: STT buchen');
 check(!JSON.stringify(rufe).includes('geheim') || rufe[0].u.endsWith('/api/anmelden'), 'Client: Kennwort nur an /api/anmelden');
+
+// ── Gemini-Schlüsselprüfung sperrt die Aufnahme nur noch, wenn Gemini wirklich gebraucht wird (Spend cap 25.11.) ──
+const ki = (o) => ({ anbieter: 'anthropic', korrektur: 'anthropic', modell: 'm', anthropicKey: 'k', fristMs: 45000, rueckfall: false, ...o });
+check(geminiNoetig(ki({})) === false, 'Claude für Befund+Korrektur mit Schlüssel → Gemini-Prüfung sperrt nicht');
+check(geminiNoetig(ki({ anthropicKey: '' })) && geminiNoetig(ki({ rueckfall: true })) && geminiNoetig(ki({ korrektur: 'gemini' }))
+  && geminiNoetig(ki({ anbieter: 'gemini' })) && geminiNoetig(undefined), 'sonst (ohne Schlüssel, Rückfall an, Gemini eingestellt) wie bisher');
 
 console.log(`\n${n - fail}/${n} PASS`);
 process.exit(fail ? 1 : 0);

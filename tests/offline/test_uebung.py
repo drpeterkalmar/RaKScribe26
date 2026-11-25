@@ -334,6 +334,13 @@ for boese in ("UPDATE sysadm.warterow SET status='x'", "DELETE FROM sysadm.lette
         check(f"Spiegel: „{boese[:20]}…“ abgewiesen", True)
 check("Spiegel: Patient-SQL nimmt nur Ziffern-IDs", "1; DROP" not in SP.patient_sql(cas, ["1; DROP TABLE x", "7"], "SEX"))
 check("Spiegel: Geschlecht-Spalte nur aus Liste", "a.BOESE" not in SP.patient_sql(cas, ["7"], "BOESE"))
+with tempfile.TemporaryDirectory() as td_ibl:
+    for n in ("202611230121_frog.txt", "202611230121_frog.json", "20261123012_koala.txt", "202611230131_rho.txt"):
+        pathlib.Path(td_ibl, n).write_text("Text " + n, encoding="utf-8")
+    alt_ibl, SP.IBL_ORDNER = SP.IBL_ORDNER, td_ibl
+    ib = SP.ibl_lesen("20261123012")
+    SP.IBL_ORDNER = alt_ibl
+    check("Spiegel: IB Lab je Accession (<nr><z>_<modul>.txt), fremde Nummer nicht", sorted(x["modul"] for x in ib) == ["FROG", "KOALA"], ib)
 check("Spiegel: Alter am Untersuchungstag", SP.alter_am("24.11.1960", "20261123") == 65 and SP.alter_am("23.11.1960", "20261123") == 66)
 an_h, an_a = SP.fall_bauen({"nr": "20261123012", "rh": "12", "wer": "kp", "rt": "08:10"},
                            {"besuch": {"zuweiser": "Dr. Gruber Franz", "info": "Knieschmerz re. seit 2 Wo, Huber"},

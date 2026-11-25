@@ -42,7 +42,7 @@ import { SpeechMikeVerbindung, webHid, BELEGUNG, ledFuer, sendefaehig } from './
 import { diktatAnzeige, type Abschnitt } from './segmente.ts';
 // Umbau Schritt 9 (Gutachten P2-8): 16 kHz Int16 schon im Audio-Callback, WAV per Ausschnitt
 import { Resampler16k, Int16Puffer, float32ToInt16At16k, wavFromInt16, sliceWav } from './audio.ts';
-import { kiAnbieterAusSpeicher, anthropicSchluesselNachladen, OHNE_KI_ZEILE } from './llmAnbieter.ts';  // Befund-KI-Anbieter (Standard Claude seit sonnet-n2)
+import { kiAnbieterAusSpeicher, anthropicSchluesselNachladen, OHNE_KI_ZEILE, geminiNoetig } from './llmAnbieter.ts';  // Befund-KI-Anbieter (Standard Claude seit sonnet-n2)
 // kaiscribe-uebung-n1 (25.11.2026): Übungsmodus – gespiegelter Ordi-Tag vom VM-Dienst, nichts wird gesendet (Sperre: uebung.ts)
 import { uebungBasis, jetztMs, UebungDienst, UEBUNG_BALKEN, UEBUNG_KUERZEL, tagAnzeige, type UebungFall, type UebungFallKurz, type DiffOp, type Zahlen } from './uebung.ts';
 
@@ -691,7 +691,7 @@ export default function App() {
 
       // Umbau Schritt 8 (Gutachten P2-9): Schlüssel wird einmal nach dem Laden geprüft. Nur wenn diese Prüfung
       // fehlschlug, vor dem Start erneut prüfen (Netzwackler beim Laden sperrt nicht dauerhaft).
-      if (keyPruefung.key === vertexApiKey && keyPruefung.stand === 'fehler') {
+      if (keyPruefung.key === vertexApiKey && keyPruefung.stand === 'fehler' && geminiNoetig(kiAnbieterAusSpeicher())) {
         setStatusText("Verifiziere API-Key...");
         setStatus('processing');
         try {
