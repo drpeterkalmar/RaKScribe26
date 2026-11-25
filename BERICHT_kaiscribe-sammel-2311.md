@@ -65,3 +65,9 @@ lesbar (Zeitüberschreitung/keine Verbindung), nichts zurückgesetzt.
 - #377: 0 Läufe mit sglg/sgrg/sgbg. #401: 5 Schulter-Läufe (alle Test): 2× neuer AC-Satz (3.26.2), 0× alte Form, 3× ohne (Abnahmefälle mit AC-Befund).
 - Wiederholung am ersten echten Tag: `FOLGEJOB-KAISCRIBE-SAMMEL-2311-KONTROLLE-F1.md` (ab 25.11. 17:45). Arbeitsdateien `~/cj/work/kaiscribe-sammel-2311-kontrolle/`.
 
+
+## Kontrolle 25.11. (Job kaiscribe-sammel-2311-kontrolle-f1, 25.11. 18:05–18:15, nur gelesen über VM)
+- Wieder kein Beleg, nicht rot: 06:00–18:04 an KEINEM Befund-PC ein KaiScribe-Fenster-Start (`[INIT]` 0), nur Wächter 3.28.2 (07:25/07:27, Abmeldung 16:53/18:04); 0 `[EINFÜGEN]`, 0 Traceback/EXCEPTION, 0 echte Läufe (nur 2 WAV-Tests 451898 01:42/01:47).
+- Live ist 3.28.2 (Wächter-Nachfolger seit 25.11. 01:36). CASWS10 weiter ohne Fenster-Start → Notiz #541 (Starter, Job waechter-zaehlt-nicht-n2).
+- #377: 0 sg*g-Läufe. #401: 0 Schulter-Läufe. Notizen auf #377/#401/#541.
+- Letzter Versuch: `FOLGEJOB-KAISCRIBE-SAMMEL-2311-KONTROLLE-F2.md` (ab Do 26.11. 17:45), danach Karte „wartet auf ersten echten Fall“. Arbeitsdateien `~/cj/work/kaiscribe-sammel-2311-kontrolle-f1/`.
