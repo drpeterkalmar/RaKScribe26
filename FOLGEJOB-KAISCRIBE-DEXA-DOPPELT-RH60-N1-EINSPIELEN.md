@@ -10,7 +10,10 @@ Mac oder Server, in Bericht und Commits nur RH-Nummern. Meldungsruhe gilt.
 ## A. Einspielen
 1. Build Windows EXE (`gh workflow run build-exe.yml`, Release mit VERSION) und Windows-UI-Test (test-exe-windows.yml) müssen grün sein.
 2. Tausch: `kaiscribe_x_tauschen.ps1 -Schritt exe -Tag <Version>`. SHA256 der X:-EXE muss gleich dem Release-Asset sein.
-3. Web-App: Pages-Deploy grün, die Live-Seite zeigt die Version.
+3. Web-App: Pages-Deploy grün, die Live-Seite zeigt die Version. **Achtung:** Seit 24.11. 22:24 scheitert der Deploy an GitHub
+   („No artifacts named github-pages“, der Build ist grün; Läufe 45500511449, 45569199889, 45569403893). Live steht noch **3.28.1**.
+   Mit `gh workflow run deploy.yml --ref main` neu starten, bis https://drpeterkalmar.github.io/RaKScribe26/ 3.28.3 (oder neuer)
+   zeigt. Scheitert es weiter: Kanban-Karte in Spalte tun „RaKScribe26 Pages-Deploy hängt“, keine Schleife.
 
 ## B. Abnahme an 451898 (Kombi Rö + DEXA)
 1. Am Testpatienten 451898 eine Kombi anlegen bzw. nutzen: eine Röntgen-Leistung (z. B. LWS 2 Ebenen) **plus** eine
