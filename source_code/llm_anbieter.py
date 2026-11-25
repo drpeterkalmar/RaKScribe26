@@ -64,7 +64,9 @@ _VAL_ANFANG = "Du bist ein radiologischer Qualitätskontrolleur"
 
 class Rueckfall(Exception):
     """Anthropic-Antwort nicht verwendbar (→ zweiter Versuch, dann ohne KI bzw. mit KI_RUECKFALL = an Gemini).
-    Text = Kategorie (ohne Patientendaten)."""
+    Text = Kategorie (ohne Patientendaten). kosten = {usage, usd, cache, fest}, wenn Anthropic schon geantwortet (und
+    damit abgerechnet) hatte — die Weiche meldet das als „verworfen“ an den Zähler (kosten-je-befund-n1)."""
+    kosten = None
 
 
 class OhneKi(Exception):
@@ -137,7 +139,9 @@ def kosten_usd(modell, usage):
 def fester_anfang(prompt):
     """Konstanter Prompt-Anfang ohne Patientendaten (geht unmaskiert + gecacht hinaus) oder "".
     Gen-Prompt: bis einschließlich '<normalbefund_template>\\n' — nur wenn das Diktat danach kommt.
-    Call 0: bis einschließlich des letzten 'Roh: '. Validator: bis vor '<diktat>'."""
+    Call 0: bis einschließlich des letzten 'Roh: '. Validator: bis vor '<diktat>'.
+    kosten-je-befund-n1: Die Marke wird auch mit CRLF gefunden (EXE-Prompt aus dem Windows-Checkout) — vorher lieferte
+    der Gen-Prompt der EXE hier immer "" → nie Cache, voller Input-Preis (RaKScribe.py normalisiert jetzt zusätzlich)."""
     p = prompt or ""
     if p.startswith(_KORR_ANFANG):
         i = p.rfind("\n\nRoh: ")
@@ -145,11 +149,26 @@ def fester_anfang(prompt):
     if p.startswith(_VAL_ANFANG):
         i = p.find("\n<diktat>\n")
         return p[:i + 1] if i > 0 else ""
-    marke = "<normalbefund_template>\n"
-    i = p.find(marke)
-    if i > 0 and "<diktat>" not in p[:i] and "<diktat>" in p[i:]:
-        return p[:i + len(marke)]
+    for marke in ("<normalbefund_template>\n", "<normalbefund_template>\r\n"):
+        i = p.find(marke)
+        if i > 0 and "<diktat>" not in p[:i] and "<diktat>" in p[i:]:
+            return p[:i + len(marke)]
     return ""
+
+
+def cache_art(usage):
+    """Cache-Ergebnis eines Aufrufs aus usage: „treffer“ (Anfang aus dem Cache gelesen), „neu“ (Anfang neu geschrieben)
+    oder „ohne“ (weder noch — kein fester Anfang/cache_control, voller Input-Preis)."""
+    u = usage or {}
+    if int(u.get("cache_read_input_tokens", 0) or 0) > 0:
+        return "treffer"
+    if int(u.get("cache_creation_input_tokens", 0) or 0) > 0:
+        return "neu"
+    return "ohne"
+
+
+def _kosten_info(modell, usage, fest):
+    return {"usage": usage, "usd": kosten_usd(modell, usage), "cache": cache_art(usage), "fest": bool(fest)}
 
 
 def diktat_teil(maskiert):
@@ -261,24 +280,28 @@ def maskiert_anthropic(prompt, sys_msg, sender, modell=ANTHROPIC_MODELL, frist=A
     if data.get("type") == "error" or "error" in data:
         typ = str(((data.get("error") or {}) if isinstance(data.get("error"), dict) else {}).get("type") or "")
         raise Rueckfall("Anthropic-Fehlerantwort" + (" overloaded" if "overloaded" in typ else ""))
-    if data.get("stop_reason") not in ("end_turn", "stop_sequence"):
-        raise Rueckfall(f"Antwort abgebrochen ({data.get('stop_reason')})")
-    roh = anthropic_text(data)
-    roh = strip(roh) if strip else roh
-    text = zuruecksetzen(roh, maske, pflicht)
-    if pruefen is not None and not pruefen(text):
-        raise Rueckfall("Antwort unvollständig")
-    usage = data.get("usage", {})
-    return text, {"anbieter": "anthropic", "modell": modell, "s": round(dauer, 2), "usage": usage,
-                  "usd": kosten_usd(modell, usage), "platzhalter": len(maske.zu_wert), "pflicht": len(pflicht),
-                  "zaehlung": maske.zaehlung()}
+    kosten = _kosten_info(modell, data.get("usage") or {}, fest)
+    try:
+        if data.get("stop_reason") not in ("end_turn", "stop_sequence"):
+            raise Rueckfall(f"Antwort abgebrochen ({data.get('stop_reason')})")
+        roh = anthropic_text(data)
+        roh = strip(roh) if strip else roh
+        text = zuruecksetzen(roh, maske, pflicht)
+        if pruefen is not None and not pruefen(text):
+            raise Rueckfall("Antwort unvollständig")
+    except Rueckfall as e:
+        e.kosten = kosten          # abgerechnet, aber verworfen → Zähler (kosten-je-befund-n1)
+        raise
+    return text, dict(kosten, anbieter="anthropic", modell=modell, s=round(dauer, 2), platzhalter=len(maske.zu_wert),
+                      pflicht=len(pflicht), zaehlung=maske.zaehlung())
 
 
 class Weiche:
     """LLM-Aufruf je Anbieter. gemini_fn(prompt, sys_msg) → Text (wirft bei Fehler) — nur für LLM_ANBIETER = gemini bzw.
     KI_RUECKFALL = an. rueckfall=False (Standard seit ohne-gemini-n1): Anthropic, bei Problemen EIN zweiter Versuch, dann
-    OhneKi (nie Gemini). beobachter(info) bekommt je Aufruf {rolle, anbieter, modell, s, usage, usd, rueckfall, ohne_ki,
-    zweitversuch, platzhalter, pflicht}."""
+    OhneKi (nie Gemini). beobachter(info) bekommt je Aufruf {rolle, anbieter, modell, s, usage, usd, cache, fest, rueckfall,
+    ohne_ki, zweitversuch, platzhalter, pflicht}; kosten-je-befund-n1: zusätzlich je verworfener, aber abgerechneter
+    Anthropic-Antwort {rolle, anbieter, usage, usd, cache, fest, verworfen=<Kategorie>, zweitversuch} (vor dem Ergebnis)."""
 
     def __init__(self, anbieter="anthropic", modell=ANTHROPIC_MODELL, gemini_fn=None, sender=None, log=None,
                  frist=ANTHROPIC_FRIST_S, beobachter=None, rueckfall=False, pause=ZWEITVERSUCH_PAUSE_S, schlafen=None):
@@ -333,6 +356,9 @@ class Weiche:
                     if isinstance(e, SystemExit):     # Kostengrenze der Tests nicht verschlucken
                         raise
                     fehler = e
+                    if getattr(e, "kosten", None):    # Antwort kam, wurde verworfen — kostet trotzdem
+                        self._melden(dict(e.kosten, rolle=rolle, anbieter="anthropic", modell=self.modell,
+                                          verworfen=kategorie(e), zweitversuch=nr > 1))
                     if nr < versuche and zweiter_versuch_sinnvoll(e):
                         self.log(f"[KI] {rolle}: Anthropic-Versuch 1 nicht verwendbar — {kategorie(e)} → zweiter Versuch")
                         self.schlafen(self.pause)

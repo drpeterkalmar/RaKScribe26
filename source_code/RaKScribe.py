@@ -245,6 +245,7 @@ def load_prompt_template(filename="radiology_prompt.txt"):
             return _read_text_robust(pfad) if os.path.exists(pfad) else ""
         builtin = _lies(os.path.join(RESOURCES_DIR, filename))
         lokale = [(name, _lies(os.path.join(BASE_DIR, name))) for name in ("radiology_prompt_v4.txt", filename)]
+        # kosten-je-befund-n1: waehle_prompt liefert LF (der Windows-Bau bündelt CRLF → sonst kein Prompt-Cache)
         text, PROMPT_QUELLE, PROMPT_HINWEIS = br.waehle_prompt(builtin, lokale)
         print(f"[INIT] Befund-Prompt {br.prompt_version(text) or '(ohne Version)'} aus {PROMPT_QUELLE or '-'}")
         if PROMPT_HINWEIS:
@@ -2229,7 +2230,7 @@ class RaKScribeApp(ctk.CTk):
             
             def save():
                 global INITIAL_PROMPT_CONTENT
-                INITIAL_PROMPT_CONTENT = txt.get("1.0", "end-1c")
+                INITIAL_PROMPT_CONTENT = br.prompt_normalisieren(txt.get("1.0", "end-1c"))   # LF wie beim Laden (Cache)
                 try:
                     with open(os.path.join(BASE_DIR, "radiology_prompt.txt"), 'w', encoding='utf-8') as f:
                         f.write(INITIAL_PROMPT_CONTENT)

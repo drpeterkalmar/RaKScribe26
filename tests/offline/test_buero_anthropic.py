@@ -28,8 +28,10 @@ neu = ka.config_setzen(ALT_INI, ka.WERTE["anthropic"])
 p = d / "config.ini"
 p.write_text(neu, encoding="utf-8")
 c = config.load_config(str(p))
-check("config: X:-Stand (ohne LLM_ANBIETER) → anthropic/Sonnet/20 s", (c.llm_anbieter, c.anthropic_modell, c.anthropic_frist)
-      == ("anthropic", "claude-sonnet-5-5", 20) and not c.warnungen, (c.llm_anbieter, c.anthropic_modell, c.warnungen))
+# ohne-gemini-n1 (24.11.2026): Frist 45 s (alte Zeile „ANTHROPIC_FRIST = 20“ wird auf 45 gehoben, config.ALT_FRIST)
+check("config: X:-Stand (ohne LLM_ANBIETER) → anthropic/Sonnet/45 s", (c.llm_anbieter, c.anthropic_modell, c.anthropic_frist)
+      == ("anthropic", "claude-sonnet-5-5", 45) and not c.warnungen,
+      (c.llm_anbieter, c.anthropic_modell, c.anthropic_frist, c.warnungen))
 check("config: Zeilen landen in [SETTINGS], [MASKE] bleibt", c.maske_tasten.get("naechstes_feld") == "FF"
       and neu.index("LLM_ANBIETER") < neu.index("[MASKE]"), neu)
 check("config: zweites Setzen ändert nichts", ka.config_setzen(neu, ka.WERTE["anthropic"]).strip() == neu.strip())

@@ -67,9 +67,11 @@ export const festerAnfang = (p: string): string => {
     const i = p.indexOf('\n<diktat>\n');
     return i > 0 ? p.slice(0, i + 1) : '';
   }
-  const marke = '<normalbefund_template>\n';
-  const i = p.indexOf(marke);
-  if (i > 0 && !p.slice(0, i).includes('<diktat>') && p.slice(i).includes('<diktat>')) return p.slice(0, i + marke.length);
+  // kosten-je-befund-n1 (25.11.2026): Marke auch mit CRLF (wie llm_anbieter.fester_anfang; der EXE-Prompt kam mit CRLF)
+  for (const marke of ['<normalbefund_template>\n', '<normalbefund_template>\r\n']) {
+    const i = p.indexOf(marke);
+    if (i > 0 && !p.slice(0, i).includes('<diktat>') && p.slice(i).includes('<diktat>')) return p.slice(0, i + marke.length);
+  }
   return '';
 };
 

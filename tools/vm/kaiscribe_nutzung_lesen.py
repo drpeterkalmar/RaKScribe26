@@ -7,6 +7,8 @@ Ordner (kaiscribe-umzug-n2, 21.11.2026): Standard X:\\KaiScribe\\Daten; fehlt de
 Gibt nur Zähler aus, nie Befundtext, Nr oder Benutzer:
   LAUF <tag> rechner=<PC> modell=<…> kaiscribe=<Version> maske=<ja|nein> anzahl=<n> von=<HH:MM> bis=<HH:MM>
   NUTZUNG <monat> <PC> <tag> befunde=… anthropic=… gemini=… rueckfall=… usd=… chirp_s=… stream_s=… gruende=<Kat:n;…>
+          ohne_ki=… zweitversuch=… verworfen=… tok_in=… tok_cache_lesen=… tok_cache_1h=… tok_cache_5m=… tok_out=…
+          cache_treffer=… cache_neu=… cache_ohne=…   (kosten-je-befund-n1, 25.11.2026: Token aus usage, nur Zahlen)
   TAGESBERICHT <tag> (danach die Datei wörtlich, je Zeile mit „| “ davor; sie enthält nur Zahlen/Kategorien)
   ORDNER <gelesener Ordner>
   WARNDATEI <monat> ja|nein
@@ -64,6 +66,13 @@ def laeufe(ordner, tage):
     print("LAUF_KAPUTT %d" % kaputt)
 
 
+def _n(d, k):
+    try:
+        return int(d.get(k, 0) or 0)
+    except (TypeError, ValueError, AttributeError):
+        return 0
+
+
 def nutzung(ordner, tage):
     for monat in sorted({t[:7] for t in tage}):
         for pfad in sorted(glob.glob(os.path.join(ordner, "%s_*.json" % monat))):
@@ -72,11 +81,17 @@ def nutzung(ordner, tage):
             for tag, td in sorted((d.get("tage") or {}).items()):
                 ki = td.get("ki") or {}
                 gr = ";".join("%s:%s" % (s(g), int(n or 0)) for g, n in sorted((td.get("rueckfall_grund") or {}).items()))
+                tk, ca = td.get("token") or {}, td.get("cache") or {}
                 print("NUTZUNG %s %s %s befunde=%s anthropic=%s gemini=%s rueckfall=%s usd=%.4f chirp_s=%.1f stream_s=%.1f gruende=%s"
+                      " ohne_ki=%d zweitversuch=%d verworfen=%d tok_in=%d tok_cache_lesen=%d tok_cache_1h=%d tok_cache_5m=%d"
+                      " tok_out=%d cache_treffer=%d cache_neu=%d cache_ohne=%d"
                       % (monat, pc, s(tag, 10), int(td.get("befunde", 0) or 0), int(ki.get("anthropic", 0) or 0),
                          int(ki.get("gemini", 0) or 0), int(ki.get("rueckfall", 0) or 0),
                          float(td.get("anthropic_usd", 0) or 0), float((td.get("stt_s") or {}).get("chirp", 0) or 0),
-                         float((td.get("stt_s") or {}).get("streaming", 0) or 0), gr or "-"))
+                         float((td.get("stt_s") or {}).get("streaming", 0) or 0), gr or "-",
+                         _n(ki, "ohne_ki"), _n(ki, "zweitversuch"), _n(ki, "verworfen"), _n(tk, "input"),
+                         _n(tk, "cache_lesen"), _n(tk, "cache_schreiben_1h"), _n(tk, "cache_schreiben_5m"), _n(tk, "output"),
+                         _n(ca, "treffer"), _n(ca, "neu"), _n(ca, "ohne")))
         print("WARNDATEI %s %s" % (monat, "ja" if os.path.exists(os.path.join(ordner, "warnung_%s.txt" % monat)) else "nein"))
     for tag in tage:
         pfad = os.path.join(ordner, "tagesbericht_%s.txt" % tag)

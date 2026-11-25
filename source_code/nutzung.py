@@ -18,6 +18,11 @@ Rückfall. Jeder Rückfall wird gezählt, und die an Chirp (Google-Spracherkennu
   der Tagesgrenze), „grenze“ (erreicht) bzw. „schleife“ (Schleifenbremse) → td["stt_deckel"] = {art: n, "min": …,
   "limit_min": …} → im Tagesbericht je PC eine Zeile „STT-DECKEL <PC> …“ (die liest die Chirp-Warnung am Mac → Karte für
   Hermes).
+- kaiscribe-kosten-je-befund-n1 (25.11.2026): je Anthropic-Antwort die Token-Summen aus usage → td["token"] = {"input",
+  "cache_lesen", "cache_schreiben_5m", "cache_schreiben_1h", "output"} und td["cache"] = {"treffer", "neu", "ohne"}
+  (Aufrufe mit Cache-Treffer / Neuschreiben / ganz ohne Cache). Verworfene, aber abgerechnete Antworten (Platzhalter
+  fehlt, unvollständig …) zählen in td["ki"]["verworfen"] und in $/Token, aber nicht als Aufruf/Befund. Tagesbericht:
+  Zeile „Claude-Token …“ (nur Zahlen).
 - Fehler beim Schreiben sind nie fatal (Laufwerk weg → still nichts).
 """
 import calendar
@@ -72,6 +77,33 @@ def _grund_kategorie(grund):
     return re.sub(r"\s+", " ", g).strip()[:60] or "?"
 
 
+TOKEN_FELDER = ("input", "cache_lesen", "cache_schreiben_5m", "cache_schreiben_1h", "output")
+
+
+def _token_zaehlen(td, u):
+    """usage einer Anthropic-Antwort → Tagessummen (nur Zahlen). Ohne Aufschlüsselung 5m/1h zählt das Schreiben als 1h
+    (so schickt die EXE cache_control)."""
+    def n(k):
+        try:
+            return max(0, int(u.get(k, 0) or 0))
+        except (TypeError, ValueError):
+            return 0
+    teil = u.get("cache_creation") if isinstance(u.get("cache_creation"), dict) else None
+    cw = n("cache_creation_input_tokens")
+    if teil:
+        w5 = max(0, int(teil.get("ephemeral_5m_input_tokens", 0) or 0))
+        w1 = max(0, int(teil.get("ephemeral_1h_input_tokens", 0) or 0))
+    else:
+        w5, w1 = 0, cw
+    t = td.setdefault("token", {})
+    for k, v in (("input", n("input_tokens")), ("cache_lesen", n("cache_read_input_tokens")),
+                 ("cache_schreiben_5m", w5), ("cache_schreiben_1h", w1), ("output", n("output_tokens"))):
+        t[k] = int(t.get(k, 0) or 0) + v
+    c = td.setdefault("cache", {})
+    art = "treffer" if n("cache_read_input_tokens") else "neu" if (cw or w5 or w1) else "ohne"
+    c[art] = int(c.get(art, 0) or 0) + 1
+
+
 class Zaehler:
     def __init__(self, ordner, pc=None, jetzt=None):
         """ordner: Pfad oder Funktion, die ihn bei jedem Schreiben liefert (kaiscribe-umzug-n1-exe: X:\\KaiScribe vor
@@ -109,11 +141,18 @@ class Zaehler:
             pass
 
     def ki(self, info):
-        """Beobachter der llm_anbieter.Weiche: je Aufruf {rolle, anbieter, rueckfall, usd …}."""
+        """Beobachter der llm_anbieter.Weiche: je Aufruf {rolle, anbieter, rueckfall, usd, usage, cache, verworfen …}."""
         info = info or {}
 
         def fn(td):
             ki = td.setdefault("ki", {})
+            if isinstance(info.get("usage"), dict):
+                _token_zaehlen(td, info["usage"])
+            if info.get("verworfen"):       # abgerechnet, aber nicht verwendet → nur Kosten/Token + Zähler
+                ki["verworfen"] = ki.get("verworfen", 0) + 1
+                if info.get("usd"):
+                    td["anthropic_usd"] = round(td.get("anthropic_usd", 0.0) + float(info["usd"]), 6)
+                return
             if info.get("zweitversuch"):     # jeder zweite Anthropic-Versuch; _ok = er hat den Text geliefert
                 ki["zweitversuch"] = ki.get("zweitversuch", 0) + 1
                 if not info.get("ohne_ki"):
@@ -195,13 +234,18 @@ def monat_summen(ordner, monat):
 
 def _summe(tage, nur_tag=None):
     s = {"anthropic": 0, "gemini": 0, "rueckfall": 0, "ohne_ki": 0, "zweitversuch": 0, "zweitversuch_ok": 0, "befunde": 0, "usd": 0.0,
-         "chirp_s": 0.0, "stream_s": 0.0, "gruende": {}, "ohne_gruende": {}, "ohne_rollen": {}}
+         "chirp_s": 0.0, "stream_s": 0.0, "gruende": {}, "ohne_gruende": {}, "ohne_rollen": {}, "verworfen": 0,
+         "token": {k: 0 for k in TOKEN_FELDER}, "cache": {"treffer": 0, "neu": 0, "ohne": 0}}
     for tag, td in (tage or {}).items():
         if nur_tag and tag != nur_tag:
             continue
         ki = td.get("ki", {})
-        for k in ("anthropic", "gemini", "rueckfall", "ohne_ki", "zweitversuch", "zweitversuch_ok"):
+        for k in ("anthropic", "gemini", "rueckfall", "ohne_ki", "zweitversuch", "zweitversuch_ok", "verworfen"):
             s[k] += int(ki.get(k, 0) or 0)
+        for k in TOKEN_FELDER:
+            s["token"][k] += int((td.get("token") or {}).get(k, 0) or 0)
+        for k in ("treffer", "neu", "ohne"):
+            s["cache"][k] += int((td.get("cache") or {}).get(k, 0) or 0)
         s["befunde"] += int(td.get("befunde", 0) or 0)
         s["usd"] += float(td.get("anthropic_usd", 0) or 0)
         s["chirp_s"] += float((td.get("stt_s") or {}).get("chirp", 0) or 0)
@@ -296,6 +340,7 @@ def tagesbericht(ordner, tag):
          f"Live-Anzeige (Google-Streaming): heute {ges(heute, 'stream_s') / 60:.1f} min, Monat {stream_m / 60:.1f} min "
          f"≈ {stream_eur(stream_m):.2f} € (× {STREAM_USD_MIN} $/min)",
          f"Google-Spracherkennung gesamt hochgerechnet {hoch:.2f} €/Monat (aus {n_tage} Tag{'en' if n_tage != 1 else ''})"]
+    z.append(token_zeile("heute", heute) + "; " + token_zeile("Monat", mon, kurz=True))
     z.extend(deckel_zeilen(alle, tag))          # tagesdeckel-n1 (vor den PC-Zeilen: der VM-Leser nimmt nur 40 Zeilen)
     for pc in sorted(alle):
         h = heute[pc]
@@ -306,6 +351,21 @@ def tagesbericht(ordner, tag):
     if warnung:
         z.append(f"WARNUNG: Google-Spracherkennung (Chirp + Live) hochgerechnet {hoch:.2f} €/Monat > {WARN_EUR:.0f} € (Google-Guthaben ~9 €)")
     return "\n".join(z) + "\n", warnung
+
+
+def token_zeile(wann, dct, kurz=False):
+    """„Claude-Token heute: Input … | Cache lesen … | schreiben 1h … (5m …) | Output … | Cache-Treffer a, neu b, ohne c
+    | verworfen d | ≈ x ct je Aufruf“ — nur Zahlen (kosten-je-befund-n1)."""
+    t = {k: sum(v["token"][k] for v in dct.values()) for k in TOKEN_FELDER}
+    c = {k: sum(v["cache"][k] for v in dct.values()) for k in ("treffer", "neu", "ohne")}
+    n, usd = sum(v["anthropic"] for v in dct.values()), sum(v["usd"] for v in dct.values())
+    verw = sum(v["verworfen"] for v in dct.values())
+    je = f", ≈ {usd / n * 100:.1f} ct je Aufruf" if n else ""
+    if kurz:
+        return (f"{wann}: Cache-Treffer {c['treffer']}, neu {c['neu']}, ohne {c['ohne']}, verworfen {verw}{je}")
+    return (f"Claude-Token {wann}: Input {t['input']}, Cache lesen {t['cache_lesen']}, Cache schreiben 1h "
+            f"{t['cache_schreiben_1h']} (5m {t['cache_schreiben_5m']}), Output {t['output']}; Cache-Treffer {c['treffer']}, "
+            f"neu {c['neu']}, ohne {c['ohne']}, verworfen {verw}{je}")
 
 
 def schreibe_tagesbericht(ordner, tag):

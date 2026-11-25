@@ -40,8 +40,16 @@ def strip_prompt_marker(text):
     return _MARKER_RE.sub("", text or "", count=1)
 
 
+def prompt_normalisieren(text):
+    """Zeilenenden des Prompts auf LF (kaiscribe-kosten-je-befund-n1, 25.11.2026). Der Windows-Bau checkt
+    radiology_prompt.txt mit CRLF aus (.gitattributes „* text=auto“, Runner windows-latest) — dann fand
+    llm_anbieter.fester_anfang die Marke „<normalbefund_template>\\n“ nicht, der Regel-Anfang ging ungecacht (und
+    maskiert) hinaus: ~6,7 statt ~1,4 ct je Befund. Wortlaut bleibt gleich, nur \\r\\n/\\r → \\n (wie Web und Tests)."""
+    return (text or "").replace("\r\n", "\n").replace("\r", "\n")
+
+
 def waehle_prompt(builtin_text, lokale):
-    """Wählt den Gen-Prompt.
+    """Wählt den Gen-Prompt (Text immer mit LF-Zeilenenden, prompt_normalisieren).
 
     builtin_text: Prompt aus dem EXE-Bundle (Release-Stand).
     lokale: Liste (pfad, text) der Dateien neben der EXE, in Prioritätsreihenfolge
@@ -59,17 +67,17 @@ def waehle_prompt(builtin_text, lokale):
         if bv and (not lv or version_kleiner(lv, bv)):
             veraltet.append(f"{pfad} ({lv or 'ohne Version'})")
             continue
-        return text, pfad, ""
+        return prompt_normalisieren(text), pfad, ""
     if builtin_text:
         hinweis = ""
         if veraltet:
             hinweis = ("Veraltete Prompt-Datei ignoriert: " + "; ".join(veraltet) +
                        f". Verwendet wird der eingebaute Befund-Prompt {bv}.")
-        return builtin_text, "eingebaut", hinweis
+        return prompt_normalisieren(builtin_text), "eingebaut", hinweis
     # Kein eingebauter Prompt (Entwicklung ohne Bundle): erste vorhandene lokale Datei
     for pfad, text in lokale:
         if text:
-            return text, pfad, ""
+            return prompt_normalisieren(text), pfad, ""
     return "", "", ""
 
 

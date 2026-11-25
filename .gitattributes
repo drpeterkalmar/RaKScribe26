@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# kosten-je-befund-n1 (25.11.2026): der Gen-Prompt muss auch im Windows-Bau LF haben (llm_anbieter.fester_anfang →
+# Prompt-Cache); RaKScribe.py normalisiert zusätzlich beim Laden (befund_regeln.prompt_normalisieren).
+radiology_prompt.txt text eol=lf
