@@ -8,7 +8,7 @@
   griff die Erkennung schon deshalb zur DEXA-Vorlage (die DEXA-Regel kam vor allen Regionen).
 - **Betroffene Briefe seit 20.11.:** am Mac nicht zählbar (keine VM-Logs). Theoretisch ist jede Kombi mit DEXA seit Mo 23.11. betroffen. Belegt ist bisher nur RH 60.
   Die Zählung (nur Anzahl + RH-Nr.) macht Teil 2 auf der VM.
-- **Fix @@VERSION@@ (EXE = Web):** DEXA-Leistungen zählen nicht mehr zur Vorlagenwahl. Sie bekommen keinen Abschnitt, keinen Normalbefund
+- **Fix **3.28.3** (EXE = Web):** DEXA-Leistungen zählen nicht mehr zur Vorlagenwahl. Sie bekommen keinen Abschnitt, keinen Normalbefund
   und keinen Hinweis und bleiben nur Auskunft für die Rho-Regel. Die Erkennung wählt die DEXA-Vorlage nie mehr: Bei DEXA-Wörtern entscheidet
   der übrige Text, sonst gilt „allgemein“. Neu ist ein Platzhalter-Wächter: Ein unbefülltes `[…]` wird im Brief zu „…“ und erscheint als rote Prüfzeile.
   Die GWS-Seitlich-Logik ist unverändert. Ordi-Bausteine (osteokal, A1 … C3) sind nicht betroffen.

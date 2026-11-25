@@ -1,6 +1,6 @@
 # Teil 2 zu kaiscribe-dexa-doppelt-rh60-n1: Einspielen + Abnahme an 451898 (Kombi Rö + DEXA)
 
-Code: Die Version steht im Commit „vX.Y.Z: Nie eine DEXA-Vorlage …“ auf origin/main (`git log --oneline -1 --grep dexa-doppelt`).
+Code: Die Version steht im Commit „v3.28.3: Nie eine DEXA-Vorlage …“ auf origin/main (`git log --oneline -1 --grep dexa-doppelt`).
 Die Änderung beschreibt `BERICHT-KAISCRIBE-DEXA-DOPPELT-RH60-N1.md`. Die Version enthält alles, was vorher auf main war.
 Läuft heute Abend schon ein anderer KaiScribe-Tausch, dann nur einmal tauschen, und zwar mit der neuesten Version.
 
