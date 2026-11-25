@@ -19,3 +19,10 @@
 - **Probe 451898:** offen, kommt in Teil 2 (`kaiscribe-dexa-doppelt-rh60-n1-einspielen`, ab 17:35).
 - **Satz für Ursula:** „KaiScribe fügt ab dem Einspielen heute Abend (ab Do 26.11. früh) bei DEXA in Kombination mit Röntgen/Ultraschall keine DEXA-Vorlage
   mehr ein. Den DEXA-Teil fügen wie früher Sie ein, bei reiner DEXA der Roboter. Neu war das seit 21.11., es war ein Fehler.“
+
+## Teil 2 (Mi 25.11.2026 abends, Hetzner): Einspielen NICHT gelungen, Stand ROT/offen
+- **Gebaut/geprüft:** main war inzwischen 3.29.0 (enthält 3.28.3). Pages-Deploy 3.29.0 grün, Live-Seite zeigt 3.29.0 (Pages-Hänger ist weg). Build Windows EXE (Lauf 45693720929) und Windows-UI-Test (45694137423) grün. Release-SHA256 `dd7f71e345949e87739d5fd28ec4bbdb01c795e7be2087683befc1c01f58649b`, auf dem Büro-PC unter `ks_tausch\v3.29.0` geholt und geprüft.
+- **Tausch:** `-Schritt exe -Tag 3.29.0` lief 21:41–23:28, 50 Versuche, immer „belegt: X:\KaiScribe\Programm\KaiScribe.exe nicht umbenennbar“. X: steht unverändert auf 3.28.2 (b9294f9aaa75). Kein `-Trotzdem`, nichts beendet.
+  Ursache offen: entweder KaiScribe an einem anderen PC (CASWS03/CASWS15 hatten heute Aktivität) oder die zwei SM-Wächter am Büro-PC, die direkt von der X:-EXE laufen.
+- **Folge:** Abnahme 451898 (B), Zählung betroffener Briefe und RH 60 (C) und der Satz für Ursula (D) sind **nicht** gemacht, weil nichts live ist. Es gibt keine Uhrzeit für Ursula. Keine Meldung nach außen.
+- **Nächster Versuch:** Kanban-Karte in Spalte tun (Folgejob). Dort zuerst klären, wer die X:-EXE hält (Lesezugriff auf Dateiserver/andere PCs, Wächter-Prozesse am Büro-PC prüfen), dann Tausch mit 3.29.0 oder neuer wiederholen.
