@@ -10,7 +10,7 @@ HARTE SPERRE: kein CAS, keine Brücke, kein Roboter, keine Plaza/ELGA/marc/Telei
 Variante: über Tailscale immer „anonym“ (erzwungen); „haus“ nur über einen ausdrücklich eingeschalteten LAN-Zugang.
 Protokoll: nur Zähler (zaehler.json), nie Inhalte.
 
-  py -3.12 -X utf8 uebung_dienst.py [--basis C:\RaK\kaiscribe_uebung] [--port 8473]
+  py -3.12 -X utf8 uebung_dienst.py [--basis C:\RaK\kaiscribe_uebung] [--port 8555]
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
 import uebung_kern as K  # noqa: E402
 
-PORT_STANDARD = 8473
+PORT_STANDARD = 8555
 X_ABLAGE = "X:\\KaiScribe-Übung"
 MAX_KOERPER = 400_000
 PAGES_HERKUNFT = "https://drpeterkalmar.github.io"     # Web-App auf GitHub Pages darf (mit Anmeldung) auch fragen

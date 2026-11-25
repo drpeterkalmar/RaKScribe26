@@ -11,14 +11,14 @@ const check = (ok, label, got) => { n++; if (!ok) fail++; console.log(ok ? 'PASS
 
 // ── Übungsmodus erkennen ──
 check(uebungBasis('https://drpeterkalmar.github.io/RaKScribe26/') === null, 'ohne ?uebung kein Übungsmodus');
-check(uebungBasis('https://dexa.example.ts.net:8473/?uebung') === 'https://dexa.example.ts.net:8473', '?uebung → eigene Herkunft');
-check(uebungBasis('https://drpeterkalmar.github.io/RaKScribe26/?uebung=https://dexa.example.ts.net:8473/x') === 'https://dexa.example.ts.net:8473', '?uebung=https://… → Dienst');
+check(uebungBasis('https://dexa.example.ts.net:8555/?uebung') === 'https://dexa.example.ts.net:8555', '?uebung → eigene Herkunft');
+check(uebungBasis('https://drpeterkalmar.github.io/RaKScribe26/?uebung=https://dexa.example.ts.net:8555/x') === 'https://dexa.example.ts.net:8555', '?uebung=https://… → Dienst');
 check(uebungBasis('https://x.github.io/?uebung=http://boese.example') === null, 'http-Dienst (nicht lokal) abgelehnt');
-check(uebungBasis('http://localhost:5173/?uebung=http://127.0.0.1:8473') === 'http://127.0.0.1:8473', 'lokaler Test-Dienst erlaubt');
+check(uebungBasis('http://localhost:5173/?uebung=http://127.0.0.1:8555') === 'http://127.0.0.1:8555', 'lokaler Test-Dienst erlaubt');
 
 // ── Sperre an einem Attrappen-Fenster ──
 const echt = [];
-const DIENST = 'https://dexa.example.ts.net:8473';
+const DIENST = 'https://dexa.example.ts.net:8555';
 const w = {
   location: { origin: 'https://drpeterkalmar.github.io' },
   fetch: async (u) => { echt.push(['fetch', String(u)]); return { ok: true, status: 200, json: async () => ({}) }; },
