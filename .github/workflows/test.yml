@@ -148,6 +148,8 @@ jobs:
         run: python tests/offline/test_gws_seitlich.py
       - name: GWS a.p.-Normaltext ohne Skoliose (Peter 20.11.2026, #459) – ohne/mit Diktat, mit SQUIRREL
         run: python tests/offline/test_gws_ap_normaltext.py
+      - name: Nie eine DEXA-Vorlage (Kombi Rö/US + DEXA, reine DEXA) + Platzhalter-Wächter (kaiscribe-dexa-doppelt-rh60-n1)
+        run: python tests/offline/test_dexa_doppelt.py
       - name: Befund-KI-Weiche ohne Gemini-Rückfall (zweiter Claude-Versuch, dann ohne KI; Handschalter gemini) (kaiscribe-ohne-gemini-n1)
         run: python tests/offline/test_llm_anbieter.py
       - name: EXE-Ablauf ohne KI (zweimal Frist → Diktat unverändert + rote Prüfzeile, nichts eingefügt, kein Gemini) (kaiscribe-ohne-gemini-n1)

@@ -436,7 +436,9 @@ def _becken_huefte_kombi(segmente, wahlen, inhalt_hinweise, ctx):
 
 def _pruefen(erg, ctx):
     """kaiscribe-schulter-ergebnis-n1 (Punkte 60/60b): rote Prüfzeilen statt stiller Normalvorlage – leeres Ergebnis,
-    „Regelrechte Darstellung“ trotz Pathologie im Befund. Nur Anzeige."""
+    „Regelrechte Darstellung“ trotz Pathologie im Befund. Nur Anzeige.
+    kaiscribe-dexa-doppelt-rh60-n1: vorher Sätze mit unbefülltem Platzhalter ([Wert_LWS] …) raus + rote Prüfzeile."""
+    _platzhalter(erg, ctx)
     if erg.report and not erg.fehler:
         neu = [h for h in br.pruefzeilen_2311(erg.report, erg.raw, ctx.templates) if h not in (erg.cas_hinweise or [])]
         if neu:
@@ -444,11 +446,23 @@ def _pruefen(erg, ctx):
     return erg
 
 
+def _platzhalter(erg, ctx):
+    """kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60): nie ein unbefüllter Platzhalter im Brief."""
+    if erg.report:
+        erg.report, zeilen = br.platzhalter_entfernen(erg.report)
+        if zeilen:
+            ctx.log(f"[PLATZHALTER] {len(zeilen)} unbefüllte(r) Platzhalter → „…“, rote Prüfzeile")
+            erg.cas_hinweise = list(erg.cas_hinweise or []) + [h for h in zeilen if h not in (erg.cas_hinweise or [])]
+    return erg
+
+
 def _rho_dexa(ctx):
     """kaiscribe-rho-regel-becken-n1: DEXA-Auskunft für die Rho-Regel. KaiScribe kennt die DEXA der letzten 2 Jahre nicht –
     eine DEXA-Leistung im selben CAS-Auftrag sperrt („gesperrt“), sonst gilt das diktierte „Rho“ als Arzt-Auskunft („frei“)."""
     cas = getattr(ctx, "cas", None)
-    return "gesperrt" if cas and any("dexa" in (l.regionen or set()) for l in cas.alle) else "frei"
+    # kaiscribe-dexa-doppelt-rh60-n1: DEXA-Leistungen stehen nicht mehr in cas.alle (nie eine Vorlage), sondern in cas.dexa
+    return "gesperrt" if cas is not None and (getattr(cas, "dexa", None)
+                                              or any("dexa" in (l.regionen or set()) for l in cas.alle)) else "frei"
 
 
 def _osteopen(erg, ctx, diktat=None):
@@ -609,6 +623,7 @@ def befund_umbauen(aktuell, stand, ctx):
                   if br.vorlage_normalisieren(s) not in vorlagen and s not in vor]
     hinweise += [bf.pruefzeile(s) for s in bf.fehlende(eigene_alt, erg.report) if not bf.verneint_vorrang(s, vor)]
     erg.cas_hinweise = hinweise
-    ctx.log(f"[UMBAU] {len(vor)} Änderung(en) mit Vorrang, {len(teile)} Abschnitt(e), {len(fehlt)} nachgetragen, "
+    _platzhalter(erg, ctx)       # kaiscribe-dexa-doppelt-rh60-n1: nie ein unbefüllter Platzhalter
+    ctx.log(f"[UMBAU]{len(vor)} Änderung(en) mit Vorrang, {len(teile)} Abschnitt(e), {len(fehlt)} nachgetragen, "
             f"{len(hinweise)} Prüfzeile(n)")
     return erg

@@ -338,14 +338,31 @@ def label(text, kurz, modalitaet):
     return t if len(t) <= 34 else t[:33].rstrip() + "…"
 
 
+# kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60): KaiScribe fügt NIE eine DEXA-Vorlage ein – reine DEXA macht
+# der Roboter, bei der Kombi (DEXA + Rö/US) fügt das Office den DEXA-Teil ein. Eine DEXA-/Osteodensitometrie-Leistung im
+# CAS-Auftrag (Brücke: dexa, dexaneu, dxf, od, odh → knochendichtemessung_dexa) zählt darum nicht als Untersuchung der
+# Vorlagenwahl (kein Abschnitt, kein Normalbefund „nicht diktiert“, kein Hinweis); sie bleibt nur als Auskunft für die
+# Rho-Regel (CasHinweis.dexa). Seit 3.19.20 (nicht_diktiert_ergaenzen) stand sonst die leere Vorlage mit [Wert_LWS] im Brief.
+DEXA_VORLAGE = "knochendichtemessung_dexa"
+
+
+def ist_dexa(d, v):
+    """DEXA-/Osteodensitometrie-Leistung (dict der Brücke, v = ihre Vorlage)?"""
+    return v == DEXA_VORLAGE or d.get("vorlage") == DEXA_VORLAGE or "dexa" in regionen(d.get("text") or "")
+
+
 class CasHinweis:
-    """Die für die Vorlagenwahl relevanten CAS-Leistungen eines Auftrags (ohne Abrechnungsposten)."""
+    """Die für die Vorlagenwahl relevanten CAS-Leistungen eines Auftrags (ohne Abrechnungsposten, ohne DEXA)."""
 
     def __init__(self, leistungen, templates):
         self.alle = []
+        self.dexa = []                       # Kürzel der DEXA-Leistungen (nur Rho-Regel, nie eine Vorlage)
         for l in leistungen or []:
             d = l if isinstance(l, dict) else vars(l)
             if d.get("ohne_vorlage"):
+                continue
+            if ist_dexa(d, d.get("vorlage")):
+                self.dexa.append(str(d.get("kurz") or ""))
                 continue
             v = d.get("vorlage")
             if v is not None and v not in templates:

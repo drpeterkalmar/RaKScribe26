@@ -2240,6 +2240,53 @@
      "6: nicht diktierter Ganzbein-Teil ohne Seite"
     ]
    }
+  },
+  {
+   "id": "nie-dexa-vorlage",
+   "titel": "KaiScribe fügt NIE eine DEXA-Vorlage ein: reine DEXA → Roboter, Kombi (DEXA + Rö/US) → das Office fügt den DEXA-Teil ein, KaiScribe formt nur den diktierten Rö/US-Teil. DEXA-/Osteodensitometrie-Leistungen (dexa, dexaneu, dxf, od, odh) zählen nicht zur Vorlagenwahl (kein Abschnitt, kein Normalbefund „nicht diktiert“, kein Hinweis), bleiben nur Auskunft für die Rho-Regel; die Erkennung wählt die DEXA-Vorlage nie (DEXA-Wörter im Diktat → der Rest entscheidet, sonst allgemein). EXE = Web. GWS a.p. + seitlich unverändert",
+   "quelle": "Ursula Hofmeister 23./24.11.2026 auf Papier (RH 60): „Warum ist die Überschrift von der DEXA doppelt …“ / „Wird die DEXA wenn sie in Kombination mit Rö oder US ist jetzt doch automatisch eingefügt? Bis jetzt hat er das nicht gemacht.“ – Lagebild (kaiscribe-dexa-doppelt-rh60-n1)",
+   "datum": "2026-11-25",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_vorlagen.py": [
+     "def ist_dexa(d, v):",
+     "if ist_dexa(d, d.get(\"vorlage\")):"
+    ],
+    "source_code/detect.py": [
+     "DEXA_VORLAGE = \"knochendichtemessung_dexa\"",
+     "return rest if rest != DEXA_VORLAGE else \"allgemein\""
+    ],
+    "web_app/src/detect.ts": [
+     "export const DEXA_VORLAGE = 'knochendichtemessung_dexa';",
+     "return rest !== DEXA_VORLAGE ? rest : 'allgemein';"
+    ],
+    "tests/offline/test_dexa_doppelt.py": [
+     "Kombi LWS + DEXA (RH 60): nur der LWS-Befund",
+     "Kombi US Schulter + DEXA"
+    ]
+   }
+  },
+  {
+   "id": "kein-platzhalter",
+   "titel": "Nie ein unbefüllter Platzhalter [...] im Brief ([Wert_LWS], [T_Wert_Hüfte], [X] …): ganz am Schluss wird er zur sichtbaren Lücke „…“, dazu eine rote Prüfzeile; der Satz bleibt. EXE = Web",
+   "quelle": "Ursula Hofmeister 23./24.11.2026 (RH 60: „ODM – LWS: … [Wert_LWS] …“ im Brief) – Lagebild (kaiscribe-dexa-doppelt-rh60-n1)",
+   "datum": "2026-11-25",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/befund_regeln.py": [
+     "def platzhalter_entfernen(report):",
+     "PLATZHALTER = re.compile("
+    ],
+    "web_app/src/befundRegeln.ts": [
+     "export function platzhalterEntfernen(report: string): [string, string[]] {"
+    ],
+    "source_code/pipeline.py": [
+     "erg.report, zeilen = br.platzhalter_entfernen(erg.report)"
+    ],
+    "web_app/src/pipeline.ts": [
+     "const [ohnePh, ph] = platzhalterEntfernen(fertig);"
+    ]
+   }
   }
  ]
 }

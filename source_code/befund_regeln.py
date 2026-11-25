@@ -2964,6 +2964,31 @@ _LOSE_REGION = re.compile(r"(?:" + _MOD + r"(?:(?:der|die|das|des)\s+)?(?:" + _R
                           _SEITE + r")?)\s*[.:]?", re.I)
 
 
+# kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60: „ODM – LWS: … [Wert_LWS] …“ im Brief): nie ein unbefüllter
+# Platzhalter [...] im Befund. Er wird zur sichtbaren Lücke „…“ (wie in den Ordi-Bausteinen), dazu eine rote Prüfzeile
+# (PLATZHALTER_ZEILE); der Satz bleibt (z. B. Aufklärungssatz der Blockade mit „[X] ml“). Ganz am Schluss (nach IB Lab).
+# Sync: befundRegeln.ts platzhalterEntfernen.
+PLATZHALTER = re.compile(r"\[[^\[\]\n]{1,40}\]")
+PLATZHALTER_ZEILE = "{name}: Platzhalter {ph} nicht befüllt (im Befund „…“) – bitte ergänzen, bitte prüfen"
+
+
+def platzhalter_entfernen(report):
+    """→ (report mit „…“ statt unbefülltem Platzhalter, [Prüfzeilen]). Ohne Platzhalter bit-gleich."""
+    if not report or not PLATZHALTER.search(report):
+        return report, []
+    out, zeilen, titel = [], [], "Befund"
+    for z in report.split("\n"):
+        k = z.strip()
+        if k.startswith("## ") and k[3:].strip().rstrip(":").lower() not in ("befund", "ergebnis"):
+            titel = k[3:].strip()
+        for ph in dict.fromkeys(PLATZHALTER.findall(z)):
+            h = PLATZHALTER_ZEILE.format(name=titel, ph=ph)
+            if h not in zeilen:
+                zeilen.append(h)
+        out.append(PLATZHALTER.sub("…", z))
+    return "\n".join(out), zeilen
+
+
 def befund_schluss(report):
     """8/5 (RH 37, RH 47, RH 120): ganz am Ende der Befundkette (nach IB Lab, Rho). → (report, Änderungen)."""
     if not report or "## " not in report:

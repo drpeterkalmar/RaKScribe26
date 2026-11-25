@@ -1,6 +1,8 @@
 {
   "_doc": "Paritäts-Fixture der Vorlagen-Erkennung (Umbau 06.10.2026, Gutachten P1-3/P2-3). Erwartungswert = Stand der EXE-Erkennung bei Anlage (v3.2.3: EXE = Web, alle Vorlagen erreichbar). Inhalt: je Vorlage '<display_name> unauffällig', '<display_name> rechts unauffällig', '<key ohne _> o.B.'; alle Diktate aus befund_regeln_fixtures.json (split/ergebnis_seite/titel_seite), normal_bypass_tests.json, misheard_tests.json (in + out), DETECT_CASES aus tests/offline/test_normalbefunde.py und vorlagen_vorrang_tests.json. Geprüft in tests/offline/test_normalbefunde.py TEIL 2c: EXE (detect_template) UND Web (detectTemplate) müssen den Erwartungswert liefern. Eine bewusste Erkennungsänderung heißt: Erwartungswert hier anpassen (Peter entscheidet). 'unerreichbar' = dokumentierte Vorlagen, die über keinen der drei Namens-Diktate erreichbar sind (Gutachten: 22, seit v3.2.3: 0). Umbau Schritt 7: 7 längere Diktate ergänzt, bei denen die alte Erkennung (hinter den Vorrang-Regeln) noch abwich — Blockade/Injektion im Sono-Zweig = EXE-Stand, Ganzaufnahme = Web-Stand.",
-  "unerreichbar": [],
+  "unerreichbar": [
+    "knochendichtemessung_dexa"
+  ],
   "faelle": [
     [
       "Schädel in 2 Ebenen unauffällig",
@@ -1300,15 +1302,15 @@
     ],
     [
       "Knochendichtemessung (DEXA) unauffällig",
-      "knochendichtemessung_dexa"
+      "allgemein"
     ],
     [
       "Knochendichtemessung (DEXA) rechts unauffällig",
-      "knochendichtemessung_dexa"
+      "allgemein"
     ],
     [
       "knochendichtemessung dexa o.B.",
-      "knochendichtemessung_dexa"
+      "allgemein"
     ],
     [
       "Digitale Volumentomographie des Oberkiefers unauffällig",
@@ -2813,6 +2815,26 @@
     [
       "Sprunggelenk rechts, Jones-Fraktur",
       "sprunggelenk_in_2_ebenen"
+    ],
+    [
+      "LWS in 2 Ebenen: verminderte Knochendichte, Osteochondrose L5/S1.",
+      "lendenwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Knochendichte vermindert. Osteochondrose L5/S1, Spondylose der LWS.",
+      "lendenwirbelsäule_in_2_ebenen"
+    ],
+    [
+      "Hüftgelenk links: Coxarthrose. DEXA empfohlen.",
+      "hüftgelenk_in_2_ebenen"
+    ],
+    [
+      "Sonographie der rechten Schulter: Bursitis subacromialis. Knochendichtemessung gesondert.",
+      "sonografie_schultergelenk"
+    ],
+    [
+      "Osteodensitometrie: T-Wert -2,6",
+      "allgemein"
     ]
   ]
 }

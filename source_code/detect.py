@@ -52,7 +52,24 @@ def derive_untersuchungs_titel(raw: str, display_name: str) -> str:
 # aber NICHT „Mammasonographie“ (m-a-m-m-a). Sync: detect.ts MAMMOGRAPHIE_RE
 MAMMOGRAPHIE_RE = re.compile(r"(?<![a-zäöüß])mammo(?:gra(?:ph|f|mm)|(?![a-zäöüß]))")
 
+# kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60): KaiScribe wählt NIE die DEXA-Vorlage (Platzhalter [Wert_LWS] …;
+# reine DEXA = Roboter, Kombi = Office fügt den DEXA-Teil ein). Nennt ein Diktat DEXA-Wörter („verminderte Knochendichte“,
+# „DEXA empfohlen“), zählt der Rest: ohne sie erkannt → diese Vorlage, sonst „allgemein“. Sync: detect.ts detectTemplate.
+DEXA_VORLAGE = "knochendichtemessung_dexa"
+DEXA_WORTE = re.compile(r"\(?\s*(?:dexa|dxa)\s*\)?|(?:osteo)?densitometri\w*|knochendichte\w*|(?<![a-zäöüß])odm(?![a-zäöüß])",
+                        re.I)
+
+
 def detect_template(text, templates):
+    """Untersuchungstyp (Vorlagen-Key) eines Diktat-Abschnitts – nie die DEXA-Vorlage (siehe DEXA_WORTE)."""
+    key = _detect_template(text, templates)
+    if key != DEXA_VORLAGE:
+        return key
+    rest = _detect_template(DEXA_WORTE.sub(" ", text or ""), templates)
+    return rest if rest != DEXA_VORLAGE else "allgemein"
+
+
+def _detect_template(text, templates):
     """Bessere Erkennungslogik für den Untersuchungstyp. templates = Vorlagen (templates.json) — für die
     Vorrang-Regeln und den Fallback „Key steht im Diktat“."""
     # v3.2.3 (Peter 06.10.: alle Vorlagen erreichbar + korrekt priorisiert): zuerst Vorrang-Regeln und diktierter

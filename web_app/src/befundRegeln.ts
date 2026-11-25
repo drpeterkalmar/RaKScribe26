@@ -2376,6 +2376,27 @@ export function ergebnisTextSichern(report: string): string {
 const LOSE_REGION = new RegExp('^(?:' + MOD + '(?:(?:der|die|das|des)\\s+)?(?:' + REGION_ALT + '|' +
   REGIONEN_OHNE_SEITE.map(([, p]) => p).join('|') + ')(?:\\s+in\\s+(?:2|zwei)\\s+ebenen)?(?:\\s+' + SEITE + ')?)\\s*[.:]?$', 'iu');
 
+// kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60): nie ein unbefüllter Platzhalter [...] im Befund – sichtbare
+// Lücke „…“ + rote Prüfzeile, der Satz bleibt. Sync: befund_regeln.py platzhalter_entfernen / PLATZHALTER_ZEILE.
+export const PLATZHALTER = /\[[^[\]\n]{1,40}\]/g;
+export const PLATZHALTER_ZEILE = '{name}: Platzhalter {ph} nicht befüllt (im Befund „…“) – bitte ergänzen, bitte prüfen';
+
+export function platzhalterEntfernen(report: string): [string, string[]] {
+  if (!report || !(report.match(PLATZHALTER) || []).length) return [report, []];
+  const out: string[] = [], zeilen: string[] = [];
+  let titel = 'Befund';
+  for (const z of report.split('\n')) {
+    const k = z.trim();
+    if (k.startsWith('## ') && !['befund', 'ergebnis'].includes(k.slice(3).trim().replace(/:$/, '').toLowerCase())) titel = k.slice(3).trim();
+    for (const ph of [...new Set(z.match(PLATZHALTER) || [])]) {
+      const h = PLATZHALTER_ZEILE.replace('{name}', titel).replace('{ph}', ph);
+      if (!zeilen.includes(h)) zeilen.push(h);
+    }
+    out.push(z.replace(PLATZHALTER, '…'));
+  }
+  return [out.join('\n'), zeilen];
+}
+
 export function befundSchluss(report: string): [string, string[]] {
   if (!report || !report.includes('## ')) return [report, []];
   let zeilen = report.split('\n');

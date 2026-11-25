@@ -3771,7 +3771,9 @@ class RaKScribeApp(ctk.CTk):
         if a is None or not a.leistungen:
             return None
         h = _cv.CasHinweis(a.leistungen, RADIOLOGY_TEMPLATES)
-        return h if h else None
+        # kaiscribe-dexa-doppelt-rh60-n1: nur DEXA im Auftrag → keine Vorlagenwahl nach CAS (bool False), aber die
+        # Rho-Regel muss die DEXA kennen (pipeline._rho_dexa)
+        return h if (h or h.dexa) else None
 
     def _cas_hinweise_zeigen(self, hinweise):
         lbl = getattr(self, "cas_hinweis_label", None)

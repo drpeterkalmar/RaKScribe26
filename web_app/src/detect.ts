@@ -42,7 +42,20 @@ export function deriveUntersuchungsTitel(raw: string, displayName: string): stri
 // v3.3.3: Mammographie in jeder Schreibweise, nicht „Mammasonographie“. Sync: detect.py MAMMOGRAPHIE_RE
 export const MAMMOGRAPHIE_RE = /(?<![a-zäöüß])mammo(?:gra(?:ph|f|mm)|(?![a-zäöüß]))/;
 
+// kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60): KaiScribe wählt NIE die DEXA-Vorlage (Platzhalter [Wert_LWS] …;
+// reine DEXA = Roboter, Kombi = Office fügt den DEXA-Teil ein). DEXA-Wörter im Diktat → der Rest entscheidet, sonst
+// „allgemein“. Sync: detect.py detect_template / DEXA_WORTE.
+export const DEXA_VORLAGE = 'knochendichtemessung_dexa';
+export const DEXA_WORTE = /\(?\s*(?:dexa|dxa)\s*\)?|(?:osteo)?densitometri[\wäöüß]*|knochendichte[\wäöüß]*|(?<![a-zäöüß])odm(?![a-zäöüß])/gi;
+
 export function detectTemplate(text: string, templates: TemplatesMap, vorrangDaten: VorrangDaten): string {
+  const key = detectTemplateRoh(text, templates, vorrangDaten);
+  if (key !== DEXA_VORLAGE) return key;
+  const rest = detectTemplateRoh((text || '').replace(DEXA_WORTE, ' '), templates, vorrangDaten);
+  return rest !== DEXA_VORLAGE ? rest : 'allgemein';
+}
+
+function detectTemplateRoh(text: string, templates: TemplatesMap, vorrangDaten: VorrangDaten): string {
   // v3.16.6 (Peter 18.10.): Empfehlungs-/Einschränkungssätze („Gehaltene Aufnahmen … empfohlen“, „die Hüfte ist nicht
   // miterfasst“) wählen keine Vorlage — sonst befundet die KI nie gemachte Aufnahmen. Sync: detect.py
   text = ohneEmpfehlungen(text, vorrangDaten?.kurzsaetze ?? KURZSAETZE);

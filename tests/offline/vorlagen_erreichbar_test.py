@@ -18,7 +18,10 @@ for k, v in T.items():
     dn = v["display_name"].strip()
     if "(allgemein)" in dn.lower():  # interne Sammel-Vorlage: erreichbar über den Fallback ihrer Gruppe (Vorrang-Fälle)
         continue
-    faelle += [[f"{dn} unauffällig", k], [f"{dn} rechts unauffällig", k]]
+    # kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60): die DEXA-Vorlage wählt KaiScribe absichtlich NIE
+    # (Roboter/Office fügen die DEXA ein) – ihr Name führt zu „allgemein“
+    soll = "allgemein" if k == detect.DEXA_VORLAGE else k
+    faelle += [[f"{dn} unauffällig", soll], [f"{dn} rechts unauffällig", soll]]
 n_reach = len(faelle)
 faelle += json.loads((ROOT / "vorlagen_vorrang_tests.json").read_text(encoding="utf-8"))
 

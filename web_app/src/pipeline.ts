@@ -4,7 +4,7 @@
 import { callGeminiLLM, validateReportConsistency, type GenKontext } from './gemini.ts';
 import { OhneKi, OHNE_KI_ZEILE } from './llmAnbieter.ts';
 import { detectTemplate, deriveUntersuchungsTitel, type TemplatesMap } from './detect.ts';
-import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, rhoRegelAnwenden, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, befundSchluss } from './befundRegeln.ts';
+import { splitRegionen, nachbearbeiten, befundeZusammenfuegen, ergebnisMitSeite, titelMitSeite, rhoErkennen, rhoEinfuegen, widerspruchBefunde, widerspruchPrompt, widersprucheBereinigen, abschnitteBereinigen, kurzsaetzeSichern, klBereinigen, arthroseBereinigen, saetzeMitLage, vorlageNormalisieren, VORLAGEN_ALTFORMEN, type VorrangDaten, grundregeln, rhoAnsEnde, rhoRegelAnwenden, osteopenErsetzen, teileZusammenlegen, nurTextUeberschriften, befundSchluss, platzhalterEntfernen } from './befundRegeln.ts';
 import { isPureNormalFinding } from './normalbypass.ts';
 import { diktatLog } from './protokoll.ts';
 import { bloecke, blockText, umbauSegment, umbauBlock, titelUebernehmen, vorrang, saetze, fehlende, ergaenzen, pruefzeile, streichen, ergebnisFehlt, verneintVorrang } from './befundfeld.ts';
@@ -127,7 +127,10 @@ export const befundAusDiktat = async (text: string, ctx: PipelineKontext): Promi
   // Überschrift, kein loses Regions-Wort – ganz am Ende
   const [fertig, schluss] = befundSchluss(osteopen(rhoAnsEnde(teileZusammenlegen(befundeZusammenfuegen(teile), text)[0]), text));   // kaiscribe-georg-2011-n1 (Punkt 19): Rho-Befund immer am Schluss
   if (schluss.length) console.log('[SCHLUSS] ' + schluss.map(a => a.slice(0, 50)).join(' · '));
-  return fertig;
+  // kaiscribe-dexa-doppelt-rh60-n1 (Sync: pipeline.py _platzhalter): nie ein unbefüllter Platzhalter im Befund
+  const [ohnePh, ph] = platzhalterEntfernen(fertig);
+  if (ph.length) console.warn(`[PLATZHALTER] ${ph.join(' · ')}`);
+  return ohnePh;
 };
 
 // kaiscribe-rho-osteopen-n1 (Georg 22.11.2026): Rho ≥ 7 → „Osteopenischer Knochenaspekt.“ statt Mineralisations-
@@ -185,6 +188,9 @@ export const befundUmbauen = async (aktuellIn: string, stand: string, ctx: Pipel
   for (const [neu, alte] of Object.entries(VORLAGEN_ALTFORMEN)) if (vorlagen.has(vorlageNormalisieren(neu))) alte.forEach(x => vorlagen.add(vorlageNormalisieren(x)));
   const eigeneAlt = saetze(text, false).map(([s]) => s).filter(s => !vorlagen.has(vorlageNormalisieren(s)) && !vor.includes(s));
   hinweise.push(...fehlende(eigeneAlt, report).filter(s => !verneintVorrang(s, vor)).map(s => pruefzeile(s)));
+  const [ohnePh, ph] = platzhalterEntfernen(report);   // kaiscribe-dexa-doppelt-rh60-n1 (Sync: pipeline.py)
+  report = ohnePh;
+  hinweise.push(...ph);
   console.log(`[UMBAU] ${vor.length} Änderung(en) mit Vorrang, ${teile.length} Abschnitt(e), ${fehlt.length} nachgetragen, ${hinweise.length} Prüfzeile(n)`);
   return { report, hinweise, leer: false };
 };

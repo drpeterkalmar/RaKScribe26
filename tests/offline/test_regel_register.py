@@ -35,7 +35,9 @@ PFLICHT = SKILL + ["kl-0", "kl-1", "kl-2", "kl-3", "kl-4", "kl-wann", "kl-rh38",
                    "ursula-prozent", "ursula-ws-ohne-seite", "ursula-im-uebrigen-folge", "ursula-schreibweisen", "ursula-th-wirbel",
                    "ursula-ergebnis-kein-titel", "ursula-schluss", "ursula-seite-laut-cas",
                    # kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg 23.11.2026 „Die Regel muss sitzen!“)
-                   "rho-eine-regel", "hippo-ergebnis-becken"]
+                   "rho-eine-regel", "hippo-ergebnis-becken",
+                   # kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60)
+                   "nie-dexa-vorlage", "kein-platzhalter"]
 
 regeln = REG["regeln"]
 ids = [r["id"] for r in regeln]
