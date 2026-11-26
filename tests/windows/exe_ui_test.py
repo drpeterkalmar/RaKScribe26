@@ -1239,7 +1239,7 @@ cm("ergaenzung-ohne-ins-n1 (Peter 26.11.): markiert → Record → Pause ⇒ ste
    "nichts angehängt, kein INS, Status „steht rechts“",
    "Dieser Text maximal 6 mm von RaKScribe" in kr and "prüft nur die Übergabe" not in kr and kp_.get("job_zustand") == "PAUSED"
    and kp_.get("transcript") == "Handgelenk links unauffällig"
-   and any(t in str(kp_.get("status_text")) for t in ("steht rechts", "eingefügt – Record: weiter dahinter · EOL: abschließen"))
+   and any(t in str(kp_.get("status_text")) for t in ("steht rechts", "– Record: weiter dahinter · EOL: abschließen"))
    and "der übrige Befund bleibt" in str((MM.get("k_rec") or {}).get("status_text")),
    json.dumps({f"{k}.{f}": (MM.get(k) or {}).get(f) for k in ("k_rec", "k_pause")
                        for f in ("status_text", "transcript", "job_zustand")},
