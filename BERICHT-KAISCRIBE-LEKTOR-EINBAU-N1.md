@@ -91,6 +91,13 @@ bleiben damit unverfälscht, das ist wichtig für die Kostenbedingung.
   Es schreibt eine eigene Schalter-Datei und setzt die Kopie danach wieder auf `aus`. Gelaufen ist es noch nicht, das
   macht Teil 2.
 
+## Nachtrag CI (26.11. 23:40)
+GitHub für 3.32.0 (`a9daac6`): **Tests grün, Build Windows EXE grün, Windows-UI-Test (EXE) grün** (Lauf 45904285594).
+Der UI-Test zeigt, dass die echte EXE mit dem Lektor-Code startet und sich ohne Schalter-Datei wie bisher verhält.
+Release-Asset `KaiScribe.exe`: 56.867.985 B, sha256 `a3aeeecea12ea9f4158d3c7272b28fb2fe21ad457f6459a3eb7ecbd14070f206`.
+Die Web-App ist unverändert. Ihr Deploy für `a9daac6` ist rot (bekannter Pages-Artefakt-Fehler), der nächste Deploy
+(`6dcc425`) ist grün.
+
 ## 3. Abweichungen vom Brief (bewusst)
 - **Prompt lektor-2 statt lektor-3:** So empfiehlt es n2 §5 ausdrücklich. Die Arzt-Markierung im Prompt ist im Einbau
   ohnehin leer: Der Lektor bekommt die KaiScribe-Fassung, bevor der Arzt etwas ändert. Der Arzt-Filter sitzt deshalb im

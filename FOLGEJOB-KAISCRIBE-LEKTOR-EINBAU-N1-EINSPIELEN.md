@@ -12,7 +12,9 @@ dort noch offen, dann direkt auf 3.32.0 tauschen (enthält 3.31.0) und das dort 
 zurück, außer als Rollback.
 
 ## A. Vorbedingung
-GitHub: „Tests“, „Build Windows EXE“ und „Windows UI-Test (EXE)“ für 3.32.0 grün (SHA aus dem API-`digest`). Ist etwas
+GitHub: „Tests“, „Build Windows EXE“ und „Windows UI-Test (EXE)“ für 3.32.0 grün (SHA aus dem API-`digest`).
+Stand 26.11. 23:40: alle drei grün (`a9daac6`, UI-Test-Lauf 45904285594), Asset 56.867.985 B, sha256
+`a3aeeecea12ea9f4158d3c7272b28fb2fe21ad457f6459a3eb7ecbd14070f206`. Ist etwas
 rot: nicht tauschen, Ursache beheben (Folgejob), nichts melden.
 
 ## B. Abnahme an 451898 mit der KaiScribe-KOPIE 3.32.0 als Gast, VOR dem Tausch
