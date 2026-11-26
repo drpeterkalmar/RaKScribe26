@@ -9,6 +9,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 import sounddevice as sd
 import threading
+from queue import Queue as _Queue   # ergaenzung-ohne-ins-n1: Abschnitte der Reihe nach einfügen
 import os
 import sys
 import time
@@ -641,7 +642,7 @@ STATUS_STYLE = {  # Status → (Anzeigetext, Punktfarbe, Pill-Hintergrund)
 # v3.8.0 (Peter 11.10., Nachtrag 3/4): Hilfe-Zeilen im Menü — gleicher Text in der Web-App (App.tsx)
 HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig & weiter",
                     "F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)",
-                    "In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)",
+                    "In den Befund rechts klicken/markieren, Record, sprechen, Pause = steht sofort rechts (ohne INS, ohne Nur Text) · EOL = fertig",
                     # 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1)
                     "Steht rechts schon ein Befund: Record = Ergänzung (Titel und Text bleiben) · neuer Befund nur bei leerem Feld oder F1",
                     "Befund-Kopf: Clear all = Feld leeren · Reset = erster Vorschlag · Restructure = neu aufbauen (deine "
@@ -649,18 +650,23 @@ HILFE_SPEECHMIKE = ("SpeechMike: Record = Aufnahme/Pause · INS = Befund erstell
 # v3.18.9 (Peter 12.11., kaiscribe-cursor-record-n1): Steht der Cursor beim Record im Befund rechts, wird das Diktat
 # wörtlich dort eingefügt (seit v3.5.0, unabhängig von „Nur Text“) — die Statuszeile sagt das jetzt in jedem Schritt.
 ERGAENZUNG = "Ergänzung an Cursor-Stelle"
-ERGAENZUNG_STATUS = {"RECORDING": f"{ERGAENZUNG} · Aufnahme läuft",
-                     "PAUSED": f"{ERGAENZUNG} · Pause – Record: weiter · INS: einfügen",
-                     "PROCESSING": f"{ERGAENZUNG} wird eingefügt…"}
+# kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026, Diktat 20261126060): jede Pause fügt den eben diktierten Abschnitt
+# SOFORT rechts ein (kein INS nötig) – die Statuszeile sagt dauerhaft, dass nur diese Stelle geändert wird
+ERGAENZUNG_REST = "der übrige Befund bleibt"
+ERGAENZUNG_STATUS = {"RECORDING": f"{ERGAENZUNG} · Aufnahme läuft · Pause = einfügen – {ERGAENZUNG_REST}",
+                     "PAUSED": f"{ERGAENZUNG} · Pause – steht rechts · Record: weiter · EOL: abschließen",
+                     "PROCESSING": f"{ERGAENZUNG} wird eingefügt… – {ERGAENZUNG_REST}"}
+ERGAENZUNG_EOL = "Ergänzung wird eingefügt – danach EOL nochmals zum Abschließen"
+ERGAENZUNG_EOL_FERTIG = "Ergänzung eingefügt – EOL nochmals zum Abschließen"
 # kaiscribe-sammel-2311 (Peter 23.11.2026, Videos RH 156/165: „funzt ned“): markierter Text im Befund wird durch das
 # Diktat ERSETZT – auch wenn die Markierung (Tk-„sel“) in der Pause durch PLAY, Fokuswechsel o. ä. verschwindet. Die
 # Markierung hält ein eigener Tag samt Text fest; nur ein echter Einzelklick ohne Auswahl im Befund hebt sie auf.
 MARKIERUNG_TAG = "ks_markierung"
 MARKIERUNG_FARBE = "#33406B"
 MARKIERUNG = "Ersetzt markierten Text ({n} Zeichen)"
-MARKIERUNG_STATUS = {"RECORDING": f"{MARKIERUNG} · Aufnahme läuft",
-                     "PAUSED": f"{MARKIERUNG} · Pause – Record: weiter · INS: ersetzen",
-                     "PROCESSING": f"{MARKIERUNG} …"}
+MARKIERUNG_STATUS = {"RECORDING": f"{MARKIERUNG} · Aufnahme läuft · Pause = ersetzen – {ERGAENZUNG_REST}",
+                     "PAUSED": f"{MARKIERUNG} · Pause – Record: weiter · EOL: abschließen",
+                     "PROCESSING": f"{MARKIERUNG} … – {ERGAENZUNG_REST}"}
 
 
 def _st_markierung(app):
@@ -1430,7 +1436,7 @@ class RaKScribeApp(ctk.CTk):
                      text_color=TEXT_FAINT).pack(side="left", padx=16)
         self.copy_btn = ctk.CTkButton(right_foot, text="⧉  Befund kopieren", height=40, width=170,
                                       font=(UI_FONT, 13, "bold"), fg_color=ACCENT_PURPLE, hover_color=ACCENT_HOVER,
-                                      corner_radius=10, command=lambda: self.copy_formatted_report(aus_knopf=True))
+                                      corner_radius=10, command=self.befund_kopieren_knopf)
         self.copy_btn.pack(side="right", padx=14)
         self.prompt_window = None
         self.update_status("READY", "ready")
@@ -2250,6 +2256,8 @@ class RaKScribeApp(ctk.CTk):
             n = len(getattr(self, "_ziel_text", "") or "")
             if n:                           # kaiscribe-sammel-2311: Markierung wird ersetzt
                 label = MARKIERUNG_STATUS[raw].format(n=n)
+            if raw == "PAUSED" and getattr(self, "_erg_offen", 0):   # ergaenzung-ohne-ins-n1: Abschnitt kommt gleich
+                label = ERGAENZUNG_STATUS["PROCESSING"] if not n else MARKIERUNG_STATUS["PROCESSING"].format(n=n)
         elif raw in EINBAU_STATUS.get(getattr(self, "_einbau", None), {}):
             label = EINBAU_STATUS[self._einbau][raw]   # 3.19.16: „Ergänzung“ bzw. „Neuer Befund“
         if raw == "RECORDING" and getattr(self, "_live_aus", False):
@@ -2415,6 +2423,7 @@ class RaKScribeApp(ctk.CTk):
                 log(f"[EINFÜGEN] {ERGAENZUNG}: Diktat wird an Stelle {self._einfuegen_ziel} in den Befund eingefügt "
                     f"(wörtlich, Nur Text {'an' if self.nur_text_aktiv() else 'aus'}).")
             self._einbau = self._einbau_bestimmen()
+            self._erg_zuruecksetzen()   # ergaenzung-ohne-ins-n1: Pause fügt ab jetzt abschnittsweise ein (mit Cursor)
             self._vor_lauf = self.result_text.get("1.0", "end-1c")
             self.final_transcript = ""
             self.stream_transcript = ""
@@ -2482,6 +2491,22 @@ class RaKScribeApp(ctk.CTk):
             self.update_processing_timer()
 
             maske_lauf = getattr(self, "_maske_lauf", False)
+            if not maske_lauf and (getattr(self, "_erg_bis", 0) or getattr(self, "_erg_offen", 0)):
+                # ergaenzung-ohne-ins-n1: die Pausen haben schon eingefügt → nur noch der Rest seit der letzten Pause
+                a = self._aufnahme
+
+                def rest():
+                    try:
+                        if a is not None:
+                            a.warten(timeout_stream=1.0)
+                        pcm = a.samples() if a is not None else None
+                        n = len(pcm) if pcm is not None else 0
+                    except Exception:
+                        log_exception("[EINFÜGEN] Rest der Ergänzung")
+                        n = 0
+                    self.after(0, lambda: self._erg_abschnitt(gen, a, n, fertig=True))
+                threading.Thread(target=rest, daemon=True).start()
+                return
 
             def wait_and_process():
                 try:
@@ -2541,7 +2566,10 @@ class RaKScribeApp(ctk.CTk):
                 if t_stopp:   # live-anzeige-aus-kp-n1: Messwert Stopp → Text links (Bericht)
                     log(f"[CHIRP3] Text links nach {time.time() - t_stopp:.1f} s ab Stopp"
                         + ("" if getattr(self, "_live_an", True) else " (Live-Anzeige aus)"))
-            self._ui(gen, links_zeigen)
+            if getattr(self, "_einfuegen_ziel", None) is None:
+                self._ui(gen, links_zeigen)
+            else:   # ergaenzung-ohne-ins-n1 (Peter 26.11.: „links wird Text angefügt“): links bleibt das Diktat stehen
+                log(f"[EINFÜGEN] {ERGAENZUNG}: links bleibt das bisherige Diktat, nichts angehängt.")
         elif ohne_live and all_pcm is not None and len(all_pcm) > 16000:
             # live-anzeige-aus-kp-n1 (unter 1 s Audio wie bisher „Kein Text diktiert“): kein Streaming-Text zum Retten (Reparaturen je Pause gibt es ohne Live-Anzeige
             # nicht; vorhandene nehmen wir trotzdem) → sonst Audio behalten + rote Zeile, nie still leer
@@ -2759,6 +2787,285 @@ class RaKScribeApp(ctk.CTk):
         except Exception:
             pass
 
+    # ── kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026, Diktat 20261126060) ─────────────────────────────────────────
+    # „Ich setze den Cursor im rechten Fenster an die falsch autobefundete Stelle und will durch Darüberdiktieren schnell
+    # korrigieren, ohne tippen zu müssen.“ Vorher kam der Text erst mit INS, EOL in der Pause sagte „Erst INS“, links
+    # stand das Diktat angehängt – Peter traute INS nicht und verwarf alles. Jetzt: mit Cursor/Markierung rechts erkennt
+    # jede Pause den eben gesprochenen Abschnitt sofort (chirp_3 nur auf diesem Abschnitt + Fehlhör-Liste + Korrektur wie
+    # „Nur Text“) und setzt ihn wörtlich an die Stelle (ersetzt die Markierung). Weiter-Diktieren hängt dahinter an, ein
+    # Klick/eine neue Markierung in der Pause lenkt den nächsten Abschnitt dorthin. INS/F10 fügt nur noch den Rest seit
+    # der letzten Pause ein, nie ein Neuaufbau. EOL in der Pause schließt direkt ab (alles steht ja rechts).
+    def _erg_zuruecksetzen(self):
+        q = getattr(self, "_erg_q", None)
+        if q is not None:
+            q.put(None)
+        self._erg_q, self._erg_q_gen = None, None
+        self._erg_bis, self._erg_offen, self._erg_n = 0, 0, 0
+        self._erg_jobs, self._erg_quelle, self._erg_letzt = [], "marken", None
+        self._erg_vorher, self._erg_eol, self._erg_mark_n = None, False, 0
+
+    def _erg_ziel_nehmen(self):
+        """Ziel des nächsten Abschnitts: die beim Start/Weiter gemerkte Stelle (Tk-Marken, wandern beim Tippen mit) bzw.
+        None = hinter dem zuletzt Eingefügten."""
+        if getattr(self, "_erg_quelle", "marken") != "marken":
+            return None
+        self._erg_quelle = "folge"
+        z = self._einfuegen_ziel
+        try:
+            z = (self._offset("diktat_a"), self._offset("diktat_b"))
+        except Exception:
+            pass
+        return {"von": z[0], "bis": z[1], "text": getattr(self, "_ziel_text", "") or ""}
+
+    def _erg_abschnitt(self, gen, a, ende, fertig=False):
+        """UI-Thread: Audio seit dem letzten eingefügten Abschnitt bis ende erkennen und einfügen lassen (der Reihe nach)."""
+        if not self._job.aktuell(gen):
+            return
+        start = getattr(self, "_erg_bis", 0)
+        self._erg_bis = max(start, ende)
+        lang = ende - start >= _seg.MIN_SAMPLES
+        if not lang and not fertig:
+            log("[EINFÜGEN] Pause ohne neuen Abschnitt (unter 0,5 s) – nichts einzufügen.")
+            return
+        job = {"gen": gen, "a": a, "s": start, "e": ende, "ziel": self._erg_ziel_nehmen(), "fertig": fertig,
+               "leer": not lang}
+        self._erg_offen = getattr(self, "_erg_offen", 0) + 1
+        self._erg_jobs = getattr(self, "_erg_jobs", []) + [job]
+        if lang:
+            log(f"[EINFÜGEN] Abschnitt ({(ende - start) / self.samplerate:.1f} s) wird erkannt und "
+                + ("an der markierten Stelle eingesetzt." if job["ziel"] and job["ziel"]["text"] else
+                   "an der Stelle eingefügt." if job["ziel"] else "hinter der Ergänzung angehängt."))
+        if self._status_raw in ("PAUSED", "PROCESSING"):
+            self.update_status(self._status_raw, "recording" if self._status_raw == "PAUSED" else "busy")
+        self._repariert_anzeigen()
+        q = getattr(self, "_erg_q", None)
+        if q is None or getattr(self, "_erg_q_gen", None) != gen:
+            q = _Queue()
+            self._erg_q, self._erg_q_gen = q, gen
+            threading.Thread(target=self._erg_arbeiter, args=(q,), daemon=True).start()
+        q.put(job)
+
+    def _erg_arbeiter(self, q):
+        """Hintergrund-Thread je Aufnahme: Abschnitte streng der Reihe nach erkennen, einsetzen lassen, dann der nächste."""
+        while True:
+            job = q.get()
+            if job is None:
+                return
+            text = None
+            if not job["leer"] and self._job.aktuell(job["gen"]):
+                try:
+                    pcm = job["a"].samples() if job["a"] is not None else None
+                    token = _get_stt_access_token()
+                    roh = _chirp3_worker(pcm[job["s"]:job["e"]], self.samplerate, 'eu', token) \
+                        if (pcm is not None and token) else None
+                    if roh and roh.strip():
+                        erg = _pl.nur_text_aus_diktat(roh.strip(), _pipeline_kontext())
+                        text = None if erg.leer else erg.report
+                except Exception:
+                    log_exception("[EINFÜGEN] Abschnitt der Ergänzung nicht erkannt")
+            fertig = threading.Event()
+
+            def ui(job=job, text=text):
+                try:
+                    self._erg_einsetzen(job, text)
+                finally:
+                    fertig.set()
+            self.after(0, ui)
+            fertig.wait(20)
+            if job["fertig"]:
+                return
+
+    def _erg_einsetzen(self, job, text):
+        """UI-Thread: erkannten Abschnitt an seiner Stelle einsetzen; Strg+Z holt den Stand vor der ganzen Ergänzung."""
+        gen = job["gen"]
+        self._erg_offen = max(0, getattr(self, "_erg_offen", 0) - 1)
+        self._erg_jobs = [j for j in getattr(self, "_erg_jobs", []) if j is not job]
+        if not self._job.aktuell(gen):
+            log("[EINFÜGEN] Lauf abgebrochen – Abschnitt verworfen, nichts eingefügt.")
+            return
+        if text:
+            v = getattr(self, "gross_satzanfang_var", None)
+            gross = bool(v.get()) if v is not None else True
+            vorher = self.result_text.get("1.0", "end-1c")
+            z = job["ziel"]
+            if z is None:
+                p = getattr(self, "_erg_letzt", None)
+                if p is None:
+                    p = (self._einfuegen_ziel or (len(vorher), len(vorher)))[1]
+                von, bis, art, gemerkt = p, p, "folge", ""
+            else:
+                gemerkt = z["text"]
+                von, bis, art = markierung_stelle(vorher, z["von"], z["bis"], gemerkt)
+            von, bis = max(0, min(von, len(vorher))), max(0, min(bis, len(vorher)))
+            e = _bf.ergebnis_einfuegen(vorher, text, gross, cursor=von) if von == bis else None
+            neu, cursor = e if e is not None else _einf.einfuegen(vorher, von, bis, text, gross=gross)
+            if getattr(self, "_erg_vorher", None) is None:
+                self._erg_vorher = vorher
+            self._feld_setzen(neu, vorher)
+            self._rueck = self._erg_vorher          # Strg+Z = Stand vor der ganzen Ergänzung
+            delta = len(neu) - len(vorher)
+            for j in self._erg_jobs:                # später angeklickte Stellen rücken mit
+                if j["ziel"] is not None and j["ziel"]["von"] >= bis:
+                    j["ziel"]["von"] += delta
+                    j["ziel"]["bis"] += delta
+            self._erg_letzt, self._erg_n = cursor, getattr(self, "_erg_n", 0) + 1
+            self._ziel_text, self._ziel_art = "", art
+            if not job["fertig"]:
+                self._einfuegen_ziel = (cursor, cursor)
+            try:
+                tb = self.result_text._textbox
+                tb.tag_remove(MARKIERUNG_TAG, "1.0", "end")   # die Markierung ist verbraucht
+                tb.tag_remove("sel", "1.0", "end")
+                for m in ("diktat_a", "diktat_b", "insert"):
+                    tb.mark_set(m, f"1.0+{cursor}c")
+                tb.see("insert")
+                tb.focus_set()
+            except Exception:
+                pass
+            if gemerkt:
+                self._erg_mark_n = len(gemerkt)
+                log(f"[EINFÜGEN] Markierung ersetzt ({art}): {len(gemerkt)} markierte Zeichen durch {len(text.strip())} "
+                    f"Zeichen an Stelle {(von, bis)} (ohne INS).")
+            else:
+                log(f"[EINFÜGEN] {ERGAENZUNG}: {len(text.strip())} Zeichen an Stelle {(von, bis)} eingefügt (ohne INS).")
+        elif not job["leer"]:
+            log("[EINFÜGEN] Abschnitt nicht erkannt – nichts eingefügt (Aufnahme bleibt erhalten).")
+            self._kurzhinweis("⚠ Ergänzung nicht erkannt – bitte die Stelle noch einmal diktieren", 10000)
+        if job["fertig"]:
+            if getattr(self, "_erg_offen", 0):
+                return
+            self._einfuegen_ziel = self._einbau = None
+            self._ziel_text = ""
+            self._lauf_fertig(gen)
+            if getattr(self, "_erg_eol", False):
+                self._erg_eol = False
+                self._kurzhinweis(ERGAENZUNG_EOL_FERTIG, 8000)
+            elif getattr(self, "_erg_n", 0):
+                self._kurzhinweis(self._erg_hinweis(), 8000)
+            return
+        if self._status_raw == "PAUSED":
+            self.update_status("PAUSED", "recording")
+        self._repariert_anzeigen()
+        if text and not getattr(self, "_erg_offen", 0):
+            if getattr(self, "_erg_eol", False):
+                self._erg_eol = False
+                self._kurzhinweis(ERGAENZUNG_EOL_FERTIG, 8000)
+            elif self._job.zustand == _js.PAUSED:
+                self._kurzhinweis(self._erg_hinweis(" – Record: weiter dahinter · EOL: abschließen"), 8000)
+
+    def _erg_fertig_hinweis(self, text, ms):
+        """Hinweis nach dem Einfügen; kam das Einfügen von EOL, sagt er „EOL nochmals zum Abschließen“."""
+        if getattr(self, "_erg_eol", False):
+            self._erg_eol = False
+            text, ms = ERGAENZUNG_EOL_FERTIG, 8000
+        self._kurzhinweis(text, ms)
+
+    def _erg_hinweis(self, zusatz=""):
+        n = getattr(self, "_erg_mark_n", 0)
+        t = f"Markierten Text ersetzt ({n} Zeichen)" if n else f"{ERGAENZUNG} eingefügt"
+        if getattr(self, "_ziel_art", "") == "veraendert":
+            t += " – die Markierung war inzwischen verändert, bitte prüfen (Strg+Z = zurück)"
+        return t + zusatz
+
+    def _erg_ziel_gilt(self):
+        return getattr(self, "_einfuegen_ziel", None) is not None and not getattr(self, "_maske_lauf", False)
+
+    def _erg_eol_aktion(self):
+        if getattr(self, "_maske_lauf", False):
+            return _bf.EOL_SENDEN if self._job.zustand in (_js.READY, _js.ERROR) else _bf.EOL_SPERRE
+        return _bf.eol_aktion(self._job.zustand, getattr(self, "_einbau", None), self._erg_ziel_gilt(),
+                              getattr(self, "_erg_offen", 0))
+
+    def _erg_abschliessbar(self):
+        """Pause, alle Abschnitte stehen rechts → die Aufnahme kann ohne weiteres Einfügen enden."""
+        return self._job.zustand == _js.PAUSED and self._erg_eol_aktion() == _bf.EOL_ABSCHLIESSEN
+
+    def _erg_beenden(self, wodurch):
+        """Aufnahme in der Pause beenden, ohne noch etwas einzufügen (alles steht schon rechts)."""
+        gen = self._job.gen
+        self.is_recording = False
+        self._aufnahme_stoppen()
+        self._job.ereignis("ins")
+        self._job.ereignis("report_done", gen)
+        q = getattr(self, "_erg_q", None)
+        if q is not None:
+            q.put(None)
+        self._erg_q = None
+        self._einfuegen_ziel = self._einbau = None
+        self._ziel_text = ""
+        self._befund_wartet, self._gesendet = True, False
+        self.record_btn.configure(state="normal", text=" Aufnahme Starten (F10) ", fg_color=ACCENT_PURPLE)
+        self.level_indicator.configure(fg_color=READY_GREEN, width=0)
+        self.update_status("KONTROLLE", "ready")
+        self._repariert_anzeigen()
+        log(f"[EINFÜGEN] {wodurch} in der Pause: Ergänzung steht rechts – Aufnahme beendet, nichts neu aufgebaut.")
+
+    def _ergaenzung_einfuegen_jetzt(self):
+        """Offenes Diktat einer Ergänzung jetzt einfügen: mit Cursor = Pause (Abschnitt kommt an die Stelle), sonst wie INS
+        (Ergänzung ans Ende des passenden Befundteils). Nie ein Neuaufbau."""
+        z = self._job.zustand
+        if z == _js.RECORDING and self._erg_ziel_gilt():
+            self._pausieren("stop")
+        elif z in (_js.RECORDING, _js.PAUSED):
+            self._aufnahme_umschalten("ins", "stop", kontrolle=True)
+
+    def _eol_vorbereiten(self):
+        """EOL: True = jetzt weiterschicken. Während einer Ergänzung nie „Erst INS“ – offenes Diktat wird erst eingefügt
+        (EOL danach nochmals), in der Pause mit allem rechts schließt EOL direkt ab. „Erst INS“ nur ohne Befund rechts."""
+        akt = self._erg_eol_aktion()
+        if akt == _bf.EOL_ABSCHLIESSEN:
+            self._erg_beenden("EOL")
+        elif akt == _bf.EOL_WARTEN:
+            self._erg_eol = True
+            self._kurzhinweis(ERGAENZUNG_EOL, 8000)
+            return False
+        elif akt == _bf.EOL_EINFUEGEN:
+            self._erg_eol = True
+            log("[EINFÜGEN] EOL bei offener Ergänzung – erst einfügen, EOL danach nochmals.")
+            self._ergaenzung_einfuegen_jetzt()
+            self._kurzhinweis(ERGAENZUNG_EOL, 8000)
+            return False
+        elif akt == _bf.EOL_SPERRE:
+            self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+            return False
+        if self._job.vorschau("eol") is None or not _sm.sendefaehig(self.result_text.get("1.0", "end-1c").strip()):
+            self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+            return False
+        return True
+
+    def _ergaenzung_offen(self):
+        """Steht gerade Diktiertes einer Ergänzung noch NICHT rechts? (Aufnahme läuft, wird eingefügt, Nachdiktat offen)"""
+        if self._job.zustand not in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
+            return False
+        return self._erg_eol_aktion() in (_bf.EOL_EINFUEGEN, _bf.EOL_WARTEN)
+
+    def _ergaenzung_offen_fragen(self, was):
+        """Fenster zu / CAS abbrechen bei offener Ergänzung: nicht still verlieren (Peter 26.11., Fall 20261126060).
+        True = Vorgang abbrechen (Ergänzung wird eingefügt), False = weitermachen."""
+        if not self._ergaenzung_offen() or wav_modus() or os.environ.get("RAKSCRIBE_SELFTEST"):
+            return False
+        log(f"[EINFÜGEN] {was} bei offener Ergänzung – Rückfrage.")
+        if messagebox.askyesno(was, "Das eben Diktierte steht noch nicht im Befund.\n\n"
+                                    "Ja = jetzt rechts einfügen (es wird nichts geschlossen)\n"
+                                    "Nein = Diktiertes verwerfen und fortfahren"):
+            log(f"[EINFÜGEN] {was}: Ergänzung wird zuerst eingefügt.")
+            if self._job.zustand != _js.PROCESSING:
+                self._ergaenzung_einfuegen_jetzt()
+            self._kurzhinweis(f"Ergänzung wird eingefügt – danach „{was}“ bitte noch einmal", 8000)
+            return True
+        log(f"[EINFÜGEN] {was}: offene Ergänzung verworfen (bestätigt).")
+        return False
+
+    def befund_kopieren_knopf(self):
+        """Knopf „Befund kopieren“: bei offener Ergänzung erst einfügen (nie ohne das Nachdiktat kopieren)."""
+        if self._ergaenzung_offen():
+            log("[EINFÜGEN] Befund kopieren bei offener Ergänzung – erst einfügen, dann nochmals kopieren.")
+            if self._job.zustand != _js.PROCESSING:
+                self._ergaenzung_einfuegen_jetzt()
+            self._kurzhinweis("Ergänzung wird eingefügt – danach „Befund kopieren“ noch einmal", 8000)
+            return False
+        return self.copy_formatted_report(aus_knopf=True)
+
     # ── 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1): Befundfeld nie still überschreiben ─────────────────
     # „Wenn schon was rechts steht und ich dazudiktieren möchte, wird manchmal alles gelöscht oder der Titel ändert sich,
     # irgendwie random.“ Ursache: ohne Fokus im Feld (kurzer Klick in Plaza/CAS) baute jedes Diktat einen neuen Befund.
@@ -2827,6 +3134,8 @@ class RaKScribeApp(ctk.CTk):
         """Strg+Z im Befundfeld: Stand vor dem letzten KaiScribe-Schritt (Diktat, Clear all, Reset, Restructure) zurück;
         noch einmal Strg+Z = wieder vor (nichts geht verloren). Ohne gemerkten Stand: normales Strg+Z."""
         alt = getattr(self, "_rueck", None)
+        if alt is not None and self._erg_abschliessbar():
+            self._erg_beenden("Strg+Z")   # ergaenzung-ohne-ins-n1: Pause nach eingefügter Ergänzung → Stand davor
         if alt is None or self._job.zustand in (_js.RECORDING, _js.PAUSED, _js.PROCESSING):
             return None
         jetzt = self.result_text.get("1.0", "end-1c")
@@ -3097,7 +3406,7 @@ class RaKScribeApp(ctk.CTk):
                 n_mark = len(getattr(self, "_ziel_text", "") or "")
                 self.after(0, lambda t=erg.report: self._einfuegen_an_ziel(gen, ziel, t))
                 self.after(0, lambda: self._lauf_fertig(gen))
-                self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(
+                self.after(0, lambda: self._job.aktuell(gen) and self._erg_fertig_hinweis(
                     (f"Markierten Text ersetzt ({n_mark} Zeichen)"
                      + (" – die Markierung war inzwischen verändert, bitte prüfen (Strg+Z = zurück)"
                         if getattr(self, "_ziel_art", "") == "veraendert" else ""))
@@ -3115,7 +3424,7 @@ class RaKScribeApp(ctk.CTk):
                     return
                 self.after(0, lambda t=erg.report: self._ergaenzung_einbauen(gen, t))
                 self.after(0, lambda: self._lauf_fertig(gen))
-                self.after(0, lambda: self._job.aktuell(gen) and self._kurzhinweis(
+                self.after(0, lambda: self._job.aktuell(gen) and self._erg_fertig_hinweis(
                     "Ergänzung eingebaut – Titel und Text bleiben · Restructure baut den Befund neu · Strg+Z = zurück", 8000))
                 return
             if self.nur_text_aktiv() and not nur_befund:  # v3.4.0: nur korrigierte Spracherkennung (Call 0), kein Befund
@@ -3423,10 +3732,9 @@ class RaKScribeApp(ctk.CTk):
             log("[WAV] EOL ohne CAS-Auftrag – nichts weitergeschickt.")
             self._kurzhinweis("WAV-Modus: EOL nur mit CAS-Auftrag")
             return
-        text = self.result_text.get("1.0", "end-1c").strip()
-        if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
-            self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+        if not self._eol_vorbereiten():   # ergaenzung-ohne-ins-n1: offene Ergänzung erst einfügen
             return
+        text = self.result_text.get("1.0", "end-1c").strip()
         if self._gesendet:  # F10 hat genau diesen Befund schon eingefügt → nicht doppelt
             self._job.ereignis("eol")
             self._felder_leeren()
@@ -3484,6 +3792,12 @@ class RaKScribeApp(ctk.CTk):
         log(f"[SPEECHMIKE] Pause nach Abschnitt {k + 1} ({(ende - start) / self.samplerate:.1f} s).")
         self.update_status("PAUSED", "recording")
         self.level_indicator.configure(width=0)
+        if _bf.pause_fuegt_ein(getattr(self, "_einfuegen_ziel", None) is not None):
+            # ergaenzung-ohne-ins-n1 (Peter 26.11.2026): Cursor/Markierung rechts → der Abschnitt wird jetzt erkannt
+            # und wörtlich an der Stelle eingefügt (kein INS nötig, links wird nichts angehängt, keine Reparatur links)
+            self._erg_abschnitt(gen, a, ende)
+            self._repariert_anzeigen()
+            return
         self._diktat_anzeigen()
         if not getattr(self, "_live_an", True):
             # live-anzeige-aus-kp-n1 (Peter 24.11.: „das verwirrt eh nur“): keine Reparatur je Pause (kein chirp_3-Aufruf),
@@ -3535,7 +3849,15 @@ class RaKScribeApp(ctk.CTk):
             except Exception:
                 m_neu = None
             klick = getattr(self, "_klick_n", 0) != getattr(self, "_klick_n_ziel", 0)
-            if alt is not None and alt_text and m_neu is None and not klick:
+            abschnittsweise = bool(getattr(self, "_erg_bis", 0) or getattr(self, "_erg_offen", 0))
+            if abschnittsweise and m_neu is not None and any(
+                    j["ziel"] and j["ziel"]["text"] and (j["ziel"]["von"], j["ziel"]["bis"]) == tuple(m_neu)
+                    for j in getattr(self, "_erg_jobs", [])):
+                m_neu = None   # die Markierung wird gerade ersetzt – das ist keine neue Markierung
+            if abschnittsweise and m_neu is None and not klick:
+                # ergaenzung-ohne-ins-n1: kein neuer Klick, keine neue Markierung → hinter dem Eingefügten weiter
+                log("[EINFÜGEN] Weiter diktieren: hängt hinter der eben eingefügten Ergänzung an.")
+            elif alt is not None and alt_text and m_neu is None and not klick:
                 log(f"[EINFÜGEN] Weiter diktieren: Markierung ({len(alt_text)} Zeichen) bleibt und wird ersetzt.")
             else:
                 self._klick_gilt = klick and bool(alt_text)   # Klick im Befund zählt auch ohne Fokus danach
@@ -3550,6 +3872,7 @@ class RaKScribeApp(ctk.CTk):
                         log(f"[EINFÜGEN] Weiter diktieren: Markierung ({len(alt_text)} Zeichen) bleibt und wird ersetzt.")
                 else:
                     self._einfuegen_ziel = z
+                    self._erg_quelle = "marken"   # ergaenzung-ohne-ins-n1: nächster Abschnitt an die neue Stelle
                     if self._ziel_text:
                         log(f"[EINFÜGEN] In der Pause neu markiert – Diktat ersetzt Stelle {z} "
                             f"({len(self._ziel_text)} Zeichen).")
@@ -3561,7 +3884,10 @@ class RaKScribeApp(ctk.CTk):
         self._maske_anzeigen()
 
     def _diktat_anzeigen(self):
-        text = _seg.anzeige(self._basis, self._abschnitte, self._live)
+        if getattr(self, "_einfuegen_ziel", None) is not None and not getattr(self, "_maske_lauf", False):
+            text = self._basis   # ergaenzung-ohne-ins-n1: Ergänzung rechts → links bleibt das bisherige Diktat
+        else:
+            text = _seg.anzeige(self._basis, self._abschnitte, self._live)
         self.transcript_text.delete("1.0", "end")
         self.transcript_text.insert("1.0", text)
 
@@ -3570,7 +3896,13 @@ class RaKScribeApp(ctk.CTk):
         if lbl is None:
             return
         zustand = self._job.zustand
-        if getattr(self, "_stt_fehler", False) and zustand not in (_js.RECORDING, _js.PAUSED):
+        if getattr(self, "_einfuegen_ziel", None) is not None and zustand in (_js.RECORDING, _js.PAUSED) \
+                and not getattr(self, "_maske_lauf", False):   # ergaenzung-ohne-ins-n1
+            lbl.configure(text="● Ergänzung – Pause fügt rechts an der Stelle ein" if zustand == _js.RECORDING
+                          else ("● Ergänzung wird rechts eingefügt …" if getattr(self, "_erg_offen", 0)
+                                else "● Pause – Ergänzung steht rechts im Befund"),
+                          text_color=RECORDING_RED if zustand == _js.RECORDING else WARN_AMBER)
+        elif getattr(self, "_stt_fehler", False) and zustand not in (_js.RECORDING, _js.PAUSED):
             fehler = self._stt_fehler if isinstance(self._stt_fehler, str) else STT_FEHLER_TEXT   # tagesdeckel-n1
             lbl.configure(text="⚠ " + fehler, text_color=RECORDING_RED)   # live-anzeige-aus-kp-n1: nie still leer
         elif not getattr(self, "_live_an", True) and zustand == _js.RECORDING:
@@ -3593,6 +3925,7 @@ class RaKScribeApp(ctk.CTk):
         """Nach EOL: alles leeren — bereit für den nächsten Patienten."""
         self.final_transcript = self.stream_transcript = self.stream_interim = ""
         self._einfuegen_ziel = self._einbau = None
+        self._erg_zuruecksetzen()
         self._stand_leeren()       # 3.19.16: Fall fertig → Reset-/Restructure-Stand und Strg+Z verworfen
         self._sm_sitzung_leeren()
         self.transcript_text.delete("1.0", "end")
@@ -3625,6 +3958,8 @@ class RaKScribeApp(ctk.CTk):
     def _schliessen(self):
         """Fenster schließen: SpeechMike-LED aus, Lese-Thread beenden. v3.10.0: offener CAS-Auftrag → „abgebrochen“
         (die Brücke startet dann das normale Diktatprogramm)."""
+        if self._ergaenzung_offen_fragen("Fenster schließen"):   # ergaenzung-ohne-ins-n1: nie still verlieren
+            return
         try:
             if getattr(self, "_cas", None) is not None:
                 self._cas_kanal.antworten(self._cas, "abgebrochen", grund="fenster_zu")
@@ -4561,6 +4896,8 @@ class RaKScribeApp(ctk.CTk):
         """Knopf „Abbrechen“ im Band: Auftrag zurückgeben — die Brücke startet das normale Diktatprogramm."""
         if getattr(self, "_cas", None) is None:
             return
+        if self._ergaenzung_offen_fragen("CAS-Diktat abbrechen"):   # ergaenzung-ohne-ins-n1
+            return
         nr = self._cas.nr
         try:
             self._cas_kanal.antworten(self._cas, "abgebrochen", grund="knopf")
@@ -4583,10 +4920,9 @@ class RaKScribeApp(ctk.CTk):
     def _cas_senden(self):
         """EOL mit CAS-Auftrag: sichtbaren Befund (+ Aufnahme) als Datei an die Brücke, „fertig“ melden, alles leeren.
         Die Zwischenablage bekommt den Text zusätzlich (Sicherheitsnetz), es wird NICHT eingefügt."""
-        text = self.result_text.get("1.0", "end-1c").strip()
-        if self._job.vorschau("eol") is None or not _sm.sendefaehig(text):
-            self._kurzhinweis("Erst INS, Befund prüfen, dann EOL")
+        if not self._eol_vorbereiten():   # ergaenzung-ohne-ins-n1: offene Ergänzung erst einfügen
             return
+        text = self.result_text.get("1.0", "end-1c").strip()
         if not self._maske_eol_pruefen():   # v3.15.0: Befund muss zum aktuellen Stand der Maske passen
             return
         a = self._cas

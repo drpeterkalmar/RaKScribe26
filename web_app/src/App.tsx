@@ -26,9 +26,17 @@ import { istAbbruch, fehlermeldung } from './net.ts';
 import { correctTranscriptionWithGemini, testGeminiAPI } from './gemini.ts';
 import { befundAusDiktat, befundUmbauen, nurTextAusDiktat, type PipelineKontext } from './pipeline.ts';
 import { einfuegen, markdownOffset } from './einfuegen.ts';
-import { ergaenzen, modus, type Modus } from './befundfeld.ts';
+import { ergaenzen, modus, eolAktion, pauseFuegtEin, type Modus } from './befundfeld.ts';
 // v3.18.9 (Peter 12.11.): Cursor im Befund beim Record → wörtliche Ergänzung dort (wie RaKScribe.py ERGAENZUNG)
 const ERGAENZUNG = 'Ergänzung an Cursor-Stelle';
+// kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026): jede Pause fügt den Abschnitt sofort rechts ein (ohne INS),
+// EOL nie „Erst INS“, solange rechts ein Befund steht. Texte = RaKScribe.py ERGAENZUNG_STATUS / ERGAENZUNG_EOL*
+const ERGAENZUNG_REST = 'der übrige Befund bleibt';
+const ERGAENZUNG_AUFNAHME = `${ERGAENZUNG} · Aufnahme läuft · Pause = einfügen – ${ERGAENZUNG_REST}`;
+const ERGAENZUNG_PAUSE = `${ERGAENZUNG} · Pause – steht rechts · Record: weiter · EOL: abschließen`;
+const ERGAENZUNG_LAEUFT = `${ERGAENZUNG} wird eingefügt… – ${ERGAENZUNG_REST}`;
+const ERGAENZUNG_EOL = 'Ergänzung wird eingefügt – danach EOL nochmals zum Abschließen';
+const ERGAENZUNG_EOL_FERTIG = 'Ergänzung eingefügt – EOL nochmals zum Abschließen';
 // 3.19.16 (Peter 20.11.2026, kaiscribe-befundfeld-sicher-n1): steht rechts schon Text, ist jedes Diktat eine Ergänzung
 // (Titel und Text bleiben); neuer Befund nur bei leerem Feld. Statuszeilen = RaKScribe.py EINBAU_STATUS.
 const EINBAU_STATUS: Partial<Record<Modus, { aufnahme: string; pause: string }>> = {
@@ -272,6 +280,14 @@ export default function App() {
   const structuredReportRef = useLatest(structuredReport);
   const reportEditorRef = useRef<HTMLTextAreaElement>(null);
   const einfuegeZielRef = useRef<[number, number] | null>(null);    // beim Start der Aufnahme gemerkte Stelle
+  // ergaenzung-ohne-ins-n1: abschnittsweises Einfügen je Pause (Stand dieser Aufnahme)
+  const ergBisRef = useRef(0);                                      // bis hierher (Samples) erkannt/eingefügt
+  const ergOffenRef = useRef(0);                                    // Abschnitte, die gerade erkannt werden
+  const ergKetteRef = useRef<Promise<void>>(Promise.resolve());     // streng der Reihe nach einfügen
+  const ergZielRef = useRef<[number, number] | null>(null);         // Stelle beim Start
+  const ergLetztRef = useRef<number | null>(null);                  // Cursor hinter dem zuletzt Eingefügten
+  const ergVorherRef = useRef<string | null>(null);                 // Strg+Z: Stand vor der ganzen Ergänzung
+  const ergEolRef = useRef(false);                                  // Einfügen kam von EOL → „EOL nochmals“
   const [cursorSetzen, setCursorSetzen] = useState<[number, number] | null>(null);  // nach Render in den Editor
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [pendingCopyText, setPendingCopyText] = useState<string>('');
@@ -599,7 +615,11 @@ export default function App() {
     },
     status: setStatusText,
     fertig: ohneKiFertig(kontrolle
-      ? () => { setStatus('ready'); setStatusText('Befund prüfen – EOL schickt ihn weiter'); setBefundWartet(true); }
+      ? () => {
+        setStatus('ready'); setBefundWartet(true);
+        setStatusText(ergEolRef.current ? ERGAENZUNG_EOL_FERTIG : 'Befund prüfen – EOL schickt ihn weiter');   // ergaenzung-ohne-ins-n1
+        ergEolRef.current = false;
+      }
       : () => { setStatus('ready'); setStatusText('Bereit'); }),
     fehler: (meldung: string) => { setStatus('ready'); setStatusText('Fehler bei der Verarbeitung.'); alert(meldung); },
     kopieren: kontrolle ? () => undefined : async (report: string) => {
@@ -611,7 +631,8 @@ export default function App() {
   });
   // Diktat-Feld während der Aufnahme: bisheriges Diktat + reparierte Abschnitte + Live-Chunks (src/segmente.ts)
   const anzeigeAktualisieren = () =>
-    setTranscript(diktatAnzeige(basisRef.current, abschnitteRef.current, chunkTranscriptsRef.current, laufendVonRef.current));
+    setTranscript(einfuegeZielRef.current ? basisRef.current   // ergaenzung-ohne-ins-n1: links bleibt das Diktat
+      : diktatAnzeige(basisRef.current, abschnitteRef.current, chunkTranscriptsRef.current, laufendVonRef.current));
 
   // Helper function to process the next chunk of recorded audio (Live-Anzeige)
   const processNextAudioChunk = (lauf: Lauf) => {
@@ -732,8 +753,11 @@ export default function App() {
       // 3.19.16: das rechte Feld wird beim Start nie mehr geleert — Text rechts = Ergänzung (befundfeld.ts modus)
       einbauRef.current = modus(structuredReportRef.current, false, !!einfuegeZielRef.current, false, abgeschlossen);
       vorLaufRef.current = structuredReportRef.current;
+      ergBisRef.current = 0; ergOffenRef.current = 0; ergKetteRef.current = Promise.resolve();
+      ergZielRef.current = einfuegeZielRef.current; ergLetztRef.current = null; ergVorherRef.current = null;
+      ergEolRef.current = false;
       setStatus('recording');
-      setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft`
+      setStatusText(einfuegeZielRef.current ? ERGAENZUNG_AUFNAHME
         : EINBAU_STATUS[einbauRef.current]?.aufnahme ?? 'Aufnahme läuft...');
       pufferRef.current = new Int16Puffer();
 
@@ -827,6 +851,13 @@ export default function App() {
     // Rest des Resamplers in den Puffer, dann den letzten Chunk BEFORE closing context
     if (resamplerRef.current) pufferRef.current.anhaengen(resamplerRef.current.flush());
     resamplerRef.current = null;
+    if (ergBisRef.current > 0 || ergOffenRef.current > 0) {
+      // ergaenzung-ohne-ins-n1: die Pausen haben schon eingefügt → nur noch der Rest seit der letzten Pause, nie neu bauen
+      audioStoppen();
+      setStatusText(ERGAENZUNG_LAEUFT);
+      ergAbschnitt(lauf, pufferRef.current.laenge, true, kontrolle);
+      return;
+    }
     processNextAudioChunk(lauf);
     audioStoppen();
 
@@ -880,7 +911,7 @@ export default function App() {
       // v3.2: gleiche Kette wie die EXE (Regionen trennen → je Region Bypass oder Gemini → Ergebnis nummerieren)
       befundErstellen: (text, signal) => befundOderText(text, genKontext(lauf, signal), ziel, ergaenzung),
     }, { ...befundUi(kontrolle, nurNeu ? 'ergaenzung' : 'neu'), transkript: (t: string) => {
-      setTranscript(nurNeu ? mitBasis(t) : t);
+      setTranscript(ziel ? basis : nurNeu ? mitBasis(t) : t);   // ergaenzung-ohne-ins-n1: Cursor → links nichts anhängen
       if (!nurNeu) transkriptKsRef.current = t;
     } },
     { transkriptVorPruefung: true, fehlerPrefix: 'Fehler bei der Transkription oder KI-Strukturierung: ' });
@@ -903,9 +934,10 @@ export default function App() {
     abschnitteRef.current = [...abschnitteRef.current, abschnitt];
     laufendVonRef.current = chunkTranscriptsRef.current.length;
     setStatus('paused');
-    setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Pause – Record: weiter · INS: einfügen`
+    setStatusText(einfuegeZielRef.current ? ERGAENZUNG_PAUSE
       : einbauRef.current && EINBAU_STATUS[einbauRef.current] ? EINBAU_STATUS[einbauRef.current]!.pause
         : 'Pause – Record: weiter · INS: Befund erstellen');
+    if (pauseFuegtEin(!!einfuegeZielRef.current)) { ergAbschnitt(lauf, ende, false, true); return; }  // ohne INS
     anzeigeAktualisieren();
     if (ende - start < 8000) return;  // unter 0,5 s: nichts zu reparieren
     setRepariert('laeuft');
@@ -921,17 +953,90 @@ export default function App() {
     });
   };
 
+  // ergaenzung-ohne-ins-n1 (Sync: RaKScribe.py _erg_abschnitt/_erg_einsetzen): Audio seit dem zuletzt Eingefügten bis
+  // ende erkennen (chirp_3 nur auf diesem Abschnitt → Fehlhör-Liste + Call 0 → wie „Nur Text“) und wörtlich an die
+  // Stelle setzen (erster Abschnitt: Cursor/Markierung beim Start, danach hinter das zuletzt Eingefügte). fertig = Stopp.
+  const ergAbschnitt = (lauf: Lauf, ende: number, fertig: boolean, kontrolle: boolean) => {
+    const s = ergBisRef.current;
+    ergBisRef.current = Math.max(s, ende);
+    const lang = ende - s >= 8000;
+    if (!lang && !fertig) return;   // unter 0,5 s: nichts einzufügen
+    const wav = lang ? sliceWav(pufferRef.current.ansicht(), s, ende) : null;
+    ergOffenRef.current++;
+    if (statusRef.current === 'paused') setStatusText(ERGAENZUNG_LAEUFT);
+    ergKetteRef.current = ergKetteRef.current.then(async () => {
+      let t = '';
+      if (wav && lauf.aktuell()) {
+        try {
+          const roh = (await transcribeAudio(wav, true, sttKontext(lauf))).trim();
+          if (roh) t = nurTextAusDiktat(await correctTranscriptionWithGemini(roh, genKontext(lauf, lauf.signal)), genKontext(lauf, lauf.signal));
+        } catch (err: unknown) {
+          if (!istAbbruch(err)) console.warn('[EINFÜGEN] Abschnitt der Ergänzung nicht erkannt:', fehlermeldung(err));
+        }
+      }
+      ergOffenRef.current = Math.max(0, ergOffenRef.current - 1);
+      if (!lauf.aktuell()) return;
+      const z = ergLetztRef.current !== null ? [ergLetztRef.current, ergLetztRef.current] : ergZielRef.current;
+      if (t && z) {
+        const vorher = structuredReportRef.current;
+        const [neu, cursor] = einfuegen(vorher, z[0], z[1], t, grossSatzanfangRef.current);
+        if (ergVorherRef.current === null) ergVorherRef.current = vorher;
+        structuredReportRef.current = neu;   // nächster Abschnitt baut auf diesem Stand auf
+        setStructuredReport(neu);
+        rueckRef.current = ergVorherRef.current;
+        ergLetztRef.current = cursor;
+        setReportView('text');
+        setCursorSetzen([cursor, cursor]);
+      } else if (wav) setStatusText('⚠ Ergänzung nicht erkannt – bitte die Stelle noch einmal diktieren');
+      if (fertig) {
+        if (ergOffenRef.current) return;
+        einfuegeZielRef.current = null;
+        einbauRef.current = null;
+        setStatus('ready');
+        if (kontrolle) { setBefundWartet(true); setStatusText(ergEolRef.current ? ERGAENZUNG_EOL_FERTIG : `${ERGAENZUNG} eingefügt`); }
+        else if (await copyTextToClipboard(structuredReportRef.current)) { gesendetRef.current = true; setStatusText(`${ERGAENZUNG} eingefügt`); }
+        ergEolRef.current = false;
+      } else if (statusRef.current === 'paused' && !ergOffenRef.current) {
+        setStatusText(t && ergEolRef.current ? ERGAENZUNG_EOL_FERTIG : ERGAENZUNG_PAUSE);
+        if (t) ergEolRef.current = false;
+      }
+    });
+  };
+  // Pause, alles steht rechts → Aufnahme ohne weiteres Einfügen beenden (EOL schließt direkt ab)
+  const ergBeenden = () => {
+    aufnahmeOffenRef.current = false;
+    pausiertRef.current = false;
+    if (chunkIntervalRef.current) { clearInterval(chunkIntervalRef.current); chunkIntervalRef.current = null; }
+    resamplerRef.current = null;
+    audioStoppen();
+    einfuegeZielRef.current = null;
+    einbauRef.current = null;
+    setStatus('ready');
+  };
+  // EOL/„Befund kopieren“ während einer Ergänzung: offenes Diktat erst einfügen (nie still verlieren, nie „Erst INS“)
+  const ergJetztEinfuegen = () => {
+    if (statusRef.current === 'recording' && einfuegeZielRef.current) pausieren();
+    else if (statusRef.current === 'recording' || statusRef.current === 'paused') void stopRecording(true);
+  };
+  const ergEolAktion = () => eolAktion(statusRef.current === 'recording' ? 'RECORDING' : statusRef.current === 'paused' ? 'PAUSED'
+    : statusRef.current === 'processing' ? 'PROCESSING' : 'READY', einbauRef.current, !!einfuegeZielRef.current, ergOffenRef.current);
+
   const fortsetzen = () => {
     if (statusRef.current !== 'paused') return;
     segStartRef.current = pufferRef.current.laenge;
     pausiertRef.current = false;
     setStatus('recording');
-    setStatusText(einfuegeZielRef.current ? `${ERGAENZUNG} · Aufnahme läuft`
+    setStatusText(einfuegeZielRef.current ? ERGAENZUNG_AUFNAHME
       : einbauRef.current && EINBAU_STATUS[einbauRef.current] ? EINBAU_STATUS[einbauRef.current]!.aufnahme : 'Aufnahme läuft...');
   };
 
   // Manual Copy Result
   const handleCopyReport = async () => {
+    if (['einfuegen', 'warten'].includes(ergEolAktion())) {   // ergaenzung-ohne-ins-n1: erst die offene Ergänzung
+      if (statusRef.current !== 'processing') ergJetztEinfuegen();
+      setStatusText('Ergänzung wird eingefügt – danach „Befund kopieren“ noch einmal');
+      return;
+    }
     if (!structuredReport) return;
     await copyTextToClipboard(structuredReport);
   };
@@ -1213,8 +1318,13 @@ export default function App() {
   // Vidierliste“ hinein. Heute: den SICHTBAREN (ggf. geänderten) Befund kopieren und alles leeren — in fremde Fenster
   // einfügen kann der Browser nicht. Ohne fertigen Befund (Aufnahme/Pause/Verarbeitung/leer) wird nichts geschickt.
   const befundFertig = async () => {
+    const akt = ergEolAktion();   // ergaenzung-ohne-ins-n1 (Sync: RaKScribe.py _eol_vorbereiten)
+    if (akt === 'warten') { ergEolRef.current = true; setStatusText(ERGAENZUNG_EOL); return; }
+    if (akt === 'einfuegen') { ergEolRef.current = true; ergJetztEinfuegen(); setStatusText(ERGAENZUNG_EOL); return; }
+    if (akt === 'sperre') { setStatusText('Erst INS, Befund prüfen, dann EOL'); return; }
+    if (akt === 'abschliessen') ergBeenden();
     const text = structuredReportRef.current.trim();
-    if (!uiAktion(appZustand, 'eol') || !sendefaehig(text)) { setStatusText('Erst INS, Befund prüfen, dann EOL'); return; }
+    if ((akt !== 'abschliessen' && !uiAktion(appZustand, 'eol')) || !sendefaehig(text)) { setStatusText('Erst INS, Befund prüfen, dann EOL'); return; }
     if (UEBUNG_BASIS) { await uebungAbgeben(); return; }   // Übung: EOL = in die Übungsablage, NICHT kopieren/senden
     if (!await copyTextToClipboard(text, false)) {
       setStatusText('Nicht kopiert – Browserfenster anklicken, dann EOL erneut');
@@ -1250,6 +1360,15 @@ export default function App() {
   };
   const smTasteRef = useLatest(smTaste);
   const befundFertigRef = useLatest(befundFertig);
+  // ergaenzung-ohne-ins-n1 (Peter 26.11., Fall 20261126060): offene Ergänzung beim Schließen des Tabs nicht still verlieren
+  const ergEolAktionRef = useLatest(ergEolAktion);
+  useEffect(() => {
+    const warnen = (e: BeforeUnloadEvent) => {
+      if (['einfuegen', 'warten'].includes(ergEolAktionRef.current())) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', warnen);
+    return () => window.removeEventListener('beforeunload', warnen);
+  }, [ergEolAktionRef]);
   useEffect(() => {
     if (ueZeitUm && (statusRef.current === 'recording' || statusRef.current === 'paused')) {
       setStatusText('Übung: Spracherkennungs-Kontingent erreicht – Aufnahme gestoppt');
@@ -1438,7 +1557,7 @@ export default function App() {
                   <span><kbd>F10</kbd> Aufnahme · <kbd>F9</kbd> Neu</span>
                   <span>SpeechMike: Record = Aufnahme/Pause · INS = Befund erstellen · EOL = fertig &amp; weiter</span>
                   <span>F1 = Neu · F2 = Nur Text (dann zeigt INS den korrigierten Text)</span>
-                  <span>In den Befund rechts klicken/markieren, dann Record = Ergänzung an Cursor-Stelle (wörtlich, ohne Nur Text)</span>
+                  <span>In den Befund rechts klicken/markieren, Record, sprechen, Pause = steht sofort rechts (ohne INS, ohne Nur Text) · EOL = fertig</span>
                   <span>Steht rechts schon ein Befund: Record = Ergänzung (Titel und Text bleiben) · neuer Befund nur bei leerem Feld oder F1</span>
                   <span>Befund-Kopf: Clear all = Feld leeren · Reset = erster Vorschlag · Restructure = neu aufbauen (deine Änderungen haben Vorrang) · Strg+Z im Befund = Schritt zurück</span>
                 </div>

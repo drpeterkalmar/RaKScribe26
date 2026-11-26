@@ -272,16 +272,20 @@ check("kp Cursor: Diktat an der Cursor-Stelle eingefügt, Rest Zeichen für Zeic
 
 MARK = "Bänder intakt."
 A = BEFUND.index(MARK)
-CHIRP["antworten"] = [ZUSATZ]
+CHIRP["antworten"] = [ZUSATZ, ""]   # 1. Aufruf = Abschnitt bis zur Pause, danach Stille
 app, tb = neue_app("kp", befund=BEFUND, insert=A + len(MARK), sel=(A, A + len(MARK)))
 app.sm_record(); puffer(app, 6)
-app.sm_record(); S.pump(app, lambda: False, 0.2)      # Pause: keine Reparatur
+app.sm_record()                                       # Pause: ergaenzung-ohne-ins-n1 → sofort ersetzt
+S.pump(app, lambda: "Gelenkerguss" in app.result_text.text, 4)
 n_pause = len(CHIRP["aufrufe"])
-app.sm_record(); puffer(app, 12)                      # weiter, Markierung bleibt
+check("kp Markierung übersprechen: Pause ersetzt SOFORT (ein chirp_3-Aufruf nur auf dem Abschnitt), links nichts angehängt",
+      app.result_text.text == BEFUND.replace(MARK, "Zusätzlich kleiner Gelenkerguss.") and n_pause == 1
+      and app.transcript_text.text == "" and STREAMS == [], f"{app.result_text.text!r} {CHIRP['aufrufe']}")
+app.sm_record(); puffer(app, 12)                      # weiter: hängt dahinter an
 app.sm_ins(); ende(app)
-check("kp Markierung übersprechen (mit Pause): markierter Text ersetzt, Pause ohne chirp_3",
-      app.result_text.text == BEFUND.replace(MARK, "Zusätzlich kleiner Gelenkerguss.") and n_pause == 0
-      and len(CHIRP["aufrufe"]) == 1, f"{app.result_text.text!r} {CHIRP['aufrufe']}")
+check("kp Markierung übersprechen (mit Pause): INS nur noch der Rest (Stille) – Befund unverändert, kein Neuaufbau",
+      app.result_text.text == BEFUND.replace(MARK, "Zusätzlich kleiner Gelenkerguss.")
+      and len(CHIRP["aufrufe"]) in (1, 2) and S.AUFZ.tasten == [], f"{app.result_text.text!r} {CHIRP['aufrufe']}")   # Rest unter 0,5 s: kein Aufruf
 
 CHIRP["antworten"] = [ZUSATZ]
 app, tb = neue_app("kp", befund=BEFUND, fokus=False)

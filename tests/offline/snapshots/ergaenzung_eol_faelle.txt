@@ -1,0 +1,1154 @@
+[
+{
+"zustand": "READY",
+"einbau": "neu",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "neu",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "neu",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "neu",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "geruest",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "geruest",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "geruest",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "geruest",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "maske",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "maske",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "maske",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "maske",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "cursor",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "cursor",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": "cursor",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": "cursor",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": null,
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": null,
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "READY",
+"einbau": null,
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "READY",
+"einbau": null,
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "neu",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "neu",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "neu",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "neu",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "geruest",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "geruest",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "geruest",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "geruest",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "maske",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "maske",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "maske",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "maske",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "cursor",
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "cursor",
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": "cursor",
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": "cursor",
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": null,
+"ziel": false,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": null,
+"ziel": false,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "ERROR",
+"einbau": null,
+"ziel": true,
+"offen": 0,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "ERROR",
+"einbau": null,
+"ziel": true,
+"offen": 1,
+"aktion": "senden",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "neu",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "neu",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "neu",
+"ziel": true,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "neu",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "geruest",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "geruest",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "geruest",
+"ziel": true,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "geruest",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "maske",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "maske",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "maske",
+"ziel": true,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "maske",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "cursor",
+"ziel": false,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "cursor",
+"ziel": false,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": "cursor",
+"ziel": true,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": "cursor",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": null,
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": null,
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "RECORDING",
+"einbau": null,
+"ziel": true,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "RECORDING",
+"einbau": null,
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "neu",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "neu",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "neu",
+"ziel": true,
+"offen": 0,
+"aktion": "abschliessen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "neu",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "geruest",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "geruest",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "geruest",
+"ziel": true,
+"offen": 0,
+"aktion": "abschliessen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "geruest",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "maske",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "maske",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "maske",
+"ziel": true,
+"offen": 0,
+"aktion": "abschliessen",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "maske",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 0,
+"aktion": "abschliessen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "cursor",
+"ziel": false,
+"offen": 0,
+"aktion": "einfuegen",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "cursor",
+"ziel": false,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": "cursor",
+"ziel": true,
+"offen": 0,
+"aktion": "abschliessen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": "cursor",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": null,
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": null,
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PAUSED",
+"einbau": null,
+"ziel": true,
+"offen": 0,
+"aktion": "abschliessen",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PAUSED",
+"einbau": null,
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "neu",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "neu",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "neu",
+"ziel": true,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "neu",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "geruest",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "geruest",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "geruest",
+"ziel": true,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "geruest",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "maske",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "maske",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "maske",
+"ziel": true,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "maske",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "cursor",
+"ziel": false,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "cursor",
+"ziel": false,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": "cursor",
+"ziel": true,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": "cursor",
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": null,
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": null,
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "PROCESSING",
+"einbau": null,
+"ziel": true,
+"offen": 0,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "PROCESSING",
+"einbau": null,
+"ziel": true,
+"offen": 1,
+"aktion": "warten",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "neu",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "neu",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "neu",
+"ziel": true,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "neu",
+"ziel": true,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "geruest",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "geruest",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "geruest",
+"ziel": true,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "geruest",
+"ziel": true,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "maske",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "maske",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "maske",
+"ziel": true,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "maske",
+"ziel": true,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "ergaenzung",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "ergaenzung",
+"ziel": true,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "cursor",
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "cursor",
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": "cursor",
+"ziel": true,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": "cursor",
+"ziel": true,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": null,
+"ziel": false,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": null,
+"ziel": false,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": false
+},
+{
+"zustand": "LOCKED",
+"einbau": null,
+"ziel": true,
+"offen": 0,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+},
+{
+"zustand": "LOCKED",
+"einbau": null,
+"ziel": true,
+"offen": 1,
+"aktion": "sperre",
+"pause_fuegt_ein": true
+}
+]

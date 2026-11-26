@@ -76,41 +76,60 @@ def status(app):
     return app.status_badge.cfg.get("text", "")
 
 
-# 2. RH 156: markiert → RECORD → Pause → PLAY (Auswahl weg, Cursor am Markierungsende, kein Klick) → RECORD → INS
+def antworten(*texte):
+    """chirp_3-Attrappe: je Aufruf der nächste Text, danach Stille (None) – ergaenzung-ohne-ins-n1: jede Pause erkennt
+    nur ihren Abschnitt, INS nur den Rest seit der letzten Pause."""
+    rest = list(texte)
+    mod._chirp3_worker = lambda pcm, sr, loc, token: rest.pop(0) if rest else None
+
+
+KORR_FEST = mod._korr.korrigieren
+KORR_GLEICH = lambda t, key, block="", log=None: t   # noqa: E731
+
+
+# 2. RH 156: markiert → RECORD → Pause ⇒ (ab ergaenzung-ohne-ins-n1) die Markierung ist SOFORT ersetzt, ohne INS →
+#    PLAY (Auswahl weg, kein Klick) → RECORD (weiter) hängt dahinter an → INS: nur der Rest, kein Neuaufbau
 LOG.clear()
 app, tb, z = neue_app(insert=A + len(MARK), sel=(A, A + len(MARK)))
+antworten("zusätzlich kleiner Gelenkerguss")
 app.sm_record()
-check("RH 156: Start mit Markierung → Status „Ersetzt markierten Text (14 Zeichen)“",
-      f"Ersetzt markierten Text ({len(MARK)} Zeichen) · Aufnahme läuft" in status(app), status(app))
+check("RH 156: Start mit Markierung → Status „Ersetzt markierten Text (14 Zeichen) · … Pause = ersetzen“",
+      f"Ersetzt markierten Text ({len(MARK)} Zeichen) · Aufnahme läuft · Pause = ersetzen" in status(app), status(app))
 check("… Log nennt die Markierung (keine Ergänzung)", any("Ersetzt markierten Text (14 Zeichen)" in l for l in LOG), LOG[-5:])
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 6)
 app.sm_record()                                       # Pause
-S.pump(app, lambda: False, 0.2)
-check("… Pause zeigt weiter „Ersetzt markierten Text“", "Ersetzt markierten Text (14 Zeichen) · Pause" in status(app), status(app))
-tb.sel = None                                         # PLAY / Fokuswechsel: Auswahl weg, Cursor am Ende
-tb.marks["insert"] = A + len(MARK)
+S.pump(app, lambda: app.result_text.text == SOLL, 4)
+check("… Pause: Markierung sofort ersetzt (ohne INS), Rest Zeichen für Zeichen gleich, Status „steht rechts“",
+      app.result_text.text == SOLL and app._job.zustand == "PAUSED" and "Pause – steht rechts" in status(app)
+      and S.AUFZ.tasten == [], repr(app.result_text.text) + status(app))
+tb.sel = None                                         # PLAY / Fokuswechsel: Auswahl weg, Cursor irgendwo
+tb.marks["insert"] = 0
 z["fokus"] = None
 app.sm_record()                                       # weiter
-check("… Weiter diktieren: Markierung bleibt (kein „In der Pause geklickt“)",
-      app._einfuegen_ziel == (A, A + len(MARK)) and not any("In der Pause in den Befund geklickt" in l for l in LOG)
-      and any("Markierung (14 Zeichen) bleibt" in l for l in LOG), f"{app._einfuegen_ziel} {LOG[-4:]}")
-S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
+check("… Weiter diktieren: hängt hinter dem Eingefügten an (kein „In der Pause geklickt“)",
+      not any("In der Pause in den Befund geklickt" in l for l in LOG)
+      and any("hängt hinter der eben eingefügten Ergänzung an" in l for l in LOG), LOG[-4:])
+n0 = len(app._aufnahme.puffer)
+S.pump(app, lambda: len(app._aufnahme.puffer) >= n0 + 8)   # Rest seit der Pause > 0,5 s
 app.sm_ins()
 warten_bis_ende(app)
-check("… INS: markierter Text ERSETZT, Rest Zeichen für Zeichen gleich, nichts ins RIS",
+check("… INS: kein weiterer Text (Stille) → Befund bleibt SOLL, nichts ins RIS",
       app.result_text.text == SOLL and S.AUFZ.tasten == [], repr(app.result_text.text))
 check("… Hinweis „Markierten Text ersetzt (14 Zeichen)“, Ziel verbraucht",
       app._letzter_hinweis.startswith("Markierten Text ersetzt (14 Zeichen)") and app._einfuegen_ziel is None
       and app._ziel_text == "", app._letzter_hinweis)
 
-# 3. RH 165: Start ohne Ziel (Fokus woanders) → Pause → markieren → weiter → Pause → Auswahl weg (EOL/Knöpfe) → weiter → INS
+# 3. RH 165: Start ohne Ziel (Fokus woanders) → Pause → markieren → weiter → Pause (ersetzt jetzt) → weiter → INS
 LOG.clear()
 app, tb, z = neue_app(insert=0, fokus=False)
+antworten("zusätzlich kleiner", "zusätzlich kleiner Gelenkerguss")   # Reparatur links (1. Pause), dann die Ersetzung
 app.sm_record()
 check("RH 165: Start ohne Markierung/Fokus → Ergänzung (kein Ziel)", app._einfuegen_ziel is None
       and "Ergänzung · Aufnahme läuft" in status(app), status(app))
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 6)
-app.sm_record()                                       # Pause
+app.sm_record()                                       # Pause (ohne Ziel: nichts eingefügt)
+S.pump(app, lambda: False, 0.2)
+check("… Pause ohne Cursor/Markierung: rechts unverändert (Ergänzung kommt mit INS)", app.result_text.text == BEFUND)
 tb.sel = (A, A + len(MARK))                           # in der Pause markiert (Maus)
 tb.marks["insert"] = A + len(MARK)
 z["fokus"] = tb
@@ -119,11 +138,13 @@ app.sm_record()                                       # weiter
 check("… weiter: neue Markierung gilt (Status „Ersetzt markierten Text“)", app._einfuegen_ziel == (A, A + len(MARK))
       and "Ersetzt markierten Text (14 Zeichen) · Aufnahme läuft" in status(app), f"{app._einfuegen_ziel} {status(app)}")
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 10)
-app.sm_record()                                       # Pause
+app.sm_record()                                       # Pause → ersetzt (beide Abschnitte gehören an die Markierung)
+S.pump(app, lambda: app.result_text.text == SOLL, 4)
 tb.sel = None                                         # Knöpfe Reset/Clear all, EOL-Hinweise: Auswahl/Fokus weg
 z["fokus"] = None
 app.befund_leeren()                                   # „Clear all: erst Aufnahme/Verarbeitung abschließen“
-check("… Clear all während der Pause ändert nichts", app.result_text.text == BEFUND)
+check("… Pause: Markierung ersetzt, Clear all während der Pause ändert nichts", app.result_text.text == SOLL,
+      repr(app.result_text.text))
 app.sm_record()                                       # weiter
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 14)
 app.sm_ins()
@@ -131,63 +152,74 @@ warten_bis_ende(app)
 check("… INS: die Markierung ist ersetzt (nicht an den Rand eingefügt)", app.result_text.text == SOLL,
       repr(app.result_text.text))
 
-# 4. Echter Einzelklick ohne Auswahl in der Pause → Cursor gilt, Markierung weg
+# 4. Echter Einzelklick ohne Auswahl in der Pause → der NÄCHSTE Abschnitt kommt an die Klick-Stelle
 LOG.clear()
+mod._korr.korrigieren = KORR_GLEICH
 app, tb, z = neue_app(insert=A + len(MARK), sel=(A, A + len(MARK)))
+antworten("Kleiner Erguss.", "Zusätzlich Plica.")
 app.sm_record()
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 6)
 app.sm_record()
-P = BEFUND.index("Knorpel")
+S.pump(app, lambda: "Kleiner Erguss." in app.result_text.text, 4)
+ZWISCHEN = BEFUND.replace(MARK, "Kleiner Erguss.")
+check("Pause: Markierung durch den ersten Abschnitt ersetzt", app.result_text.text == ZWISCHEN, repr(app.result_text.text))
+P = ZWISCHEN.index("Knorpel")
 tb.sel = None
 tb.marks["insert"] = P
 app._befund_klick()                                   # <ButtonRelease-1> ohne Auswahl
-check("Klick ohne Auswahl hebt die gemerkte Markierung auf", app._markierung() is None)
+check("Klick ohne Auswahl: keine Markierung", app._markierung() is None)
 app.sm_record()
 check("… weiter: Diktat an der Klick-Stelle (Cursor), Status „Ergänzung an Cursor-Stelle“",
       app._einfuegen_ziel == (P, P) and app._ziel_text == "" and "Ergänzung an Cursor-Stelle · Aufnahme läuft" in status(app),
       f"{app._einfuegen_ziel} {status(app)}")
-S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
+n0 = len(app._aufnahme.puffer)
+S.pump(app, lambda: len(app._aufnahme.puffer) >= n0 + 8)   # Rest seit der Pause > 0,5 s
 app.sm_ins()
 warten_bis_ende(app)
-check("… INS: eingefügt, markierter Text bleibt stehen",
-      app.result_text.text == BEFUND.replace("Knorpel", "Zusätzlich kleiner Gelenkerguss. Knorpel"), repr(app.result_text.text))
+check("… INS: zweiter Abschnitt an der Klick-Stelle, sonst nichts geändert",
+      app.result_text.text == ZWISCHEN.replace("Knorpel", "Zusätzlich Plica. Knorpel"), repr(app.result_text.text))
 
-# 5. Klick, der eine NEUE Markierung setzt (Doppelklick/Ziehen) → die neue wird ersetzt
+# 5. Klick, der eine NEUE Markierung setzt (Doppelklick/Ziehen) → der nächste Abschnitt ersetzt die neue
 app, tb, z = neue_app(insert=A + len(MARK), sel=(A, A + len(MARK)))
+antworten("Kleiner Erguss.", "Knorpel aufgeraut.")
 app.sm_record()
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 6)
 app.sm_record()
-B2 = BEFUND.index("Knorpel glatt.")
+S.pump(app, lambda: app.result_text.text == ZWISCHEN, 4)
+B2 = ZWISCHEN.index("Knorpel glatt.")
 tb.sel = (B2, B2 + len("Knorpel glatt."))
 app._befund_klick()                                   # Loslassen mit Auswahl = neue Markierung
 app.sm_record()
 check("Neue Markierung in der Pause → sie ist das Ziel", app._einfuegen_ziel == (B2, B2 + len("Knorpel glatt."))
       and "Ersetzt markierten Text (14 Zeichen)" in status(app), f"{app._einfuegen_ziel} {status(app)}")
-S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
+n0 = len(app._aufnahme.puffer)
+S.pump(app, lambda: len(app._aufnahme.puffer) >= n0 + 8)   # Rest seit der Pause > 0,5 s
 app.sm_ins()
 warten_bis_ende(app)
-check("… INS: die neue Markierung ersetzt, die alte Stelle unverändert",
-      app.result_text.text == BEFUND.replace("Knorpel glatt.", "Zusätzlich kleiner Gelenkerguss."), repr(app.result_text.text))
+check("… INS: die neue Markierung ersetzt, die erste Ersetzung bleibt",
+      app.result_text.text == ZWISCHEN.replace("Knorpel glatt.", "Knorpel aufgeraut."), repr(app.result_text.text))
+mod._korr.korrigieren = KORR_FEST
 
-# 6. Markierter Text in der Pause verändert (getippt) → Stelle der Marken, Hinweis „bitte prüfen“, Strg+Z zurück
+# 6. Markierter Text während der Aufnahme verändert (getippt) → Stelle der Marken, Hinweis „bitte prüfen“, Strg+Z
+#    in der Pause holt den Stand vor der Ergänzung zurück (Aufnahme endet, nichts neu aufgebaut)
 app, tb, z = neue_app(insert=A + len(MARK), sel=(A, A + len(MARK)))
+antworten("zusätzlich kleiner Gelenkerguss")
 app.sm_record()
 S.pump(app, lambda: len(app._aufnahme.puffer) >= 6)
-app.sm_record()
 GETIPPT = BEFUND.replace(MARK, "xy")
 app.result_text.text = GETIPPT                        # Tk: Auswahl überschrieben, Marken jetzt um „xy“
 tb.sel = None
 tb.marks["diktat_a"], tb.marks["diktat_b"] = A, A + 2
 tb.tags.pop(mod.MARKIERUNG_TAG, None)
-app.sm_record()
-S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
-app.sm_ins()
-warten_bis_ende(app)
+app.sm_record()                                       # Pause
+S.pump(app, lambda: "Gelenkerguss" in app.result_text.text, 4)
+S.pump(app, lambda: False, 0.3)
 check("Markierung inzwischen verändert → nur die Stelle der Marken ersetzt, nichts sonst gelöscht",
       app.result_text.text == GETIPPT.replace("xy", "Zusätzlich kleiner Gelenkerguss."), repr(app.result_text.text))
-check("… Hinweis „bitte prüfen (Strg+Z = zurück)“, Strg+Z holt den Stand davor",
-      "bitte prüfen" in app._letzter_hinweis and app._rueckgaengig() == "break" and app.result_text.text == GETIPPT,
-      app._letzter_hinweis)
+check("… Hinweis „bitte prüfen (Strg+Z = zurück)“, Strg+Z in der Pause holt den Stand davor, Aufnahme beendet",
+      "bitte prüfen" in app._letzter_hinweis and app._rueckgaengig() == "break" and app.result_text.text == GETIPPT
+      and app._job.zustand == "READY" and not app.is_recording, app._letzter_hinweis)
+app._aufnahme_stoppen()
 
 # 7. IB-Lab-Gerüst: Markierung darin wird ersetzt – kein neuer Befund aus dem Gerüst, Rest bleibt wörtlich
 GERUEST = "## Röntgen linke Hand\n\n## Befund\nKnochenalter nach Greulich-Pyle 10 Jahre (IB Lab).\n\n## Ergebnis\n"
@@ -200,7 +232,8 @@ tb.sel = None                                         # Fokus ins CAS gewechselt
 app.sm_record()
 check("Gerüst mit Markierung: Ziel = Markierung, Einbau Cursor (nicht „Neuer Befund (IB-Lab-Gerüst)“)",
       app._einfuegen_ziel == (G, G + len("10 Jahre")) and app._einbau == mod._bf.CURSOR, f"{app._einfuegen_ziel} {app._einbau}")
-S.pump(app, lambda: len(app._aufnahme.puffer) >= 12)
+n0 = len(app._aufnahme.puffer)
+S.pump(app, lambda: len(app._aufnahme.puffer) >= n0 + 8)   # Rest seit der Pause > 0,5 s
 app.sm_ins()
 warten_bis_ende(app)
 check("… INS: nur die Markierung ersetzt, Gerüst sonst Zeichen für Zeichen gleich, keine Befund-KI",

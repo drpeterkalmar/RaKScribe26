@@ -103,7 +103,9 @@ mod._llm_aufruf = lambda p: (_ for _ in ()).throw(AssertionError("Befund-KI beim
 
 
 def lauf_pause(sel=None, insert=0, nur_text=False, cas=False):
-    mod._chirp3_worker = lambda pcm, sr, loc, token: "zusätzlich kleiner Gelenkerguss"
+    # ergaenzung-ohne-ins-n1: mit Markierung beim Start ersetzt schon die Pause (ein Aufruf), der Rest danach ist Stille
+    texte = ["zusätzlich kleiner Gelenkerguss"] if sel else None
+    mod._chirp3_worker = lambda pcm, sr, loc, token: (texte.pop(0) if texte else None) if sel else "zusätzlich kleiner Gelenkerguss"
     app = S.baue_app(mod)
     app.result_text.insert("1.0", BEFUND)
     app.transcript_text.insert("1.0", "Knie rechts unauffällig")      # bisheriges Diktat (Nachdiktat-Basis)

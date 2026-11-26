@@ -465,15 +465,17 @@ def fall_m(state, work, hwnd=None):
     ph("nur_text_aus#e1")
     # kaiscribe-sammel-2311 (Peter 23.11., RH 156): markiert → RECORD → Pause → Auswahl weg ohne Klick (PLAY/Fokus) →
     # RECORD (weiter) → INS: die Markierung wird ERSETZT (vorher: an das Markierungsende eingefügt)
-    ph("chirp#markierung neu|markierung neu")
+    # ergaenzung-ohne-ins-n1: schon die Pause ersetzt (ohne INS); Weiter + INS hängen nur den Rest an (hier Stille)
+    ph("chirp#markierung neu|")
     m["r_mark"] = ph("befund_suchen#prüft nur die Übergabe")
     m["r_rec"] = ph("sm_RECORD#r1")
-    ph("sm_RECORD#r2", 1.0)
+    m["r_pause"] = ph("sm_RECORD#r2", 1.0)
     m["r_sel_weg"] = ph("befund_sel_weg#r1")
     m["r_weiter"] = ph("sm_RECORD#r3")
     m["r_ins"] = ph("sm_INS#r1", 1.5)
-    # … RH 165-Gegenprobe: echter Einzelklick ohne Auswahl in der Pause → an der Klick-Stelle eingefügt
-    ph("chirp#klick neu|klick neu")
+    # … RH 165-Gegenprobe: echter Einzelklick ohne Auswahl in der Pause → der nächste Abschnitt an der Klick-Stelle
+    # (ergaenzung-ohne-ins-n1: der erste Abschnitt hat die Markierung schon in der Pause ersetzt)
+    ph("chirp#klick eins|klick neu")
     ph("befund_suchen#an CAS")
     ph("sm_RECORD#r4")
     ph("sm_RECORD#r5", 1.0)
@@ -485,6 +487,22 @@ def fall_m(state, work, hwnd=None):
     # v3.15.4 (Peter 15.10.: Häkchen im Optionen-Menü schwarz auf dunkelblau): ☰ anklicken, Menü fotografieren, ESC
     m["menu"] = menu_foto(m["a_abbrechen"], hwnd)
     m["nach_menu"] = ph("cas_status#nach_menu", 0.5)
+    # kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026, Fall 20261126060) – Abnahmeablauf am echten Programm (nach
+    # dem Menü-Foto, weil EOL das Fenster minimiert): Befund rechts, Stelle markiert, Record → sprechen → Pause ⇒
+    # steht rechts (Markierung ersetzt), links nichts angehängt, kein INS; EOL schließt direkt ab („fertig“ an die Brücke, genau der sichtbare Befund)
+    auftrag("20261126061", "uitestk1")
+    m["k_offen"] = ph("cas_status#k1", 1.5)
+    m["k_test"] = ph("cas_testbefund#k1")
+    m["k_links"] = ph("diktat_setzen#Handgelenk links unauffällig")
+    ph("chirp#maximal 6 mm|")
+    m["k_mark"] = ph("befund_suchen#prüft nur die Übergabe")
+    m["k_rec"] = ph("sm_RECORD#k1")
+    m["k_pause"] = ph("sm_RECORD#k2", 1.5)
+    bild("K_ergaenzung_ohne_ins.png")
+    m["k_eol"] = ph("sm_EOL#k1", 1.0)
+    m["k_antwort"] = antwort("uitestk1")
+    txt = ordner / "cas_ergebnis_20261126061.txt"
+    m["k_ergebnis"] = txt.read_text(encoding="utf-8") if txt.exists() else None
     return m
 
 
@@ -1207,13 +1225,26 @@ rr = str((MM.get("r_ins") or {}).get("result_voll") or "")
 cm("kaiscribe-sammel-2311 RH 156: markiert → Record → Pause → Auswahl weg (ohne Klick) → weiter → INS: Markierung ERSETZT",
    (MM.get("r_rec") or {}).get("ziel_text_n") == len("prüft nur die Übergabe")
    and "Ersetzt markierten Text (22 Zeichen)" in str((MM.get("r_rec") or {}).get("status_text"))
-   and (MM.get("r_sel_weg") or {}).get("markierung") is not None
-   and (MM.get("r_weiter") or {}).get("ziel_text_n") == 22
+   and "Dieser Text markierung neu von RaKScribe" in str((MM.get("r_pause") or {}).get("result_voll"))
+   and (MM.get("r_pause") or {}).get("job_zustand") == "PAUSED"
    and "prüft nur die Übergabe" not in rr and "Dieser Text markierung neu von RaKScribe" in rr,
    json.dumps({k: (MM.get(k) or {}).get("status_text") for k in ("r_rec", "r_weiter")}, ensure_ascii=False) + rr[:400])
 rk = str((MM.get("r_ins2") or {}).get("result_voll") or "")
-cm("… echter Einzelklick ohne Auswahl in der Pause hebt die Markierung auf → an der Klick-Stelle eingefügt, „an CAS“ bleibt",
-   (MM.get("r_klick") or {}).get("markierung") is None and rk.startswith("Klick neu") and "an CAS" in rk, rk[:300])
+cm("… echter Einzelklick ohne Auswahl in der Pause → nächster Abschnitt an der Klick-Stelle (erster ersetzte „an CAS“ schon in der Pause)",
+   (MM.get("r_klick") or {}).get("markierung") is None and rk.startswith("Klick neu") and "klick eins" in rk
+   and "an CAS" not in rk, rk[:300])
+kp_ = MM.get("k_pause") or {}
+kr = str(kp_.get("result_voll") or "")
+cm("ergaenzung-ohne-ins-n1 (Peter 26.11.): markiert → Record → Pause ⇒ steht SOFORT rechts (Markierung ersetzt), links "
+   "nichts angehängt, kein INS, Status „steht rechts“",
+   "Dieser Text maximal 6 mm von RaKScribe" in kr and "prüft nur die Übergabe" not in kr and kp_.get("job_zustand") == "PAUSED"
+   and kp_.get("transcript") == "Handgelenk links unauffällig" and "steht rechts" in str(kp_.get("status_text"))
+   and "der übrige Befund bleibt" in str((MM.get("k_rec") or {}).get("status_text")),
+   json.dumps({k: (MM.get(k) or {}).get("status_text") for k in ("k_rec", "k_pause")}, ensure_ascii=False) + kr[:300])
+cm("… EOL direkt danach schließt ab: „fertig“ an die Brücke, genau dieser Befund, kein „Erst INS“",
+   (MM.get("k_antwort") or {}).get("status") == "fertig" and (MM.get("k_ergebnis") or "").strip() == kr.strip()
+   and "Erst INS" not in str((MM.get("k_eol") or {}).get("hinweis")),
+   json.dumps(MM.get("k_antwort"), ensure_ascii=False) + str((MM.get("k_eol") or {}).get("hinweis")))
 mf = MM.get("menu") or {}
 cm("v3.15.4 ☰-Menü: Häkchen weiß (selectcolor), Foto O_menu_haekchen.png; „Nur Text“-Schalter mit hellem Knopf und Rahmen",
    (MM.get("offen") or {}).get("menu_haken") == "#FFFFFF" and str(((MM.get("offen") or {}).get("nur_text_switch") or {})

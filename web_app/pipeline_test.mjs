@@ -8,7 +8,7 @@ import { transcribeAudio, base64AusBytes, whisperErlaubt } from './src/stt.ts';
 import { fetchWithRetry } from './src/net.ts';
 import { wavFromInt16 } from './src/audio.ts';
 import { befundAusDiktat, befundUmbauen, nurTextAusDiktat } from './src/pipeline.ts';
-import { ergaenzen, vorrang, umbauSegment, umbauBlock, titelUebernehmen } from './src/befundfeld.ts';
+import { ergaenzen, vorrang, umbauSegment, umbauBlock, titelUebernehmen, eolAktion, pauseFuegtEin } from './src/befundfeld.ts';
 import { einfuegen, markdownOffset } from './src/einfuegen.ts';
 import { correctTranscriptionWithGemini, validationPrompt, correctionPrompt, SYS_MSG, VERTEX_ENDPOINT } from './src/gemini.ts';
 import { nachbearbeiten } from './src/befundRegeln.ts';
@@ -299,6 +299,13 @@ check(fehler && fehler.name === 'AbortError' && !aufrufe.some(u => u.includes('l
     }
     check(gleich(r, f.ergebnis), `befundfeld = EXE: ${f.art}: ${f.name}`, JSON.stringify(r).slice(0, 600));
   }
+  // kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026): was tut EOL während einer Ergänzung, wann fügt die Pause ein —
+  // dieselbe Tabelle wie die EXE (befundfeld.py eol_aktion, tests/offline/test_ergaenzung_ohne_ins.py)
+  const eolFaelle = JSON.parse(readFileSync('../tests/offline/snapshots/ergaenzung_eol_faelle.txt', 'utf-8'));
+  const eolAnders = eolFaelle.filter(f => eolAktion(f.zustand, f.einbau, f.ziel, f.offen) !== f.aktion
+    || pauseFuegtEin(f.ziel, f.einbau === 'maske') !== f.pause_fuegt_ein);
+  check(eolFaelle.length === 144 && eolAnders.length === 0, `Ergänzung ohne INS: EOL-/Pause-Regel = EXE (${eolFaelle.length} Fälle)`,
+    JSON.stringify(eolAnders.slice(0, 3)));
 }
 
 console.log(`${n - fail}/${n} PASS (pipeline)`);

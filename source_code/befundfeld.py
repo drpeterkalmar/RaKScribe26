@@ -43,6 +43,41 @@ def modus(rechts, geruest=False, cursor=False, maske=False, abgeschlossen=False)
     return CURSOR if cursor else ERGAENZUNG
 
 
+# kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026, Diktat 20261126060: „ich kann noch immer nicht rechts spontan
+# dazu diktieren“ / „lässt mich den Befund nicht mit EOL abschließen“): Cursor bzw. Markierung rechts → Record → sprechen
+# → Pause ⇒ der Abschnitt steht SOFORT wörtlich an der Stelle (kein INS nötig), links wird nichts angehängt. EOL während
+# einer Ergänzung ist nie die Sackgasse „Erst INS“: offene Ergänzung erst einfügen, dann schließt EOL ab. Die Sperre
+# „Erst INS“ gilt nur, solange rechts noch gar kein Befund steht (Neuer Befund / IB-Lab-Gerüst / Mammo-Maske).
+EOL_SENDEN, EOL_ABSCHLIESSEN, EOL_EINFUEGEN, EOL_WARTEN, EOL_SPERRE = (
+    "senden", "abschliessen", "einfuegen", "warten", "sperre")
+
+
+def ergaenzung_laeuft(einbau, ziel=False):
+    """Ist die laufende Aufnahme eine Ergänzung eines schon stehenden Befunds? (Cursor/Markierung oder Text rechts)"""
+    return bool(ziel) or einbau in (CURSOR, ERGAENZUNG)
+
+
+def pause_fuegt_ein(ziel, maske=False):
+    """Pause (Record/Stop) fügt den eben diktierten Abschnitt sofort ein: nur mit Cursor/Markierung im Befund."""
+    return bool(ziel) and not maske
+
+
+def eol_aktion(zustand, einbau, ziel=False, offen=0):
+    """Was tut EOL? zustand = jobstate-Zustand, einbau = modus() dieser Aufnahme, ziel = Cursor/Markierung gilt,
+    offen = Abschnitte, die gerade erkannt/eingefügt werden. → senden (Ruhe: sichtbaren Befund weiterschicken),
+    abschliessen (Pause, alles steht rechts: Aufnahme beenden, dann senden), einfuegen (offenes Diktat erst einfügen,
+    EOL nochmals), warten (wird gerade eingefügt), sperre („Erst INS“: rechts steht noch kein Befund)."""
+    if zustand in ("READY", "ERROR"):
+        return EOL_SENDEN
+    if zustand not in ("RECORDING", "PAUSED", "PROCESSING") or not ergaenzung_laeuft(einbau, ziel):
+        return EOL_SPERRE
+    if zustand == "PROCESSING" or offen:
+        return EOL_WARTEN
+    if zustand == "PAUSED" and ziel:
+        return EOL_ABSCHLIESSEN
+    return EOL_EINFUEGEN
+
+
 def _art(zeile):
     m = _UEBERSCHRIFT.match(zeile)
     if not m:

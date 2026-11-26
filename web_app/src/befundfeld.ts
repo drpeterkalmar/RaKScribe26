@@ -24,6 +24,21 @@ export const STATUS: Record<string, string> = { neu: 'Neuer Befund', ergaenzung:
 export const modus = (rechts: string, geruest = false, cursor = false, maske = false, abgeschlossen = false): Modus =>
   maske ? 'maske' : geruest ? 'geruest' : (!(rechts || '').trim() || (abgeschlossen && !cursor)) ? 'neu' : cursor ? 'cursor' : 'ergaenzung';
 
+// kaiscribe-ergaenzung-ohne-ins-n1 (Peter 26.11.2026): Cursor/Markierung rechts → Record → sprechen → Pause ⇒ der
+// Abschnitt steht sofort wörtlich an der Stelle (ohne INS); EOL während einer Ergänzung nie „Erst INS“.
+// Sync: befundfeld.py eol_aktion, gemeinsame Fälle tests/offline/snapshots/ergaenzung_eol_faelle.txt
+export type EolAktion = 'senden' | 'abschliessen' | 'einfuegen' | 'warten' | 'sperre';
+export const ergaenzungLaeuft = (einbau: string | null, ziel = false): boolean =>
+  ziel || einbau === 'cursor' || einbau === 'ergaenzung';
+export const pauseFuegtEin = (ziel: boolean, maske = false): boolean => ziel && !maske;
+export function eolAktion(zustand: string, einbau: string | null, ziel = false, offen = 0): EolAktion {
+  if (zustand === 'READY' || zustand === 'ERROR') return 'senden';
+  if (!['RECORDING', 'PAUSED', 'PROCESSING'].includes(zustand) || !ergaenzungLaeuft(einbau, ziel)) return 'sperre';
+  if (zustand === 'PROCESSING' || offen) return 'warten';
+  if (zustand === 'PAUSED' && ziel) return 'abschliessen';
+  return 'einfuegen';
+}
+
 type Art = 'befund' | 'ergebnis' | 'titel' | null;
 const art = (zeile: string): Art => {
   const m = UEBERSCHRIFT.exec(zeile);
