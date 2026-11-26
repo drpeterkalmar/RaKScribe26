@@ -62,6 +62,15 @@ spielt nichts ein. Einspielen und Abnahme am Testpatienten 451898 laufen heute A
 - **Am echten Programm:** Der Windows-UI-Test hat einen neuen Fall „k“ (`tests/windows/exe_ui_test.py`). Die echte EXE läuft
   mit CAS-Auftrag: markieren → RECORD → Pause ⇒ steht rechts, links gleich, Status „steht rechts“ → EOL ⇒ „fertig“ an die
   Brücke mit genau diesem Text. Die R-Fälle (RH 156/165) sind auf die neue Bedeutung umgestellt. Ergebnis siehe Nachtrag CI.
+
+## Nachtrag CI (26.11. 13:50)
+GitHub für 3.31.0: Tests grün (`7468767`), Build Windows EXE grün (Release 3.31.0), **Windows-UI-Test 123/123 grün**
+(Lauf 45821398625, Testskript `17f881f`, gleiche EXE). Am echten Programm: Markierung (22 Zeichen) → Record → Pause ⇒
+rechts sofort ersetzt, links „Handgelenk links unauffällig“ unverändert, Zustand Pause; EOL ⇒ „fertig“ an die Brücke mit
+genau diesem Text, kein „Erst INS“. Die ersten zwei Läufe waren nur wegen des Tests rot: Die Statuszeile zeigte in der
+Pause den Kurzhinweis, und der Markier-Schritt hatte denselben Namen wie ein früherer Schritt, wurde also übersprungen.
+Nach der Korrektur ist am Programm nichts mehr rot. Die Web-App ist über GitHub Pages seit 12:20 mit dem neuen Verhalten
+online (automatisches Deploy bei main).
 - Für den Büro-PC: `tools/buero/ergaenzung_abnahme.py` (K1 markiert, K2 Cursor am Ende) mit echter Spracherkennung über
   ris-mods `diktat_e2e.py`, ohne INS.
 
@@ -80,7 +89,6 @@ spielt nichts ein. Einspielen und Abnahme am Testpatienten 451898 laufen heute A
 ## Offen / Lücken (→ Teil 2)
 - Log am Büro-PC: Live-Anzeige an/aus um 10:53:26; `abgebrochen (fenster_zu)` nach 10:56 und ob die offene Aufnahme dabei
   verworfen wurde; Lauf-Datei 20261126060 für 5a/5b.
-- CI für `7468767`: Build Windows EXE (Release 3.31.0) und Windows-UI-Test → Nachtrag unten.
 - `tools/buero/markierung_abnahme.py` (M156/M165) prüft noch die alte Bedeutung („Markierung bis INS gehalten“). Ab 3.31.0
   gilt dafür K1.
 
