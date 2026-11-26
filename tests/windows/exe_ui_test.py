@@ -495,7 +495,7 @@ def fall_m(state, work, hwnd=None):
     m["k_test"] = ph("cas_testbefund#k1")
     m["k_links"] = ph("diktat_setzen#Handgelenk links unauffällig")
     ph("chirp#maximal 6 mm|")
-    m["k_mark"] = ph("befund_suchen#prüft nur die Übergabe")
+    m["k_mark"] = ph("befund_suchen#prüft nur die Übergabe|k1-eindeutig")   # Phasenname je Lauf eindeutig (wait_json)
     m["k_rec"] = ph("sm_RECORD#k1")
     m["k_pause"] = ph("sm_RECORD#k2", 1.5)
     bild("K_ergaenzung_ohne_ins.png")
