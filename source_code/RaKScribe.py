@@ -48,6 +48,7 @@ import bereitschaft as _bs  # v3.11.0: wartet minimiert auf das nächste CAS-Dik
 import maske as _mk  # v3.15.0: Mammo-Maske — Felder per SpeechMike-Taste, Vorbefund schon eingetragen (ohne KI)
 import audiodatei as _ad  # v3.16.0: „Audio laden“ + WAV-Modus (Audio-Datei statt Mikrofon, echtes STT + Gemini)
 import stt_deckel as _deckel  # kaiscribe-stt-tagesdeckel-n1: harter Tagesdeckel + Schleifenbremse Google-Spracherkennung
+import lektor as _lk  # kaiscribe-lektor-einbau-n1: Lektor (Opus 5.5, Konto A) nach dem Befund, nur über den Wächter, Schalter AUS
 import umzug as _umzug  # kaiscribe-umzug-n1-exe: %APPDATA%\\RaKScribe → KaiScribe, X:\\KaiScribe vor X:\\RaKScribe
 
 # =========================================================================
@@ -509,6 +510,31 @@ def _ki_weiche(anbieter):
 
 KI_GEN = KI_KORR = None   # init_runtime() setzt die Weichen aus config.ini (LLM_ANBIETER, LLM_ANBIETER_KORREKTUR)
 NUTZUNG = None            # kaiscribe-sonnet-n2: nutzung.Zaehler (X:\RaKScribe\Daten\nutzung), im Selbsttest aus
+LEKTOR_SCHALTER = None    # kaiscribe-lektor-einbau-n1: lektor.Schalter (X:\KaiScribe\Daten\lektor.json, fehlt = AUS)
+LEKTOR_REGISTER = ()      # Regel-Register-Wortlaute (gebündelte regeln.json) – der Wächter lässt sie nie ändern
+LEKTOR_POOL = set()       # Vorlagen-/Bausteinsätze (Wächter + „reiner Normal-/Bausteinbefund → kein Lektor“)
+
+
+def _lektor_einrichten():
+    """kaiscribe-lektor-einbau-n1: Schalter + Wächter-Daten. Der Schalter wird erst je Befund gelesen (X: fehlt beim Start
+    oft noch); ohne Datei bleibt der Lektor AUS."""
+    global LEKTOR_SCHALTER, LEKTOR_REGISTER, LEKTOR_POOL
+    LEKTOR_SCHALTER = _lk.Schalter(CFG.lektor_datei, x_pfad=_umzug.x_pfad)
+    reg = os.path.join(RESOURCES_DIR, "regeln.json")
+    if not os.path.exists(reg):
+        reg = os.path.join(BASE_DIR, "tests", "regel_register", "regeln.json")
+    LEKTOR_REGISTER = _lk.register_saetze_laden(reg)
+    try:
+        LEKTOR_POOL = _lk.vorlagen_pool(RADIOLOGY_TEMPLATES, _pl.ORDI_BAUSTEINE)
+    except Exception:
+        log_exception("[INIT] Lektor: Vorlagensätze")
+        LEKTOR_POOL = set()
+    print(f"[INIT] Lektor: {_lk.MODELL} ({_lk.PROMPT_VERSION}), Schalter {CFG.lektor_datei} (fehlt = aus), nur "
+          f"{'/'.join(_lk.ERLAUBT)}, {len(LEKTOR_REGISTER)} Register-Wortlaute, {len(LEKTOR_POOL)} Vorlagensätze")
+
+
+def _lektor_sender():
+    return _la.anthropic_sender(lambda: _keys.load_anthropic_key(BASE_DIR, _schluessel_benutzerpfad()))
 
 
 def _korrektur(text):
@@ -3496,6 +3522,8 @@ class RaKScribeApp(ctk.CTk):
             if not erg.vollstaendig:
                 self.after(0, lambda: self._ende_fehler(gen, None))
                 return
+            # kaiscribe-lektor-einbau-n1: Befund steht rechts → Lektor im Hintergrund (nur mit Schalter, CAS-Befunder)
+            self._ui(gen, lambda d=stt_roh: self._lektor_starten(gen, d))
             self.after(0, lambda: self._lauf_fertig(gen))
         except Exception as e:
             log_exception("Befund-Generierung")
@@ -3923,6 +3951,7 @@ class RaKScribeApp(ctk.CTk):
 
     def _felder_leeren(self):
         """Nach EOL: alles leeren — bereit für den nächsten Patienten."""
+        self._lektor_abbrechen("Felder leeren")
         self.final_transcript = self.stream_transcript = self.stream_interim = ""
         self._einfuegen_ziel = self._einbau = None
         self._erg_zuruecksetzen()
@@ -4110,6 +4139,106 @@ class RaKScribeApp(ctk.CTk):
         # kaiscribe-dexa-doppelt-rh60-n1: nur DEXA im Auftrag → keine Vorlagenwahl nach CAS (bool False), aber die
         # Rho-Regel muss die DEXA kennen (pipeline._rho_dexa)
         return h if (h or h.dexa) else None
+
+    # ── kaiscribe-lektor-einbau-n1 (Peter 26.11.2026 „Go: a“, Schalter AUS bis die Kosten belegt sind) ─────────────────
+    # Sobald der Befund rechts steht: EIN Lektor-Aufruf im Hintergrund (lektor.py). Korrekturen nur über den Wächter und
+    # nur dort, wo der Arzt inzwischen nichts geändert hat; Prüfzeilen als rote Prüfzeile (Hinweiszeile, nie im Befund).
+    # EOL vor der Antwort oder Ausfall → Befund unverändert, kein zweiter Versuch, kein anderes Modell.
+    def _lektor_starten(self, gen, diktat):
+        self._lektor_abbrechen("neuer Befund")
+        a = getattr(self, "_cas", None)
+        if a is None or LEKTOR_SCHALTER is None or not self._job.aktuell(gen):
+            return
+        kz = (getattr(a, "benutzer", "") or "").strip().lower()
+        if not LEKTOR_SCHALTER.an_fuer(kz):
+            return
+        basis = self.result_text.get("1.0", "end-1c")
+        if not basis.strip():
+            return
+        titel = [z.strip("# ").strip() for z in basis.splitlines() if z.startswith("## ")]
+        if _lk.normal_oder_baustein(basis, diktat, LEKTOR_POOL,
+                                    lambda d, t: _nb.is_pure_normal_finding(d, list(t) + list(titel))):
+            log("[LEKTOR] reiner Normal-/Bausteinbefund – kein Lektor")
+            if NUTZUNG is not None:
+                NUTZUNG.lektor({"lektor": "normal"})
+            return
+        deckel = LEKTOR_SCHALTER.deckel_usd()
+        monat = time.strftime("%Y-%m")
+        bisher = _nutz.lektor_monat_usd(NUTZUNG.ordner, monat) if NUTZUNG is not None and NUTZUNG.ordner else 0.0
+        if bisher >= deckel:
+            log(f"[LEKTOR] Monatsdeckel erreicht ({bisher:.2f} von {deckel:.2f} $) – kein Lektor bis Monatsende")
+            if NUTZUNG is not None:
+                NUTZUNG.lektor({"lektor": "deckel"})
+            return
+        log(f"[LEKTOR] gestartet für {kz} ({_lk.MODELL}, {len(basis)} Zeichen, Monat bisher {bisher:.2f} von {deckel:.2f} $)")
+        self._lektor_eol_ok = False
+        self._lektor = _lk.Lauf(basis, diktat, _lektor_sender(), namen=list(getattr(KI_GEN, "namen", []) or []),
+                                kosten_fn=_la.kosten_usd, log=log,
+                                melden=(lambda info: NUTZUNG.ki(info)) if NUTZUNG is not None else None,
+                                fertig_fn=lambda lauf: self.after(0, lambda: self._lektor_fertig(lauf)))
+
+    def _lektor_abbrechen(self, wodurch):
+        lauf = getattr(self, "_lektor", None)
+        self._lektor = None
+        if lauf is not None:
+            lauf.abbrechen(wodurch)
+
+    def _lektor_ruhig(self):
+        """Einarbeiten nur, wenn gerade nichts aufgenommen/verarbeitet/eingefügt wird."""
+        return self._job.zustand in (_js.READY, _js.ERROR) and not getattr(self, "_erg_offen", 0) \
+            and getattr(self, "_einfuegen_ziel", None) is None and not getattr(self, "_maske_lauf", False)
+
+    def _lektor_fertig(self, lauf, versuch=0):
+        """UI-Thread: Antwort einarbeiten (nur der eigene, nicht abgebrochene Lauf)."""
+        if lauf is not getattr(self, "_lektor", None) or lauf.abgebrochen:
+            return
+        if not self._lektor_ruhig():
+            if versuch < 600:            # bis zu 10 min auf Ruhe warten; EOL/neuer Befund bricht vorher ab
+                self.after(1000, lambda: self._lektor_fertig(lauf, versuch + 1))
+            return
+        jetzt = self.result_text.get("1.0", "end-1c")
+        plan, zeilen, z = _lk.zusammenfuehren(lauf.basis, jetzt, lauf.ergebnis, LEKTOR_REGISTER, LEKTOR_POOL)
+        if plan and (_lk.W._nfc(jetzt) != jetzt or any(ord(c) > 0xFFFF for c in jetzt)):
+            plan = []                    # Zeichen-Positionen wären im Textfeld nicht sicher – nur Prüfzeilen
+        try:
+            for pos, n, neu in plan:     # absteigend: frühere Positionen bleiben gültig
+                self.result_text.delete(f"1.0+{pos}c", f"1.0+{pos + n}c")
+                self.result_text.insert(f"1.0+{pos}c", neu)
+        except Exception:
+            log_exception("[LEKTOR] Einarbeiten")
+            self.result_text.delete("1.0", "end")
+            self.result_text.insert("1.0", jetzt)
+            plan = []
+        if plan:
+            self._rueck = jetzt          # Strg+Z holt den Stand vor dem Lektor zurück
+            self._lektor_zeit = time.monotonic()
+            if jetzt == lauf.basis and getattr(self, "_stand_ks", None) == lauf.basis:
+                self._stand_ks = self.result_text.get("1.0", "end-1c")   # Restructure: Lektor-Fassung = KaiScribe-Stand
+        if zeilen:
+            self._cas_hinweise_zeigen(list(getattr(self, "_cas_hinweise", []) or []) + zeilen)
+        if NUTZUNG is not None:
+            NUTZUNG.lektor({"lektor": "uebernommen", "n": z["uebernommen"] if plan else 0, "pruefzeilen": len(zeilen)})
+        log(f"[LEKTOR] fertig nach {time.monotonic() - lauf.start:.1f} s: Korrekturen {z['korrekturen']} (übernommen "
+            f"{z['uebernommen'] if plan else 0}, Wächter {z['waechter']}, Arzt-Stelle {z['arzt']}), Prüfzeilen "
+            f"{len(zeilen)} (verworfen Arzt-Stelle {z['pruef_arzt']})")
+        if plan or zeilen:
+            self._kurzhinweis(f"Lektor: {z['uebernommen'] if plan else 0} Korrektur(en) übernommen"
+                              + (f" · {len(zeilen)} Prüfzeile(n)" if zeilen else "")
+                              + (" – Strg+Z = zurück" if plan else ""), 8000)
+        self._lektor = None
+
+    def _lektor_eol(self):
+        """EOL: hat der Lektor eben (< 3 s) korrigiert, erst ein zweites EOL (nie Ungesehenes senden). Läuft er noch →
+        abbrechen, Befund bleibt, wie er ist."""
+        if time.monotonic() - getattr(self, "_lektor_zeit", -1e9) < _lk.EOL_SPERRE_S \
+                and not getattr(self, "_lektor_eol_ok", False):
+            self._lektor_eol_ok = True
+            log("[LEKTOR] EOL kurz nach dem Einarbeiten – zweites EOL nötig")
+            self._kurzhinweis("Lektor hat eben korrigiert – bitte prüfen, dann EOL noch einmal", 6000)
+            return False
+        self._lektor_eol_ok = False
+        self._lektor_abbrechen("EOL")
+        return True
 
     def _cas_hinweise_zeigen(self, hinweise):
         lbl = getattr(self, "cas_hinweis_label", None)
@@ -4924,6 +5053,8 @@ class RaKScribeApp(ctk.CTk):
             return
         text = self.result_text.get("1.0", "end-1c").strip()
         if not self._maske_eol_pruefen():   # v3.15.0: Befund muss zum aktuellen Stand der Maske passen
+            return
+        if not self._lektor_eol():       # kaiscribe-lektor-einbau-n1: eben korrigiert → EOL nochmals; läuft noch → verworfen
             return
         a = self._cas
         # v3.14.0: kamen IB-Lab-Werte eben erst automatisch hinzu, braucht EOL eine Bestätigung (nie Ungesehenes senden)
@@ -5758,6 +5889,10 @@ def init_runtime():
     except Exception:
         log_exception("[INIT] masken.json nicht ladbar — ohne Maske")
         MASKEN, MASKE_TASTEN, MASKE_TASTEN_AMBIENT = {}, {}, {}
+    try:
+        _lektor_einrichten()
+    except Exception:
+        log_exception("[INIT] Lektor – bleibt aus")
     try:  # Umbau Schritt 20: gebündelte phrases.json früh prüfen (sonst fiele erst die Spracherkennung aus)
         print(f"[INIT] Phrasen: {len(_stt.medical_phrases())} Streaming, {len(_stt.chirp_phrases())} chirp_3")
     except Exception:

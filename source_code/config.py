@@ -78,6 +78,10 @@ class Config:
     # kaiscribe-stt-tagesdeckel-n1 (Peter 24.11.2026): harter Tagesdeckel Google-Spracherkennung je PC in Minuten Audio
     # (chirp_3 + Live-Anzeige, Wiederholungen mitgezählt; Tageswechsel 00:00 Wien). Normal 15–30 min/Tag → greift nie.
     stt_tagesdeckel_min: int = 240
+    # kaiscribe-lektor-einbau-n1 (Peter 26.11.2026 „Go: a“, scharf erst nach geklärten Kosten): zentrale Schalter-Datei
+    # des Lektors je Befunder (lektor.py). Fehlt sie → AUS. „aus“ = nie. Für den Testlauf an 451898 kann eine Gast-Kopie
+    # auf eine eigene Datei zeigen, ohne den Schalter der Ordi anzufassen.
+    lektor_datei: str = "X:\\KaiScribe\\Daten\\lektor.json"
     sm_uebernehmen_taste: str = "ctrl+alt+s"   # Nachtrag 21.11. 21:13: „Übernehmen“ = [SENF]-Marken weg (aus = keine Taste)
     maske_tasten: Dict[str, str] = field(default_factory=dict)  # v3.15.0: [MASKE] NAECHSTES_FELD = FF … (überschreibt masken.json)
     maske_tasten_ambient: Dict[str, str] = field(default_factory=dict)  # v3.15.4: [MASKE] AMBIENT_UEBERNEHMEN = PLAY …
@@ -179,6 +183,7 @@ def load_config(path):
         cfg.warnungen.append(f"config.ini: STT_TAGESDECKEL_MIN = {cfg.stt_tagesdeckel_min} — muss > 0 sein, "
                              "Standardwert 240 wird verwendet.")
         cfg.stt_tagesdeckel_min = 240
+    cfg.lektor_datei = (sek.get("LEKTOR_DATEI", "") or cfg.lektor_datei).strip().strip('"')
     cfg.sm_uebernehmen_taste = (sek.get("SM_UEBERNEHMEN_TASTE", "") or cfg.sm_uebernehmen_taste).strip().lower()
     # v3.15.0 (Peter 14.10., Mammo-Maske): Tastenbelegung der Maske, z. B. [MASKE] NAECHSTES_FELD = FF INSTR
     if parser.has_section("MASKE"):

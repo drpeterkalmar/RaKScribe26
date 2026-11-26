@@ -9,6 +9,9 @@ Gibt nur Zähler aus, nie Befundtext, Nr oder Benutzer:
   NUTZUNG <monat> <PC> <tag> befunde=… anthropic=… gemini=… rueckfall=… usd=… chirp_s=… stream_s=… gruende=<Kat:n;…>
           ohne_ki=… zweitversuch=… verworfen=… tok_in=… tok_cache_lesen=… tok_cache_1h=… tok_cache_5m=… tok_out=…
           cache_treffer=… cache_neu=… cache_ohne=…   (kosten-je-befund-n1, 25.11.2026: Token aus usage, nur Zahlen)
+  LEKTOR <monat> <PC> <tag> aufrufe=… usd=… uebernommen=… befunde_korrigiert=… pruefzeilen=… ausfall=… zu_spaet=…
+          deckel=… normal=… tok_in=… tok_cache_lesen=… tok_cache_schreiben=… tok_out=…   (kaiscribe-lektor-einbau-n1,
+          26.11.2026: Rolle lektor, Opus 5.5 über Konto A, getrennt von den KaiScribe-Befund-Aufrufen; nur wenn gezählt)
   TAGESBERICHT <tag> (danach die Datei wörtlich, je Zeile mit „| “ davor; sie enthält nur Zahlen/Kategorien)
   ORDNER <gelesener Ordner>
   WARNDATEI <monat> ja|nein
@@ -92,6 +95,18 @@ def nutzung(ordner, tage):
                          _n(ki, "ohne_ki"), _n(ki, "zweitversuch"), _n(ki, "verworfen"), _n(tk, "input"),
                          _n(tk, "cache_lesen"), _n(tk, "cache_schreiben_1h"), _n(tk, "cache_schreiben_5m"), _n(tk, "output"),
                          _n(ca, "treffer"), _n(ca, "neu"), _n(ca, "ohne")))
+                lk = td.get("lektor") or {}
+                if lk:
+                    try:
+                        lusd = float(lk.get("usd", 0) or 0)
+                    except (TypeError, ValueError):
+                        lusd = 0.0
+                    print("LEKTOR %s %s %s aufrufe=%d usd=%.4f uebernommen=%d befunde_korrigiert=%d pruefzeilen=%d ausfall=%d"
+                          " zu_spaet=%d deckel=%d normal=%d tok_in=%d tok_cache_lesen=%d tok_cache_schreiben=%d tok_out=%d"
+                          % (monat, pc, s(tag, 10), _n(lk, "aufrufe"), lusd, _n(lk, "uebernommen"),
+                             _n(lk, "befunde_korrigiert"), _n(lk, "pruefzeilen"), _n(lk, "ausfall"), _n(lk, "zu_spaet"),
+                             _n(lk, "deckel"), _n(lk, "normal"), _n(lk, "token_in"), _n(lk, "token_cache_lesen"),
+                             _n(lk, "token_cache_schreiben"), _n(lk, "token_out")))
         print("WARNDATEI %s %s" % (monat, "ja" if os.path.exists(os.path.join(ordner, "warnung_%s.txt" % monat)) else "nein"))
     for tag in tage:
         pfad = os.path.join(ordner, "tagesbericht_%s.txt" % tag)

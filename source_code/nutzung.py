@@ -23,6 +23,10 @@ Rückfall. Jeder Rückfall wird gezählt, und die an Chirp (Google-Spracherkennu
   (Aufrufe mit Cache-Treffer / Neuschreiben / ganz ohne Cache). Verworfene, aber abgerechnete Antworten (Platzhalter
   fehlt, unvollständig …) zählen in td["ki"]["verworfen"] und in $/Token, aber nicht als Aufruf/Befund. Tagesbericht:
   Zeile „Claude-Token …“ (nur Zahlen).
+- kaiscribe-lektor-einbau-n1 (26.11.2026): Rolle „lektor“ (Opus 5.5, Konto A) wird GETRENNT gezählt → td["lektor"] =
+  {"aufrufe", "usd", "token_in", "token_cache_lesen", "token_cache_schreiben", "token_out", "uebernommen", "pruefzeilen",
+  "befunde_korrigiert", "ausfall", "zu_spaet", "deckel", "normal"}; die KaiScribe-Zahlen (Aufrufe, $, Cache, ct je Aufruf)
+  bleiben unverfälscht. Tagesbericht-Zeile „Lektor …“, lektor_monat_usd() für den Monatsdeckel.
 - Fehler beim Schreiben sind nie fatal (Laufwerk weg → still nichts).
 """
 import calendar
@@ -143,6 +147,8 @@ class Zaehler:
     def ki(self, info):
         """Beobachter der llm_anbieter.Weiche: je Aufruf {rolle, anbieter, rueckfall, usd, usage, cache, verworfen …}."""
         info = info or {}
+        if info.get("rolle") == "lektor":
+            return self.lektor(info)
 
         def fn(td):
             ki = td.setdefault("ki", {})
@@ -177,6 +183,40 @@ class Zaehler:
                 td["befunde"] = td.get("befunde", 0) + 1
             if info.get("usd"):
                 td["anthropic_usd"] = round(td.get("anthropic_usd", 0.0) + float(info["usd"]), 6)
+        self._aendern(fn)
+
+    def lektor(self, info):
+        """kaiscribe-lektor-einbau-n1: Lektor-Aufruf (usage/usd) bzw. Ergebnis {"lektor": uebernommen|ausfall|zu_spaet|
+        deckel|normal, "n": …, "pruefzeilen": …}. Nur Zahlen."""
+        info = info or {}
+
+        def fn(td):
+            lk = td.setdefault("lektor", {})
+
+            def plus(k, v=1):
+                lk[k] = round(lk.get(k, 0) + v, 6) if isinstance(v, float) else int(lk.get(k, 0) or 0) + int(v)
+            if isinstance(info.get("usage"), dict):
+                u = info["usage"]
+
+                def n(k):
+                    try:
+                        return max(0, int(u.get(k, 0) or 0))
+                    except (TypeError, ValueError):
+                        return 0
+                plus("aufrufe")
+                plus("token_in", n("input_tokens"))
+                plus("token_cache_lesen", n("cache_read_input_tokens"))
+                plus("token_cache_schreiben", n("cache_creation_input_tokens"))
+                plus("token_out", n("output_tokens"))
+                plus("usd", float(info.get("usd") or 0.0))
+            art = info.get("lektor")
+            if art == "uebernommen":
+                plus("uebernommen", int(info.get("n") or 0))
+                plus("pruefzeilen", int(info.get("pruefzeilen") or 0))
+                if int(info.get("n") or 0):
+                    plus("befunde_korrigiert")
+            elif art in ("ausfall", "zu_spaet", "deckel", "normal"):
+                plus(art)
         self._aendern(fn)
 
     def stt(self, sekunden, art="chirp"):
@@ -257,6 +297,47 @@ def _summe(tage, nur_tag=None):
         for g, n in (td.get("ohne_ki_rolle") or {}).items():
             s["ohne_rollen"][g] = s["ohne_rollen"].get(g, 0) + int(n or 0)
     return s
+
+
+LEKTOR_FELDER = ("aufrufe", "usd", "uebernommen", "pruefzeilen", "befunde_korrigiert", "ausfall", "zu_spaet", "deckel",
+                 "normal", "token_in", "token_cache_lesen", "token_cache_schreiben", "token_out")
+
+
+def lektor_summe(tage, nur_tag=None):
+    s = {k: 0 for k in LEKTOR_FELDER}
+    s["usd"] = 0.0
+    for tag, td in (tage or {}).items():
+        if nur_tag and tag != nur_tag:
+            continue
+        lk = td.get("lektor") or {}
+        for k in LEKTOR_FELDER:
+            try:
+                s[k] += float(lk.get(k, 0) or 0) if k == "usd" else int(lk.get(k, 0) or 0)
+            except (TypeError, ValueError):
+                pass
+    return s
+
+
+def lektor_monat_usd(ordner, monat):
+    """Lektor-$ des Monats über alle PC-Dateien (Monatsdeckel). Ordner fehlt → 0."""
+    try:
+        return sum(lektor_summe(d.get("tage"))["usd"] for d in monat_summen(ordner, monat).values())
+    except Exception:
+        return 0.0
+
+
+def lektor_zeile(alle, tag):
+    """„Lektor heute: Aufrufe a, Korrekturen übernommen b (in c Befunden), Prüfzeilen d, ausgefallen e, zu spät f,
+    Deckel g, x $ (≈ y ct je Aufruf); Monat: Aufrufe …, z $“ — nur wenn es Lektor-Zahlen gibt."""
+    h = {k: sum(lektor_summe(d.get("tage"), tag)[k] for d in alle.values()) for k in LEKTOR_FELDER}
+    m = {k: sum(lektor_summe(d.get("tage"))[k] for d in alle.values()) for k in LEKTOR_FELDER}
+    if not any(m[k] for k in LEKTOR_FELDER):
+        return None
+    je = f" (≈ {h['usd'] / h['aufrufe'] * 100:.1f} ct je Aufruf)" if h["aufrufe"] else ""
+    return (f"Lektor heute: Aufrufe {h['aufrufe']}, Korrekturen übernommen {h['uebernommen']} (in "
+            f"{h['befunde_korrigiert']} Befunden), Prüfzeilen {h['pruefzeilen']}, ausgefallen {h['ausfall']}, zu spät "
+            f"{h['zu_spaet']}, Deckel {h['deckel']}, {h['usd']:.2f} ${je}; Monat: Aufrufe {m['aufrufe']}, "
+            f"{m['usd']:.2f} $")
 
 
 def chirp_eur(sekunden):
@@ -341,6 +422,9 @@ def tagesbericht(ordner, tag):
          f"≈ {stream_eur(stream_m):.2f} € (× {STREAM_USD_MIN} $/min)",
          f"Google-Spracherkennung gesamt hochgerechnet {hoch:.2f} €/Monat (aus {n_tage} Tag{'en' if n_tage != 1 else ''})"]
     z.append(token_zeile("heute", heute) + "; " + token_zeile("Monat", mon, kurz=True))
+    lz = lektor_zeile(alle, tag)            # lektor-einbau-n1 (vor den PC-Zeilen, der VM-Leser nimmt nur 40 Zeilen)
+    if lz:
+        z.append(lz)
     z.extend(deckel_zeilen(alle, tag))          # tagesdeckel-n1 (vor den PC-Zeilen: der VM-Leser nimmt nur 40 Zeilen)
     for pc in sorted(alle):
         h = heute[pc]

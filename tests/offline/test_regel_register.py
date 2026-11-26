@@ -39,7 +39,9 @@ PFLICHT = SKILL + ["kl-0", "kl-1", "kl-2", "kl-3", "kl-4", "kl-wann", "kl-rh38",
                    # kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60)
                    "nie-dexa-vorlage", "kein-platzhalter",
                    # kaiscribe-nicht-diktiert-streichen-n1 (Georg 26.11.2026 „1b“, Karte #542; ersetzt georg-nicht-diktiert-normal)
-                   "georg-nicht-diktiert-streichen"]
+                   "georg-nicht-diktiert-streichen",
+                   # kaiscribe-lektor-einbau-n1 (Peter 26.11.2026 „Go: a“): Lektor nur mit Schalter, nur über den Wächter
+                   "lektor-schalter-aus"]
 
 regeln = REG["regeln"]
 ids = [r["id"] for r in regeln]

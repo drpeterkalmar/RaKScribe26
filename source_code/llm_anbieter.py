@@ -46,6 +46,7 @@ MAX_TOKENS = 4000
 PREISE = {
     "claude-haiku-5-5": (0.10, 0.01, 0.125, 0.50),
     "claude-sonnet-5-5": (2.00, 0.20, 2.50, 10.00),
+    "claude-opus-5-5": (4.00, 0.40, 5.00, 20.00),   # kaiscribe-lektor-einbau-n1: nur der Lektor (lektor.py)
 }
 
 # sonnet-n2: fester Prompt-Anfang 1 Stunde im Cache (Schreiben 2 × Input statt 1,25 ×, Lesen 0,1 ×). Im Ordi liegen

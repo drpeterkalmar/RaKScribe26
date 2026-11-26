@@ -2308,6 +2308,29 @@
      "const [ohnePh, ph] = platzhalterEntfernen(fertig);"
     ]
    }
+  },
+  {
+   "id": "lektor-schalter-aus",
+   "titel": "KaiScribe-Lektor (Opus 5.5, Konto A) nur nach dem fertigen Befund, nur für kp/rg und nur mit Schalter (Standard AUS, X:\\KaiScribe\\Daten\\lektor.json); Korrekturen nur über den Wächter und nie auf Stellen, die der Arzt geändert hat; Prüfzeilen nur als rote Hinweiszeile, nie im Befund; EOL vor der Antwort oder Ausfall → Befund unverändert, kein zweiter Versuch, kein anderes Modell, kein Gemini",
+   "quelle": "Peter Kalmar 26.11.2026 „Go: a“ (Kanban #531): Lektor einbauen, scharf erst wenn KaiScribe-Kosten belegt und Konto A reicht (kaiscribe-lektor-einbau-n1)",
+   "datum": "2026-11-26",
+   "status": "ergänzt",
+   "notiz": "Scharf schalten = in lektor.json je Befunder true setzen (nach Ordi-Schluss). Notaus = false oder Datei löschen (wird alle 30 s gelesen). Monatsdeckel monatsdeckel_usd (Standard 40 $).",
+   "pruefwort": {
+    "source_code/lektor.py": [
+     "ERLAUBT = (\"kp\", \"rg\")",
+     "SCHALTER_DATEI_STANDARD = \"X:\\\\KaiScribe\\\\Daten\\\\lektor.json\"",
+     "ok, grund = W.pruefen_eine(basis, alt, neu, register, vorlagen)",
+     "except Exception as e:      # noqa: BLE001 — jeder Fehler = Ausfall, kein zweiter Versuch"
+    ],
+    "source_code/config.py": [
+     "lektor_datei: str = \"X:\\\\KaiScribe\\\\Daten\\\\lektor.json\""
+    ],
+    "source_code/RaKScribe.py": [
+     "if not self._lektor_eol():",
+     "if not LEKTOR_SCHALTER.an_fuer(kz):"
+    ]
+   }
   }
  ]
 }
