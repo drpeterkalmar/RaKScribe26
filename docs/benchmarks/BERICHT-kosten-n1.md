@@ -110,3 +110,10 @@ mit dem LF-/Cache-Weg. Der Fix bringt die EXE also auf genau den Stand, der gepr
   → Karte #578 (tun). `test_buero_anthropic` (Frist 20 → 45 s veraltet) ist hier behoben.
 - Testkonto B steht diesen Monat bei ≈ 149 von 150 $ (fast alles aus anderen Jobs). Weitere Live-Tests im November
   sind kaum möglich.
+
+## Einspielen 3.29.2 – Stand 26.11. (Nacht auf Do, 02:37)
+
+Nicht ausgeführt: Ordi-Systeme sind Mo–Do erst ab 17:30 frei (Fr ab 13:30, Wochenende); der Lauf startete Do 02:37, also
+vor dem Fenster. Weder Abnahme an 451898 noch Tausch noch Beleg im Betrieb wurden gemacht, nichts an Ordi angefasst.
+Offen bleibt: A (Tausch 3.29.2 nach 20 min Ruhe, Rollback `.alt`), B (zwei Diktate, 2. muss `Cache treffer` zeigen,
+stornieren), C (Betriebsbeleg am Folgetag). Hinweis: Der letzte Tausch (3.29.0) scheiterte an belegter X:-EXE.
