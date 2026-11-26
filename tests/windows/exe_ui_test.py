@@ -1241,7 +1241,8 @@ cm("ergaenzung-ohne-ins-n1 (Peter 26.11.): markiert → Record → Pause ⇒ ste
    and kp_.get("transcript") == "Handgelenk links unauffällig"
    and any(t in str(kp_.get("status_text")) for t in ("steht rechts", "eingefügt – Record: weiter dahinter · EOL: abschließen"))
    and "der übrige Befund bleibt" in str((MM.get("k_rec") or {}).get("status_text")),
-   json.dumps({k: (MM.get(k) or {}).get(f) for k in ("k_rec", "k_pause") for f in ("status_text", "transcript", "job_zustand")},
+   json.dumps({f"{k}.{f}": (MM.get(k) or {}).get(f) for k in ("k_rec", "k_pause")
+                       for f in ("status_text", "transcript", "job_zustand")},
               ensure_ascii=False) + kr[kr.find("## Befund"):][:300])
 cm("… EOL direkt danach schließt ab: „fertig“ an die Brücke, genau dieser Befund, kein „Erst INS“",
    (MM.get("k_antwort") or {}).get("status") == "fertig" and (MM.get("k_ergebnis") or "").strip() == kr.strip()
