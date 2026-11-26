@@ -176,7 +176,9 @@ with tempfile.TemporaryDirectory() as td:
     (basis / "daten" / "20261123" / "haus.json").write_text(json.dumps({"tag": "20261123", "faelle": [haus]}),
                                                             encoding="utf-8")
     ablage = pathlib.Path(td) / "X_KaiScribe-Uebung"
-    dienst = D.Dienst(str(basis), ablage=str(ablage), lan=False)
+    # feste Uhr (Abend nach Ordi-Schluss): sonst greift Mo–Fr vor 17:00 der gemeinsame 20-min-Deckel und
+    # „STT buchen“ wird tagsüber rot (CI 26.11.2026 10:01)
+    dienst = D.Dienst(str(basis), ablage=str(ablage), lan=False, uhr=lambda: dt.datetime(2026, 11, 25, 20, 0))
     srv = D.server(dienst, "127.0.0.1", 0)
     port = srv.server_address[1]
     th = threading.Thread(target=srv.serve_forever, daemon=True)
