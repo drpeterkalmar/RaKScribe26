@@ -198,9 +198,10 @@ erg = pl.befund_aus_diktat("Jones-Fraktur Os metatarsale V links.",
 titel = [z[3:] for z in erg.report.split("\n") if z.startswith("## ") and z[3:] not in ("Befund", "Ergebnis")]
 check("16: Jones/Os metatarsale V → Vorfuß-Vorlage (nicht „allgemein“), Region Fuß",
       erg.vorlagen[0] == "vorfuß_in_2_ebenen" and cv.regionen("Jones-Fraktur Os metatarsale V") == {"fuss"}, erg.vorlagen)
-check("16: 2 CAS-Leistungen, 1 diktierte Region → die zweite (OSG) bekommt ihren Normalbefund + Prüfzeile",
-      "Sprunggelenk links in 2 Ebenen" in titel and T["sprunggelenk_in_2_ebenen"]["body"].split("\n", 2)[2][:40] in erg.report
-      and any(cv.NICHT_DIKTIERT_NORMAL in h for h in erg.cas_hinweise), (titel, erg.cas_hinweise))
+# Georg 26.11.2026 („1b“, ersetzt 20.11.): nicht diktierte Untersuchung → gestrichen + EINE rote Prüfzeile
+check("16 (ab 26.11.): 2 CAS-Leistungen, 1 diktierte Region → OSG ohne Titel/Normaltext, eine Prüfzeile „OSG li. bestellt …“",
+      not any("Sprunggelenk" in t for t in titel) and T["sprunggelenk_in_2_ebenen"]["body"].split("\n", 2)[2][:40] not in erg.report
+      and "OSG li. bestellt, aber nicht diktiert – bitte prüfen" in erg.cas_hinweise, (titel, erg.cas_hinweise))
 check("41b: Os naviculare cornutum zählt zum Fuß, nicht zur Hand", cv.regionen("kleines Os naviculare cornutum") == {"fuss"},
       cv.regionen("kleines Os naviculare cornutum"))
 

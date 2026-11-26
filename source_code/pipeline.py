@@ -350,8 +350,10 @@ def cas_wahlen(segmente, ctx):
         ctx.log(f"[CAS] {len(inhalt_hinweise)} Prüfzeile(n) zur Satz-Zuordnung")
     # kaiscribe-funktion-n1 (RH 97): Funktionsaufnahmen laut CAS → eigener Abschnitt nach HWS/LWS in 2 Ebenen
     segmente, wahlen, f_log = cv.funktion_ergaenzen(segmente, wahlen, ctx.cas, ctx.templates)
-    # kaiscribe-georg-2011-n1 (Georg 20.11.2026, RH 84/77/37): nicht diktierte CAS-Untersuchung → eigener Normalbefund
-    segmente, wahlen, hinweise, n_log = cv.nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, ctx.cas, ctx.templates)
+    # kaiscribe-nicht-diktiert-streichen-n1 (Georg 26.11.2026, ersetzt die Regel vom 20.11.): nicht diktierte
+    # CAS-Untersuchung → gestrichen + EINE rote Prüfzeile; nur ein reiner IB-Lab-Teil (Ganzbein/LAMA) behält seinen Befund
+    segmente, wahlen, hinweise, n_log = cv.nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, ctx.cas, ctx.templates,
+                                                                    ctx.ibl.bausteine if ctx.ibl else None)
     # kaiscribe-ursula-2011-text-n1 (Punkt 6): auch ein nicht diktierter Teil ohne Seite (Ganzbein) → rote Prüfzeile
     hinweise += [h for h in _seite_hinweise(segmente, wahlen) if h not in hinweise]
     for z in f_log + n_log:

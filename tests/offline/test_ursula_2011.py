@@ -1,7 +1,7 @@
 """Gate kaiscribe-ursula-2011-text-n1 – Ursula Hofmeisters Durchsicht der KaiScribe-Briefe vom 20.11.2026 (Text/Struktur).
 Die Textregeln (EXE = Web) prüft befund_regeln_test.py (Fixtures „ursula_2011“); hier die ganze EXE-Kette mit KI-Attrappe:
    6   Ganzbein (paarige Region): Seite der CAS-Leistung in die Überschrift, wenn die KI sie weglässt; CAS ohne Seite → rote
-       Prüfzeile – auch beim nicht diktierten Teil (Normalbefund laut CAS); Gegenprobe: diktierte/andere Seite bleibt
+       Prüfzeile – auch beim nicht diktierten reinen IB-Lab-Teil (ab 26.11.: ohne IB Lab gestrichen); Gegenprobe: diktierte/andere Seite bleibt
    5   Teil ohne Inhalt / loses Regions-Wort fallen am Ende der Kette weg; reiner IB-Lab-Teil (LAMA) bleibt mit Titel
    8   keine Leerzeile zwischen „## Ergebnis“ und dem Ergebnistext
    1   Ergebnistext als Überschrift („## Osteochondrose L4/5.“) → Text
@@ -70,9 +70,21 @@ LWS = L("lws", "LWS", "lendenwirbelsäule_in_2_ebenen", None, ziffer=1)
 LWS_KI = "## Lendenwirbelsäule in 2 Ebenen\n\n## Befund\nOsteochondrose L4/5 mit Höhenminderung.\n\n## Ergebnis\nOsteochondrose L4/5."
 erg = pl.befund_aus_diktat("Lendenwirbelsäule: Osteochondrose L4/5.",
                            kontext(lambda p: LWS_KI, [LWS, L("gb", "Ganzbein", "ganzbeinaufnahme_im_stand", None, ziffer=2)]))
-check("6: nicht diktierter Ganzbein-Teil ohne Seite (Normalbefund laut CAS) → auch dort rote Prüfzeile",
-      any(SEITE_FEHLT in h for h in erg.cas_hinweise) and any(cv.NICHT_DIKTIERT_NORMAL in h for h in erg.cas_hinweise),
-      erg.cas_hinweise)
+# Georg 26.11.2026 (kaiscribe-nicht-diktiert-streichen-n1): Ganzbein ohne IB Lab nicht diktiert → kein Teil, keine
+# Seiten-Prüfzeile, nur „Ganzbein bestellt, aber nicht diktiert“; mit LAMA (reiner IB-Lab-Teil) wie bisher Teil + Seiten-Prüfzeile
+check("6 (ab 26.11.): nicht diktierter Ganzbein-Teil ohne IB Lab → gestrichen, eine Prüfzeile, keine Seiten-Prüfzeile",
+      "Ganzbein bestellt, aber nicht diktiert – bitte prüfen" in erg.cas_hinweise
+      and not any(SEITE_FEHLT in h for h in erg.cas_hinweise) and not any(t.startswith("Ganzbein") for t in titel(erg.report)),
+      (erg.cas_hinweise, erg.report))
+LAMA6 = {"accno": "999001200068", "ziffer": 2, "modul": "lama", "name": "LAMA", "version": 1, "seiten": ["rechts", "links"],
+         "befundteil": ["HKA-Winkel rechts 178,1° (IB Lab LAMA)."],
+         "ergebnis": ["Regelrechte Beinachse beidseits (HKA rechts 1,9°, links 0,9°)."], "hinweise": []}
+erg = pl.befund_aus_diktat("Lendenwirbelsäule: Osteochondrose L4/5.",
+                           kontext(lambda p: LWS_KI, [LWS, L("gb", "Ganzbein", "ganzbeinaufnahme_im_stand", None, ziffer=2)],
+                                   [LAMA6]))
+check("6: nicht diktierter Ganzbein-Teil MIT LAMA (reiner IB-Lab-Teil) → Teil bleibt, auch dort rote Seiten-Prüfzeile",
+      any(SEITE_FEHLT in h for h in erg.cas_hinweise) and any(cv.NICHT_DIKTIERT_NORMAL in h for h in erg.cas_hinweise)
+      and any(t.startswith("Ganzbein") for t in titel(erg.report)), (erg.cas_hinweise, erg.report))
 check("6 Gegenprobe: Wirbelsäule (nicht paarig) bekommt keine Seite und keine Seiten-Prüfzeile",
       "Lendenwirbelsäule in 2 Ebenen" in titel(erg.report) and not erg.fehler
       and not any(h.startswith("LWS") and SEITE_FEHLT in h for h in erg.cas_hinweise), (erg.report, erg.cas_hinweise))

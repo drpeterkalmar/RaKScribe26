@@ -1,5 +1,5 @@
 {
- "_doc": "Regel-Register (kaiscribe-kl-tabelle-zurueck-n1, Georg Riegler 18.11.2026: „Wir haben Regeln definiert beim KaiScribe. Die müssen sitzen!!“). Jede von Georg/Peter freigegebene Befundregel mit Prüfwortlaut je Datei. tests/offline/test_regel_register.py wird rot, wenn ein Prüfwort fehlt oder eine Pflicht-Regel (Skill 1–13, 3a–3af, K&L-Tabelle 0–4 …) aus dem Register verschwindet. Wer einen Wortlaut bewusst ändert, ändert ihn hier mit (im selben Commit) und schreibt Datum + Quelle dazu. Quelle der Regeln: Hermes-Skill radiology-shoulder-dictation. status: vorhanden | ergänzt (18.11.) | unklar.",
+ "_doc": "Regel-Register (kaiscribe-kl-tabelle-zurueck-n1, Georg Riegler 18.11.2026: „Wir haben Regeln definiert beim KaiScribe. Die müssen sitzen!!“). Jede von Georg/Peter freigegebene Befundregel mit Prüfwortlaut je Datei. tests/offline/test_regel_register.py wird rot, wenn ein Prüfwort fehlt oder eine Pflicht-Regel (Skill 1–13, 3a–3af, K&L-Tabelle 0–4 …) aus dem Register verschwindet. Wer einen Wortlaut bewusst ändert, ändert ihn hier mit (im selben Commit) und schreibt Datum + Quelle dazu. Quelle der Regeln: Hermes-Skill radiology-shoulder-dictation. status: vorhanden | ergänzt (18.11.) | unklar | ersetzt (26.11.2026: alte Regel bleibt mit Datum stehen, ersetzt_durch nennt die gültige).",
  "regeln": [
   {
    "id": "kl-0",
@@ -1471,10 +1471,31 @@
    "titel": "Mehrere CAS-Leistungen, nur ein Teil diktiert → jede nicht diktierte Untersuchung bekommt eigenen Befund mit Titel + Normalsätzen (auch reine KI-Teile wie Ganzbein/LAMA), Prüfzeile (RH 84/77/37, Test test_georg_2011)",
    "quelle": "Georg Riegler 20.11.2026, Diktiertag (kaiscribe-georg-2011-n1, Sammelliste Nr. 16/26/36/37a/40d, Durchsprache 15:20)",
    "datum": "2026-11-20",
-   "status": "ergänzt",
+   "status": "ersetzt",
+   "ersetzt_durch": "georg-nicht-diktiert-streichen",
+   "notiz": "ERSETZT am 26.11.2026 durch georg-nicht-diktiert-streichen (Georg „1b“, Karte #542). Gilt nur noch für den reinen IB-Lab-Teil (z. B. Ganzbein mit LAMA): der behält Titel + Normalsätze + diese Prüfzeile.",
    "pruefwort": {
     "source_code/cas_vorlagen.py": [
      "NICHT_DIKTIERT_NORMAL = \"laut CAS, nicht diktiert – Normalbefund der Vorlage eingesetzt, bitte prüfen\""
+    ]
+   }
+  },
+  {
+   "id": "georg-nicht-diktiert-streichen",
+   "titel": "Mehrere CAS-Leistungen, nur ein Teil diktiert → nicht diktierte Untersuchungen bekommen KEINEN Titel, KEINEN Normaltext, KEINEN eigenen Befund; stattdessen GENAU EINE rote Prüfzeile im Befundfenster (nicht im Brief) „<Untersuchungen> bestellt, aber nicht diktiert – bitte prüfen“. Unverändert: reiner IB-Lab-Teil (Ganzbein/LAMA, HIPPO …), Funktions-Kombis, Trennung nach Inhalt + CAS-Leistung, DEXA nie durch KaiScribe (RH 68, Test test_nicht_diktiert_streichen)",
+   "quelle": "Georg Riegler 26.11.2026 („1b“, Karte #542; ersetzt seine Regel vom 20.11.), Wunsch Ursula Hofmeister 20.11. (RH 68: Überschriften nicht diktierter Untersuchungen ganz weg), Grundsatz Peter „nie Befundtext, der nicht diktiert ist“ (kaiscribe-nicht-diktiert-streichen-n1)",
+   "datum": "2026-11-26",
+   "status": "ergänzt",
+   "pruefwort": {
+    "source_code/cas_vorlagen.py": [
+     "NICHT_DIKTIERT_PRUEF = \"{namen} bestellt, aber nicht diktiert – bitte prüfen\"",
+     "def _ibl_teil(l, ibl_bausteine, templates):"
+    ],
+    "source_code/pipeline.py": [
+     "ctx.ibl.bausteine if ctx.ibl else None)"
+    ],
+    "tests/offline/test_nicht_diktiert_streichen.py": [
+     "2 RH 68: eine Prüfzeile mit allen drei"
     ]
    }
   },
@@ -2221,7 +2242,7 @@
      "befundSchluss(osteopen(rhoAnsEnde("
     ]
    },
-   "notiz": "Nicht diktierte CAS-Leistung MIT Normalbefund bleibt (georg-nicht-diktiert-normal) – Ursulas Wunsch „streichen“ widerspricht dieser Regel, Frage an Georg (Bericht)."
+   "notiz": "Nicht diktierte CAS-Leistung: bis 26.11. Normalbefund (georg-nicht-diktiert-normal); seit 26.11.2026 gestrichen + eine Prüfzeile (georg-nicht-diktiert-streichen, Georg „1b“, Ursulas Wunsch RH 68)."
   },
   {
    "id": "ursula-seite-laut-cas",
@@ -2237,7 +2258,7 @@
      "hinweise += [h for h in _seite_hinweise(segmente, wahlen) if h not in hinweise]"
     ],
     "tests/offline/test_ursula_2011.py": [
-     "6: nicht diktierter Ganzbein-Teil ohne Seite"
+     "6: nicht diktierter Ganzbein-Teil MIT LAMA (reiner IB-Lab-Teil)"
     ]
    }
   },

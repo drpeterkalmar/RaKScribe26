@@ -37,7 +37,9 @@ PFLICHT = SKILL + ["kl-0", "kl-1", "kl-2", "kl-3", "kl-4", "kl-wann", "kl-rh38",
                    # kaiscribe-rho-regel-becken-n1 (Kanban #533, Georg 23.11.2026 „Die Regel muss sitzen!“)
                    "rho-eine-regel", "hippo-ergebnis-becken",
                    # kaiscribe-dexa-doppelt-rh60-n1 (Ursula 23.11.2026, RH 60)
-                   "nie-dexa-vorlage", "kein-platzhalter"]
+                   "nie-dexa-vorlage", "kein-platzhalter",
+                   # kaiscribe-nicht-diktiert-streichen-n1 (Georg 26.11.2026 „1b“, Karte #542; ersetzt georg-nicht-diktiert-normal)
+                   "georg-nicht-diktiert-streichen"]
 
 regeln = REG["regeln"]
 ids = [r["id"] for r in regeln]
@@ -46,10 +48,13 @@ fehlt = [i for i in PFLICHT if i not in ids]
 check(f"Register: alle {len(PFLICHT)} Pflicht-Regeln da (Skill 1–13, 3a–3af, K&L 0–4, Formate, IB Lab)", not fehlt, fehlt)
 for r in regeln:
     ok = all(str(r.get(k) or "").strip() for k in ("titel", "quelle", "datum", "status")) \
-        and r["status"] in ("vorhanden", "ergänzt", "unklar") and re.fullmatch(r"\d{4}-\d{2}-\d{2}", r["datum"]) \
+        and r["status"] in ("vorhanden", "ergänzt", "unklar", "ersetzt") and re.fullmatch(r"\d{4}-\d{2}-\d{2}", r["datum"]) \
         and isinstance(r.get("pruefwort"), dict) and r["pruefwort"]
     if not ok:
         check(f"Regel {r.get('id')}: Titel, Quelle, Datum (JJJJ-MM-TT), Status und Prüfwort", False, r)
+    # Status „ersetzt“ (26.11.2026): alte Regel bleibt sichtbar, nennt die neue (ersetzt_durch) – nie still gelöscht
+    if r.get("status") == "ersetzt" and r.get("ersetzt_durch") not in ids:
+        check(f"Regel {r.get('id')}: „ersetzt“ nennt die gültige Regel (ersetzt_durch)", False, r)
 
 texte = {}
 for r in regeln:

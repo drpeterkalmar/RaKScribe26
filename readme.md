@@ -154,6 +154,10 @@ ausgewertet und dürfen gelöscht werden.
   CAS-Untersuchung nennen („Fuß links: … LWS: …“). So entsteht je Untersuchung ein eigener Befund in Diktat-Reihenfolge.
 - **Hinweise im Band:** „LWS laut CAS, nicht diktiert“, „… nicht in den CAS-Leistungen“ und „Seite: diktiert rechts,
   laut CAS links“. Ergänzt wird dabei nichts.
+- **Nicht diktierte Untersuchung (ab 26.11.2026, Georg „1b“):** Bestellt das CAS mehrere Untersuchungen und wird nur ein
+  Teil diktiert, gibt es für die übrigen keinen Titel, keinen Normaltext und keinen Befund, sondern genau eine rote
+  Prüfzeile „BWS, LWS bestellt, aber nicht diktiert – bitte prüfen“. Ausnahme wie bisher: reiner IB-Lab-Teil (z. B.
+  Ganzbein mit LAMA) und Funktions-Kombis. Test `tests/offline/test_nicht_diktiert_streichen.py`.
 - **Nach EOL im CAS-Modus** steht 4,5 s ein grünes Band „✓ An CAS übergeben: <Nr> · <Titel>“, erst danach geht KaiScribe
   in die Taskleiste. In der Kopfzeile überdeckt „Bereit“ den Hinweis „SpeechMike verbunden“ nicht mehr.
 - Ohne CAS-Leistungen bleiben Einzelbefunde bit-gleich (`tools/cas_bitgleich.py`, 726 Diktate). Tests:

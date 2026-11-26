@@ -839,29 +839,51 @@ def funktion_saetze(seg):
     return teil, re.sub(r"(?:\s*[.;:]){2,}", ".", "".join(rest)).strip(" ,;\n")
 
 
+# kaiscribe-georg-2011-n1 (Georg 20.11.2026) – ERSETZT am 26.11.2026 durch georg-nicht-diktiert-streichen (unten); bleibt
+# nur noch für den reinen IB-Lab-Teil (z. B. Ganzbein mit LAMA), der seinen Befund behält
 NICHT_DIKTIERT_NORMAL = "laut CAS, nicht diktiert – Normalbefund der Vorlage eingesetzt, bitte prüfen"
+# kaiscribe-nicht-diktiert-streichen-n1 (Georg 26.11.2026 „1b“, Karte #542, Ursula RH 68): nicht diktierte Untersuchung
+# → kein Titel, kein Normaltext, kein Befund; GENAU EINE rote Prüfzeile mit allen nicht diktierten Untersuchungen
+NICHT_DIKTIERT_PRUEF = "{namen} bestellt, aber nicht diktiert – bitte prüfen"
 
 
-def nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, cas, templates):
-    """kaiscribe-georg-2011-n1 (Georg 20.11.2026, Punkte 16/17/26/36/37a, RH 84/77/37): mehrere CAS-Untersuchungen, aber nur
-    ein Teil diktiert → jede nicht diktierte Untersuchung mit eigener Vorlage bekommt ihren eigenen Befund (Titel aus
-    der CAS-Leistung, Normalsätze der Vorlage, ohne KI); IB-Lab-Werte (z. B. LAMA im Ganzbein) setzt KaiScribe danach
-    dort ein. Sichtbare Prüfzeile statt „laut CAS, nicht diktiert“. Ohne diktierten Abschnitt mit CAS-Leistung
-    (Ordi-Baustein, nichts zugeordnet) bleibt alles wie bisher. → (segmente, wahlen, hinweise, [Log])."""
+def _ibl_teil(l, ibl_bausteine, templates):
+    """Reiner IB-Lab-Teil: ein IB-Lab-Baustein mit Inhalt gehört zur Region dieser CAS-Leistung (LAMA → Ganzbein,
+    HIPPO → Becken/Hüfte, FROG → Fuß, KOALA → Knie) – dann behält die Untersuchung ihren eigenen Befund."""
+    reg = set(l.regionen) | regionen(vorlagen_text(l.vorlage, templates))
+    return any(b.regionen and b.regionen & reg and (b.befundteil or b.ergebnis) for b in ibl_bausteine or [])
+
+
+def nicht_diktiert_ergaenzen(segmente, wahlen, hinweise, cas, templates, ibl_bausteine=None):
+    """Mehrere CAS-Untersuchungen, aber nur ein Teil diktiert (Ordi-Baustein bzw. nichts zugeordnet → alles wie bisher).
+    georg-nicht-diktiert-streichen (Georg 26.11.2026, ersetzt georg-nicht-diktiert-normal vom 20.11.): die nicht
+    diktierten Untersuchungen bekommen KEINEN Titel, KEINEN Normaltext, KEINEN eigenen Befund; ihre Hinweise „… laut CAS,
+    nicht diktiert“ werden zu GENAU EINER roten Prüfzeile „BWS, LWS bestellt, aber nicht diktiert – bitte prüfen“.
+    Unverändert: reiner IB-Lab-Teil (Baustein mit Inhalt zur Region, z. B. Ganzbein mit LAMA) bekommt wie bisher seinen
+    Befund aus Titel der CAS-Leistung + Normalsätzen (IB-Lab-Werte setzt KaiScribe danach dort ein, Prüfzeile
+    NICHT_DIKTIERT_NORMAL); Funktions-Kombi (Regel kaiscribe-funktion-n1) behält ihren Hinweis. DEXA erscheint hier nie
+    (zählt nicht zur Vorlagenwahl). → (segmente, wahlen, hinweise, [Log])."""
     if not any(w.leistung is not None for w in wahlen) or any(w.art == "baustein" for w in wahlen):
         return segmente, wahlen, hinweise, []
     segmente, wahlen, hinweise, log = list(segmente), list(wahlen), list(hinweise), []
+    gestrichen = []
     for l in cas.alle:
         alt = f"{l.label} laut CAS, nicht diktiert"
-        if alt not in hinweise or not l.vorlage or l.vorlage not in templates or l.vorlage == "allgemein" \
-                or l.funktion_grund or _funktion_teil(l, cas) \
+        if alt not in hinweise or l.funktion_grund or _funktion_teil(l, cas) \
                 or any(x.funktion_grund and x.kurz == l.kurz for x in cas.alle):
             continue                     # Funktions-Kombi: Regel kaiscribe-funktion-n1 bleibt (nicht diktiert → nichts)
-        seite = l.seite if (l.seite and l.regionen & PAARIG) else ""
-        segmente.append(f"{_anzeige(l.vorlage, templates) or l.vorlage}{' ' + seite if seite else ''} unauffällig.")
-        wahlen.append(Wahl(l.vorlage, "cas", l, l.vorlage))
-        hinweise[hinweise.index(alt)] = f"{l.label} {NICHT_DIKTIERT_NORMAL}"
-        log.append(f"{l.label}: nicht diktiert → Normalbefund der Vorlage {l.vorlage}")
+        if l.vorlage and l.vorlage in templates and l.vorlage != "allgemein" and _ibl_teil(l, ibl_bausteine, templates):
+            seite = l.seite if (l.seite and l.regionen & PAARIG) else ""
+            segmente.append(f"{_anzeige(l.vorlage, templates) or l.vorlage}{' ' + seite if seite else ''} unauffällig.")
+            wahlen.append(Wahl(l.vorlage, "cas", l, l.vorlage))
+            hinweise[hinweise.index(alt)] = f"{l.label} {NICHT_DIKTIERT_NORMAL}"
+            log.append(f"{l.label}: nicht diktiert, IB-Lab-Teil → Normalbefund der Vorlage {l.vorlage}")
+            continue
+        hinweise.remove(alt)
+        gestrichen.append(l.label)
+        log.append(f"{l.label}: nicht diktiert → gestrichen (Prüfzeile)")
+    if gestrichen:
+        hinweise.append(NICHT_DIKTIERT_PRUEF.format(namen=", ".join(gestrichen)))
     return segmente, wahlen, hinweise, log
 
 
