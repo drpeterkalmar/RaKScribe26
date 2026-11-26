@@ -1,7 +1,8 @@
 # kaiscribe-nicht-diktiert-streichen-n1 – Bericht Teil 1 (Do 26.11.2026 vormittags, Hetzner), Karte #542
 
 - **Version:** KaiScribe **3.30.0** (main `2b08a63`). Release gebaut, `KaiScribe.exe` sha256
-  `4f48fe2fab5cae8b1c119eafab41c97a788bbf5c1d199248cd9a92a0ac4381c3` (56.795.398 B). Noch **nicht live**: X: steht auf 3.28.2.
+  `4f48fe2fab5cae8b1c119eafab41c97a788bbf5c1d199248cd9a92a0ac4381c3` (56.795.398 B). GitHub: Tests (aa96e55), Build EXE und
+  Windows-UI-Test (2b08a63) grün. Noch **nicht live**: X: steht auf 3.28.2.
 - **Was geändert:** `cas_vorlagen.nicht_diktiert_ergaenzen` (nur EXE, das Web hat kein CAS). Werden von mehreren
   CAS-Untersuchungen nur einige diktiert, bekommen die übrigen keinen Titel, keinen Normaltext und keinen Befund mehr.
   Stattdessen gibt es GENAU EINE rote Prüfzeile im Befundfenster: „BWS, LWS bestellt, aber nicht diktiert – bitte prüfen“.
