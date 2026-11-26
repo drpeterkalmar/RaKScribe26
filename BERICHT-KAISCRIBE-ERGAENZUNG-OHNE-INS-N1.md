@@ -104,3 +104,9 @@ Der Text steht sofort rechts an der Stelle, links bleibt alles, wie es war. „N
 Weiter sprechen = Record, das kommt dahinter. Danach einfach EOL, ein INS ist nicht nötig.
 Drückst du EOL schon während des Sprechens, fügt KaiScribe zuerst ein. Dann EOL noch einmal.
 Schließen oder Abbrechen mit offenem Nachdiktat fragt jetzt nach, statt es zu verwerfen.
+
+## Teil 2 – live (Fr 27.11.2026 00:35, Job kaiscribe-nicht-diktiert-streichen-n1-einspielen)
+- **Live seit** 27.11.2026 00:35 (KaiScribe 3.31.0, einmal getauscht für beide Aufträge; SM-Wächter hat sich selbst auf 3.31.0 umgestellt, Log ohne Fehler).
+- **K1** (markiert, Befunder kp, Live aus): `ERGABN=ok`, Log „Markierung ersetzt … (ohne INS)“, „EOL in der Pause … nichts neu aufgebaut“; **K2** (Cursor am Ende, Befunder rg, Live-Thread an): `ERGABN=ok`, „Ergänzung an Cursor-Stelle … (ohne INS)“. Kein „Erst INS“, kein „Restructure“ (Nr. 20261127004/002, storniert, nie vidiert).
+- Werkzeug-Hinweis: `diktat_e2e` 1.2.0 (ris-mods) verglich bei K1/K2 die Ablage mit dem Befund VOR der Pause → in den Werkzeug-Kopien am Büro-PC auf „nach der Pause“ umgestellt (Folgearbeit: im ris-mods-Repo nachziehen). Bild: keins (keine Screenshot-Option).
+- **Belege D (Log 10:53/10:56, Lauf-Datei 20261126060):** nicht gemacht (kein Ordi-Auftrag dafür in dieser Runde); bleiben offen.

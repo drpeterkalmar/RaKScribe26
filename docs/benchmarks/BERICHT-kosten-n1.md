@@ -117,3 +117,7 @@ Nicht ausgeführt: Ordi-Systeme sind Mo–Do erst ab 17:30 frei (Fr ab 13:30, Wo
 vor dem Fenster. Weder Abnahme an 451898 noch Tausch noch Beleg im Betrieb wurden gemacht, nichts an Ordi angefasst.
 Offen bleibt: A (Tausch 3.29.2 nach 20 min Ruhe, Rollback `.alt`), B (zwei Diktate, 2. muss `Cache treffer` zeigen,
 stornieren), C (Betriebsbeleg am Folgetag). Hinweis: Der letzte Tausch (3.29.0) scheiterte an belegter X:-EXE.
+
+## Einspielen 3.31.0 – Stand Fr 27.11.2026 00:35 (enthält 3.29.2)
+Abnahme 451898 (Kopie 3.31.0, Konto A): Diktat N1 `Cache neu` (23:47:47), Diktat A1 33 s später **`Cache treffer`** (23:48:17), kein `Cache ohne`. X: seit 00:35 auf 3.31.0 live (EXE-Prüfung am Asset: crlf=0).
+Offen: Betriebsbeleg (Teil C) am nächsten Ordi-Tag ab 17:30 bzw. Fr ab 13:30 – eigener Kontroll-Folgejob `FOLGEJOB-KAISCRIBE-KOSTEN-KONTROLLE-N1.md`; dort Nachtrag „Betrieb nach dem Fix“ inkl. Hochrechnung 3.000 Befunde/Monat.

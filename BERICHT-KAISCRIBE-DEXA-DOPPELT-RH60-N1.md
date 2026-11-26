@@ -26,3 +26,7 @@
   Ursache offen: entweder KaiScribe an einem anderen PC (CASWS03/CASWS15 hatten heute Aktivität) oder die zwei SM-Wächter am Büro-PC, die direkt von der X:-EXE laufen.
 - **Folge:** Abnahme 451898 (B), Zählung betroffener Briefe und RH 60 (C) und der Satz für Ursula (D) sind **nicht** gemacht, weil nichts live ist. Es gibt keine Uhrzeit für Ursula. Keine Meldung nach außen.
 - **Nächster Versuch:** Kanban-Karte in Spalte tun (Folgejob). Dort zuerst klären, wer die X:-EXE hält (Lesezugriff auf Dateiserver/andere PCs, Wächter-Prozesse am Büro-PC prüfen), dann Tausch mit 3.29.0 oder neuer wiederholen.
+
+## Teil 3 – live seit Fr 27.11.2026 00:35 (KaiScribe 3.31.0, enthält 3.29.0)
+- **Abnahme B (Kopie 3.31.0, Nr. 20261127003, LWS + DEXA, nur LWS diktiert):** Brief nur „Lendenwirbelsäule in 2 Ebenen“; keine DEXA-/ODM-Überschrift, keine eckigen Klammern, kein „Osteodensitometrie laut CAS, nicht diktiert“; Log „[CAS] Leistungen … dexa(knochendichtemessung_dexa)“, **kein** „Normalbefund der Vorlage knochendichtemessung_dexa“, kein „Abschnitt …: Vorlage …“, keine Prüfzeile für DEXA. Storniert, nie vidiert.
+- Rho-Gegenprobe und Seitenbild: nicht gemacht. C (Zählung betroffener Briefe, RH 60) und D (Satz für Ursula): offen, aber der Fehler ist ab jetzt behoben (gilt ab Fr 27.11. mit dem nächsten KaiScribe-Start).
